@@ -25,6 +25,8 @@ Des mots simples, sans jargon : voir [docs/vocabulaire.md](docs/vocabulaire.md).
 - [docs/systalink-services.md](docs/systalink-services.md) : les services Systalink testés, ce qui est gratuit et ce qui ne l'est pas.
 - [docs/architecture.md](docs/architecture.md) : l'architecture technique et ses justifications.
 - [docs/equipe.md](docs/equipe.md) : qui fait quoi.
+- [docs/propositions/](docs/propositions/README.md) : **propose et améliore les idées** (Discussions, ou proposition écrite).
+- [AGENTS.md](AGENTS.md) : les consignes de réflexion pour les agents IA (Claude, Codex, Cursor…), à lire aussi par les humains.
 - [CONTRIBUTING.md](CONTRIBUTING.md) : **à lire avant de coder.** On y explique comment prendre une tâche, créer une branche et ouvrir une PR.
 - [docs/presentation.html](docs/presentation.html) : la présentation animée (à ouvrir dans un navigateur).
 

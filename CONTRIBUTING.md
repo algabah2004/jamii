@@ -41,3 +41,13 @@
 | `type: proposition` | `domaine: démo` | |
 
 Une issue marquée `bloqué` signifie qu'il faut prévenir le chef de projet tout de suite.
+
+## Proposer une idée
+
+Tout le monde peut proposer, et c'est attendu. Voir [docs/propositions/](docs/propositions/README.md) :
+- **idée rapide** : onglet *Discussions → Idées* ;
+- **proposition écrite** : un fichier `docs/propositions/NNNN-titre.md` (à partir de `TEMPLATE.md`), soumis par PR, que toute l'équipe commente avant la décision du chef de projet.
+
+## Travailler avec un agent IA
+
+Claude, Codex, Cursor… sont les bienvenus. Ils lisent automatiquement [AGENTS.md](AGENTS.md), qui leur demande de **critiquer, comparer des alternatives et terminer par des pistes d'amélioration**. Relis toujours ce que ton agent produit : c'est toi qui signes la PR.

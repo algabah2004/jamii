@@ -1,5 +1,5 @@
 name: Proposition
-description: Une idée ou une amélioration, à valider par le chef de projet
+description: Une petite idée à valider. Pour une idée importante, écris une proposition dans docs/propositions/ (voir TEMPLATE.md)
 labels: ["type: proposition"]
 body:
   - type: textarea
@@ -12,3 +12,8 @@ body:
     id: pourquoi
     attributes:
       label: Pourquoi c'est utile
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives envisagées et risques
+      description: Quelle autre option ? Qu'est-ce qui pourrait mal tourner ?
