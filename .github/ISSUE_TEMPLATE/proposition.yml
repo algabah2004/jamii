@@ -1,0 +1,14 @@
+name: Proposition
+description: Une idée ou une amélioration, à valider par le chef de projet
+labels: ["type: proposition"]
+body:
+  - type: textarea
+    id: idee
+    attributes:
+      label: L'idée
+    validations:
+      required: true
+  - type: textarea
+    id: pourquoi
+    attributes:
+      label: Pourquoi c'est utile

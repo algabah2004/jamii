@@ -1,0 +1,885 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jamii · CADEV 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@400..700&family=DM+Sans:wght@400..700&display=swap">
+<style>
+:root{--night:#0F1A2A;--night2:#16243A;--night3:#1F3350;--sand:#F7F2E8;--ink:#1A2233;--gold:#F2A93B;--rust:#A8590F;--teal:#22A699;--teal2:#4FD1C1;--mutedD:#B9C6D6;--mutedL:#4A5568;--line:#E6DCC8}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#070d17;overflow:hidden;font-family:'DM Sans',Arial,sans-serif}
+#stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform:translate(-50%,-50%) scale(var(--s,1));overflow:hidden;background:var(--night)}
+h1,h2,h3,p,ul,ol{margin:0}
+ul,ol{padding-left:1.15em}
+li{margin:4px 0}
+.slide{position:absolute;inset:0;padding:104px 128px 120px;display:flex;flex-direction:column;opacity:0;visibility:hidden;transform:translateX(90px);transition:opacity .6s ease,transform .75s cubic-bezier(.2,.8,.2,1),visibility 0s linear .75s}
+.slide.past{transform:translateX(-90px)}
+.slide.active{opacity:1;visibility:visible;transform:none;transition:opacity .6s ease,transform .75s cubic-bezier(.2,.8,.2,1),visibility 0s}
+.slide.nomove{transform:none!important}
+.dark{background:var(--night);color:var(--sand)}
+.glow{background:radial-gradient(ellipse at 75% 10%,#1F3A5A 0%,#0F1A2A 65%);color:var(--sand)}
+.glowc{background:radial-gradient(ellipse at 50% 45%,#1F3A5A 0%,#0F1A2A 65%);color:var(--sand)}
+.sand{background:var(--sand);color:var(--ink)}
+.gold{background:var(--gold);color:var(--night)}
+.eyebrow{font-size:26px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--gold)}
+.sand .eyebrow{color:var(--rust)}
+h2{font-family:'Oswald',Arial,sans-serif;font-size:76px;font-weight:600;line-height:1.1;margin-top:12px}
+.head{margin-bottom:44px}
+.body{flex:1;min-height:0;display:flex;flex-direction:column;gap:28px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:26px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:24px}
+.g5{display:grid;grid-template-columns:repeat(5,1fr);gap:24px}
+.rowf{display:flex;gap:28px}
+.card{border-radius:24px;padding:30px 34px;display:flex;flex-direction:column;gap:12px}
+.dark .card,.glow .card,.glowc .card{background:var(--night2)}
+.sand .card{background:#fff;border:2px solid var(--line)}
+.card.goldc{background:var(--gold)!important;color:var(--night);border:none}
+.card.darkc{background:var(--night)!important;color:var(--sand);border:none}
+.card h3{font-size:32px;font-weight:700;line-height:1.2}
+.t26{font-size:26px;line-height:1.45}
+.t24{font-size:24px;line-height:1.45}
+.t30{font-size:30px;line-height:1.4}
+.t34{font-size:34px;line-height:1.35}
+.muted{color:var(--mutedD)}
+.sand .muted{color:var(--mutedL)}
+.card.goldc .muted{color:#3b2a10}
+.card.darkc .muted{color:var(--mutedD)}
+.acc{color:var(--gold)}
+.sand .acc{color:var(--rust)}
+.tealt{color:var(--teal2)}
+.sand .tealt{color:#157A70}
+.osw{font-family:'Oswald',Arial,sans-serif}
+.num{font-family:'Oswald',Arial,sans-serif;font-size:56px;font-weight:700;color:var(--gold);line-height:1}
+.sand .num{color:var(--rust)}
+.pill{display:inline-block;align-self:flex-start;font-size:22px;font-weight:700;padding:6px 16px;border-radius:999px;background:var(--teal);color:var(--night)}
+.pill.g{background:var(--gold)}
+.pill.n{background:var(--night);color:var(--gold)}
+.pill.o{background:transparent;border:2px solid var(--teal);color:var(--teal2)}
+.band{border-radius:24px;padding:26px 44px;font-size:34px;font-weight:700;line-height:1.35}
+.band.goldb{background:var(--gold);color:var(--night)}
+.band.darkb{background:var(--night);color:var(--sand)}
+.ic{width:56px;height:56px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;color:var(--gold)}
+.sand .ic{color:var(--rust)}
+.goldc .ic,.goldb .ic{color:var(--night)}
+.ic.sm{width:44px;height:44px}
+.item{display:flex;gap:24px;align-items:center}
+.item h3{font-size:32px;font-weight:700}
+.dot{width:60px;height:60px;flex:none;border-radius:50%;background:var(--gold);color:var(--night);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700}
+.top-gold{border-top:10px solid var(--gold)}
+.top-teal{border-top:10px solid var(--teal)}
+.top-rust{border-top:10px solid #E07A3F}
+.left-gold{border-left:10px solid var(--gold)!important}
+.left-teal{border-left:10px solid var(--teal)!important}
+.spacer{flex:1}
+table.tb{width:100%;border-collapse:collapse;font-size:27px}
+.tb th{text-align:left;padding:14px 20px;font-size:24px;letter-spacing:2px;text-transform:uppercase}
+.tb td{padding:14px 20px;border-top:2px solid var(--line)}
+.sand .tb th{color:var(--rust)}
+.dark .tb th{color:var(--gold)}
+.dark .tb td{border-top:2px solid #24364F}
+.tb tr.z td{background:#EFE6D4}
+/* animation des éléments */
+[data-a]{opacity:0;transition:opacity .7s ease,transform .8s cubic-bezier(.2,.8,.2,1);transition-delay:0s}
+[data-a=rise]{transform:translateY(46px)}
+[data-a=drop]{transform:translateY(-46px)}
+[data-a=left]{transform:translateX(-70px)}
+[data-a=right]{transform:translateX(70px)}
+[data-a=pop]{transform:scale(.55)}
+[data-a=zoom]{transform:scale(1.25)}
+.slide.active [data-a]{opacity:1;transform:none;transition-delay:calc(var(--i,0) * 130ms + 250ms)}
+.slide.active [data-a=pop]{transition:opacity .5s ease,transform .7s cubic-bezier(.3,1.6,.5,1);transition-delay:calc(var(--i,0) * 130ms + 250ms)}
+/* carte de joueur */
+.pcard{border-radius:32px;padding:42px;display:flex;flex-direction:column;gap:14px;color:var(--night);box-shadow:0 32px 80px rgba(0,0,0,.45)}
+.pcard.or{background:linear-gradient(160deg,#F7C66B 0%,#F2A93B 55%,#C97F1E 100%)}
+.pcard.espoir{background:linear-gradient(160deg,#4FD1C1 0%,#22A699 60%,#157A70 100%)}
+.pcard .nm{font-family:'Oswald',Arial,sans-serif;font-size:88px;font-weight:700;line-height:1}
+.pcard hr{border:none;border-top:2px solid rgba(15,26,42,.4);margin:4px 0;width:100%}
+.pcard .st{font-size:28px}
+.shine{position:relative;overflow:hidden}
+.shine::after{content:"";position:absolute;top:-50%;left:-60%;width:40%;height:200%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent);transform:rotate(18deg);animation:shine 4.5s ease-in-out infinite}
+@keyframes shine{0%,55%{left:-60%}80%,100%{left:130%}}
+@keyframes floaty{0%,100%{transform:translateY(0) rotate(var(--r,0deg))}50%{transform:translateY(-14px) rotate(var(--r,0deg))}}
+.floaty{animation:floaty 5s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(242,169,59,.55)}50%{box-shadow:0 0 0 22px rgba(242,169,59,0)}}
+.pulse{animation:pulse 2.4s ease-out infinite}
+/* widgets */
+.panel{background:var(--night2);border-radius:28px;padding:28px 32px;overflow:hidden}
+.chat .top{display:flex;justify-content:space-between;align-items:center;font-size:24px;color:var(--mutedD);margin-bottom:20px}
+.chat .top b{color:var(--sand)}
+.chat .view{background:var(--night);border-radius:999px;padding:8px 18px;color:var(--gold);transition:opacity .3s}
+.msg{background:var(--night3);border-radius:20px;padding:18px 22px;margin-bottom:18px;opacity:0;transform:translateY(18px);transition:all .5s}
+.msg.on{opacity:1;transform:none}
+.msg.me{background:#2B4468;margin-left:9%}
+.msg .who{font-size:24px;font-weight:700;color:var(--teal2);margin-bottom:6px}
+.msg .who span{color:var(--mutedD);font-weight:400}
+.msg .t{font-size:26px;line-height:1.38;transition:opacity .3s}
+.msg .tag{font-size:22px;color:var(--gold);margin-top:6px;min-height:28px}
+.badge{display:table;margin:6px auto 0;background:var(--gold);color:var(--night);font-weight:700;font-size:26px;border-radius:999px;padding:12px 26px;opacity:0;transform:scale(.5);transition:all .45s cubic-bezier(.3,1.6,.5,1)}
+.badge.on{opacity:1;transform:scale(1)}
+.lb .h{font-size:26px;color:var(--mutedD);margin-bottom:22px}.lb .h b{color:var(--sand)}
+#lb{position:relative;height:512px}
+.lr{position:absolute;left:0;right:0;height:56px;display:flex;align-items:center;gap:14px;transition:top .6s ease}
+.lr .k{width:36px;font-size:26px;font-weight:700;color:var(--gold)}
+.lr .n{width:210px;font-size:26px;white-space:nowrap}
+.lr .bar{flex:1;height:22px;background:var(--night);border-radius:11px;overflow:hidden}
+.lr .f{height:100%;background:linear-gradient(90deg,#22A699,#4FD1C1);transition:width .6s ease}
+.lr .p{width:64px;text-align:right;font-size:26px;font-weight:700}
+.lr .c{width:96px;font-size:22px;font-weight:800;color:var(--night);background:var(--gold);border-radius:999px;text-align:center;padding:4px 0;opacity:0;transform:scale(.4);transition:all .3s cubic-bezier(.3,1.6,.5,1)}
+.lr .c.on{opacity:1;transform:scale(1)}
+.lr .c.pass{background:var(--teal2)}
+#net .city{fill:#2B4468;transition:fill .4s}
+#net .city.on{fill:#F2A93B}
+#net .arc{fill:none;stroke:#F2A93B;stroke-width:3;stroke-linecap:round;transition:stroke-dashoffset 1.2s ease,opacity 1s ease}
+#net .lbl{fill:#B9C6D6;font-size:20px;font-family:'DM Sans',Arial,sans-serif}
+.netinfo{display:flex;justify-content:space-between;align-items:center;font-size:24px;color:var(--mutedD);margin-top:6px}
+.netinfo b{color:var(--gold);font-size:30px}
+#netmsg{transition:opacity .4s}
+/* interface */
+#ui{position:absolute;left:0;right:0;bottom:0;height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 48px;font-size:22px;letter-spacing:2px;pointer-events:none;z-index:5}
+#ui .l{font-weight:700;opacity:.55}
+#ui .r{opacity:.6;font-variant-numeric:tabular-nums}
+#prog{position:absolute;left:0;bottom:0;height:6px;background:var(--gold);transition:width .6s ease;z-index:6}
+#notes{position:fixed;left:0;right:0;bottom:0;max-height:34vh;overflow:auto;background:rgba(7,13,23,.96);color:#E8EEF5;font-size:17px;line-height:1.55;padding:18px 28px;border-top:2px solid #F2A93B;display:none;z-index:20}
+#notes.on{display:block}
+#notes b{color:#F2A93B}
+#hint{position:fixed;left:50%;top:18px;transform:translateX(-50%);background:rgba(7,13,23,.85);color:#E8EEF5;font-size:15px;padding:10px 18px;border-radius:999px;z-index:20;transition:opacity 1s;pointer-events:none}
+aside.notes{display:none}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+<symbol id="i-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></symbol>
+<symbol id="i-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+<symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></symbol>
+<symbol id="i-star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></symbol>
+<symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></symbol>
+<symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></symbol>
+<symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+<symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></symbol>
+<symbol id="i-cloud" viewBox="0 0 24 24"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></symbol>
+<symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+<symbol id="i-heart" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></symbol>
+<symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></symbol>
+<symbol id="i-flag" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/></symbol>
+</svg>
+
+<div id="stage">
+
+<!-- 1 · COUVERTURE -->
+<section class="slide glow" id="cover">
+<aside class="notes">Jamii veut dire « communauté » en swahili, une langue parlée bien au-delà d’un seul pays. C’est un nom provisoire. L’idée : une Coupe d’Afrique des développeurs qui dure toute l’année et qui réunit tout le continent. On se rencontre, on s’entraide, on marque des buts, c’est-à-dire qu’on met de vrais projets en ligne.</aside>
+<div data-a="fade" style="--i:0;position:absolute;left:1476px;top:0;width:4px;height:1080px;background:#22A699;opacity:.3"></div>
+<div data-a="pop" style="--i:0;position:absolute;left:1176px;top:240px;width:600px;height:600px;border-radius:50%;border:4px solid #22A699;opacity:.35"></div>
+<div style="position:absolute;left:128px;top:270px;width:1050px">
+<p class="eyebrow" data-a="fade" style="--i:1">CADEV 2026 · Proposition d’équipe · nom provisoire</p>
+<h1 class="osw" data-a="rise" style="--i:2;font-size:260px;font-weight:700;line-height:1;margin-top:10px">JAMII</h1>
+<p data-a="rise" style="--i:3;font-size:52px;font-weight:600;line-height:1.2;margin-top:18px">La Coupe d’Afrique des développeurs. <span class="acc">Toute l’année.</span></p>
+<p class="muted" data-a="fade" style="--i:4;font-size:32px;line-height:1.4;margin-top:28px;max-width:960px">Le terrain où les devs de tout le continent se rencontrent, s’entraident et marquent des buts. Ensemble.</p>
+</div>
+<div data-a="pop" style="--i:5;position:absolute;left:1328px;top:300px;width:300px">
+<div class="pcard or shine floaty" style="--r:6deg;padding:28px;gap:10px;border-radius:24px">
+<p style="font-size:22px;font-weight:700;letter-spacing:2px">CARTE OR</p>
+<p class="osw" style="font-size:56px;font-weight:700;line-height:1.05">TA CARTE</p>
+<p style="font-size:24px;font-weight:600">Style : Bâtisseur</p>
+<hr>
+<p style="font-size:22px">Backend · 3 projets en ligne</p>
+<p style="font-size:22px">Entraide · 41 réponses</p>
+<p style="font-size:22px">Équipes · 4 pays</p>
+</div>
+</div>
+</section>
+
+<!-- 2 · ENJEU -->
+<section class="slide sand" id="enjeu">
+<aside class="notes">Systalink organise la CADEV pour entrer dans la communauté tech africaine, où sa présence est encore timide. Le thème officiel parle d’une plateforme d’échange. Le jury se posera trois questions : est-ce que ça fait venir des développeurs, est-ce qu’ils reviennent, est-ce que ça prouve que Systalink est fiable ?</aside>
+<div class="head"><p class="eyebrow">Le contexte</p><h2>Ce que Systalink attend vraiment</h2></div>
+<div class="body">
+<div class="rowf" style="flex:1">
+<div class="card darkc" data-a="rise" style="--i:0;flex:0 0 720px;padding:56px;justify-content:space-between">
+<p class="eyebrow">Le thème officiel</p>
+<p class="osw" style="font-size:58px;font-weight:500;line-height:1.2">« Construire la plateforme d’échange africaine, pour les devs, par les devs. »</p>
+<p class="t24 muted">CADEV 2026 · du 29 septembre au 15 novembre</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:22px">
+<div class="card item" data-a="right" style="--i:1;flex-direction:row"><svg class="ic"><use href="#i-users"/></svg><div><h3>Acquisition</h3><p class="t26 muted">Faire connaître son cloud aux devs du continent.</p></div></div>
+<div class="card item" data-a="right" style="--i:2;flex-direction:row"><svg class="ic"><use href="#i-heart"/></svg><div><h3>Rétention</h3><p class="t26 muted">Les faire revenir chaque semaine, pas une fois par an.</p></div></div>
+<div class="card item" data-a="right" style="--i:3;flex-direction:row"><svg class="ic"><use href="#i-shield"/></svg><div><h3>Confiance</h3><p class="t26 muted">Montrer de vrais projets qui tournent chez eux.</p></div></div>
+</div>
+</div>
+<p class="t30" data-a="fade" style="--i:4;font-weight:600">La question du jury : <span class="acc">ce produit fait-il venir, rester et payer des devs chez Systalink ?</span></p>
+</div>
+</section>
+
+<!-- 3 · CONSTAT -->
+<section class="slide dark" id="probleme">
+<aside class="notes">Quatre problèmes simples : les développeurs sont invisibles, isolés, mal payés, et leurs projets meurent après les hackathons. Et surtout, le continent est fragmenté : francophones, anglophones et lusophones ne se parlent presque pas. C’est ce mur qu’on veut faire tomber.</aside>
+<div class="head"><p class="eyebrow">Le constat</p><h2>Le talent est partout. Il est éparpillé.</h2></div>
+<div class="body">
+<div class="g4">
+<div class="card" data-a="rise" style="--i:0;padding:40px"><svg class="ic"><use href="#i-search"/></svg><h3 class="osw" style="font-size:46px;font-weight:600">Invisible</h3><p class="t26 muted">Un CV ne montre pas ce qu’on sait vraiment faire.</p></div>
+<div class="card" data-a="rise" style="--i:1;padding:40px"><svg class="ic"><use href="#i-users"/></svg><h3 class="osw" style="font-size:46px;font-weight:600">Isolé</h3><p class="t26 muted">Trouver des coéquipiers fiables relève du hasard.</p></div>
+<div class="card" data-a="rise" style="--i:2;padding:40px"><svg class="ic"><use href="#i-key"/></svg><h3 class="osw" style="font-size:46px;font-weight:600">Sans revenus</h3><p class="t26 muted">Les grandes plateformes freelance sont pensées pour ailleurs.</p></div>
+<div class="card" data-a="rise" style="--i:3;padding:40px"><svg class="ic"><use href="#i-alert"/></svg><h3 class="osw" style="font-size:46px;font-weight:600">Abandonné</h3><p class="t26 muted">Après le hackathon, beaucoup de prototypes s’arrêtent.</p></div>
+</div>
+<div class="spacer"></div>
+<div class="band goldb" data-a="zoom" style="--i:5">Et surtout : <u>des écosystèmes qui ne se parlent pas</u>. Francophones, anglophones, lusophones, arabophones vivent chacun de leur côté.</div>
+</div>
+</section>
+
+<!-- 5 · L'IDÉE -->
+<section class="slide gold" id="idee">
+<aside class="notes">La phrase à retenir. Le foot sert de décor, tout le monde comprend ce qu’est un but. Chez nous, un but est un projet réellement mis en ligne, sur Systalink. Et le mot clé, c’est « ensemble » : on réunit tout le continent.</aside>
+<div style="margin:auto 0">
+<p data-a="fade" style="--i:0;font-size:28px;font-weight:700;letter-spacing:4px;text-transform:uppercase">L’idée en une phrase</p>
+<h1 class="osw" data-a="rise" style="--i:1;font-size:104px;font-weight:700;line-height:1.1;margin-top:26px">Le terrain où les devs de toute l’Afrique se rencontrent, s’entraident et marquent des buts. Ensemble.</h1>
+<p data-a="rise" style="--i:2;font-size:40px;font-weight:600;margin-top:44px">Un but = un projet mis en ligne. Sur Systalink.</p>
+<p data-a="fade" style="--i:3;font-size:32px;margin-top:14px">Fun dans la forme. Utile sur le fond. Accrocheur dès la première minute.</p>
+</div>
+</section>
+
+<!-- 6 · RÉUNIR L'AFRIQUE -->
+<section class="slide glowc" id="unir">
+<aside class="notes">C’est l’ambition centrale : réunir l’Afrique, pas la découper par ville. Tout est sans frontières par défaut. Les clubs de passion sont continentaux, les suggestions de coéquipiers vont chercher au-delà de ton pays, la traduction fait tomber le mur des langues, et collaborer entre pays rapporte plus de points que jouer seul. L’animation montre des connexions qui se créent entre villes du continent (c’est une simulation).</aside>
+<div class="head"><p class="eyebrow">Notre ambition</p><h2>Réunir l’Afrique, pas la découper</h2></div>
+<div class="body" style="flex-direction:row;gap:56px">
+<div style="flex:0 0 860px;display:flex;flex-direction:column;gap:24px">
+<div class="card item" data-a="left" style="--i:0;flex-direction:row"><svg class="ic"><use href="#i-globe"/></svg><div><h3>Sans frontières par défaut</h3><p class="t26 muted">Les clubs, les équipes et les missions sont ouverts à tout le continent.</p></div></div>
+<div class="card item" data-a="left" style="--i:1;flex-direction:row"><svg class="ic"><use href="#i-chat"/></svg><div><h3>Chacun dans sa langue</h3><p class="t26 muted">Français, anglais, portugais, arabe, swahili : la traduction fait tomber le mur.</p></div></div>
+<div class="card item" data-a="left" style="--i:2;flex-direction:row"><svg class="ic"><use href="#i-link"/></svg><div><h3>Collaborer entre pays rapporte plus</h3><p class="t26 muted">Un projet qui réunit plusieurs pays fait monter chacun d’eux.</p></div></div>
+<div class="card item" data-a="left" style="--i:3;flex-direction:row"><svg class="ic"><use href="#i-users"/></svg><div><h3>Ton prochain coéquipier est peut-être à Kigali</h3><p class="t26 muted">Les suggestions vont chercher au-delà de ta ville.</p></div></div>
+</div>
+<div class="panel" data-a="pop" style="--i:2;flex:1;display:flex;flex-direction:column;padding:20px 28px">
+<svg id="net" viewBox="0 0 880 860" style="width:100%;flex:1"></svg>
+<div class="netinfo"><span id="netmsg">Connexions entre pays (simulation)</span><span><b id="netcount">0</b> liens</span></div>
+</div>
+</div>
+</section>
+
+<!-- 7 · PILIERS -->
+<section class="slide dark" id="piliers">
+<aside class="notes">Cinq piliers qui forment une boucle. La carte donne envie d’entrer. Les clubs panafricains donnent une raison de revenir et de rencontrer tout le continent. Les équipes et missions apportent du concret. Le but est le moment où Systalink gagne un projet hébergé. La saison fait revenir tout le monde. Sous chaque pilier, on voit le service Systalink qu’il utilise.</aside>
+<div class="head"><p class="eyebrow">L’idée en 5 piliers</p><h2>Cinq piliers, une seule boucle</h2></div>
+<div class="body">
+<div class="g5">
+<div class="card" data-a="rise" style="--i:0"><p class="num">01</p><h3>Ta carte</h3><p class="t26 muted">Ton profil se construit tout seul depuis GitHub.</p><div class="spacer"></div><span class="pill">Yokk</span></div>
+<div class="card" data-a="rise" style="--i:1"><p class="num">02</p><h3>Les Clubs</h3><p class="t26 muted">Des communautés sans frontières, chacun dans sa langue.</p><div class="spacer"></div><span class="pill">Yokk · SystaTalk</span></div>
+<div class="card" data-a="rise" style="--i:2"><p class="num">03</p><h3>Équipes et missions</h3><p class="t26 muted">Une équipe multi-pays, une mission payée, un client.</p><div class="spacer"></div><span class="pill">Orion · Yokk · SystaONE</span></div>
+<div class="card" data-a="rise" style="--i:3"><p class="num">04</p><h3>Marquer un but</h3><p class="t26 muted">Déployer en un clic. Le projet est en ligne.</p><div class="spacer"></div><span class="pill">DataCloud · MCP</span></div>
+<div class="card goldc" data-a="rise" style="--i:4"><p class="num" style="color:#0F1A2A">05</p><h3>La Saison</h3><p class="t26">Le continent joue ensemble. La CADEV dure toute l’année.</p><div class="spacer"></div><span class="pill n">Notre code</span></div>
+</div>
+<div class="spacer"></div>
+<p class="t30 muted" data-a="fade" style="--i:6">On se montre <span class="acc">→</span> on se rencontre <span class="acc">→</span> on collabore <span class="acc">→</span> on livre <span class="acc">→</span> on brille, et on recommence.</p>
+</div>
+</section>
+
+<!-- 8 · LA CARTE -->
+<section class="slide glow" id="carte">
+<aside class="notes">Le moment « wow » de l’inscription. On se connecte avec GitHub, l’agent lit uniquement les données publiques, et la carte apparaît en 30 secondes. Ce n’est pas une note mais des forces, chacune reliée au code qui la prouve. Kofi a une carte Espoir, celle des débutants, aussi belle que la carte Or d’Awa. Tout le monde voudra partager la sienne, et chaque partage fait venir de nouveaux inscrits.</aside>
+<div class="head"><p class="eyebrow">Pilier 1 · Ta carte</p><h2>30 secondes. Ta carte est prête.</h2></div>
+<div class="body" style="flex-direction:row">
+<div style="flex:0 0 800px;display:flex;flex-direction:column;gap:34px;padding-top:10px">
+<div class="item" data-a="left" style="--i:0"><div class="dot">1</div><div><h3>Connexion avec GitHub</h3><p class="t26 muted">Un clic, aucune permission sur tes dépôts privés.</p></div></div>
+<div class="item" data-a="left" style="--i:1"><div class="dot">2</div><div><h3>L’agent lit tes projets publics</h3><p class="t26 muted">Langages, sujets, README, activité.</p></div></div>
+<div class="item" data-a="left" style="--i:2"><div class="dot">3</div><div><h3>Ta carte apparaît</h3><p class="t26 muted">Tes 3 forces, ton style, ton pays. Chaque stat a sa preuve.</p></div></div>
+<div class="item" data-a="left" style="--i:3"><div class="dot">4</div><div><h3>Tu la partages</h3><p class="t26 muted">Tes amis veulent la leur : la plateforme grandit seule.</p></div></div>
+</div>
+<div style="position:relative;flex:1">
+<div data-a="pop" style="--i:4;position:absolute;left:0;top:70px;width:430px">
+<div class="pcard espoir floaty" style="--r:-8deg;padding:36px;gap:12px">
+<p style="font-size:22px;font-weight:700;letter-spacing:2px">GH · ACCRA · CARTE ESPOIR</p>
+<p class="nm" style="font-size:64px">KOFI</p>
+<p style="font-size:28px;font-weight:600">Style : Explorateur</p><hr>
+<p class="st" style="font-size:25px">Python · 1er projet en ligne</p>
+<p class="st" style="font-size:25px">Curiosité · 6 technos testées</p>
+<p class="st" style="font-size:25px">Entraide · 4 réponses</p>
+</div>
+</div>
+<div data-magic="awa" data-a="pop" style="--i:5;position:absolute;left:300px;top:0;width:520px">
+<div class="pcard or shine">
+<div style="display:flex;justify-content:space-between;align-items:center"><p style="font-size:24px;font-weight:700;letter-spacing:2px">SN · DAKAR</p><span class="pill n">CARTE OR</span></div>
+<p class="nm">AWA</p>
+<p style="font-size:30px;font-weight:600">Style : Bâtisseuse</p><hr>
+<p class="st"><b>Backend</b> · 3 projets en ligne</p>
+<p class="st"><b>Entraide</b> · 41 réponses validées</p>
+<p class="st"><b>Équipes</b> · avec 4 pays</p>
+<p style="font-size:22px;font-weight:600;opacity:.8">→ chaque ligne mène au code qui la prouve</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 9 · SANS HONTE -->
+<section class="slide sand" id="sanshonte">
+<aside class="notes">La carte doit faire plaisir à tout le monde, y compris à un débutant. Pas de note globale, seulement des forces et un style valorisant. Les débutants ont leur carte Espoir. La carte progresse par l’effort et non par le talent, donc un débutant actif peut atteindre l’Or. Et c’est l’utilisateur qui décide de ce qui est public.</aside>
+<div style="display:flex;gap:64px;height:100%">
+<div style="flex:0 0 520px;position:relative">
+<div data-magic="awa" style="position:absolute;left:0;top:120px;width:520px">
+<div class="pcard or shine">
+<div style="display:flex;justify-content:space-between;align-items:center"><p style="font-size:24px;font-weight:700;letter-spacing:2px">SN · DAKAR</p><span class="pill n">CARTE OR</span></div>
+<p class="nm">AWA</p>
+<p style="font-size:30px;font-weight:600">Style : Bâtisseuse</p><hr>
+<p class="st"><b>Backend</b> · 3 projets en ligne</p>
+<p class="st"><b>Entraide</b> · 41 réponses validées</p>
+<p class="st"><b>Équipes</b> · avec 4 pays</p>
+<p style="font-size:22px;font-weight:600;opacity:.8">→ chaque ligne mène au code qui la prouve</p>
+</div>
+</div>
+</div>
+<div style="flex:1;display:flex;flex-direction:column">
+<div class="head"><p class="eyebrow">Personne n’a honte de sa carte</p><h2>Valoriser, jamais juger</h2></div>
+<div class="g2" style="gap:22px">
+<div class="card" data-a="rise" style="--i:0"><h3>Pas de note globale</h3><p class="t24 muted">Personne n’est résumé à un chiffre.</p></div>
+<div class="card" data-a="rise" style="--i:1"><h3>Seulement tes forces</h3><p class="t24 muted">Tes 3 points forts, jamais ce qui te manque.</p></div>
+<div class="card" data-a="rise" style="--i:2"><h3>Un style, pas un niveau</h3><p class="t24 muted">Bâtisseur, Architecte, Explorateur, Mentor, Designer, Data.</p></div>
+<div class="card left-teal" data-a="rise" style="--i:3"><h3>La carte Espoir</h3><p class="t24 muted">Être débutant devient un statut que l’on montre.</p></div>
+<div class="card left-gold" data-a="rise" style="--i:4"><h3>Évoluer par l’effort</h3><p class="t24 muted">Bronze, Argent, Or : en aidant, en livrant, en participant.</p></div>
+<div class="card" data-a="rise" style="--i:5"><h3>C’est toi qui décides</h3><p class="t24 muted">Ta carte reste privée tant que tu ne la publies pas.</p></div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 10 · LES CLUBS -->
+<section class="slide dark" id="clubs">
+<aside class="notes">Les communautés s’appellent des clubs, un mot que tout le monde comprend. Les clubs de passion (une techno, un thème, un métier) sont panafricains par défaut. Les villes et les pays existent, mais comme antennes locales d’un grand club : on s’y retrouve en vrai, et on joue dans le grand club. Les jumelages relient deux villes de deux régions. Un club ne devient officiel qu’avec des membres actifs d’au moins 3 pays, ce qui pousse tout le monde à s’ouvrir.</aside>
+<div class="head"><p class="eyebrow">Pilier 2 · Les Clubs</p><h2>Des clubs sans frontières</h2></div>
+<div class="body" style="flex-direction:row;gap:48px">
+<div class="panel" data-a="pop" style="--i:0;flex:0 0 780px;position:relative;padding:0">
+<svg viewBox="0 0 780 660" style="position:absolute;inset:0;width:100%;height:100%">
+<g stroke="#22A699" stroke-width="3" stroke-dasharray="8 8" opacity=".7">
+<line x1="390" y1="330" x2="140" y2="130"/><line x1="390" y1="330" x2="640" y2="130"/><line x1="390" y1="330" x2="110" y2="400"/><line x1="390" y1="330" x2="670" y2="400"/><line x1="390" y1="330" x2="250" y2="570"/><line x1="390" y1="330" x2="530" y2="570"/>
+</g>
+<circle cx="390" cy="330" r="150" fill="#F2A93B" class="pulse"/>
+</svg>
+<div style="position:absolute;left:240px;top:250px;width:300px;text-align:center;color:#0F1A2A">
+<p style="font-size:22px;font-weight:700;letter-spacing:2px">CLUB PANAFRICAIN</p>
+<p class="osw" style="font-size:52px;font-weight:700;line-height:1.05">Flutter Afrique</p>
+<p style="font-size:22px;font-weight:600">2 340 membres · 31 pays</p>
+</div>
+<span class="pill o" style="position:absolute;left:60px;top:105px;background:#0F1A2A;font-size:24px">Antenne Dakar</span>
+<span class="pill o" style="position:absolute;left:560px;top:105px;background:#0F1A2A;font-size:24px">Antenne Le Caire</span>
+<span class="pill o" style="position:absolute;left:20px;top:378px;background:#0F1A2A;font-size:24px">Antenne Lagos</span>
+<span class="pill o" style="position:absolute;left:575px;top:378px;background:#0F1A2A;font-size:24px">Antenne Nairobi</span>
+<span class="pill o" style="position:absolute;left:150px;top:548px;background:#0F1A2A;font-size:24px">Antenne Kinshasa</span>
+<span class="pill o" style="position:absolute;left:440px;top:548px;background:#0F1A2A;font-size:24px">Antenne Jo’burg</span>
+<p class="t24 muted" style="position:absolute;left:28px;bottom:14px">Exemple fictif</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:20px">
+<div class="card item" data-a="right" style="--i:1;flex-direction:row;padding:24px 30px"><svg class="ic sm"><use href="#i-globe"/></svg><div><h3 style="font-size:30px">Les clubs de passion sont continentaux</h3><p class="t24 muted">Une techno, un thème, un métier : Fintech Afrique, IA et langues africaines…</p></div></div>
+<div class="card item" data-a="right" style="--i:2;flex-direction:row;padding:24px 30px"><svg class="ic sm"><use href="#i-flag"/></svg><div><h3 style="font-size:30px">Villes et pays = antennes</h3><p class="t24 muted">On se retrouve en vrai près de chez soi, mais on joue dans le grand club.</p></div></div>
+<div class="card item" data-a="right" style="--i:3;flex-direction:row;padding:24px 30px"><svg class="ic sm"><use href="#i-link"/></svg><div><h3 style="font-size:30px">Les jumelages</h3><p class="t24 muted">Dakar ↔ Nairobi, Abidjan ↔ Lagos : lives communs, équipes mixtes.</p></div></div>
+<div class="card item goldc" data-a="right" style="--i:4;flex-direction:row;padding:24px 30px"><svg class="ic sm"><use href="#i-star"/></svg><div><h3 style="font-size:30px">Officiel à partir de 3 pays</h3><p class="t24">Tout le monde peut créer un club. Il devient officiel avec des membres actifs d’au moins 3 pays.</p></div></div>
+<p class="t24 muted" data-a="fade" style="--i:5">Rôles : <b class="acc">capitaine</b> (le fondateur), <b class="acc">animateurs</b>, <b class="acc">mentors</b>.</p>
+</div>
+</div>
+</section>
+
+<!-- 11 · FORMATS D'ÉCHANGE -->
+<section class="slide dark" id="formats">
+<aside class="notes">Dans un club, on ne fait pas que poser des questions. Il y a des questions-réponses, des discussions, « Montre ton projet » pour trouver des testeurs, des annonces d’équipe et de mission, des lives et des événements. Et tout est traduit : Chidi écrit en anglais depuis Lagos, Aminata le lit en français à Abidjan et répond en français, et Chidi lit la réponse en anglais. Une réponse validée vaut une passe décisive pour son pays.</aside>
+<div class="head"><p class="eyebrow">Pilier 2 · Échanger</p><h2>Six façons d’échanger, une seule langue : la tienne</h2></div>
+<div class="body" style="flex-direction:row;gap:44px">
+<div style="flex:0 0 800px;display:grid;grid-template-columns:1fr 1fr;gap:18px;align-content:start">
+<div class="card" data-a="rise" style="--i:0;padding:24px 28px;gap:6px"><h3 style="font-size:28px">Questions-réponses</h3><p class="t24 muted">Un problème précis, une réponse validée.</p></div>
+<div class="card" data-a="rise" style="--i:1;padding:24px 28px;gap:6px"><h3 style="font-size:28px">Discussions</h3><p class="t24 muted">Débats, retours d’expérience, carrière.</p></div>
+<div class="card" data-a="rise" style="--i:2;padding:24px 28px;gap:6px"><h3 style="font-size:28px">Montre ton projet</h3><p class="t24 muted">Des retours et tes premiers testeurs.</p></div>
+<div class="card" data-a="rise" style="--i:3;padding:24px 28px;gap:6px"><h3 style="font-size:28px">Annonces</h3><p class="t24 muted">« Je cherche une équipe », « Mission dispo ».</p></div>
+<div class="card" data-a="rise" style="--i:4;padding:24px 28px;gap:6px"><h3 style="font-size:28px">Lives · SystaTalk</h3><p class="t24 muted">Revue de code en direct, démos, questions.</p></div>
+<div class="card" data-a="rise" style="--i:5;padding:24px 28px;gap:6px"><h3 style="font-size:28px">Événements</h3><p class="t24 muted">En ligne ou en vrai, avec inscription.</p></div>
+<p class="t24 tealt" data-a="fade" style="--i:7;grid-column:span 2;margin-top:6px">L’agent n’intervient que si personne n’a répondu, ou si on le lui demande.</p>
+</div>
+<div class="panel chat" data-a="pop" style="--i:6;flex:1">
+<div class="top"><div><b>Club Laravel Afrique</b> › Questions</div><div class="view" id="cv">Vu par Aminata · FR</div></div>
+<div class="msg" id="cm1"><div class="who">Chidi <span>· Lagos, Nigeria</span></div><div class="t" id="ct1"></div><div class="tag" id="cg1"></div></div>
+<div class="msg me" id="cm2"><div class="who">Aminata <span>· Abidjan, Côte d’Ivoire</span></div><div class="t" id="ct2"></div><div class="tag" id="cg2"></div></div>
+<div class="badge" id="cb">✓ Validée · +1 passe décisive · Côte d’Ivoire</div>
+</div>
+</div>
+</section>
+
+<!-- 12 · LE SAVOIR DU CONTINENT -->
+<section class="slide sand" id="savoir">
+<aside class="notes">C’est un contenu qu’on ne trouve nulle part ailleurs : comment intégrer Wave, Orange Money, MTN MoMo ou M-Pesa, construire un service USSD ou SMS, faire une appli qui marche en 3G, travailler avec les langues africaines, respecter les lois sur les données de chaque pays. C’est écrit par la communauté et traduit pour tout le continent. Un guide kényan sur M-Pesa aide un développeur de Douala. C’est ce qui fait de la plateforme une référence, et une raison d’y revenir.</aside>
+<div class="head"><p class="eyebrow">Le savoir du continent</p><h2>Ce qu’on ne trouve nulle part ailleurs</h2></div>
+<div class="body">
+<div class="g3">
+<div class="card top-gold" data-a="rise" style="--i:0"><svg class="ic"><use href="#i-key"/></svg><h3>Payer en mobile money</h3><p class="t26 muted">Wave, Orange Money, MTN MoMo, M-Pesa, et Paxity pour tout brancher d’un coup.</p></div>
+<div class="card top-teal" data-a="rise" style="--i:1"><svg class="ic"><use href="#i-chat"/></svg><h3>USSD et SMS</h3><p class="t26 muted">Toucher les utilisateurs sans smartphone ni internet.</p></div>
+<div class="card top-gold" data-a="rise" style="--i:2"><svg class="ic"><use href="#i-bolt"/></svg><h3>Applis légères</h3><p class="t26 muted">Concevoir pour la 3G, le hors-ligne, les petits téléphones.</p></div>
+<div class="card top-teal" data-a="rise" style="--i:3"><svg class="ic"><use href="#i-mic"/></svg><h3>IA et langues africaines</h3><p class="t26 muted">Wolof, swahili, yoruba, haoussa : jeux de données et modèles.</p></div>
+<div class="card top-gold" data-a="rise" style="--i:4"><svg class="ic"><use href="#i-shield"/></svg><h3>Les règles du jeu</h3><p class="t26 muted">Protection des données, pays par pays.</p></div>
+<div class="card top-teal" data-a="rise" style="--i:5"><svg class="ic"><use href="#i-cloud"/></svg><h3>Héberger en Afrique</h3><p class="t26 muted">Guides de déploiement sur Systalink, écrits par la communauté.</p></div>
+</div>
+<div class="band darkb" data-a="zoom" style="--i:7">Écrit par la communauté, traduit pour tout le continent : <span class="acc">un guide kényan sur M-Pesa aide un dev de Douala.</span></div>
+</div>
+</section>
+
+<!-- 13 · LES RENDEZ-VOUS -->
+<section class="slide dark" id="rendezvous">
+<aside class="notes">Pourquoi on revient : il se passe quelque chose chaque jour, chaque semaine, chaque mois et chaque saison. Les défis du mois se jouent en équipes mixtes, avec au moins 3 pays par équipe. Les aînés, des développeurs expérimentés, parrainent des Espoirs d’autres pays. Et les lives changent d’horaire pour convenir tour à tour à l’Ouest, à l’Est et au Sud du continent.</aside>
+<div class="head"><p class="eyebrow">Les rendez-vous</p><h2>Il se passe toujours quelque chose</h2></div>
+<div class="body">
+<div class="g4">
+<div class="card" data-a="rise" style="--i:0"><p class="pill g">CHAQUE JOUR</p><h3>La question du jour</h3><p class="t24 muted">Ou un mini-défi de 10 minutes.</p></div>
+<div class="card" data-a="rise" style="--i:1"><p class="pill g">CHAQUE SEMAINE</p><h3>Le live du club</h3><p class="t24 muted">Le brief perso et le projet de la semaine, voté.</p></div>
+<div class="card" data-a="rise" style="--i:2"><p class="pill g">CHAQUE MOIS</p><h3>Le défi mixte</h3><p class="t24 muted">Des équipes d’au moins 3 pays sur un même défi.</p></div>
+<div class="card goldc" data-a="rise" style="--i:3"><p class="pill n">CHAQUE SAISON</p><h3>Sélection Afrique</h3><p class="t24">Les sélections nationales, l’équipe Afrique, puis la CADEV.</p></div>
+</div>
+<div class="g2">
+<div class="card item" data-a="left" style="--i:4;flex-direction:row"><svg class="ic"><use href="#i-heart"/></svg><div><h3>Les aînés</h3><p class="t26 muted">Un senior de Nairobi parraine une Espoir de Cotonou. Revue de code, conseils, permanences.</p></div></div>
+<div class="card item" data-a="right" style="--i:5;flex-direction:row"><svg class="ic"><use href="#i-cal"/></svg><div><h3>Des lives à l’heure de tous</h3><p class="t26 muted">Les horaires tournent pour l’Ouest, l’Est et le Sud du continent.</p></div></div>
+</div>
+</div>
+</section>
+
+<!-- 14 · LANCEMENT ET MODÉRATION -->
+<section class="slide sand" id="lancement">
+<aside class="notes">Deux risques classiques : une plateforme vide au lancement, et une plateforme envahie de spam. Contre le vide : les participants de la CADEV (Systalink en annonce plus de 50 000), des ambassadeurs dans chaque pays et campus, et du contenu dès le premier jour. Contre le spam : votes et réputation, un agent qui signale les doublons et les abus, et des humains qui décident. Et face à Discord ou WhatsApp, ici rien ne se perd, tout se traduit, et chaque échange mène à quelque chose. Il y a aussi un Club Systalink officiel, qui sert de support et de canal de retours produit.</aside>
+<div class="head"><p class="eyebrow">Lancement et modération</p><h2>Jamais vide, jamais envahie</h2></div>
+<div class="body" style="flex-direction:row;gap:32px">
+<div style="flex:0 0 500px;display:flex;flex-direction:column;gap:20px">
+<div class="card" data-a="rise" style="--i:0"><h3>Dès le premier jour</h3><ul class="t24 muted"><li>Les équipes CADEV ont chacune leur club</li><li>Des ambassadeurs par pays et campus</li><li>FAQ Systalink et guides mobile money</li></ul></div>
+<div class="card" data-a="rise" style="--i:1"><h3>Une modération saine</h3><ul class="t24 muted"><li>Votes et réputation par club</li><li>L’agent repère doublons, spam, abus</li><li>Ce sont des humains qui tranchent</li></ul></div>
+</div>
+<div class="card darkc" data-a="pop" style="--i:2;flex:1;padding:36px 40px">
+<h3 class="osw" style="font-size:42px;font-weight:600;color:#F2A93B">Pourquoi ici, et pas sur WhatsApp ou Discord ?</h3>
+<table class="tb" style="font-size:26px;margin-top:6px">
+<tr><th style="width:44%;color:#B9C6D6">Ailleurs</th><th>Sur Jamii</th></tr>
+<tr><td class="muted">Les messages se perdent</td><td>Tout reste consultable</td></tr>
+<tr><td class="muted">Une seule langue par groupe</td><td>Chacun lit dans la sienne</td></tr>
+<tr><td class="muted">Aucune réputation</td><td>Chaque aide construit ta carte</td></tr>
+<tr><td class="muted">Ça s’arrête à la discussion</td><td>Ça mène à une équipe, un projet, une mission</td></tr>
+</table>
+<p class="t24" style="margin-top:8px"><b class="acc">Bonus Systalink :</b> un Club Systalink officiel, pour le support et les retours produit.</p>
+</div>
+</div>
+</section>
+
+<!-- 15 · ÉQUIPES ET MISSIONS -->
+<section class="slide sand" id="aiguillage">
+<aside class="notes">Un client décrit son besoin avec ses mots. L’agent, construit sur Yokk, en fait un cahier des charges et oriente vers le bon outil : Orion pour un besoin simple, une mission Yokk pour un agent ou une automatisation, une mission de développement sur DataCloud pour une vraie application. Les équipes peuvent réunir plusieurs pays, ce qui rapporte un bonus. Dans tous les cas, le client finit chez Systalink.</aside>
+<div class="head"><p class="eyebrow">Pilier 3 · Équipes et missions</p><h2>Chaque besoin vers le bon outil</h2></div>
+<div class="body" style="gap:22px">
+<div class="card darkc item" data-a="drop" style="--i:0;flex-direction:row;padding:26px 40px"><svg class="ic sm"><use href="#i-chat"/></svg><p class="t30">« Je veux vendre en ligne et répondre à mes clients le soir. » <span class="muted">· Moussa, boutique à Dakar</span></p></div>
+<div style="text-align:center"><span class="pill" data-a="pop" style="--i:1;font-size:26px;padding:10px 26px">L’agent rédige le cahier des charges · Yokk</span></div>
+<div class="g3">
+<div class="card top-gold" data-a="rise" style="--i:2"><p class="t24 acc" style="font-weight:700">ORION</p><h3>Un site simple</h3><p class="t26 muted">Le client le crée seul, à partir d’une description. Gratuit pour commencer.</p></div>
+<div class="card top-teal" data-a="rise" style="--i:3"><p class="t24 tealt" style="font-weight:700">MISSION YOKK</p><h3>Un agent, une automatisation</h3><p class="t26 muted">Un dev construit l’agent, puis l’intègre au site du client en widget.</p></div>
+<div class="card" data-a="rise" style="--i:4;border-top:10px solid #0F1A2A"><p class="t24" style="font-weight:700">MISSION DEV · DATACLOUD</p><h3>Une application sur mesure</h3><p class="t26 muted">Une équipe la construit. Le client valide la préview, puis paie via Paxity.</p></div>
+</div>
+<p class="t26 muted" data-a="fade" style="--i:5"><b style="color:#1A2233">Côté devs :</b> des équipes formées selon les compétences prouvées, <b style="color:#1A2233">ouvertes à tout le continent</b>, avec un score de fiabilité et un vestiaire SystaTalk + SystaDrive.</p>
+</div>
+</section>
+
+<!-- 16 · MARQUER UN BUT -->
+<section class="slide dark" id="but">
+<aside class="notes">C’est le geste le plus important pour Systalink. L’utilisateur connecte une fois son compte Systalink grâce à leur OAuth. Notre agent lit le dépôt et propose une configuration. L’utilisateur valide, et Systalink déploie lui-même via son MCP. Le projet tourne sur le compte de l’utilisateur : un client de plus. Pour l’utilisateur, c’est un but. Point d’attention : le MCP et l’OAuth sont à tester de bout en bout en premier.</aside>
+<div class="head"><p class="eyebrow">Pilier 4 · Marquer un but</p><h2>Déployer, c’est marquer un but</h2></div>
+<div class="body">
+<div style="display:grid;grid-template-columns:1fr 48px 1fr 48px 1fr 48px 1fr;align-items:stretch">
+<div class="card" data-a="rise" style="--i:0"><svg class="ic"><use href="#i-link"/></svg><h3>Connecter mon Systalink</h3><p class="t26 muted">Une seule autorisation (OAuth). Le compte reste celui de l’utilisateur.</p></div>
+<div data-a="fade" style="--i:1;display:flex;align-items:center;justify-content:center;font-size:44px;color:#F2A93B">→</div>
+<div class="card" data-a="rise" style="--i:1"><svg class="ic"><use href="#i-search"/></svg><h3>L’agent lit le dépôt</h3><p class="t26 muted">« Laravel + MySQL. L’offre gratuite suffit. Je déploie ? »</p></div>
+<div data-a="fade" style="--i:2;display:flex;align-items:center;justify-content:center;font-size:44px;color:#F2A93B">→</div>
+<div class="card" data-a="rise" style="--i:2"><svg class="ic"><use href="#i-check"/></svg><h3>Tu valides</h3><p class="t26 muted">Systalink construit et déploie via son MCP. Rien n’est payé sans ton accord.</p></div>
+<div data-a="fade" style="--i:3;display:flex;align-items:center;justify-content:center;font-size:44px;color:#F2A93B">→</div>
+<div class="card goldc pulse" data-a="pop" style="--i:4"><svg class="ic"><use href="#i-star"/></svg><h3 class="osw" style="font-size:60px;font-weight:700;line-height:1.05">BUT !</h3><p class="t26">Badge « En ligne » vérifié. Les pays de l’équipe s’allument.</p></div>
+</div>
+<div class="spacer"></div>
+<p class="t34" data-a="fade" style="--i:6">On ne réinvente pas le déploiement : <span class="acc">Systalink sait déjà le faire.</span> On le rend accessible à ceux qui ne savent pas le configurer.</p>
+</div>
+</section>
+
+<!-- 17 · LA SAISON -->
+<section class="slide dark" id="saison" style="background:linear-gradient(160deg,#0F1A2A 0%,#132B3F 100%)">
+<aside class="notes">La saison donne une raison de revenir. Chaque action utile rapporte des points à son pays. Et pour que la compétition rapproche au lieu de diviser, le bonus passerelle récompense les projets qui réunissent plusieurs pays : chacun des pays gagne. Il n’y a pas de perdant à collaborer. Pas de classement individuel public. Le classement animé est un exemple aux chiffres fictifs.</aside>
+<div class="head"><p class="eyebrow">Pilier 5 · La Saison</p><h2>Le continent joue ensemble</h2></div>
+<div class="body" style="flex-direction:row;gap:48px">
+<div style="flex:0 0 800px;display:flex;flex-direction:column;gap:26px">
+<div class="item" data-a="left" style="--i:0"><svg class="ic sm"><use href="#i-chat"/></svg><p class="t30"><b>Une réponse validée</b> <span class="muted">= une passe décisive</span></p></div>
+<div class="item" data-a="left" style="--i:1"><svg class="ic sm"><use href="#i-star"/></svg><p class="t30"><b>Un projet en ligne</b> <span class="muted">= un but</span></p></div>
+<div class="item" data-a="left" style="--i:2"><svg class="ic sm"><use href="#i-check"/></svg><p class="t30"><b>Une mission livrée</b> <span class="muted">= une victoire</span></p></div>
+<div class="card goldc" data-a="zoom" style="--i:3;padding:26px 32px"><div class="item"><svg class="ic sm"><use href="#i-link"/></svg><div><h3 style="font-size:32px">Bonus passerelle</h3><p class="t26">Un projet qui réunit 3 pays rapporte des points <b>à chacun des trois</b>.</p></div></div></div>
+<p class="t26 tealt" data-a="fade" style="--i:4">Collaborer ne fait jamais perdre. Aucun classement individuel public.</p>
+</div>
+<div class="panel lb" data-a="pop" style="--i:2;flex:1">
+<div class="h"><b>Saison 1</b> · classement des pays (exemple)</div>
+<div id="lb"></div>
+</div>
+</div>
+</section>
+
+<!-- 18 · TON ACCESSIBLE -->
+<section class="slide sand" id="accessible">
+<aside class="notes">Pour que tout le monde accroche, même ceux qui ne suivent pas le foot, la métaphore reste dans le décor. Les boutons disent ce qu’ils font, le vocabulaire fun n’arrive qu’après l’action, et on n’utilise que des mots universels. Le test : si quelqu’un qui ne suit pas le foot hésite, on simplifie.</aside>
+<div class="head"><p class="eyebrow">Un ton pour tous</p><h2>Le foot dans le décor, pas dans la langue</h2></div>
+<div class="body" style="flex-direction:row;gap:56px">
+<div style="flex:0 0 860px;display:flex;flex-direction:column;gap:20px">
+<div class="card" data-a="rise" style="--i:0"><h3>1 · Les boutons disent ce qu’ils font</h3><p class="t26 muted">« Déployer », « Répondre », « Rejoindre ». Aucun jargon.</p></div>
+<div class="card" data-a="rise" style="--i:1"><h3>2 · Le mot fun arrive après l’action</h3><p class="t26 muted">Tu cliques sur « Déployer », puis l’écran fête ton but.</p></div>
+<div class="card" data-a="rise" style="--i:2"><h3>3 · Seulement des mots universels</h3><p class="t26 muted">Équipe, but, saison, coupe, carte, club. Ni hors-jeu ni mercato.</p></div>
+<p class="t26 acc" data-a="fade" style="--i:3;font-weight:700">Le test : quelqu’un qui ne suit pas le foot comprend tout, sans explication.</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:22px;align-items:flex-start">
+<div data-a="pop" style="--i:4;background:#0F1A2A;color:#F7F2E8;font-size:32px;font-weight:700;padding:20px 56px;border-radius:999px">Déployer</div>
+<div data-a="drop" style="--i:5;font-size:44px;color:#A8590F;padding-left:120px">↓</div>
+<div class="card goldc pulse" data-a="pop" style="--i:6;flex-direction:row;align-items:center;gap:26px;width:100%"><svg class="ic"><use href="#i-star"/></svg><div><p class="osw" style="font-size:60px;font-weight:700;line-height:1.05">BUT !</p><p class="t26" style="font-weight:600">Ton projet est en ligne.</p></div></div>
+<table class="tb" data-a="fade" style="--i:7;font-size:24px">
+<tr><th>À dire</th><th>À éviter</th></tr>
+<tr><td>« Ta carte »</td><td class="muted">« Ta note sur 100 »</td></tr>
+<tr><td>« Ton club »</td><td class="muted">« Ton vestiaire, ton banc »</td></tr>
+<tr><td>« Il rejoint l’équipe »</td><td class="muted">« Transfert au mercato »</td></tr>
+</table>
+</div>
+</div>
+</section>
+
+<!-- 19 · CATALOGUE 1 -->
+<section class="slide dark" id="catalogue">
+<aside class="notes">Tout ce dont on a besoin existe déjà chez Systalink. Le Web sans serveur déploie depuis GitHub, avec préview par pull request et offre gratuite. Leur serveur MCP permet à un agent IA de piloter le cloud, et leur console contient un espace développeurs pour un « Se connecter avec Systalink ». Ces deux-là sont à tester en priorité. Les webhooks signalent chaque déploiement (offre Professionnel). Yokk et Orion, leurs produits stratégiques, sont au centre de notre idée.</aside>
+<div class="head"><p class="eyebrow">Systalink · déjà disponible (1/2)</p><h2>Tout existe déjà. On le branche.</h2></div>
+<div class="body">
+<div class="g3" style="flex:1">
+<div class="card" data-a="rise" style="--i:0"><p class="t24 tealt" style="font-weight:700">DISPONIBLE</p><h3>Web sans serveur</h3><p class="t24 muted">Déploiement depuis GitHub, préview par pull request, offre gratuite.</p><p class="t24 acc">→ Le « but » : chaque projet mis en ligne.</p></div>
+<div class="card" data-a="rise" style="--i:1"><p class="t24 tealt" style="font-weight:700">DISPONIBLE · À TESTER</p><h3>Serveur MCP</h3><p class="t24 muted">Piloter le cloud depuis un agent IA, par OAuth ou par token.</p><p class="t24 acc">→ Notre agent configure et déploie pour l’utilisateur.</p></div>
+<div class="card" data-a="rise" style="--i:2"><p class="t24 tealt" style="font-weight:700">REPÉRÉ · À TESTER</p><h3>Espace développeurs</h3><p class="t24 muted">Un « Se connecter avec Systalink » pour les applications tierces.</p><p class="t24 acc">→ Le bouton « Connecter mon Systalink ».</p></div>
+<div class="card" data-a="rise" style="--i:3"><p class="t24 tealt" style="font-weight:700">OFFRE PROFESSIONNEL</p><h3>Webhooks</h3><p class="t24 muted">Un signal à chaque déploiement réussi ou échoué.</p><p class="t24 acc">→ Le badge « En ligne » et la carte qui s’allume.</p></div>
+<div class="card goldc" data-a="pop" style="--i:4"><p class="t24" style="font-weight:700">STRATÉGIQUE</p><h3>Yokk</h3><p class="t24">Constructeur d’agents IA, publiés en API ou en widget.</p><p class="t24" style="font-weight:700">→ Nos agents, les missions « agent », la vitrine.</p></div>
+<div class="card goldc" data-a="pop" style="--i:5"><p class="t24" style="font-weight:700">STRATÉGIQUE</p><h3>Orion</h3><p class="t24">Un site créé par l’IA à partir d’une simple description.</p><p class="t24" style="font-weight:700">→ Les besoins simples des PME, les portfolios.</p></div>
+</div>
+</div>
+</section>
+
+<!-- 20 · CATALOGUE 2 -->
+<section class="slide dark" id="catalogue2">
+<aside class="notes">Autour du cloud, Systalink a toute une suite : SystaTalk pour le chat et la visio, SystaDrive pour les fichiers, SystaForms pour les formulaires, la signature et l’encaissement Mobile Money, SystaMail, les noms de domaine, les bases de données, les GPU et Kubernetes, et Paxity, leur agrégateur de paiement, qui sert à payer les missions et que les développeurs peuvent intégrer dans leurs propres applications. On est aussi honnêtes sur les limites.</aside>
+<div class="head"><p class="eyebrow">Systalink · déjà disponible (2/2)</p><h2>Et toute la suite autour</h2></div>
+<div class="body">
+<div class="g4">
+<div class="card" data-a="rise" style="--i:0"><h3>SystaTalk</h3><p class="t24 muted">Chat et visio jusqu’à 250 personnes.</p><p class="t24 acc">→ Les lives des clubs, le vestiaire des équipes.</p></div>
+<div class="card" data-a="rise" style="--i:1"><h3>SystaDrive</h3><p class="t24 muted">Fichiers partagés, hébergés à Dakar.</p><p class="t24 acc">→ L’espace projet de l’équipe.</p></div>
+<div class="card" data-a="rise" style="--i:2"><h3>SystaForms</h3><p class="t24 muted">Formulaires, signature, Mobile Money.</p><p class="t24 acc">→ Contrat de mission et encaissement.</p></div>
+<div class="card" data-a="rise" style="--i:3"><h3>SystaMail</h3><p class="t24 muted">Messagerie professionnelle.</p><p class="t24 acc">→ Le moment « Passer pro ».</p></div>
+<div class="card" data-a="rise" style="--i:4"><h3>Noms de domaine</h3><p class="t24 muted">.sn, .ci, .cm… et e-mail pro.</p><p class="t24 acc">→ Quand un projet devient startup.</p></div>
+<div class="card" data-a="rise" style="--i:5"><h3>Bases de données</h3><p class="t24 muted">MySQL, PostgreSQL, MongoDB, Redis.</p><p class="t24 acc">→ Proposées par l’agent au déploiement.</p></div>
+<div class="card" data-a="rise" style="--i:6"><h3>GPU et Kubernetes</h3><p class="t24 muted">Calcul IA et montée en charge.</p><p class="t24 acc">→ Défis IA, projets qui grandissent.</p></div>
+<div class="card" data-a="rise" style="--i:7"><h3>Paxity</h3><p class="t24 muted">Agrégateur de paiement : Mobile Money, carte.</p><p class="t24 acc">→ Le paiement des missions, et des applis des devs.</p></div>
+</div>
+<div class="spacer"></div>
+<p class="t26 muted" data-a="fade" style="--i:8"><b style="color:#F7F2E8">Limites connues :</b> pas d’API REST publique documentée · webhooks sur l’offre Professionnel · API SystaONE sur l’offre Business.</p>
+</div>
+</section>
+
+<!-- 21 · USAGE DANS LE PARCOURS -->
+<section class="slide sand" id="usage">
+<aside class="notes">Le résumé à garder en tête : à chaque étape du parcours, un service Systalink intervient naturellement, sans publicité.</aside>
+<div class="head"><p class="eyebrow">Où intervient Systalink</p><h2>Systalink à chaque étape du parcours</h2></div>
+<div class="body">
+<table class="tb" data-a="rise" style="--i:0">
+<tr><th style="width:19%">Étape</th><th style="width:51%">Ce que vit l’utilisateur</th><th>Service Systalink</th></tr>
+<tr><td><b>S’inscrire</b></td><td>Sa carte se génère depuis GitHub</td><td>Yokk</td></tr>
+<tr class="z"><td><b>Se rencontrer</b></td><td>Clubs panafricains, échanges traduits, lives</td><td>Yokk · SystaTalk</td></tr>
+<tr><td><b>Collaborer</b></td><td>Une équipe multi-pays, sa visio, ses fichiers</td><td>SystaTalk · SystaDrive</td></tr>
+<tr class="z"><td><b>Mission</b></td><td>Cahier des charges, contrat signé, paiement</td><td>Yokk · SystaForms · Paxity</td></tr>
+<tr><td><b>Livrer</b></td><td>Déploiement en un clic, préview client : un but</td><td>DataCloud · MCP · OAuth</td></tr>
+<tr class="z"><td><b>Agents</b></td><td>Un agent publié, testable en direct</td><td>Yokk (widget)</td></tr>
+<tr><td><b>Passer pro</b></td><td>Domaine, e-mail, espace d’équipe</td><td>Domaines · SystaMail</td></tr>
+<tr class="z"><td><b>Besoin simple</b></td><td>Un site créé sans développeur</td><td>Orion</td></tr>
+</table>
+</div>
+</section>
+
+<!-- 22 · YOKK ET ORION -->
+<section class="slide dark" id="strategie">
+<aside class="notes">Yokk et Orion sont les produits que Systalink pousse en ce moment, donc on les met au cœur. Yokk est le cerveau : nos agents, les missions « agent », la vitrine. Orion est la vitrine : les besoins simples des PME et un portfolio en option. Chaque nouvel inscrit touche ces deux produits dès sa première semaine.</aside>
+<div class="head"><p class="eyebrow">Yokk et Orion</p><h2>Les deux produits stratégiques, au cœur</h2></div>
+<div class="body">
+<div class="g2">
+<div class="card top-teal" data-a="left" style="--i:0;padding:40px 44px">
+<div class="item"><svg class="ic" style="color:#4FD1C1"><use href="#i-bulb"/></svg><h3 class="osw" style="font-size:54px;font-weight:600">Yokk, le cerveau</h3></div>
+<ul class="t26" style="color:#D5DEE8"><li>Nos agents : la carte, l’aide dans les clubs, la traduction, les cahiers des charges</li><li>Les missions « agent » pour les PME, livrées en widget</li><li>La vitrine d’agents testables et les défis</li></ul>
+</div>
+<div class="card top-gold" data-a="right" style="--i:1;padding:40px 44px">
+<div class="item"><svg class="ic"><use href="#i-globe"/></svg><h3 class="osw" style="font-size:54px;font-weight:600">Orion, la vitrine</h3></div>
+<ul class="t26" style="color:#D5DEE8"><li>Les besoins simples des PME, sans développeur</li><li>Le portfolio Orion en option, sur le compte de l’utilisateur</li><li>La page du projet le jour où il passe pro</li></ul>
+</div>
+</div>
+<div class="spacer"></div>
+<div class="band goldb" data-a="rise" style="--i:3">Chaque inscrit découvre Yokk et Orion dès sa première semaine, sans qu’on les lui vende.</div>
+</div>
+</section>
+
+<!-- 23 · SOBRIÉTÉ -->
+<section class="slide sand" id="sobre">
+<aside class="notes">Systalink n’a pas les moyens de payer de l’IA pour tout, donc on est sobres. L’IA intervient seulement si l’utilisateur la demande, si c’est un moment qui peut rapporter un client, ou si le résultat est réutilisé par tous. Le reste est calculé par notre code. Côté coûts : Systalink paie ce qui fait venir les gens, l’utilisateur paie son usage, le client paie ses missions.</aside>
+<div class="head"><p class="eyebrow">Une IA sobre</p><h2>L’IA seulement quand ça vaut le coup</h2></div>
+<div class="body" style="flex-direction:row;gap:56px">
+<div style="flex:0 0 820px;display:flex;flex-direction:column;gap:30px">
+<div class="item" data-a="left" style="--i:0"><p class="num" style="font-size:80px;width:60px">1</p><div><h3>L’utilisateur le demande</h3><p class="t26 muted">Il clique. Rien n’est automatique.</p></div></div>
+<div class="item" data-a="left" style="--i:1"><p class="num" style="font-size:80px;width:60px">2</p><div><h3>C’est un moment qui rapporte</h3><p class="t26 muted">Un futur client, une conversion vers une offre.</p></div></div>
+<div class="item" data-a="left" style="--i:2"><p class="num" style="font-size:80px;width:60px">3</p><div><h3>Le résultat est réutilisé</h3><p class="t26 muted">Calculé une fois, gardé en cache, servi à tous.</p></div></div>
+<p class="t26 muted" data-a="fade" style="--i:3">Sinon, <b style="color:#1A2233">notre code fait le travail</b> : la carte, le brief et le classement sont calculés sans IA.</p>
+</div>
+<div class="card darkc" data-a="right" style="--i:4;flex:1;padding:44px;gap:26px">
+<h3 class="osw" style="font-size:48px;font-weight:600;color:#F2A93B">Qui paie quoi ?</h3>
+<div><p class="t30" style="font-weight:700">Systalink</p><p class="t26 muted">Ce qui fait venir : ses offres gratuites, un appel IA à l’inscription.</p></div>
+<div><p class="t30" style="font-weight:700">L’utilisateur</p><p class="t26 muted">Son usage réel : déploiements, domaines.</p></div>
+<div><p class="t30" style="font-weight:700">Le client</p><p class="t26 muted">Ses missions et ses agents Yokk.</p></div>
+<p class="t26 acc" style="font-weight:700">Plus il y a d’utilisateurs, plus ça rapporte à Systalink.</p>
+</div>
+</div>
+</section>
+
+<!-- 24 · CONFIANCE -->
+<section class="slide dark" id="confiance">
+<aside class="notes">L’agent qui crée la carte ne demande aucune permission sur les dépôts GitHub. Il ne lit que des données publiques, n’écrit jamais rien, exclut les fichiers sensibles et ne garde pas le code. L’utilisateur choisit ses dépôts, voit ce qui a été lu, valide avant publication et peut tout supprimer. Pour Systalink, qui vend de la confiance et de la souveraineté, c’est un argument fort.</aside>
+<div class="head"><p class="eyebrow">Confiance et vie privée</p><h2>Un agent qui ne touche pas à ton code</h2></div>
+<div class="body">
+<div class="g3">
+<div class="card top-teal" data-a="rise" style="--i:0"><div class="item"><svg class="ic sm" style="color:#4FD1C1"><use href="#i-search"/></svg><h3>Il lit</h3></div><ul class="t26" style="color:#D5DEE8"><li>Les langages et sujets publics</li><li>Les README et l’activité</li><li>Rien d’autre par défaut</li></ul></div>
+<div class="card top-rust" data-a="rise" style="--i:1"><div class="item"><svg class="ic sm" style="color:#E07A3F"><use href="#i-lock"/></svg><h3>Il ne fait jamais</h3></div><ul class="t26" style="color:#D5DEE8"><li>Lire un dépôt privé sans accord</li><li>Écrire, pousser ou modifier</li><li>Lire les .env, clés, secrets</li><li>Garder le code ou s’entraîner dessus</li></ul></div>
+<div class="card top-gold" data-a="rise" style="--i:2"><div class="item"><svg class="ic sm"><use href="#i-key"/></svg><h3>Tu contrôles</h3></div><ul class="t26" style="color:#D5DEE8"><li>Les dépôts qui comptent</li><li>Le journal de ce qu’il a lu</li><li>La validation avant publication</li><li>La suppression, à tout moment</li></ul></div>
+</div>
+<div class="spacer"></div>
+<p class="t30" data-a="fade" style="--i:3"><b class="acc">Le déploiement est séparé :</b> c’est Systalink qui lit le dépôt, seulement quand tu le demandes.</p>
+<p class="t26 muted" data-a="fade" style="--i:4">Données partagées avec Systalink : agrégées, anonymes, avec ton accord. Un argument de souveraineté.</p>
+</div>
+</section>
+
+<!-- 25 · PARCOURS AMINATA -->
+<section class="slide sand" id="aminata">
+<aside class="notes">Le parcours principal. Aminata voit passer la carte d’un ami et veut la sienne. Elle obtient une carte Espoir en 30 secondes, rejoint le club Laravel Afrique par l’antenne d’Abidjan, aide Chidi de Lagos dans sa langue, forme une équipe avec Bamako et Nairobi, met le projet en ligne sur Systalink, décroche une mission pour une boutique de Dakar, et revient pour le défi mixte du mois.</aside>
+<div class="head"><p class="eyebrow">Parcours · Aminata, développeuse à Abidjan</p><h2>Un mois dans la vie d’Aminata</h2></div>
+<div class="body">
+<div class="g4" style="gap:20px">
+<div class="card" data-a="rise" style="--i:0;padding:24px 28px;gap:8px"><div class="item" style="gap:16px"><div class="dot" style="width:48px;height:48px;font-size:24px">1</div><h3 class="osw" style="font-size:36px;font-weight:600">Découvre</h3></div><p class="t24 muted">La carte d’un ami passe sur LinkedIn.</p></div>
+<div class="card" data-a="rise" style="--i:1;padding:24px 28px;gap:8px"><div class="item" style="gap:16px"><div class="dot" style="width:48px;height:48px;font-size:24px">2</div><h3 class="osw" style="font-size:36px;font-weight:600">S’inscrit</h3></div><p class="t24 muted">GitHub, 30 secondes : sa carte Espoir.</p></div>
+<div class="card" data-a="rise" style="--i:2;padding:24px 28px;gap:8px"><div class="item" style="gap:16px"><div class="dot" style="width:48px;height:48px;font-size:24px">3</div><h3 class="osw" style="font-size:36px;font-weight:600">Rejoint</h3></div><p class="t24 muted">Le club Laravel Afrique, par l’antenne d’Abidjan.</p></div>
+<div class="card" data-a="rise" style="--i:3;padding:24px 28px;gap:8px"><div class="item" style="gap:16px"><div class="dot" style="width:48px;height:48px;font-size:24px">4</div><h3 class="osw" style="font-size:36px;font-weight:600">Échange</h3></div><p class="t24 muted">Aide Chidi, de Lagos, chacun dans sa langue.</p></div>
+<div class="card" data-a="rise" style="--i:4;padding:24px 28px;gap:8px"><div class="item" style="gap:16px"><div class="dot" style="width:48px;height:48px;font-size:24px">5</div><h3 class="osw" style="font-size:36px;font-weight:600">Fait équipe</h3></div><p class="t24 muted">Avec Bamako et Nairobi, sur un projet agricole.</p></div>
+<div class="card goldc" data-a="pop" style="--i:5;padding:24px 28px;gap:8px"><div class="item" style="gap:16px"><div class="dot" style="width:48px;height:48px;font-size:24px;background:#0F1A2A;color:#F2A93B">6</div><h3 class="osw" style="font-size:36px;font-weight:700">BUT !</h3></div><p class="t24">En ligne sur Systalink. 3 pays s’allument.</p></div>
+<div class="card" data-a="rise" style="--i:6;padding:24px 28px;gap:8px"><div class="item" style="gap:16px"><div class="dot" style="width:48px;height:48px;font-size:24px">7</div><h3 class="osw" style="font-size:36px;font-weight:600">Gagne</h3></div><p class="t24 muted">Une boutique de Dakar la choisit pour une mission.</p></div>
+<div class="card" data-a="rise" style="--i:7;padding:24px 28px;gap:8px"><div class="item" style="gap:16px"><div class="dot" style="width:48px;height:48px;font-size:24px">8</div><h3 class="osw" style="font-size:36px;font-weight:600">Revient</h3></div><p class="t24 muted">Défi mixte du mois. Sa carte passe Argent.</p></div>
+</div>
+<div class="spacer"></div>
+<div class="band darkb" data-a="rise" style="--i:9">En un mois : un profil prouvé, des amis dans 4 pays, un projet en ligne, <span class="acc">un premier revenu.</span></div>
+</div>
+</section>
+
+<!-- 26 · MOUSSA ET SYSTALINK -->
+<section class="slide dark" id="moussa">
+<aside class="notes">Le parcours du client. Moussa décrit son besoin, l’agent Yokk en fait un cahier des charges, Orion s’il est simple, une mission sinon. Il valide la préview, signe et paie via Paxity, l’agrégateur de paiement de Systalink. Son application tourne sur Systalink : il devient client sans l’avoir cherché. Systalink dispose d’un tableau de bord en données agrégées et anonymes.</aside>
+<div class="head"><p class="eyebrow">Parcours · le client et Systalink</p><h2>Moussa trouve un dev, Systalink un client</h2></div>
+<div class="body" style="flex-direction:row;gap:56px">
+<div style="flex:0 0 820px;display:flex;flex-direction:column;gap:26px">
+<p class="eyebrow tealt" data-a="fade" style="--i:0;color:#4FD1C1">Moussa, boutique à Dakar</p>
+<div class="item" data-a="left" style="--i:1"><div class="dot" style="background:#22A699">1</div><p class="t30">Il décrit son besoin, avec ses mots.</p></div>
+<div class="item" data-a="left" style="--i:2"><div class="dot" style="background:#22A699">2</div><p class="t30">L’agent Yokk en fait un cahier des charges clair.</p></div>
+<div class="item" data-a="left" style="--i:3"><div class="dot" style="background:#22A699">3</div><p class="t30">Orion si c’est simple, une mission sinon.</p></div>
+<div class="item" data-a="left" style="--i:4"><div class="dot" style="background:#22A699">4</div><p class="t30">Il teste la préview, signe, paie via Paxity. L’appli tourne sur Systalink.</p></div>
+<p class="t30 acc" data-a="fade" style="--i:5;font-weight:700;margin-top:10px">Moussa devient client de Systalink sans l’avoir cherché.</p>
+</div>
+<div class="card" data-a="right" style="--i:6;flex:1;padding:36px;gap:20px">
+<p class="eyebrow">Tableau de bord Systalink</p>
+<div class="g2" style="gap:16px">
+<div class="card darkc" style="padding:22px;gap:10px"><svg class="ic sm" style="color:#4FD1C1"><use href="#i-globe"/></svg><p class="t26" style="font-weight:700">Inscrits par pays</p></div>
+<div class="card darkc" style="padding:22px;gap:10px"><svg class="ic sm" style="color:#4FD1C1"><use href="#i-cloud"/></svg><p class="t26" style="font-weight:700">Projets déployés</p></div>
+<div class="card darkc" style="padding:22px;gap:10px"><svg class="ic sm" style="color:#4FD1C1"><use href="#i-chart"/></svg><p class="t26" style="font-weight:700">Gratuit → payant</p></div>
+<div class="card darkc" style="padding:22px;gap:10px"><svg class="ic sm" style="color:#4FD1C1"><use href="#i-star"/></svg><p class="t26" style="font-weight:700">Talents repérés</p></div>
+</div>
+<p class="t24 muted">Plus les stacks utilisées et les questions qui reviennent, pour améliorer leur doc. Données agrégées et anonymes.</p>
+</div>
+</div>
+</section>
+
+<!-- 27 · CE QUE SYSTALINK Y GAGNE -->
+<section class="slide glowc" id="gagnant">
+<aside class="notes">Pour Systalink, c’est une boucle qui s’auto-alimente. Les développeurs s’inscrivent en voyant des cartes partagées, se rencontrent dans les clubs, déploient sur Systalink, leurs clients restent hébergés, et ça donne plus de visibilité dans tout le continent. Quatre gains : acquisition, rétention, revenus et confiance, et une porte d’entrée dans chaque pays, pas seulement en Afrique de l’Ouest.</aside>
+<div class="head"><p class="eyebrow">Ce que Systalink y gagne</p><h2>Une boucle qui grandit toute seule</h2></div>
+<div class="body" style="flex-direction:row;gap:40px">
+<div style="flex:0 0 800px;display:flex;flex-direction:column;gap:28px">
+<div data-a="left" style="--i:6"><h3 class="acc" style="font-size:34px">Acquisition</h3><p class="t26 muted">Chaque carte partagée amène de nouveaux inscrits.</p></div>
+<div data-a="left" style="--i:7"><h3 class="acc" style="font-size:34px">Rétention</h3><p class="t26 muted">Clubs, défis et missions font revenir chaque semaine.</p></div>
+<div data-a="left" style="--i:8"><h3 class="acc" style="font-size:34px">Revenus</h3><p class="t26 muted">Chaque but est un projet hébergé, chaque client reste.</p></div>
+<div data-a="left" style="--i:9"><h3 class="acc" style="font-size:34px">Expansion</h3><p class="t26 muted">Une présence dans tout le continent, au-delà de l’Afrique de l’Ouest.</p></div>
+</div>
+<div style="position:relative;flex:1">
+<div data-a="pop" style="--i:0;position:absolute;left:130px;top:40px;width:500px;height:500px;border-radius:50%;border:4px dashed #22A699;opacity:.6"></div>
+<div class="pulse" data-a="pop" style="--i:1;position:absolute;left:290px;top:200px;width:180px;height:180px;border-radius:50%;background:#F2A93B;display:flex;align-items:center;justify-content:center"><p class="osw" style="font-size:34px;font-weight:700;color:#0F1A2A">SYSTALINK</p></div>
+<span class="pill o" data-a="pop" style="--i:2;position:absolute;left:250px;top:14px;background:#16243A;color:#F7F2E8;font-size:26px;padding:12px 22px">Les devs s’inscrivent</span>
+<span class="pill o" data-a="pop" style="--i:3;position:absolute;left:520px;top:190px;background:#16243A;color:#F7F2E8;font-size:26px;padding:12px 22px">Ils se rencontrent</span>
+<span class="pill o" data-a="pop" style="--i:4;position:absolute;left:450px;top:470px;background:#16243A;color:#F7F2E8;font-size:26px;padding:12px 22px">Ils déploient</span>
+<span class="pill o" data-a="pop" style="--i:5;position:absolute;left:60px;top:470px;background:#16243A;color:#F7F2E8;font-size:26px;padding:12px 22px">Les clients restent</span>
+<span class="pill o" data-a="pop" style="--i:6;position:absolute;left:0;top:190px;background:#16243A;color:#F7F2E8;font-size:26px;padding:12px 22px">Plus de visibilité</span>
+</div>
+</div>
+</section>
+
+<!-- 28 · DÉMO -->
+<section class="slide dark" id="demo">
+<aside class="notes">Une seule boucle, montrée en entier en trois minutes : le problème, la carte en direct, un club panafricain avec traduction, une mission rédigée par Yokk, le déploiement et le but, puis la carte de l’Afrique qui s’allume et le tableau de bord Systalink. Tout le reste est présenté comme feuille de route.</aside>
+<div class="head"><p class="eyebrow">La démo du jury</p><h2>3 minutes pour convaincre</h2></div>
+<div class="body" style="gap:0">
+<div class="item" data-a="left" style="--i:0;padding:16px 0;border-bottom:2px solid #24364F;gap:40px"><p class="num" style="width:140px;font-size:50px">0:00</p><p class="t30"><b>Le problème :</b> <span class="muted">Aminata, talentueuse mais isolée.</span></p></div>
+<div class="item" data-a="left" style="--i:1;padding:16px 0;border-bottom:2px solid #24364F;gap:40px"><p class="num" style="width:140px;font-size:50px">0:20</p><p class="t30"><b>Connexion GitHub en direct :</b> <span class="muted">sa carte apparaît devant le jury.</span></p></div>
+<div class="item" data-a="left" style="--i:2;padding:16px 0;border-bottom:2px solid #24364F;gap:40px"><p class="num" style="width:140px;font-size:50px">0:50</p><p class="t30"><b>Un club panafricain :</b> <span class="muted">elle aide Lagos, chacun lit dans sa langue.</span></p></div>
+<div class="item" data-a="left" style="--i:3;padding:16px 0;border-bottom:2px solid #24364F;gap:40px"><p class="num" style="width:140px;font-size:50px">1:20</p><p class="t30"><b>Une mission :</b> <span class="muted">une PME décrit son besoin, l’agent Yokk écrit le cahier des charges.</span></p></div>
+<div class="item" data-a="left" style="--i:4;padding:16px 0;border-bottom:2px solid #24364F;gap:40px"><p class="num" style="width:140px;font-size:50px">2:00</p><p class="t30"><b>Déploiement en un clic sur Systalink :</b> <span class="acc">BUT !</span></p></div>
+<div class="item" data-a="left" style="--i:5;padding:16px 0;gap:40px"><p class="num" style="width:140px;font-size:50px">2:30</p><p class="t30"><b>La carte de l’Afrique s’allume,</b> <span class="muted">puis le tableau de bord Systalink.</span></p></div>
+</div>
+</section>
+
+<!-- 29 · LA SUITE -->
+<section class="slide sand" id="suite">
+<aside class="notes">Ce qu’il nous reste à trancher ensemble, et les prochaines étapes. La plus importante : tester de bout en bout le MCP et l’OAuth de Systalink, puisque tout le pilier déploiement en dépend.</aside>
+<div class="head"><p class="eyebrow">À décider ensemble</p><h2>Nos prochaines décisions</h2></div>
+<div class="body">
+<div class="g2" style="flex:1">
+<div class="card" data-a="left" style="--i:0;padding:40px 44px">
+<div class="item"><svg class="ic sm"><use href="#i-bulb"/></svg><h3 style="font-size:38px">Questions ouvertes</h3></div>
+<ul class="t26 muted"><li>Le nom : Jamii, ou autre chose ?</li><li>Les paliers : Bronze, Argent, Or, ou des tissus (Wax, Kente, Bogolan) ?</li><li>Le paiement des missions via Paxity : réel, simulé ou en crédits ? Paxity peut-il bloquer l’argent jusqu’à la livraison ?</li><li>La Tontine : format d’événement, ou on la retire ?</li><li>Le seuil pour qu’un club devienne officiel : 3 pays ?</li></ul>
+</div>
+<div class="card darkc" data-a="right" style="--i:1;padding:40px 44px">
+<div class="item"><svg class="ic sm"><use href="#i-check"/></svg><h3 style="font-size:38px">Prochaines étapes</h3></div>
+<ol class="t26" style="color:#D5DEE8"><li>Tester le MCP et l’OAuth Systalink de bout en bout</li><li>Confirmer le règlement : format, taille des équipes</li><li>Répartir les rôles dans l’équipe</li><li>Maquetter la carte et un club</li><li>Écrire la démo, seconde par seconde</li></ol>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 30 · FIN -->
+<section class="slide glowc" id="fin">
+<aside class="notes">On termine sur le proverbe repris de la proposition Tech Tontine, qui résume l’esprit du projet. Place à la discussion : qu’est-ce qui vous plaît, qu’est-ce qu’on change, et qui prend quoi ?</aside>
+<div data-a="pop" style="--i:0;position:absolute;left:660px;top:240px;width:600px;height:600px;border-radius:50%;border:4px solid #22A699;opacity:.25"></div>
+<div data-a="fade" style="--i:0;position:absolute;left:958px;top:0;width:4px;height:1080px;background:#22A699;opacity:.2"></div>
+<div style="margin:auto 0;text-align:center;position:relative">
+<h1 class="osw" data-a="rise" style="--i:1;font-size:96px;font-weight:600;line-height:1.15">« Seul on va plus vite.<br><span class="acc">Ensemble, on va plus loin.</span> »</h1>
+<p class="muted" data-a="fade" style="--i:2;font-size:36px;margin-top:40px">Jamii · tout le continent sur le même terrain, toute l’année.</p>
+<p data-a="pop" style="--i:3;display:inline-block;margin-top:44px;font-size:32px;font-weight:700;background:#F2A93B;color:#0F1A2A;padding:18px 40px;border-radius:999px">On en discute ?</p>
+</div>
+</section>
+
+<div id="ui"><span class="l">JAMII · CADEV 2026</span><span class="r" id="count"></span></div>
+<div id="prog"></div>
+</div>
+
+<div id="notes"></div>
+<div id="hint">← → ou clic pour naviguer · F plein écran · N notes de l’orateur</div>
+
+<script>
+(function(){
+var stage=document.getElementById('stage');
+var slides=[].slice.call(document.querySelectorAll('.slide'));
+var cur=-1, S=1;
+function fit(){S=Math.min(innerWidth/1920,innerHeight/1080);document.documentElement.style.setProperty('--s',S)}
+addEventListener('resize',fit);fit();
+
+/* ---------- widgets ---------- */
+var W={};
+function timers(){var t=[];return{add:function(id){t.push(id);return id},clear:function(){t.forEach(function(i){clearTimeout(i);clearInterval(i)});t=[]}}}
+
+/* conversation traduite */
+(function(){
+var T=timers(),$=function(i){return document.getElementById(i)};
+var Q={en:"How do I send emails in Laravel without blocking the request?",fr:"Comment envoyer des e-mails avec Laravel sans bloquer la requête ?"};
+var R={fr:"Utilise Mail::queue() et lance un worker : php artisan queue:work. La requête répond tout de suite.",en:"Use Mail::queue() and run a worker: php artisan queue:work. The request returns right away."};
+function sw(el,txt){el.style.opacity=0;T.add(setTimeout(function(){el.textContent=txt;el.style.opacity=1},300))}
+function run(){
+['cm1','cm2','cb'].forEach(function(i){$(i).classList.remove('on')});
+$('cg1').textContent='';$('cg2').textContent='';$('cv').textContent='Vu par Aminata · FR';$('ct1').textContent=Q.en;$('ct2').textContent=R.fr;
+T.add(setTimeout(function(){$('cm1').classList.add('on')},900));
+T.add(setTimeout(function(){sw($('ct1'),Q.fr);$('cg1').textContent='Traduit de l’anglais'},2700));
+T.add(setTimeout(function(){$('cm2').classList.add('on')},4500));
+T.add(setTimeout(function(){sw($('cv'),'Vu par Chidi · EN');sw($('ct1'),Q.en);$('cg1').textContent='';sw($('ct2'),R.en);$('cg2').textContent='Translated from French'},7000));
+T.add(setTimeout(function(){$('cb').classList.add('on')},9000));
+T.add(setTimeout(run,13500));
+}
+W.formats={start:run,stop:T.clear};
+})();
+
+/* classement des pays */
+(function(){
+var T=timers(),L=document.getElementById('lb'),R=[];
+var C=[["Sénégal",182],["Nigeria",176],["Kenya",161],["Côte d’Ivoire",149],["Ghana",133],["Égypte",120],["Maroc",104],["Afrique du Sud",98]];
+C.forEach(function(c){var d=document.createElement('div');d.className='lr';d.innerHTML='<div class="k"></div><div class="n">'+c[0]+'</div><div class="bar"><div class="f"></div></div><div class="p"></div><div class="c">BUT !</div>';L.appendChild(d);R.push({d:d,v:c[1]})});
+function draw(){var s=R.slice().sort(function(a,b){return b.v-a.v}),m=s[0].v;s.forEach(function(o,i){o.d.style.top=(i*64)+'px';o.d.querySelector('.k').textContent=i+1;o.d.querySelector('.f').style.width=(o.v/m*100)+'%';o.d.querySelector('.p').textContent=o.v})}
+function flash(o,txt,cls){var c=o.d.querySelector('.c');c.textContent=txt;c.className='c on'+(cls?' '+cls:'');T.add(setTimeout(function(){c.className='c'+(cls?' '+cls:'')},1000))}
+function tick(){
+if(Math.random()<.4){var idx=[];while(idx.length<3){var k=Math.floor(Math.random()*R.length);if(idx.indexOf(k)<0)idx.push(k)}idx.forEach(function(k){R[k].v+=6;flash(R[k],'PASSERELLE','pass')})}
+else{var o=R[Math.floor(Math.random()*R.length)];o.v+=4+Math.floor(Math.random()*10);flash(o,'BUT !')}
+draw()}
+draw();
+W.saison={start:function(){T.add(setInterval(tick,1500))},stop:T.clear};
+})();
+
+/* réseau du continent */
+(function(){
+var T=timers(),svg=document.getElementById('net'),NS='http://www.w3.org/2000/svg';
+var P=[["Casablanca",250,95],["Tunis",440,40],["Le Caire",690,85],["Dakar",70,320],["Bamako",210,350],["Abidjan",215,470],["Accra",300,480],["Lagos",385,455],["Douala",455,535],["Kinshasa",500,645],["Addis-Abeba",760,390],["Kigali",640,580],["Nairobi",740,560],["Lusaka",590,745],["Maputo",700,800],["Johannesburg",600,820],["Le Cap",470,860]];
+var dots=[],count=0,cnt=document.getElementById('netcount'),msg=document.getElementById('netmsg');
+var M=["Équipe formée","Réponse traduite","Projet en ligne","Mentorat lancé","Jumelage de clubs","Mission livrée"];
+var gA=document.createElementNS(NS,'g');svg.appendChild(gA);
+P.forEach(function(p){var c=document.createElementNS(NS,'circle');c.setAttribute('cx',p[1]);c.setAttribute('cy',p[2]);c.setAttribute('r',11);c.setAttribute('class','city');svg.appendChild(c);dots.push(c);
+var t=document.createElementNS(NS,'text');t.setAttribute('x',p[1]+(p[1]>600?-16:16));t.setAttribute('y',p[2]+6);t.setAttribute('class','lbl');t.setAttribute('text-anchor',p[1]>600?'end':'start');t.textContent=p[0];svg.appendChild(t)});
+function link(){
+var a=Math.floor(Math.random()*P.length),b;do{b=Math.floor(Math.random()*P.length)}while(b===a||Math.hypot(P[a][1]-P[b][1],P[a][2]-P[b][2])<260);
+var x1=P[a][1],y1=P[a][2],x2=P[b][1],y2=P[b][2],mx=(x1+x2)/2,my=(y1+y2)/2-Math.hypot(x2-x1,y2-y1)*.28;
+var path=document.createElementNS(NS,'path');path.setAttribute('d','M'+x1+' '+y1+' Q'+mx+' '+my+' '+x2+' '+y2);path.setAttribute('class','arc');gA.appendChild(path);
+var len=path.getTotalLength();path.style.strokeDasharray=len;path.style.strokeDashoffset=len;path.getBoundingClientRect();path.style.strokeDashoffset=0;
+dots[a].classList.add('on');dots[b].classList.add('on');
+count++;cnt.textContent=count;msg.style.opacity=0;
+T.add(setTimeout(function(){msg.textContent=M[Math.floor(Math.random()*M.length)]+' · '+P[a][0]+' ↔ '+P[b][0];msg.style.opacity=1},350));
+T.add(setTimeout(function(){path.style.opacity=0;dots[a].classList.remove('on');dots[b].classList.remove('on')},4200));
+T.add(setTimeout(function(){path.remove()},5400));
+}
+W.unir={start:function(){count=0;cnt.textContent=0;T.add(setTimeout(link,900));T.add(setInterval(link,1300))},stop:function(){T.clear();while(gA.firstChild)gA.removeChild(gA.firstChild);dots.forEach(function(d){d.classList.remove('on')});msg.textContent='Connexions entre pays (simulation)'}};
+})();
+
+/* ---------- navigation ---------- */
+function pos(el){var x=0,y=0;while(el&&!el.classList.contains('slide')){x+=el.offsetLeft;y+=el.offsetTop;el=el.offsetParent}return[x,y]}
+var notes=document.getElementById('notes'),count=document.getElementById('count'),prog=document.getElementById('prog');
+function go(n,instant){
+n=Math.max(0,Math.min(slides.length-1,n));if(n===cur)return;
+var from=cur>=0?slides[cur]:null,to=slides[n],magic=false;
+if(from){[].forEach.call(to.querySelectorAll('[data-magic]'),function(el){var o=from.querySelector('[data-magic="'+el.dataset.magic+'"]');if(!o)return;magic=true;var a=pos(o),b=pos(el);el.style.transition='none';el.style.transform='translate('+(a[0]-b[0])+'px,'+(a[1]-b[1])+'px)';el.style.opacity=1;el.getBoundingClientRect();requestAnimationFrame(function(){el.style.transition='transform 1s cubic-bezier(.2,.8,.2,1)';el.style.transform='translate(0,0)'})})}
+if(magic)to.classList.add('nomove');
+if(instant)slides.forEach(function(s){s.style.transition='none'});
+slides.forEach(function(s,i){s.classList.toggle('past',i<n)});
+if(from){from.classList.remove('active');var wf=W[from.id];if(wf)wf.stop()}
+to.classList.add('active');var wt=W[to.id];if(wt)wt.start();
+if(instant){to.getBoundingClientRect();slides.forEach(function(s){s.style.transition=''})}
+if(magic)setTimeout(function(){to.classList.remove('nomove');[].forEach.call(to.querySelectorAll('[data-magic]'),function(el){el.style.transition='';el.style.transform='';el.style.opacity=''})},1100);
+cur=n;count.textContent=(n+1)+' / '+slides.length;prog.style.width=((n+1)/slides.length*100)+'%';
+var nt=to.querySelector('aside.notes');notes.innerHTML='<b>Notes · diapo '+(n+1)+'</b><br>'+(nt?nt.innerHTML:'');
+if(history.replaceState)history.replaceState(null,'','#'+(n+1));
+}
+function next(){go(cur+1)}function prev(){go(cur-1)}
+addEventListener('keydown',function(e){
+var k=e.key;
+if(k==='ArrowRight'||k===' '||k==='PageDown'||k==='Enter'){e.preventDefault();next()}
+else if(k==='ArrowLeft'||k==='PageUp'||k==='Backspace'){e.preventDefault();prev()}
+else if(k==='Home')go(0);else if(k==='End')go(slides.length-1);
+else if(k==='f'||k==='F'){if(!document.fullscreenElement)document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();else document.exitFullscreen()}
+else if(k==='n'||k==='N')notes.classList.toggle('on');
+});
+document.addEventListener('click',function(e){if(e.target.closest('#notes,a'))return;if(e.clientX<innerWidth/3)prev();else next()});
+var tx=null;document.addEventListener('touchstart',function(e){tx=e.touches[0].clientX},{passive:true});
+document.addEventListener('touchend',function(e){if(tx===null)return;var dx=e.changedTouches[0].clientX-tx;if(Math.abs(dx)>50){dx<0?next():prev()}tx=null});
+var h=parseInt((location.hash||'').slice(1),10);go(isNaN(h)?0:h-1,true);
+setTimeout(function(){document.getElementById('hint').style.opacity=0},4500);
+})();
+</script>
+</body>
+</html>

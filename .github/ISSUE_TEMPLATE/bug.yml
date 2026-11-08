@@ -1,0 +1,19 @@
+name: Bug
+description: Quelque chose ne marche pas
+labels: ["type: bug"]
+body:
+  - type: textarea
+    id: probleme
+    attributes:
+      label: Ce qui se passe
+    validations:
+      required: true
+  - type: textarea
+    id: reproduire
+    attributes:
+      label: Comment reproduire
+      placeholder: "1. Aller sur…\n2. Cliquer sur…"
+  - type: textarea
+    id: attendu
+    attributes:
+      label: Ce qui devrait se passer

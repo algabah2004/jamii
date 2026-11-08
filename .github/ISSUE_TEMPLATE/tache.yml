@@ -1,0 +1,25 @@
+name: Tâche
+description: Un travail à réaliser (créé par le chef de projet)
+labels: ["type: fonctionnalité"]
+body:
+  - type: textarea
+    id: objectif
+    attributes:
+      label: Objectif
+      description: Pourquoi on fait ça, pour quel utilisateur
+    validations:
+      required: true
+  - type: textarea
+    id: travail
+    attributes:
+      label: Ce qu'il faut faire
+      placeholder: "- [ ] étape 1\n- [ ] étape 2"
+    validations:
+      required: true
+  - type: textarea
+    id: termine
+    attributes:
+      label: C'est terminé quand…
+      description: Critères vérifiables pour accepter la PR
+    validations:
+      required: true
