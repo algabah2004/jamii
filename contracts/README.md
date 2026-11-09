@@ -5,10 +5,11 @@
 | Fichier | Responsable | Contenu |
 |---|---|---|
 | `socle.yaml` | @sowibrr | Authentification, utilisateur connecté (`/api/me`), schémas communs (erreurs, pagination) |
-| `demandes.yaml` | @sowibrr | Demandes des PME et réponses des devs |
+| `projets.yaml` | @sowibrr | Projets d'équipe (depuis une idée ou une demande de PME), rôles, candidatures, tâches, continuité |
 | `communautes.yaml` | @Amar233-ui | Communautés, questions-réponses, discussions, modération |
-| `profils.yaml` | @rev22rse22 | Profils et recherche de coéquipiers |
+| `profils.yaml` | @rev22rse22 | Profil prouvé, indice de fiabilité, recherche de coéquipiers |
 | `deploiement.yaml` | @boubacarsidibe | Mise en ligne des projets sur DataCloud |
+| `systalink.yaml` | @Amar233-ui | Statistiques agrégées du tableau de bord Systalink |
 | `ia.yaml` | @boubacarsidibe | API interne du service IA (appelée par l'API, jamais par le navigateur) |
 
 ## Règles

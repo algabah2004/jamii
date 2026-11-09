@@ -67,12 +67,13 @@ Trois axes prioritaires :
 
 ## Comment Jamii y répond
 
-| Problème | Bloc de Jamii | Cas d'usage |
+| Problème | Pilier de Jamii | Cas d'usage |
 |---|---|---|
-| Former des équipes | Profils et recherche de coéquipiers (#19) | UC01, UC02, UC03 |
-| Échanger, s'entraider | Communautés et échanges (#18) | UC04, UC21, UC22, UC24 |
-| Vrais besoins locaux | Demandes des PME + IA (#17, #20) | UC11, UC14 |
-| Mettre en ligne | Déploiement Systalink (#20) | UC16, UC20 |
-| Solidité de l'ensemble | Socle API (#17) | Ce que le jury vérifie |
+| Former des équipes | Projets d'équipe (#17) + suggestions de l'assistant (#20) | UC01, UC02, UC03, UC05 |
+| Les projets meurent après le concours | Continuité des projets (#17) + résumé et alerte de l'assistant (#20) | **UC06, UC07, UC08, UC10, UC25** |
+| Vrais besoins locaux | Demandes de PME → projets (#17) + plan par l'IA (#20) | UC11, UC12 |
+| Échanger, s'entraider | Communautés et entraide (#18) | UC04, UC21, UC22, UC24 |
+| Mettre en ligne | Mise en ligne sur DataCloud (#20) | UC16 |
+| Visibilité, confiance | Profil prouvé (#19) + vitrine (#18) | UC23, UC17 |
+| Ce que Systalink y gagne | Tableau de bord et page de statut (#18, #17) | UC25 |
 
-Ce qui est à renforcer, car c'est peu couvert aujourd'hui : **la continuité après les concours** (UC06, UC07, UC25) et **les beta-testeurs** (UC17). Ce sont de bons sujets pour une proposition dans [propositions/](propositions/README.md).

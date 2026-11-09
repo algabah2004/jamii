@@ -47,30 +47,25 @@
   - consigne malveillante → une liste de commandes approuvées.
 - **L'architecture proposée** : Spring Boot + PostgreSQL/Flyway + service d'agents Python, en Docker Compose sur un **serveur cloud Systalink à Dakar**. **C'est un bon plan B si DataCloud n'accepte pas Java.**
 
-## Ce qui est déjà dans Jamii
+## Les décisions (9 novembre 2026)
 
-| Idée | Source | Où |
-|---|---|---|
-| Profil généré depuis GitHub | Mbokk, Boubacar | Bloc #19 |
-| Entraide et questions-réponses | Boubacar, Jamii | Bloc #18 |
-| Demandes des PME, cahier des charges par IA | Jamii | Blocs #17 et #20 |
-| Déploiement sur Systalink | Les trois | Bloc #20 |
-| Pensé pour l'Afrique (3G, langues) | Mbokk, Boubacar | AGENTS.md, bloc #18 |
-| Agents avec garde-fous, humain dans la boucle | Tontine, Boubacar | Règles de concept.md |
+On a gardé **ce qui fait gagner** : ce qui répond au vrai problème, ce qui montre à Systalink ce qu'il y gagne, et ce qu'on peut livrer solidement. Le concept final est dans [concept.md](concept.md).
 
-## Les idées fortes encore à décider
-
-| # | Idée | Source | Pourquoi c'est fort | Bloc concerné |
-|---|---|---|---|---|
-| A | **Score de confiance / réputation vérifiable** | Tontine, Boubacar | Répond au « qui va vraiment livrer ? ». C'est une preuve concrète pour les recruteurs | #19 Profils |
-| B | **Cercles à tour de rôle (tontine)** comme format de projet | Tontine | **Couvre la continuité après les concours** (UC06, UC07, UC25), aujourd'hui le point le plus faible. Très africain, très mémorable | À attribuer |
-| C | **Tableau de bord Systalink + page de statut publique** | Boubacar | Donne à Systalink des chiffres et une preuve de fiabilité. Énorme pour le jury | #20 ou #17 |
-| D | **Agents de support et d'exploitation** | Boubacar | Réduit la charge de Systalink, et montre leur cloud sous un bon jour | #20 (phase 2) |
-| E | **Missions payées en FCFA (Wave, sandbox)** | Boubacar | Des revenus locaux, le frein n°1 des freelances africains | Phase 2 |
-| F | **Brief quotidien de l'IA** (opportunités, coéquipiers) | Mbokk | Le moment « wow », qui donne envie de revenir chaque jour | #19 ou #20 |
-| G | **Vitrine des projets + label « Né sur Jamii · hébergé par Systalink »** | Tontine | De la visibilité pour les devs, et la marque Systalink sur chaque réussite | #18 ou #19 |
-| H | **PWA hors ligne** (brouillons) | Boubacar | Les connexions lentes sont la réalité de nos utilisateurs | #18 ossature |
-| I | **Messages vocaux** (wolof, français) → texte | Mbokk, cas UC14 | Inclut les non-techniciens et les langues locales | #20 |
-| J | **50 à 100 profils de démo** | Mbokk | La plateforme paraît vivante dès la démo | Démo |
-
-**Écarté volontairement** : des agents qui parlent ou s'engagent **à la place** des humains (Mbokk, piliers 1 et 2), pour éviter les faux profils et la perte de contrôle. On garde « l'IA propose, l'humain décide ». Le thème foot (Championnat) a lui aussi été abandonné.
+| Idée | Source | Décision | Pourquoi |
+|---|---|---|---|
+| Profil prouvé (projets réellement en ligne) | Boubacar, Mbokk | ✅ **Pilier 1** | La raison n°1 de s'inscrire : une preuve plutôt qu'un CV |
+| Indice de fiabilité explicable | Tontine, Boubacar | ✅ Dans le pilier 1 | Répond au « qui va vraiment livrer ? ». Explicable et contestable, sans note globale |
+| Projets d'équipe et continuité | Catalogue, Tontine | ✅ **Pilier 2** | Notre différence : le projet survit au concours |
+| Assistant IA : plan, suivi, résumé, alerte | Tontine (Griot), Mbokk | ✅ **Pilier 3** | Fait avancer les équipes. « L'IA propose, l'équipe décide » |
+| Mise en ligne sur Systalink | Les trois | ✅ **Pilier 4** | Chaque projet devient un client DataCloud |
+| Entraide (l'IA propose, les pairs valident) | Boubacar | ✅ **Pilier 5** | Le thème « échange » de la CADEV |
+| Tableau de bord Systalink + page de statut | Boubacar | ✅ **Espace Systalink** | La réponse directe à « qu'est-ce que Systalink y gagne ? » |
+| Vitrine « Hébergé sur Systalink » | Tontine | ✅ Dans le pilier 5 | Visibilité pour les devs, marque pour Systalink |
+| Données de démo réalistes | Mbokk | ✅ Pour la démo | La plateforme paraît vivante |
+| Missions payées en FCFA (Wave) | Boubacar | 🕒 Feuille de route | Fort, mais un paiement réel est risqué à livrer à temps |
+| Cercles en tontine | Tontine | 🕒 Feuille de route | Un format d'événement à lancer sur la base des projets d'équipe |
+| Agents de support et d'exploitation | Boubacar | 🕒 Feuille de route | Utile à Systalink, mais hors du parcours de la démo |
+| Messages vocaux, langues locales | Mbokk, UC14 | 🕒 Feuille de route | Pas indispensable pour un public de développeurs |
+| Mode 3G / PWA hors ligne | Boubacar, Mbokk | ❌ Écarté | Un dev qui code et déploie a déjà une connexion correcte |
+| Brief quotidien des agents qui se parlent | Mbokk | ❌ Écarté | Les agents ne parlent pas à la place des humains. On garde le résumé de la semaine de l'équipe |
+| Thème foot (championnat, buts) | Jamii v1, Mbokk | ❌ Écarté | Il perdait ceux qui ne connaissent pas le foot |

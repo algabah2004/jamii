@@ -39,4 +39,4 @@ C'est encouragé, mais **pour réfléchir mieux, pas pour réfléchir moins**. P
 
 | N° | Titre | Auteur | Statut |
 |---|---|---|---|
-| 0001 | [Réduire le périmètre au parcours « d'une demande à une appli en ligne »](0001-perimetre-demo.md) | @algabah2004 | En discussion |
+| 0001 | [Réduire le périmètre au parcours « d'une demande à une appli en ligne »](0001-perimetre-demo.md) | @algabah2004 | Acceptée (concept final) |

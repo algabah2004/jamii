@@ -35,7 +35,7 @@ Le plan est un **point de départ** : si ton développeur veut le changer, aide-
 | `docs/cadev.md` | **La compétition, Systalink, le problème de fond et les 25 cas d'usage. À lire en premier** |
 | `docs/integration-systalink.md` | **Comment chaque service Systalink se branche sur Jamii (notre point fort)** |
 | `docs/idees-sources.md` | **Les 4 pistes de départ de l'équipe et les idées fortes encore à décider** |
-| `docs/concept.md` | La vision du produit |
+| `docs/concept.md` | **Le concept final : les 5 piliers, la démo, ce qu'on fait et ce qu'on ne fait pas** |
 | `docs/architecture.md` | La stack et la raison de chaque choix |
 | `docs/vocabulaire.md` | Les mots de l'interface : simples, sans thème ni jargon |
 | `docs/systalink-services.md` | Ce qui est gratuit et testé chez Systalink, et ce qui ne l'est pas |
@@ -106,7 +106,7 @@ Tu n'es pas là pour dire oui. Tu es là pour que le résultat soit **excellent*
 
 ## 5. Les questions à toujours se poser
 
-- Un **développeur de Bamako en 3G** sur un téléphone d'entrée de gamme peut-il l'utiliser ?
+- Un **développeur de n'importe quel pays du continent** s'y retrouve-t-il (langue, contexte local, pas de supposition « occidentale ») ?
 - Un **commerçant non technique** comprend-il l'écran sans aide ?
 - Que se passe-t-il si **l'IA, GitHub ou Systalink ne répond plus** ?
 - Si quelqu'un **essaie d'abuser** de cette fonction (spam, accès aux données d'un autre), que se passe-t-il ?

@@ -1,182 +1,94 @@
-# Jamii · CADEV 2026
+# Jamii · Le concept final
 
-> ℹ️ *Mise à jour du 8 novembre 2026 : le thème football a été abandonné. Le produit utilise uniquement des mots simples.*
+> **Trouve ton équipe. Construis un vrai projet. Mets-le en ligne sur Systalink. Et prouve-le.**
 
-> **La plateforme d'échange des développeurs africains.**
-> L'endroit où les devs de tout le continent se rencontrent, s'entraident et mettent en ligne des projets utiles. Ensemble.
+*Jamii veut dire « communauté » en swahili.* Ce document est **la référence produit**. Les choix y sont tranchés : ce qui n'y figure pas, on ne le construit pas pour la CADEV.
 
-*Jamii* veut dire « communauté » en swahili. C'est un nom provisoire.
+## Le problème qu'on résout
 
----
+Les développeurs africains ont des idées, mais **les projets meurent** :
+- ils n'ont pas l'équipe ;
+- l'équipe se défait après le hackathon ;
+- personne ne sait qui va vraiment livrer ;
+- et la mise en ligne bloque.
 
-## 1. Le contexte
+(Détails et cas d'usage : [cadev.md](cadev.md).)
 
-Systalink organise la **CADEV 2026** pour entrer dans la communauté tech africaine, où sa présence est encore timide. Le thème officiel est :
+## Pourquoi on gagne : 3 arguments pour le jury
 
-> « Construire la plateforme d'échange africaine, pour les devs, par les devs. »
+1. **On s'attaque au vrai problème, la continuité.** Les autres équipes feront des forums et des annuaires. Nous, on emmène un projet **de l'idée jusqu'à la mise en ligne**, et on le garde vivant après.
+2. **Chaque projet réussi devient un client de DataCloud, et Systalink le voit.** Jamii est un canal d'acquisition pour leur cloud, avec un tableau de bord qui le prouve en chiffres.
+3. **Une démo qui marche de bout en bout**, sur leur infrastructure, avec une architecture que leurs ingénieurs respecteront.
 
-Le jury se demandera si notre produit **fait venir** des devs chez Systalink, s'il **les fait rester** et s'il **les fait payer**.
+Et pour **le vote du public** : un dev repart avec un **profil prouvé**, c'est-à-dire des projets réellement en ligne et une fiabilité reconnue. C'est ce qui donne envie de s'inscrire et de partager.
 
-## 2. Notre principe : brancher ce qui existe déjà
+## Le produit : 5 piliers et un espace Systalink
 
-**On ne réinvente rien de ce que Systalink sait déjà faire.** Notre travail consiste à **assembler leurs services** dans une expérience fun et simple.
+### 1. Le profil prouvé · bloc #19
+- **Généré depuis GitHub** en quelques secondes : langages, projets, pays, forces. Pas de note globale.
+- **Une preuve plutôt qu'un CV** : on y voit les **projets réellement en ligne** (lien vérifié) et les contributions dans les équipes Jamii.
+- **Un indice de fiabilité, explicable** : tâches livrées à temps, avis des coéquipiers, réponses acceptées dans les communautés. Chaque point est justifié et contestable.
+- **La recherche de coéquipiers** par compétence, pays et disponibilité.
 
-On a trois bonnes raisons de faire comme ça :
+### 2. Les projets d'équipe · bloc #17
+- Un projet naît d'une **idée** (celle d'un dev) ou d'une **demande** (celle d'une PME qui décrit son besoin).
+- On publie les **rôles recherchés**, les devs **candidatent**, et l'équipe se forme, de préférence entre plusieurs pays.
+- L'équipe a son **espace** : membres, tâches, jalons, statut.
+- **La continuité** : un projet qui ralentit est signalé, un membre qui part est remplacé (on republie le rôle), et le projet peut être repris par une autre équipe.
 
-1. **Pour Systalink**, chaque action sur Jamii devient une utilisation réelle de ses produits : déploiements, Yokk, Orion, paiements. On leur sert de vitrine et on leur amène des clients.
-2. **Pour nous**, on va plus vite et on est plus crédibles. On construit l'expérience, et Systalink fournit l'infrastructure.
-3. **Pour les utilisateurs**, ils découvrent les services Systalink en s'en servant, sans qu'on leur fasse de publicité.
+### 3. L'assistant de projet (IA) · bloc #20
+L'IA **propose**, l'équipe **décide**. Elle :
+- transforme une idée ou une demande de PME en **plan** : cahier des charges, jalons, tâches réparties selon les compétences ;
+- **suggère des coéquipiers** complémentaires ;
+- envoie un **résumé de la semaine** à l'équipe, et **alerte** quand le projet décroche ;
+- **propose une réponse** aux questions dans les communautés, que les pairs valident.
 
-### Les services Systalink que l'on branche
+### 4. La mise en ligne sur Systalink · bloc #20
+- Un projet se déploie sur **DataCloud** depuis Jamii : automatiquement si l'API ou le MCP le permet, sinon par un parcours guidé.
+- Une fois en ligne, le projet est **vérifié** : il apparaît sur le profil de chaque membre et dans la vitrine.
 
-| Service Systalink | Ce qu'il fait | Ce qu'on en fait dans Jamii |
-|---|---|---|
-| **Web sans serveur (DataCloud)** | Déploie depuis GitHub, avec préview par pull request et offre gratuite | La mise en ligne de chaque projet |
-| **Serveur MCP** *(à tester)* | Permet à un agent IA de piloter le cloud | Notre agent configure et déploie pour l'utilisateur |
-| **Espace développeurs / OAuth** *(à tester)* | « Se connecter avec Systalink » | Le bouton « Connecter mon Systalink » |
-| **Webhooks** *(offre Professionnel)* | Un signal à chaque déploiement | Le badge « En ligne » et la carte d'Afrique des projets |
-| **Yokk** ⭐ | Constructeur d'agents IA, publiés en API ou en widget | Création des profils, aide dans les communautés, traduction, cahiers des charges, missions « agent » |
-| **Orion** ⭐ | Un site créé par l'IA à partir d'une description | Les besoins simples des PME, les portfolios (en option) |
-| **SystaTalk** | Chat et visio jusqu'à 250 personnes | Les lives des communautés, l'espace d'échange des équipes |
-| **SystaDrive** | Fichiers hébergés à Dakar | L'espace projet de l'équipe |
-| **SystaForms** | Formulaires et signature | Le contrat de mission |
-| **Paxity** | Agrégateur de paiement (Mobile Money, carte) | Le paiement des missions, et l'intégration dans les applis des devs |
-| **SystaMail + domaines** | E-mail pro, .sn, .ci, .cm… | Le moment « Passer pro » d'un projet |
-| **Bases de données, GPU, Kubernetes** | Infrastructure | Proposées par l'agent au déploiement, défis IA |
+### 5. Les communautés et l'entraide · bloc #18
+- Des communautés **thématiques** (Flutter, Fintech, IA…), ouvertes à tout le continent.
+- **Questions-réponses** (l'IA propose une réponse, les pairs la valident), discussions et « Montre ton projet ».
+- **La vitrine** : tous les projets en ligne nés sur Jamii, avec la mention « Hébergé sur Systalink ».
 
-⭐ = produits stratégiques pour Systalink en ce moment, qu'on met au cœur du projet.
+### L'espace Systalink · blocs #18 et #17
+- Un **tableau de bord** : devs inscrits, projets créés, **projets déployés sur DataCloud**, taux de passage vers une offre payante (données agrégées et anonymes).
+- Une **page de statut publique** de Jamii (disponibilité, incidents) : **la preuve de fiabilité** sur l'infrastructure Systalink.
 
-**Limites connues :**
-- Aucune API REST publique n'est documentée.
-- Les webhooks demandent l'offre Professionnel.
-- L'API SystaONE demande l'offre Business.
-- Le MCP et l'OAuth restent à **tester de bout en bout en priorité**.
-
-### Une utilisation intelligente
-
-Systalink n'a pas les moyens de faire tourner de l'IA, ou de créer un site, pour chaque inscrit. On applique donc trois règles :
-
-- **L'IA n'intervient que si** l'utilisateur la demande, si le moment peut rapporter un client, ou si le résultat est réutilisé (calculé une fois, puis gardé en cache).
-- **Notre propre code calcule tout le reste**, sans IA : les profils, la carte d'Afrique et les statistiques.
-- **Chacun paie sa part.** Systalink paie ce qui fait venir les gens (offres gratuites, un appel IA à l'inscription). L'utilisateur paie son usage réel. Le client paie ses missions.
-
----
-
-## 3. L'ambition : réunir l'Afrique
-
-On ne veut pas d'une communauté par ville. **Tout est sans frontières par défaut :**
-
-- Les communautés, les équipes et les missions sont ouverts à tout le continent.
-- **La traduction fait tomber le mur des langues** entre le français, l'anglais, le portugais, l'arabe et le swahili.
-- **Les projets multi-pays sont mis en avant :** un projet qui réunit 3 pays apparaît sur la carte de chacun des trois.
-- Les suggestions de coéquipiers vont chercher au-delà de ta ville.
-
-## 4. Les 5 piliers
-
-1. **Ton profil (Yokk).** Ton profil se construit tout seul depuis GitHub, en 30 secondes. Il montre tes forces, ton style et ton pays, et chaque stat renvoie au code qui la prouve.
-2. **Les communautés (Yokk, SystaTalk).**
-   - Les communautés thématiques (Flutter Afrique, Fintech Afrique…) sont continentaux.
-   - Les villes et les pays en sont les **antennes** locales.
-   - Des **jumelages** relient des villes, par exemple Dakar ↔ Nairobi.
-   - Une communauté devient officielle avec des membres d'au moins 3 pays.
-   - On y échange de six façons : questions-réponses, discussions, « Montre ton projet », annonces, lives et événements.
-3. **Équipes et missions (Orion, Yokk, SystaForms, Paxity).** Un client décrit son besoin, et l'agent l'oriente vers la bonne option :
-   - Orion si c'est simple ;
-   - une mission Yokk pour un agent ;
-   - une mission de développement sur DataCloud pour une vraie application.
-4. **Mettre en ligne (DataCloud, MCP).** On connecte son compte Systalink et l'agent lit le dépôt. On valide, puis Systalink déploie. Le projet est en ligne.
-5. **L'impact du continent.**
-   - Une carte d'Afrique montre, pays par pays, les projets mis en ligne et l'entraide (réponses acceptées).
-   - Un défi multi-pays est proposé chaque mois.
-   - L'esprit de la CADEV continue toute l'année.
-
-### Le savoir du continent
-
-On propose des guides qu'on ne trouve nulle part ailleurs :
-- intégrer le mobile money (Wave, Orange Money, MTN MoMo, M-Pesa, Paxity) ;
-- construire un service USSD ou SMS ;
-- faire des applis légères qui marchent en 3G ;
-- utiliser l'IA avec les langues africaines ;
-- respecter les lois sur les données de chaque pays.
-
-Ces guides sont écrits par la communauté et traduits pour tout le continent.
-
----
-
-## 5. Nos règles
-
-**Personne n'a honte de son profil :**
-- il n'y a pas de note globale ;
-- le profil ne montre que tes forces, et un style plutôt qu'un niveau ;
-- les débutants ont un profil « Débutant motivé » ;
-- le profil reste privé jusqu'à ce que tu la publies.
-
-**L'agent ne touche pas à ton code :**
-- il ne lit que les données publiques et n'écrit jamais rien ;
-- il exclut les fichiers .env et les secrets ;
-- il ne garde pas le code et ne s'entraîne pas dessus ;
-- tu peux voir le journal de ce qu'il a lu et tout supprimer.
-
-**Des mots simples :**
-- les boutons disent ce qu'ils font (« Déployer », « Rejoindre ») ;
-- aucun jargon ni métaphore à apprendre (voir vocabulaire.md).
-
-**Les données partagées avec Systalink** sont agrégées, anonymes et soumises à l'accord de l'utilisateur.
-
-**Ce qu'on a mis de côté :** WhatsApp, les agents qui parlent à ta place et les faux profils.
-
-## 6. Parcours type
-
-**Aminata, développeuse à Abidjan :**
-1. Elle voit passer le profil d'un ami.
-2. Elle crée son profil depuis GitHub.
-3. Elle rejoint la communauté Laravel Afrique.
-4. Elle aide Chidi, de Lagos, chacun dans sa langue.
-5. Elle forme une équipe avec Bamako et Nairobi.
-6. Elle met le projet en ligne sur Systalink.
-7. Une boutique de Dakar lui confie une mission.
-8. Elle revient pour le défi du mois.
-
-**Moussa, commerçant à Dakar :**
-1. Il décrit son besoin avec ses mots.
-2. Yokk en fait un cahier des charges.
-3. Son besoin part vers Orion ou devient une mission.
-4. Il teste la préview, signe et paie via Paxity.
-5. Son appli tourne sur Systalink : il devient client sans l'avoir cherché.
-
-## 7. La démo du jury (3 minutes)
+## La démo (3 minutes)
 
 | Temps | Moment |
 |---|---|
-| 0:00 | Le problème |
-| 0:20 | Le profil se crée en direct |
-| 0:50 | Une communauté panafricaine avec traduction |
-| 1:20 | Une mission rédigée par Yokk |
-| 2:00 | Le déploiement en un clic |
-| 2:30 | La carte de l'Afrique s'allume, puis le tableau de bord Systalink |
+| 0:00 | Le problème : des idées, des hackathons, et des projets qui meurent |
+| 0:20 | Connexion GitHub → **le profil prouvé** se génère |
+| 0:50 | Une PME décrit son besoin → **l'assistant** en fait un plan et propose une équipe de 3 pays |
+| 1:30 | Dans une communauté : une question, l'IA propose une réponse, un pair la valide |
+| 2:00 | **Déploiement sur DataCloud** → le projet est en ligne, il apparaît sur les profils et dans la vitrine |
+| 2:30 | **Le tableau de bord Systalink** et la page de statut : « chaque projet est un client DataCloud » |
 
-## 8. À décider ensemble
+Une vidéo de secours et des données de démo réalistes (une soixantaine de profils et de projets) sont prêtes, au cas où.
 
-- **Le nom :** Jamii, ou autre chose ?
-- **Le paiement des missions via Paxity :** réel, simulé ou en crédits ? Paxity peut-il bloquer l'argent jusqu'à la livraison ?
-- **La Tontine :** on la garde comme format d'événement, ou on la retire ?
-- **Le seuil d'une communauté officielle :** 3 pays ?
+## Ce qu'on ne construit pas maintenant (feuille de route)
 
-**Prochaines étapes :**
-1. Tester le MCP et l'OAuth Systalink de bout en bout.
-2. Confirmer le règlement (format, taille des équipes).
-3. Répartir les rôles.
-4. Maquetter le profil et une communauté.
-5. Écrire la démo seconde par seconde.
+On les mentionne sur une diapo « Et après », sans les coder :
+- **Missions payées en FCFA** (Wave, Orange Money) : séduisant, mais un paiement réel est risqué à livrer à temps.
+- **Cercles en tontine** (chacun son tour, on construit le projet d'un membre) : un format d'événement à lancer sur la base des projets d'équipe.
+- **Agents de support et d'exploitation** pour les clients Systalink.
+- **Messages vocaux et langues locales** (wolof…).
 
----
+## Ce qu'on a écarté, et pourquoi
 
-## Ouvrir la présentation
+| Idée | Raison |
+|---|---|
+| Mode 3G / hors ligne | Un développeur qui code, pousse et déploie a déjà une connexion correcte. Ça coûte cher pour aucun gain réel |
+| Des agents IA qui parlent ou s'engagent à la place des devs | Faux contacts et perte de contrôle. On garde « l'IA propose, l'humain décide » |
+| Le thème foot (buts, saison, championnat) | Il perdait ceux qui ne connaissent pas le foot |
+| Orion, SystaTalk et SystaForms dans le parcours | Pas d'API, ou pas gratuits. Ils alourdiraient la démo sans la renforcer |
 
-La présentation animée est dans le fichier **`Jamii_CADEV2026.html`**.
+## Nos règles produit
 
-- **Sur ordinateur :** ouvre-le avec Chrome, Edge ou Firefox. Avance avec les flèches ← →. **F** passe en plein écran et **N** affiche les notes d'orateur.
-- **Sur téléphone :** ouvre-le avec Chrome (Android) ou Safari (iPhone), en mode paysage. Glisse le doigt pour changer de diapo.
-- Il faut internet pour charger les polices. Hors ligne, tout fonctionne quand même.
-
-> « Seul on va plus vite. Ensemble, on va plus loin. »
+- **Des mots simples** dans l'interface ([vocabulaire.md](vocabulaire.md)).
+- **L'IA propose, l'humain décide.** Chaque suggestion est explicable.
+- **Le profil reste privé** jusqu'à ce que l'utilisateur le publie. L'IA ne lit que les données publiques de GitHub et n'écrit jamais.
+- **Branchable sur Systalink** ([integration-systalink.md](integration-systalink.md)).

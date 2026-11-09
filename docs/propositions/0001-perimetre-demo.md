@@ -4,8 +4,8 @@
 |---|---|
 | **Auteur** | @algabah2004 |
 | **Date** | 2026-11-08 |
-| **Statut** | En discussion |
-| **Décision** | — |
+| **Statut** | Acceptée |
+| **Décision** | Acceptée sous une forme élargie : un parcours complet de bout en bout, mais centré sur les projets d'équipe et leur continuité. Voir [concept.md](../concept.md) (9 novembre 2026) |
 
 ## Le problème
 

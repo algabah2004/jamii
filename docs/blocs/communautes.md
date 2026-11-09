@@ -1,4 +1,4 @@
-# Communautés et échanges + ossature du front
+# Communautés et entraide + ossature du front + espace Systalink
 
 > 🧭 **Ce plan est un point de départ, pas une consigne. C'est ton bloc.**
 > - **Fixe** : le 🎯 But, le 🏁 « Terminé quand » et les règles communes (`docs/equipe.md`, `AGENTS.md`).
@@ -8,47 +8,48 @@
 **Responsable : @Amar233-ui** · Ticket de suivi : [#18](https://github.com/algabah2004/jamii/issues/18)
 
 ## 🎯 But
-Tu construis **le cœur du thème de la CADEV, la « plateforme d'échange »**. Les développeurs de tout le continent s'y retrouvent par sujet, posent des questions, discutent et montrent leurs projets. Tu es aussi **lead technique du front** : tu poses l'ossature de l'appli web que tout le monde utilisera.
+Tu es **lead technique du front** : tu poses l'ossature de l'appli que tout le monde utilise. Et tu construis **l'échange**, le cœur du thème CADEV : les communautés, l'entraide, la **vitrine** des projets en ligne et le **tableau de bord Systalink**, c'est-à-dire ce que le jury de Systalink verra de « son » côté. Voir le pilier 5 et l'espace Systalink de [concept.md](../concept.md).
 
 ## 📦 À livrer
-1. **L'ossature du front** `apps/web` : Vue 3 + TypeScript + Vite, routage, mise en page (en-tête, navigation : Accueil, Communautés, Demandes, Projets, Profil), client API **généré depuis `contracts/`**, données factices avec MSW, traduction FR/EN, job CI.
-2. **La spec Communautés** : `docs/propositions/0002-communautes.md`.
-3. **Le module Communautés, front et back** : contrat `contracts/communautes.yaml`, tables, endpoints dans `apps/api` (package `communautes`), écrans, tests.
-   - communautés thématiques (Flutter Afrique, Fintech…) et antennes locales ;
-   - questions-réponses avec réponse acceptée, discussions, « Montre ton projet » ;
-   - modération : signalement, rôle modérateur.
-4. Les tests de bout en bout (Playwright) du parcours Communautés.
+1. **L'ossature `apps/web`** : Vue 3 + TypeScript + Vite, routage, mise en page, client API généré depuis `contracts/`, données factices (MSW), traduction FR/EN, job CI.
+2. **Les communautés** (`contracts/communautes.yaml`, front et back) :
+   - communautés thématiques ouvertes à tout le continent ;
+   - questions-réponses avec réponse acceptée : **l'IA propose une réponse, les pairs la valident** (via #20) ;
+   - discussions et « Montre ton projet » ;
+   - modération (signalement, modérateurs).
+3. **La vitrine** : les projets en ligne nés sur Jamii, avec la mention « Hébergé sur Systalink ».
+4. **Le tableau de bord Systalink** : devs inscrits, projets créés, projets déployés sur DataCloud, passage vers une offre payante (agrégé et anonyme).
+5. **Les tests de bout en bout** (Playwright) du parcours de la démo.
 
 ## 🚀 Avancer sans attendre personne
-- **Jour 1** : crée l'ossature de `apps/web` et fusionne-la vite. rev22rse22 y branchera le design system.
-- Le front tourne **sur des données factices (MSW)** générées depuis ton contrat. Tu n'attends pas l'API.
-- Ton backend vit dans son propre package `communautes`. Il ne dépend du socle de @sowibrr que pour l'utilisateur connecté, à simuler en attendant.
+- **Jours 1-2** : fusionne l'ossature `apps/web`. @rev22rse22 y branchera le design system.
+- Le front tourne sur des **données factices (MSW)** générées depuis les contrats.
+- Ton backend vit dans son package `communautes`. L'utilisateur connecté est simulé tant que le socle n'est pas prêt.
 
 ## 🔌 Branchement Systalink
 Voir [integration-systalink.md](../integration-systalink.md).
-- Interface `Visio` : les salons et les événements de communauté génèrent un lien **SystaTalk** (simulé tant que l'essai n'est pas ouvert).
+- La vitrine et le tableau de bord mettent en avant **DataCloud** : chaque projet affiché est hébergé chez Systalink.
 - Le front est **brandable** (nom, logo et couleurs depuis la configuration), pour devenir un produit Systalink.
 
 ## ✅ Étapes
-- [ ] Ossature `apps/web` fusionnée (jour 1-2) : routage, mise en page, i18n, MSW, CI
-- [ ] Spec 0002 : étude de Discord, Stack Overflow, Dev.to et GitHub Discussions, parcours, cas limites (spam, langue, abus)
-- [ ] `contracts/communautes.yaml` validé avec @sowibrr (respect des conventions de l'API)
-- [ ] Écrans Communautés avec les composants du design system (@rev22rse22)
-- [ ] Backend du module Communautés et tests
-- [ ] Tests Playwright, performance vérifiée en 3G simulée
+- [ ] Ossature `apps/web` fusionnée (jours 1-2)
+- [ ] Spec `docs/propositions/0002-communautes.md` : étude de Stack Overflow, Discord et GitHub Discussions, parcours, cas limites
+- [ ] `contracts/communautes.yaml` validé avec @sowibrr
+- [ ] Communautés et questions-réponses (front et back), réponse proposée par l'IA
+- [ ] Vitrine des projets en ligne
+- [ ] Tableau de bord Systalink
+- [ ] Tests Playwright du parcours de la démo
 
-## 🤖 Prompt de démarrage pour ton agent IA
+## 🤖 Exemple de prompt pour ton agent IA
 ```
-Lis AGENTS.md, docs/architecture.md, docs/vocabulaire.md et docs/blocs/communautes.md.
-Je suis lead technique front et responsable du bloc « Communautés et échanges ».
+Lis AGENTS.md, docs/concept.md, docs/vocabulaire.md et docs/blocs/communautes.md.
+Je suis lead technique front et responsable du bloc « Communautés et entraide ».
 1. Crée l'ossature apps/web : Vue 3 + TS + Vite, vue-router, Pinia, vue-i18n,
-   MSW, client API généré depuis contracts/*.yaml (openapi-typescript), Vitest, ESLint.
-2. Étudie Discord, Stack Overflow, Dev.to et GitHub Discussions, puis propose
-   la spec 0002 avec docs/propositions/TEMPLATE.md : ce qui manque à un dev africain
-   (3G, langues, mobile money…).
-Petites PR, chacune avec ses tests. Termine par « Pistes d'amélioration ».
+   MSW, client API généré depuis contracts/*.yaml, Vitest, ESLint.
+2. Étudie Stack Overflow, Discord et GitHub Discussions, puis propose la spec 0002 :
+   qu'est-ce qui fera revenir un dev africain chaque semaine ?
+Petites PR. Termine par « Pistes d'amélioration ».
 ```
 
 ## 🏁 Terminé quand
-Un dev peut rejoindre une communauté, poser une question, recevoir une réponse et la marquer comme acceptée, depuis l'appli, sur la vraie API. Les tests Playwright passent et le chef de projet a validé en revue.
-
+Un dev pose une question dans une communauté, l'IA propose une réponse et un pair la valide. La vitrine affiche les projets en ligne, et le tableau de bord Systalink montre les vrais chiffres. Le tout sur la vraie API, avec les tests Playwright verts et la validation du chef de projet.
