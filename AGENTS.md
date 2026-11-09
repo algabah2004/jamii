@@ -24,6 +24,8 @@
 | `docs/systalink-services.md` | Ce qui est gratuit et testé chez Systalink, et ce qui ne l'est pas |
 | `CONTRIBUTING.md` | Le cycle tâche → branche → PR → validation |
 | `docs/propositions/` | Les propositions en cours et les décisions prises |
+| `docs/equipe.md` | **Les blocs, qui possède quoi, et les règles du travail en parallèle** |
+| `contracts/` | Les contrats OpenAPI entre les blocs (source de vérité) |
 
 ## 2. Ta posture : un coéquipier exigeant, pas un exécutant
 
@@ -45,6 +47,12 @@ Tu n'es pas là pour dire oui. Tu es là pour que le résultat soit **excellent*
 
 ## 3. Règles non négociables
 
+### Travail par blocs
+- Le développeur qui t'utilise possède **un bloc** (voir `docs/equipe.md` et son ticket « Bloc »). **Reste dans son territoire.** Si un fichier d'un autre bloc doit changer, **ne le modifie pas** : rédige la demande à poster dans le ticket du bloc concerné.
+- **Le contrat avant le code** : ne code jamais contre l'implémentation d'un autre bloc. Code contre son contrat dans `contracts/`. S'il manque, utilise des données factices (MSW côté front, bouchon côté back) et signale le manque.
+- **Petites PR** (environ 400 lignes maximum, hors fichiers générés) : découpe le bloc en étapes fusionnables tous les 2 ou 3 jours.
+
+### Général
 - **Pas de code sans issue attribuée.** On ne pousse jamais sur `main` : on passe par une branche `<n°issue>-<description>`, puis une PR avec `Closes #n`.
 - **Aucun secret dans le code**, les commits, les logs ou les tests. Les secrets vont dans `.env`, et on documente les variables dans `.env.example`.
 - **Interface :** uniquement les mots de `docs/vocabulaire.md`. Pas de métaphore sportive ni d'autre thème.
