@@ -6,7 +6,7 @@ On travaille **par gros blocs de bout en bout** : chacun possède une fonctionna
 
 | Bloc | Responsable | Ticket | Territoire dans le code |
 |---|---|---|---|
-| 🧱 **Socle API + Demandes des PME** | `@sowibrr` | [#17](https://github.com/algabah2004/jamii/issues/17) | `apps/api` (socle, package `demandes`), `contracts/socle.yaml`, `contracts/demandes.yaml` |
+| 🧱 **Socle API** (Demandes = une étape simple) | `@sowibrr` | [#17](https://github.com/algabah2004/jamii/issues/17) | `apps/api` (socle, package `demandes`), `contracts/socle.yaml`, `contracts/demandes.yaml` |
 | 💬 **Communautés et échanges + ossature du front** | `@Amar233-ui` | [#18](https://github.com/algabah2004/jamii/issues/18) | `apps/web` (ossature, `features/communautes`), package `communautes`, `contracts/communautes.yaml` |
 | 🎨 **Design system + Profils et coéquipiers** | `@rev22rse22` | [#19](https://github.com/algabah2004/jamii/issues/19) | `apps/web/src/design-system`, `features/profils`, package `profils`, `contracts/profils.yaml` |
 | 🤖 **IA et déploiement Systalink** | `@boubacarsidibe` | [#20](https://github.com/algabah2004/jamii/issues/20) | `services/ia`, package `deploiement`, `contracts/ia.yaml`, `contracts/deploiement.yaml`, configuration DataCloud |
