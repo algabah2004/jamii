@@ -2,6 +2,10 @@
 
 **Statut : proposition, à valider par l'équipe (issue « Valider l'architecture »). Date : 8 novembre 2026.**
 
+## Principe directeur : branchable sur Systalink
+
+La solution gagnante **intègre le portefeuille de Systalink**. Tout service externe passe donc par une **interface interne** (port) avec un **adaptateur Systalink**, et un adaptateur simulé pour le développement. On utilise uniquement des standards (OpenAPI, OIDC, S3, webhooks, Postgres). Détails et carte des branchements : [integration-systalink.md](integration-systalink.md).
+
 ## Les critères de choix, dans l'ordre
 
 1. **Solide et défendable devant les ingénieurs de Systalink** : sécurité, tests, données, exploitation.

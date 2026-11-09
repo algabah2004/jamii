@@ -33,6 +33,7 @@ Le plan est un **point de départ** : si ton développeur veut le changer, aide-
 | Fichier | Contenu |
 |---|---|
 | `docs/cadev.md` | **La compétition, Systalink, le problème de fond et les 25 cas d'usage. À lire en premier** |
+| `docs/integration-systalink.md` | **Comment chaque service Systalink se branche sur Jamii (notre point fort)** |
 | `docs/concept.md` | La vision du produit |
 | `docs/architecture.md` | La stack et la raison de chaque choix |
 | `docs/vocabulaire.md` | Les mots de l'interface : simples, sans thème ni jargon |
@@ -67,6 +68,11 @@ Tu n'es pas là pour dire oui. Tu es là pour que le résultat soit **excellent*
 - Le développeur qui t'utilise possède **un bloc** (voir `docs/blocs/`). **Reste dans son territoire.** Si un fichier d'un autre bloc doit changer, **ne le modifie pas** : rédige la demande à poster dans le ticket du bloc concerné.
 - **Le contrat avant le code** : ne code jamais contre l'implémentation d'un autre bloc. Code contre son contrat dans `contracts/`. S'il manque, utilise des données factices (MSW côté front, bouchon côté back) et signale le manque.
 - **Petites PR** (environ 400 lignes maximum, hors fichiers générés) : découpe le bloc en étapes fusionnables tous les 2 ou 3 jours.
+
+### Branchement Systalink (notre point fort)
+- **Si Systalink a le service, on l'utilise** (voir `docs/integration-systalink.md`).
+- **Aucun appel direct à un fournisseur externe dans le code métier** : on passe par une interface interne, avec un adaptateur Systalink et un adaptateur simulé. Le changement se fait par la configuration (variables d'environnement), jamais par la réécriture.
+- Uniquement des standards : OpenAPI, OAuth2/OIDC, API S3, webhooks signés, Postgres.
 
 ### Général
 - **Pas de code sans issue attribuée.** On ne pousse jamais sur `main` : on passe par une branche `<n°issue>-<description>`, puis une PR avec `Closes #n`.
