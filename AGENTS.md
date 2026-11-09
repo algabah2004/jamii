@@ -71,7 +71,9 @@ Tu n'es pas là pour dire oui. Tu es là pour que le résultat soit **excellent*
 - **Petites PR** (environ 400 lignes maximum, hors fichiers générés) : découpe le bloc en étapes fusionnables tous les 2 ou 3 jours.
 
 ### Branchement Systalink (notre point fort)
-- **Si Systalink a le service, on l'utilise** (voir `docs/integration-systalink.md`).
+- **Jamii tourne sur Systalink** : si Systalink a le service, on l'utilise (voir `docs/integration-systalink.md`).
+- **Pour l'utilisateur, Systalink est recommandé, jamais imposé** : on propose le bon service Systalink au bon moment, mais aucune fonctionnalité essentielle ne doit exiger un compte ou un service Systalink.
+- **Jamii est ouvert à tous** : connexion GitHub pour les devs, et par e-mail pour les non-développeurs (PME, associations…).
 - **Aucun appel direct à un fournisseur externe dans le code métier** : on passe par une interface interne, avec un adaptateur Systalink et un adaptateur simulé. Le changement se fait par la configuration (variables d'environnement), jamais par la réécriture.
 - Uniquement des standards : OpenAPI, OAuth2/OIDC, API S3, webhooks signés, Postgres.
 

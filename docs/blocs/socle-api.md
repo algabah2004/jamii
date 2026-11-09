@@ -12,13 +12,14 @@ Tu poses **les fondations** sur lesquelles tout se branche (API, connexion GitHu
 
 ## 📦 À livrer
 1. **Le socle** `apps/api` : monolithe modulaire (Spring Boot 3 / Java 21, ou NestJS si Java n'est pas supporté), Flyway, PostgreSQL et `/health`.
-2. **La connexion GitHub (OAuth)**, la session sécurisée, `GET /api/me`, les rôles et la limitation des requêtes.
+2. **La connexion** : GitHub (OAuth) pour les devs, et **lien de connexion par e-mail** pour les non-développeurs (PME, associations). Puis la session sécurisée, `GET /api/me`, les rôles et la limitation des requêtes.
 3. **Les conventions de l'API** (`docs/api-conventions.md`) et le **contrat du socle** (`contracts/socle.yaml`).
 4. **Les projets d'équipe** (`contracts/projets.yaml`) :
    - créer un projet depuis une **idée** ou une **demande de PME** ;
    - rôles recherchés, candidatures, formation de l'équipe ;
    - espace d'équipe : membres, tâches, jalons, statut ;
-   - **continuité** : détection d'un projet inactif, remplacement d'un membre, reprise du projet par une autre équipe.
+   - **continuité** : détection d'un projet inactif, remplacement d'un membre, reprise du projet par une autre équipe ;
+   - les **moments Systalink** de l'espace d'équipe : salle de visio SystaTalk, validation et signature de la livraison par la PME via SystaForms (des liens proposés, jamais imposés).
 5. **La page de statut publique** de Jamii (disponibilité et incidents).
 
 ## 🚀 Avancer sans attendre personne
@@ -34,7 +35,7 @@ Voir [integration-systalink.md](../integration-systalink.md).
 ## ✅ Étapes
 - [ ] `contracts/socle.yaml` + `docs/api-conventions.md` fusionnés (jours 1-2)
 - [ ] Squelette de l'API, Flyway, `/health`, job CI vert
-- [ ] OAuth GitHub, session, `GET /api/me`, rôles, tests
+- [ ] OAuth GitHub + lien de connexion par e-mail, session, `GET /api/me`, rôles, tests
 - [ ] `contracts/projets.yaml`, puis projets, rôles recherchés, candidatures, équipe
 - [ ] Espace d'équipe : tâches, jalons, statut
 - [ ] Continuité : détection d'inactivité, remplacement d'un membre, reprise

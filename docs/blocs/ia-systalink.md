@@ -17,9 +17,10 @@ Tu rends Jamii **intelligent** et tu le **branches sur Systalink** : l'**assista
    - **suggestion de coéquipiers** complémentaires ;
    - **résumé de la semaine** et **alerte** quand un projet décroche ;
    - **réponse proposée** aux questions des communautés ;
-   - résumé du profil GitHub (pour #19).
+   - résumé du profil GitHub (pour #19) ;
+   - **le bon service Systalink au bon moment** : il recommande Orion pour un besoin simple de PME, Yokk pour un agent IA, une base ou du GPU sur DataCloud, un domaine quand le projet devient sérieux. Ce sont des suggestions, jamais des obligations.
    Le tout derrière une interface `FournisseurIA` (Yokk ou autre), avec une file de tâches PostgreSQL, un cache et un repli si l'IA tombe. **L'IA propose, l'humain décide.**
-3. **La mise en ligne sur DataCloud** (`contracts/deploiement.yaml`) : automatique via l'API ou le MCP si c'est possible, sinon un parcours guidé. Un projet en ligne est **vérifié**.
+3. **La mise en ligne sur DataCloud** (`contracts/deploiement.yaml`) : automatique via l'API ou le MCP si c'est possible, sinon un parcours guidé, avec la réduction CADEV. Un projet hébergé **ailleurs** peut aussi être déclaré et vérifié (son URL répond) : Systalink est recommandé, pas obligatoire.
 4. **Jamii lui-même déployé sur DataCloud**, avec une préview par PR (plan B : serveur cloud Systalink + Docker Compose).
 
 ## 🚀 Avancer sans attendre personne

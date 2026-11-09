@@ -14,6 +14,31 @@ Les développeurs africains ont des idées, mais **les projets meurent** :
 
 (Détails et cas d'usage : [cadev.md](cadev.md).)
 
+## Deux principes qui ne se négocient pas
+
+### Ouvert à tous, sans contrainte
+Jamii est **un lieu de rassemblement des communautés tech africaines**. N'importe qui doit pouvoir l'utiliser :
+- **aucun compte Systalink n'est exigé**, ni pour s'inscrire, ni pour participer ;
+- les **développeurs** se connectent avec GitHub, et les **non-développeurs** (PME, associations, designers, étudiants) avec leur **e-mail** (lien de connexion, sans mot de passe) ;
+- un projet peut être hébergé **où l'équipe veut** : il apparaît sur le profil et dans la vitrine. Systalink est le choix le plus simple, jamais une obligation ;
+- tout ce qui est essentiel est **gratuit**.
+
+### Systalink, le bon outil au bon moment
+Jamii est aussi **le meilleur canal de clients pour Systalink**. Pas par de la publicité : en proposant **le bon service Systalink au moment exact où l'utilisateur en a besoin**, en un clic, avec les avantages CADEV.
+
+| Le moment | Ce que Jamii propose | Service Systalink |
+|---|---|---|
+| L'équipe veut mettre son projet en ligne | « Déployer sur DataCloud » en un clic, avec la réduction CADEV | **DataCloud** |
+| Le projet a besoin d'une base de données ou de fichiers | Une base PostgreSQL ou un stockage, déjà configurés | **DataCloud BDD, stockage objet** |
+| Une PME a un besoin simple (un site vitrine) | « Un site prêt en quelques minutes » avec Orion, plutôt qu'une équipe | **Orion** |
+| L'équipe veut créer un agent IA (chatbot, assistant) | Le construire avec Yokk | **Yokk** |
+| L'équipe se réunit | Une salle de visio en un clic | **SystaTalk** |
+| Le projet devient sérieux | Un nom de domaine (.sn, .ci…) et des e-mails pro | **Domaines, SystaMail** |
+| Une PME doit valider ou signer la livraison | Un formulaire de validation et de signature | **SystaForms** |
+| Le projet a besoin de GPU ou de Kubernetes | Les ressources adaptées, proposées par l'assistant | **GPU, Kubernetes** |
+
+Dans la démo, on en montre **2 ou 3** (DataCloud, Orion et Yokk). Les autres sont prévus dans l'architecture (un adaptateur chacun) et s'activent dès que le service est prêt : **aucun n'est exclu**.
+
 ## Pourquoi on gagne : 3 arguments pour le jury
 
 1. **On s'attaque au vrai problème, la continuité.** Les autres équipes feront des forums et des annuaires. Nous, on emmène un projet **de l'idée jusqu'à la mise en ligne**, et on le garde vivant après.
@@ -79,16 +104,18 @@ On les mentionne sur une diapo « Et après », sans les coder :
 
 ## Ce qu'on a écarté, et pourquoi
 
+*(Les services Systalink ne sont jamais écartés : voir « Systalink, le bon outil au bon moment ».)*
+
 | Idée | Raison |
 |---|---|
 | Mode 3G / hors ligne | Un développeur qui code, pousse et déploie a déjà une connexion correcte. Ça coûte cher pour aucun gain réel |
 | Des agents IA qui parlent ou s'engagent à la place des devs | Faux contacts et perte de contrôle. On garde « l'IA propose, l'humain décide » |
 | Le thème foot (buts, saison, championnat) | Il perdait ceux qui ne connaissent pas le foot |
-| Orion, SystaTalk et SystaForms dans le parcours | Pas d'API, ou pas gratuits. Ils alourdiraient la démo sans la renforcer |
 
 ## Nos règles produit
 
 - **Des mots simples** dans l'interface ([vocabulaire.md](vocabulaire.md)).
 - **L'IA propose, l'humain décide.** Chaque suggestion est explicable.
+- **Ouvert à tous, Systalink recommandé mais jamais imposé.**
 - **Le profil reste privé** jusqu'à ce que l'utilisateur le publie. L'IA ne lit que les données publiques de GitHub et n'écrit jamais.
 - **Branchable sur Systalink** ([integration-systalink.md](integration-systalink.md)).

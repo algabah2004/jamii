@@ -18,7 +18,7 @@ Tu es **lead technique du front** : tu poses l'ossature de l'appli que tout le m
    - discussions et « Montre ton projet » ;
    - modération (signalement, modérateurs).
 3. **La vitrine** : les projets en ligne nés sur Jamii, avec la mention « Hébergé sur Systalink ».
-4. **Le tableau de bord Systalink** : devs inscrits, projets créés, projets déployés sur DataCloud, passage vers une offre payante (agrégé et anonyme).
+4. **Le tableau de bord Systalink** : devs inscrits, projets créés, projets déployés sur DataCloud, passage vers une offre payante (agrégé et anonyme), et **l'efficacité de chaque « moment Systalink »** (service proposé → accepté : DataCloud, Orion, Yokk…). C'est la preuve chiffrée que Jamii apporte des clients.
 5. **Les tests de bout en bout** (Playwright) du parcours de la démo.
 
 ## 🚀 Avancer sans attendre personne

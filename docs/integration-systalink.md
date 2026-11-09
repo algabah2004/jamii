@@ -2,12 +2,13 @@
 
 > **Notre point fort.** La solution gagnante de la CADEV **intègre le portefeuille de Systalink**. Jamii doit donc pouvoir être **branché sur leurs services en quelques jours, sans réécriture**. Chaque bloc conçoit son code avec ça en tête.
 
-## Le principe : « Systalink d'abord, et toujours remplaçable »
+## Le principe : « Systalink partout, imposé nulle part »
 
-1. **Si Systalink a le service, on l'utilise** plutôt qu'un équivalent externe : hébergement, base de données, stockage, IA, paiement, e-mail.
-2. **Tout service externe passe par un adaptateur** : une interface interne, et une implémentation Systalink. Le code métier ne dépend jamais directement d'un fournisseur. On passe de « simulé » à « réel », ou d'un fournisseur à un autre, **en changeant la configuration**, pas le code.
-3. **Uniquement des standards** : OpenAPI, OAuth2 / OpenID Connect, API S3, webhooks signés, conteneurs, variables d'environnement, Postgres. C'est ce que leurs ingénieurs savent intégrer.
-4. **Souveraineté** : les données restent hébergées chez Systalink, à Dakar. Aucune donnée personnelle n'est envoyée à un service hors d'Afrique sans le dire clairement à l'utilisateur.
+1. **Jamii lui-même tourne sur Systalink** : hébergement, base de données, stockage, IA, e-mail. Si Systalink a le service, on l'utilise.
+2. **Pour les utilisateurs, Systalink est recommandé, jamais imposé.** Jamii propose **le bon service Systalink au bon moment** (voir le tableau « Le bon outil au bon moment » dans [concept.md](concept.md)). Personne n'a besoin d'un compte Systalink pour utiliser Jamii, et un projet hébergé ailleurs est accepté.
+3. **Tout service externe passe par un adaptateur** : une interface interne, et une implémentation Systalink. Le code métier ne dépend jamais directement d'un fournisseur. On passe de « simulé » à « réel », ou d'un fournisseur à un autre, **en changeant la configuration**, pas le code.
+4. **Uniquement des standards** : OpenAPI, OAuth2 / OpenID Connect, API S3, webhooks signés, conteneurs, variables d'environnement, Postgres. C'est ce que leurs ingénieurs savent intégrer.
+5. **Souveraineté** : les données restent hébergées chez Systalink, à Dakar. Aucune donnée personnelle n'est envoyée à un service hors d'Afrique sans le dire clairement à l'utilisateur.
 
 ```
 Code métier (modules)  ──►  Interface interne (port)  ──►  Adaptateur Systalink   (production)
@@ -23,9 +24,12 @@ Code métier (modules)  ──►  Interface interne (port)  ──►  Adaptate
 | **Stockage objet (S3)** | Avatars, fichiers des projets | `StockageFichiers` (API S3) | Socle #17 | ⏳ à tester |
 | **Yokk** | Cahiers des charges, résumés de profils, traduction | `FournisseurIA` | IA #20 | ⏳ offre gratuite à vérifier |
 | **MCP / API Systalink** | Bouton « Déployer sur Systalink » pour les projets des utilisateurs | `Deployeur` | IA #20 (phase 2) | ⚠️ `mcp.systalink.com` ne répond pas, à tester avec une clé |
-| **Orion** | Proposer un site généré par IA aux PME qui ont un besoin simple | `GenerateurSite` (lien sortant au départ) | Feuille de route | ✅ offre Free · pas d'API |
+| **Orion** | Proposer un site généré par IA aux PME qui ont un besoin simple | `GenerateurSite` (lien sortant au départ) | Assistant #20 | ✅ offre Free · pas d'API → lien sortant pré-rempli |
 | **Paxity / Mobile Money** | Paiement des missions | `Paiement` | Phase 2 | ⚠️ pas de doc publique → simulé |
-| **SystaTalk** | Visio pour les communautés et les équipes | `Visio` (lien de salle) | Feuille de route | ⚠️ essai 14 jours |
+| **SystaTalk** | Visio pour les communautés et les équipes | `Visio` (lien de salle) | Projets #17 | ⚠️ essai 14 jours → lien proposé |
+| **Yokk (pour les projets des utilisateurs)** | Proposer de créer l'agent IA d'un projet avec Yokk | `GenerateurAgent` (lien sortant) | Assistant #20 | ⏳ à tester |
+| **SystaForms** | Validation et signature de la livraison par la PME | `Signature` (lien sortant) | Projets #17 | ⚠️ suite SystaONE → lien proposé |
+| **Domaines** | Proposer un nom de domaine (.sn, .ci…) au projet en ligne | `Domaines` (lien sortant) | Assistant #20 | ⏳ à tester |
 | **SystaMail / E-mail Pro** | E-mails transactionnels (notifications) | `EnvoiEmail` (SMTP) | Socle #17 | ⏳ à tester |
 | **Observabilité DataCloud** | Journaux et métriques de Jamii | — (logs JSON sur stdout) | Socle #17 | ⏳ à configurer |
 | **Webhooks** | Être prévenu quand un déploiement réussit | `EvenementsDeploiement` | IA #20 | ⚠️ offre Professionnel → interrogation régulière en attendant |
