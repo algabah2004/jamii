@@ -12,7 +12,7 @@ On travaille **par gros blocs de bout en bout** : chacun possède une fonctionna
 | 🤖 **IA et déploiement Systalink** | `@boubacarsidibe` | [#20](https://github.com/algabah2004/jamii/issues/20) | `services/ia`, package `deploiement`, `contracts/ia.yaml`, `contracts/deploiement.yaml`, configuration DataCloud |
 | 🧭 **Chef de projet, produit et démo** | `@algabah2004` | #1, #10 | Revue de toutes les PR, intégration entre les blocs, entretiens utilisateurs, démo |
 
-Chaque ticket de bloc contient : le **but**, ce qu'il faut **livrer**, **comment avancer sans attendre**, les **étapes**, un **prompt de démarrage pour ton agent IA** et les critères de **fin**.
+Le **plan de chaque bloc** est dans [`docs/blocs/`](blocs/README.md). C'est un **point de départ** que son responsable réécrit à sa façon. Seuls le **but** et le critère **« terminé quand »** sont fixés par le chef de projet. Les tickets GitHub servent au suivi au jour le jour.
 
 ## Les 5 règles du travail en parallèle
 
