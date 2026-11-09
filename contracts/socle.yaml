@@ -1,0 +1,332 @@
+openapi: 3.1.0
+info:
+  title: Jamii · Socle
+  version: 0.1.0
+  summary: Connexion, utilisateur connecté, santé et schémas communs à tous les contrats.
+  description: |
+    Responsable : @sowibrr (bloc Socle, #17). Règles communes : docs/api-conventions.md.
+    Les autres contrats référencent les schémas d'ici, par exemple
+    `$ref: './socle.yaml#/components/schemas/Erreur'`.
+servers:
+  - url: http://localhost:8080
+    description: Développement local (docker compose)
+
+security:
+  - session: []
+
+tags:
+  - name: connexion
+    description: Connexion GitHub (développeurs) ou par lien envoyé par e-mail (tout le monde).
+  - name: moi
+    description: Le compte de l'utilisateur connecté et ses droits sur ses données.
+  - name: exploitation
+    description: Sondes de santé pour DataCloud et la page de statut.
+
+paths:
+  /health:
+    get:
+      tags: [exploitation]
+      operationId: sante
+      summary: État de l'API et de sa base de données (sonde DataCloud et page de statut)
+      security: []
+      responses:
+        '200':
+          description: L'API répond et la base est joignable.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Sante' }
+        '503':
+          description: L'API répond mais une dépendance indispensable est hors service.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Sante' }
+
+  /api/auth/github:
+    get:
+      tags: [connexion]
+      operationId: connexionGithub
+      summary: Démarre la connexion GitHub (le navigateur suit la redirection)
+      description: Permissions demandées à GitHub, au minimum `read:user` et `user:email`.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/Retour'
+      responses:
+        '302':
+          description: Redirection vers la page d'autorisation de GitHub (avec un `state` anti-CSRF).
+        '429': { $ref: '#/components/responses/TropDeRequetes' }
+
+  /api/auth/github/retour:
+    get:
+      tags: [connexion]
+      operationId: retourGithub
+      summary: Adresse de retour déclarée dans l'application OAuth GitHub
+      description: |
+        Appelée par le navigateur au retour de GitHub, jamais par le front directement.
+        En cas de succès, ouvre une session neuve (nouvel identifiant, contre la fixation de session).
+      security: []
+      parameters:
+        - { name: code, in: query, required: true, schema: { type: string } }
+        - { name: state, in: query, required: true, schema: { type: string } }
+      responses:
+        '302':
+          description: |
+            Succès : redirection vers `retour` (ou `/`) et cookie `JAMII_SESSION` posé.
+            Échec (refus, `state` invalide, GitHub indisponible) : redirection vers
+            `/connexion?erreur=<code>`, avec `code` parmi `refus_github`, `github_indisponible`, `requete_invalide`.
+        '429': { $ref: '#/components/responses/TropDeRequetes' }
+
+  /api/auth/lien-email:
+    post:
+      tags: [connexion]
+      operationId: demanderLienEmail
+      summary: Envoie un lien de connexion par e-mail (sans mot de passe)
+      description: |
+        Répond toujours `202`, que l'adresse soit inscrite ou non, pour ne pas révéler qui utilise Jamii.
+        Le lien ouvre la page du front `/connexion/email?jeton=…`, qui appelle ensuite la confirmation.
+        Le lien ne connecte donc pas sur un simple `GET` : les antivirus de messagerie qui ouvrent les
+        liens à l'avance ne peuvent pas le consommer.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DemandeLienEmail' }
+      responses:
+        '202': { description: Demande prise en compte. Un e-mail part si l'adresse est valide. }
+        '400': { $ref: '#/components/responses/Invalide' }
+        '429': { $ref: '#/components/responses/TropDeRequetes' }
+
+  /api/auth/lien-email/confirmation:
+    post:
+      tags: [connexion]
+      operationId: confirmerLienEmail
+      summary: Échange le jeton du lien contre une session
+      description: |
+        Jeton à usage unique, valable 15 minutes, stocké haché en base. À la première confirmation
+        d'une adresse inconnue, le compte est créé avec le rôle `membre`.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ConfirmationLienEmail' }
+      responses:
+        '204':
+          description: Connecté. Cookie `JAMII_SESSION` posé sur une session neuve.
+          headers:
+            Set-Cookie: { schema: { type: string } }
+        '400':
+          description: Jeton inconnu, déjà utilisé ou expiré (`code` = `lien_invalide`). On ne précise pas lequel.
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Erreur' }
+        '429': { $ref: '#/components/responses/TropDeRequetes' }
+
+  /api/auth/deconnexion:
+    post:
+      tags: [connexion]
+      operationId: deconnexion
+      summary: Ferme la session côté serveur et efface le cookie
+      security:
+        - session: []
+          csrf: []
+      responses:
+        '204': { description: Déconnecté. }
+        '401': { $ref: '#/components/responses/NonConnecte' }
+
+  /api/me:
+    get:
+      tags: [moi]
+      operationId: moi
+      summary: L'utilisateur connecté
+      description: Le front l'appelle au démarrage. `401` signifie « afficher l'accueil non connecté ».
+      responses:
+        '200':
+          description: L'utilisateur connecté.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Moi' }
+        '401': { $ref: '#/components/responses/NonConnecte' }
+    delete:
+      tags: [moi]
+      operationId: supprimerMonCompte
+      summary: Supprime mon compte et mes données personnelles
+      description: |
+        La session est fermée tout de suite. Chaque module efface ou anonymise ensuite ses données
+        (tâche de fond). Les contenus utiles aux autres (réponses acceptées) restent, signés « compte supprimé ».
+      security:
+        - session: []
+          csrf: []
+      responses:
+        '202': { description: Suppression lancée. }
+        '401': { $ref: '#/components/responses/NonConnecte' }
+
+  /api/me/export:
+    get:
+      tags: [moi]
+      operationId: exporterMesDonnees
+      summary: Télécharge toutes mes données personnelles (JSON)
+      description: Chaque module ajoute sa section. Limité à 5 exports par jour.
+      responses:
+        '200':
+          description: Export complet, en pièce jointe.
+          headers:
+            Content-Disposition: { schema: { type: string, examples: ['attachment; filename="jamii-export.json"'] } }
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '401': { $ref: '#/components/responses/NonConnecte' }
+        '429': { $ref: '#/components/responses/TropDeRequetes' }
+
+components:
+  securitySchemes:
+    session:
+      type: apiKey
+      in: cookie
+      name: JAMII_SESSION
+      description: Cookie de session HttpOnly, Secure, SameSite=Lax.
+    csrf:
+      type: apiKey
+      in: header
+      name: X-XSRF-TOKEN
+      description: Valeur du cookie `XSRF-TOKEN`, obligatoire sur POST, PUT, PATCH et DELETE.
+
+  parameters:
+    Curseur:
+      name: curseur
+      in: query
+      description: Valeur opaque reçue dans `curseurSuivant`. Absent pour la première page.
+      schema: { type: string, maxLength: 512 }
+    Limite:
+      name: limite
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+    Retour:
+      name: retour
+      in: query
+      description: Chemin du front où revenir après la connexion. Chemin relatif uniquement (pas de redirection ouverte).
+      schema: { $ref: '#/components/schemas/CheminRetour' }
+
+  headers:
+    RetryAfter:
+      description: Nombre de secondes à attendre avant de réessayer.
+      schema: { type: integer, minimum: 1 }
+
+  responses:
+    Invalide:
+      description: Entrée invalide (`code` = `validation`, détail dans `erreurs`).
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Erreur' }
+    NonConnecte:
+      description: Pas connecté ou session expirée (`code` = `non_connecte`).
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Erreur' }
+    Interdit:
+      description: Connecté mais sans le droit nécessaire, ou jeton CSRF absent (`code` = `interdit`).
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Erreur' }
+    Introuvable:
+      description: Ressource inexistante ou que l'utilisateur n'a pas le droit de voir (`code` = `introuvable`).
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Erreur' }
+    Conflit:
+      description: Doublon, état incompatible ou `modification_concurrente`.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Erreur' }
+    TropDeRequetes:
+      description: Limite atteinte (`code` = `trop_de_requetes`).
+      headers:
+        Retry-After: { $ref: '#/components/headers/RetryAfter' }
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Erreur' }
+
+  schemas:
+    Erreur:
+      type: object
+      description: Problem Details (RFC 9457). Le front se base sur `code`, jamais sur `title`.
+      required: [type, title, status, code]
+      properties:
+        type: { type: string, format: uri, examples: ['urn:jamii:erreur:validation'] }
+        title: { type: string, description: 'Résumé lisible, pour le débogage.' }
+        status: { type: integer, minimum: 400, maximum: 599 }
+        detail: { type: string }
+        instance: { type: string, description: Chemin de la requête. }
+        code: { type: string, pattern: '^[a-z][a-z0-9_]*$', examples: [validation, introuvable] }
+        traceId: { type: string, description: Identifiant à retrouver dans les journaux. }
+        erreurs:
+          type: array
+          items: { $ref: '#/components/schemas/ErreurChamp' }
+
+    ErreurChamp:
+      type: object
+      required: [champ, code]
+      properties:
+        champ: { type: string, description: 'Chemin du champ, par exemple `roles[0].titre`.' }
+        code: { type: string, examples: [obligatoire, trop_court, format_invalide] }
+
+    Page:
+      type: object
+      description: |
+        Base de toute liste paginée. Un contrat l'étend ainsi :
+        `allOf: [{ $ref: './socle.yaml#/components/schemas/Page' }, { properties: { elements: { items: { $ref: … } } } }]`
+      required: [elements, curseurSuivant]
+      properties:
+        elements: { type: array, items: {} }
+        curseurSuivant: { type: [string, 'null'], description: '`null` à la dernière page.' }
+
+    Role:
+      type: string
+      enum: [membre, moderateur, admin]
+
+    Moi:
+      type: object
+      required: [id, nom, roles, methodesConnexion, creeLe]
+      properties:
+        id: { type: string, format: uuid }
+        nom: { type: string, maxLength: 100 }
+        email: { type: [string, 'null'], format: email, description: Visible uniquement par l'utilisateur lui-même. }
+        avatarUrl: { type: [string, 'null'], format: uri }
+        loginGithub: { type: [string, 'null'], description: '`null` pour un compte créé par e-mail.' }
+        methodesConnexion:
+          type: array
+          items: { type: string, enum: [github, email] }
+          minItems: 1
+        roles:
+          type: array
+          items: { $ref: '#/components/schemas/Role' }
+          minItems: 1
+        creeLe: { type: string, format: date-time }
+
+    DemandeLienEmail:
+      type: object
+      required: [email]
+      additionalProperties: false
+      properties:
+        email: { type: string, format: email, maxLength: 254 }
+        retour: { $ref: '#/components/schemas/CheminRetour' }
+
+    CheminRetour:
+      type: string
+      description: Chemin relatif du front (commence par un seul `/`), contre les redirections ouvertes.
+      pattern: '^/(?!/)[^\s\\]*$'
+      maxLength: 512
+      default: /
+
+    ConfirmationLienEmail:
+      type: object
+      required: [jeton]
+      additionalProperties: false
+      properties:
+        jeton: { type: string, minLength: 32, maxLength: 128 }
+
+    Sante:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [UP, DOWN], description: Format de Spring Boot Actuator. }
