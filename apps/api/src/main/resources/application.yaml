@@ -1,14 +1,12 @@
-# Toute la configuration passe par des variables d'environnement (DataCloud, CI).
-# En local, le fichier .env à la racine du dépôt est lu s'il existe (voir .env.example).
+# Toute la configuration passe par des variables d'environnement (DataCloud, CI) : voir .env.example.
 spring:
   application:
     name: jamii-api
-  config:
-    import: optional:file:../../.env[.properties]
   datasource:
-    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:jamii}
+    # sslmode : « prefer » en local (pas de TLS dans docker compose), « require » ou « verify-full » en production.
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:jamii}?sslmode=${POSTGRES_SSLMODE:prefer}
     username: ${POSTGRES_USER:jamii}
-    # Pas de valeur par défaut : un mot de passe ne vit que dans .env ou l'environnement.
+    # Pas de valeur par défaut : un mot de passe ne vit que dans l'environnement.
     password: ${POSTGRES_PASSWORD}
   jpa:
     # Le schéma appartient à Flyway : Hibernate vérifie, il ne modifie jamais.
@@ -16,11 +14,18 @@ spring:
       ddl-auto: validate
     # Pas de requête SQL cachée pendant le rendu de la réponse.
     open-in-view: false
-  flyway:
-    locations: classpath:db/migration
+  # En local uniquement (./mvnw spring-boot:run) : Spring Boot lance le PostgreSQL de docker-compose.yml
+  # et s'y connecte tout seul. docker compose lit lui-même le .env de la racine.
+  # Ce module n'est pas embarqué dans le jar de production, ni actif pendant les tests.
+  docker:
+    compose:
+      file: ../../docker-compose.yml
+      # La base est partagée avec le service IA : l'arrêt de l'API ne l'arrête pas.
+      lifecycle-management: start-only
 
 server:
-  port: ${API_PORT:8080}
+  # PORT : port imposé par la plateforme d'hébergement, s'il y en a un. API_PORT : choix local.
+  port: ${PORT:${API_PORT:8080}}
 
 # Seule la santé est exposée, sur /health (contrat : contracts/socle.yaml).
 # /health/liveness et /health/readiness servent de sondes à DataCloud.
@@ -35,3 +40,8 @@ management:
       show-details: never
       probes:
         enabled: true
+      group:
+        # Sans base, l'API ne peut rien servir : elle n'est pas « prête ».
+        # La liveness, elle, ne dépend pas de la base (inutile de redémarrer l'API si la base tombe).
+        readiness:
+          include: readinessState,db

@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.health.actuate.endpoint.HealthEndpointGroups;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
@@ -22,6 +23,9 @@ class SanteTest {
 	@Autowired
 	JdbcTemplate jdbc;
 
+	@Autowired
+	HealthEndpointGroups groupes;
+
 	@Test
 	void health_repond_up_sans_details_internes() {
 		assertThat(mvc.get().uri("/health"))
@@ -35,6 +39,12 @@ class SanteTest {
 	void sondes_datacloud_disponibles() {
 		assertThat(mvc.get().uri("/health/liveness")).hasStatusOk();
 		assertThat(mvc.get().uri("/health/readiness")).hasStatusOk();
+	}
+
+	@Test
+	void readiness_depend_de_la_base_mais_pas_la_liveness() {
+		assertThat(groupes.get("readiness").isMember("db")).isTrue();
+		assertThat(groupes.get("liveness").isMember("db")).isFalse();
 	}
 
 	@Test

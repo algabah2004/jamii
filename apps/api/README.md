@@ -10,13 +10,16 @@ Prérequis : **Java 21 ou plus** et **Docker**. Maven est fourni (`./mvnw`).
 
 ```bash
 cp .env.example .env              # à la racine du dépôt (une seule fois)
-docker compose up -d --wait postgres
 cd apps/api
 ./mvnw spring-boot:run            # sous Windows (cmd/PowerShell) : mvnw.cmd spring-boot:run
 curl localhost:8080/health        # {"status":"UP",…}
 ```
 
-L'API lit le `.env` de la racine du dépôt. Si un port est déjà pris sur ta machine, change `POSTGRES_PORT` ou `API_PORT` dans `.env`.
+`spring-boot:run` démarre tout seul le PostgreSQL de `docker-compose.yml` (s'il ne tourne pas déjà) et s'y connecte. Tu n'as rien à configurer côté API. À l'arrêt de l'API, la base reste allumée, car le service IA l'utilise aussi.
+
+- **Port 5432 déjà pris** : change `POSTGRES_PORT` dans `.env`. docker compose le lit, et l'API trouve le bon port toute seule.
+- **Port 8080 déjà pris** : `API_PORT=18080 ./mvnw spring-boot:run` (PowerShell : `$env:API_PORT=18080; .\mvnw.cmd spring-boot:run`).
+- **Depuis un IDE** : lance `ApiApplication` avec `apps/api` comme dossier de travail, pour qu'il trouve `../../docker-compose.yml`.
 
 ## Tester
 
@@ -24,7 +27,7 @@ L'API lit le `.env` de la racine du dépôt. Si un port est déjà pris sur ta m
 ./mvnw verify
 ```
 
-Les tests démarrent une **vraie base PostgreSQL 16** dans Docker (Testcontainers). Docker doit donc tourner. Aucune base locale n'est nécessaire.
+Les tests démarrent une **vraie base PostgreSQL** dans Docker (Testcontainers), avec la même image que `docker-compose.yml`. Docker doit donc tourner. Aucune base locale n'est nécessaire.
 
 ## Configuration
 
@@ -33,8 +36,11 @@ Tout passe par des variables d'environnement (voir [`.env.example`](../../.env.e
 | Variable | Rôle | Défaut |
 |---|---|---|
 | `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_DB`, `POSTGRES_USER` | Connexion à la base | `localhost`, `5432`, `jamii`, `jamii` |
-| `POSTGRES_PASSWORD` | Mot de passe de la base | **aucun** : l'API refuse de démarrer sans |
-| `API_PORT` | Port d'écoute | `8080` |
+| `POSTGRES_PASSWORD` | Mot de passe de la base | **aucun** : pas de mot de passe dans le code |
+| `POSTGRES_SSLMODE` | Chiffrement de la connexion (`require` ou `verify-full` en production) | `prefer` |
+| `PORT`, puis `API_PORT` | Port d'écoute. `PORT` est celui qu'impose l'hébergeur, s'il y en a un | `8080` |
+
+En local, `./mvnw spring-boot:run` n'a besoin d'aucune de ces variables : la connexion vient de docker compose. Elles servent au déploiement.
 
 ## Santé
 
@@ -42,7 +48,7 @@ Tout passe par des variables d'environnement (voir [`.env.example`](../../.env.e
 |---|---|
 | `GET /health` | État global. `503` si la base est injoignable. Aucun détail interne exposé |
 | `GET /health/liveness` | Le processus vit. Reste `UP` si la base tombe : inutile de redémarrer l'API pour ça |
-| `GET /health/readiness` | Prêt à recevoir du trafic |
+| `GET /health/readiness` | Prêt à recevoir du trafic. `503` si la base est injoignable |
 
 Aucun autre endpoint Actuator n'est exposé.
 

@@ -11,3 +11,8 @@ updates:
     directory: /apps/api
     schedule:
       interval: weekly
+    groups:
+      # Spring Boot et Spring Modulith doivent monter ensemble, dans une seule PR.
+      spring:
+        patterns:
+          - "org.springframework*"

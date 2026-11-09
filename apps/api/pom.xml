@@ -16,6 +16,7 @@
 
 	<properties>
 		<java.version>21</java.version>
+		<!-- À monter en même temps que Spring Boot (groupe « spring » dans .github/dependabot.yml) -->
 		<spring-modulith.version>2.1.1</spring-modulith.version>
 	</properties>
 
@@ -49,10 +50,11 @@
 			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
 		</dependency>
-		<!-- Frontières entre modules (auth, projets, communautés…) : vérifiées par ModulesTest -->
+		<!-- Développement local uniquement : lance PostgreSQL via docker-compose.yml. Exclu du jar de production. -->
 		<dependency>
-			<groupId>org.springframework.modulith</groupId>
-			<artifactId>spring-modulith-starter-core</artifactId>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-docker-compose</artifactId>
+			<optional>true</optional>
 		</dependency>
 
 		<dependency>
@@ -90,6 +92,7 @@
 			<artifactId>testcontainers-postgresql</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<!-- Frontières entre modules (auth, projets, communautés…) : vérifiées par ModulesTest -->
 		<dependency>
 			<groupId>org.springframework.modulith</groupId>
 			<artifactId>spring-modulith-starter-test</artifactId>
