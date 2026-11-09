@@ -20,6 +20,7 @@ Des mots simples, sans jargon : voir [docs/vocabulaire.md](docs/vocabulaire.md).
 
 ## Documentation
 
+- [docs/cadev.md](docs/cadev.md) : **la compétition, Systalink, le problème à résoudre et les cas d'usage. À lire en premier.**
 - [docs/concept.md](docs/concept.md) : la vision complète du produit.
 - [docs/vocabulaire.md](docs/vocabulaire.md) : les mots à utiliser dans l'interface.
 - [docs/systalink-services.md](docs/systalink-services.md) : les services Systalink testés, ce qui est gratuit et ce qui ne l'est pas.
@@ -29,7 +30,6 @@ Des mots simples, sans jargon : voir [docs/vocabulaire.md](docs/vocabulaire.md).
 - [docs/propositions/](docs/propositions/README.md) : **propose et améliore les idées** (Discussions, ou proposition écrite).
 - [AGENTS.md](AGENTS.md) : les consignes de réflexion pour les agents IA (Claude, Codex, Cursor…), à lire aussi par les humains.
 - [CONTRIBUTING.md](CONTRIBUTING.md) : **à lire avant de coder.** On y explique comment prendre une tâche, créer une branche et ouvrir une PR.
-- [docs/presentation.html](docs/presentation.html) : la présentation animée (à ouvrir dans un navigateur).
 
 ## Équipe
 
