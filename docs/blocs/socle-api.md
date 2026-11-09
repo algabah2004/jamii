@@ -22,6 +22,11 @@ Tu poses **les fondations sur lesquelles tous les autres blocs se branchent** : 
 - **Jour 1** : écris `contracts/socle.yaml` et `docs/api-conventions.md`, puis fusionne-les. Les autres peuvent alors brancher leurs données factices dessus.
 - En attendant le résultat de #3 (Java sur DataCloud ?), développe en local avec `docker compose`. Le choix Spring ou NestJS ne bloque ni le contrat ni le modèle de données.
 
+## 🔌 Branchement Systalink
+Voir [integration-systalink.md](../integration-systalink.md).
+- Interfaces `StockageFichiers` (S3), `EnvoiEmail` (SMTP) et `FournisseurIdentite` (OIDC : GitHub d'abord, « Se connecter avec Systalink » ensuite, sans réécriture).
+- PostgreSQL géré et observabilité DataCloud. Toute la configuration par variables d'environnement.
+
 ## ✅ Étapes
 - [ ] `contracts/socle.yaml` et `docs/api-conventions.md` fusionnés (jour 1-2)
 - [ ] Squelette de l'API, migrations Flyway, `/health`, job CI vert

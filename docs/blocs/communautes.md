@@ -24,6 +24,11 @@ Tu construis **le cœur du thème de la CADEV, la « plateforme d'échange »**.
 - Le front tourne **sur des données factices (MSW)** générées depuis ton contrat. Tu n'attends pas l'API.
 - Ton backend vit dans son propre package `communautes`. Il ne dépend du socle de @sowibrr que pour l'utilisateur connecté, à simuler en attendant.
 
+## 🔌 Branchement Systalink
+Voir [integration-systalink.md](../integration-systalink.md).
+- Interface `Visio` : les salons et les événements de communauté génèrent un lien **SystaTalk** (simulé tant que l'essai n'est pas ouvert).
+- Le front est **brandable** (nom, logo et couleurs depuis la configuration), pour devenir un produit Systalink.
+
 ## ✅ Étapes
 - [ ] Ossature `apps/web` fusionnée (jour 1-2) : routage, mise en page, i18n, MSW, CI
 - [ ] Spec 0002 : étude de Discord, Stack Overflow, Dev.to et GitHub Discussions, parcours, cas limites (spam, langue, abus)

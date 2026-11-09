@@ -25,6 +25,11 @@ Tu rends Jamii **intelligent** et tu le **branches sur le cloud Systalink**. C'e
 - Le service IA est **indépendant** : il a sa propre API (`contracts/ia.yaml`), et tu le testes seul avec des exemples.
 - Le contrat de déploiement peut être écrit avant même que le MCP fonctionne.
 
+## 🔌 Branchement Systalink
+Voir [integration-systalink.md](../integration-systalink.md).
+- Tu es le **référent Systalink** de l'équipe : tu tiens `docs/integration-systalink.md` à jour (statut de chaque service).
+- Interfaces `FournisseurIA` (Yokk), `Deployeur` (MCP/API DataCloud), `GenerateurSite` (Orion) et `EvenementsDeploiement` (webhooks), chacune avec un adaptateur simulé.
+
 ## ✅ Étapes
 - [ ] Compte Systalink créé, hello world **Spring Boot** et **FastAPI** déployés sur DataCloud, résultat publié (jour 1-3)
 - [ ] Préview par PR vérifiée, base PostgreSQL gérée testée (sauvegardes ?)

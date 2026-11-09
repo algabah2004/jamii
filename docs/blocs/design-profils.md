@@ -23,6 +23,11 @@ Tu donnes **son identité visuelle** à Jamii. C'est la première chose que le j
 - Dès que l'ossature de `apps/web` est fusionnée (Amar, jour 1-2), tu y ajoutes le design system.
 - Tes écrans de profil tournent sur des **données factices (MSW)** générées depuis ton contrat. La génération par IA viendra du bloc de @boubacarsidibe, à simuler en attendant.
 
+## 🔌 Branchement Systalink
+Voir [integration-systalink.md](../integration-systalink.md).
+- Le design system est **brandable** (les tokens pilotent nom, logo et couleurs) : Systalink doit pouvoir appliquer sa charte en changeant les tokens.
+- Le profil peut afficher « Projets en ligne sur Systalink » (données du bloc #20).
+
 ## ✅ Étapes
 - [ ] Maquettes des écrans clés, validées par le chef de projet (lien en commentaire)
 - [ ] Design tokens et composants de base dans `apps/web`, page de démonstration des composants

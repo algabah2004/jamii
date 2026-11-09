@@ -31,6 +31,7 @@
 - **Le jury, ce sont des ingénieurs cloud.** Ils jugeront la solidité : sécurité, architecture, tests, exploitation. Pas seulement la démo.
 - **Le gagnant devient un produit Systalink.** Il faut donc un produit **crédible à exploiter**, et pas un prototype jetable. Il doit s'intégrer à leur écosystème : DataCloud, Yokk, Orion…
 - **Il y a aussi un vote du public** : il faut que des développeurs aient envie de l'utiliser et de le partager.
+- **Notre point fort : Jamii est conçu pour se brancher directement sur l'écosystème Systalink** (voir [integration-systalink.md](integration-systalink.md)).
 - Notre hypothèse, cohérente avec leur communication mais pas officielle : Systalink veut **faire venir des développeurs sur son cloud**. Chaque fonctionnalité qui fait découvrir et utiliser DataCloud est un plus.
 
 ## Le problème de fond
