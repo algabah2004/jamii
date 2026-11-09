@@ -51,7 +51,7 @@ Un indice : `api.systalink.com` renvoie le message d'erreur par défaut de **Spr
 | **Vue 3 + TypeScript + Vite** | @Amar233-ui maîtrise Vue et TypeScript. Le client API est **généré depuis le contrat OpenAPI**, donc le front et le back ne peuvent pas diverger | React : personne ne le pratique dans l'équipe |
 | **Service IA séparé en Python** | L'écosystème IA est en Python et @boubacarsidibe le maîtrise. Il est isolé : une panne ou une lenteur de l'IA ne bloque jamais l'API | IA dans l'API Java : mélange les rythmes (des appels lents bloqueraient les requêtes) |
 | **PostgreSQL** | Recommandé par la doc DataCloud. Transactions, JSON, recherche plein texte. Il sert aussi de **file de tâches** (`SELECT … FOR UPDATE SKIP LOCKED`), ce qui évite d'ajouter Redis ou RabbitMQ | MongoDB : nos données sont relationnelles (membres ↔ équipes ↔ projets) |
-| **Connexion avec GitHub (OAuth)** | Pas d'OAuth Systalink public. Tous nos utilisateurs ont GitHub, et le profil est généré à partir de GitHub | Inscription par e-mail et mot de passe : plus de risques et de code |
+| **Connexion GitHub (OAuth) pour les devs + lien par e-mail pour les autres** | Pas d'OAuth Systalink public. Le profil d'un dev est généré depuis GitHub. Les PME et les non-développeurs se connectent par un **lien envoyé par e-mail** (sans mot de passe) | Mot de passe : plus de risques (fuites, réinitialisations) et plus de code |
 
 ## Les garanties de solidité (ce que le jury va vérifier)
 
