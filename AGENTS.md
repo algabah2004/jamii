@@ -34,6 +34,7 @@ Le plan est un **point de départ** : si ton développeur veut le changer, aide-
 |---|---|
 | `docs/cadev.md` | **La compétition, Systalink, le problème de fond et les 25 cas d'usage. À lire en premier** |
 | `docs/integration-systalink.md` | **Comment chaque service Systalink se branche sur Jamii (notre point fort)** |
+| `docs/idees-sources.md` | **Les 4 pistes de départ de l'équipe et les idées fortes encore à décider** |
 | `docs/concept.md` | La vision du produit |
 | `docs/architecture.md` | La stack et la raison de chaque choix |
 | `docs/vocabulaire.md` | Les mots de l'interface : simples, sans thème ni jargon |

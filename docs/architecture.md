@@ -78,6 +78,10 @@ Un indice : `api.systalink.com` renvoie le message d'erreur par défaut de **Spr
 - Si l'IA tombe, l'appli reste utilisable : la tâche est remise en file, et l'utilisateur peut écrire son texte lui-même en attendant.
 - Les résultats de l'IA sont mis en cache pour maîtriser les coûts (règle « on n'appelle l'IA que si c'est utile »).
 
+## Plan B d'hébergement
+
+Si DataCloud (serverless) n'accepte pas Java, ou pose problème, on passe à la piste de la présentation de Boubacar : **un serveur cloud Systalink à Dakar avec Docker Compose** (Nginx, API, PostgreSQL et service IA). Ça reste 100 % Systalink. Voir [idees-sources.md](idees-sources.md).
+
 ## À valider avant de coder
 
 1. **DataCloud accepte-t-il Java et Python ?** C'est le test n°1 : déployer un hello world Spring Boot et un hello world FastAPI. **Si Java n'est pas supporté**, on passe l'API en **NestJS (TypeScript)**, avec la même architecture.

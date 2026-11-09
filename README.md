@@ -22,6 +22,7 @@ Des mots simples, sans jargon : voir [docs/vocabulaire.md](docs/vocabulaire.md).
 
 - [docs/cadev.md](docs/cadev.md) : **la compétition, Systalink, le problème à résoudre et les cas d'usage. À lire en premier.**
 - [docs/integration-systalink.md](docs/integration-systalink.md) : **comment Jamii se branche sur l'écosystème Systalink (notre point fort)**.
+- [docs/idees-sources.md](docs/idees-sources.md) : les pistes de départ (Tech Tontine, Mbokk, présentation de Boubacar) et les idées fortes à décider.
 - [docs/concept.md](docs/concept.md) : la vision complète du produit.
 - [docs/vocabulaire.md](docs/vocabulaire.md) : les mots à utiliser dans l'interface.
 - [docs/systalink-services.md](docs/systalink-services.md) : les services Systalink testés, ce qui est gratuit et ce qui ne l'est pas.
