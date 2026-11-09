@@ -1,0 +1,10 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+  # À activer quand les apps existeront :
+  # - package-ecosystem: npm     (apps/web)
+  # - package-ecosystem: maven   (apps/api)
+  # - package-ecosystem: pip     (services/ia)

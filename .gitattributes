@@ -1,0 +1,8 @@
+# Fins de ligne LF partout, même depuis Windows. Sinon les scripts shell cassent sous WSL et les diffs deviennent illisibles.
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.png binary
+*.jpg binary
+*.pdf binary
+*.pptx binary

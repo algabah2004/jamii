@@ -3,12 +3,14 @@
 | Rôle | Personne (pseudo GitHub) | Responsabilités |
 |---|---|---|
 | **Chef de projet** (lead) | `@algabah2004` | Priorise le travail, crée et attribue les tâches, valide toutes les PR, gère la relation avec Systalink et la démo finale |
-| **Frontend** | `@Amar233-ui` | Interface web, design system, parcours utilisateur |
-| **Backend** | `@sowibrr` | API, base de données, authentification GitHub, logique des communautés et des demandes |
+| **Lead technique frontend** + **responsable de la fonctionnalité « Communautés et échanges »** | `@Amar233-ui` | Architecture du front (Vue), routage, état, client API généré, connexion GitHub côté front, performance en 3G, traduction, tests de bout en bout. Il porte **de bout en bout** les Communautés, le cœur de la « plateforme d'échange » : spécification, front, et coordination avec le backend |
+| **Design et interface (UI)** | `@rev22rse22` | Identité visuelle, maquettes, design system, composants Vue, parcours utilisateur, accessibilité |
+| **Backend** | `@sowibrr` | API, base de données, authentification GitHub, logique métier (communautés, demandes, projets) |
 | **IA et intégrations Systalink** | `@boubacarsidibe` | Yokk, MCP et API Systalink, déploiement DataCloud, génération des profils et des cahiers des charges |
-| **Design, produit et démo** | `@rev22rse22` | Maquettes, textes de l'interface, tests avec de vrais utilisateurs, script et vidéo de la démo |
 
-> Remplace `@algabah2004`, `@Amar233-ui`… par les vrais pseudos GitHub, ici et dans `scripts/equipe.conf`.
+Le **chef de projet** porte aussi le produit : entretiens utilisateurs, script et vidéo de la démo, avec l'aide de toute l'équipe.
+
+> Mise à jour du 9 novembre 2026 : rev22rse22 prend le design et l'interface. Amar233-ui devient lead technique du frontend et responsable de la fonctionnalité Communautés. Le chef de projet reprend le produit et la démo.
 
 ## Rituels
 

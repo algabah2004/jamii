@@ -10,3 +10,11 @@ __pycache__/
 .venv/
 .DS_Store
 *:Zone.Identifier
+
+# Outils et build
+*.log
+.idea/
+.vscode/
+target/
+coverage/
+.pytest_cache/

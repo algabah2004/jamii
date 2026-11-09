@@ -1,0 +1,7 @@
+# Règles gitleaks par défaut, plus les exceptions documentées ci-dessous.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Valeurs de développement local, publiques et sans risque"
+paths = ['''^\.env\.example$''', '''^docker-compose\.yml$''']
