@@ -1,0 +1,37 @@
+# Toute la configuration passe par des variables d'environnement (DataCloud, CI).
+# En local, le fichier .env à la racine du dépôt est lu s'il existe (voir .env.example).
+spring:
+  application:
+    name: jamii-api
+  config:
+    import: optional:file:../../.env[.properties]
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:jamii}
+    username: ${POSTGRES_USER:jamii}
+    # Pas de valeur par défaut : un mot de passe ne vit que dans .env ou l'environnement.
+    password: ${POSTGRES_PASSWORD}
+  jpa:
+    # Le schéma appartient à Flyway : Hibernate vérifie, il ne modifie jamais.
+    hibernate:
+      ddl-auto: validate
+    # Pas de requête SQL cachée pendant le rendu de la réponse.
+    open-in-view: false
+  flyway:
+    locations: classpath:db/migration
+
+server:
+  port: ${API_PORT:8080}
+
+# Seule la santé est exposée, sur /health (contrat : contracts/socle.yaml).
+# /health/liveness et /health/readiness servent de sondes à DataCloud.
+management:
+  endpoints:
+    web:
+      base-path: /
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
