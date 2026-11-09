@@ -1,0 +1,22 @@
+# Services locaux de développement. Lancer : docker compose up -d
+# Les applications (web, api, ia) seront ajoutées ici quand leur stack sera validée (#6).
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-jamii}
+      POSTGRES_USER: ${POSTGRES_USER:-jamii}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-jamii_dev_only}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-jamii} -d ${POSTGRES_DB:-jamii}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:
