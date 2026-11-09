@@ -46,7 +46,9 @@ paths:
       tags: [connexion]
       operationId: connexionGithub
       summary: Démarre la connexion GitHub (le navigateur suit la redirection)
-      description: Permissions demandées à GitHub, au minimum `read:user` et `user:email`.
+      description: |
+        Permission demandée à GitHub : `read:user` uniquement. `user:email` ne sera demandée que pour
+        rattacher une adresse vérifiée. L'e-mail public du profil GitHub n'est jamais utilisé.
       security: []
       parameters:
         - $ref: '#/components/parameters/Retour'
@@ -127,12 +129,12 @@ paths:
       tags: [connexion]
       operationId: deconnexion
       summary: Ferme la session côté serveur et efface le cookie
+      description: Idempotent. Répond `204` même sans session ouverte, mais le jeton CSRF reste obligatoire.
       security:
-        - session: []
-          csrf: []
+        - csrf: []
       responses:
         '204': { description: Déconnecté. }
-        '401': { $ref: '#/components/responses/NonConnecte' }
+        '403': { $ref: '#/components/responses/Interdit' }
 
   /api/me:
     get:
