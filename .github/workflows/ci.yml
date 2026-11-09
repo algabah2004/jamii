@@ -63,5 +63,23 @@ jobs:
             ci
           requireScope: false
 
-  # Les jobs build et tests de web, api et ia seront ajoutés ici
+  ia:
+    name: Service IA (lint et tests)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/ia
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: services/ia/uv.lock
+      # --locked : échoue si uv.lock ne correspond plus à pyproject.toml.
+      - run: uv sync --locked
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run pytest
+
+  # Les jobs build et tests de web et api seront ajoutés ici
   # quand leur stack sera validée (#6).
