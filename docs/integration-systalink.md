@@ -23,9 +23,9 @@ Code métier (modules)  ──►  Interface interne (port)  ──►  Adaptate
 | **Stockage objet (S3)** | Avatars, fichiers des projets | `StockageFichiers` (API S3) | Socle #17 | ⏳ à tester |
 | **Yokk** | Cahiers des charges, résumés de profils, traduction | `FournisseurIA` | IA #20 | ⏳ offre gratuite à vérifier |
 | **MCP / API Systalink** | Bouton « Déployer sur Systalink » pour les projets des utilisateurs | `Deployeur` | IA #20 (phase 2) | ⚠️ `mcp.systalink.com` ne répond pas, à tester avec une clé |
-| **Orion** | Proposer un site généré par IA aux PME qui ont un besoin simple | `GenerateurSite` (lien sortant au départ) | IA #20 | ✅ offre Free · pas d'API |
+| **Orion** | Proposer un site généré par IA aux PME qui ont un besoin simple | `GenerateurSite` (lien sortant au départ) | Feuille de route | ✅ offre Free · pas d'API |
 | **Paxity / Mobile Money** | Paiement des missions | `Paiement` | Phase 2 | ⚠️ pas de doc publique → simulé |
-| **SystaTalk** | Visio pour les communautés et les équipes | `Visio` (lien de salle) | Communautés #18 | ⚠️ essai 14 jours |
+| **SystaTalk** | Visio pour les communautés et les équipes | `Visio` (lien de salle) | Feuille de route | ⚠️ essai 14 jours |
 | **SystaMail / E-mail Pro** | E-mails transactionnels (notifications) | `EnvoiEmail` (SMTP) | Socle #17 | ⏳ à tester |
 | **Observabilité DataCloud** | Journaux et métriques de Jamii | — (logs JSON sur stdout) | Socle #17 | ⏳ à configurer |
 | **Webhooks** | Être prévenu quand un déploiement réussit | `EvenementsDeploiement` | IA #20 | ⚠️ offre Professionnel → interrogation régulière en attendant |
@@ -43,6 +43,7 @@ Code métier (modules)  ──►  Interface interne (port)  ──►  Adaptate
 ## À montrer dans la démo
 
 1. Jamii **tourne sur DataCloud** (l'URL, la préview de PR).
-2. Une PME décrit son besoin → **Yokk** rédige le cahier des charges.
+2. Une PME décrit son besoin → **Yokk** (l'assistant de projet) rédige le plan et propose une équipe.
 3. Une équipe met son projet en ligne → **sur DataCloud**, depuis Jamii.
-4. Une diapo « **Prêt pour Systalink** » : cette carte des branchements, et ce qu'il reste à brancher le jour où on rejoint leur portefeuille.
+4. Le **tableau de bord Systalink** : projets déployés sur DataCloud, et la page de statut.
+5. Une diapo « **Prêt pour Systalink** » : cette carte des branchements, et ce qu'il reste à brancher le jour où on rejoint leur portefeuille.

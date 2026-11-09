@@ -1,22 +1,23 @@
 # Jamii · CADEV 2026
 
-> La plateforme d'échange des développeurs africains : trouver une équipe, construire un projet utile, le mettre en ligne et le faire vivre après le concours.
+> **Trouve ton équipe. Construis un vrai projet. Mets-le en ligne sur Systalink. Et prouve-le.**
 
-*Jamii* veut dire « communauté » en swahili. C'est un nom provisoire.
+*Jamii* veut dire « communauté » en swahili.
 
 Projet présenté à la **Coupe d'Afrique des Développeurs (CADEV 2026)**, organisée par [Systalink](https://systalink.com).
 
 ## Ce que fait la plateforme
 
-| Besoin | Fonctionnalité |
+| Besoin | Pilier |
 |---|---|
-| Je ne trouve pas de coéquipiers | **Profil** généré depuis GitHub, puis **recherche de coéquipiers** dans tout le continent |
-| Je veux échanger avec d'autres devs | **Communautés** thématiques : questions-réponses, discussions, projets, événements, avec traduction automatique |
-| J'ai un besoin mais je ne suis pas développeur | **Demandes** : une PME décrit son besoin, l'IA en fait un cahier des charges et des devs y répondent |
-| Mon projet de hackathon meurt après le concours | **Suivi de projet** : feuille de route, recrutement d'un membre, beta-testeurs |
-| Je ne sais pas mettre en ligne | **Déploiement en un clic** sur le cloud Systalink |
+| Montrer ce que je sais vraiment faire | **Profil prouvé** : généré depuis GitHub, avec mes projets réellement en ligne et un indice de fiabilité explicable |
+| Trouver une équipe, ne pas laisser mourir le projet | **Projets d'équipe** : depuis une idée ou une demande de PME, avec candidatures, espace d'équipe et continuité après le concours |
+| Avancer vite et bien | **Assistant de projet (IA)** : plan, coéquipiers suggérés, résumé de la semaine, alerte quand ça décroche. L'IA propose, l'équipe décide |
+| Mettre en ligne | **Mise en ligne sur DataCloud** (Systalink), puis le projet est vérifié |
+| Échanger, s'entraider | **Communautés** : questions-réponses (l'IA propose, les pairs valident) et vitrine des projets en ligne |
+| *Pour Systalink* | **Tableau de bord** (projets déployés sur DataCloud…) et **page de statut** publique |
 
-Des mots simples, sans jargon : voir [docs/vocabulaire.md](docs/vocabulaire.md).
+Le détail est dans [docs/concept.md](docs/concept.md). Des mots simples, sans jargon : voir [docs/vocabulaire.md](docs/vocabulaire.md).
 
 ## Documentation
 

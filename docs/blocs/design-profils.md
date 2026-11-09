@@ -1,4 +1,4 @@
-# Design system + Profils et coéquipiers
+# Design system + Profil prouvé
 
 > 🧭 **Ce plan est un point de départ, pas une consigne. C'est ton bloc.**
 > - **Fixe** : le 🎯 But, le 🏁 « Terminé quand » et les règles communes (`docs/equipe.md`, `AGENTS.md`).
@@ -8,45 +8,46 @@
 **Responsable : @rev22rse22** · Ticket de suivi : [#19](https://github.com/algabah2004/jamii/issues/19)
 
 ## 🎯 But
-Tu donnes **son identité visuelle** à Jamii. C'est la première chose que le jury verra. Tu construis aussi le module **Profils et recherche de coéquipiers** : un profil généré depuis GitHub, et la recherche de partenaires dans tout le continent.
+Tu donnes à Jamii **son identité visuelle**, la première chose que le jury et le public verront. Et tu construis **le profil prouvé** : ce qu'un dev montre fièrement, et la raison n°1 de s'inscrire. Voir le pilier 1 de [concept.md](../concept.md).
 
 ## 📦 À livrer
-1. **Le design system** : couleurs, typographie, espacements, thème clair et sombre, et les composants Vue de base (bouton, champ, carte, badge, avatar, modale, liste, état vide, chargement). Documentation dans `apps/web/src/design-system/README.md`.
-2. **Les maquettes** des écrans clés : accueil, profil, communauté, demande, en mobile et sur ordinateur.
-3. **Le module Profils, front et back** : contrat `contracts/profils.yaml`, tables, endpoints dans `apps/api` (package `profils`), écrans, tests.
-   - un profil généré depuis GitHub : langages, projets, pays, et uniquement les forces, sans note globale ;
-   - le profil est privé jusqu'à sa publication ;
-   - la recherche de coéquipiers par compétence, pays et disponibilité.
+1. **Le design system** : tokens (couleurs, typographie, espacements, clair et sombre) et composants Vue de base, avec une page de démonstration. Il est **brandable** (Systalink peut appliquer sa charte en changeant les tokens).
+2. **Les maquettes** des écrans de la démo : profil, projet d'équipe, communauté, vitrine, tableau de bord Systalink.
+3. **Le profil prouvé** (`contracts/profils.yaml`, front et back) :
+   - généré depuis GitHub (avec le résumé fait par l'IA du bloc #20) ;
+   - **projets réellement en ligne** (lien vérifié) et contributions dans les équipes Jamii ;
+   - **un indice de fiabilité explicable** : tâches livrées, avis des coéquipiers, réponses acceptées. Chaque point est justifié et contestable, sans note globale ;
+   - privé jusqu'à sa publication ;
+   - recherche de coéquipiers par compétence, pays et disponibilité.
 
 ## 🚀 Avancer sans attendre personne
-- **Tout de suite** : maquettes et choix visuels (Figma ou Penpot), sans aucune dépendance.
-- Dès que l'ossature de `apps/web` est fusionnée (Amar, jour 1-2), tu y ajoutes le design system.
-- Tes écrans de profil tournent sur des **données factices (MSW)** générées depuis ton contrat. La génération par IA viendra du bloc de @boubacarsidibe, à simuler en attendant.
+- **Tout de suite** : maquettes et identité visuelle (Figma ou Penpot), sans aucune dépendance.
+- Dès que l'ossature de `apps/web` est fusionnée (Amar, jours 1-2) : le design system.
+- Le profil tourne sur des **données factices (MSW)**. Les données de fiabilité viendront des projets (#17) et des communautés (#18) via leurs contrats.
 
 ## 🔌 Branchement Systalink
 Voir [integration-systalink.md](../integration-systalink.md).
-- Le design system est **brandable** (les tokens pilotent nom, logo et couleurs) : Systalink doit pouvoir appliquer sa charte en changeant les tokens.
-- Le profil peut afficher « Projets en ligne sur Systalink » (données du bloc #20).
+- Le badge « En ligne sur Systalink » sur chaque projet du profil.
+- Le design system brandable.
 
 ## ✅ Étapes
-- [ ] Maquettes des écrans clés, validées par le chef de projet (lien en commentaire)
-- [ ] Design tokens et composants de base dans `apps/web`, page de démonstration des composants
+- [ ] Maquettes des écrans de la démo, validées par le chef de projet
+- [ ] Tokens et composants de base, page de démonstration
 - [ ] `contracts/profils.yaml` validé avec @sowibrr
-- [ ] Écrans Profil et Recherche de coéquipiers
-- [ ] Backend du module Profils et tests
-- [ ] Accessibilité vérifiée (contrastes, clavier) et rendu mobile
+- [ ] Profil généré depuis GitHub, publication, recherche de coéquipiers
+- [ ] Projets en ligne vérifiés et indice de fiabilité explicable
+- [ ] Accessibilité (contrastes, clavier) et rendu mobile
 
-## 🤖 Prompt de démarrage pour ton agent IA
+## 🤖 Exemple de prompt pour ton agent IA
 ```
 Lis AGENTS.md, docs/concept.md, docs/vocabulaire.md et docs/blocs/design-profils.md.
-Je suis responsable du bloc « Design system + Profils ».
-1. Propose une identité visuelle pour une plateforme panafricaine de développeurs :
-   moderne, sobre, lisible en 3G et sur mobile, sans cliché. Donne 2 directions
-   avec leurs palettes accessibles (contraste AA), puis recommande-en une.
-2. Implémente les design tokens et les composants Vue de base, avec une page de démo.
+Je suis responsable du bloc « Design system + Profil prouvé ».
+1. Propose 2 directions d'identité visuelle pour une plateforme panafricaine
+   de développeurs (moderne, sobre, sans cliché, contraste AA), puis recommande-en une.
+2. Conçois un indice de fiabilité juste et explicable (sans note globale) :
+   ses sources, son calcul, comment le contester, comment éviter la triche.
 Petites PR. Termine par « Pistes d'amélioration ».
 ```
 
 ## 🏁 Terminé quand
-Toute l'appli utilise le design system, et un dev peut générer son profil depuis GitHub, le publier et trouver des coéquipiers. Le chef de projet a validé en revue.
-
+Toute l'appli utilise le design system. Un dev génère son profil depuis GitHub, voit ses projets en ligne vérifiés et son indice de fiabilité expliqué, le publie et trouve des coéquipiers. Le chef de projet a validé en revue.

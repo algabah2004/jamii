@@ -6,10 +6,10 @@ On travaille **par gros blocs de bout en bout** : chacun possède une fonctionna
 
 | Bloc | Responsable | Ticket | Territoire dans le code |
 |---|---|---|---|
-| 🧱 **Socle API** (Demandes = une étape simple) | `@sowibrr` | [#17](https://github.com/algabah2004/jamii/issues/17) | `apps/api` (socle, package `demandes`), `contracts/socle.yaml`, `contracts/demandes.yaml` |
-| 💬 **Communautés et échanges + ossature du front** | `@Amar233-ui` | [#18](https://github.com/algabah2004/jamii/issues/18) | `apps/web` (ossature, `features/communautes`), package `communautes`, `contracts/communautes.yaml` |
-| 🎨 **Design system + Profils et coéquipiers** | `@rev22rse22` | [#19](https://github.com/algabah2004/jamii/issues/19) | `apps/web/src/design-system`, `features/profils`, package `profils`, `contracts/profils.yaml` |
-| 🤖 **IA et déploiement Systalink** | `@boubacarsidibe` | [#20](https://github.com/algabah2004/jamii/issues/20) | `services/ia`, package `deploiement`, `contracts/ia.yaml`, `contracts/deploiement.yaml`, configuration DataCloud |
+| 🧱 **Socle API + Projets d'équipe** | `@sowibrr` | [#17](https://github.com/algabah2004/jamii/issues/17) | `apps/api` (socle, package `projets`), `contracts/socle.yaml`, `contracts/projets.yaml` |
+| 💬 **Communautés et entraide + ossature du front + espace Systalink** | `@Amar233-ui` | [#18](https://github.com/algabah2004/jamii/issues/18) | `apps/web` (ossature, `features/communautes`, `features/vitrine`, `features/systalink`), package `communautes`, `contracts/communautes.yaml` |
+| 🎨 **Design system + Profil prouvé** | `@rev22rse22` | [#19](https://github.com/algabah2004/jamii/issues/19) | `apps/web/src/design-system`, `features/profils`, package `profils`, `contracts/profils.yaml` |
+| 🤖 **Assistant de projet IA + mise en ligne Systalink** | `@boubacarsidibe` | [#20](https://github.com/algabah2004/jamii/issues/20) | `services/ia`, package `deploiement`, `contracts/ia.yaml`, `contracts/deploiement.yaml`, configuration DataCloud |
 | 🧭 **Chef de projet, produit et démo** | `@algabah2004` | #1, #10 | Revue de toutes les PR, intégration entre les blocs, entretiens utilisateurs, démo |
 
 Le **plan de chaque bloc** est dans [`docs/blocs/`](blocs/README.md). C'est un **point de départ** que son responsable réécrit à sa façon. Seuls le **but** et le critère **« terminé quand »** sont fixés par le chef de projet. Les tickets GitHub servent au suivi au jour le jour.
