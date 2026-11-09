@@ -3,6 +3,20 @@
 > Ce fichier est lu automatiquement par les agents de code : Claude Code (via `CLAUDE.md`), Codex, Cursor, Copilot, Gemini…
 > **Humains :** lisez-le aussi. C'est la façon de penser qu'on attend de tout le monde.
 
+## 0. Au début de chaque session : qui est ton développeur ?
+
+Avant toute chose :
+1. **Identifie le développeur** : `gh api user -q .login`, à défaut l'e-mail ou le nom de `git config user.name`. Si tu n'es pas sûr, **demande-lui son pseudo GitHub**.
+2. **Trouve son bloc** dans `docs/blocs/README.md`, puis lis **son plan** (`docs/blocs/<bloc>.md`). Si `gh` est disponible, lis aussi les derniers commentaires de son ticket de suivi (`gh issue view <n> --comments`).
+3. **Commence par lui résumer, en 5 lignes maximum** :
+   - son bloc et son but ;
+   - où il en est (cases cochées, branches et PR ouvertes : `gh pr list --author @me`) ;
+   - **la prochaine étape concrète** que tu proposes ;
+   - un éventuel blocage ou une dépendance envers un autre bloc.
+4. Si c'est le **chef de projet** (`algabah2004`) : résume plutôt l'état de **tous** les blocs (tickets #17 à #20, PR ouvertes, étiquettes `bloqué`) et ce qui attend sa revue.
+
+Le plan est un **point de départ** : si ton développeur veut le changer, aide-le à réécrire son fichier `docs/blocs/<bloc>.md` dans une PR. Ne change jamais le but ni le critère « terminé quand » sans l'accord du chef de projet.
+
 ## 1. Le projet en 30 secondes
 
 **Jamii** est la plateforme d'échange des développeurs africains, présentée à la **CADEV 2026** organisée par **Systalink**, une entreprise cloud de Dakar. Avec elle, on peut :
@@ -24,6 +38,7 @@
 | `docs/systalink-services.md` | Ce qui est gratuit et testé chez Systalink, et ce qui ne l'est pas |
 | `CONTRIBUTING.md` | Le cycle tâche → branche → PR → validation |
 | `docs/propositions/` | Les propositions en cours et les décisions prises |
+| `docs/blocs/` | **Le plan de chaque bloc et qui le possède** |
 | `docs/equipe.md` | **Les blocs, qui possède quoi, et les règles du travail en parallèle** |
 | `contracts/` | Les contrats OpenAPI entre les blocs (source de vérité) |
 
@@ -48,7 +63,7 @@ Tu n'es pas là pour dire oui. Tu es là pour que le résultat soit **excellent*
 ## 3. Règles non négociables
 
 ### Travail par blocs
-- Le développeur qui t'utilise possède **un bloc** (voir `docs/equipe.md` et son ticket « Bloc »). **Reste dans son territoire.** Si un fichier d'un autre bloc doit changer, **ne le modifie pas** : rédige la demande à poster dans le ticket du bloc concerné.
+- Le développeur qui t'utilise possède **un bloc** (voir `docs/blocs/`). **Reste dans son territoire.** Si un fichier d'un autre bloc doit changer, **ne le modifie pas** : rédige la demande à poster dans le ticket du bloc concerné.
 - **Le contrat avant le code** : ne code jamais contre l'implémentation d'un autre bloc. Code contre son contrat dans `contracts/`. S'il manque, utilise des données factices (MSW côté front, bouchon côté back) et signale le manque.
 - **Petites PR** (environ 400 lignes maximum, hors fichiers générés) : découpe le bloc en étapes fusionnables tous les 2 ou 3 jours.
 
