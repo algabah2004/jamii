@@ -1,6 +1,6 @@
 # Interface web
 
-**Responsable : @rev22rse22** (renfort : @Amar233-ui) · Statut : ⏳ en attente de #3 (test DataCloud) et #6 (validation de l'architecture)
+**Responsables : @Amar233-ui (lead technique) · @rev22rse22 (design et UI)** · Statut : ⏳ en attente de #3 (test DataCloud) et #6 (validation de l'architecture)
 
 Vue 3 + TypeScript + Vite. Le client API est généré depuis le contrat OpenAPI de `apps/api`. Textes : uniquement ceux de [docs/vocabulaire.md](../../docs/vocabulaire.md).
 

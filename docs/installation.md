@@ -21,7 +21,7 @@ docker compose ps             # postgres doit être « healthy »
 ```
 jamii/
 ├── apps/
-│   ├── web/        Interface web (Vue 3 + TypeScript)       · @rev22rse22
+│   ├── web/        Interface web (Vue 3 + TypeScript)       · @Amar233-ui · @rev22rse22
 │   └── api/        API (Spring Boot, ou NestJS selon #3/#6)  · @sowibrr
 ├── services/
 │   └── ia/         Service IA (Python FastAPI)               · @boubacarsidibe
