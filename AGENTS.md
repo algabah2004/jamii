@@ -32,6 +32,7 @@ Le plan est un **point de départ** : si ton développeur veut le changer, aide-
 
 | Fichier | Contenu |
 |---|---|
+| `docs/cadev.md` | **La compétition, Systalink, le problème de fond et les 25 cas d'usage. À lire en premier** |
 | `docs/concept.md` | La vision du produit |
 | `docs/architecture.md` | La stack et la raison de chaque choix |
 | `docs/vocabulaire.md` | Les mots de l'interface : simples, sans thème ni jargon |
