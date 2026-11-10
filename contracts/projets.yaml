@@ -1,0 +1,657 @@
+openapi: 3.1.0
+info:
+  title: Jamii · Projets d'équipe
+  version: 0.1.0
+  summary: Projets nés d'une idée ou d'une demande de PME, rôles recherchés, candidatures, équipe, tâches, jalons et continuité.
+  description: |
+    Responsable : @sowibrr (bloc #17). Règles communes : docs/api-conventions.md. Modèle : docs/modele-donnees.md §4.
+
+    **Droits** : tout utilisateur connecté voit les projets et leurs rôles (pour candidater). Seuls les membres de
+    l'équipe voient les tâches et les jalons. Seul le porteur modifie le projet, les rôles et décide des candidatures.
+
+    **CSRF** : toute requête POST, PATCH ou DELETE envoie l'en-tête `X-XSRF-TOKEN` (socle.yaml, schéma `csrf`).
+
+    **Codes d'erreur métier** (champ `code` de `Erreur`, réponse 409) : `transition_invalide`, `modification_concurrente`,
+    `demande_deja_prise`, `propre_projet`, `role_pourvu`, `candidature_existante`, `porteur_doit_transmettre`,
+    `pas_membre`, `reprise_impossible`.
+servers:
+  - url: http://localhost:8080
+
+security:
+  - session: []
+
+tags:
+  - { name: projets, description: 'Créer, trouver, modifier et reprendre un projet.' }
+  - { name: recrutement, description: Rôles recherchés et candidatures. }
+  - { name: equipe, description: 'Membres, tâches et jalons (réservé à l''équipe).' }
+
+paths:
+  /api/projets:
+    get:
+      tags: [projets]
+      operationId: listerProjets
+      summary: Trouver des projets (les plus récents d'abord)
+      parameters:
+        - $ref: './socle.yaml#/components/parameters/Curseur'
+        - $ref: './socle.yaml#/components/parameters/Limite'
+        - { name: statut, in: query, schema: { $ref: '#/components/schemas/StatutProjet' } }
+        - { name: competence, in: query, description: 'Projets qui recrutent cette compétence (rôle ouvert). Ex. : `flutter`.', schema: { type: string, maxLength: 50 } }
+        - { name: membre, in: query, description: '`moi` : seulement les projets dont je suis membre.', schema: { type: string, enum: [moi] } }
+      responses:
+        '200':
+          description: Une page de projets.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: './socle.yaml#/components/schemas/Page'
+                  - properties: { elements: { type: array, items: { $ref: '#/components/schemas/ProjetResume' } } }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+    post:
+      tags: [projets]
+      operationId: creerProjet
+      summary: Créer un projet depuis une idée, ou depuis une demande de PME (je deviens le porteur)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreationProjet' }
+      responses:
+        '201':
+          description: Projet créé, au statut `recrutement`.
+          headers: { Location: { schema: { type: string } } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Projet' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { description: '`demandeId` inconnu.', $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { description: '`demande_deja_prise` : une autre équipe a déjà un projet actif sur cette demande.', $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/projets/{projetId}:
+    parameters:
+      - $ref: '#/components/parameters/ProjetId'
+    get:
+      tags: [projets]
+      operationId: lireProjet
+      summary: Le projet, son équipe, ses rôles et ses alertes ouvertes
+      responses:
+        '200':
+          description: Le projet.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Projet' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+    patch:
+      tags: [projets]
+      operationId: modifierProjet
+      summary: Modifier le titre, la description ou le statut (porteur uniquement)
+      description: |
+        Statuts permis : `recrutement` → `en_cours` ⇄ `en_pause` → `livre`, et `abandonne` depuis tout statut sauf `livre`.
+        Tout autre changement répond `409 transition_invalide`.
+      requestBody:
+        required: true
+        content:
+          application/merge-patch+json:
+            schema: { $ref: '#/components/schemas/ModificationProjet' }
+      responses:
+        '200':
+          description: Projet modifié.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Projet' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/projets/{projetId}/reprendre:
+    parameters:
+      - $ref: '#/components/parameters/ProjetId'
+    post:
+      tags: [projets]
+      operationId: reprendreProjet
+      summary: Reprendre un projet abandonné ou en pause depuis longtemps, avec une nouvelle équipe
+      description: |
+        Crée un nouveau projet (`projetRepris` = l'ancien) dont je suis le porteur. L'ancien projet et son équipe
+        restent intacts, chacun garde ses preuves. Possible si le projet est `abandonne`, ou `en_pause` avec une
+        alerte `inactif` ouverte ; sinon `409 reprise_impossible`.
+      responses:
+        '201':
+          description: Nouveau projet créé.
+          headers: { Location: { schema: { type: string } } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Projet' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/projets/{projetId}/porteur:
+    parameters:
+      - $ref: '#/components/parameters/ProjetId'
+    put:
+      tags: [equipe]
+      operationId: transmettreProjet
+      summary: Transmettre le projet à un autre membre de l'équipe (porteur uniquement)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [utilisateurId]
+              additionalProperties: false
+              properties: { utilisateurId: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: Le nouveau porteur est en place.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Projet' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { description: '`pas_membre` : la personne ne fait pas partie de l''équipe.', $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/projets/{projetId}/roles:
+    parameters:
+      - $ref: '#/components/parameters/ProjetId'
+    post:
+      tags: [recrutement]
+      operationId: publierRole
+      summary: Publier un rôle recherché (porteur uniquement)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreationRole' }
+      responses:
+        '201':
+          description: Rôle publié, au statut `ouvert`.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RoleRecherche' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+
+  /api/projets/{projetId}/roles/{roleId}:
+    parameters:
+      - $ref: '#/components/parameters/ProjetId'
+      - { name: roleId, in: path, required: true, schema: { type: string, format: uuid } }
+    patch:
+      tags: [recrutement]
+      operationId: modifierRole
+      summary: Modifier ou fermer un rôle (porteur uniquement)
+      description: Fermer un rôle refuse automatiquement ses candidatures en attente.
+      requestBody:
+        required: true
+        content:
+          application/merge-patch+json:
+            schema: { $ref: '#/components/schemas/ModificationRole' }
+      responses:
+        '200':
+          description: Rôle modifié.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RoleRecherche' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/projets/{projetId}/roles/{roleId}/candidatures:
+    parameters:
+      - $ref: '#/components/parameters/ProjetId'
+      - { name: roleId, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      tags: [recrutement]
+      operationId: candidater
+      summary: Candidater à un rôle
+      description: '`409` avec `propre_projet`, `role_pourvu` (rôle pourvu ou fermé) ou `candidature_existante`.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreationCandidature' }
+      responses:
+        '201':
+          description: Candidature envoyée.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Candidature' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+        '429': { $ref: './socle.yaml#/components/responses/TropDeRequetes' }
+
+  /api/projets/{projetId}/candidatures:
+    parameters:
+      - $ref: '#/components/parameters/ProjetId'
+    get:
+      tags: [recrutement]
+      operationId: listerCandidaturesDuProjet
+      summary: Les candidatures reçues par le projet (porteur uniquement)
+      parameters:
+        - $ref: './socle.yaml#/components/parameters/Curseur'
+        - $ref: './socle.yaml#/components/parameters/Limite'
+        - { name: statut, in: query, schema: { $ref: '#/components/schemas/StatutCandidature' } }
+      responses:
+        '200':
+          description: Une page de candidatures.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PageCandidatures' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+
+  /api/projets/{projetId}/candidatures/{candidatureId}/{decision}:
+    parameters:
+      - $ref: '#/components/parameters/ProjetId'
+      - { name: candidatureId, in: path, required: true, schema: { type: string, format: uuid } }
+      - name: decision
+        in: path
+        required: true
+        description: |
+          `accepter` ou `refuser` (porteur), `retirer` (candidat). Accepter, en une seule transaction : le candidat
+          rejoint l'équipe, le rôle passe à `pourvu`, les autres candidatures à ce rôle sont refusées.
+        schema: { type: string, enum: [accepter, refuser, retirer] }
+    post:
+      tags: [recrutement]
+      operationId: deciderCandidature
+      summary: Accepter, refuser ou retirer une candidature
+      responses:
+        '200':
+          description: Candidature mise à jour.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Candidature' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { description: '`transition_invalide` (déjà décidée) ou `role_pourvu`.', $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/me/candidatures:
+    get:
+      tags: [recrutement]
+      operationId: mesCandidatures
+      summary: Mes candidatures, tous projets confondus
+      parameters:
+        - $ref: './socle.yaml#/components/parameters/Curseur'
+        - $ref: './socle.yaml#/components/parameters/Limite'
+        - { name: statut, in: query, schema: { $ref: '#/components/schemas/StatutCandidature' } }
+      responses:
+        '200':
+          description: Une page de candidatures.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PageCandidatures' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+
+  /api/projets/{projetId}/membres/{utilisateurId}:
+    parameters:
+      - $ref: '#/components/parameters/ProjetId'
+      - { name: utilisateurId, in: path, required: true, schema: { type: string, format: uuid } }
+    delete:
+      tags: [equipe]
+      operationId: retirerMembre
+      summary: Quitter l'équipe (soi-même) ou retirer un membre (porteur)
+      description: |
+        Le membre reste dans l'historique (sa contribution est prouvée) et son rôle est rouvert. Une alerte
+        `membre_parti` est ouverte. Le porteur ne peut pas partir : `409 porteur_doit_transmettre`.
+      responses:
+        '204': { description: Le membre a quitté l'équipe. }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/projets/{projetId}/jalons:
+    parameters:
+      - $ref: '#/components/parameters/ProjetId'
+    get:
+      tags: [equipe]
+      operationId: listerJalons
+      summary: Les jalons du projet, dans l'ordre (membres uniquement)
+      responses:
+        '200':
+          description: Tous les jalons (une vingtaine au plus, pas de pagination).
+          content:
+            application/json:
+              schema: { type: array, maxItems: 50, items: { $ref: '#/components/schemas/Jalon' } }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+    post:
+      tags: [equipe]
+      operationId: creerJalon
+      summary: Ajouter un jalon (membres)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EcritureJalon' }
+      responses:
+        '201':
+          description: Jalon créé.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Jalon' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+
+  /api/projets/{projetId}/jalons/{jalonId}:
+    parameters:
+      - $ref: '#/components/parameters/ProjetId'
+      - { name: jalonId, in: path, required: true, schema: { type: string, format: uuid } }
+    patch:
+      tags: [equipe]
+      operationId: modifierJalon
+      summary: Modifier un jalon ou le marquer atteint (membres)
+      requestBody:
+        required: true
+        content:
+          application/merge-patch+json:
+            schema: { $ref: '#/components/schemas/EcritureJalon' }
+      responses:
+        '200':
+          description: Jalon modifié.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Jalon' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/projets/{projetId}/taches:
+    parameters:
+      - $ref: '#/components/parameters/ProjetId'
+    get:
+      tags: [equipe]
+      operationId: listerTaches
+      summary: Les tâches du projet (membres uniquement)
+      parameters:
+        - $ref: './socle.yaml#/components/parameters/Curseur'
+        - $ref: './socle.yaml#/components/parameters/Limite'
+        - { name: statut, in: query, schema: { $ref: '#/components/schemas/StatutTache' } }
+        - { name: jalonId, in: query, schema: { type: string, format: uuid } }
+        - { name: assignee, in: query, description: '`moi` : seulement mes tâches.', schema: { type: string, enum: [moi] } }
+      responses:
+        '200':
+          description: Une page de tâches.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: './socle.yaml#/components/schemas/Page'
+                  - properties: { elements: { type: array, items: { $ref: '#/components/schemas/Tache' } } }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+    post:
+      tags: [equipe]
+      operationId: creerTache
+      summary: Ajouter une tâche (membres)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EcritureTache' }
+      responses:
+        '201':
+          description: Tâche créée, au statut `a_faire`.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Tache' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { description: '`pas_membre` : l''assigné ne fait pas partie de l''équipe.', $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/projets/{projetId}/taches/{tacheId}:
+    parameters:
+      - $ref: '#/components/parameters/ProjetId'
+      - { name: tacheId, in: path, required: true, schema: { type: string, format: uuid } }
+    patch:
+      tags: [equipe]
+      operationId: modifierTache
+      summary: Modifier une tâche, la prendre, ou la marquer livrée (membres)
+      description: '`version` est obligatoire : si la tâche a changé entre-temps, `409 modification_concurrente`.'
+      requestBody:
+        required: true
+        content:
+          application/merge-patch+json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/EcritureTache'
+                - required: [version]
+                  properties: { statut: { $ref: '#/components/schemas/StatutTache' } }
+      responses:
+        '200':
+          description: Tâche modifiée.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Tache' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+
+components:
+  securitySchemes:
+    session: { $ref: './socle.yaml#/components/securitySchemes/session' }
+    csrf: { $ref: './socle.yaml#/components/securitySchemes/csrf' }
+
+  parameters:
+    ProjetId:
+      name: projetId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+  schemas:
+    StatutProjet:
+      type: string
+      enum: [recrutement, en_cours, en_pause, livre, abandonne]
+    StatutRole:
+      type: string
+      enum: [ouvert, pourvu, ferme]
+    StatutCandidature:
+      type: string
+      enum: [envoyee, acceptee, refusee, retiree]
+    StatutTache:
+      type: string
+      enum: [a_faire, en_cours, livree]
+    Competence:
+      type: string
+      description: En minuscules, sans espace inutile (`flutter`, `postgresql`, `ux-design`).
+      pattern: '^[a-z0-9][a-z0-9.+#-]*$'
+      maxLength: 50
+
+    PersonneResume:
+      type: object
+      description: Ce que le projet montre d'une personne. Jamais son e-mail.
+      required: [id, nom]
+      properties:
+        id: { type: string, format: uuid }
+        nom: { type: string }
+        avatarUrl: { type: [string, 'null'], format: uri }
+
+    ProjetResume:
+      type: object
+      required: [id, titre, origine, statut, porteur, competencesRecherchees, nombreMembres, creeLe]
+      properties:
+        id: { type: string, format: uuid }
+        titre: { type: string }
+        origine: { type: string, enum: [idee, demande] }
+        statut: { $ref: '#/components/schemas/StatutProjet' }
+        porteur: { $ref: '#/components/schemas/PersonneResume' }
+        competencesRecherchees: { type: array, description: Compétences des rôles encore ouverts., items: { $ref: '#/components/schemas/Competence' } }
+        nombreMembres: { type: integer, minimum: 1 }
+        creeLe: { type: string, format: date-time }
+
+    Projet:
+      allOf:
+        - $ref: '#/components/schemas/ProjetResume'
+        - type: object
+          required: [description, roles, equipe, alertes, derniereActiviteLe, version, moi]
+          properties:
+            description: { type: string }
+            demandeId: { type: [string, 'null'], format: uuid, description: La demande de PME d'origine. }
+            projetRepris: { type: [string, 'null'], format: uuid, description: Le projet abandonné que celui-ci reprend. }
+            roles: { type: array, items: { $ref: '#/components/schemas/RoleRecherche' } }
+            equipe: { type: array, items: { $ref: '#/components/schemas/MembreEquipe' } }
+            alertes: { type: array, description: Alertes de continuité encore ouvertes., items: { $ref: '#/components/schemas/Alerte' } }
+            derniereActiviteLe: { type: string, format: date-time }
+            version: { type: integer }
+            moi:
+              type: object
+              description: Ma place dans ce projet, pour afficher les bons boutons (les droits restent vérifiés par le serveur).
+              required: [estPorteur, estMembre]
+              properties:
+                estPorteur: { type: boolean }
+                estMembre: { type: boolean }
+
+    CreationProjet:
+      type: object
+      required: [titre, description, origine]
+      additionalProperties: false
+      properties:
+        titre: { type: string, minLength: 3, maxLength: 120 }
+        description: { type: string, minLength: 10, maxLength: 5000 }
+        origine: { type: string, enum: [idee, demande] }
+        demandeId: { type: string, format: uuid, description: 'Obligatoire si `origine` vaut `demande`, interdit sinon.' }
+
+    ModificationProjet:
+      type: object
+      required: [version]
+      additionalProperties: false
+      properties:
+        titre: { type: string, minLength: 3, maxLength: 120 }
+        description: { type: string, minLength: 10, maxLength: 5000 }
+        statut: { $ref: '#/components/schemas/StatutProjet' }
+        version: { type: integer }
+
+    RoleRecherche:
+      type: object
+      required: [id, titre, competences, statut]
+      properties:
+        id: { type: string, format: uuid }
+        titre: { type: string }
+        competences: { type: array, items: { $ref: '#/components/schemas/Competence' } }
+        statut: { $ref: '#/components/schemas/StatutRole' }
+
+    CreationRole:
+      type: object
+      required: [titre, competences]
+      additionalProperties: false
+      properties:
+        titre: { type: string, minLength: 3, maxLength: 80, examples: ['Développeur mobile Flutter'] }
+        competences: { type: array, minItems: 1, maxItems: 10, uniqueItems: true, items: { $ref: '#/components/schemas/Competence' } }
+
+    ModificationRole:
+      type: object
+      additionalProperties: false
+      properties:
+        titre: { type: string, minLength: 3, maxLength: 80 }
+        competences: { type: array, minItems: 1, maxItems: 10, uniqueItems: true, items: { $ref: '#/components/schemas/Competence' } }
+        statut: { type: string, enum: [ouvert, ferme], description: '`pourvu` est posé par l''acceptation d''une candidature.' }
+
+    CreationCandidature:
+      type: object
+      required: [message]
+      additionalProperties: false
+      properties:
+        message: { type: string, minLength: 10, maxLength: 1000, description: 'Pourquoi moi, pour ce rôle.' }
+
+    Candidature:
+      type: object
+      required: [id, projetId, role, candidat, message, statut, creeLe]
+      properties:
+        id: { type: string, format: uuid }
+        projetId: { type: string, format: uuid }
+        role: { $ref: '#/components/schemas/RoleRecherche' }
+        candidat: { $ref: '#/components/schemas/PersonneResume' }
+        message: { type: string }
+        statut: { $ref: '#/components/schemas/StatutCandidature' }
+        creeLe: { type: string, format: date-time }
+        decideeLe: { type: [string, 'null'], format: date-time }
+
+    PageCandidatures:
+      allOf:
+        - $ref: './socle.yaml#/components/schemas/Page'
+        - properties: { elements: { type: array, items: { $ref: '#/components/schemas/Candidature' } } }
+
+    MembreEquipe:
+      type: object
+      required: [personne, estPorteur, rejointLe]
+      properties:
+        personne: { $ref: '#/components/schemas/PersonneResume' }
+        role: { type: [string, 'null'], description: Titre du rôle occupé. }
+        estPorteur: { type: boolean }
+        rejointLe: { type: string, format: date-time }
+
+    Alerte:
+      type: object
+      required: [type, creeLe]
+      properties:
+        type: { type: string, enum: [inactif, membre_parti, echeance_depassee] }
+        creeLe: { type: string, format: date-time }
+
+    Jalon:
+      type: object
+      required: [id, titre, statut, ordre]
+      properties:
+        id: { type: string, format: uuid }
+        titre: { type: string }
+        echeance: { type: [string, 'null'], format: date }
+        statut: { type: string, enum: [prevu, atteint] }
+        ordre: { type: integer, minimum: 0 }
+
+    EcritureJalon:
+      type: object
+      additionalProperties: false
+      properties:
+        titre: { type: string, minLength: 3, maxLength: 120 }
+        echeance: { type: [string, 'null'], format: date }
+        statut: { type: string, enum: [prevu, atteint] }
+        ordre: { type: integer, minimum: 0 }
+
+    Tache:
+      type: object
+      required: [id, titre, statut, proposeeParIa, version, creeLe]
+      properties:
+        id: { type: string, format: uuid }
+        titre: { type: string }
+        jalonId: { type: [string, 'null'], format: uuid }
+        assignee: { oneOf: [{ $ref: '#/components/schemas/PersonneResume' }, { type: 'null' }] }
+        statut: { $ref: '#/components/schemas/StatutTache' }
+        echeance: { type: [string, 'null'], format: date }
+        livreeLe: { type: [string, 'null'], format: date-time }
+        proposeeParIa: { type: boolean, description: 'Vient du plan proposé par l''assistant (#20), acceptée par l''équipe.' }
+        version: { type: integer }
+        creeLe: { type: string, format: date-time }
+
+    EcritureTache:
+      type: object
+      additionalProperties: false
+      properties:
+        titre: { type: string, minLength: 3, maxLength: 200 }
+        jalonId: { type: [string, 'null'], format: uuid }
+        assigneeId: { type: [string, 'null'], format: uuid, description: Un membre de l'équipe. }
+        echeance: { type: [string, 'null'], format: date }
+        version: { type: integer }

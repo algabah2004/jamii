@@ -94,5 +94,22 @@ jobs:
           if [ -z "$boms" ]; then echo "Aucune dépendance à vérifier pour l'instant."; exit 0; fi
           python3 .github/scripts/verifier_licences.py $boms
 
-  # Les jobs build et tests de web, api et ia seront ajoutés ici
+  api:
+    name: API (build et tests)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: apps/api/pom.xml
+      # Les tests d'intégration démarrent PostgreSQL avec Testcontainers (Docker est fourni par le runner).
+      - run: ./mvnw -B verify
+
+  # Les jobs build et tests de web et ia seront ajoutés ici
   # quand leur stack sera validée (#6).
