@@ -63,5 +63,36 @@ jobs:
             ci
           requireScope: false
 
+  licences:
+    name: Licences autorisées
+    # Règlement CADEV, article 6 : aucune dépendance GPL, AGPL ou LGPL.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: SBOM de l'API (Maven)
+        if: hashFiles('apps/api/pom.xml') != ''
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: apps/api/pom.xml
+      - if: hashFiles('apps/api/pom.xml') != ''
+        working-directory: apps/api
+        run: ./mvnw -B -q org.cyclonedx:cyclonedx-maven-plugin:2.9.3:makeBom -DoutputFormat=json -DoutputName=bom
+      - name: SBOM du service IA (Python)
+        if: hashFiles('services/ia/uv.lock') != ''
+        uses: astral-sh/setup-uv@v10.3.3
+      - if: hashFiles('services/ia/uv.lock') != ''
+        working-directory: services/ia
+        run: |
+          uv sync --locked --no-dev
+          uvx --from cyclonedx-bom==8.0.1 cyclonedx-py environment .venv/bin/python --of JSON -o bom.json
+      - name: Aucune licence GPL, AGPL ou LGPL
+        run: |
+          boms=$(ls apps/api/target/bom.json services/ia/bom.json 2>/dev/null || true)
+          if [ -z "$boms" ]; then echo "Aucune dépendance à vérifier pour l'instant."; exit 0; fi
+          python3 .github/scripts/verifier_licences.py $boms
+
   # Les jobs build et tests de web, api et ia seront ajoutés ici
   # quand leur stack sera validée (#6).
