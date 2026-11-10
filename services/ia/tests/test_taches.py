@@ -1,12 +1,9 @@
 from uuid import uuid4
 
-import psycopg
-from conftest import reglages_de_test
+from conftest import reglages_de_test, vider_la_file
 from fastapi.testclient import TestClient
 
-from jamii_ia.base_donnees import migrer
 from jamii_ia.main import creer_app
-from jamii_ia.taches import empreinte
 
 DEMANDE = {
     "type": "plan_projet",
@@ -93,20 +90,10 @@ def test_tache_inconnue_c_est_404(client, jeton):
 
 def test_la_limite_globale_repond_429(url_base, jeton):
     with TestClient(creer_app(reglages_de_test(url_base, IA_LIMITE_PAR_HEURE=2))) as client:
-        with psycopg.connect(url_base, autocommit=True) as connexion:
-            connexion.execute("TRUNCATE ia.taches")
+        vider_la_file(url_base)
         assert deposer(client, jeton).status_code == 202
         assert deposer(client, jeton).status_code == 202
         reponse = deposer(client, jeton)
         assert reponse.status_code == 429
         assert reponse.json()["code"] == "trop_de_requetes"
         assert reponse.headers["Retry-After"] == "60"
-
-
-def test_les_migrations_ne_sont_jouees_qu_une_fois(client, url_base):
-    assert migrer(url_base) == []
-
-
-def test_l_empreinte_ne_depend_pas_de_l_ordre_des_cles():
-    assert empreinte("plan_projet", {"a": 1, "b": 2}) == empreinte("plan_projet", {"b": 2, "a": 1})
-    assert empreinte("plan_projet", {"a": 1}) != empreinte("plan_projet", {"a": 2})

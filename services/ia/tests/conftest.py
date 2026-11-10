@@ -12,8 +12,10 @@ import pytest
 from fastapi.testclient import TestClient
 from psycopg.conninfo import make_conninfo
 
+from jamii_ia.base_donnees import migrer, ouvrir_pool
 from jamii_ia.config import Reglages
 from jamii_ia.main import creer_app
+from jamii_ia.taches import DepotTaches
 
 BASE_DE_TEST = "jamii_ia_test"
 JETON = "jeton-de-test-0123456789"
@@ -34,7 +36,22 @@ def url_base() -> str:
         if os.environ.get("CI"):
             raise  # En CI, une base absente est une erreur, pas un test ignoré.
         pytest.skip(f"PostgreSQL injoignable (docker compose up -d postgres) : {erreur}")
-    return make_conninfo(url, dbname=BASE_DE_TEST)
+    url_test = make_conninfo(url, dbname=BASE_DE_TEST)
+    migrer(url_test)
+    return url_test
+
+
+def vider_la_file(url_base: str) -> None:
+    with psycopg.connect(url_base, autocommit=True) as connexion:
+        connexion.execute("TRUNCATE ia.taches")
+
+
+@pytest.fixture
+def depot(url_base: str) -> Iterator[DepotTaches]:
+    vider_la_file(url_base)
+    pool = ouvrir_pool(url_base)
+    yield DepotTaches(pool, limite_par_heure=100)
+    pool.close()
 
 
 def reglages_de_test(url_base: str, **surcharges: object) -> Reglages:
@@ -48,10 +65,9 @@ def reglages_de_test(url_base: str, **surcharges: object) -> Reglages:
 
 @pytest.fixture
 def client(url_base: str) -> Iterator[TestClient]:
+    vider_la_file(url_base)
     # Le bloc `with` lance le démarrage de l'appli : migrations, puis ouverture du pool.
     with TestClient(creer_app(reglages_de_test(url_base))) as client:
-        with psycopg.connect(url_base, autocommit=True) as connexion:
-            connexion.execute("TRUNCATE ia.taches")
         yield client
 
 

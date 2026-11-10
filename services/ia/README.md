@@ -32,7 +32,8 @@ Les tests ont besoin de PostgreSQL : `docker compose up -d postgres` à la racin
 
 - `POST /taches` dépose une tâche (`202`), `GET /taches/{id}` lit son état. Les deux exigent `Authorization: Bearer <IA_JETON_INTERNE>`.
 - L'en-tête `Idempotency-Key` est obligatoire : rejouer la même requête renvoie la même tâche (`200`), sans doublon.
-- Les tables vivent dans le schéma `ia`. Les migrations (`src/jamii_ia/migrations/*.sql`) sont jouées au démarrage, une seule fois, sous verrou.
+
+Les tables vivent dans le schéma `ia` : l'API de Jamii ne les lit jamais, elle passe par `contracts/ia.yaml`. Les migrations (`src/jamii_ia/migrations/*.sql`) sont jouées une seule fois, sous verrou, dans une transaction. Une clé d'idempotence empêche qu'un nouvel essai réseau crée deux tâches.
 
 ## Le fournisseur IA est remplaçable
 
