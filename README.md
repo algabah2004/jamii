@@ -1,21 +1,37 @@
 # Jamii · CADEV 2026
 
-> **Trouve ton équipe. Construis un vrai projet. Mets-le en ligne sur Systalink. Et prouve-le.**
+> **Le lieu où les développeurs africains se rencontrent, échangent et construisent ensemble.**
 
 *Jamii* veut dire « communauté » en swahili.
 
-Projet présenté à la **Coupe d'Afrique des Développeurs (CADEV 2026)**, organisée par [Systalink](https://systalink.com).
+Projet présenté à la **Coupe d'Afrique des Développeurs (CADEV 2026)**, organisée par [Systalink](https://systalink.com), sur le thème : *construire la plateforme d'échange africaine, pour les devs, par les devs*.
 
-## Ce que fait la plateforme
+## Avant tout, un lieu d'échange
 
-| Besoin | Pilier |
+Les talents tech du continent sont nombreux, mais **dispersés** : chacun dans son pays, son groupe WhatsApp, son école. Jamii les **rassemble en un seul endroit** :
+
+- **Se rencontrer** : découvrir des développeurs de Dakar, Abidjan, Lagos, Nairobi ou Douala, voir ce qu'ils savent faire, entrer en contact.
+- **Échanger** : des communautés par thème (Flutter, Fintech, IA…), des discussions, et « Montre ton projet ».
+- **S'entraider** : poser une question, recevoir des réponses de la communauté. L'IA propose une première réponse, les pairs la valident.
+- **Se connecter avec ceux qui ont de vrais besoins** : des PME, des associations et des non-développeurs y décrivent leur problème, et des devs y répondent.
+
+Ouvert à tous, gratuitement, sans compte Systalink : connexion GitHub pour les devs, par e-mail pour les autres.
+
+## Et de l'échange naissent des projets
+
+Jamii ne s'arrête pas à la discussion. Quand une rencontre donne une idée, la plateforme l'emmène **jusqu'au bout** :
+
+> **Trouve ton équipe. Construis un vrai projet. Mets-le en ligne sur Systalink. Et prouve-le.**
+
+| Besoin | Ce que Jamii apporte |
 |---|---|
-| Montrer ce que je sais vraiment faire | **Profil prouvé** : généré depuis GitHub, avec mes projets réellement en ligne et un indice de fiabilité explicable |
-| Trouver une équipe, ne pas laisser mourir le projet | **Projets d'équipe** : depuis une idée ou une demande de PME, avec candidatures, espace d'équipe et continuité après le concours |
-| Avancer vite et bien | **Assistant de projet (IA)** : plan, coéquipiers suggérés, résumé de la semaine, alerte quand ça décroche. L'IA propose, l'équipe décide |
-| Mettre en ligne | **Mise en ligne sur DataCloud** (Systalink), puis le projet est vérifié |
-| Échanger, s'entraider | **Communautés** : questions-réponses (l'IA propose, les pairs valident) et vitrine des projets en ligne |
-| *Pour Systalink* | **Tableau de bord** (projets déployés sur DataCloud…) et **page de statut** publique |
+| **Échanger, s'entraider** | **Communautés et questions-réponses**, et la **vitrine** des projets nés sur Jamii |
+| **Trouver des coéquipiers** | La **recherche par compétence, pays et disponibilité**, et des **projets d'équipe** qui publient les rôles recherchés : on candidate, l'équipe se forme |
+| **Répondre à un vrai besoin** | Une PME décrit son besoin, il devient un projet que des devs rejoignent |
+| **Avancer sans abandonner** | L'**assistant de projet (IA)** : plan, coéquipiers suggérés, résumé de la semaine, alerte quand ça décroche. L'IA propose, l'équipe décide |
+| **Mettre en ligne** | La **mise en ligne sur DataCloud** (Systalink) en quelques clics. Un projet hébergé ailleurs est aussi accepté |
+| **Être reconnu** | Le **profil prouvé** : généré depuis GitHub, avec mes projets réellement en ligne, mes contributions et l'aide apportée aux autres |
+| *Pour Systalink* | Un **tableau de bord** (projets déployés sur DataCloud…) et une **page de statut** publique |
 
 Le détail est dans [docs/concept.md](docs/concept.md). Des mots simples, sans jargon : voir [docs/vocabulaire.md](docs/vocabulaire.md).
 
