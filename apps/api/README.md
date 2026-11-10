@@ -40,7 +40,22 @@ Tout passe par des variables d'environnement (voir [`.env.example`](../../.env.e
 | `POSTGRES_SSLMODE` | Chiffrement de la connexion (`require` ou `verify-full` en production) | `prefer` |
 | `PORT`, puis `API_PORT` | Port d'écoute. `PORT` est celui qu'impose l'hébergeur, s'il y en a un | `8080` |
 
+| `JAVA_TOOL_OPTIONS` | Réglages de la JVM, lus par Java lui-même (voir ci-dessous) | aucun |
+
 En local, `./mvnw spring-boot:run` n'a besoin d'aucune de ces variables : la connexion vient de docker compose. Elles servent au déploiement.
+
+### Déployer avec 512 Mo de mémoire (offre Free de DataCloud, cf. #36)
+
+Mettre `JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=75` : sans ce réglage, Java ne prend qu'un quart de la mémoire pour ses objets. Sur DataCloud, il faut aussi `POSTGRES_SSLMODE=require`, à vérifier avec leur PostgreSQL géré.
+
+Mesuré en local dans un conteneur limité à 512 Mo et 1 CPU, avec la connexion GitHub et la session en base. Ce n'est pas une mesure sur DataCloud :
+
+| Réglage | Démarrage | Au repos | Pic (3 000 requêtes) |
+|---|---|---|---|
+| Défaut de Java | 24 s | 304 Mo | 321 Mo |
+| `-XX:+UseSerialGC -XX:MaxRAMPercentage=60 -XX:TieredStopAtLevel=1 -Xss512k -XX:ReservedCodeCacheSize=48m -XX:MaxMetaspaceSize=128m` | 23 s | 252 Mo | 266 Mo |
+
+L'API tient dans 512 Mo. En revanche, l'offre Free se met en veille : la première requête après une veille attend le démarrage, plus de 20 s.
 
 ## Santé
 
