@@ -30,6 +30,14 @@
 4. Pousse ta branche et ouvre une PR. Écris `Closes #12` dans la description pour que l'issue se ferme automatiquement.
 5. Corrige les remarques de la revue, puis le chef de projet fusionne.
 
+### Peu de branches, toujours depuis `main`
+Trop de branches, c'est des conflits en cascade et des revues qui traînent. Donc :
+- **2 PR ouvertes maximum par personne.** Une en revue, une en cours. Au-delà, on attend une fusion.
+- **Toujours partir de `main` à jour, jamais de la branche d'une autre PR.** Une PR empilée sur une autre doit être reprise à chaque fusion, et un seul conflit bloque toute la pile.
+- **Même sujet, même branche** : une correction ou une suite sur la PR encore ouverte s'ajoute en commit sur sa branche, pas dans une nouvelle branche.
+- **Une PR vit moins d'un jour.** Si elle grossit, on fusionne ce qui est prêt et on continue ensuite.
+- Après la fusion, la branche est supprimée automatiquement. Fais `git switch main && git pull && git fetch --prune` avant de recommencer.
+
 ## Les étiquettes
 
 | Type | Domaine | Priorité |

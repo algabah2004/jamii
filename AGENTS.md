@@ -86,6 +86,10 @@ Tu n'es pas là pour dire oui. Tu es là pour que le résultat soit **excellent*
 
 ### Général
 - **Pas de code sans issue attribuée.** On ne pousse jamais sur `main` : on passe par une branche `<n°issue>-<description>`, puis une PR avec `Closes #n`.
+- **Le moins de branches possible.** Avant d'en créer une, lance `gh pr list --author @me` :
+  - si ton développeur a déjà **2 PR ouvertes**, ne crée pas de branche : propose plutôt de finir ou de faire fusionner l'existante ;
+  - si le travail continue le sujet d'une PR ouverte, **ajoute des commits sur sa branche** ;
+  - une nouvelle branche part **toujours de `main` à jour**, **jamais de la branche d'une autre PR** (pas de PR empilées).
 - **Aucun secret dans le code**, les commits, les logs ou les tests. Les secrets vont dans `.env`, et on documente les variables dans `.env.example`.
 - **Interface :** uniquement les mots de `docs/vocabulaire.md`. Pas de métaphore sportive ni d'autre thème.
 - **Architecture :** pour s'écarter de `docs/architecture.md`, il faut une proposition acceptée par le chef de projet.
