@@ -1,0 +1,12 @@
+# Vérification des contrats : npx @redocly/cli@1.34.5 lint --config contracts/redocly.yaml contracts/*.yaml
+extends:
+  - recommended
+rules:
+  # socle.yaml est une bibliothèque de composants communs, utilisés par les autres contrats.
+  no-unused-components: off
+  # Le développement local tourne sur localhost.
+  no-server-example.com: off
+  # Licence du dépôt pas encore choisie.
+  info-license: off
+  # Les routes de connexion GitHub répondent par une redirection (302), par conception.
+  operation-2xx-response: off

@@ -6,5 +6,13 @@ updates:
       interval: weekly
   # À activer quand les apps existeront :
   # - package-ecosystem: npm     (apps/web)
-  # - package-ecosystem: maven   (apps/api)
   # - package-ecosystem: pip     (services/ia)
+  - package-ecosystem: maven
+    directory: /apps/api
+    schedule:
+      interval: weekly
+    groups:
+      # Spring Boot et Spring Modulith doivent monter ensemble, dans une seule PR.
+      spring:
+        patterns:
+          - "org.springframework*"

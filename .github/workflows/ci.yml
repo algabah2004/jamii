@@ -63,6 +63,23 @@ jobs:
             ci
           requireScope: false
 
+  api:
+    name: API (build et tests)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: apps/api/pom.xml
+      # Les tests d'intégration démarrent PostgreSQL avec Testcontainers (Docker est fourni par le runner).
+      - run: ./mvnw -B verify
+
   ia:
     name: Service IA (lint et tests)
     runs-on: ubuntu-latest
@@ -81,5 +98,5 @@ jobs:
       - run: uv run ruff format --check .
       - run: uv run pytest
 
-  # Les jobs build et tests de web et api seront ajoutés ici
+  # Le job build et tests de web sera ajouté ici
   # quand leur stack sera validée (#6).
