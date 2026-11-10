@@ -1,0 +1,312 @@
+openapi: 3.1.0
+info:
+  title: Jamii · Service IA
+  version: 0.1.0
+  summary: API interne de l'assistant de projet. Appelée par l'API de Jamii, jamais par le navigateur.
+  description: |
+    Responsable : @boubacarsidibe (bloc Assistant IA + mise en ligne Systalink, #20).
+    Règles communes : docs/api-conventions.md. Erreurs : schéma `Erreur` de socle.yaml.
+
+    **Fonctionnement.** L'IA est lente et peut tomber : rien n'est donc synchrone.
+    L'API dépose une tâche (`202`), puis lit son état jusqu'à `terminee` ou `echouee`.
+    La file est stockée dans PostgreSQL par le service IA lui-même (schéma `ia`) :
+    l'API ne lit jamais ses tables, elle passe uniquement par ce contrat.
+
+    **L'IA propose, l'humain décide.** Un résultat est une *proposition* : l'API l'affiche
+    comme telle, et seul un humain la transforme en projet, en tâches ou en réponse publiée.
+    Les textes d'un résultat sont générés : comme les contenus écrits par les utilisateurs,
+    ils ne sont pas traduits par le front et doivent être échappés à l'affichage.
+
+    **Données envoyées à l'IA : le minimum.** Aucun nom, e-mail ou identifiant GitHub.
+    Les membres sont désignés par un identifiant opaque et leurs seules compétences.
+
+    **Limitation.** C'est l'API qui limite, car elle seule connaît l'utilisateur :
+    10 tâches par heure et par utilisateur, 100 par heure au total (à ajuster après mesure).
+    Le service IA applique la limite globale en dernier rempart (`429`).
+
+    **Types de tâche.** Ce contrat commence par `plan_projet`. Les suivants (suggestion de
+    coéquipiers, résumé de la semaine, alerte de décrochage, réponse proposée, résumé de
+    profil) seront ajoutés à l'énumération `TypeTache`, chacun avec son entrée et son résultat.
+    Un consommateur doit donc ignorer un type qu'il ne connaît pas.
+servers:
+  - url: http://localhost:8000
+    description: Développement local
+
+security:
+  - jetonInterne: []
+
+tags:
+  - name: taches
+    description: Dépôt et suivi des tâches confiées à l'assistant.
+  - name: exploitation
+    description: Sondes de santé pour DataCloud et la page de statut.
+
+paths:
+  /health/liveness:
+    get:
+      tags: [exploitation]
+      operationId: vivant
+      summary: Le processus répond (ne dépend ni de la base ni du fournisseur IA)
+      security: []
+      responses:
+        '200':
+          description: Le service tourne.
+          content:
+            application/json:
+              schema: { $ref: './socle.yaml#/components/schemas/Sante' }
+
+  /health/readiness:
+    get:
+      tags: [exploitation]
+      operationId: pret
+      summary: Le service peut accepter des tâches (la base est joignable)
+      description: |
+        Une panne du fournisseur IA ne rend **pas** le service indisponible : les tâches sont
+        acceptées, puis réessayées ou traitées par le repli. Seule la base est indispensable.
+      security: []
+      responses:
+        '200':
+          description: Prêt.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Etat' }
+        '503':
+          description: La base est injoignable.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Etat' }
+
+  /taches:
+    post:
+      tags: [taches]
+      operationId: deposerTache
+      summary: Confie une tâche à l'assistant (traitée plus tard)
+      description: |
+        Idempotent grâce à `Idempotency-Key` : rejouer la même requête avec la même clé renvoie
+        la tâche déjà créée (`200`) au lieu d'en créer une deuxième. Une entrée identique à une
+        tâche terminée il y a moins de 24 h est servie depuis le cache (`origine` = `cache`).
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: UUID choisi par l'appelant, un par action de l'utilisateur.
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NouvelleTache' }
+      responses:
+        '200':
+          description: Tâche déjà déposée avec cette clé. Aucune nouvelle tâche créée.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Tache' }
+        '202':
+          description: Tâche acceptée, en file.
+          headers:
+            Location: { schema: { type: string, examples: ['/taches/0b0f5a4e-6c1d-4f0e-9a3b-2f6f0d1c7e11'] } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Tache' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: '#/components/responses/JetonInvalide' }
+        '409':
+          description: Cette clé a déjà servi pour une entrée différente (`code` = `cle_reutilisee`).
+          content:
+            application/problem+json:
+              schema: { $ref: './socle.yaml#/components/schemas/Erreur' }
+        '429': { $ref: './socle.yaml#/components/responses/TropDeRequetes' }
+
+  /taches/{tacheId}:
+    get:
+      tags: [taches]
+      operationId: lireTache
+      summary: État d'une tâche, et son résultat quand elle est terminée
+      description: À interroger toutes les 2 secondes au plus. Une tâche est conservée 30 jours.
+      parameters:
+        - name: tacheId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: La tâche.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Tache' }
+        '401': { $ref: '#/components/responses/JetonInvalide' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+
+components:
+  securitySchemes:
+    jetonInterne:
+      type: http
+      scheme: bearer
+      description: |
+        Secret partagé entre l'API et le service IA (variable `IA_JETON_INTERNE`), comparé en
+        temps constant. Le service IA n'est pas destiné à être exposé sur Internet : ce jeton est
+        une deuxième barrière, pas la seule.
+
+  responses:
+    JetonInvalide:
+      description: Jeton interne absent ou incorrect (`code` = `non_connecte`).
+      content:
+        application/problem+json:
+          schema: { $ref: './socle.yaml#/components/schemas/Erreur' }
+
+  schemas:
+    Etat:
+      type: object
+      required: [status, fournisseur]
+      properties:
+        status: { type: string, enum: [UP, DOWN] }
+        fournisseur:
+          type: string
+          description: Fournisseur IA configuré (`IA_PROVIDER`), pour la page de statut.
+          examples: [simule, yokk]
+
+    TypeTache:
+      type: string
+      enum: [plan_projet]
+
+    NouvelleTache:
+      type: object
+      required: [type, entree]
+      additionalProperties: false
+      properties:
+        type: { $ref: '#/components/schemas/TypeTache' }
+        entree:
+          description: Dépend de `type`. Pour `plan_projet` → `EntreePlanProjet`.
+          oneOf:
+            - $ref: '#/components/schemas/EntreePlanProjet'
+
+    Tache:
+      type: object
+      required: [id, type, statut, creeLe]
+      properties:
+        id: { type: string, format: uuid }
+        type: { $ref: '#/components/schemas/TypeTache' }
+        statut:
+          type: string
+          enum: [en_attente, en_cours, terminee, echouee]
+        creeLe: { type: string, format: date-time }
+        termineLe: { type: string, format: date-time, description: Présent si `terminee` ou `echouee`. }
+        origine:
+          type: string
+          enum: [ia, cache, repli]
+          description: |
+            Présent si `terminee`. `repli` : le fournisseur IA était indisponible, le résultat est
+            un modèle générique à compléter à la main. Le front doit le dire à l'utilisateur.
+        resultat:
+          description: Présent si `terminee`. Pour `plan_projet` → `PlanProjet`.
+          oneOf:
+            - $ref: '#/components/schemas/PlanProjet'
+        erreurCode:
+          type: string
+          description: Présent si `echouee`.
+          enum: [entree_refusee, resultat_invalide, delai_depasse]
+
+    EntreePlanProjet:
+      type: object
+      description: Une idée de développeur ou une demande de PME, à transformer en plan.
+      required: [source, titre, description]
+      additionalProperties: false
+      properties:
+        source: { type: string, enum: [idee, demande_pme] }
+        titre: { type: string, minLength: 3, maxLength: 120 }
+        description:
+          type: string
+          minLength: 20
+          maxLength: 4000
+          description: Le besoin, avec les mots de son auteur. Traité comme une donnée, jamais comme une consigne.
+        langue: { type: string, enum: [fr, en], default: fr, description: Langue du plan produit. }
+        dureeSemaines: { type: integer, minimum: 1, maximum: 26, description: 'Durée souhaitée, si connue.' }
+        membres:
+          type: array
+          maxItems: 10
+          description: L'équipe déjà formée. Vide ou absent - le plan ne répartit pas les tâches.
+          items: { $ref: '#/components/schemas/MembreEquipe' }
+
+    MembreEquipe:
+      type: object
+      required: [membreId, competences]
+      additionalProperties: false
+      properties:
+        membreId: { type: string, format: uuid, description: Identifiant opaque. Aucune autre donnée personnelle. }
+        competences:
+          type: array
+          maxItems: 20
+          items: { type: string, maxLength: 40, examples: [flutter, postgresql, design] }
+        heuresParSemaine: { type: integer, minimum: 1, maximum: 60 }
+
+    PlanProjet:
+      type: object
+      required: [cahierDesCharges, jalons, taches, rolesManquants, servicesSuggeres]
+      properties:
+        cahierDesCharges:
+          type: object
+          required: [resume, objectifs, fonctionnalites, horsPerimetre]
+          properties:
+            resume: { type: string, maxLength: 800 }
+            objectifs: { type: array, maxItems: 6, items: { type: string, maxLength: 200 } }
+            fonctionnalites:
+              type: array
+              maxItems: 15
+              items:
+                type: object
+                required: [titre, description, priorite]
+                properties:
+                  titre: { type: string, maxLength: 120 }
+                  description: { type: string, maxLength: 500 }
+                  priorite: { type: string, enum: [indispensable, utile, plus_tard] }
+            horsPerimetre: { type: array, maxItems: 8, items: { type: string, maxLength: 200 } }
+        jalons:
+          type: array
+          maxItems: 8
+          items:
+            type: object
+            required: [titre, semaine, livrable]
+            properties:
+              titre: { type: string, maxLength: 120 }
+              semaine: { type: integer, minimum: 1, maximum: 26, description: 'Semaine de fin, comptée depuis le début.' }
+              livrable: { type: string, maxLength: 300 }
+        taches:
+          type: array
+          maxItems: 40
+          items:
+            type: object
+            required: [titre, jalon, competences]
+            properties:
+              titre: { type: string, maxLength: 120 }
+              description: { type: string, maxLength: 500 }
+              jalon: { type: integer, minimum: 0, description: Position du jalon dans `jalons` (commence à 0). }
+              competences: { type: array, maxItems: 5, items: { type: string, maxLength: 40 } }
+              membreSuggere:
+                type: string
+                format: uuid
+                description: Un `membreId` de l'entrée, jamais inventé. Absent si personne ne convient.
+              raison: { type: string, maxLength: 300, description: Pourquoi ce membre. Toute suggestion est explicable. }
+        rolesManquants:
+          type: array
+          maxItems: 6
+          description: Les compétences que l'équipe n'a pas - des rôles à publier.
+          items:
+            type: object
+            required: [role, competences, raison]
+            properties:
+              role: { type: string, maxLength: 80 }
+              competences: { type: array, maxItems: 5, items: { type: string, maxLength: 40 } }
+              raison: { type: string, maxLength: 300 }
+        servicesSuggeres:
+          type: array
+          maxItems: 4
+          description: |
+            « Le bon service Systalink au bon moment » : des suggestions, jamais des obligations.
+            Souvent vide. Le plan reste complet et utilisable sans aucun de ces services.
+          items:
+            type: object
+            required: [service, raison]
+            properties:
+              service: { type: string, enum: [datacloud, orion, yokk, domaine] }
+              raison: { type: string, maxLength: 300 }
