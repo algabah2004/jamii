@@ -20,6 +20,8 @@ class DemandeIA:
     consigne: str
     donnees: str
     max_jetons: int = 2000
+    # Type de tâche : sert à l'adaptateur simulé pour choisir sa réponse.
+    tache: str = ""
 
 
 @dataclass(frozen=True)

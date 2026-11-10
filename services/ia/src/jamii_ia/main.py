@@ -1,5 +1,6 @@
 """Point d'entrée HTTP du service IA (contrat : contracts/ia.yaml)."""
 
+import asyncio
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -11,6 +12,7 @@ from jamii_ia.erreurs import brancher_erreurs
 from jamii_ia.fournisseurs import creer_fournisseur
 from jamii_ia.routes_taches import creer_routes_taches
 from jamii_ia.taches import DepotTaches
+from jamii_ia.travailleur import Travailleur
 
 _LONGUEUR_MIN_JETON = 16
 
@@ -35,7 +37,13 @@ def creer_app(config: Reglages | None = None) -> FastAPI:
         await migrer(config.database_url)
         pool = await ouvrir_pool(config.database_url)
         app.state.depot = DepotTaches(pool, config.limite_par_heure)
+        boucle = None
+        if config.travailleur_actif:
+            boucle = asyncio.create_task(Travailleur(app.state.depot, fournisseur).tourner())
         yield
+        if boucle is not None:
+            boucle.cancel()
+            await asyncio.gather(boucle, return_exceptions=True)
         await pool.close()
 
     # Service interne : pas de documentation interactive exposée.

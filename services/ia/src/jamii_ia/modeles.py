@@ -34,6 +34,56 @@ class NouvelleTache(Entree):
     entree: EntreePlanProjet
 
 
+Texte = Annotated[str, StringConstraints(min_length=1, max_length=500)]
+
+
+class Fonctionnalite(BaseModel):
+    titre: Texte
+    description: Texte
+    priorite: Literal["indispensable", "utile", "plus_tard"]
+
+
+class CahierDesCharges(BaseModel):
+    resume: str = Field(min_length=1, max_length=800)
+    objectifs: list[Texte] = Field(max_length=6)
+    fonctionnalites: list[Fonctionnalite] = Field(max_length=15)
+    horsPerimetre: list[Texte] = Field(max_length=8)
+
+
+class Jalon(BaseModel):
+    titre: Texte
+    semaine: int = Field(ge=1, le=26)
+    livrable: Texte
+
+
+class TachePlan(BaseModel):
+    titre: Texte
+    description: Texte | None = None
+    jalon: int = Field(ge=0)
+    competences: list[Competence] = Field(max_length=5)
+    membreSuggere: UUID | None = None
+    raison: Texte | None = None
+
+
+class RoleManquant(BaseModel):
+    role: Texte
+    competences: list[Competence] = Field(max_length=5)
+    raison: Texte
+
+
+class ServiceSuggere(BaseModel):
+    service: Literal["datacloud", "orion", "yokk", "domaine"]
+    raison: Texte
+
+
+class PlanProjet(BaseModel):
+    cahierDesCharges: CahierDesCharges
+    jalons: list[Jalon] = Field(min_length=1, max_length=8)
+    taches: list[TachePlan] = Field(max_length=40)
+    rolesManquants: list[RoleManquant] = Field(max_length=6)
+    servicesSuggeres: list[ServiceSuggere] = Field(max_length=4)
+
+
 class Tache(BaseModel):
     id: UUID
     type: str

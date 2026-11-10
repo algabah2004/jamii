@@ -15,6 +15,8 @@ class Reglages(BaseSettings):
     database_url: str = Field(default="", validation_alias="DATABASE_URL")
     # Secret partagé avec l'API. Aucune valeur par défaut : un oubli bloque le démarrage.
     jeton_interne: str = Field(default="", validation_alias="IA_JETON_INTERNE")
+    # Faux pour un service qui ne fait que recevoir les tâches (ou pour les tests).
+    travailleur_actif: bool = Field(default=True, validation_alias="IA_TRAVAILLEUR")
     limite_par_heure: int = Field(default=100, ge=1, validation_alias="IA_LIMITE_PAR_HEURE")
 
 

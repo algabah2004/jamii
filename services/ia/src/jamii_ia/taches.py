@@ -59,6 +59,61 @@ class DepotTaches:
             ligne = await connexion.fetchrow("SELECT * FROM ia.taches WHERE id = $1", tache_id)
         return dict(ligne) if ligne else None
 
+    async def prendre_suivante(self) -> dict[str, Any] | None:
+        """Réserve la prochaine tâche à traiter, ou rien si la file est vide.
+
+        `SKIP LOCKED` : deux travailleurs ne prennent jamais la même tâche. La tâche est
+        réservée 2 minutes ; si le travailleur meurt, elle redevient disponible ensuite.
+        """
+        async with self._pool.acquire() as connexion:
+            ligne = await connexion.fetchrow(
+                "UPDATE ia.taches SET statut = 'en_cours', essais = essais + 1, "
+                "disponible_le = now() + interval '2 minutes' "
+                "WHERE id = (SELECT id FROM ia.taches "
+                "WHERE statut IN ('en_attente', 'en_cours') AND disponible_le <= now() "
+                "ORDER BY disponible_le FOR UPDATE SKIP LOCKED LIMIT 1) RETURNING *"
+            )
+        return dict(ligne) if ligne else None
+
+    async def terminer(self, tache_id: UUID, resultat: dict[str, Any], origine: str) -> None:
+        await self._executer(
+            "UPDATE ia.taches SET statut = 'terminee', resultat = $2, origine = $3, "
+            "termine_le = now() WHERE id = $1",
+            tache_id,
+            resultat,
+            origine,
+        )
+
+    async def echouer(self, tache_id: UUID, erreur_code: str) -> None:
+        await self._executer(
+            "UPDATE ia.taches SET statut = 'echouee', erreur_code = $2, termine_le = now() "
+            "WHERE id = $1",
+            tache_id,
+            erreur_code,
+        )
+
+    async def remettre(self, tache_id: UUID, delai_secondes: int) -> None:
+        await self._executer(
+            "UPDATE ia.taches SET statut = 'en_attente', "
+            "disponible_le = now() + make_interval(secs => $2) WHERE id = $1",
+            tache_id,
+            delai_secondes,
+        )
+
+    async def resultat_en_cache(self, marque: str) -> dict[str, Any] | None:
+        """Résultat produit par l'IA pour la même entrée il y a moins de 24 h, s'il existe."""
+        async with self._pool.acquire() as connexion:
+            return await connexion.fetchval(
+                "SELECT resultat FROM ia.taches WHERE empreinte = $1 AND statut = 'terminee' "
+                "AND origine = 'ia' AND termine_le > now() - interval '24 hours' "
+                "ORDER BY termine_le DESC LIMIT 1",
+                marque,
+            )
+
+    async def _executer(self, requete: str, *valeurs: Any) -> None:
+        async with self._pool.acquire() as connexion:
+            await connexion.execute(requete, *valeurs)
+
     async def base_joignable(self) -> bool:
         try:
             async with self._pool.acquire(timeout=3) as connexion:

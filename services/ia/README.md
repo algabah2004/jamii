@@ -24,6 +24,7 @@ uv run ruff check . && uv run ruff format --check .
 | `PORT`, sinon `IA_PORT` | `8000` | Port d'écoute. `PORT` (imposé par l'hébergeur) l'emporte |
 | `DATABASE_URL` | aucun, **obligatoire** | PostgreSQL. Le service y crée son schéma `ia` au démarrage |
 | `IA_JETON_INTERNE` | aucun, **obligatoire** | Secret partagé avec l'API, 16 caractères minimum |
+| `IA_TRAVAILLEUR` | `true` | Faux : le service reçoit les tâches mais ne les traite pas |
 | `IA_LIMITE_PAR_HEURE` | `100` | Dernier rempart : tâches acceptées par heure, au total |
 
 Les tests ont besoin de PostgreSQL : `docker compose up -d postgres` à la racine. Ils créent leur propre base, `jamii_ia_test`, et ne touchent jamais à la base de développement.
@@ -50,6 +51,6 @@ code métier ──► FournisseurIA (fournisseurs/base.py) ──► simule   (
 
 - [x] Squelette, sondes de santé, `FournisseurIA` et adaptateur simulé, tests, CI
 - [x] File de tâches PostgreSQL : dépôt, lecture, idempotence, jeton interne, limite globale
-- [ ] Travailleur qui traite la file, cache et repli si l'IA tombe
-- [ ] Premier cas : idée ou demande de PME → plan
+- [x] Travailleur qui traite la file, cache de 24 h et repli si l'IA tombe
+- [x] Premier cas : idée ou demande de PME → plan (avec le fournisseur simulé)
 - [ ] Adaptateur Yokk (après le test de son API, voir `docs/systalink-services.md`)
