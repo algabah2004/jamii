@@ -5,9 +5,7 @@ import json
 from typing import Any
 from uuid import UUID, uuid4
 
-import psycopg
-from psycopg.types.json import Jsonb
-from psycopg_pool import ConnectionPool, PoolTimeout
+import asyncpg
 
 
 class CleReutiliseeError(Exception):
@@ -25,56 +23,59 @@ def empreinte(type_tache: str, entree: dict[str, Any]) -> str:
 
 
 class DepotTaches:
-    def __init__(self, pool: ConnectionPool, limite_par_heure: int) -> None:
+    def __init__(self, pool: asyncpg.Pool, limite_par_heure: int) -> None:
         self._pool = pool
         self._limite_par_heure = limite_par_heure
 
-    def deposer(self, cle: UUID, type_tache: str, entree: dict[str, Any]) -> tuple[dict, bool]:
+    async def deposer(
+        self, cle: UUID, type_tache: str, entree: dict[str, Any]
+    ) -> tuple[dict[str, Any], bool]:
         """Renvoie (tâche, créée). `créée` est faux si la clé avait déjà servi pour cette entrée."""
         marque = empreinte(type_tache, entree)
-        with self._pool.connection() as connexion:
-            existante = self._par_cle(connexion, cle)
+        async with self._pool.acquire() as connexion:
+            existante = await self._par_cle(connexion, cle)
             if existante is None:
-                self._verifier_limite(connexion)
-                creee = connexion.execute(
+                await self._verifier_limite(connexion)
+                creee = await connexion.fetchrow(
                     "INSERT INTO ia.taches (id, cle_idempotence, type, entree, empreinte) "
-                    "VALUES (%s, %s, %s, %s, %s) "
+                    "VALUES ($1, $2, $3, $4, $5) "
                     "ON CONFLICT (cle_idempotence) DO NOTHING RETURNING *",
-                    (uuid4(), cle, type_tache, Jsonb(entree), marque),
-                ).fetchone()
+                    uuid4(),
+                    cle,
+                    type_tache,
+                    entree,
+                    marque,
+                )
                 if creee is not None:
-                    return creee, True
+                    return dict(creee), True
                 # Deux requêtes avec la même clé au même instant : l'autre a gagné.
-                existante = self._par_cle(connexion, cle)
+                existante = await self._par_cle(connexion, cle)
             if existante["empreinte"] != marque:
                 raise CleReutiliseeError
-            return existante, False
+            return dict(existante), False
 
-    def lire(self, tache_id: UUID) -> dict | None:
-        with self._pool.connection() as connexion:
-            return connexion.execute(
-                "SELECT * FROM ia.taches WHERE id = %s", (tache_id,)
-            ).fetchone()
+    async def lire(self, tache_id: UUID) -> dict[str, Any] | None:
+        async with self._pool.acquire() as connexion:
+            ligne = await connexion.fetchrow("SELECT * FROM ia.taches WHERE id = $1", tache_id)
+        return dict(ligne) if ligne else None
 
-    def base_joignable(self) -> bool:
+    async def base_joignable(self) -> bool:
         try:
-            with self._pool.connection() as connexion:
-                connexion.execute("SELECT 1")
+            async with self._pool.acquire(timeout=3) as connexion:
+                await connexion.execute("SELECT 1")
             return True
-        except (psycopg.Error, PoolTimeout):
+        except (asyncpg.PostgresError, asyncpg.InterfaceError, OSError, TimeoutError):
             return False
 
     @staticmethod
-    def _par_cle(connexion: psycopg.Connection, cle: UUID) -> dict | None:
-        return connexion.execute(
-            "SELECT * FROM ia.taches WHERE cle_idempotence = %s", (cle,)
-        ).fetchone()
+    async def _par_cle(connexion: asyncpg.Connection, cle: UUID) -> asyncpg.Record | None:
+        return await connexion.fetchrow("SELECT * FROM ia.taches WHERE cle_idempotence = $1", cle)
 
-    def _verifier_limite(self, connexion: psycopg.Connection) -> None:
+    async def _verifier_limite(self, connexion: asyncpg.Connection) -> None:
         # Compte approximatif sous forte concurrence : suffisant pour un dernier rempart,
         # la limite précise par utilisateur est faite par l'API.
-        ligne = connexion.execute(
-            "SELECT count(*) AS n FROM ia.taches WHERE cree_le > now() - interval '1 hour'"
-        ).fetchone()
-        if ligne["n"] >= self._limite_par_heure:
+        nombre = await connexion.fetchval(
+            "SELECT count(*) FROM ia.taches WHERE cree_le > now() - interval '1 hour'"
+        )
+        if nombre >= self._limite_par_heure:
             raise LimiteAtteinteError

@@ -25,7 +25,7 @@ def creer_routes_taches(jeton_interne: str) -> APIRouter:
     routes = APIRouter(prefix="/taches", dependencies=[Depends(exiger_jeton)])
 
     @routes.post("", response_model=Tache, response_model_exclude_none=True)
-    def deposer(
+    async def deposer(
         corps: NouvelleTache,
         reponse: Response,
         depot: Annotated[DepotTaches, Depends(depot)],
@@ -33,7 +33,7 @@ def creer_routes_taches(jeton_interne: str) -> APIRouter:
     ) -> Tache:
         entree = corps.entree.model_dump(mode="json", exclude_none=True)
         try:
-            ligne, creee = depot.deposer(cle, corps.type, entree)
+            ligne, creee = await depot.deposer(cle, corps.type, entree)
         except CleReutiliseeError:
             raise ErreurApi(
                 409, "cle_reutilisee", "Cette clé a déjà servi pour une autre entrée"
@@ -48,8 +48,8 @@ def creer_routes_taches(jeton_interne: str) -> APIRouter:
         return Tache.depuis_ligne(ligne)
 
     @routes.get("/{tache_id}", response_model=Tache, response_model_exclude_none=True)
-    def lire(tache_id: UUID, depot: Annotated[DepotTaches, Depends(depot)]) -> Tache:
-        ligne = depot.lire(tache_id)
+    async def lire(tache_id: UUID, depot: Annotated[DepotTaches, Depends(depot)]) -> Tache:
+        ligne = await depot.lire(tache_id)
         if ligne is None:
             raise ErreurApi(404, "introuvable", "Tâche inconnue")
         return Tache.depuis_ligne(ligne)

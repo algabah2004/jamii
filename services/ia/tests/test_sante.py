@@ -24,7 +24,7 @@ def test_readiness_indique_le_fournisseur(client):
 
 
 def test_readiness_repond_503_si_la_base_tombe(client):
-    client.app.state.depot._pool.close()
+    client.portal.call(client.app.state.depot._pool.close)
     reponse = client.get("/health/readiness")
     assert reponse.status_code == 503
     assert reponse.json()["status"] == "DOWN"

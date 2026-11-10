@@ -32,11 +32,11 @@ def creer_app(config: Reglages | None = None) -> FastAPI:
 
     @asynccontextmanager
     async def cycle_de_vie(app: FastAPI) -> AsyncIterator[None]:
-        migrer(config.database_url)
-        pool = ouvrir_pool(config.database_url)
+        await migrer(config.database_url)
+        pool = await ouvrir_pool(config.database_url)
         app.state.depot = DepotTaches(pool, config.limite_par_heure)
         yield
-        pool.close()
+        await pool.close()
 
     # Service interne : pas de documentation interactive exposée.
     app = FastAPI(
@@ -55,10 +55,10 @@ def creer_app(config: Reglages | None = None) -> FastAPI:
         return {"status": "UP"}
 
     @app.get("/health/readiness")
-    def pret(reponse: Response) -> dict[str, str]:
+    async def pret(reponse: Response) -> dict[str, str]:
         # Seule la base est indispensable : une panne du fournisseur IA ne rend pas le
         # service indisponible, les tâches restent acceptées.
-        joignable = app.state.depot.base_joignable()
+        joignable = await app.state.depot.base_joignable()
         if not joignable:
             reponse.status_code = 503
         return {"status": "UP" if joignable else "DOWN", "fournisseur": fournisseur.nom}
