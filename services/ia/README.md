@@ -23,6 +23,12 @@ uv run ruff check . && uv run ruff format --check .
 | `IA_PROVIDER` | `simule` | Le fournisseur IA. Une valeur inconnue **bloque le démarrage** |
 | `PORT`, sinon `IA_PORT` | `8000` | Port d'écoute. `PORT` (imposé par l'hébergeur) l'emporte |
 
+Les tests ont besoin de PostgreSQL : `docker compose up -d postgres` à la racine. Ils créent leur propre base, `jamii_ia_test`, et ne touchent jamais à la base de développement.
+
+## La file de tâches
+
+Les tables vivent dans le schéma `ia` : l'API de Jamii ne les lit jamais, elle passe par `contracts/ia.yaml`. Les migrations (`src/jamii_ia/migrations/*.sql`) sont jouées une seule fois, sous verrou, dans une transaction. Une clé d'idempotence empêche qu'un nouvel essai réseau crée deux tâches.
+
 ## Le fournisseur IA est remplaçable
 
 ```

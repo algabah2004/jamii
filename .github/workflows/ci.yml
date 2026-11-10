@@ -69,6 +69,21 @@ jobs:
     defaults:
       run:
         working-directory: services/ia
+    # Les tests tournent sur un vrai PostgreSQL (même version que docker-compose.yml).
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: jamii
+          POSTGRES_USER: jamii
+          POSTGRES_PASSWORD: jamii_ci_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U jamii -d jamii"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://jamii:jamii_ci_only@localhost:5432/jamii
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v10.3.3

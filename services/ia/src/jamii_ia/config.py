@@ -12,6 +12,8 @@ class Reglages(BaseSettings):
     # Même règle que apps/api : PORT (imposé par l'hébergeur) l'emporte sur IA_PORT.
     port: int = Field(default=8000, validation_alias=AliasChoices("PORT", "IA_PORT"))
     fournisseur: str = Field(default="simule", validation_alias="IA_PROVIDER")
+    database_url: str = Field(default="", validation_alias="DATABASE_URL")
+    limite_par_heure: int = Field(default=100, ge=1, validation_alias="IA_LIMITE_PAR_HEURE")
 
 
 @lru_cache
