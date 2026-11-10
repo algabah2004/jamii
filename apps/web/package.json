@@ -1,0 +1,29 @@
+{
+  "name": "jamii-web",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "contrats": "openapi-typescript ../../contracts/socle.yaml -o src/api/socle.d.ts && openapi-typescript ../../contracts/projets.yaml -o src/api/projets.d.ts"
+  },
+  "dependencies": {
+    "openapi-fetch": "^0.17.0",
+    "vue": "^3.5.45",
+    "vue-router": "^5.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "@vitejs/plugin-vue": "^6.0.10",
+    "@vue/test-utils": "^2.5.1",
+    "jsdom": "^31.0.0",
+    "openapi-typescript": "^7.13.0",
+    "typescript": "~5.9",
+    "vite": "^8.3.7",
+    "vitest": "^5.1.0",
+    "vue-tsc": "^3.3.14"
+  }
+}

@@ -1,0 +1,50 @@
+/* Jetons de design : point de départ, à remplacer par le design system (#19). Brandable. */
+:root {
+  --fond: #fbfaf7;
+  --surface: #ffffff;
+  --texte: #1c1b19;
+  --texte-doux: #5f5b53;
+  --accent: #c2410c;
+  --accent-texte: #ffffff;
+  --bordure: #e7e3da;
+  --rayon: 10px;
+  color-scheme: light dark;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.5;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fond: #141311;
+    --surface: #1e1d1a;
+    --texte: #f2efe8;
+    --texte-doux: #b0aa9e;
+    --accent: #fb923c;
+    --accent-texte: #1c1b19;
+    --bordure: #34322d;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--fond); color: var(--texte); }
+a { color: var(--accent); }
+main { max-width: 960px; margin: 0 auto; padding: 24px 16px 48px; }
+h1 { font-size: clamp(1.8rem, 4vw, 2.6rem); line-height: 1.15; margin: 0 0 12px; }
+.entete {
+  display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+  padding: 12px 16px; border-bottom: 1px solid var(--bordure); background: var(--surface);
+}
+.entete nav { display: flex; gap: 16px; flex: 1; }
+.entete nav a, .moi { color: var(--texte); text-decoration: none; }
+.entete nav a.router-link-active { color: var(--accent); font-weight: 600; }
+.marque { font-weight: 800; font-size: 1.3rem; color: var(--accent); text-decoration: none; }
+.moi { display: flex; align-items: center; gap: 8px; }
+.moi img { border-radius: 50%; }
+.bouton {
+  display: inline-block; padding: 10px 16px; border-radius: var(--rayon); border: 0; cursor: pointer;
+  background: var(--accent); color: var(--accent-texte); text-decoration: none; font-weight: 600; font-size: 1rem;
+}
+.bouton.secondaire { background: transparent; color: var(--texte); border: 1px solid var(--bordure); }
+.carte { background: var(--surface); border: 1px solid var(--bordure); border-radius: var(--rayon); padding: 20px; }
+.grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+.doux { color: var(--texte-doux); }
+.alerte { margin: 0; padding: 10px 16px; background: #fef3c7; color: #78350f; text-align: center; }
+.pied { text-align: center; padding: 24px 16px; color: var(--texte-doux); font-size: 0.9rem; }
