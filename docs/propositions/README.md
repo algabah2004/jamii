@@ -40,3 +40,4 @@ C'est encouragé, mais **pour réfléchir mieux, pas pour réfléchir moins**. P
 | N° | Titre | Auteur | Statut |
 |---|---|---|---|
 | 0001 | [Réduire le périmètre au parcours « d'une demande à une appli en ligne »](0001-perimetre-demo.md) | @algabah2004 | Acceptée (concept final) |
+| 0003 | [Des communautés vivantes : l'échange qui fait naître les projets](0003-communautes-vivantes.md) | @rev22rse22 | Brouillon |
