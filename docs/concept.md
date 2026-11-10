@@ -1,8 +1,12 @@
 # Jamii · Le concept final
 
-> **Trouve ton équipe. Construis un vrai projet. Mets-le en ligne sur Systalink. Et prouve-le.**
+> **Le lieu où les développeurs africains se rencontrent, échangent et construisent ensemble.**
+>
+> Et de l'échange naissent des projets : **trouve ton équipe, construis un vrai projet, mets-le en ligne sur Systalink, et prouve-le.**
 
 *Jamii veut dire « communauté » en swahili.* Ce document est **la référence produit**. Les choix y sont tranchés : ce qui n'y figure pas, on ne le construit pas pour la CADEV.
+
+**Jamii est d'abord une plateforme d'échange** (c'est le thème de la CADEV) : on s'y rencontre, on discute, on s'entraide, on y trouve des coéquipiers et des PME qui ont de vrais besoins. Ce qui nous distingue d'un forum ou d'un annuaire, c'est que **ces échanges débouchent sur des projets qui vivent et sont mis en ligne**.
 
 ## Le problème qu'on résout
 
