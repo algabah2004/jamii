@@ -1,6 +1,10 @@
 package dev.jamii.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oauth2Login;
+
+import java.util.Set;
+import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +15,9 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
+
+import dev.jamii.api.auth.Role;
+import dev.jamii.api.auth.UtilisateurConnecte;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -49,8 +56,10 @@ class SanteTest {
 
 	@Test
 	void aucun_autre_endpoint_actuator_expose() {
+		// Même connecté : ces routes n'existent pas (sans session, la réponse serait 401).
+		var connecte = oauth2Login().oauth2User(new UtilisateurConnecte(UUID.randomUUID(), Set.of(Role.MEMBRE)));
 		for (String chemin : new String[] { "/env", "/beans", "/configprops", "/actuator", "/actuator/env" }) {
-			assertThat(mvc.get().uri(chemin)).as(chemin).hasStatus(HttpStatus.NOT_FOUND);
+			assertThat(mvc.get().uri(chemin).with(connecte)).as(chemin).hasStatus(HttpStatus.NOT_FOUND);
 		}
 	}
 

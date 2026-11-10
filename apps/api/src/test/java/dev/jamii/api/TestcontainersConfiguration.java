@@ -14,7 +14,7 @@ import org.testcontainers.utility.DockerImageName;
 
 /** Une vraie base PostgreSQL pour les tests, avec la même image que docker-compose.yml (une seule source). */
 @TestConfiguration(proxyBeanMethods = false)
-class TestcontainersConfiguration {
+public class TestcontainersConfiguration {
 
 	static final Path DOCKER_COMPOSE = Path.of("../../docker-compose.yml");
 

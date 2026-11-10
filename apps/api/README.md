@@ -67,6 +67,16 @@ L'API tient dans 512 Mo. En revanche, l'offre Free se met en veille : la premiè
 
 Aucun autre endpoint Actuator n'est exposé.
 
+## Connexion et sécurité
+
+Tout le code est dans le module `auth` (`dev.jamii.api.auth`).
+
+- **Connexion GitHub** : `GET /api/auth/github?retour=/chemin`. Pour l'essayer en local, crée une [OAuth App GitHub](https://github.com/settings/developers) avec l'adresse de retour `http://localhost:8080/api/auth/github/retour`, puis remplis `GITHUB_CLIENT_ID` et `GITHUB_CLIENT_SECRET`. Sans ces variables, l'API démarre quand même, mais la connexion GitHub échoue.
+- **Session** : cookie `JAMII_SESSION` (HttpOnly, Secure, SameSite=Lax), stockée dans PostgreSQL et expirée après 7 jours sans activité.
+- **CSRF** : tout `POST`, `PUT`, `PATCH` ou `DELETE` renvoie la valeur du cookie `XSRF-TOKEN` dans l'en-tête `X-XSRF-TOKEN`.
+- **Tout est fermé par défaut.** Une route publique s'ouvre explicitement dans `SecuriteConfig`.
+- **Dans ton module**, l'utilisateur connecté s'obtient avec `@AuthenticationPrincipal UtilisateurConnecte moi`, qui donne `moi.id()` et `moi.roles()`.
+
 ## Base de données
 
 - Le schéma appartient à **Flyway** : `src/main/resources/db/migration/V<n>__<description>.sql`.
