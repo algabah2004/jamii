@@ -3,7 +3,8 @@
     "profil": "Profile",
     "principal": "Main menu",
     "systalink": "Systalink space",
-    "vitrine": "Showcase"
+    "vitrine": "Showcase",
+    "communautes": "Communities"
   },
   "connexion": {
     "github": "Sign in with GitHub",
@@ -77,5 +78,36 @@
     "verifie": "Checked {quand}",
     "plus": "See more projects",
     "vide": "No project online yet."
+  },
+  "communautes": {
+    "titre": "Communities",
+    "intro": "Ask questions, help others and show your projects, with developers from across the continent.",
+    "antenne": "Local chapter · {pays}",
+    "membres": "{n} member | {n} members",
+    "questionsOuvertes": "no open question | {n} open question | {n} open questions",
+    "tuEnFaisPartie": "You are a member",
+    "retour": "← All communities",
+    "rejoindre": "Join",
+    "quitter": "Leave",
+    "poser": "Ask a question",
+    "type": "Type",
+    "types": {
+      "question": "Question",
+      "discussion": "Discussion",
+      "montre_ton_projet": "Show your project"
+    },
+    "champTitre": "Title (at least 10 characters)",
+    "champContenu": "Explain your problem (at least 20 characters)",
+    "aideIa": "For a question, the AI will suggest an answer. A community member will have to check it.",
+    "publier": "Publish",
+    "erreurPublier": "Your post could not be sent. Try again in a moment.",
+    "rejoindrePourPublier": "Join the community to post and answer.",
+    "filtre": "Show",
+    "toutes": "Everything",
+    "ouvertes": "Questions without an accepted answer",
+    "vide": "Nothing here yet. Ask the first question!",
+    "reponseAcceptee": "Accepted answer",
+    "reponses": "no answer | {n} answer | {n} answers",
+    "compteSupprime": "deleted account"
   }
 }

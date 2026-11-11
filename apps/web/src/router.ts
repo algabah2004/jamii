@@ -10,6 +10,19 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('./pages/ProfilPage.vue'),
     meta: { connexionRequise: true },
   },
+  // Communautés : connexion requise (contracts/communautes.yaml).
+  {
+    path: '/communautes',
+    name: 'communautes',
+    component: () => import('./features/communautes/CommunautesPage.vue'),
+    meta: { connexionRequise: true },
+  },
+  {
+    path: '/communautes/:slug',
+    name: 'communaute',
+    component: () => import('./features/communautes/CommunautePage.vue'),
+    meta: { connexionRequise: true },
+  },
   {
     // Public : seulement ce que chaque projet montre déjà à tous (contracts/vitrine.yaml).
     path: '/vitrine',
