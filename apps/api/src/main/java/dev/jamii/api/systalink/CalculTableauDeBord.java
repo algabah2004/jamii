@@ -12,6 +12,8 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 
+import dev.jamii.api.auth.Annuaire;
+
 /**
  * Calcule le tableau de bord et le garde 5 minutes par période : si toute la salle ouvre la page pendant la démo,
  * la base ne reçoit qu'une série de requêtes toutes les 5 minutes.
@@ -23,7 +25,9 @@ class CalculTableauDeBord {
 
 	private final JdbcClient base;
 
-	private final ObjectProvider<ChiffresDesModules.Inscrits> inscrits;
+	private final Annuaire annuaire;
+
+	private final ObjectProvider<ChiffresDesModules.PaysDesInscrits> pays;
 
 	private final ObjectProvider<ChiffresDesModules.Projets> projets;
 
@@ -33,11 +37,12 @@ class CalculTableauDeBord {
 
 	private final Map<Periode, TableauDeBord> cache = new ConcurrentHashMap<>();
 
-	CalculTableauDeBord(JdbcClient base, ObjectProvider<ChiffresDesModules.Inscrits> inscrits,
+	CalculTableauDeBord(JdbcClient base, Annuaire annuaire, ObjectProvider<ChiffresDesModules.PaysDesInscrits> pays,
 			ObjectProvider<ChiffresDesModules.Projets> projets,
 			ObjectProvider<ChiffresDesModules.Deploiements> deploiements, ObjectProvider<Clock> horloge) {
 		this.base = base;
-		this.inscrits = inscrits;
+		this.annuaire = annuaire;
+		this.pays = pays;
 		this.projets = projets;
 		this.deploiements = deploiements;
 		this.horloge = horloge.getIfAvailable(Clock::systemUTC);
@@ -60,11 +65,12 @@ class CalculTableauDeBord {
 	/** Un module qui n'a pas encore branché son compteur compte pour 0 : jamais de chiffre inventé. */
 	private TableauDeBord calculer(Periode periode, Instant maintenant) {
 		Instant debut = periode.debut(maintenant);
-		var i = inscrits.getIfAvailable();
+		var lesPays = pays.getIfAvailable();
 		var p = projets.getIfAvailable();
 		var d = deploiements.getIfAvailable();
-		var lesInscrits = TableauDeBord.Inscrits.anonymiser(i == null ? 0 : i.compter(null),
-				i == null ? 0 : i.compter(debut), i == null ? Map.of() : i.parPays());
+		// Tant que les profils (#19) ne donnent pas les pays, tous les inscrits sont comptés dans « autres ».
+		var lesInscrits = TableauDeBord.Inscrits.anonymiser(annuaire.compterInscrits(null),
+				annuaire.compterInscrits(debut), lesPays == null ? Map.of() : lesPays.parPays());
 		var lesProjets = new TableauDeBord.Projets(p == null ? 0 : p.compter(null), p == null ? 0 : p.compter(debut),
 				d == null ? 0 : d.projetsEnLigne(), d == null ? 0 : d.projetsSurDatacloud());
 		return new TableauDeBord(periode, maintenant, lesInscrits, lesProjets, moments(debut));
