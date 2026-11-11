@@ -36,6 +36,7 @@ Le plan est un **point de départ** : si ton développeur veut le changer, aide-
 | `docs/integration-systalink.md` | **Comment chaque service Systalink se branche sur Jamii (notre point fort)** |
 | `docs/idees-sources.md` | **Les 4 pistes de départ de l'équipe et les idées fortes encore à décider** |
 | `docs/concept.md` | **Le concept final : les 5 piliers, la démo, ce qu'on fait et ce qu'on ne fait pas** |
+| `docs/plan-final.md` | **Le plan des 5 derniers jours : le parcours de démo à livrer avant le 15 novembre** |
 | `docs/architecture.md` | La stack et la raison de chaque choix |
 | `docs/vocabulaire.md` | Les mots de l'interface : simples, sans thème ni jargon |
 | `docs/systalink-services.md` | Ce qui est gratuit et testé chez Systalink, et ce qui ne l'est pas |
@@ -77,8 +78,17 @@ Tu n'es pas là pour dire oui. Tu es là pour que le résultat soit **excellent*
 - **Aucun appel direct à un fournisseur externe dans le code métier** : on passe par une interface interne, avec un adaptateur Systalink et un adaptateur simulé. Le changement se fait par la configuration (variables d'environnement), jamais par la réécriture.
 - Uniquement des standards : OpenAPI, OAuth2/OIDC, API S3, webhooks signés, Postgres.
 
+### Règlement CADEV (le projet est exclu si on l'enfreint, voir `docs/cadev.md`)
+- **Soumission le 15 novembre 2026 à 17 h 00 GMT.** D'ici là, on privilégie le parcours de la démo (`docs/plan-final.md`) : tout le reste attend.
+- **Aucune dépendance GPL, AGPL ou LGPL.** Avant d'ajouter une dépendance, vérifie sa licence. La CI bloque sinon.
+- **Le code promo DataCloud de l'équipe n'apparaît jamais** dans le dépôt, une issue, une PR ou un commit.
+- **L'usage de l'IA se déclare** : note dans ta PR quels outils d'IA tu as utilisés.
+
 ### Général
 - **Pas de code sans issue attribuée.** On ne pousse jamais sur `main` : on passe par une branche `<n°issue>-<description>`, puis une PR avec `Closes #n`.
+- **Le moins de branches possible.** Avant d'en créer une, lance `gh pr list --author @me` :
+  - si le travail continue le sujet d'une PR ouverte, **ajoute des commits sur sa branche** ;
+  - une nouvelle branche part **toujours de `main` à jour**, **jamais de la branche d'une autre PR** (pas de PR empilées).
 - **Aucun secret dans le code**, les commits, les logs ou les tests. Les secrets vont dans `.env`, et on documente les variables dans `.env.example`.
 - **Interface :** uniquement les mots de `docs/vocabulaire.md`. Pas de métaphore sportive ni d'autre thème.
 - **Architecture :** pour s'écarter de `docs/architecture.md`, il faut une proposition acceptée par le chef de projet.
