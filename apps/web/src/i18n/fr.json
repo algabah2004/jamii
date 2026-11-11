@@ -17,7 +17,68 @@
   },
   "profil": {
     "titre": "Profil",
-    "vide": "Ton profil se remplira avec tes langages et tes projets publics GitHub, et les projets que tu mets en ligne sur Jamii."
+    "vide": "Ton profil se remplira avec tes langages et tes projets publics GitHub, et les projets que tu mets en ligne sur Jamii.",
+    "generation": {
+      "titre": "Crée ton profil à partir de GitHub",
+      "texte": "Jamii lit tes dépôts publics (langages, sujets, étoiles) pour remplir ton profil. Rien de privé n'est lu, et tu pourras tout compléter ensuite.",
+      "bouton": "Générer mon profil depuis GitHub",
+      "regenerer": "Mettre à jour depuis GitHub",
+      "enCours": "Lecture de tes dépôts GitHub…",
+      "prive": "Ton profil reste privé jusqu'à ce que tu le publies.",
+      "sansGithub": "Ton compte n'est pas relié à GitHub. Connecte-toi avec GitHub pour générer ton profil.",
+      "tropSouvent": "Tu as déjà mis ton profil à jour plusieurs fois cette heure-ci. Réessaie un peu plus tard.",
+      "erreurs": {
+        "github_indisponible": "GitHub ne répond pas pour le moment. Ton profil précédent est conservé : réessaie dans quelques minutes.",
+        "github_refus": "GitHub ne trouve plus ton compte. Vérifie ton identifiant GitHub, puis réessaie."
+      }
+    },
+    "disponibilite": {
+      "disponible": "Disponible",
+      "occupe": "Occupé en ce moment",
+      "indisponible": "Pas disponible"
+    },
+    "heures": "{n} h par semaine",
+    "visibilite": {
+      "prive": "🔒 Ton profil est privé : toi seul le vois.",
+      "publie": "✅ Ton profil est publié : les membres connectés le voient et peuvent te proposer une équipe.",
+      "publier": "Publier mon profil",
+      "retirer": "Rendre mon profil privé"
+    },
+    "modifier": {
+      "bouton": "Modifier",
+      "titre": "Ce que tu déclares toi-même",
+      "bio": "Présentation",
+      "pays": "Pays",
+      "paysAucun": "Je préfère ne pas le dire",
+      "ville": "Ville",
+      "disponibilite": "Disponibilité",
+      "heures": "Heures par semaine (1 à 60)",
+      "competences": "Autres compétences",
+      "competencesAide": "Séparées par des virgules, 20 au plus. Exemple : UX design, Mobile Money",
+      "enregistrer": "Enregistrer",
+      "annuler": "Annuler",
+      "enregistre": "Ton profil est enregistré.",
+      "conflit": "Ton profil a changé dans un autre onglet. Voici la dernière version : refais ta modification.",
+      "invalide": "Cette valeur n'est pas acceptée."
+    },
+    "langages": {
+      "titre": "Langages",
+      "estimation": "Estimé d'après la taille de tes dépôts publics GitHub (hors forks)."
+    },
+    "competences": {
+      "titre": "Compétences",
+      "declaree": "(déclarée)",
+      "source": "Déduites de tes dépôts GitHub, plus celles que tu ajoutes."
+    },
+    "projets": {
+      "titre": "Projets sur Jamii",
+      "vide": "Pas encore de projet. Les projets que tu mets en ligne avec ton équipe apparaîtront ici, avec le lien vérifié."
+    },
+    "depots": {
+      "titre": "Dépôts GitHub",
+      "etoiles": "aucune étoile | {n} étoile | {n} étoiles",
+      "pasUnePreuve": "Les dépôts montrent ce que tu codes. Seul un projet mis en ligne et vérifié compte comme preuve."
+    }
   },
   "etat": {
     "chargement": "Chargement…",

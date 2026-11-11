@@ -7,7 +7,7 @@ export const routes: RouteRecordRaw[] = [
   {
     path: '/profil',
     name: 'profil',
-    component: () => import('./pages/ProfilPage.vue'),
+    component: () => import('./features/profils/MonProfilPage.vue'),
     meta: { connexionRequise: true },
   },
   // Communautés : connexion requise (contracts/communautes.yaml).
