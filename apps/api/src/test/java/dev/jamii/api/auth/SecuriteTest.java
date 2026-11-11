@@ -66,7 +66,7 @@ class SecuriteTest {
 
 	@Test
 	void route_publique_inconnue_repond_404_et_pas_500() {
-		assertThat(mvc.post().uri("/api/auth/lien-email").with(csrf())).hasStatus(HttpStatus.NOT_FOUND);
+		assertThat(mvc.post().uri("/api/auth/inconnue").with(csrf())).hasStatus(HttpStatus.NOT_FOUND);
 	}
 
 	@Test
