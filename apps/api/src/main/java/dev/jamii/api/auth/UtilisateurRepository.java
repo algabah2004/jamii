@@ -9,4 +9,6 @@ interface UtilisateurRepository extends JpaRepository<Utilisateur, UUID> {
 
 	Optional<Utilisateur> findByGithubId(long githubId);
 
+	long countByCreeLeGreaterThanEqual(java.time.Instant depuis);
+
 }

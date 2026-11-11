@@ -74,7 +74,8 @@ Tout le code est dans le module `auth` (`dev.jamii.api.auth`).
 - **Connexion GitHub** : `GET /api/auth/github?retour=/chemin`. Pour l'essayer en local, crée une [OAuth App GitHub](https://github.com/settings/developers) avec l'adresse de retour `http://localhost:8080/api/auth/github/retour`, puis remplis `GITHUB_CLIENT_ID` et `GITHUB_CLIENT_SECRET`. Sans ces variables, l'API démarre quand même, mais la connexion GitHub échoue.
 - **Session** : cookie `JAMII_SESSION` (HttpOnly, Secure, SameSite=Lax), stockée dans PostgreSQL et expirée après 7 jours sans activité.
 - **CSRF** : tout `POST`, `PUT`, `PATCH` ou `DELETE` renvoie la valeur du cookie `XSRF-TOKEN` dans l'en-tête `X-XSRF-TOKEN`.
-- **Tout est fermé par défaut.** Une route publique s'ouvre explicitement dans `SecuriteConfig`.
+- **Tout est fermé par défaut.** Une route publique s'ouvre explicitement dans `SecuriteConfig`, en GET seulement et avec le chemin exact. Aujourd'hui : `/health`, `/api/auth/**`, `GET /api/systalink/tableau-de-bord` et `GET /api/vitrine`. Pour en ouvrir une autre, il faut `security: []` dans son contrat et un test dans `SecuriteTest`.
+- **Lire un compte depuis un autre module** : injecte `dev.jamii.api.auth.Annuaire` (`lire(UUID)`, `lire(Collection<UUID>)`). Il renvoie un `Compte(id, nom, avatarUrl, loginGithub)`, jamais l'e-mail. Ne lis pas la table `utilisateur` : `ModulesTest` te le refuserait. `compterInscrits(Instant)` sert au tableau de bord Systalink.
 - **Dans ton module**, l'utilisateur connecté s'obtient avec `@AuthenticationPrincipal UtilisateurConnecte moi`, qui donne `moi.id()` et `moi.roles()`.
 
 ## Base de données

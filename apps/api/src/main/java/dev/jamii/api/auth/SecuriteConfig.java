@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
@@ -33,6 +34,10 @@ class SecuriteConfig {
 		http.authorizeHttpRequests(acces -> acces
 				// /error : pour qu'une route publique inconnue réponde 404, et non 401.
 				.requestMatchers("/health", "/health/**", "/api/auth/**", "/error").permitAll()
+				// Lectures publiques, sans connexion (le jury, un visiteur) : uniquement ces deux routes et seulement
+				// en GET. Elles ne montrent que des chiffres agrégés et ce que les projets montrent déjà à tous
+				// (contracts/systalink.yaml et contracts/vitrine.yaml, `security: []`). Toute autre route reste fermée.
+				.requestMatchers(HttpMethod.GET, "/api/systalink/tableau-de-bord", "/api/vitrine").permitAll()
 				.anyRequest().authenticated())
 			.oauth2Login(oauth -> oauth
 				.authorizationEndpoint(debut -> debut.authorizationRequestResolver(resolveurAvecRetour(clients)))
