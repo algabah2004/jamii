@@ -1,0 +1,252 @@
+openapi: 3.1.0
+info:
+  title: Jamii · Mise en ligne
+  version: 0.1.0
+  summary: Une équipe déclare l'adresse de son projet en ligne. Jamii vérifie qu'elle répond, puis le montre.
+  description: |
+    Responsable : @boubacarsidibe (bloc #20). Règles communes : docs/api-conventions.md. Modèle : docs/modele-donnees.md
+    (table `deploiement`).
+
+    **Le parcours de la démo.** L'équipe ouvre « Mettre en ligne » : Jamii lui propose DataCloud (`proposerDatacloud`,
+    un moment Systalink), avec la remise CADEV. Elle met son projet en ligne, sur DataCloud ou ailleurs, puis déclare
+    son adresse. Jamii vérifie que l'adresse répond : le projet apparaît alors sur les profils et dans la vitrine.
+    Systalink est recommandé, jamais imposé : un projet hébergé ailleurs est accepté.
+
+    **Pas de déploiement automatique pour l'instant.** L'API et le MCP de Systalink ne sont pas encore testés
+    (docs/systalink-services.md). Ce contrat couvre la mise en ligne **guidée** ; un déploiement automatique s'ajoutera
+    sans casser ces routes.
+
+    **Droits.** Tout utilisateur connecté lit les déploiements d'un projet (les adresses sont publiques). Seuls les
+    membres de l'équipe déclarent, revérifient ou retirent une adresse.
+
+    **La vérification (ce qu'un attaquant ne peut pas détourner).** L'adresse vient d'un utilisateur, et c'est le
+    serveur qui l'appelle. Pour que Jamii ne serve jamais à atteindre un réseau interne (SSRF) :
+    - `https` uniquement, sur le port 443, sans identifiant dans l'adresse ;
+    - toutes les adresses IP du nom doivent être publiques : refus des réseaux privés, de la boucle locale, des
+      adresses de lien local (dont `169.254.169.254`), du partage d'opérateur (`100.64.0.0/10`), du multicast et de leurs
+      équivalents IPv6. On se connecte ensuite **à l'IP vérifiée**, pour qu'un changement de DNS ne contourne pas le contrôle ;
+    - une seule requête `GET`, **sans suivre les redirections**, 5 secondes au plus, sans lire plus de 64 Kio, sans
+      rien stocker de la réponse. Elle est identifiée par l'en-tête `User-Agent: Jamii-verification`.
+
+    L'adresse **répond** si le serveur renvoie un code HTTP inférieur à 500 (une redirection compte).
+
+    **Fréquence et statut.** Une vérification part juste après la déclaration, puis **toutes les heures**.
+    - `en_cours` : déclarée, pas encore de réponse ;
+    - `en_ligne` : a répondu. `verifieLe` est la dernière réponse ;
+    - `echec` : aucune réponse depuis 24 heures. Le projet sort de la vitrine, et revient tout seul dès que l'adresse
+      répond à nouveau.
+
+    **L'hébergeur n'est pas déclaré par l'équipe** : il est déduit de l'adresse. `datacloud` si le nom se termine par un
+    domaine de DataCloud (variable `DATACLOUD_DOMAINES`, à confirmer au premier vrai déploiement), sinon `autre`.
+    Personne ne peut donc gonfler le chiffre « projets sur DataCloud » du tableau de bord.
+
+    **Pour les autres modules (Java, pas HTTP).** Le module `deploiement` expose :
+    - `ChiffresDesModules.Deploiements` (tableau de bord, #18) : projets distincts en ligne, et parmi eux sur DataCloud ;
+    - `DeploiementsEnLigne.lister()` (vitrine, #18) : pour chaque projet en ligne, l'adresse, l'hébergeur,
+      `misEnLigneLe` et `verifieLe` du déploiement affiché ;
+    - l'événement `ProjetMisEnLigne` (`projetId`, `deploiementId`, `hebergeur`, `misEnLigneLe`), publié au **premier**
+      passage `en_ligne` d'un projet (vitrine, profils).
+servers:
+  - url: http://localhost:8080
+
+security:
+  - session: []
+
+tags:
+  - { name: mise-en-ligne, description: 'Déclarer, vérifier et retirer l''adresse en ligne d''un projet.' }
+
+paths:
+  /api/projets/{projetId}/deploiements:
+    parameters:
+      - $ref: '#/components/parameters/ProjetId'
+    get:
+      tags: [mise-en-ligne]
+      operationId: listerDeploiements
+      summary: Les adresses déclarées pour un projet, les plus récentes d'abord
+      parameters:
+        - $ref: './socle.yaml#/components/parameters/Curseur'
+        - $ref: './socle.yaml#/components/parameters/Limite'
+      responses:
+        '200':
+          description: Une page de déploiements.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PageDeploiements' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+    post:
+      tags: [mise-en-ligne]
+      operationId: declarerDeploiement
+      summary: Déclarer l'adresse publique du projet (membres de l'équipe)
+      description: |
+        La vérification part tout de suite, en arrière-plan : la réponse est `202`, avec le statut `en_cours`.
+        Limite : 10 déclarations par heure et par utilisateur.
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DeclarationDeploiement' }
+      responses:
+        '202':
+          description: Adresse enregistrée, vérification en cours.
+          headers:
+            Location: { schema: { type: string, examples: ['/api/projets/3f0e6c1a-2b4d-4e8f-9a7c-1d2e3f4a5b6c/deploiements/9a1b2c3d-4e5f-4a6b-8c7d-0e1f2a3b4c5d'] } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Deploiement' }
+        '400':
+          description: |
+            Entrée invalide (`code` = `validation`). Codes de champ propres à `url` : `pas_https`, `port_interdit`,
+            `identifiant_interdit`, `adresse_refusee` (le nom désigne une IP non publique), `nom_inconnu`.
+          content:
+            application/problem+json:
+              schema: { $ref: './socle.yaml#/components/schemas/Erreur' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: '#/components/responses/PasMembre' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409':
+          description: '`deja_declaree` : cette adresse est déjà déclarée pour ce projet.'
+          content:
+            application/problem+json:
+              schema: { $ref: './socle.yaml#/components/schemas/Erreur' }
+        '429': { $ref: './socle.yaml#/components/responses/TropDeRequetes' }
+
+  /api/projets/{projetId}/deploiements/proposer-datacloud:
+    parameters:
+      - $ref: '#/components/parameters/ProjetId'
+    post:
+      tags: [mise-en-ligne]
+      operationId: proposerDatacloud
+      summary: L'équipe ouvre « Mettre en ligne » : Jamii lui propose DataCloud (membres de l'équipe)
+      description: |
+        Crée un moment Systalink (`datacloud`, contexte `projet`) et renvoie la proposition à afficher. Le front
+        l'appelle une fois à l'ouverture de l'écran, pas à chaque affichage. Rien n'oblige à suivre la proposition.
+      security:
+        - session: []
+          csrf: []
+      responses:
+        '200':
+          description: La proposition à afficher.
+          content:
+            application/json:
+              schema: { $ref: './systalink.yaml#/components/schemas/PropositionSystalink' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: '#/components/responses/PasMembre' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+
+  /api/projets/{projetId}/deploiements/{deploiementId}:
+    parameters:
+      - $ref: '#/components/parameters/ProjetId'
+      - $ref: '#/components/parameters/DeploiementId'
+    delete:
+      tags: [mise-en-ligne]
+      operationId: retirerDeploiement
+      summary: Retirer une adresse (membres de l'équipe)
+      description: Le projet sort de la vitrine s'il n'a plus d'autre adresse en ligne.
+      security:
+        - session: []
+          csrf: []
+      responses:
+        '204': { description: Adresse retirée. }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: '#/components/responses/PasMembre' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+
+  /api/projets/{projetId}/deploiements/{deploiementId}/verifier:
+    parameters:
+      - $ref: '#/components/parameters/ProjetId'
+      - $ref: '#/components/parameters/DeploiementId'
+    post:
+      tags: [mise-en-ligne]
+      operationId: verifierDeploiement
+      summary: Relancer la vérification tout de suite (membres de l'équipe)
+      description: Utile juste après avoir corrigé le projet. Limite : une fois par minute et par déploiement.
+      security:
+        - session: []
+          csrf: []
+      responses:
+        '202':
+          description: Vérification lancée. Relire le déploiement pour voir le résultat.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Deploiement' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: '#/components/responses/PasMembre' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '429': { $ref: './socle.yaml#/components/responses/TropDeRequetes' }
+
+components:
+  parameters:
+    ProjetId:
+      name: projetId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    DeploiementId:
+      name: deploiementId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+  responses:
+    PasMembre:
+      description: Connecté, mais pas membre de l'équipe du projet (`code` = `interdit`).
+      content:
+        application/problem+json:
+          schema: { $ref: './socle.yaml#/components/schemas/Erreur' }
+
+  schemas:
+    DeclarationDeploiement:
+      type: object
+      required: [url]
+      additionalProperties: false
+      properties:
+        url:
+          type: string
+          format: uri
+          pattern: '^https://'
+          maxLength: 2048
+          examples: ['https://couture-thies.example.com']
+
+    Deploiement:
+      type: object
+      required: [id, projetId, url, hebergeur, statut, creeLe]
+      properties:
+        id: { type: string, format: uuid }
+        projetId: { type: string, format: uuid }
+        url: { type: string, format: uri, pattern: '^https://' }
+        hebergeur: { $ref: './vitrine.yaml#/components/schemas/Hebergeur' }
+        statut:
+          type: string
+          enum: [en_cours, en_ligne, echec]
+        verifieLe:
+          type: string
+          format: date-time
+          description: Dernière fois que l'adresse a répondu. Absent si elle n'a encore jamais répondu.
+        misEnLigneLe:
+          type: string
+          format: date-time
+          description: Premier passage `en_ligne`. Absent tant que l'adresse n'a pas répondu.
+        dernierEssai:
+          type: object
+          description: La dernière vérification, réussie ou non. Absent avant la première.
+          required: [le, resultat]
+          properties:
+            le: { type: string, format: date-time }
+            resultat:
+              type: string
+              enum: [repond, erreur_serveur, delai_depasse, connexion_refusee, certificat_invalide, adresse_refusee, nom_inconnu]
+              description: '`repond` : code HTTP inférieur à 500. Le front traduit les autres codes en conseils.'
+        creeLe: { type: string, format: date-time }
+
+    PageDeploiements:
+      allOf:
+        - $ref: './socle.yaml#/components/schemas/Page'
+        - type: object
+          properties:
+            elements:
+              type: array
+              items: { $ref: '#/components/schemas/Deploiement' }
