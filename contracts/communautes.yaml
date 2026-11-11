@@ -1,0 +1,425 @@
+openapi: 3.1.0
+info:
+  title: Jamii · Communautés et entraide
+  version: 0.1.0
+  summary: Communautés thématiques, questions-réponses où l'IA propose et un pair valide, discussions, signalements.
+  description: |
+    Responsable : @Amar233-ui (bloc #18). Règles communes : docs/api-conventions.md. Modèle : docs/modele-donnees.md
+    (tables `communaute`, `adhesion`, `publication`, `reponse`, `signalement`). Idées reprises de la proposition 0003.
+
+    **Droits** : il faut être connecté pour tout. Lire est ouvert à tout utilisateur connecté. Publier, répondre et
+    valider demandent d'être **membre** de la communauté (rejoindre se fait en un clic). Les droits sont vérifiés par
+    le serveur, à chaque route.
+
+    **L'IA propose, l'humain décide** :
+    1. À la création d'une question, l'API demande une réponse au service IA (#20), en tâche de fond. La question
+       est publiée tout de suite, avec `propositionIa.statut = en_attente`.
+    2. Quand l'IA a répondu, une réponse `proposeeParIa: true` apparaît, sans auteur. Le front l'étiquette
+       « Proposée par l'IA · à vérifier par un pair ». Si l'IA ne répond pas, `statut = indisponible` : la question
+       reste ouverte aux réponses humaines, rien n'est bloqué.
+    3. Un **pair** (un membre qui n'est pas l'auteur de la question) la **valide** : elle devient la réponse acceptée.
+    4. Une réponse humaine est acceptée par l'**auteur de la question**. Son auteur reçoit une preuve
+       `reponse_acceptee` sur son profil (événement `ReponseAcceptee`, #19). Une réponse de l'IA ne compte sur le profil
+       de **personne**, même validée.
+
+    **Contenus** : texte brut. Le front l'affiche échappé (jamais `v-html`), donc aucun HTML ne s'exécute.
+
+    **CSRF** : toute requête POST ou DELETE envoie l'en-tête `X-XSRF-TOKEN` (socle.yaml, schéma `csrf`).
+
+    **Codes d'erreur métier** (champ `code` de `Erreur`) : `pas_membre` (403), `pas_auteur_question` (403),
+    `propre_question` (409, valider la réponse de l'IA à sa propre question), `deja_acceptee` (409),
+    `pas_une_question` (409), `pas_proposee_par_ia` (409), `deja_signale` (409).
+servers:
+  - url: http://localhost:8080
+
+security:
+  - session: []
+
+tags:
+  - { name: communautes, description: 'Trouver, rejoindre et quitter une communauté.' }
+  - { name: publications, description: 'Questions, discussions et « Montre ton projet ».' }
+  - { name: reponses, description: 'Répondre, accepter une réponse, valider la réponse proposée par l''IA.' }
+  - { name: moderation, description: 'Signaler un contenu à un modérateur.' }
+
+paths:
+  /api/communautes:
+    get:
+      tags: [communautes]
+      operationId: listerCommunautes
+      summary: Les communautés, les plus actives cette semaine d'abord
+      parameters:
+        - $ref: './socle.yaml#/components/parameters/Curseur'
+        - $ref: './socle.yaml#/components/parameters/Limite'
+        - { name: membre, in: query, description: '`moi` : seulement celles que j''ai rejointes.', schema: { type: string, enum: [moi] } }
+      responses:
+        '200':
+          description: Une page de communautés.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PageCommunautes' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+
+  /api/communautes/{slug}:
+    parameters:
+      - $ref: '#/components/parameters/Slug'
+    get:
+      tags: [communautes]
+      operationId: lireCommunaute
+      summary: Une communauté
+      responses:
+        '200':
+          description: La communauté.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Communaute' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+
+  /api/communautes/{slug}/adhesion:
+    parameters:
+      - $ref: '#/components/parameters/Slug'
+    post:
+      tags: [communautes]
+      operationId: rejoindreCommunaute
+      summary: Rejoindre la communauté
+      description: Idempotent. Répond `204` aussi si je suis déjà membre.
+      security:
+        - session: []
+          csrf: []
+      responses:
+        '204': { description: Je suis membre. }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+    delete:
+      tags: [communautes]
+      operationId: quitterCommunaute
+      summary: Quitter la communauté
+      description: Idempotent. Mes publications restent, signées de mon nom.
+      security:
+        - session: []
+          csrf: []
+      responses:
+        '204': { description: Je ne suis plus membre. }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+
+  /api/communautes/{slug}/publications:
+    parameters:
+      - $ref: '#/components/parameters/Slug'
+    get:
+      tags: [publications]
+      operationId: listerPublications
+      summary: Les publications de la communauté, les plus récentes d'abord
+      parameters:
+        - $ref: './socle.yaml#/components/parameters/Curseur'
+        - $ref: './socle.yaml#/components/parameters/Limite'
+        - { name: type, in: query, schema: { $ref: '#/components/schemas/TypePublication' } }
+        - { name: sansReponseAcceptee, in: query, description: 'Seulement les questions encore ouvertes.', schema: { type: boolean } }
+      responses:
+        '200':
+          description: Une page de publications.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PagePublications' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+    post:
+      tags: [publications]
+      operationId: publier
+      summary: Publier une question, une discussion ou « Montre ton projet »
+      description: |
+        Réservé aux membres. Une question déclenche la proposition de l'IA en tâche de fond (`propositionIa`).
+        Limité à 10 publications par heure et par personne, contre le spam.
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NouvellePublication' }
+      responses:
+        '201':
+          description: Publiée.
+          headers:
+            Location: { schema: { type: string, examples: ['/api/publications/5d2c…'] } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Publication' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '429': { $ref: './socle.yaml#/components/responses/TropDeRequetes' }
+
+  /api/publications/{publicationId}:
+    parameters:
+      - $ref: '#/components/parameters/PublicationId'
+    get:
+      tags: [publications]
+      operationId: lirePublication
+      summary: Une publication et toutes ses réponses
+      description: |
+        Le front relit cette route toutes les 3 secondes tant que `propositionIa.statut` vaut `en_attente`
+        (au plus 1 minute), pour afficher la réponse de l'IA dès qu'elle arrive.
+      responses:
+        '200':
+          description: La publication.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Publication' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+
+  /api/publications/{publicationId}/reponses:
+    parameters:
+      - $ref: '#/components/parameters/PublicationId'
+    post:
+      tags: [reponses]
+      operationId: repondre
+      summary: Répondre à une publication
+      description: Réservé aux membres de la communauté. Limité à 30 réponses par heure et par personne.
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NouvelleReponse' }
+      responses:
+        '201':
+          description: Réponse publiée.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Reponse' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '429': { $ref: './socle.yaml#/components/responses/TropDeRequetes' }
+
+  /api/reponses/{reponseId}/accepter:
+    parameters:
+      - $ref: '#/components/parameters/ReponseId'
+    post:
+      tags: [reponses]
+      operationId: accepterReponse
+      summary: L'auteur de la question accepte une réponse humaine
+      description: |
+        Une seule réponse acceptée par question (`409 deja_acceptee`). L'auteur de la réponse reçoit une preuve
+        `reponse_acceptee` sur son profil. La réponse de l'IA ne s'accepte pas ici : elle se **valide** par un pair.
+      security:
+        - session: []
+          csrf: []
+      responses:
+        '200':
+          description: La question, avec sa réponse acceptée.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Publication' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/reponses/{reponseId}/valider:
+    parameters:
+      - $ref: '#/components/parameters/ReponseId'
+    post:
+      tags: [reponses]
+      operationId: validerReponseIa
+      summary: Un pair valide la réponse proposée par l'IA
+      description: |
+        Réservé à un membre qui **n'est pas** l'auteur de la question (`409 propre_question`) : un humain se porte
+        garant de la réponse de l'IA. Elle devient la réponse acceptée, et affiche « Validée par <nom> ».
+        Personne ne reçoit de preuve sur son profil pour une réponse de l'IA.
+      security:
+        - session: []
+          csrf: []
+      responses:
+        '200':
+          description: La question, avec la réponse de l'IA validée et acceptée.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Publication' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/signalements:
+    post:
+      tags: [moderation]
+      operationId: signaler
+      summary: Signaler une publication ou une réponse à un modérateur
+      description: |
+        Le contenu reste visible jusqu'à la décision d'un modérateur (le traitement des signalements viendra après le
+        15 novembre). Un même compte ne signale qu'une fois le même contenu (`409 deja_signale`).
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NouveauSignalement' }
+      responses:
+        '202': { description: Signalement reçu. }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+        '429': { $ref: './socle.yaml#/components/responses/TropDeRequetes' }
+
+components:
+  securitySchemes:
+    session: { $ref: './socle.yaml#/components/securitySchemes/session' }
+    csrf: { $ref: './socle.yaml#/components/securitySchemes/csrf' }
+
+  parameters:
+    Slug:
+      name: slug
+      in: path
+      required: true
+      description: Nom court de la communauté dans l'adresse (`flutter`, `fintech`, `antenne-dakar`).
+      schema: { type: string, pattern: '^[a-z0-9]+(-[a-z0-9]+)*$', maxLength: 60 }
+    PublicationId:
+      name: publicationId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    ReponseId:
+      name: reponseId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+  schemas:
+    Communaute:
+      type: object
+      required: [id, slug, nom, description, theme, pays, nombreMembres, questionsOuvertes, membre]
+      properties:
+        id: { type: string, format: uuid }
+        slug: { type: string }
+        nom: { type: string, maxLength: 80 }
+        description: { type: string, maxLength: 500 }
+        theme: { type: string, maxLength: 40, examples: [flutter, fintech, ia, antenne] }
+        pays:
+          oneOf: [{ $ref: './profils.yaml#/components/schemas/Pays' }, { type: 'null' }]
+          description: Renseigné pour une **antenne locale** (Dakar, Abidjan, Nairobi…), vide sinon.
+        nombreMembres: { type: integer, minimum: 0 }
+        questionsOuvertes: { type: integer, minimum: 0, description: Questions sans réponse acceptée. }
+        membre: { type: boolean, description: 'Suis-je membre ? (pour afficher « Rejoindre » ou « Quitter »)' }
+
+    PageCommunautes:
+      allOf:
+        - $ref: './socle.yaml#/components/schemas/Page'
+        - type: object
+          properties:
+            elements: { type: array, items: { $ref: '#/components/schemas/Communaute' } }
+
+    TypePublication:
+      type: string
+      enum: [question, discussion, montre_ton_projet]
+
+    NouvellePublication:
+      type: object
+      required: [type, titre, contenu]
+      additionalProperties: false
+      properties:
+        type: { $ref: '#/components/schemas/TypePublication' }
+        titre: { type: string, minLength: 10, maxLength: 150 }
+        contenu: { type: string, minLength: 20, maxLength: 10000, description: Texte brut. }
+        projetId: { type: string, format: uuid, description: 'Obligatoire pour `montre_ton_projet`, interdit sinon.' }
+
+    PublicationResume:
+      type: object
+      required: [id, communaute, type, titre, auteur, nombreReponses, accepteeLe, creeLe]
+      properties:
+        id: { type: string, format: uuid }
+        communaute: { type: string, description: Slug de la communauté. }
+        type: { $ref: '#/components/schemas/TypePublication' }
+        titre: { type: string }
+        auteur:
+          oneOf: [{ $ref: './projets.yaml#/components/schemas/PersonneResume' }, { type: 'null' }]
+          description: '`null` : compte supprimé, affiché « compte supprimé ».'
+        nombreReponses: { type: integer, minimum: 0 }
+        accepteeLe: { type: [string, 'null'], format: date-time, description: 'Pour une question : quand une réponse a été acceptée.' }
+        creeLe: { type: string, format: date-time }
+
+    PagePublications:
+      allOf:
+        - $ref: './socle.yaml#/components/schemas/Page'
+        - type: object
+          properties:
+            elements: { type: array, items: { $ref: '#/components/schemas/PublicationResume' } }
+
+    Publication:
+      allOf:
+        - $ref: '#/components/schemas/PublicationResume'
+        - type: object
+          required: [contenu, projetId, reponseAccepteeId, propositionIa, reponses, moi]
+          properties:
+            contenu: { type: string }
+            projetId: { type: [string, 'null'], format: uuid, description: 'Le projet montré (`montre_ton_projet`).' }
+            reponseAccepteeId: { type: [string, 'null'], format: uuid }
+            propositionIa:
+              oneOf: [{ $ref: '#/components/schemas/PropositionIa' }, { type: 'null' }]
+              description: 'Pour une question seulement. `null` pour une discussion ou « Montre ton projet ».'
+            reponses:
+              type: array
+              description: La réponse acceptée d'abord, puis la proposition de l'IA, puis les autres, des plus anciennes aux plus récentes.
+              items: { $ref: '#/components/schemas/Reponse' }
+            moi:
+              type: object
+              description: Ma place, pour afficher les bons boutons. Les droits restent vérifiés par le serveur.
+              required: [estAuteur, estMembre]
+              properties:
+                estAuteur: { type: boolean }
+                estMembre: { type: boolean }
+
+    PropositionIa:
+      type: object
+      required: [statut]
+      properties:
+        statut:
+          type: string
+          enum: [en_attente, prete, indisponible]
+          description: '`indisponible` : l''IA n''a pas répondu à temps. La question reste ouverte aux humains.'
+
+    NouvelleReponse:
+      type: object
+      required: [contenu]
+      additionalProperties: false
+      properties:
+        contenu: { type: string, minLength: 10, maxLength: 10000, description: Texte brut. }
+
+    Reponse:
+      type: object
+      required: [id, contenu, auteur, proposeeParIa, valideePar, acceptee, creeLe]
+      properties:
+        id: { type: string, format: uuid }
+        contenu: { type: string }
+        auteur:
+          oneOf: [{ $ref: './projets.yaml#/components/schemas/PersonneResume' }, { type: 'null' }]
+          description: '`null` pour la réponse de l''IA, ou un compte supprimé (alors `proposeeParIa` vaut `false`).'
+        proposeeParIa: { type: boolean }
+        valideePar:
+          oneOf: [{ $ref: './projets.yaml#/components/schemas/PersonneResume' }, { type: 'null' }]
+          description: Le pair qui a validé la réponse de l'IA.
+        acceptee: { type: boolean }
+        creeLe: { type: string, format: date-time }
+
+    NouveauSignalement:
+      type: object
+      required: [cibleType, cibleId, motif]
+      additionalProperties: false
+      properties:
+        cibleType: { type: string, enum: [publication, reponse] }
+        cibleId: { type: string, format: uuid }
+        motif: { type: string, enum: [spam, irrespectueux, hors_sujet, autre] }
+        precision: { type: string, maxLength: 500, description: 'Facultatif, texte brut.' }
