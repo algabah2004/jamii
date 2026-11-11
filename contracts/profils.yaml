@@ -380,7 +380,7 @@ components:
       required: [nom, part]
       properties:
         nom: { type: string, examples: [Dart] }
-        part: { type: number, minimum: 0, maximum: 1, description: 'Part du code des dépôts publics (0,42 = 42 %).' }
+        part: { type: number, minimum: 0, maximum: 1, description: 'Part estimée (0,42 = 42 %) : langage principal de chaque dépôt, pondéré par sa taille. Une seule requête à GitHub, contre une par dépôt pour le détail exact.' }
 
     CompetenceProfil:
       type: object
