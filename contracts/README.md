@@ -10,6 +10,7 @@
 | `profils.yaml` | @rev22rse22 | Profil prouvé, indice de fiabilité, recherche de coéquipiers |
 | `deploiement.yaml` | @boubacarsidibe | Mise en ligne des projets sur DataCloud |
 | `systalink.yaml` | @Amar233-ui | Statistiques agrégées du tableau de bord Systalink |
+| `vitrine.yaml` | @Amar233-ui | Les projets en ligne nés sur Jamii (lecture publique) |
 | `ia.yaml` | @boubacarsidibe | API interne du service IA (appelée par l'API, jamais par le navigateur) |
 
 ## Règles
