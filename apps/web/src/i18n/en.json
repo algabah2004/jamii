@@ -13,7 +13,33 @@
   "accueil": {
     "titre": "Find your team, build your project, put it online.",
     "texte": "Jamii brings African developers together: communities to help each other, small business requests to deliver as a team, and projects that live on after the hackathon.",
-    "bienvenue": "Welcome back, {nom}."
+    "bienvenue": "Welcome back, {nom}.",
+    "voirProfil": "See my profile",
+    "voirCommunautes": "Find a community",
+    "voirVitrine": "See projects online",
+    "rassurance": "Free. Your profile stays private until you publish it.",
+    "piliers": "What you can do on Jamii",
+    "pilier": {
+      "profil": {
+        "titre": "A profile that proves",
+        "texte": "Your GitHub languages and repositories, your projects actually online and what your teammates say about you. No CV to fill in.",
+        "lien": "Create my profile"
+      },
+      "equipe": {
+        "titre": "A team, communities",
+        "texte": "Ask a question, help others, find teammates from other countries, or answer a small business request.",
+        "lien": "See communities"
+      },
+      "enLigne": {
+        "titre": "A project that lives",
+        "texte": "Put your project online, on Systalink or elsewhere. Jamii checks that it responds, and shows it in the showcase.",
+        "lien": "See the showcase"
+      }
+    },
+    "principe": {
+      "badge": "Verified",
+      "texte": "On Jamii, orange always means the same thing: it is proven. A project that responds, a task delivered on time, an answer accepted by the person who asked."
+    }
   },
   "profil": {
     "titre": "Profile",
@@ -72,12 +98,35 @@
     },
     "projets": {
       "titre": "Projects on Jamii",
-      "vide": "No project yet. The projects you put online with your team will appear here, with the verified link."
+      "vide": "No project yet. The projects you put online with your team will appear here, with the verified link.",
+      "inspiration": "See projects already online",
+      "equipe": "team {pays}",
+      "surSystalink": "Hosted on Systalink",
+      "enLigne": "Online"
     },
     "depots": {
       "titre": "GitHub repositories",
       "etoiles": "no stars | {n} star | {n} stars",
       "pasUnePreuve": "Repositories show what you code. Only a project that is online and verified counts as proof."
+    },
+    "fiabilite": {
+      "titre": "Why you can count on {prenom}",
+      "sur": "{n} of {sur}",
+      "types": {
+        "tache_livree_a_temps": "task delivered on the planned date | tasks delivered on the planned date",
+        "avis_coequipier": "positive teammate review | positive teammate reviews",
+        "reponse_acceptee": "accepted answer | accepted answers",
+        "projet_en_ligne": "verified project online | verified projects online"
+      },
+      "contestees": "including {n} being checked | including {n} being checked",
+      "vide": "No proof yet. It adds up on its own as you take part:",
+      "comment": {
+        "projet_en_ligne": "a project put online with your team, that responds;",
+        "tache_livree_a_temps": "a task delivered on the planned date;",
+        "reponse_acceptee": "an answer accepted in a community;",
+        "avis_coequipier": "a teammate who would work with you again."
+      },
+      "sansNote": "No overall score: each point can be checked, and disputed if it is wrong."
     }
   },
   "etat": {

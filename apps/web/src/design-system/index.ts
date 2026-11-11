@@ -9,9 +9,11 @@ import './tokens.css'
 import './base.css'
 import './marques.css'
 
+export { default as JAvatar } from './JAvatar.vue'
 export { default as JBadgePreuve } from './JBadgePreuve.vue'
 export { default as JBouton } from './JBouton.vue'
 export { default as JChamp } from './JChamp.vue'
+export { default as JIllustration } from './JIllustration.vue'
 
 export type Theme = 'clair' | 'sombre' | 'systeme'
 export type Marque = 'jamii' | 'partenaire'

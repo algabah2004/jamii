@@ -2,7 +2,8 @@
 import { computed, onBeforeUnmount, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { api } from '../../api/client'
-import { JBouton, JChamp } from '../../design-system'
+import { RouterLink } from 'vue-router'
+import { JAvatar, JBadgePreuve, JBouton, JChamp, JIllustration } from '../../design-system'
 import { useSession } from '../../session'
 import { nomPays } from '../systalink/calculs'
 import { DISPONIBILITES, lireCompetences, PAYS_AFRIQUE, pourcentage, type Disponibilite, type MonProfil } from './profils'
@@ -45,6 +46,8 @@ void charger()
 const enCours = computed(() => profil.value?.generation.statut === 'en_cours')
 const echec = computed(() => (profil.value?.generation.statut === 'echec' ? profil.value.generation.erreur : null))
 const sansGithub = computed(() => !moi.value?.loginGithub)
+const prenom = computed(() => profil.value?.nom.split(/\s+/)[0] ?? '')
+const TYPES_PREUVE = ['projet_en_ligne', 'tache_livree_a_temps', 'reponse_acceptee', 'avis_coequipier'] as const
 
 async function generer() {
   occupe.value = true
@@ -160,26 +163,29 @@ async function enregistrer() {
     </div>
 
     <template v-else-if="profil">
-      <header class="entete-profil">
-        <img v-if="profil.avatarUrl" :src="profil.avatarUrl" alt="" width="72" height="72" />
-        <div>
+      <header class="carte identite">
+        <JAvatar :nom="profil.nom" :url="profil.avatarUrl" :taille="72" />
+        <div class="identite__texte">
           <h1>{{ profil.nom }}</h1>
           <p class="texte-discret">
             <span v-if="profil.loginGithub">@{{ profil.loginGithub }}</span>
             <span v-if="profil.ville || profil.pays">
               · {{ [profil.ville, profil.pays && nomPays(profil.pays, locale)].filter(Boolean).join(', ') }}</span>
           </p>
-          <p>
+          <p class="identite__dispo">
             <span class="disponibilite" :class="`disponibilite--${profil.disponibilite}`">
               {{ t(`profil.disponibilite.${profil.disponibilite}`) }}</span>
             <span v-if="profil.heuresParSemaine" class="texte-discret">
               · {{ t('profil.heures', { n: profil.heuresParSemaine }) }}</span>
           </p>
+          <ul v-if="profil.competences.length" class="etiquettes etiquettes--entete">
+            <li v-for="c in profil.competences.slice(0, 6)" :key="c.competence" class="etiquette">{{ c.competence }}</li>
+          </ul>
         </div>
       </header>
 
       <div class="barre-actions">
-        <p class="visibilite" data-test="visibilite">
+        <p class="visibilite" :class="{ 'visibilite--publie': profil.publie }" data-test="visibilite">
           {{ profil.publie ? t('profil.visibilite.publie') : t('profil.visibilite.prive') }}
         </p>
         <JBouton :variante="profil.publie ? 'secondaire' : 'principal'" :occupe="occupe" data-test="publier" @click="changerVisibilite">
@@ -229,46 +235,85 @@ async function enregistrer() {
 
       <p v-if="profil.bio" class="bio">{{ profil.bio }}</p>
 
-      <section v-if="profil.langages.length" class="carte" :aria-label="t('profil.langages.titre')">
-        <h2>{{ t('profil.langages.titre') }}</h2>
-        <ul class="langages" data-test="langages">
-          <li v-for="l in profil.langages" :key="l.nom">
-            <span>{{ l.nom }}</span>
-            <span class="jauge" aria-hidden="true"><span :style="{ width: `${Math.max(l.part * 100, 2)}%` }" /></span>
-            <span class="texte-discret">{{ pourcentage(l.part, locale) }}</span>
-          </li>
-        </ul>
-        <p class="texte-discret">{{ t('profil.langages.estimation') }}</p>
-      </section>
+      <div class="colonnes">
+        <div class="colonne">
+          <!-- Les projets d'abord : c'est la preuve la plus forte (contrat : Profil.projets). -->
+          <section class="carte">
+            <h2>{{ t('profil.projets.titre') }}</h2>
+            <ul v-if="profil.projets.length" class="projets" data-test="projets">
+              <li v-for="p in profil.projets" :key="p.projetId">
+                <div>
+                  <strong>{{ p.titre }}</strong>
+                  <p class="texte-discret">{{ p.role }}<template v-if="p.paysEquipe?.length"> · {{ t('profil.projets.equipe', { pays: p.paysEquipe.map((c) => nomPays(c, locale)).join(' · ') }) }}</template></p>
+                </div>
+                <JBadgePreuve v-if="p.enLigne">✓ {{ p.hebergeur === 'datacloud' ? t('profil.projets.surSystalink') : t('profil.projets.enLigne') }}</JBadgePreuve>
+              </li>
+            </ul>
+            <div v-else class="vide" data-test="projets-vide">
+              <JIllustration nom="en-ligne" class="vide__illustration" />
+              <p>{{ t('profil.projets.vide') }}</p>
+              <RouterLink to="/vitrine">{{ t('profil.projets.inspiration') }}</RouterLink>
+            </div>
+          </section>
 
-      <section v-if="profil.competences.length" class="carte">
-        <h2>{{ t('profil.competences.titre') }}</h2>
-        <ul class="etiquettes" data-test="competences">
-          <li v-for="c in profil.competences" :key="c.competence + c.source" class="etiquette">
-            {{ c.competence }}
-            <span v-if="c.source === 'declaree'" class="visuellement-cache">{{ t('profil.competences.declaree') }}</span>
-          </li>
-        </ul>
-        <p class="texte-discret">{{ t('profil.competences.source') }}</p>
-      </section>
+          <section v-if="profil.langages.length" class="carte" :aria-label="t('profil.langages.titre')">
+            <h2>{{ t('profil.langages.titre') }}</h2>
+            <ul class="langages" data-test="langages">
+              <li v-for="l in profil.langages" :key="l.nom">
+                <span>{{ l.nom }}</span>
+                <span class="jauge" aria-hidden="true"><span :style="{ width: `${Math.max(l.part * 100, 2)}%` }" /></span>
+                <span class="texte-discret">{{ pourcentage(l.part, locale) }}</span>
+              </li>
+            </ul>
+            <p class="texte-discret">{{ t('profil.langages.estimation') }}</p>
+          </section>
 
-      <section class="carte">
-        <h2>{{ t('profil.projets.titre') }}</h2>
-        <p class="texte-discret" data-test="projets-vide">{{ t('profil.projets.vide') }}</p>
-      </section>
+          <section v-if="profil.depotsGithub.length" class="carte">
+            <h2>{{ t('profil.depots.titre') }}</h2>
+            <ul class="depots" data-test="depots">
+              <li v-for="d in profil.depotsGithub" :key="d.url">
+                <a :href="d.url" rel="noopener noreferrer" target="_blank">{{ d.nom }}</a>
+                <span class="texte-discret">
+                  <template v-if="d.langage">{{ d.langage }} · </template>{{ t('profil.depots.etoiles', { n: d.etoiles }, d.etoiles) }}</span>
+                <p v-if="d.description">{{ d.description }}</p>
+              </li>
+            </ul>
+            <p class="texte-discret">{{ t('profil.depots.pasUnePreuve') }}</p>
+          </section>
+        </div>
 
-      <section v-if="profil.depotsGithub.length" class="carte">
-        <h2>{{ t('profil.depots.titre') }}</h2>
-        <ul class="depots" data-test="depots">
-          <li v-for="d in profil.depotsGithub" :key="d.url">
-            <a :href="d.url" rel="noopener noreferrer" target="_blank">{{ d.nom }}</a>
-            <span class="texte-discret">
-              <template v-if="d.langage">{{ d.langage }} · </template>{{ t('profil.depots.etoiles', { n: d.etoiles }, d.etoiles) }}</span>
-            <p v-if="d.description">{{ d.description }}</p>
-          </li>
-        </ul>
-        <p class="texte-discret">{{ t('profil.depots.pasUnePreuve') }}</p>
-      </section>
+        <aside class="colonne">
+          <!-- L'indice de fiabilité : un point par type de preuve, jamais de note globale. -->
+          <section class="carte fiabilite">
+            <h2>{{ t('profil.fiabilite.titre', { prenom: prenom }) }}</h2>
+            <ul v-if="profil.fiabilite.length" class="points" data-test="fiabilite">
+              <li v-for="f in profil.fiabilite" :key="f.type">
+                <span class="points__nombre">{{ f.sur != null ? t('profil.fiabilite.sur', { n: f.nombre, sur: f.sur }) : f.nombre }}</span>
+                <span>{{ t(`profil.fiabilite.types.${f.type}`, f.nombre) }}</span>
+                <small v-if="f.contestees" class="texte-discret">{{ t('profil.fiabilite.contestees', { n: f.contestees }, f.contestees) }}</small>
+              </li>
+            </ul>
+            <template v-else>
+              <p class="texte-discret" data-test="fiabilite-vide">{{ t('profil.fiabilite.vide') }}</p>
+              <ul class="comment">
+                <li v-for="type in TYPES_PREUVE" :key="type">{{ t(`profil.fiabilite.comment.${type}`) }}</li>
+              </ul>
+            </template>
+            <p class="texte-discret">{{ t('profil.fiabilite.sansNote') }}</p>
+          </section>
+
+          <section v-if="profil.competences.length" class="carte">
+            <h2>{{ t('profil.competences.titre') }}</h2>
+            <ul class="etiquettes" data-test="competences">
+              <li v-for="c in profil.competences" :key="c.competence + c.source" class="etiquette" :class="{ 'etiquette--declaree': c.source === 'declaree' }">
+                {{ c.competence }}
+                <span v-if="c.source === 'declaree'" class="visuellement-cache">{{ t('profil.competences.declaree') }}</span>
+              </li>
+            </ul>
+            <p class="texte-discret">{{ t('profil.competences.source') }}</p>
+          </section>
+        </aside>
+      </div>
     </template>
   </section>
 </template>
@@ -276,14 +321,33 @@ async function enregistrer() {
 <style scoped>
 .mon-profil { display: grid; gap: var(--space-6); }
 .accueil-profil { max-width: 36rem; display: grid; gap: var(--space-2); justify-items: start; }
-.entete-profil { display: flex; gap: var(--space-4); align-items: center; }
-.entete-profil img { border-radius: var(--radius-pill); }
-.entete-profil h1, .entete-profil p { margin: 0; }
+.identite { flex-direction: row; display: flex; gap: var(--space-6); align-items: center; flex-wrap: wrap; }
+.identite__texte { display: grid; gap: var(--space-1); min-width: 0; flex: 1; }
+.identite__texte h1, .identite__texte p { margin: 0; }
+.etiquettes--entete { margin: var(--space-2) 0 0; }
+.visibilite { padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); background: var(--surface-raised); }
+.visibilite--publie { background: var(--action-soft); }
+.colonnes { display: grid; gap: var(--space-6); grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); align-items: start; }
+@media (max-width: 860px) { .colonnes { grid-template-columns: 1fr; } }
+.colonne { display: grid; gap: var(--space-6); min-width: 0; }
+.carte h2 { font-size: var(--type-h3-size); line-height: var(--type-h3-line); }
+.projets { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
+.projets li { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; justify-content: space-between; padding: var(--space-3) var(--space-4); background: var(--surface-raised); border-radius: var(--radius-sm); }
+.projets p { margin: 0; }
+.vide { display: grid; gap: var(--space-3); justify-items: center; text-align: center; padding: var(--space-4); border: 1px dashed var(--line-strong); border-radius: var(--radius-md); }
+.vide p { margin: 0; color: var(--ink-muted); max-width: 30rem; }
+.vide__illustration { width: 9rem; }
+.points { list-style: none; margin: 0 0 var(--space-3); padding: 0; display: grid; gap: var(--space-2); }
+.points li { display: grid; grid-template-columns: auto 1fr; gap: 2px var(--space-3); align-items: baseline; padding: var(--space-3); background: var(--proof-soft); border-radius: var(--radius-sm); }
+.points__nombre { font-family: var(--font-display); font-weight: 700; font-size: 1.25rem; color: var(--proof-ink); }
+.points small { grid-column: 2; }
+.comment { margin: 0 0 var(--space-3); padding-inline-start: 1.2em; display: grid; gap: var(--space-1); }
+.etiquette--declaree { background: transparent; border: 1px solid var(--line-strong); }
 .disponibilite { font-weight: 600; }
 .disponibilite::before { content: ''; display: inline-block; width: 0.6em; height: 0.6em; margin-inline-end: var(--space-1); border-radius: 50%; background: var(--line-strong); }
 .disponibilite--disponible::before { background: var(--action); }
 .barre-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
-.barre-actions .visibilite { margin: 0; flex-basis: 100%; }
+.barre-actions .visibilite { margin: 0; }
 .formulaire-profil { display: grid; gap: var(--space-4); }
 .deux-colonnes { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); }
 .j-champ > span { font-size: var(--type-label-size); line-height: var(--type-label-line); font-weight: var(--type-label-weight); }

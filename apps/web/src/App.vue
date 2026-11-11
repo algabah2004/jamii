@@ -17,7 +17,7 @@ function changerLangue(langue: Langue) {
 
 <template>
   <header class="entete">
-    <RouterLink to="/" class="marque">Jamii</RouterLink>
+    <RouterLink to="/" class="marque">Jamii<span class="marque__point" aria-hidden="true" /></RouterLink>
     <nav :aria-label="t('menu.principal')">
       <RouterLink v-if="etat === 'connecte'" to="/communautes">{{ t('menu.communautes') }}</RouterLink>
       <RouterLink to="/vitrine">{{ t('menu.vitrine') }}</RouterLink>
@@ -61,6 +61,7 @@ function changerLangue(langue: Langue) {
 <style>
 /* L'en-tête et la mise en page, sur les variables du design system (src/design-system, #19). */
 .entete {
+  position: sticky; top: 0; z-index: 10;
   display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-4);
   padding: var(--space-3) var(--space-4);
   background: var(--surface); border-bottom: 1px solid var(--line);
@@ -68,7 +69,9 @@ function changerLangue(langue: Langue) {
 .entete nav { flex: 1; display: flex; gap: var(--space-4); white-space: nowrap; overflow-x: auto; }
 .entete nav a { color: var(--ink); text-decoration: none; font-weight: 600; padding-block: var(--space-1); border-bottom: 2px solid transparent; }
 .entete nav a.router-link-active { border-bottom-color: var(--action); }
-.marque { font-family: var(--font-display); font-weight: 700; font-size: var(--type-h3-size); color: var(--ink); text-decoration: none; }
+.marque { display: inline-flex; align-items: baseline; gap: 2px; font-family: var(--font-display); font-weight: 700; font-size: 1.5rem; letter-spacing: -0.5px; color: var(--ink); text-decoration: none; }
+/* Le point orange : la couleur de la preuve, la signature de la marque. */
+.marque__point { width: 0.3em; height: 0.3em; border-radius: 50%; background: var(--proof); }
 .actions { display: flex; align-items: center; gap: var(--space-2); }
 .actions button, .actions .bouton { white-space: nowrap; }
 /* Le menu défile sur mobile : l'anneau de focus passe à l'intérieur pour ne pas être rogné. */
