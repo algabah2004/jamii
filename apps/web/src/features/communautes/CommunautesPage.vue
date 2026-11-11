@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { JBouton } from '../../design-system'
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
@@ -34,7 +35,7 @@ void charger()
     <p v-if="etat === 'chargement'" role="status">{{ t('etat.chargement') }}</p>
     <div v-else-if="etat === 'indisponible'" role="alert">
       <p>{{ t('etat.indisponible') }}</p>
-      <button type="button" @click="charger">{{ t('etat.reessayer') }}</button>
+      <JBouton variante="secondaire" @click="charger">{{ t('etat.reessayer') }}</JBouton>
     </div>
     <ul v-else class="cartes" data-test="communautes">
       <li v-for="c in communautes" :key="c.id" class="carte">

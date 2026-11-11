@@ -29,6 +29,16 @@ a:hover { text-decoration-thickness: 2px; }
 
 button, input, select, textarea { font: inherit; color: inherit; }
 
+/* Champs natifs : le même habillage que JChamp, pour les formulaires qui ne l'utilisent pas encore. */
+input:not([type='radio'], [type='checkbox'], [type='range']), select, textarea {
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+}
+input[type='radio'], input[type='checkbox'] { accent-color: var(--action); width: 1.1em; height: 1.1em; }
+
 ::selection { background: var(--action-soft); color: var(--ink); }
 
 img, svg { max-width: 100%; }

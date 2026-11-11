@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { JBouton } from '../../design-system'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
@@ -65,7 +66,7 @@ const maxPays = computed(() => Math.max(1, ...pays.value.map((p) => p.nombre)))
     <p v-if="etat === 'chargement' && !tableau" role="status">{{ t('etat.chargement') }}</p>
     <div v-else-if="etat === 'indisponible'" role="alert">
       <p>{{ t('etat.indisponible') }}</p>
-      <button type="button" @click="charger">{{ t('etat.reessayer') }}</button>
+      <JBouton variante="secondaire" @click="charger">{{ t('etat.reessayer') }}</JBouton>
     </div>
 
     <template v-else-if="tableau">
