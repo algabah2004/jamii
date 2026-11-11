@@ -17,7 +17,68 @@
   },
   "profil": {
     "titre": "Profile",
-    "vide": "Your profile will fill up with your languages and public GitHub projects, and the projects you put online on Jamii."
+    "vide": "Your profile will fill up with your public GitHub languages and projects, and the projects you put online on Jamii.",
+    "generation": {
+      "titre": "Create your profile from GitHub",
+      "texte": "Jamii reads your public repositories (languages, topics, stars) to fill in your profile. Nothing private is read, and you can complete everything afterwards.",
+      "bouton": "Generate my profile from GitHub",
+      "regenerer": "Update from GitHub",
+      "enCours": "Reading your GitHub repositories…",
+      "prive": "Your profile stays private until you publish it.",
+      "sansGithub": "Your account is not linked to GitHub. Sign in with GitHub to generate your profile.",
+      "tropSouvent": "You have already updated your profile several times this hour. Try again a little later.",
+      "erreurs": {
+        "github_indisponible": "GitHub is not responding right now. Your previous profile is kept: try again in a few minutes.",
+        "github_refus": "GitHub can no longer find your account. Check your GitHub username, then try again."
+      }
+    },
+    "disponibilite": {
+      "disponible": "Available",
+      "occupe": "Busy at the moment",
+      "indisponible": "Not available"
+    },
+    "heures": "{n} h per week",
+    "visibilite": {
+      "prive": "🔒 Your profile is private: only you can see it.",
+      "publie": "✅ Your profile is published: signed-in members can see it and invite you to a team.",
+      "publier": "Publish my profile",
+      "retirer": "Make my profile private"
+    },
+    "modifier": {
+      "bouton": "Edit",
+      "titre": "What you declare yourself",
+      "bio": "About you",
+      "pays": "Country",
+      "paysAucun": "I'd rather not say",
+      "ville": "City",
+      "disponibilite": "Availability",
+      "heures": "Hours per week (1 to 60)",
+      "competences": "Other skills",
+      "competencesAide": "Separated by commas, 20 at most. Example: UX design, Mobile Money",
+      "enregistrer": "Save",
+      "annuler": "Cancel",
+      "enregistre": "Your profile is saved.",
+      "conflit": "Your profile changed in another tab. Here is the latest version: please make your change again.",
+      "invalide": "This value is not accepted."
+    },
+    "langages": {
+      "titre": "Languages",
+      "estimation": "Estimated from the size of your public GitHub repositories (forks excluded)."
+    },
+    "competences": {
+      "titre": "Skills",
+      "declaree": "(declared)",
+      "source": "Deduced from your GitHub repositories, plus the ones you add."
+    },
+    "projets": {
+      "titre": "Projects on Jamii",
+      "vide": "No project yet. The projects you put online with your team will appear here, with the verified link."
+    },
+    "depots": {
+      "titre": "GitHub repositories",
+      "etoiles": "no stars | {n} star | {n} stars",
+      "pasUnePreuve": "Repositories show what you code. Only a project that is online and verified counts as proof."
+    }
   },
   "etat": {
     "chargement": "Loading…",

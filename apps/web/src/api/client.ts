@@ -3,9 +3,10 @@ import type { paths as CheminsSocle } from './generated/socle'
 import type { paths as CheminsSystalink } from './generated/systalink'
 import type { paths as CheminsCommunautes } from './generated/communautes'
 import type { paths as CheminsVitrine } from './generated/vitrine'
+import type { paths as CheminsProfils } from './generated/profils'
 
 /** Un chemin par contrat : on ajoute ici chaque nouveau contrat généré. */
-type paths = CheminsSocle & CheminsSystalink & CheminsVitrine & CheminsCommunautes
+type paths = CheminsSocle & CheminsSystalink & CheminsVitrine & CheminsCommunautes & CheminsProfils
 
 const METHODES_PROTEGEES = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
 
