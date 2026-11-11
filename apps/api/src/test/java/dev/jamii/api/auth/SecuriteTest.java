@@ -49,8 +49,24 @@ class SecuriteTest {
 	}
 
 	@Test
+	void tableau_de_bord_et_vitrine_se_lisent_sans_connexion() {
+		assertThat(mvc.get().uri("/api/systalink/tableau-de-bord")).hasStatus(HttpStatus.OK);
+		// La vitrine n'est pas encore codée : ce qui compte, c'est qu'elle ne soit pas refusée (401).
+		assertThat(mvc.get().uri("/api/vitrine").exchange().getResponse().getStatus()).isNotEqualTo(401);
+	}
+
+	@Test
+	void seules_ces_deux_lectures_sont_publiques() {
+		assertThat(mvc.post().uri("/api/systalink/tableau-de-bord").with(csrf())).hasStatus(HttpStatus.UNAUTHORIZED);
+		assertThat(mvc.post().uri("/api/vitrine").with(csrf())).hasStatus(HttpStatus.UNAUTHORIZED);
+		assertThat(mvc.get().uri("/api/vitrine/autre")).hasStatus(HttpStatus.UNAUTHORIZED);
+		assertThat(mvc.post().uri("/api/systalink/moments/{id}/accepter", UUID.randomUUID()).with(csrf()))
+			.hasStatus(HttpStatus.UNAUTHORIZED);
+	}
+
+	@Test
 	void route_publique_inconnue_repond_404_et_pas_500() {
-		assertThat(mvc.post().uri("/api/auth/lien-email").with(csrf())).hasStatus(HttpStatus.NOT_FOUND);
+		assertThat(mvc.post().uri("/api/auth/inconnue").with(csrf())).hasStatus(HttpStatus.NOT_FOUND);
 	}
 
 	@Test
