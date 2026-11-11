@@ -78,6 +78,10 @@ export interface paths {
          *     Le lien ouvre la page du front `/connexion/email?jeton=…`, qui appelle ensuite la confirmation.
          *     Le lien ne connecte donc pas sur un simple `GET` : les antivirus de messagerie qui ouvrent les
          *     liens à l'avance ne peuvent pas le consommer.
+         *
+         *     Le jeton CSRF est obligatoire, comme pour toute requête POST : le front l'a déjà, car le cookie
+         *     `XSRF-TOKEN` est posé dès la première réponse de l'API. Limites : 5 demandes par heure par adresse,
+         *     20 par heure par adresse IP (`429` avec `Retry-After`).
          */
         post: operations["demanderLienEmail"];
         delete?: never;
@@ -98,7 +102,9 @@ export interface paths {
         /**
          * Échange le jeton du lien contre une session
          * @description Jeton à usage unique, valable 15 minutes, stocké haché en base. À la première confirmation
-         *     d'une adresse inconnue, le compte est créé avec le rôle `membre`.
+         *     d'une adresse inconnue, le compte est créé avec le rôle `membre` et le nom « Nouveau membre » (le début de
+         *     l'adresse serait montré aux autres). Un compte créé par e-mail n'est jamais fusionné avec un compte GitHub.
+         *     Le jeton CSRF est obligatoire : sinon un site tiers pourrait connecter un visiteur au compte de quelqu'un d'autre.
          */
         post: operations["confirmerLienEmail"];
         delete?: never;

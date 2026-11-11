@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Service IA de Jamii : l'assistant de projet"
 requires-python = ">=3.12"
 dependencies = [
+    "asyncpg>=0.32.0",
     "fastapi>=0.162.2",
     "pydantic-settings>=2.16.2",
     "uvicorn[standard]>=0.54.0",
@@ -19,6 +20,7 @@ packages = ["src/jamii_ia"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 
 [tool.ruff]
 line-length = 100
