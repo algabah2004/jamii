@@ -10,6 +10,12 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('./pages/ProfilPage.vue'),
     meta: { connexionRequise: true },
   },
+  {
+    // Public : uniquement des chiffres agrégés (contracts/systalink.yaml).
+    path: '/systalink',
+    name: 'systalink',
+    component: () => import('./features/systalink/TableauDeBordPage.vue'),
+  },
   { path: '/:chemin(.*)*', name: 'introuvable', component: () => import('./pages/IntrouvablePage.vue') },
 ]
 

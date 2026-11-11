@@ -1,5 +1,9 @@
 import createClient, { type Middleware } from 'openapi-fetch'
-import type { paths } from './generated/socle'
+import type { paths as CheminsSocle } from './generated/socle'
+import type { paths as CheminsSystalink } from './generated/systalink'
+
+/** Un chemin par contrat : on ajoute ici chaque nouveau contrat généré. */
+type paths = CheminsSocle & CheminsSystalink
 
 const METHODES_PROTEGEES = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
 
