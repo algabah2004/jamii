@@ -52,4 +52,4 @@ Le détail est dans [docs/concept.md](docs/concept.md). Des mots simples, sans j
 
 ## Équipe
 
-5 personnes. Le chef de projet attribue les tâches et valide toutes les PR. Détails dans [docs/equipe.md](docs/equipe.md).
+5 personnes. Le chef de projet attribue les tâches et relit les PR. Chacun fusionne la sienne quand les contrôles automatiques sont verts. Détails dans [docs/equipe.md](docs/equipe.md).
