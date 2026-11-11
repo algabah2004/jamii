@@ -169,5 +169,10 @@
       "iaTexte": "En pointillé tant qu'un humain ne l'a pas accepté : ce n'est pas encore une preuve."
     }
   },
-  "theme": "Thème"
+  "theme": "Thème",
+  "themeCourt": {
+    "systeme": "Auto",
+    "clair": "Clair",
+    "sombre": "Sombre"
+  }
 }

@@ -169,5 +169,10 @@
       "iaTexte": "Dashed until a human accepts it: it is not proof yet."
     }
   },
-  "theme": "Theme"
+  "theme": "Theme",
+  "themeCourt": {
+    "systeme": "Auto",
+    "clair": "Light",
+    "sombre": "Dark"
+  }
 }

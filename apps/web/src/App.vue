@@ -34,9 +34,9 @@ function changerLangue(langue: Langue) {
       <label>
         <span class="visuellement-cache">{{ t('theme') }}</span>
         <select :value="themeActuel" data-test="theme" @change="choisirTheme(($event.target as HTMLSelectElement).value as Theme)">
-          <option value="systeme">◐ {{ t('designSystem.themes.systeme') }}</option>
-          <option value="clair">☀ {{ t('designSystem.themes.clair') }}</option>
-          <option value="sombre">☾ {{ t('designSystem.themes.sombre') }}</option>
+          <option value="systeme">◐ {{ t('themeCourt.systeme') }}</option>
+          <option value="clair">☀ {{ t('themeCourt.clair') }}</option>
+          <option value="sombre">☾ {{ t('themeCourt.sombre') }}</option>
         </select>
       </label>
       <a v-if="etat === 'non_connecte'" :href="adresseConnexionGithub($route.fullPath)" class="bouton">
@@ -70,6 +70,9 @@ function changerLangue(langue: Langue) {
 .entete nav a.router-link-active { border-bottom-color: var(--action); }
 .marque { font-family: var(--font-display); font-weight: 700; font-size: var(--type-h3-size); color: var(--ink); text-decoration: none; }
 .actions { display: flex; align-items: center; gap: var(--space-2); }
+.actions button, .actions .bouton { white-space: nowrap; }
+/* Le menu défile sur mobile : l'anneau de focus passe à l'intérieur pour ne pas être rogné. */
+.entete nav a:focus-visible { outline-offset: -2px; }
 .actions select, .actions button {
   min-height: 36px; padding: 0 var(--space-3);
   background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); cursor: pointer;
