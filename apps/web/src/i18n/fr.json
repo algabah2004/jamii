@@ -3,7 +3,8 @@
     "profil": "Profil",
     "principal": "Menu principal",
     "systalink": "Espace Systalink",
-    "vitrine": "Vitrine"
+    "vitrine": "Vitrine",
+    "communautes": "Communautés"
   },
   "connexion": {
     "github": "Se connecter avec GitHub",
@@ -77,5 +78,36 @@
     "verifie": "Vérifié {quand}",
     "plus": "Voir plus de projets",
     "vide": "Aucun projet en ligne pour le moment."
+  },
+  "communautes": {
+    "titre": "Communautés",
+    "intro": "Pose tes questions, aide les autres et montre tes projets, avec des devs de tout le continent.",
+    "antenne": "Antenne locale · {pays}",
+    "membres": "{n} membre | {n} membres",
+    "questionsOuvertes": "aucune question ouverte | {n} question ouverte | {n} questions ouvertes",
+    "tuEnFaisPartie": "Tu en fais partie",
+    "retour": "← Toutes les communautés",
+    "rejoindre": "Rejoindre",
+    "quitter": "Quitter",
+    "poser": "Poser une question",
+    "type": "Type",
+    "types": {
+      "question": "Question",
+      "discussion": "Discussion",
+      "montre_ton_projet": "Montre ton projet"
+    },
+    "champTitre": "Titre (10 caractères au moins)",
+    "champContenu": "Explique ton problème (20 caractères au moins)",
+    "aideIa": "Pour une question, l'IA proposera une réponse. Un membre de la communauté devra la vérifier.",
+    "publier": "Publier",
+    "erreurPublier": "La publication n'a pas pu être envoyée. Réessaie dans un instant.",
+    "rejoindrePourPublier": "Rejoins la communauté pour publier et répondre.",
+    "filtre": "Afficher",
+    "toutes": "Tout",
+    "ouvertes": "Questions sans réponse acceptée",
+    "vide": "Rien ici pour le moment. Pose la première question !",
+    "reponseAcceptee": "Réponse acceptée",
+    "reponses": "aucune réponse | {n} réponse | {n} réponses",
+    "compteSupprime": "compte supprimé"
   }
 }

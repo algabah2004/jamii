@@ -2,6 +2,7 @@ import { http, HttpResponse } from 'msw'
 import type { components } from '../api/generated/socle'
 import type { components as ComposantsSystalink } from '../api/generated/systalink'
 import { handlersVitrine } from './vitrine'
+import { handlersCommunautes } from './communautes'
 
 type Moi = components['schemas']['Moi']
 type TableauDeBord = ComposantsSystalink['schemas']['TableauDeBord']
@@ -46,6 +47,7 @@ let connecte = true
 
 export const handlers = [
   ...handlersVitrine,
+  ...handlersCommunautes,
   http.get('/api/me', () =>
     connecte
       ? HttpResponse.json(moiDemo)
