@@ -4,7 +4,7 @@
 
 1. **Pas de tâche, pas de code.** Tout travail part d'une **issue** attribuée par le chef de projet. Une idée ? Ouvre une issue « Proposition » : le chef de projet la valide ou non.
 2. **On ne pousse jamais directement sur `main`.** On passe toujours par une branche et une Pull Request.
-3. **Chaque PR est relue et approuvée par le chef de projet** avant d'être fusionnée.
+3. **Tu fusionnes ta PR toi-même dès que les contrôles automatiques sont verts.** L'approbation du chef de projet n'est plus obligatoire (depuis le 11 novembre 2026, pour ne pas ralentir la dernière ligne droite). Il relit quand même les PR et peut laisser des remarques : corrige-les dans une PR suivante. Tu restes responsable de ce que tu fusionnes.
 4. **Aucun secret dans le code** (clés d'API, mots de passe). Ils vont dans `.env`, qui est ignoré par Git, et on documente les variables dans `.env.example`.
 
 ## Le cycle d'une tâche
@@ -28,7 +28,19 @@
    ```
    Préfixes possibles : `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`.
 4. Pousse ta branche et ouvre une PR. Écris `Closes #12` dans la description pour que l'issue se ferme automatiquement.
-5. Corrige les remarques de la revue, puis le chef de projet fusionne.
+5. Quand les contrôles sont verts, fusionne ta PR. S'il y a des remarques de revue, corrige-les avant, ou dans une PR suivante si elles arrivent après.
+
+### Peu de branches, toujours depuis `main`
+Trop de branches, c'est des conflits en cascade et des revues qui traînent. Donc :
+- **Toujours partir de `main` à jour, jamais de la branche d'une autre PR.** Une PR empilée sur une autre doit être reprise à chaque fusion, et un seul conflit bloque toute la pile.
+- **Même sujet, même branche** : une correction ou une suite sur la PR encore ouverte s'ajoute en commit sur sa branche, pas dans une nouvelle branche.
+- **Une PR vit moins d'un jour.** Si elle grossit, on fusionne ce qui est prêt et on continue ensuite.
+- Après la fusion, la branche est supprimée automatiquement. Fais `git switch main && git pull && git fetch --prune` avant de recommencer.
+
+## Le fil de l'équipe et les demandes
+
+- **Le fil [#54](https://github.com/algabah2004/jamii/issues/54)** : chacun (ou son agent IA) y écrit un point court en fin de session, et le lit en début de session. C'est là qu'on voit où en sont les autres.
+- **Une demande à un autre membre** est un ticket avec l'étiquette `demande`, attribué à la personne. Elle passe avant son propre travail. On la ferme quand c'est fait.
 
 ## Les étiquettes
 

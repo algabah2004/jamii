@@ -57,6 +57,19 @@ async def test_la_limite_par_heure_bloque_les_nouvelles_taches(depot):
     assert (await strict.deposer(cle, "plan_projet", ENTREE))[1] is False
 
 
+async def test_la_limite_est_exacte_meme_avec_des_depots_simultanes(depot):
+    strict = DepotTaches(depot._pool, limite_par_heure=3)
+
+    async def tenter():
+        try:
+            return (await strict.deposer(uuid4(), "plan_projet", ENTREE))[1]
+        except LimiteAtteinteError:
+            return False
+
+    acceptes = await asyncio.gather(*(tenter() for _ in range(10)))
+    assert sum(acceptes) == 3
+
+
 async def test_base_joignable_puis_injoignable(depot):
     assert await depot.base_joignable()
     await depot._pool.close()

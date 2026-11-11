@@ -1,0 +1,81 @@
+{
+  "menu": {
+    "profil": "Profile",
+    "principal": "Main menu",
+    "systalink": "Systalink space",
+    "vitrine": "Showcase"
+  },
+  "connexion": {
+    "github": "Sign in with GitHub",
+    "deconnexion": "Sign out"
+  },
+  "accueil": {
+    "titre": "Find your team, build your project, put it online.",
+    "texte": "Jamii brings African developers together: communities to help each other, small business requests to deliver as a team, and projects that live on after the hackathon.",
+    "bienvenue": "Welcome back, {nom}."
+  },
+  "profil": {
+    "titre": "Profile",
+    "vide": "Your profile will fill up with your languages and public GitHub projects, and the projects you put online on Jamii."
+  },
+  "etat": {
+    "chargement": "Loading…",
+    "indisponible": "Jamii is not responding right now. Try again in a moment.",
+    "reessayer": "Try again"
+  },
+  "introuvable": {
+    "titre": "This page does not exist.",
+    "retour": "Back to home"
+  },
+  "langue": "Language",
+  "systalink": {
+    "titre": "Systalink space",
+    "intro": "What Jamii brings to the Systalink cloud. Figures are aggregated and anonymous: no individual appears.",
+    "periode": "Period",
+    "periodes": {
+      "semaine": "Last 7 days",
+      "mois": "Last 30 days",
+      "tout": "Since the start"
+    },
+    "surDatacloud": "projects online on DataCloud",
+    "partDatacloud": "{part}% of online projects are hosted on DataCloud",
+    "inscrits": "Members",
+    "projetsCrees": "Projects created",
+    "projetsEnLigne": "Projects online",
+    "nouveaux": "+{n} in this period",
+    "parPays": "Members by country",
+    "autresPays": "Other countries",
+    "seuilPays": "A country appears once it has 5 members, so that no one can be identified.",
+    "moments": "Systalink services offered",
+    "momentsIntro": "Jamii offers a Systalink service at the right moment: DataCloud to put a project online, Orion for a small business website… Here is how often, and how many people followed it.",
+    "service": "Service",
+    "proposes": "Offered",
+    "acceptes": "Followed",
+    "taux": "Rate",
+    "momentsVide": "No service offered in this period.",
+    "nonMesure": "Moving to a paid plan is not measured: Jamii cannot see purchases made at Systalink.",
+    "calculeLe": "Calculated on {date}",
+    "services": {
+      "datacloud": "DataCloud",
+      "orion": "Orion",
+      "yokk": "Yokk",
+      "systatalk": "SystaTalk",
+      "systaforms": "SystaForms",
+      "domaines": "Domain names"
+    }
+  },
+  "vitrine": {
+    "titre": "Showcase",
+    "intro": "Projects born on Jamii and actually online. Every address responded less than 24 hours ago.",
+    "filtre": "Hosting",
+    "tous": "All projects",
+    "surSystalink": "Hosted on Systalink",
+    "hebergeSurSystalink": "Hosted on Systalink",
+    "pourUnePme": "Built for a small business",
+    "equipe": "Team: {noms}",
+    "voir": "View the project",
+    "verifie": "Checked {quand}",
+    "plus": "See more projects",
+    "vide": "No project online yet."
+  }
+}

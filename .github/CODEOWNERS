@@ -1,2 +1,2 @@
-# Toute PR doit être approuvée par le chef de projet
+# Le chef de projet est ajouté comme relecteur de chaque PR. Son approbation n'est pas obligatoire pour fusionner.
 * @algabah2004
