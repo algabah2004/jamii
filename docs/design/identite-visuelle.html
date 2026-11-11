@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Identité visuelle Jamii</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@600;700&family=Noto+Sans:wght@400;600&display=swap">
+<style>
+/* ===== Tokens Jamii (source : tokens.json v2). Les composants n'utilisent que ces noms. ===== */
+:root,.t-clair{
+  --midnight:#02070A;--electric-blue:#0297DE;--cantaloupe:#FC734D;
+  --bg:#F4F8FA;--surface:#FFFFFF;--surface-raised:#EAF1F5;--line:#D3DEE5;--line-strong:#74868F;
+  --ink:#02070A;--ink-muted:#4B5D69;
+  --action:var(--electric-blue);--on-action:var(--midnight);--action-ink:#0270A6;--action-soft:#DDF0FA;
+  --proof:var(--cantaloupe);--on-proof:var(--midnight);--proof-ink:#B4431F;--proof-soft:#FFE6DD;
+  --focus:#0270A6;--danger:#C0264B;
+  --font-display:"Familjen Grotesk","Noto Sans",system-ui,sans-serif;--font-text:"Noto Sans",system-ui,sans-serif;
+  --space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-6:24px;--space-8:32px;--space-12:48px;
+  --radius-sm:6px;--radius-md:12px;--radius-lg:20px;--radius-pill:999px;
+  --motion-fast:120ms;--motion-base:220ms;--motion-celebrate:700ms;
+  --ease-out:cubic-bezier(.2,.8,.2,1);--ease-pop:cubic-bezier(.34,1.56,.64,1);
+  color-scheme:light;
+}
+.t-sombre{
+  --bg:#02070A;--surface:#0B141A;--surface-raised:#121E26;--line:#1F2E38;--line-strong:#5A7080;
+  --ink:#EEF4F7;--ink-muted:#9DB0BC;
+  --action-ink:#0297DE;--action-soft:#0B2A3B;--proof-ink:#FC734D;--proof-soft:#3A1D14;
+  --focus:#0297DE;--danger:#FF6B8A;color-scheme:dark;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#02070A;--surface:#0B141A;--surface-raised:#121E26;--line:#1F2E38;--line-strong:#5A7080;
+  --ink:#EEF4F7;--ink-muted:#9DB0BC;--action-ink:#0297DE;--action-soft:#0B2A3B;--proof-ink:#FC734D;--proof-soft:#3A1D14;
+  --focus:#0297DE;--danger:#FF6B8A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#02070A;--surface:#0B141A;--surface-raised:#121E26;--line:#1F2E38;--line-strong:#5A7080;
+  --ink:#EEF4F7;--ink-muted:#9DB0BC;--action-ink:#0297DE;--action-soft:#0B2A3B;--proof-ink:#FC734D;--proof-soft:#3A1D14;
+  --focus:#0297DE;--danger:#FF6B8A;color-scheme:dark}
+/* Charte partenaire : seuls les tokens d'action changent, la preuve reste fixe */
+.marque-partenaire{--action:#7BC86C;--action-ink:#2F7A22;--action-soft:#E4F4E0}
+.t-sombre.marque-partenaire{--action-ink:#7BC86C;--action-soft:#16301A}
+@media (prefers-reduced-motion:reduce){:root{--motion-fast:0ms;--motion-base:0ms;--motion-celebrate:0ms}}
+
+/* ===== Page ===== */
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-text);font-size:16px;line-height:1.55;padding-inline:max(16px,env(safe-area-inset-left,0px))}
+main{max-width:1120px;margin:0 auto;padding-block:48px 80px;display:flex;flex-direction:column;gap:64px}
+h1,h2,h3,h4{font-family:var(--font-display);text-wrap:balance;line-height:1.15;margin:0}
+h1{font-size:clamp(2rem,5vw,3.2rem);letter-spacing:-.02em}
+h2{font-size:1.65rem;letter-spacing:-.01em}
+h3{font-size:1.2rem}
+h4{font-size:1rem}
+p{margin:0;max-width:68ch}
+a{color:var(--action-ink)}
+.lead{font-size:1.15rem;color:var(--ink-muted)}
+.muted{color:var(--ink-muted)}
+.small{font-size:.875rem;line-height:1.45}
+section{display:flex;flex-direction:column;gap:24px}
+.head{display:flex;flex-direction:column;gap:8px}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.kicker{font-size:.875rem;font-weight:600;color:var(--proof-ink)}
+
+/* Palette */
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
+.sw{border:1px solid var(--line);border-radius:var(--radius-md);overflow:hidden;background:var(--surface);font-size:.85rem}
+.sw .chip{display:grid;grid-template-columns:1fr 1fr;height:52px}
+.sw .meta{padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.sw .meta small{color:var(--ink-muted);font-variant-numeric:tabular-nums}
+.brand{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.brand div{border-radius:var(--radius-md);padding:20px;min-height:120px;display:flex;flex-direction:column;justify-content:flex-end;gap:2px;font-weight:600}
+.brand small{font-weight:400}
+.type{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.type>div,.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-md);padding:20px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.big{font-family:var(--font-display);font-weight:700;font-size:2.2rem;line-height:1.1}
+
+/* Composants communs */
+.btn{font:inherit;font-weight:600;font-size:.875rem;line-height:20px;border-radius:var(--radius-md);padding:8px 16px;cursor:pointer;border:1.5px solid transparent;transition:transform var(--motion-fast) var(--ease-out),background var(--motion-fast);display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn:active{transform:scale(.97)}
+.btn.primaire{background:var(--action);color:var(--on-action)}
+.btn.secondaire{background:transparent;color:var(--ink);border-color:var(--line-strong)}
+.btn.secondaire:hover{background:var(--surface-raised)}
+.btn.petit{padding:4px 12px}
+.btn[aria-pressed="true"]{background:var(--action-soft);border-color:var(--action)}
+.badge{display:inline-flex;align-items:center;gap:6px;background:var(--proof);color:var(--on-proof);border-radius:var(--radius-pill);padding:2px 10px;font-size:.8rem;font-weight:600;white-space:nowrap}
+.badge svg{width:14px;height:14px}
+.tag{border:1px solid var(--line-strong);border-radius:var(--radius-pill);padding:1px 10px;font-size:.8rem;white-space:nowrap}
+.avatar{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-family:var(--font-display);font-weight:700;font-size:.9rem;flex:none;background:var(--action);color:var(--on-action)}
+.avatar.o{background:var(--proof);color:var(--on-proof)}
+.avatar.n{background:var(--ink);color:var(--bg)}
+.avatar.s{width:28px;height:28px;font-size:.7rem;border:2px solid var(--surface)}
+.stack{display:flex}.stack .avatar+.avatar{margin-left:-8px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-md);padding:var(--space-6);display:flex;flex-direction:column;gap:14px;min-width:0}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.between{justify-content:space-between}
+
+/* Profil */
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.pv{background:var(--bg);color:var(--ink);border-radius:var(--radius-lg);padding:20px;display:flex;flex-direction:column;gap:12px;border:1px solid var(--line);min-width:0}
+.proj{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:12px}
+.proj b{font-family:var(--font-display);font-weight:600}
+.proj small{display:block;color:var(--ink-muted)}
+.point{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:baseline;background:var(--proof-soft);border-radius:var(--radius-sm);padding:8px 10px;font-size:.9rem}
+.point .n{font-weight:600;font-variant-numeric:tabular-nums}
+.point a{color:var(--ink);font-size:.8rem}
+
+/* ===== Écran communauté ===== */
+.ecran{background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:var(--radius-lg);overflow:hidden}
+.ecran-barre{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 20px;border-bottom:1px solid var(--line);background:var(--surface)}
+.logo{font-family:var(--font-display);font-weight:700;font-size:1.25rem;display:flex;align-items:center;gap:8px}
+.logo i{width:22px;height:22px;border-radius:7px;background:var(--action);display:inline-block;position:relative}
+.logo i::after{content:"";position:absolute;left:6px;right:6px;bottom:5px;height:3px;border-radius:2px;background:var(--proof)}
+.nav{display:flex;gap:4px;flex-wrap:wrap}
+.nav a{color:var(--ink-muted);text-decoration:none;font-weight:600;font-size:.875rem;padding:6px 10px;border-radius:var(--radius-sm)}
+.nav a[aria-current="page"]{color:var(--ink);background:var(--surface-raised)}
+.com-tete{padding:24px 20px 20px;display:flex;flex-direction:column;gap:12px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,var(--action-soft),transparent 140%)}
+.presence{display:inline-flex;align-items:center;gap:8px;font-size:.875rem;font-weight:600}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--action);position:relative;flex:none}
+.dot::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid var(--action);opacity:0;animation:pulse 2s var(--ease-out) infinite}
+@keyframes pulse{0%{transform:scale(.6);opacity:.8}100%{transform:scale(1.6);opacity:0}}
+@media (prefers-reduced-motion:reduce){.dot::after{animation:none}}
+.grille{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:20px;padding:20px}
+.col{display:flex;flex-direction:column;gap:20px;min-width:0}
+
+/* Fil « Ça bouge » */
+.fil ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.fil li{display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;padding:8px 10px;border-radius:var(--radius-sm);font-size:.9rem}
+.fil li .ic{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:.85rem;background:var(--surface-raised)}
+.fil li.preuve .ic{background:var(--proof);color:var(--on-proof)}
+.fil li time{color:var(--ink-muted);font-size:.8rem;white-space:nowrap}
+.fil li a{color:var(--ink);font-weight:600;text-decoration-color:var(--line-strong)}
+.fil li.nouveau{animation:arrive var(--motion-celebrate) var(--ease-out)}
+@keyframes arrive{0%{opacity:0;transform:translateY(-8px);background:var(--action-soft)}40%{opacity:1;transform:none;background:var(--action-soft)}100%{background:transparent}}
+
+/* Question en direct */
+.ia{border:1.5px dashed var(--line-strong);background:var(--action-soft);border-radius:var(--radius-md);padding:16px;display:flex;flex-direction:column;gap:10px}
+.ia-label{font-size:.8rem;font-weight:600;display:flex;align-items:center;gap:6px}
+.ia.acceptee{border-style:solid;border-color:var(--proof);background:var(--proof-soft)}
+pre{margin:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-sm);padding:10px 12px;font-size:.8rem;line-height:1.5;overflow-x:auto}
+.ajout{border-left:3px solid var(--action);padding-left:10px;font-size:.9rem}
+.zone-celeb{position:relative}
+.confetti{position:absolute;left:50%;top:50%;width:8px;height:8px;border-radius:2px;pointer-events:none;animation:eclat var(--motion-celebrate) var(--ease-out) forwards}
+@keyframes eclat{0%{transform:translate(-50%,-50%) scale(.4);opacity:1}100%{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) rotate(var(--r)) scale(1);opacity:0}}
+.pop{animation:pop var(--motion-celebrate) var(--ease-pop)}
+@keyframes pop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.08);opacity:1}100%{transform:scale(1)}}
+
+/* Réactions utiles */
+.reactions{display:flex;gap:8px;flex-wrap:wrap}
+.reactions .btn b{font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-muted)}
+.reactions .btn[aria-pressed="true"] b{color:var(--ink)}
+
+/* Défi du mois */
+.defi{background:var(--midnight);color:#EEF4F7;border:0}
+.defi .muted{color:#9DB0BC}
+.jauge{height:12px;border-radius:var(--radius-pill);background:#1F2E38;overflow:hidden;display:flex}
+.jauge span{display:block;height:100%}
+.chiffres{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:left}
+.chiffres b{display:block;font-family:var(--font-display);font-size:1.6rem;line-height:1.1;font-variant-numeric:tabular-nums}
+.chiffres small{color:#9DB0BC}
+.defi .btn.primaire{width:100%;justify-content:center}
+
+/* Impact par pays */
+.pays{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.pays li{display:grid;grid-template-columns:110px 1fr 28px;gap:10px;align-items:center;font-size:.875rem}
+.pays .b{height:8px;border-radius:var(--radius-pill);background:var(--surface-raised);overflow:hidden}
+.pays .b span{display:block;height:100%;background:var(--action);border-radius:var(--radius-pill)}
+.pays b{text-align:right;font-variant-numeric:tabular-nums}
+
+.qpt{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.qpt li{padding:10px 0;border-top:1px solid var(--line);font-size:.9rem;display:flex;flex-direction:column;gap:2px}
+.qpt li:first-child{border-top:0;padding-top:0}
+.qpt a{color:var(--ink);font-weight:600}
+
+/* Message (toast) */
+.toast{position:sticky;bottom:16px;margin:0 20px 20px auto;max-width:420px;background:var(--ink);color:var(--bg);border-radius:var(--radius-md);padding:12px 16px;font-size:.9rem;display:none;gap:10px;align-items:flex-start;box-shadow:0 8px 24px rgba(2,7,10,.25)}
+.toast.on{display:flex;animation:pop var(--motion-base) var(--ease-out)}
+
+.commandes{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.seg button{font:inherit;font-size:.875rem;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);border-radius:var(--radius-pill);padding:6px 14px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+/* Tableaux */
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius-md);background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:600px;font-size:.9rem}
+th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+th{font-weight:600}
+ul.liste{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:8px;max-width:76ch}
+
+@media (max-width:900px){.grille{grid-template-columns:1fr}}
+@media (max-width:720px){.pair,.type,.brand{grid-template-columns:1fr}.fil li{grid-template-columns:28px 1fr}.fil li time{grid-column:2}}
+</style>
+</head>
+<body>
+<main>
+  <header class="head">
+    <span class="kicker">Bloc 🎨 Design system + Profil prouvé · ticket #19</span>
+    <h1>L'identité visuelle de Jamii</h1>
+    <p class="lead">Notre charte : Midnight, Electric Blue et Cantaloupe. Le bleu fait agir, l'orange prouve. Elle est montrée sur les deux écrans qui comptent pour la démo : le profil prouvé, et une communauté qui donne envie de revenir.</p>
+    <p class="muted small">Source des valeurs : <code>docs/design/tokens.json</code> (v2). Tous les noms, pays et projets sont des exemples.</p>
+  </header>
+
+  <section>
+    <div class="head">
+      <h2>Le principe : la preuve a sa propre couleur</h2>
+      <p>Tout ce qui est vérifié sur Jamii (un projet en ligne, une tâche livrée, une réponse acceptée) se reconnaît partout à l'orange. Les boutons et les liens sont bleus. Les deux couleurs portent toujours un texte Midnight, jamais du blanc. Quand Systalink ou un partenaire applique sa charte, seul le bleu change : la preuve reste la même, pour rester digne de confiance.</p>
+    </div>
+    <div class="brand">
+      <div style="background:#02070A;color:#EEF4F7">Midnight<small>#02070A · encre et fond sombre</small></div>
+      <div style="background:#0297DE;color:#02070A">Electric Blue<small>#0297DE · action · 6,3:1 avec Midnight</small></div>
+      <div style="background:#FC734D;color:#02070A">Cantaloupe<small>#FC734D · preuve · 7,4:1 avec Midnight</small></div>
+    </div>
+    <p class="small muted">⚠️ Le bleu et l'orange ne s'écrivent jamais en texte sur fond clair (3,2:1 et 2,7:1). En texte, on utilise <code>action-ink</code> et <code>proof-ink</code>.</p>
+  </section>
+
+  <section>
+    <div class="head">
+      <h2>Les couleurs de l'interface</h2>
+      <p>Chaque pastille montre le thème clair à gauche et le sombre à droite. Les contrastes sont recalculés en direct (WCAG 2.1 : 4,5:1 pour le texte, 3:1 pour les bords de contrôle).</p>
+    </div>
+    <div class="swatches" id="swatches"></div>
+  </section>
+
+  <section>
+    <div class="head"><h2>La typographie</h2></div>
+    <div class="type">
+      <div><span class="muted small">Titres · Familjen Grotesk 600 et 700</span><span class="big">Trouve ton équipe</span></div>
+      <div><span class="muted small">Texte · Noto Sans 400 et 600</span><span>Ton profil reste privé jusqu'à ce que tu le publies.</span><span class="muted">Ŋgóor · Ɗan ƙasa · Ẹ kú àárọ̀ · Ɓeydugol</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="head">
+      <h2>Le mouvement : on célèbre la preuve, sans thème</h2>
+      <p>Jamii est vivant par le rythme, pas par des points ou des niveaux. Trois durées suffisent. Une célébration ne joue qu'une fois, le texte dit toujours ce qui s'est passé, et tout s'arrête si l'utilisateur a demandé moins d'animations.</p>
+    </div>
+    <div class="type">
+      <div><b>motion-fast · 120 ms</b><span class="muted small">Survol, appui, compteur qui change.</span><b>motion-base · 220 ms</b><span class="muted small">Une carte, une ligne du fil ou un message qui apparaît.</span><b>motion-celebrate · 700 ms</b><span class="muted small">Réponse acceptée, projet en ligne, badge obtenu.</span></div>
+      <div class="zone-celeb" style="align-items:flex-start;justify-content:center">
+        <span class="muted small">Essaie :</span>
+        <button class="btn primaire" type="button" id="essai-celeb">Accepter la réponse</button>
+        <span id="essai-badge" class="badge" hidden><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8.5l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Réponse acceptée</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="head">
+      <h2>Écran 1 · Le profil prouvé</h2>
+      <p>Une preuve plutôt qu'un CV : des projets réellement en ligne, et un indice de fiabilité expliqué point par point, sans note globale.</p>
+    </div>
+    <div class="pair">
+      <div class="pv t-clair" data-pv></div>
+      <div class="pv t-sombre" data-pv></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="head">
+      <h2>Écran 2 · Une communauté vivante</h2>
+      <p>Une communauté n'est pas qu'un forum : c'est là qu'on voit tout Jamii bouger, et d'où l'on part vers un projet. Cet écran est interactif. Accepte la réponse, réagis à un projet, transforme une discussion en projet. Le détail est dans la <a href="../propositions/0003-communautes-vivantes.md">proposition 0003</a>.</p>
+    </div>
+    <div class="commandes">
+      <div class="seg" role="group" aria-label="Thème de l'écran">
+        <button type="button" data-theme-ecran="clair" aria-pressed="true">Clair</button>
+        <button type="button" data-theme-ecran="sombre" aria-pressed="false">Sombre</button>
+      </div>
+      <div class="seg" role="group" aria-label="Charte appliquée à l'écran">
+        <button type="button" data-marque="jamii" aria-pressed="true">Charte Jamii</button>
+        <button type="button" data-marque="partenaire" aria-pressed="false">Exemple de charte partenaire</button>
+      </div>
+    </div>
+
+    <div class="ecran t-clair" id="ecran">
+      <div class="ecran-barre">
+        <span class="logo"><i aria-hidden="true"></i>Jamii</span>
+        <nav class="nav" aria-label="Menu principal de l'exemple">
+          <a href="#" aria-current="page">Communautés</a><a href="#">Projets</a><a href="#">Demandes</a><a href="#">Vitrine</a>
+        </nav>
+        <span class="avatar s n" aria-label="Ton profil">MD</span>
+      </div>
+
+      <div class="com-tete">
+        <div class="row between">
+          <div>
+            <h3 style="font-size:1.6rem">Flutter Afrique</h3>
+            <p class="muted small">2 340 membres · 31 pays · antennes à Dakar, Abidjan, Nairobi et Lagos</p>
+          </div>
+          <div class="row">
+            <button class="btn secondaire" type="button">Montre ton projet</button>
+            <button class="btn primaire" type="button">Poser une question</button>
+          </div>
+        </div>
+        <span class="presence"><span class="dot" aria-hidden="true"></span><span id="en-ligne">18</span> membres en ligne maintenant</span>
+      </div>
+
+      <div class="grille">
+        <div class="col">
+
+          <!-- Fil « Ça bouge » -->
+          <article class="card fil" aria-labelledby="fil-titre">
+            <div class="row between">
+              <h4 id="fil-titre">🔥 Ça bouge</h4>
+              <button class="btn secondaire petit" type="button" id="pause" aria-pressed="false">Mettre en pause</button>
+            </div>
+            <ol id="fil" aria-live="polite" aria-relevant="additions"></ol>
+          </article>
+
+          <!-- Question en direct -->
+          <article class="card" aria-labelledby="q-titre">
+            <div class="row between">
+              <div class="row"><span class="avatar s n" aria-hidden="true">MD</span><span class="small"><b>Moussa Diop</b> · Thiès, Sénégal · il y a 2 min</span></div>
+              <span class="tag">Question</span>
+            </div>
+            <h3 id="q-titre">Riverpod : comment garder les données en cache quand l'appli perd la connexion ?</h3>
+            <p class="small muted">👀 3 devs regardent ta question · Aïcha (Abidjan) est en train d'écrire…</p>
+            <div class="ia zone-celeb" id="ia">
+              <span class="ia-label" id="ia-label">✨ Proposée par l'IA · à vérifier par un pair</span>
+              <p class="small">Garde le fournisseur en vie avec <code>ref.keepAlive()</code> et enregistre la dernière réponse sur le téléphone. Au retour du réseau, recharge en arrière-plan.</p>
+<pre><code>final produits = FutureProvider((ref) async {
+  ref.keepAlive();
+  return depot.produits(horsLigne: cache);
+});</code></pre>
+              <div class="ajout"><b>Aïcha Kouassi</b> a complété : « Ajoute <code>ref.invalidate</code> quand le réseau revient, sinon l'écran garde l'ancienne liste. »</div>
+              <div class="row" id="ia-actions">
+                <button class="btn primaire" type="button" id="accepter">Accepter la réponse</button>
+                <button class="btn secondaire" type="button">Ça ne marche pas chez moi</button>
+              </div>
+            </div>
+            <p class="small muted" id="ia-note">Une réponse de l'IA ne compte sur le profil de personne. Seul l'apport d'Aïcha comptera, une fois la réponse acceptée.</p>
+          </article>
+
+          <!-- Montre ton projet -->
+          <article class="card" aria-labelledby="p-titre">
+            <div class="row between">
+              <div class="row"><span class="stack" aria-hidden="true"><span class="avatar s">AK</span><span class="avatar s o">JM</span><span class="avatar s n">TB</span></span><span class="small"><b>Équipe Marché Facile</b> · Côte d'Ivoire · Kenya · Bénin</span></div>
+              <span class="badge"><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8.5l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>En ligne sur Systalink</span>
+            </div>
+            <h3 id="p-titre">Marché Facile : les vendeuses d'Adjamé reçoivent leurs commandes sur WhatsApp</h3>
+            <p class="small muted">Montre ton projet · un rôle ouvert : dev Flutter, 5 h par semaine</p>
+            <div class="reactions">
+              <button class="btn secondaire" type="button" aria-pressed="false" data-react="42">Je veux l'utiliser <b>42</b></button>
+              <button class="btn secondaire" type="button" aria-pressed="false" data-react="9" data-msg="Ta candidature au rôle « dev Flutter » est prête. L'équipe la verra dans son espace.">Je veux contribuer <b>9</b></button>
+              <button class="btn secondaire" type="button" aria-pressed="false" data-react="17" data-msg="Merci ! Dis en une phrase ce qui t'a plu ou gêné : l'équipe le lira.">Je l'ai testé <b>17</b></button>
+            </div>
+          </article>
+
+          <!-- Discussion → projet -->
+          <article class="card" aria-labelledby="d-titre">
+            <div class="row between">
+              <div class="row"><span class="stack" aria-hidden="true"><span class="avatar s o">FS</span><span class="avatar s">NO</span><span class="avatar s n">KA</span><span class="avatar s o">+2</span></span><span class="small">5 participants · Sénégal · Nigeria · Ghana</span></div>
+              <span class="tag">Discussion · 14 messages</span>
+            </div>
+            <h3 id="d-titre">Qui veut faire une appli de covoiturage pour aller à l'université à Dakar ?</h3>
+            <p class="small muted">« J'ai déjà la maquette. Il manque quelqu'un pour le back et quelqu'un pour la carte. » · Fatou, Dakar</p>
+            <div class="row">
+              <button class="btn primaire" type="button" id="transformer">🚀 Transformer en projet</button>
+              <span class="small muted">Les 5 participants sont invités à candidater, et l'assistant propose un plan.</span>
+            </div>
+          </article>
+        </div>
+
+        <aside class="col" aria-label="À côté">
+          <!-- Défi du mois -->
+          <article class="card defi" aria-labelledby="defi-titre">
+            <span class="small" style="color:#FC734D;font-weight:600">Défi du mois · encore 12 jours</span>
+            <h3 id="defi-titre">Une appli pour les commerçants du marché</h3>
+            <p class="small muted">Proposé par une PME de Dakar. Les projets mis en ligne entrent dans la vitrine.</p>
+            <div class="chiffres">
+              <div><b id="defi-equipes">12</b><small>équipes</small></div>
+              <div><b>5</b><small>en ligne</small></div>
+              <div><b>7</b><small>pays</small></div>
+            </div>
+            <div class="jauge" role="img" aria-label="5 projets en ligne et 7 en cours sur 12 équipes"><span style="width:41.6%;background:#FC734D"></span><span style="width:58.4%;background:#0297DE;opacity:.55"></span></div>
+            <p class="small muted">■ <span style="color:#FC734D">en ligne</span> · ■ <span style="color:#5DBDEB">en cours</span></p>
+            <button class="btn primaire" type="button" id="rejoindre-defi">Rejoindre le défi</button>
+          </article>
+
+          <!-- Questions pour toi -->
+          <article class="card" aria-labelledby="qpt-titre">
+            <h4 id="qpt-titre">Questions pour toi</h4>
+            <p class="small muted">Tu as 14 dépôts en Dart. Ces questions attendent quelqu'un comme toi :</p>
+            <ul class="qpt">
+              <li><a href="#">Paiement Wave dans une appli Flutter : quelle librairie ?</a><span class="small muted">Lomé · 0 réponse · il y a 20 min</span></li>
+              <li><a href="#">go_router : garder l'onglet ouvert au retour</a><span class="small muted">Kigali · 1 réponse · il y a 1 h</span></li>
+              <li><a href="#">Réduire la taille de l'APK sous 20 Mo</a><span class="small muted">Douala · 0 réponse · il y a 3 h</span></li>
+            </ul>
+          </article>
+
+          <!-- Impact par pays -->
+          <article class="card" aria-labelledby="pays-titre">
+            <h4 id="pays-titre">Impact par pays · cette semaine</h4>
+            <p class="small muted">Questions résolues ensemble. On célèbre les pays, jamais un classement de personnes.</p>
+            <ul class="pays" id="pays"></ul>
+          </article>
+
+          <!-- Rendez-vous -->
+          <article class="card" aria-labelledby="rdv-titre">
+            <h4 id="rdv-titre">📅 La démo du vendredi</h4>
+            <p class="small">Vendredi à 18 h GMT · 5 minutes par projet · 4 projets inscrits</p>
+            <div class="row"><button class="btn secondaire" type="button">Inscrire mon projet</button></div>
+            <p class="small muted">Visio proposée avec SystaTalk. Un lien d'un autre outil marche aussi.</p>
+          </article>
+        </aside>
+      </div>
+
+      <div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-texte"></span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="head">
+      <h2>Les choix et ce qu'on a écarté</h2>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Choix</th><th>Pourquoi</th><th>Écarté</th></tr></thead>
+        <tbody>
+          <tr><td>Midnight · Electric Blue · Cantaloupe</td><td>Deux couleurs vives qui portent toutes deux un texte Midnight lisible (6,3:1 et 7,4:1). L'orange se distingue du bleu pour les daltoniens (à confirmer au simulateur).</td><td>Indigo + vert d'eau (trop sage pour la scène), vert + jaune (le jaune limite les chartes partenaires)</td></tr>
+          <tr><td>Le fun par le rythme et la rencontre</td><td>Fil d'activité réel, présence, réponse en direct, célébrations explicites. Respecte <code>vocabulaire.md</code> : pas de thème.</td><td>Points, niveaux, classement de personnes : contraires au principe « pas de note globale », et ils poussent à la triche</td></tr>
+          <tr><td>Réponse de l'IA en pointillé, sur fond bleu léger</td><td>Elle n'est pas encore une preuve. Elle passe en orange plein seulement quand un humain l'accepte.</td><td>Une couleur à part pour l'IA : une 4ᵉ couleur à justifier, et une IA trop mise en avant</td></tr>
+          <tr><td>Réactions qui déclenchent une action</td><td>« Je veux contribuer » ouvre une candidature : l'échange mène à une équipe.</td><td>Des « j'aime » qui ne servent à rien</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Pistes d'amélioration</h2>
+    <ul class="liste">
+      <li>🔴 Risque : le profil prouvé passe avant tout. Le bloc #19 doit montrer de l'activité avant le 11/11 à 20 h. L'écran communauté est une maquette pour le bloc #18, pas du code à livrer par nous.</li>
+      <li>🔴 Risque : je ne connais pas la charte officielle de Systalink. Il faut vérifier que l'Electric Blue ne la contredit pas sur la diapo.</li>
+      <li>🟡 À améliorer ensuite : passer la palette dans un simulateur de daltonisme, et tester les accents (ŋ, ɗ, ƙ, ɓ, ẹ̀) de Familjen Grotesk sur un Android d'entrée de gamme.</li>
+      <li>🟡 À améliorer ensuite : les illustrations ont un fond clair fixe. Il faut une variante pour le thème sombre.</li>
+      <li>💡 Idée : une illustration « communauté » (des devs de plusieurs pays reliés par des bulles), dans le style des trois existantes.</li>
+      <li>❓ Question pour l'équipe : « Ça bouge » ou « En ce moment » pour le fil ? Le premier est plus vivant, le second plus neutre.</li>
+    </ul>
+  </section>
+</main>
+
+<script>
+/* ---- Pastilles depuis les tokens ---- */
+const T=[
+ ["bg","#F4F8FA","#02070A",null],["surface","#FFFFFF","#0B141A",null],["surface-raised","#EAF1F5","#121E26",null],
+ ["ink","#02070A","#EEF4F7","s"],["ink-muted","#4B5D69","#9DB0BC","s"],["line-strong","#74868F","#5A7080","s"],
+ ["action-ink","#0270A6","#0297DE","s"],["action-soft","#DDF0FA","#0B2A3B","ink"],
+ ["proof-ink","#B4431F","#FC734D","s"],["proof-soft","#FFE6DD","#3A1D14","ink"],
+ ["focus","#0270A6","#0297DE","s"],["danger","#C0264B","#FF6B8A","s"]];
+const SURF=["#FFFFFF","#0B141A"],INK=["#02070A","#EEF4F7"];
+const lum=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16)/255).map(v=>v<=.03928?v/12.92:((v+.055)/1.055)**2.4).reduce((s,v,i)=>s+v*[.2126,.7152,.0722][i],0);
+const ratio=(a,b)=>{const[x,y]=[lum(a),lum(b)].sort((p,q)=>q-p);return(x+.05)/(y+.05)};
+const fmt=n=>n.toFixed(1).replace(".",",")+":1";
+document.getElementById("swatches").innerHTML=T.map(([n,c,s,m])=>{
+  let info="&nbsp;";
+  if(m==="s")info=`sur surface : ${fmt(ratio(c,SURF[0]))} · ${fmt(ratio(s,SURF[1]))}`;
+  if(m==="ink")info=`texte ink dessus : ${fmt(ratio(INK[0],c))} · ${fmt(ratio(INK[1],s))}`;
+  return `<div class="sw"><div class="chip"><span style="background:${c}"></span><span style="background:${s}"></span></div><div class="meta"><b>${n}</b><small>${c} · ${s}</small><small>${info}</small></div></div>`;
+}).join("");
+
+/* ---- Profil ---- */
+const check='<svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8.5l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const profil=`<span class="muted small"></span>
+<article class="card" aria-label="Exemple de profil prouvé">
+  <div class="row"><div class="avatar" style="width:48px;height:48px" aria-hidden="true">AK</div><div><h3>Aïcha Kouassi</h3><p class="muted small">Développeuse mobile · Abidjan, Côte d'Ivoire · disponible 10 h par semaine</p></div></div>
+  <div class="row" style="gap:6px"><span class="tag">Flutter</span><span class="tag">Dart</span><span class="tag">Firebase</span><span class="tag">Node.js</span></div>
+  <div class="proj"><div><b>Marché Facile</b><small>Commandes pour les vendeuses d'Adjamé · équipe de 3 pays</small></div><span class="badge">${check}En ligne sur Systalink</span></div>
+  <div style="display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);padding-top:12px">
+    <h4>Pourquoi on peut compter sur Aïcha</h4>
+    <div class="point"><span class="n">11 sur 12</span><span>tâches livrées à la date prévue</span><a href="#">Voir le détail</a></div>
+    <div class="point"><span class="n">4</span><span>avis positifs de coéquipiers</span><a href="#">Voir le détail</a></div>
+    <div class="point"><span class="n">7</span><span>réponses acceptées dans Flutter Afrique</span><a href="#">Voir lesquelles</a></div>
+  </div>
+  <div class="row"><button type="button" class="btn primaire">Proposer de rejoindre l'équipe</button><button type="button" class="btn secondaire">Voir ses projets</button></div>
+</article>`;
+document.querySelectorAll("[data-pv]").forEach(el=>{el.innerHTML=profil;el.querySelector("span").textContent=el.classList.contains("t-clair")?"Thème clair":"Thème sombre";});
+
+/* ---- Célébration ---- */
+const reduit=matchMedia("(prefers-reduced-motion: reduce)");
+function celebrer(zone){
+  if(reduit.matches)return;
+  const couleurs=["#FC734D","#0297DE","#02070A","#5DBDEB"];
+  for(let i=0;i<16;i++){
+    const c=document.createElement("span");c.className="confetti";
+    const a=Math.PI*2*i/16+Math.random()*.4,d=50+Math.random()*50;
+    c.style.setProperty("--dx",Math.cos(a)*d+"px");c.style.setProperty("--dy",Math.sin(a)*d+"px");c.style.setProperty("--r",(Math.random()*360|0)+"deg");
+    c.style.background=couleurs[i%4];zone.appendChild(c);setTimeout(()=>c.remove(),900);
+  }
+}
+document.getElementById("essai-celeb").addEventListener("click",e=>{
+  const b=document.getElementById("essai-badge");b.hidden=false;b.classList.remove("pop");void b.offsetWidth;b.classList.add("pop");celebrer(e.currentTarget.parentElement);
+});
+
+/* ---- Message ---- */
+const toast=document.getElementById("toast"),toastT=document.getElementById("toast-texte");let tt;
+function dire(txt){toastT.textContent=txt;toast.classList.remove("on");void toast.offsetWidth;toast.classList.add("on");clearTimeout(tt);tt=setTimeout(()=>toast.classList.remove("on"),5000);}
+
+/* ---- Fil « Ça bouge » ---- */
+const fil=document.getElementById("fil");
+const debut=[
+ ["preuve","✓",'<a href="#">Marché Facile</a> est en ligne · équipe Côte d\'Ivoire · Kenya · Bénin',"il y a 4 min"],
+ ["","👥",'L\'équipe <a href="#">Agri-Alertes</a> cherche un dev Flutter',"il y a 12 min"],
+ ["preuve","✓",'Kwame (Accra) a eu sa réponse acceptée sur <a href="#">l\'état global avec Bloc</a>',"il y a 25 min"],
+ ["","🚀",'La discussion <a href="#">Tontine en ligne</a> est devenue un projet · 4 pays',"il y a 1 h"]];
+const suite=[
+ ["","🙋",'Nadia (Rabat) a rejoint Flutter Afrique et pose sa première question',"à l'instant"],
+ ["preuve","✓",'<a href="#">Santé Mobile</a> est en ligne sur Systalink · équipe Nigeria · Cameroun',"à l'instant"],
+ ["","👥",'Une équipe du Défi du mois s\'est formée entre Dakar et Nairobi',"à l'instant"],
+ ["preuve","✓",'Thierry (Cotonou) a livré la tâche <a href="#">paiement hors ligne</a>',"à l'instant"]];
+const li=([cl,ic,html,t],nouveau)=>{const e=document.createElement("li");e.className=cl+(nouveau?" nouveau":"");e.innerHTML=`<span class="ic" aria-hidden="true">${ic}</span><span>${html}</span><time>${t}</time>`;return e;};
+debut.forEach(x=>fil.appendChild(li(x)));
+let k=0,pause=false;
+function ajouter(x){fil.prepend(li(x,true));while(fil.children.length>5)fil.lastElementChild.remove();}
+setInterval(()=>{if(pause||document.hidden)return;ajouter(suite[k++%suite.length]);
+  const n=document.getElementById("en-ligne");n.textContent=16+Math.floor(Math.random()*6);},5000);
+const bp=document.getElementById("pause");
+bp.addEventListener("click",()=>{pause=!pause;bp.setAttribute("aria-pressed",String(pause));bp.textContent=pause?"Reprendre":"Mettre en pause";});
+if(reduit.matches){pause=true;bp.setAttribute("aria-pressed","true");bp.textContent="Reprendre";}
+
+/* ---- Réponse acceptée ---- */
+document.getElementById("accepter").addEventListener("click",()=>{
+  const ia=document.getElementById("ia");ia.classList.add("acceptee");
+  document.getElementById("ia-label").innerHTML=`<span class="badge pop">${check}Réponse acceptée</span> complétée par Aïcha Kouassi`;
+  document.getElementById("ia-actions").remove();
+  document.getElementById("ia-note").textContent="Sur le profil d'Aïcha : « 8 réponses acceptées dans Flutter Afrique ».";
+  celebrer(ia);
+  ajouter(["preuve","✓",'Aïcha (Abidjan) a eu sa réponse acceptée sur <a href="#">Riverpod hors ligne</a>',"à l'instant"]);
+  dire("🎉 Ta question est résolue. Aïcha voit sa réponse acceptée sur son profil.");
+});
+
+/* ---- Réactions ---- */
+document.querySelectorAll("[data-react]").forEach(b=>b.addEventListener("click",()=>{
+  const on=b.getAttribute("aria-pressed")!=="true";b.setAttribute("aria-pressed",String(on));
+  const n=+b.dataset.react+(on?1:0);const c=b.querySelector("b");c.textContent=n;c.classList.remove("pop");void c.offsetWidth;c.classList.add("pop");
+  if(on&&b.dataset.msg)dire(b.dataset.msg);
+}));
+
+/* ---- Transformer en projet ---- */
+document.getElementById("transformer").addEventListener("click",e=>{
+  const b=e.currentTarget;b.disabled=true;b.textContent="✓ Projet créé";b.classList.replace("primaire","secondaire");
+  ajouter(["","🚀",'La discussion <a href="#">Covoiturage Dakar</a> est devenue un projet · 3 pays',"à l'instant"]);
+  dire("Projet « Covoiturage Dakar » créé. 5 participants invités à candidater, l'assistant prépare le plan.");
+});
+document.getElementById("rejoindre-defi").addEventListener("click",e=>{
+  const b=e.currentTarget;b.disabled=true;b.textContent="✓ Tu participes";document.getElementById("defi-equipes").textContent="13";
+  dire("Tu participes au Défi du mois. Trouve ton équipe dans la communauté, ou crée-la.");
+});
+
+/* ---- Impact par pays ---- */
+const P=[["Sénégal",34],["Côte d'Ivoire",29],["Nigeria",26],["Kenya",21],["Cameroun",14],["Bénin",11]];
+document.getElementById("pays").innerHTML=P.map(([p,n])=>`<li><span>${p}</span><span class="b" aria-hidden="true"><span style="width:${n/34*100}%"></span></span><b>${n}</b></li>`).join("");
+
+/* ---- Thème et charte de l'écran ---- */
+const ecran=document.getElementById("ecran");
+if(matchMedia("(prefers-color-scheme: dark)").matches)setTheme("sombre");
+function setTheme(t){ecran.classList.toggle("t-sombre",t==="sombre");ecran.classList.toggle("t-clair",t==="clair");
+  document.querySelectorAll("[data-theme-ecran]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.themeEcran===t)));}
+document.querySelectorAll("[data-theme-ecran]").forEach(b=>b.addEventListener("click",()=>setTheme(b.dataset.themeEcran)));
+document.querySelectorAll("[data-marque]").forEach(b=>b.addEventListener("click",()=>{
+  ecran.classList.toggle("marque-partenaire",b.dataset.marque==="partenaire");
+  document.querySelectorAll("[data-marque]").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));}));
+</script>
+</body>
+</html>
