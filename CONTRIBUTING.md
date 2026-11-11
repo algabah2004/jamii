@@ -32,7 +32,6 @@
 
 ### Peu de branches, toujours depuis `main`
 Trop de branches, c'est des conflits en cascade et des revues qui traînent. Donc :
-- **2 PR ouvertes maximum par personne.** Une en revue, une en cours. Au-delà, on attend une fusion.
 - **Toujours partir de `main` à jour, jamais de la branche d'une autre PR.** Une PR empilée sur une autre doit être reprise à chaque fusion, et un seul conflit bloque toute la pile.
 - **Même sujet, même branche** : une correction ou une suite sur la PR encore ouverte s'ajoute en commit sur sa branche, pas dans une nouvelle branche.
 - **Une PR vit moins d'un jour.** Si elle grossit, on fusionne ce qui est prêt et on continue ensuite.
