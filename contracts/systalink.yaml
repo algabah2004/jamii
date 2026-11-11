@@ -1,0 +1,164 @@
+openapi: 3.1.0
+info:
+  title: Jamii · Espace Systalink
+  version: 0.1.0
+  summary: Tableau de bord agrégé et anonyme, et mesure des « moments Systalink » (service proposé → accepté).
+  description: |
+    Responsable : @Amar233-ui (bloc #18). Règles communes : docs/api-conventions.md. Modèle : docs/modele-donnees.md (table `moment_systalink`).
+
+    **Ce que le tableau de bord prouve** : Jamii amène des utilisateurs et des projets au cloud Systalink.
+    Il montre seulement des **chiffres agrégés**, jamais une personne, un nom ou un identifiant.
+
+    **Lecture publique** : le tableau de bord se lit sans connexion. Il ne contient que des comptes, et un pays
+    regroupe au moins 5 inscrits (sinon il passe dans `autres`). Personne ne peut donc être reconnu.
+
+    **Ce qu'on ne mesure pas** : le passage à une offre payante DataCloud. Jamii ne voit pas les achats faits chez
+    Systalink, et on n'invente pas ce chiffre. Il faudra une donnée de Systalink (API ou webhook) pour l'ajouter.
+
+    **Les moments Systalink** : quand un module propose un service Systalink au bon moment (DataCloud au moment de
+    mettre en ligne, Orion pour le besoin simple d'une PME…), l'API crée un moment et renvoie une `PropositionSystalink`
+    que le front affiche. Quand l'utilisateur suit la proposition, le front appelle `accepter`. Le moment ne garde
+    **aucun identifiant d'utilisateur**.
+servers:
+  - url: http://localhost:8080
+
+tags:
+  - { name: tableau-de-bord, description: 'Chiffres agrégés pour Systalink (lecture publique).' }
+  - { name: moments, description: 'Mesure de chaque service Systalink proposé, puis accepté.' }
+
+paths:
+  /api/systalink/tableau-de-bord:
+    get:
+      tags: [tableau-de-bord]
+      operationId: tableauDeBordSystalink
+      summary: Les chiffres agrégés du tableau de bord Systalink
+      description: |
+        Calculé par l'API et mis en cache 5 minutes : la page tient la charge même si toute la salle l'ouvre en même temps.
+        Les compteurs `nouveaux…` portent sur la période demandée. Les totaux portent sur toute la vie de Jamii.
+      security: []
+      parameters:
+        - name: periode
+          in: query
+          schema: { $ref: '#/components/schemas/Periode' }
+      responses:
+        '200':
+          description: Les chiffres.
+          headers:
+            Cache-Control:
+              schema: { type: string, examples: ['public, max-age=300'] }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TableauDeBord' }
+              examples:
+                demo:
+                  value:
+                    periode: mois
+                    calculeLe: '2026-11-13T10:00:00Z'
+                    inscrits: { total: 64, nouveaux: 41, parPays: [{ pays: SN, nombre: 22 }, { pays: CI, nombre: 11 }, { pays: KE, nombre: 9 }, { pays: NG, nombre: 8 }, { pays: CM, nombre: 6 }], autres: 8 }
+                    projets: { crees: 23, nouveaux: 17, enLigne: 9, surDatacloud: 7 }
+                    moments:
+                      - { service: datacloud, proposes: 12, acceptes: 7 }
+                      - { service: orion, proposes: 5, acceptes: 2 }
+                      - { service: yokk, proposes: 8, acceptes: 3 }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+
+  /api/systalink/moments/{momentId}/accepter:
+    post:
+      tags: [moments]
+      operationId: accepterMomentSystalink
+      summary: L'utilisateur a suivi la proposition d'un service Systalink
+      description: |
+        À appeler quand l'utilisateur clique sur le lien de la proposition, juste avant d'ouvrir `lien`.
+        **Idempotent** : seul le premier appel compte (`accepte_le` n'est jamais écrasé). Un second clic, ou un double
+        envoi, répond aussi `204`, et le taux ne peut donc pas être gonflé en cliquant plusieurs fois.
+        Il faut être connecté : les identifiants de moment ne sont donnés qu'à l'utilisateur qui a reçu la proposition.
+      security:
+        - session: []
+          csrf: []
+      parameters:
+        - name: momentId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '204': { description: Acceptation enregistrée (ou déjà enregistrée). }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '429': { $ref: './socle.yaml#/components/responses/TropDeRequetes' }
+
+components:
+  securitySchemes:
+    session: { $ref: './socle.yaml#/components/securitySchemes/session' }
+    csrf: { $ref: './socle.yaml#/components/securitySchemes/csrf' }
+
+  schemas:
+    Periode:
+      type: string
+      enum: [semaine, mois, tout]
+      default: mois
+      description: Fenêtre des compteurs `nouveaux…` (7 jours, 30 jours ou depuis le début).
+
+    ServiceSystalink:
+      type: string
+      enum: [datacloud, orion, yokk, systatalk, systaforms, domaines]
+      description: Le service Systalink proposé. On ajoute une valeur quand un module se met à proposer un nouveau service.
+
+    TableauDeBord:
+      type: object
+      required: [periode, calculeLe, inscrits, projets, moments]
+      properties:
+        periode: { $ref: '#/components/schemas/Periode' }
+        calculeLe: { type: string, format: date-time, description: Moment du calcul (le cache peut avoir jusqu'à 5 minutes). }
+        inscrits:
+          type: object
+          required: [total, nouveaux, parPays, autres]
+          properties:
+            total: { type: integer, minimum: 0 }
+            nouveaux: { type: integer, minimum: 0 }
+            parPays:
+              type: array
+              description: Les pays qui comptent **au moins 5 inscrits**, du plus grand au plus petit.
+              items:
+                type: object
+                required: [pays, nombre]
+                properties:
+                  pays: { $ref: './profils.yaml#/components/schemas/Pays' }
+                  nombre: { type: integer, minimum: 5 }
+            autres:
+              type: integer
+              minimum: 0
+              description: Inscrits d'un pays de moins de 5 inscrits, ou sans pays déclaré.
+        projets:
+          type: object
+          required: [crees, nouveaux, enLigne, surDatacloud]
+          properties:
+            crees: { type: integer, minimum: 0, description: Projets créés sur Jamii. }
+            nouveaux: { type: integer, minimum: 0, description: Projets créés pendant la période. }
+            enLigne: { type: integer, minimum: 0, description: 'Projets avec un déploiement `en_ligne` vérifié, quel que soit l''hébergeur.' }
+            surDatacloud: { type: integer, minimum: 0, description: 'Parmi `enLigne`, ceux hébergés sur DataCloud.' }
+        moments:
+          type: array
+          description: |
+            Un élément par service proposé au moins une fois pendant la période. Le taux d'acceptation se calcule côté
+            front (`acceptes / proposes`). On ne le stocke pas, pour qu'il ne puisse jamais contredire les deux comptes.
+          items: { $ref: '#/components/schemas/StatistiqueMoment' }
+
+    StatistiqueMoment:
+      type: object
+      required: [service, proposes, acceptes]
+      properties:
+        service: { $ref: '#/components/schemas/ServiceSystalink' }
+        proposes: { type: integer, minimum: 1 }
+        acceptes: { type: integer, minimum: 0, description: Toujours inférieur ou égal à `proposes`. }
+
+    PropositionSystalink:
+      type: object
+      description: |
+        À référencer par les autres contrats (`$ref: './systalink.yaml#/components/schemas/PropositionSystalink'`)
+        quand une réponse propose un service Systalink. Le texte affiché vient du front (clé de traduction par `service`).
+      required: [momentId, service, lien]
+      properties:
+        momentId: { type: string, format: uuid, description: 'À envoyer à `accepterMomentSystalink` au clic.' }
+        service: { $ref: '#/components/schemas/ServiceSystalink' }
+        lien: { type: string, format: uri, description: 'Page Systalink à ouvrir, toujours en https.' }

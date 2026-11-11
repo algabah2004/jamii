@@ -1,0 +1,458 @@
+openapi: 3.1.0
+info:
+  title: Jamii · Profils
+  version: 0.1.0
+  summary: Le profil prouvé (généré depuis GitHub), ses projets en ligne vérifiés, l'indice de fiabilité explicable et la recherche de coéquipiers.
+  description: |
+    Responsable : @rev22rse22 (bloc #19). Règles communes : docs/api-conventions.md. Modèle : docs/modele-donnees.md §5.
+
+    **Privé par défaut** : un profil n'est visible que par son propriétaire tant qu'il n'est pas publié.
+    Pour les autres, un profil non publié répond `404` (on ne révèle pas qu'il existe).
+
+    **Données GitHub** : seulement les données **publiques** (permission `read:user`), jamais en écriture. Les
+    dépôts privés et les forks sont ignorés. Si GitHub ne répond pas, le dernier profil généré reste affiché.
+
+    **Indice de fiabilité** : il n'y a **pas de note globale**. L'indice est une liste de preuves. Chacune a une source
+    vérifiable et peut être contestée. Les preuves ne se créent **jamais par cette API** : elles viennent des événements
+    des autres modules (`TacheLivree`, `AvisCoequipier`, `ReponseAcceptee`, `ProjetMisEnLigne`, modele-donnees.md §6).
+    Une réponse proposée par l'IA et acceptée telle quelle ne crée de preuve pour personne.
+
+    **Compétences** : texte libre normalisé (minuscules, `Competence` de projets.yaml). Le serveur ramène les
+    variantes connues à une seule forme (`react.js` → `react`, `postgres` → `postgresql`) avant de stocker.
+
+    **CSRF** : toute requête POST, PATCH ou DELETE envoie l'en-tête `X-XSRF-TOKEN` (socle.yaml, schéma `csrf`).
+
+    **Codes d'erreur métier** (champ `code` de `Erreur`) : `github_non_relie`, `generation_en_cours`,
+    `profil_non_genere`, `modification_concurrente`, `contestation_existante`, `preuve_non_contestable`.
+servers:
+  - url: http://localhost:8080
+
+security:
+  - session: []
+
+tags:
+  - { name: mon-profil, description: 'Générer, modifier, publier ou retirer mon profil.' }
+  - { name: profils, description: 'Voir un profil publié et chercher des coéquipiers.' }
+  - { name: fiabilite, description: 'Le détail de l''indice de fiabilité et la contestation d''une preuve.' }
+
+paths:
+  /api/me/profil:
+    get:
+      tags: [mon-profil]
+      operationId: lireMonProfil
+      summary: Mon profil, publié ou non, avec l'état de sa génération
+      responses:
+        '200':
+          description: Mon profil.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MonProfil' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404':
+          description: '`profil_non_genere` : aucun profil pour l''instant. Le front propose de le générer.'
+          content:
+            application/problem+json:
+              schema: { $ref: './socle.yaml#/components/schemas/Erreur' }
+    patch:
+      tags: [mon-profil]
+      operationId: modifierMonProfil
+      summary: Modifier ce que je déclare moi-même (bio, pays, ville, disponibilité, compétences)
+      description: |
+        Les données venues de GitHub (langages, dépôts) ne se modifient pas ici : on les régénère.
+        `competencesDeclarees` remplace la liste entière. `version` est obligatoire.
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/merge-patch+json:
+            schema: { $ref: '#/components/schemas/ModificationProfil' }
+      responses:
+        '200':
+          description: Profil modifié.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MonProfil' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { description: '`profil_non_genere`.', $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { description: '`modification_concurrente`.', $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/me/profil/generation:
+    post:
+      tags: [mon-profil]
+      operationId: genererMonProfil
+      summary: Générer ou régénérer mon profil depuis mes données publiques GitHub
+      description: |
+        Traité en tâche de fond : lecture de GitHub, puis résumé proposé par l'IA (bloc #20). Le front suit l'avancement
+        avec `GET /api/me/profil` (champ `generation`), toutes les 2 secondes, 60 secondes au plus.
+        Ce que j'ai déclaré moi-même (bio, pays, compétences déclarées) n'est jamais écrasé.
+        Si l'IA ne répond pas, le profil est généré sans résumé (`resumeIa` = `null`).
+        Limité à 5 générations par heure.
+      security:
+        - session: []
+          csrf: []
+      responses:
+        '202':
+          description: Génération lancée.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Generation' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '409':
+          description: '`github_non_relie` (compte créé par e-mail, sans GitHub) ou `generation_en_cours`.'
+          content:
+            application/problem+json:
+              schema: { $ref: './socle.yaml#/components/schemas/Erreur' }
+        '429': { $ref: './socle.yaml#/components/responses/TropDeRequetes' }
+
+  /api/me/profil/publier:
+    post:
+      tags: [mon-profil]
+      operationId: publierMonProfil
+      summary: Publier mon profil (visible par les utilisateurs connectés et dans la recherche)
+      description: Idempotent. Publier ne change rien aux données, seulement leur visibilité.
+      security:
+        - session: []
+          csrf: []
+      responses:
+        '200':
+          description: Profil publié.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MonProfil' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { description: '`profil_non_genere`.', $ref: './socle.yaml#/components/responses/Introuvable' }
+
+  /api/me/profil/retirer:
+    post:
+      tags: [mon-profil]
+      operationId: retirerMonProfil
+      summary: Rendre mon profil privé à nouveau
+      description: Idempotent. Le profil disparaît tout de suite de la recherche et répond `404` aux autres.
+      security:
+        - session: []
+          csrf: []
+      responses:
+        '200':
+          description: Profil redevenu privé.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MonProfil' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { description: '`profil_non_genere`.', $ref: './socle.yaml#/components/responses/Introuvable' }
+
+  /api/profils:
+    get:
+      tags: [profils]
+      operationId: chercherCoequipiers
+      summary: Chercher des coéquipiers parmi les profils publiés
+      description: |
+        Tous les filtres se combinent (ET). Plusieurs `competence` : le profil doit les avoir toutes.
+        Tri : les profils `disponible` d'abord, puis les plus récemment mis à jour. Mon propre profil est exclu.
+      parameters:
+        - $ref: './socle.yaml#/components/parameters/Curseur'
+        - $ref: './socle.yaml#/components/parameters/Limite'
+        - name: competence
+          in: query
+          description: 'Ex. : `?competence=flutter&competence=firebase`. 5 au plus.'
+          style: form
+          explode: true
+          schema: { type: array, maxItems: 5, items: { $ref: './projets.yaml#/components/schemas/Competence' } }
+        - name: pays
+          in: query
+          description: 'Code ISO 3166-1 alpha-2. Plusieurs pays : `?pays=SN&pays=KE`.'
+          style: form
+          explode: true
+          schema: { type: array, maxItems: 10, items: { $ref: '#/components/schemas/Pays' } }
+        - { name: disponibilite, in: query, schema: { $ref: '#/components/schemas/Disponibilite' } }
+      responses:
+        '200':
+          description: Une page de profils publiés.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: './socle.yaml#/components/schemas/Page'
+                  - properties: { elements: { type: array, items: { $ref: '#/components/schemas/ProfilResume' } } }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '429': { $ref: './socle.yaml#/components/responses/TropDeRequetes' }
+
+  /api/profils/{utilisateurId}:
+    parameters:
+      - $ref: '#/components/parameters/UtilisateurId'
+    get:
+      tags: [profils]
+      operationId: lireProfil
+      summary: Un profil publié
+      responses:
+        '200':
+          description: Le profil.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Profil' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { description: Profil inconnu ou non publié., $ref: './socle.yaml#/components/responses/Introuvable' }
+
+  /api/profils/{utilisateurId}/preuves:
+    parameters:
+      - $ref: '#/components/parameters/UtilisateurId'
+    get:
+      tags: [fiabilite]
+      operationId: listerPreuves
+      summary: Le détail d'un point de l'indice (« Voir le détail »), les plus récentes d'abord
+      parameters:
+        - $ref: './socle.yaml#/components/parameters/Curseur'
+        - $ref: './socle.yaml#/components/parameters/Limite'
+        - { name: type, in: query, schema: { $ref: '#/components/schemas/TypePreuve' } }
+      responses:
+        '200':
+          description: Une page de preuves.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: './socle.yaml#/components/schemas/Page'
+                  - properties: { elements: { type: array, items: { $ref: '#/components/schemas/Preuve' } } }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { description: Profil inconnu ou non publié (sauf le mien)., $ref: './socle.yaml#/components/responses/Introuvable' }
+
+  /api/profils/{utilisateurId}/preuves/{preuveId}/contester:
+    parameters:
+      - $ref: '#/components/parameters/UtilisateurId'
+      - { name: preuveId, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      tags: [fiabilite]
+      operationId: contesterPreuve
+      summary: Contester une preuve (la sienne ou celle d'un autre)
+      description: |
+        Exemples : le propriétaire conteste un avis injuste, un coéquipier signale une tâche marquée livrée qui ne l'est pas.
+        La preuve reste comptée pendant l'examen par un modérateur, sinon contester suffirait à faire baisser
+        l'indice de quelqu'un. Elle porte la mention « contestée, en cours de vérification ». Si le modérateur donne raison,
+        la preuve est retirée. On ne peut contester une même preuve qu'une fois. Limité à 10 contestations par jour.
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Contestation' }
+      responses:
+        '202': { description: "Contestation enregistrée, en attente d'un modérateur." }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409':
+          description: '`contestation_existante` (déjà contestée par moi) ou `preuve_non_contestable` (déjà retirée).'
+          content:
+            application/problem+json:
+              schema: { $ref: './socle.yaml#/components/schemas/Erreur' }
+        '429': { $ref: './socle.yaml#/components/responses/TropDeRequetes' }
+
+components:
+  securitySchemes:
+    session: { $ref: './socle.yaml#/components/securitySchemes/session' }
+    csrf: { $ref: './socle.yaml#/components/securitySchemes/csrf' }
+
+  parameters:
+    UtilisateurId:
+      name: utilisateurId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+  schemas:
+    Pays:
+      type: string
+      description: Code ISO 3166-1 alpha-2 (`SN`, `CI`, `KE`).
+      pattern: '^[A-Z]{2}$'
+    Disponibilite:
+      type: string
+      enum: [disponible, occupe, indisponible]
+    TypePreuve:
+      type: string
+      enum: [tache_livree_a_temps, avis_coequipier, reponse_acceptee, projet_en_ligne]
+
+    ProfilResume:
+      type: object
+      description: Une ligne de la recherche de coéquipiers.
+      required: [utilisateurId, nom, competences, disponibilite, projetsEnLigne]
+      properties:
+        utilisateurId: { type: string, format: uuid }
+        nom: { type: string }
+        avatarUrl: { type: [string, 'null'], format: uri }
+        pays: { oneOf: [{ $ref: '#/components/schemas/Pays' }, { type: 'null' }] }
+        ville: { type: [string, 'null'] }
+        disponibilite: { $ref: '#/components/schemas/Disponibilite' }
+        heuresParSemaine: { type: [integer, 'null'], minimum: 1, maximum: 60 }
+        competences: { type: array, maxItems: 10, description: 'Les principales, GitHub et déclarées confondues.', items: { $ref: './projets.yaml#/components/schemas/Competence' } }
+        projetsEnLigne: { type: integer, minimum: 0, description: Nombre de projets en ligne vérifiés. }
+
+    Profil:
+      type: object
+      description: Ce que les autres voient d'un profil publié. Jamais l'e-mail.
+      required: [utilisateurId, nom, disponibilite, langages, competences, projets, depotsGithub, fiabilite, misAJourLe]
+      properties:
+        utilisateurId: { type: string, format: uuid }
+        nom: { type: string }
+        avatarUrl: { type: [string, 'null'], format: uri }
+        loginGithub: { type: [string, 'null'] }
+        bio: { type: [string, 'null'], maxLength: 500 }
+        resumeIa:
+          type: [string, 'null']
+          maxLength: 600
+          description: Résumé proposé par l'IA à partir des données publiques. Le front l'étiquette « Proposé par l'IA ». `null` si l'utilisateur l'a masqué ou si l'IA n'a pas répondu.
+        pays: { oneOf: [{ $ref: '#/components/schemas/Pays' }, { type: 'null' }] }
+        ville: { type: [string, 'null'], maxLength: 80 }
+        disponibilite: { $ref: '#/components/schemas/Disponibilite' }
+        heuresParSemaine: { type: [integer, 'null'], minimum: 1, maximum: 60 }
+        langages:
+          type: array
+          description: Langages des dépôts publics GitHub (hors forks), par part décroissante.
+          items: { $ref: '#/components/schemas/Langage' }
+        competences:
+          type: array
+          items: { $ref: '#/components/schemas/CompetenceProfil' }
+        projets:
+          type: array
+          description: Projets Jamii auxquels la personne a participé. Les projets en ligne vérifiés d'abord.
+          items: { $ref: '#/components/schemas/ProjetDuProfil' }
+        depotsGithub:
+          type: array
+          maxItems: 6
+          description: Les dépôts publics les plus récents ou les plus suivis. Un lien de site déclaré sur GitHub n'est **pas** une preuve de mise en ligne.
+          items: { $ref: '#/components/schemas/DepotGithub' }
+        fiabilite:
+          type: array
+          description: Un point par type de preuve ayant au moins une preuve. Pas de note globale.
+          items: { $ref: '#/components/schemas/PointFiabilite' }
+        misAJourLe: { type: string, format: date-time }
+
+    MonProfil:
+      description: Mon profil, avec ce que moi seul vois.
+      allOf:
+        - $ref: '#/components/schemas/Profil'
+        - type: object
+          required: [publie, afficherResumeIa, generation, version]
+          properties:
+            publie: { type: boolean, description: '`false` par défaut : le profil reste privé jusqu''à sa publication.' }
+            afficherResumeIa: { type: boolean }
+            resumeIaPropose: { type: [string, 'null'], description: 'Le résumé de l''IA, même masqué, pour que je puisse le relire.' }
+            generation: { $ref: '#/components/schemas/Generation' }
+            version: { type: integer, minimum: 0 }
+
+    ModificationProfil:
+      type: object
+      additionalProperties: false
+      required: [version]
+      properties:
+        bio: { type: [string, 'null'], maxLength: 500 }
+        pays: { oneOf: [{ $ref: '#/components/schemas/Pays' }, { type: 'null' }] }
+        ville: { type: [string, 'null'], maxLength: 80 }
+        disponibilite: { $ref: '#/components/schemas/Disponibilite' }
+        heuresParSemaine: { type: [integer, 'null'], minimum: 1, maximum: 60 }
+        competencesDeclarees:
+          type: array
+          maxItems: 20
+          uniqueItems: true
+          items: { $ref: './projets.yaml#/components/schemas/Competence' }
+        afficherResumeIa: { type: boolean }
+        version: { type: integer, minimum: 0 }
+
+    Generation:
+      type: object
+      required: [statut]
+      properties:
+        statut: { type: string, enum: [jamais, en_cours, terminee, echec] }
+        erreur:
+          type: [string, 'null']
+          enum: [github_indisponible, github_refus, null]
+          description: Seulement si `statut` = `echec`. Le profil précédent reste affiché.
+        lanceeLe: { type: [string, 'null'], format: date-time }
+        termineeLe: { type: [string, 'null'], format: date-time }
+
+    Langage:
+      type: object
+      required: [nom, part]
+      properties:
+        nom: { type: string, examples: [Dart] }
+        part: { type: number, minimum: 0, maximum: 1, description: 'Part estimée (0,42 = 42 %) : langage principal de chaque dépôt, pondéré par sa taille. Une seule requête à GitHub, contre une par dépôt pour le détail exact.' }
+
+    CompetenceProfil:
+      type: object
+      required: [competence, source]
+      properties:
+        competence: { $ref: './projets.yaml#/components/schemas/Competence' }
+        source: { type: string, enum: [github, declaree], description: '`github` : déduite des dépôts. `declaree` : ajoutée par la personne.' }
+
+    ProjetDuProfil:
+      type: object
+      required: [projetId, titre, role, enLigne]
+      properties:
+        projetId: { type: string, format: uuid }
+        titre: { type: string }
+        role: { type: string, description: 'Le rôle tenu dans l''équipe (`porteur` ou titre du rôle).' }
+        paysEquipe: { type: array, items: { $ref: '#/components/schemas/Pays' }, description: Pays des membres de l'équipe. }
+        enLigne: { type: boolean, description: '`true` si un déploiement a répondu lors de la dernière vérification.' }
+        url: { type: [string, 'null'], format: uri }
+        hebergeur: { type: [string, 'null'], enum: [datacloud, autre, null], description: '`datacloud` : badge « En ligne sur Systalink ».' }
+        verifieLe: { type: [string, 'null'], format: date-time, description: La dernière fois que l'URL a répondu. }
+
+    DepotGithub:
+      type: object
+      required: [nom, url, etoiles]
+      properties:
+        nom: { type: string }
+        url: { type: string, format: uri }
+        description: { type: [string, 'null'] }
+        langage: { type: [string, 'null'] }
+        etoiles: { type: integer, minimum: 0 }
+        misAJourLe: { type: [string, 'null'], format: date-time }
+
+    PointFiabilite:
+      type: object
+      description: |
+        Exemples d'affichage : « 11 sur 12 tâches livrées à la date prévue », « 7 réponses acceptées ».
+        `sur` n'existe que pour les tâches (tâches livrées à temps sur toutes les tâches livrées).
+      required: [type, nombre, contestees]
+      properties:
+        type: { $ref: '#/components/schemas/TypePreuve' }
+        nombre: { type: integer, minimum: 0 }
+        sur: { type: [integer, 'null'], minimum: 0 }
+        contestees: { type: integer, minimum: 0, description: Preuves en cours de vérification (toujours comptées). }
+
+    Preuve:
+      type: object
+      required: [id, type, source, contestee, creeLe]
+      properties:
+        id: { type: string, format: uuid }
+        type: { $ref: '#/components/schemas/TypePreuve' }
+        source:
+          type: object
+          description: D'où vient la preuve, pour la vérifier en un clic.
+          required: [module, id]
+          properties:
+            module: { type: string, enum: [projets, communautes, deploiement] }
+            id: { type: string, format: uuid }
+            titre: { type: [string, 'null'], description: 'Titre de la tâche, de la question ou du projet.' }
+        detail:
+          type: [string, 'null']
+          maxLength: 280
+          description: 'Ex. : l''avis écrit par le coéquipier, ou « livrée le 12/11, prévue le 13/11 ».'
+        auteur:
+          oneOf: [{ $ref: './projets.yaml#/components/schemas/PersonneResume' }, { type: 'null' }]
+          description: Pour un avis, le coéquipier qui l'a donné. `null` si son compte est supprimé.
+        contestee: { type: boolean }
+        creeLe: { type: string, format: date-time }
+
+    Contestation:
+      type: object
+      additionalProperties: false
+      required: [motif]
+      properties:
+        motif: { type: string, enum: [inexacte, injuste, triche, autre] }
+        explication: { type: [string, 'null'], maxLength: 500 }

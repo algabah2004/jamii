@@ -8,12 +8,29 @@
 Avant toute chose :
 1. **Identifie le développeur** : `gh api user -q .login`, à défaut l'e-mail ou le nom de `git config user.name`. Si tu n'es pas sûr, **demande-lui son pseudo GitHub**.
 2. **Trouve son bloc** dans `docs/blocs/README.md`, puis lis **son plan** (`docs/blocs/<bloc>.md`). Si `gh` est disponible, lis aussi les derniers commentaires de son ticket de suivi (`gh issue view <n> --comments`).
-3. **Commence par lui résumer, en 5 lignes maximum** :
+3. **Lis le fil de l'équipe et les demandes qui lui sont adressées** (ticket [#54](https://github.com/algabah2004/jamii/issues/54)) :
+   ```bash
+   gh issue view 54 --comments                    # où en sont les autres blocs
+   gh issue list --label demande --assignee @me   # ce que les autres attendent de lui
+   ```
+   Une demande ouverte **passe avant son propre travail** : quelqu'un est bloqué en l'attendant. Signale-la dès ton résumé.
+4. **Commence par lui résumer, en 5 lignes maximum** :
    - son bloc et son but ;
    - où il en est (cases cochées, branches et PR ouvertes : `gh pr list --author @me`) ;
    - **la prochaine étape concrète** que tu proposes ;
    - un éventuel blocage ou une dépendance envers un autre bloc.
-4. Si c'est le **chef de projet** (`algabah2004`) : résume plutôt l'état de **tous** les blocs (tickets #17 à #20, PR ouvertes, étiquettes `bloqué`) et ce qui attend sa revue.
+5. Si c'est le **chef de projet** (`algabah2004`) : résume plutôt l'état de **tous** les blocs (fil #54, tickets #17 à #20, PR ouvertes, étiquettes `demande` et `bloqué`) et ce qui attend sa revue.
+
+### À la fin de chaque session : préviens les autres
+
+- **Écris un point dans le fil #54** (`gh issue comment 54 --body "…"`), au format donné dans le ticket : fait, ensuite, bloqué par, ce qui change pour les autres. Un seul commentaire court, et aucun s'il n'y a rien de nouveau. Montre-le à ton développeur avant de l'envoyer.
+- **Tu as besoin de quelque chose d'un autre bloc ?** Ne touche pas à son territoire et ne laisse pas un commentaire perdu dans son ticket : ouvre **une demande**, attribuée à la bonne personne.
+  ```bash
+  gh issue create --label demande --assignee <pseudo> \
+    --title "Demande à @<pseudo> : <ce qu'il faut, en une ligne>" \
+    --body "Pourquoi, ce qui est attendu précisément, pour quand, et ce que ça bloque."
+  ```
+- **Une demande traitée se ferme**, avec le numéro de la PR qui y répond. Sans réponse sous 12 heures, ajoute l'étiquette `bloqué` : le chef de projet tranche.
 
 Le plan est un **point de départ** : si ton développeur veut le changer, aide-le à réécrire son fichier `docs/blocs/<bloc>.md` dans une PR. Ne change jamais le but ni le critère « terminé quand » sans l'accord du chef de projet.
 
@@ -36,6 +53,7 @@ Le plan est un **point de départ** : si ton développeur veut le changer, aide-
 | `docs/integration-systalink.md` | **Comment chaque service Systalink se branche sur Jamii (notre point fort)** |
 | `docs/idees-sources.md` | **Les 4 pistes de départ de l'équipe et les idées fortes encore à décider** |
 | `docs/concept.md` | **Le concept final : les 5 piliers, la démo, ce qu'on fait et ce qu'on ne fait pas** |
+| `docs/plan-final.md` | **Le plan des 5 derniers jours : le parcours de démo à livrer avant le 15 novembre** |
 | `docs/architecture.md` | La stack et la raison de chaque choix |
 | `docs/vocabulaire.md` | Les mots de l'interface : simples, sans thème ni jargon |
 | `docs/systalink-services.md` | Ce qui est gratuit et testé chez Systalink, et ce qui ne l'est pas |
@@ -77,8 +95,17 @@ Tu n'es pas là pour dire oui. Tu es là pour que le résultat soit **excellent*
 - **Aucun appel direct à un fournisseur externe dans le code métier** : on passe par une interface interne, avec un adaptateur Systalink et un adaptateur simulé. Le changement se fait par la configuration (variables d'environnement), jamais par la réécriture.
 - Uniquement des standards : OpenAPI, OAuth2/OIDC, API S3, webhooks signés, Postgres.
 
+### Règlement CADEV (le projet est exclu si on l'enfreint, voir `docs/cadev.md`)
+- **Soumission le 15 novembre 2026 à 17 h 00 GMT.** D'ici là, on privilégie le parcours de la démo (`docs/plan-final.md`) : tout le reste attend.
+- **Aucune dépendance GPL, AGPL ou LGPL.** Avant d'ajouter une dépendance, vérifie sa licence. La CI bloque sinon.
+- **Le code promo DataCloud de l'équipe n'apparaît jamais** dans le dépôt, une issue, une PR ou un commit.
+- **L'usage de l'IA se déclare** : note dans ta PR quels outils d'IA tu as utilisés.
+
 ### Général
 - **Pas de code sans issue attribuée.** On ne pousse jamais sur `main` : on passe par une branche `<n°issue>-<description>`, puis une PR avec `Closes #n`.
+- **Le moins de branches possible.** Avant d'en créer une, lance `gh pr list --author @me` :
+  - si le travail continue le sujet d'une PR ouverte, **ajoute des commits sur sa branche** ;
+  - une nouvelle branche part **toujours de `main` à jour**, **jamais de la branche d'une autre PR** (pas de PR empilées).
 - **Aucun secret dans le code**, les commits, les logs ou les tests. Les secrets vont dans `.env`, et on documente les variables dans `.env.example`.
 - **Interface :** uniquement les mots de `docs/vocabulaire.md`. Pas de métaphore sportive ni d'autre thème.
 - **Architecture :** pour s'écarter de `docs/architecture.md`, il faut une proposition acceptée par le chef de projet.
