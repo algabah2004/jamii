@@ -14,7 +14,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "typecheck": "vue-tsc --noEmit",
-    "api:types": "openapi-typescript ../../contracts/socle.yaml -o src/api/generated/socle.ts && openapi-typescript ../../contracts/systalink.yaml -o src/api/generated/systalink.ts",
+    "api:types": "openapi-typescript ../../contracts/socle.yaml -o src/api/generated/socle.ts && openapi-typescript ../../contracts/systalink.yaml -o src/api/generated/systalink.ts && openapi-typescript ../../contracts/vitrine.yaml -o src/api/generated/vitrine.ts",
     "msw:init": "msw init public --save"
   },
   "dependencies": {
