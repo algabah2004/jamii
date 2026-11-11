@@ -24,6 +24,12 @@ export const routes: RouteRecordRaw[] = [
     meta: { connexionRequise: true },
   },
   {
+    path: '/publications/:id',
+    name: 'publication',
+    component: () => import('./features/communautes/PublicationPage.vue'),
+    meta: { connexionRequise: true },
+  },
+  {
     // Public : seulement ce que chaque projet montre déjà à tous (contracts/vitrine.yaml).
     path: '/vitrine',
     name: 'vitrine',
