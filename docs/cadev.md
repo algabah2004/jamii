@@ -25,7 +25,7 @@
 | **Prix** | **5 000 000 FCFA**, et **la solution gagnante intègre le portefeuille technologique de Systalink** |
 | **Avantages** | -40 % sur DataCloud pour les équipes, -70 % pour tous les participants en 2026 |
 | **Page officielle** | https://systalink.com/fr/coupe-afrique-des-developpeurs-cadev · contact : cadev@systalink.com |
-| **Inconnus** (ticket #1) | Dates exactes, taille des équipes, livrables, critères et pondération du jury |
+| **Règlement** | Lu dans l'espace CADEV de la console DataCloud le 10/11/2026 : voir ci-dessous |
 
 ### Ce que ça implique pour nous
 - **Le jury, ce sont des ingénieurs cloud.** Ils jugeront la solidité : sécurité, architecture, tests, exploitation. Pas seulement la démo.
@@ -33,6 +33,40 @@
 - **Il y a aussi un vote du public** : il faut que des développeurs aient envie de l'utiliser et de le partager.
 - **Notre point fort : Jamii est conçu pour se brancher directement sur l'écosystème Systalink** (voir [integration-systalink.md](integration-systalink.md)).
 - Notre hypothèse, cohérente avec leur communication mais pas officielle : Systalink veut **faire venir des développeurs sur son cloud**. Chaque fonctionnalité qui fait découvrir et utiliser DataCloud est un plus.
+
+## Le règlement (lu le 10 novembre 2026)
+
+> Source : « Conditions générales » de l'espace CADEV dans la console DataCloud (relevé par @boubacarsidibe, PR #36). **Un manquement rend le projet irrecevable.**
+
+### Le calendrier
+| Date | Étape |
+|---|---|
+| **15 novembre 2026, 17 h 00 GMT** | **Fin des soumissions** |
+| 15 et 16 novembre | **Vote des pairs : obligatoire pour chaque membre de l'équipe, sinon le projet est exclu** |
+| 17 au 20 novembre | Vote du public |
+| 21 et 22 novembre | Délibération du jury |
+| 23 novembre | Résultats |
+
+### Les conditions
+- **Équipe** de 2 à 5 membres.
+- **Livrables** : un dépôt Git et une **démo en ligne**.
+- **Article 6, hébergement** : le projet est déployé avec **au moins un produit DataCloud payant**, acheté avec la remise de 40 % de l'équipe. **Le code promo ne doit jamais apparaître dans le dépôt** (ni dans une issue, une PR ou un commit).
+- **Article 6, licences** : aucun composant sous licence **GPL, AGPL ou LGPL**. Licences permissives uniquement (MIT, Apache 2.0, BSD…). La CI le vérifie (job « Licences autorisées »), et son résumé donne la liste complète des composants et de leurs licences pour la soumission. Jamii est lui-même sous licence Apache 2.0 (`LICENSE`).
+- **L'usage de l'IA est libre mais doit être déclaré** à la soumission : les outils utilisés et les parties concernées. Voir « Ce qu'on déclare » ci-dessous.
+
+### La grille du jury
+| Critère | Poids | Ce qui le nourrit chez nous |
+|---|---|---|
+| Qualité technique | **30 %** | Tests, CI, sécurité, contrats OpenAPI, architecture modulaire, déploiement sur DataCloud |
+| Pertinence | **25 %** | Le problème de fond (continuité, équipes, besoins des PME) et la valeur pour Systalink |
+| Expérience utilisateur | **20 %** | Un parcours de démo fluide, des mots simples, l'interface en ligne |
+| Innovation | **15 %** | Le profil prouvé, l'assistant de projet, les moments Systalink mesurés |
+| Vote du public | **10 %** | Que chaque membre partage le projet du 17 au 20 novembre |
+
+### Ce qu'on déclare (usage de l'IA)
+- **Pour construire Jamii** : des agents de code (Claude Code, et ceux de chaque membre) ont aidé à écrire la documentation, les contrats et le code. Tout a été relu et validé en revue par un humain (une PR, une approbation).
+- **Dans Jamii** : l'assistant de projet (`services/ia`) génère des plans, des suggestions et des réponses proposées, via l'interface `FournisseurIA` (Yokk ou un fournisseur simulé). L'IA propose, l'humain décide.
+- Chaque membre complète cette liste avec ses propres outils avant le 15 novembre.
 
 ## Le problème de fond
 

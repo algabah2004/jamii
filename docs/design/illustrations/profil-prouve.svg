@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 360" role="img" aria-labelledby="t"><title id="t">Une développeuse montre son profil avec un projet en ligne vérifié</title>
+<path fill="#DDF0FA" d="M90 90c40-60 160-70 240-40s130 90 110 170-90 120-190 110S70 290 60 220s-10-90 30-130z"/>
+<ellipse cx="240" cy="322" rx="180" ry="13" fill="#C9E3F1"/>
+<!-- carte profil -->
+<rect x="200" y="60" width="200" height="240" rx="16" fill="#FFFFFF"/>
+<rect x="200" y="60" width="200" height="56" rx="16" fill="#0297DE"/><rect x="200" y="96" width="200" height="20" fill="#0297DE"/>
+<circle cx="244" cy="118" r="26" fill="#FFFFFF"/><circle cx="244" cy="118" r="21" fill="#5C3A21"/><path fill="#02070A" d="M224 114c0-14 10-22 20-22s20 8 20 22c-6-6-12-8-20-8s-14 2-20 8z"/>
+<rect x="282" y="124" width="84" height="8" rx="4" fill="#02070A"/><rect x="282" y="138" width="56" height="6" rx="3" fill="#8A9BA6"/>
+<rect x="222" y="162" width="156" height="34" rx="8" fill="#F4F8FA"/><rect x="232" y="172" width="60" height="6" rx="3" fill="#02070A"/><rect x="232" y="182" width="40" height="5" rx="2.5" fill="#8A9BA6"/>
+<rect x="318" y="170" width="50" height="18" rx="9" fill="#FC734D"/><path d="M328 179l3 3 6-6" stroke="#02070A" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="341" y="176" width="20" height="6" rx="3" fill="#02070A"/>
+<rect x="222" y="208" width="156" height="12" rx="6" fill="#DDF0FA"/><rect x="222" y="208" width="130" height="12" rx="6" fill="#0297DE"/>
+<rect x="222" y="230" width="156" height="12" rx="6" fill="#DDF0FA"/><rect x="222" y="230" width="96" height="12" rx="6" fill="#0297DE"/>
+<rect x="222" y="252" width="156" height="12" rx="6" fill="#DDF0FA"/><rect x="222" y="252" width="112" height="12" rx="6" fill="#0297DE"/>
+<!-- badge vérifié -->
+<circle cx="398" cy="70" r="26" fill="#FC734D"/><path d="M386 70l8 8 16-16" stroke="#02070A" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<!-- personne -->
+<path fill="#02070A" d="M106 320l8-104h22l-2 104zM146 320l4-104h22l6 104z"/>
+<path fill="#FC734D" d="M98 222c-6-70 12-104 46-104s54 34 46 104z"/>
+<rect x="134" y="94" width="20" height="26" rx="7" fill="#5C3A21"/>
+<circle cx="144" cy="76" r="26" fill="#5C3A21"/>
+<path fill="#02070A" d="M116 74c-4-26 12-40 28-40 18 0 32 12 30 36-4-10-16-16-30-16-12 0-22 8-28 20z"/><circle cx="168" cy="44" r="10" fill="#02070A"/>
+<path fill="#5C3A21" d="M184 148c14 2 22 10 26 20l-10 6c-4-6-10-10-18-12z"/>
+<path fill="#FC734D" d="M178 136c14 4 22 14 24 28l-14 4c-2-10-8-16-16-18z"/>
+<path fill="#5C3A21" d="M104 150c-12 20-14 40-8 60l12-2c-4-16-2-32 6-48z"/>
+<!-- étoiles -->
+<path fill="#0297DE" d="M80 120l4 10 10 4-10 4-4 10-4-10-10-4 10-4z"/><path fill="#FC734D" d="M430 230l3 7 7 3-7 3-3 7-3-7-7-3 7-3z"/>
+</svg>
