@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import { genererCss } from '../../scripts/tokens-css.mjs'
-import { appliquerTheme, choisirTheme, JBadgePreuve, JBouton, JChamp, themeActuel, themeRetenu } from '.'
+import { appliquerTheme, choisirTheme, JAvatar, JBadgePreuve, JBouton, JChamp, JIllustration, themeActuel, themeRetenu } from '.'
 import { contraste } from './contraste'
 
 const lire = (chemin: string) => readFileSync(new URL(chemin, import.meta.url), 'utf8')
@@ -104,5 +104,20 @@ describe('thème retenu', () => {
     localStorage.setItem('jamii.theme', 'violet')
     expect(themeRetenu()).toBe('systeme')
     choisirTheme('systeme')
+  })
+})
+
+describe('JAvatar et JIllustration', () => {
+  it('sans photo, les initiales (deux au plus), cachées aux lecteurs d’écran', () => {
+    const avatar = mount(JAvatar, { props: { nom: 'Aïcha  Kouassi Yao' } })
+    expect(avatar.text()).toBe('AK')
+    expect(avatar.attributes('aria-hidden')).toBe('true')
+  })
+
+  it('l’illustration suit le thème et reste décorative par défaut', () => {
+    const html = mount(JIllustration, { props: { nom: 'equipe' } }).html()
+    expect(html).toContain('var(--action-soft)')
+    expect(html).not.toContain('#DDF0FA')
+    expect(html).toContain('aria-hidden="true"')
   })
 })

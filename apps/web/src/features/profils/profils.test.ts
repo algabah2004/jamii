@@ -76,6 +76,31 @@ describe('Mon profil', () => {
     await vi.waitFor(() => expect(page.find('[aria-invalid="true"]').exists()).toBe(true))
   })
 
+  it('montre les projets en ligne avec leur badge, et chaque point de fiabilité sans note globale', async () => {
+    serveur.use(
+      http.get('/api/me/profil', () =>
+        HttpResponse.json({
+          utilisateurId: 'x', nom: 'Aïcha Kouassi', disponibilite: 'disponible', langages: [{ nom: 'Dart', part: 1 }],
+          competences: [], depotsGithub: [], misAJourLe: '2026-11-11T10:00:00Z', publie: true, afficherResumeIa: true, version: 2,
+          generation: { statut: 'terminee' },
+          projets: [{ projetId: 'p1', titre: 'Marché Facile', role: 'porteur', paysEquipe: ['CI', 'KE'], enLigne: true, hebergeur: 'datacloud' }],
+          fiabilite: [
+            { type: 'tache_livree_a_temps', nombre: 11, sur: 12, contestees: 0 },
+            { type: 'reponse_acceptee', nombre: 7, contestees: 1 },
+          ],
+        }),
+      ),
+    )
+    const page = await ouvrir()
+    expect(page.get('[data-test="projets"]').text()).toContain('Hébergé sur Systalink')
+    const points = page.get('[data-test="fiabilite"]').text()
+    expect(points).toContain('11 sur 12')
+    expect(points).toContain('tâches livrées à la date prévue')
+    expect(points).toContain('7réponses acceptées')
+    expect(points).toContain('dont 1 en cours de vérification')
+    expect(page.text()).toContain('Pourquoi on peut compter sur Aïcha')
+  })
+
   it('si GitHub ne répond pas, le dit et garde le profil précédent', async () => {
     serveur.use(
       http.get('/api/me/profil', () =>

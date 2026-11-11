@@ -13,7 +13,33 @@
   "accueil": {
     "titre": "Trouve ton équipe, construis ton projet, mets-le en ligne.",
     "texte": "Jamii réunit les développeurs africains : des communautés pour s'entraider, des demandes de PME à réaliser en équipe, et des projets qui vivent après le hackathon.",
-    "bienvenue": "Bon retour, {nom}."
+    "bienvenue": "Bon retour, {nom}.",
+    "voirProfil": "Voir mon profil",
+    "voirCommunautes": "Trouver une communauté",
+    "voirVitrine": "Voir les projets en ligne",
+    "rassurance": "Gratuit. Ton profil reste privé jusqu'à ce que tu le publies.",
+    "piliers": "Ce que tu peux faire sur Jamii",
+    "pilier": {
+      "profil": {
+        "titre": "Un profil qui prouve",
+        "texte": "Tes langages et tes dépôts GitHub, tes projets réellement en ligne et ce que tes coéquipiers disent de toi. Pas de CV à remplir.",
+        "lien": "Créer mon profil"
+      },
+      "equipe": {
+        "titre": "Une équipe, des communautés",
+        "texte": "Pose une question, aide les autres, trouve des coéquipiers d'autres pays, ou réponds à la demande d'une PME.",
+        "lien": "Voir les communautés"
+      },
+      "enLigne": {
+        "titre": "Un projet qui vit",
+        "texte": "Mets ton projet en ligne, sur Systalink ou ailleurs. Jamii vérifie qu'il répond, et le montre dans la vitrine.",
+        "lien": "Voir la vitrine"
+      }
+    },
+    "principe": {
+      "badge": "Vérifié",
+      "texte": "Sur Jamii, l'orange veut toujours dire la même chose : c'est prouvé. Un projet qui répond, une tâche livrée à temps, une réponse acceptée par la personne qui l'a posée."
+    }
   },
   "profil": {
     "titre": "Profil",
@@ -72,12 +98,35 @@
     },
     "projets": {
       "titre": "Projets sur Jamii",
-      "vide": "Pas encore de projet. Les projets que tu mets en ligne avec ton équipe apparaîtront ici, avec le lien vérifié."
+      "vide": "Pas encore de projet. Les projets que tu mets en ligne avec ton équipe apparaîtront ici, avec le lien vérifié.",
+      "inspiration": "Voir les projets déjà en ligne",
+      "equipe": "équipe {pays}",
+      "surSystalink": "Hébergé sur Systalink",
+      "enLigne": "En ligne"
     },
     "depots": {
       "titre": "Dépôts GitHub",
       "etoiles": "aucune étoile | {n} étoile | {n} étoiles",
       "pasUnePreuve": "Les dépôts montrent ce que tu codes. Seul un projet mis en ligne et vérifié compte comme preuve."
+    },
+    "fiabilite": {
+      "titre": "Pourquoi on peut compter sur {prenom}",
+      "sur": "{n} sur {sur}",
+      "types": {
+        "tache_livree_a_temps": "tâche livrée à la date prévue | tâches livrées à la date prévue",
+        "avis_coequipier": "avis positif de coéquipier | avis positifs de coéquipiers",
+        "reponse_acceptee": "réponse acceptée | réponses acceptées",
+        "projet_en_ligne": "projet en ligne vérifié | projets en ligne vérifiés"
+      },
+      "contestees": "dont {n} en cours de vérification | dont {n} en cours de vérification",
+      "vide": "Pas encore de preuve. Elles s'ajoutent toutes seules, à mesure que tu participes :",
+      "comment": {
+        "projet_en_ligne": "un projet mis en ligne avec ton équipe, et qui répond ;",
+        "tache_livree_a_temps": "une tâche livrée à la date prévue ;",
+        "reponse_acceptee": "une réponse acceptée dans une communauté ;",
+        "avis_coequipier": "un coéquipier qui referait équipe avec toi."
+      },
+      "sansNote": "Pas de note globale : chaque point se vérifie, et se conteste s'il est faux."
     }
   },
   "etat": {
