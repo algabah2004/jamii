@@ -11,6 +11,12 @@ export const routes: RouteRecordRaw[] = [
     meta: { connexionRequise: true },
   },
   {
+    // Public : seulement ce que chaque projet montre déjà à tous (contracts/vitrine.yaml).
+    path: '/vitrine',
+    name: 'vitrine',
+    component: () => import('./features/vitrine/VitrinePage.vue'),
+  },
+  {
     // Public : uniquement des chiffres agrégés (contracts/systalink.yaml).
     path: '/systalink',
     name: 'systalink',

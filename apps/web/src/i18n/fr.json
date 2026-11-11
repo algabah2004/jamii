@@ -2,7 +2,8 @@
   "menu": {
     "profil": "Profil",
     "principal": "Menu principal",
-    "systalink": "Espace Systalink"
+    "systalink": "Espace Systalink",
+    "vitrine": "Vitrine"
   },
   "connexion": {
     "github": "Se connecter avec GitHub",
@@ -62,5 +63,19 @@
       "systaforms": "SystaForms",
       "domaines": "Noms de domaine"
     }
+  },
+  "vitrine": {
+    "titre": "Vitrine",
+    "intro": "Les projets nés sur Jamii et vraiment en ligne. Chaque adresse a répondu il y a moins de 24 heures.",
+    "filtre": "Hébergement",
+    "tous": "Tous les projets",
+    "surSystalink": "Hébergés sur Systalink",
+    "hebergeSurSystalink": "Hébergé sur Systalink",
+    "pourUnePme": "Réalisé pour une PME",
+    "equipe": "Équipe : {noms}",
+    "voir": "Voir le projet",
+    "verifie": "Vérifié {quand}",
+    "plus": "Voir plus de projets",
+    "vide": "Aucun projet en ligne pour le moment."
   }
 }

@@ -18,6 +18,7 @@ function changerLangue(langue: Langue) {
   <header class="entete">
     <RouterLink to="/" class="marque">Jamii</RouterLink>
     <nav :aria-label="t('menu.principal')">
+      <RouterLink to="/vitrine">{{ t('menu.vitrine') }}</RouterLink>
       <RouterLink to="/systalink">{{ t('menu.systalink') }}</RouterLink>
       <RouterLink v-if="etat === 'connecte'" to="/profil">{{ t('menu.profil') }}</RouterLink>
     </nav>

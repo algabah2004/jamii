@@ -2,7 +2,8 @@
   "menu": {
     "profil": "Profile",
     "principal": "Main menu",
-    "systalink": "Systalink space"
+    "systalink": "Systalink space",
+    "vitrine": "Showcase"
   },
   "connexion": {
     "github": "Sign in with GitHub",
@@ -62,5 +63,19 @@
       "systaforms": "SystaForms",
       "domaines": "Domain names"
     }
+  },
+  "vitrine": {
+    "titre": "Showcase",
+    "intro": "Projects born on Jamii and actually online. Every address responded less than 24 hours ago.",
+    "filtre": "Hosting",
+    "tous": "All projects",
+    "surSystalink": "Hosted on Systalink",
+    "hebergeSurSystalink": "Hosted on Systalink",
+    "pourUnePme": "Built for a small business",
+    "equipe": "Team: {noms}",
+    "voir": "View the project",
+    "verifie": "Checked {quand}",
+    "plus": "See more projects",
+    "vide": "No project online yet."
   }
 }
