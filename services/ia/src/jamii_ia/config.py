@@ -13,6 +13,8 @@ class Reglages(BaseSettings):
     port: int = Field(default=8000, validation_alias=AliasChoices("PORT", "IA_PORT"))
     fournisseur: str = Field(default="simule", validation_alias="IA_PROVIDER")
     database_url: str = Field(default="", validation_alias="DATABASE_URL")
+    # Secret partagé avec l'API. Aucune valeur par défaut : un oubli bloque le démarrage.
+    jeton_interne: str = Field(default="", validation_alias="IA_JETON_INTERNE")
     limite_par_heure: int = Field(default=100, ge=1, validation_alias="IA_LIMITE_PAR_HEURE")
 
 

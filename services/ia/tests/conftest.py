@@ -6,16 +6,20 @@ En CI : le service `postgres` du job.
 
 import asyncio
 import os
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Iterator
 from urllib.parse import urlsplit, urlunsplit
 
 import asyncpg
 import pytest
+from fastapi.testclient import TestClient
 
 from jamii_ia.base_donnees import migrer, ouvrir_pool
+from jamii_ia.config import Reglages
+from jamii_ia.main import creer_app
 from jamii_ia.taches import DepotTaches
 
 BASE_DE_TEST = "jamii_ia_test"
+JETON = "jeton-de-test-0123456789"
 URL_DEV = "postgresql://jamii:jamii_dev_only@localhost:5432/jamii"
 
 
@@ -63,3 +67,25 @@ async def depot(url_base: str) -> AsyncIterator[DepotTaches]:
     pool = await ouvrir_pool(url_base)
     yield DepotTaches(pool, limite_par_heure=100)
     await pool.close()
+
+
+def reglages_de_test(url_base: str, **surcharges: object) -> Reglages:
+    valeurs = {
+        "IA_PROVIDER": "simule",
+        "IA_JETON_INTERNE": JETON,
+        "DATABASE_URL": url_base,
+    } | surcharges
+    return Reglages(**valeurs)
+
+
+@pytest.fixture
+def client(url_base: str) -> Iterator[TestClient]:
+    vider_la_file(url_base)
+    # Le bloc `with` lance le démarrage de l'appli : migrations, puis ouverture du pool.
+    with TestClient(creer_app(reglages_de_test(url_base))) as client:
+        yield client
+
+
+@pytest.fixture
+def jeton() -> dict[str, str]:
+    return {"Authorization": f"Bearer {JETON}"}
