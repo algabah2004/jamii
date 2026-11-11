@@ -234,22 +234,31 @@ class MiseEnLigne {
 
 		final String code;
 
+		/** Code de l'erreur de champ (`pas_https`…), ou null. */
 		final String champ;
 
+		/** Le champ en erreur : `url`, `limite`, `curseur`. */
+		final String nomChamp;
+
 		Refus(HttpStatus statut, String code) {
-			this(statut, code, null);
+			this(statut, code, null, null);
 		}
 
-		private Refus(HttpStatus statut, String code, String champ) {
+		private Refus(HttpStatus statut, String code, String nomChamp, String champ) {
 			super(code, null, false, false);
 			this.statut = statut;
 			this.code = code;
+			this.nomChamp = nomChamp;
 			this.champ = champ;
 		}
 
 		/** Erreur de validation sur `url` (400, `code` = `validation`). */
 		static Refus champ(String codeChamp) {
-			return new Refus(HttpStatus.BAD_REQUEST, "validation", codeChamp);
+			return champ("url", codeChamp);
+		}
+
+		static Refus champ(String nomChamp, String codeChamp) {
+			return new Refus(HttpStatus.BAD_REQUEST, "validation", nomChamp, codeChamp);
 		}
 
 	}
