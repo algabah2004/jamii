@@ -7,6 +7,9 @@ from uuid import UUID, uuid4
 
 import asyncpg
 
+# Au-delà, une tâche n'est plus reprise : elle échoue au lieu de tourner sans fin.
+ESSAIS_MAX = 3
+
 # Identifiant arbitraire du verrou PostgreSQL qui sérialise les dépôts (limite exacte).
 _VERROU_LIMITE = 7420_2611_10
 
@@ -72,41 +75,63 @@ class DepotTaches:
 
         `SKIP LOCKED` : deux travailleurs ne prennent jamais la même tâche. La tâche est
         réservée 2 minutes ; si le travailleur meurt, elle redevient disponible ensuite.
+        Le nombre d'essais sert de jeton de réservation : seul le dernier travailleur à
+        l'avoir prise peut l'écrire (voir `_ecrire`).
         """
         async with self._pool.acquire() as connexion:
+            # Une tâche abandonnée en cours de route après le dernier essai ne repart pas.
+            await connexion.execute(
+                "UPDATE ia.taches SET statut = 'echouee', erreur_code = 'delai_depasse', "
+                "termine_le = now() WHERE statut = 'en_cours' AND disponible_le <= now() "
+                "AND essais >= $1",
+                ESSAIS_MAX,
+            )
             ligne = await connexion.fetchrow(
                 "UPDATE ia.taches SET statut = 'en_cours', essais = essais + 1, "
                 "disponible_le = now() + interval '2 minutes' "
                 "WHERE id = (SELECT id FROM ia.taches "
                 "WHERE statut IN ('en_attente', 'en_cours') AND disponible_le <= now() "
-                "ORDER BY disponible_le FOR UPDATE SKIP LOCKED LIMIT 1) RETURNING *"
+                "AND essais < $1 "
+                "ORDER BY disponible_le FOR UPDATE SKIP LOCKED LIMIT 1) RETURNING *",
+                ESSAIS_MAX,
             )
         return dict(ligne) if ligne else None
 
-    async def terminer(self, tache_id: UUID, resultat: dict[str, Any], origine: str) -> None:
-        await self._executer(
-            "UPDATE ia.taches SET statut = 'terminee', resultat = $2, origine = $3, "
-            "termine_le = now() WHERE id = $1",
-            tache_id,
+    async def terminer(self, tache: dict[str, Any], resultat: dict[str, Any], origine: str) -> bool:
+        return await self._ecrire(
+            tache,
+            "statut = 'terminee', resultat = $3, origine = $4, termine_le = now()",
             resultat,
             origine,
         )
 
-    async def echouer(self, tache_id: UUID, erreur_code: str) -> None:
-        await self._executer(
-            "UPDATE ia.taches SET statut = 'echouee', erreur_code = $2, termine_le = now() "
-            "WHERE id = $1",
-            tache_id,
-            erreur_code,
+    async def echouer(self, tache: dict[str, Any], erreur_code: str) -> bool:
+        return await self._ecrire(
+            tache, "statut = 'echouee', erreur_code = $3, termine_le = now()", erreur_code
         )
 
-    async def remettre(self, tache_id: UUID, delai_secondes: int) -> None:
-        await self._executer(
-            "UPDATE ia.taches SET statut = 'en_attente', "
-            "disponible_le = now() + make_interval(secs => $2) WHERE id = $1",
-            tache_id,
+    async def remettre(self, tache: dict[str, Any], delai_secondes: int) -> bool:
+        return await self._ecrire(
+            tache,
+            "statut = 'en_attente', disponible_le = now() + make_interval(secs => $3)",
             delai_secondes,
         )
+
+    async def _ecrire(self, tache: dict[str, Any], affectations: str, *valeurs: Any) -> bool:
+        """Écrit seulement si la tâche est toujours réservée par ce travailleur.
+
+        Si un appel IA a dépassé la réservation et qu'un autre travailleur a repris la tâche,
+        `essais` a changé : l'écriture tardive est ignorée. Renvoie faux dans ce cas.
+        """
+        async with self._pool.acquire() as connexion:
+            etat = await connexion.execute(
+                f"UPDATE ia.taches SET {affectations} "  # noqa: S608 (affectations fixes, pas d'entrée)
+                "WHERE id = $1 AND statut = 'en_cours' AND essais = $2",
+                tache["id"],
+                tache["essais"],
+                *valeurs,
+            )
+        return etat == "UPDATE 1"
 
     async def resultat_en_cache(self, marque: str) -> dict[str, Any] | None:
         """Résultat produit par l'IA pour la même entrée il y a moins de 24 h, s'il existe."""

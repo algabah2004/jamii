@@ -5,11 +5,11 @@ import logging
 
 from jamii_ia import plan_projet
 from jamii_ia.fournisseurs import FournisseurIA, FournisseurIndisponibleError
-from jamii_ia.taches import DepotTaches
+from jamii_ia.taches import ESSAIS_MAX, DepotTaches
 
 journal = logging.getLogger(__name__)
 
-ESSAIS_MAX = 3
+__all__ = ["ESSAIS_MAX", "Travailleur"]
 
 
 class Travailleur:
@@ -22,12 +22,12 @@ class Travailleur:
         tache = await self._depot.prendre_suivante()
         if tache is None:
             return False
-        identifiant, entree, essais = tache["id"], tache["entree"], tache["essais"]
+        entree, essais = tache["entree"], tache["essais"]
 
         # On n'appelle l'IA que si c'est utile : même entrée déjà traitée → même résultat.
         en_cache = await self._depot.resultat_en_cache(tache["empreinte"])
         if en_cache is not None:
-            await self._depot.terminer(identifiant, en_cache, "cache")
+            await self._depot.terminer(tache, en_cache, "cache")
             return True
 
         try:
@@ -35,18 +35,18 @@ class Travailleur:
             plan = plan_projet.lire_plan(reponse.texte, entree)
         except FournisseurIndisponibleError:
             if essais < ESSAIS_MAX:
-                await self._depot.remettre(identifiant, delai_secondes=30 * essais)
+                await self._depot.remettre(tache, delai_secondes=30 * essais)
             else:
                 # L'IA est tombée : l'utilisateur reçoit un modèle à compléter, pas une erreur.
-                await self._depot.terminer(identifiant, plan_projet.plan_de_repli(entree), "repli")
+                await self._depot.terminer(tache, plan_projet.plan_de_repli(entree), "repli")
         except plan_projet.PlanInvalideError as erreur:
             journal.warning("plan non conforme (essai %s) : %s", essais, erreur)
             if essais < ESSAIS_MAX:
-                await self._depot.remettre(identifiant, delai_secondes=5)
+                await self._depot.remettre(tache, delai_secondes=5)
             else:
-                await self._depot.echouer(identifiant, "resultat_invalide")
+                await self._depot.echouer(tache, "resultat_invalide")
         else:
-            await self._depot.terminer(identifiant, plan, "ia")
+            await self._depot.terminer(tache, plan, "ia")
         return True
 
     async def tourner(self, pause_secondes: float = 1.0) -> None:

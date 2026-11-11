@@ -107,6 +107,30 @@ async def test_deux_travailleurs_ne_prennent_jamais_la_meme_tache(depot):
     assert len({tache["id"] for tache in prises}) == 6
 
 
+async def test_une_tache_qui_plante_toujours_finit_en_echec(depot):
+    """Erreur inattendue à chaque fois : la tâche ne tourne pas sans fin (revue d'Alga, #37)."""
+    identifiant = await _deposer(depot)
+    for _ in range(ESSAIS_MAX):
+        assert await depot.prendre_suivante() is not None  # le travailleur « meurt » ensuite
+        await _rendre_disponible(depot, identifiant)
+    assert await depot.prendre_suivante() is None
+    tache = await depot.lire(identifiant)
+    assert (tache["statut"], tache["erreur_code"]) == ("echouee", "delai_depasse")
+
+
+async def test_une_ecriture_tardive_d_un_ancien_travailleur_est_ignoree(depot):
+    """Un appel IA trop long : un 2e travailleur reprend la tâche, le 1er ne l'écrase pas."""
+    identifiant = await _deposer(depot)
+    premier = await depot.prendre_suivante()
+    await _rendre_disponible(depot, identifiant)
+    second = await depot.prendre_suivante()
+    assert second["essais"] == premier["essais"] + 1
+
+    assert not await depot.terminer(premier, {"vieux": True}, "ia")
+    assert await depot.terminer(second, {"neuf": True}, "ia")
+    assert (await depot.lire(identifiant))["resultat"] == {"neuf": True}
+
+
 def test_de_bout_en_bout_par_http(url_base, jeton):
     vider_la_file(url_base)
     app = creer_app(reglages_de_test(url_base, IA_TRAVAILLEUR="true"))
