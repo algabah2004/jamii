@@ -27,7 +27,7 @@ Les noms reprennent [vocabulaire.md](vocabulaire.md) : Profil, Communauté, Dema
 |---|---|---|
 | `auth` (socle) | #17 @sowibrr | `utilisateur`, `utilisateur_role`, `spring_session*` ✅ déjà dans [#31](https://github.com/algabah2004/jamii/pull/31) · `jeton_connexion` (lien par e-mail) |
 | `demandes` | #17 @sowibrr | `demande` |
-| `projets` | #17 @sowibrr | `projet`, `role_recherche`, `candidature`, `membre_equipe`, `jalon`, `tache`, `alerte_continuite` |
+| `projets` | #17 @sowibrr | `projet`, `role_recherche`, `candidature`, `membre_equipe`, `jalon`, `tache`, `avis_coequipier`, `alerte_continuite` |
 | `profils` | #19 @rev22rse22 | `profil`, `competence_profil`, `preuve_fiabilite` |
 | `communautes` | #18 @Amar233-ui | `communaute`, `adhesion`, `publication`, `reponse`, `signalement` |
 | `deploiement` | #20 @boubacarsidibe | `deploiement` |
@@ -57,6 +57,7 @@ erDiagram
     projet ||--o{ jalon : planifie
     jalon |o--o{ tache : regroupe
     projet ||--o{ tache : suit
+    projet ||--o{ avis_coequipier : "avis entre membres"
     projet ||--o{ alerte_continuite : signale
 
     communaute ||--o{ adhesion : compte
@@ -111,6 +112,11 @@ erDiagram
 - `tache` : `id`, `projet_id`, `jalon_id` (facultatif), `titre`, `assignee_id` → utilisateur, `statut` (`a_faire` | `en_cours` | `livree`), `echeance`, `livree_le`, `proposee_par_ia` (booléen), `version`.
 - `livree_le` comparé à `echeance` alimente l'indice de fiabilité du profil (#19), via un événement (§6).
 
+### `avis_coequipier`
+`id`, `projet_id`, `auteur_id` → utilisateur, `destinataire_id` → utilisateur, `sens` (`positif` | `negatif`), `texte` (280 caractères au plus), `cree_le`.
+- Un seul avis par auteur, par destinataire et par projet : index unique (`projet_id`, `auteur_id`, `destinataire_id`), et CHECK `auteur_id <> destinataire_id`.
+- Possible quand le destinataire a une tâche `livree` dans le projet, ou quand le projet est `livre`. L'avis ne se modifie pas : on le conteste depuis le profil (#19).
+
 ### `alerte_continuite`
 `id`, `projet_id`, `type` (`inactif` | `membre_parti` | `echeance_depassee`), `cree_le`, `resolue_le`.
 - Une tâche planifiée signale un projet `en_cours` sans activité depuis **14 jours** (valeur à ajuster). Index sur (`statut`, `derniere_activite_le`).
@@ -140,7 +146,7 @@ erDiagram
 ## 6. Comment les modules se parlent
 
 - **Par l'API publique d'un module** (un service Java exposé), jamais par ses tables. Exemple : `communautes` vérifie qu'un `projet_id` existe en appelant `projets`, pas en lisant la table `projet`.
-- **Par des événements** quand un module doit réagir sans que l'autre l'attende. Exemples : `TacheLivree` → `profils` ajoute une `preuve_fiabilite` ; `ReponseAcceptee` → idem ; `ProjetMisEnLigne` → vitrine et profils. Pour fiabiliser ces événements, on pourra activer le registre d'événements de Spring Modulith (stocké en base).
+- **Par des événements** quand un module doit réagir sans que l'autre l'attende. Exemples : `TacheLivree` → `profils` ajoute une `preuve_fiabilite` ; `AvisCoequipier` (`avisId`, `projetId`, `auteurId`, `destinataireId`, `sens`, `texte`, `creeLe`) → idem ; `ReponseAcceptee` → idem ; `ProjetMisEnLigne` → vitrine et profils. Pour fiabiliser ces événements, on pourra activer le registre d'événements de Spring Modulith (stocké en base).
 - **Le service IA** ne lit aucune table de l'API : l'API lui envoie ce qu'il faut par HTTP ([`contracts/ia.yaml`](https://github.com/algabah2004/jamii/pull/32)), sans donnée personnelle.
 
 ## 7. Questions ouvertes

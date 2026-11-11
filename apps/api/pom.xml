@@ -17,7 +17,7 @@
 	<properties>
 		<java.version>21</java.version>
 		<!-- À monter en même temps que Spring Boot (groupe « spring » dans .github/dependabot.yml) -->
-		<spring-modulith.version>2.1.1</spring-modulith.version>
+		<spring-modulith.version>2.1.2</spring-modulith.version>
 	</properties>
 
 	<dependencies>

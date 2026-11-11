@@ -63,6 +63,37 @@ jobs:
             ci
           requireScope: false
 
+  licences:
+    name: Licences autorisées
+    # Règlement CADEV, article 6 : aucune dépendance GPL, AGPL ou LGPL.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: SBOM de l'API (Maven)
+        if: hashFiles('apps/api/pom.xml') != ''
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: apps/api/pom.xml
+      - if: hashFiles('apps/api/pom.xml') != ''
+        working-directory: apps/api
+        run: ./mvnw -B -q org.cyclonedx:cyclonedx-maven-plugin:2.9.3:makeBom -DoutputFormat=json -DoutputName=bom
+      - name: SBOM du service IA (Python)
+        if: hashFiles('services/ia/uv.lock') != ''
+        uses: astral-sh/setup-uv@v10.3.3
+      - if: hashFiles('services/ia/uv.lock') != ''
+        working-directory: services/ia
+        run: |
+          uv sync --locked --no-dev
+          uvx --from cyclonedx-bom==8.0.1 cyclonedx-py environment .venv/bin/python --of JSON -o bom.json
+      - name: Aucune licence GPL, AGPL ou LGPL
+        run: |
+          boms=$(ls apps/api/target/bom.json services/ia/bom.json 2>/dev/null || true)
+          if [ -z "$boms" ]; then echo "Aucune dépendance à vérifier pour l'instant."; exit 0; fi
+          python3 .github/scripts/verifier_licences.py $boms
+
   api:
     name: API (build et tests)
     runs-on: ubuntu-latest
@@ -71,7 +102,7 @@ jobs:
         working-directory: apps/api
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '21'
@@ -80,5 +111,23 @@ jobs:
       # Les tests d'intégration démarrent PostgreSQL avec Testcontainers (Docker est fourni par le runner).
       - run: ./mvnw -B verify
 
-  # Les jobs build et tests de web et ia seront ajoutés ici
+  ia:
+    name: Service IA (lint et tests)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/ia
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: services/ia/uv.lock
+      # --locked : échoue si uv.lock ne correspond plus à pyproject.toml.
+      - run: uv sync --locked
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run pytest
+
+  # Le job build et tests de web sera ajouté ici
   # quand leur stack sera validée (#6).
