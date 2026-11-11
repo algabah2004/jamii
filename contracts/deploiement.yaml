@@ -120,7 +120,7 @@ paths:
     post:
       tags: [mise-en-ligne]
       operationId: proposerDatacloud
-      summary: L'équipe ouvre « Mettre en ligne » : Jamii lui propose DataCloud (membres de l'équipe)
+      summary: 'L''équipe ouvre « Mettre en ligne » : Jamii lui propose DataCloud (membres de l''équipe)'
       description: |
         Crée un moment Systalink (`datacloud`, contexte `projet`) et renvoie la proposition à afficher. Le front
         l'appelle une fois à l'ouverture de l'écran, pas à chaque affichage. Rien n'oblige à suivre la proposition.
@@ -163,7 +163,7 @@ paths:
       tags: [mise-en-ligne]
       operationId: verifierDeploiement
       summary: Relancer la vérification tout de suite (membres de l'équipe)
-      description: Utile juste après avoir corrigé le projet. Limite : une fois par minute et par déploiement.
+      description: 'Utile juste après avoir corrigé le projet. Limite : une fois par minute et par déploiement.'
       security:
         - session: []
           csrf: []
@@ -179,6 +179,10 @@ paths:
         '429': { $ref: './socle.yaml#/components/responses/TropDeRequetes' }
 
 components:
+  securitySchemes:
+    session: { $ref: './socle.yaml#/components/securitySchemes/session' }
+    csrf: { $ref: './socle.yaml#/components/securitySchemes/csrf' }
+
   parameters:
     ProjetId:
       name: projetId
