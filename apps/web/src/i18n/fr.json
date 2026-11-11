@@ -1,7 +1,8 @@
 {
   "menu": {
     "profil": "Profil",
-    "principal": "Menu principal"
+    "principal": "Menu principal",
+    "systalink": "Espace Systalink"
   },
   "connexion": {
     "github": "Se connecter avec GitHub",
@@ -25,5 +26,41 @@
     "titre": "Cette page n'existe pas.",
     "retour": "Revenir à l'accueil"
   },
-  "langue": "Langue"
+  "langue": "Langue",
+  "systalink": {
+    "titre": "Espace Systalink",
+    "intro": "Ce que Jamii apporte au cloud Systalink. Les chiffres sont agrégés et anonymes : aucune personne n'y apparaît.",
+    "periode": "Période",
+    "periodes": {
+      "semaine": "7 derniers jours",
+      "mois": "30 derniers jours",
+      "tout": "Depuis le début"
+    },
+    "surDatacloud": "projets en ligne sur DataCloud",
+    "partDatacloud": "{part} % des projets en ligne sont hébergés sur DataCloud",
+    "inscrits": "Inscrits",
+    "projetsCrees": "Projets créés",
+    "projetsEnLigne": "Projets en ligne",
+    "nouveaux": "+{n} sur la période",
+    "parPays": "Inscrits par pays",
+    "autresPays": "Autres pays",
+    "seuilPays": "Un pays apparaît à partir de 5 inscrits, pour que personne ne puisse être reconnu.",
+    "moments": "Services Systalink proposés",
+    "momentsIntro": "Jamii propose un service Systalink au bon moment : DataCloud pour mettre un projet en ligne, Orion pour le site d'une PME… Voici combien de fois, et combien de personnes l'ont suivi.",
+    "service": "Service",
+    "proposes": "Proposé",
+    "acceptes": "Suivi",
+    "taux": "Taux",
+    "momentsVide": "Aucun service proposé sur cette période.",
+    "nonMesure": "Le passage à une offre payante n'est pas mesuré : Jamii ne voit pas les achats faits chez Systalink.",
+    "calculeLe": "Calculé le {date}",
+    "services": {
+      "datacloud": "DataCloud",
+      "orion": "Orion",
+      "yokk": "Yokk",
+      "systatalk": "SystaTalk",
+      "systaforms": "SystaForms",
+      "domaines": "Noms de domaine"
+    }
+  }
 }

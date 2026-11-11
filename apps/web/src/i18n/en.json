@@ -1,7 +1,8 @@
 {
   "menu": {
     "profil": "Profile",
-    "principal": "Main menu"
+    "principal": "Main menu",
+    "systalink": "Systalink space"
   },
   "connexion": {
     "github": "Sign in with GitHub",
@@ -25,5 +26,41 @@
     "titre": "This page does not exist.",
     "retour": "Back to home"
   },
-  "langue": "Language"
+  "langue": "Language",
+  "systalink": {
+    "titre": "Systalink space",
+    "intro": "What Jamii brings to the Systalink cloud. Figures are aggregated and anonymous: no individual appears.",
+    "periode": "Period",
+    "periodes": {
+      "semaine": "Last 7 days",
+      "mois": "Last 30 days",
+      "tout": "Since the start"
+    },
+    "surDatacloud": "projects online on DataCloud",
+    "partDatacloud": "{part}% of online projects are hosted on DataCloud",
+    "inscrits": "Members",
+    "projetsCrees": "Projects created",
+    "projetsEnLigne": "Projects online",
+    "nouveaux": "+{n} in this period",
+    "parPays": "Members by country",
+    "autresPays": "Other countries",
+    "seuilPays": "A country appears once it has 5 members, so that no one can be identified.",
+    "moments": "Systalink services offered",
+    "momentsIntro": "Jamii offers a Systalink service at the right moment: DataCloud to put a project online, Orion for a small business website… Here is how often, and how many people followed it.",
+    "service": "Service",
+    "proposes": "Offered",
+    "acceptes": "Followed",
+    "taux": "Rate",
+    "momentsVide": "No service offered in this period.",
+    "nonMesure": "Moving to a paid plan is not measured: Jamii cannot see purchases made at Systalink.",
+    "calculeLe": "Calculated on {date}",
+    "services": {
+      "datacloud": "DataCloud",
+      "orion": "Orion",
+      "yokk": "Yokk",
+      "systatalk": "SystaTalk",
+      "systaforms": "SystaForms",
+      "domaines": "Domain names"
+    }
+  }
 }
