@@ -55,8 +55,8 @@ void charger()
 
 <style scoped>
 .cartes { list-style: none; padding: 0; margin: 1.5rem 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: 1rem; }
-.carte { background: #fff; border: 1px solid #d3dee5; border-radius: 0.5rem; padding: 1rem; }
+.carte { background: var(--surface); border: 1px solid var(--line); border-radius: 0.5rem; padding: 1rem; }
 .carte h2 { font-size: 1.125rem; margin: 0 0 0.25rem; }
 .carte p { margin: 0.375rem 0; }
-.discret { color: #4a5a65; font-size: 0.875rem; }
+.discret { color: var(--ink-muted); font-size: 0.875rem; }
 </style>

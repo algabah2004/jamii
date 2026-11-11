@@ -1,5 +1,6 @@
 import { createApp } from 'vue'
 import App from './App.vue'
+import './design-system'
 import { i18n } from './i18n'
 import { creerRouteur } from './router'
 import { chargerSession } from './session'

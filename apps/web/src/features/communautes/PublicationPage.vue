@@ -166,20 +166,20 @@ async function repondre() {
 
 <style scoped>
 .texte { white-space: pre-wrap; }
-.discret { color: #4a5a65; font-size: 0.875rem; }
-.message { background: #eaf1f5; border-radius: 0.375rem; padding: 0.5rem 0.75rem; }
-.attente { background: #eaf1f5; border-radius: 0.375rem; padding: 0.75rem; font-weight: 600; }
+.discret { color: var(--ink-muted); font-size: 0.875rem; }
+.message { background: var(--surface-raised); border-radius: 0.375rem; padding: 0.5rem 0.75rem; }
+.attente { background: var(--surface-raised); border-radius: 0.375rem; padding: 0.75rem; font-weight: 600; }
 .reponses { list-style: none; padding: 0; margin: 0 0 1.5rem; display: grid; gap: 0.75rem; }
-.reponses li { background: #fff; border: 1px solid #d3dee5; border-radius: 0.5rem; padding: 1rem; }
+.reponses li { background: var(--surface); border: 1px solid var(--line); border-radius: 0.5rem; padding: 1rem; }
 .reponses li.ia { border-style: dashed; }
 /* Orange = la preuve (tokens.json) : la réponse acceptée. */
-.reponses li.acceptee { border: 2px solid #fc734d; border-style: solid; }
-.badge-acceptee { display: inline-block; background: #fc734d; color: #02070a; font-weight: 600; font-size: 0.875rem; padding: 0.125rem 0.5rem; border-radius: 999px; margin: 0 0 0.5rem; }
+.reponses li.acceptee { border: 2px solid var(--proof); border-style: solid; }
+.badge-acceptee { display: inline-block; background: var(--proof); color: var(--on-action); font-weight: 600; font-size: 0.875rem; padding: 0.125rem 0.5rem; border-radius: 999px; margin: 0 0 0.5rem; }
 .etiquette-ia { font-weight: 600; font-size: 0.875rem; margin: 0 0 0.5rem; }
-.principal { background: #0297de; color: #02070a; border: 0; border-radius: 0.375rem; padding: 0.5rem 1rem; font-weight: 600; cursor: pointer; }
+.principal { background: var(--action); color: var(--on-action); border: 0; border-radius: 0.375rem; padding: 0.5rem 1rem; font-weight: 600; cursor: pointer; }
 .principal:disabled { opacity: 0.5; cursor: not-allowed; }
 .formulaire { display: grid; gap: 0.75rem; }
 .formulaire label { display: grid; gap: 0.25rem; font-weight: 600; }
-.formulaire textarea { font: inherit; padding: 0.5rem; border: 1px solid #8a9aa5; border-radius: 0.375rem; }
+.formulaire textarea { font: inherit; padding: 0.5rem; border: 1px solid var(--line-strong); border-radius: 0.375rem; }
 .formulaire .principal { justify-self: start; }
 </style>

@@ -1,0 +1,136 @@
+/* Généré par scripts/tokens-css.mjs depuis docs/design/tokens.json (v2). Ne pas modifier à la main : npm run tokens. */
+
+:root {
+  color-scheme: light;
+  --midnight: #02070A;
+  --electric-blue: #0297DE;
+  --cantaloupe: #FC734D;
+  --bg: #F4F8FA;
+  --surface: #FFFFFF;
+  --surface-raised: #EAF1F5;
+  --line: #D3DEE5;
+  --line-strong: #74868F;
+  --ink: #02070A;
+  --ink-muted: #4B5D69;
+  --action: #0297DE;
+  --on-action: #02070A;
+  --action-ink: #0270A6;
+  --action-soft: #DDF0FA;
+  --proof: #FC734D;
+  --on-proof: #02070A;
+  --proof-ink: #B4431F;
+  --proof-soft: #FFE6DD;
+  --focus: #0270A6;
+  --danger: #C0264B;
+  --relief: var(--surface-raised);
+  --ligne: var(--line);
+  --preuve: var(--proof);
+  --discret: var(--ink-muted);
+  --font-display: "Familjen Grotesk", "Noto Sans", system-ui, sans-serif;
+  --font-text: "Noto Sans", system-ui, sans-serif;
+  --type-display-size: 56px;
+  --type-display-line: 60px;
+  --type-display-weight: 700;
+  --type-h1-size: 36px;
+  --type-h1-line: 42px;
+  --type-h1-weight: 700;
+  --type-h2-size: 26px;
+  --type-h2-line: 32px;
+  --type-h2-weight: 600;
+  --type-h3-size: 20px;
+  --type-h3-line: 26px;
+  --type-h3-weight: 600;
+  --type-body-size: 16px;
+  --type-body-line: 24px;
+  --type-body-weight: 400;
+  --type-body-sm-size: 14px;
+  --type-body-sm-line: 20px;
+  --type-body-sm-weight: 400;
+  --type-label-size: 14px;
+  --type-label-line: 20px;
+  --type-label-weight: 600;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-pill: 999px;
+  --motion-fast: 120ms;
+  --motion-base: 220ms;
+  --motion-celebrate: 700ms;
+  --ease-out: cubic-bezier(.2,.8,.2,1);
+  --ease-pop: cubic-bezier(.34,1.56,.64,1);
+}
+
+/* Thème sombre : celui du système, sauf si l'utilisateur a choisi (data-theme sur <html>). */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='clair']) {
+    color-scheme: dark;
+    --midnight: #02070A;
+    --electric-blue: #0297DE;
+    --cantaloupe: #FC734D;
+    --bg: #02070A;
+    --surface: #0B141A;
+    --surface-raised: #121E26;
+    --line: #1F2E38;
+    --line-strong: #5A7080;
+    --ink: #EEF4F7;
+    --ink-muted: #9DB0BC;
+    --action: #0297DE;
+    --on-action: #02070A;
+    --action-ink: #0297DE;
+    --action-soft: #0B2A3B;
+    --proof: #FC734D;
+    --on-proof: #02070A;
+    --proof-ink: #FC734D;
+    --proof-soft: #3A1D14;
+    --focus: #0297DE;
+    --danger: #FF6B8A;
+    --relief: var(--surface-raised);
+    --ligne: var(--line);
+    --preuve: var(--proof);
+    --discret: var(--ink-muted);
+  }
+}
+
+:root[data-theme='sombre'] {
+  color-scheme: dark;
+  --midnight: #02070A;
+  --electric-blue: #0297DE;
+  --cantaloupe: #FC734D;
+  --bg: #02070A;
+  --surface: #0B141A;
+  --surface-raised: #121E26;
+  --line: #1F2E38;
+  --line-strong: #5A7080;
+  --ink: #EEF4F7;
+  --ink-muted: #9DB0BC;
+  --action: #0297DE;
+  --on-action: #02070A;
+  --action-ink: #0297DE;
+  --action-soft: #0B2A3B;
+  --proof: #FC734D;
+  --on-proof: #02070A;
+  --proof-ink: #FC734D;
+  --proof-soft: #3A1D14;
+  --focus: #0297DE;
+  --danger: #FF6B8A;
+  --relief: var(--surface-raised);
+  --ligne: var(--line);
+  --preuve: var(--proof);
+  --discret: var(--ink-muted);
+}
+
+/* Mouvement réduit : toutes les durées à 0, le contenu reste le même. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-fast: 0ms;
+    --motion-base: 0ms;
+    --motion-celebrate: 0ms;
+  }
+}

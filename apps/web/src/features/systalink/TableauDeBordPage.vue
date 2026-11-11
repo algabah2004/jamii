@@ -139,11 +139,9 @@ const maxPays = computed(() => Math.max(1, ...pays.value.map((p) => p.nombre)))
 </template>
 
 <style scoped>
-/* Valeurs de docs/design/tokens.json (thème clair). Le design system (#19) les fournira en variables. */
-.tableau { --surface: #fff; --relief: #eaf1f5; --ligne: #d3dee5; --action: #0297de; --preuve: #fc734d; --discret: #4a5a65; }
 .periodes { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .periodes button { border: 1px solid var(--ligne); background: var(--surface); color: inherit; border-radius: 999px; padding: 0.375rem 0.75rem; cursor: pointer; }
-.periodes button[aria-pressed='true'] { background: var(--action); border-color: var(--action); font-weight: 600; }
+.periodes button[aria-pressed='true'] { background: var(--action); color: var(--on-action); border-color: var(--action); font-weight: 600; }
 .principal, .tuiles > div { background: var(--surface); border: 1px solid var(--ligne); border-radius: 0.5rem; padding: 1rem; }
 .principal { margin: 1.5rem 0 1rem; }
 .principal p { margin: 0.25rem 0; }

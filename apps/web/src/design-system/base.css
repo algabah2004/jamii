@@ -1,0 +1,66 @@
+/* Base commune de toutes les pages : la charte de docs/design/identite-visuelle.html, en variables (tokens.css). */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-text);
+  font-size: var(--type-body-size);
+  line-height: var(--type-body-line);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3 { font-family: var(--font-display); margin: 0 0 var(--space-3); text-wrap: balance; }
+h1 { font-size: var(--type-h1-size); line-height: var(--type-h1-line); font-weight: var(--type-h1-weight); letter-spacing: -0.5px; }
+h2 { font-size: var(--type-h2-size); line-height: var(--type-h2-line); font-weight: var(--type-h2-weight); }
+h3 { font-size: var(--type-h3-size); line-height: var(--type-h3-line); font-weight: var(--type-h3-weight); }
+p { margin: 0 0 var(--space-3); }
+small, .texte-discret { color: var(--ink-muted); font-size: var(--type-body-sm-size); line-height: var(--type-body-sm-line); }
+
+/* Le bleu ne s'écrit jamais en texte sur blanc (3,2:1) : les liens utilisent action-ink (5:1 minimum). */
+a { color: var(--action-ink); text-underline-offset: 0.2em; }
+a:hover { text-decoration-thickness: 2px; }
+
+/* Un seul anneau de focus pour toute l'application, visible au clavier seulement. */
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+button, input, select, textarea { font: inherit; color: inherit; }
+
+::selection { background: var(--action-soft); color: var(--ink); }
+
+img, svg { max-width: 100%; }
+
+.visuellement-cache {
+  position: absolute !important;
+  width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* Carte : le conteneur de base des écrans (profil, projet, communauté). */
+.carte {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: var(--space-6);
+}
+
+/* Étiquette de compétence. */
+.etiquette {
+  display: inline-flex; align-items: center;
+  padding: 2px var(--space-3);
+  border-radius: var(--radius-pill);
+  background: var(--surface-raised);
+  color: var(--ink);
+  font-size: var(--type-body-sm-size); line-height: var(--type-body-sm-line);
+}
+
+/* Proposition de l'IA : pointillé, ce n'est pas encore une preuve (« l'IA propose, un humain décide »). */
+.proposition-ia {
+  background: var(--action-soft);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+}

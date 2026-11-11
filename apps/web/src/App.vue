@@ -50,13 +50,25 @@ function changerLangue(langue: Langue) {
 </template>
 
 <style>
-/* Mise en page minimale : le design system (@rev22rse22) la remplacera dans src/design-system. */
-body { margin: 0; font-family: system-ui, sans-serif; background: #f4f8fa; color: #02070a; }
-.entete { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; padding: 0.75rem 1rem; background: #fff; border-bottom: 1px solid #d3dee5; }
-.entete nav { flex: 1; display: flex; gap: 1rem; white-space: nowrap; }
-.marque { font-weight: 700; font-size: 1.25rem; color: inherit; text-decoration: none; }
-.actions { display: flex; align-items: center; gap: 0.5rem; }
-.bouton { background: #0297de; color: #02070a; padding: 0.5rem 0.75rem; border-radius: 0.375rem; text-decoration: none; font-weight: 600; }
-main { max-width: 60rem; margin: 0 auto; padding: 1.5rem 1rem; }
-.visuellement-cache { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+/* L'en-tête et la mise en page, sur les variables du design system (src/design-system, #19). */
+.entete {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface); border-bottom: 1px solid var(--line);
+}
+.entete nav { flex: 1; display: flex; gap: var(--space-4); white-space: nowrap; overflow-x: auto; }
+.entete nav a { color: var(--ink); text-decoration: none; font-weight: 600; padding-block: var(--space-1); border-bottom: 2px solid transparent; }
+.entete nav a.router-link-active { border-bottom-color: var(--action); }
+.marque { font-family: var(--font-display); font-weight: 700; font-size: var(--type-h3-size); color: var(--ink); text-decoration: none; }
+.actions { display: flex; align-items: center; gap: var(--space-2); }
+.actions select, .actions button {
+  min-height: 36px; padding: 0 var(--space-3);
+  background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); cursor: pointer;
+}
+.bouton {
+  display: inline-flex; align-items: center; min-height: 36px; padding: 0 var(--space-4);
+  background: var(--action); color: var(--on-action); border-radius: var(--radius-md);
+  text-decoration: none; font-weight: var(--type-label-weight);
+}
+main { max-width: 60rem; margin: 0 auto; padding: var(--space-6) var(--space-4); }
 </style>
