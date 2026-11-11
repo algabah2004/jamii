@@ -2,7 +2,8 @@ import { readFileSync } from 'node:fs'
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import { genererCss } from '../../scripts/tokens-css.mjs'
-import { appliquerTheme, JBadgePreuve, JBouton, JChamp } from '.'
+import { appliquerTheme, choisirTheme, JBadgePreuve, JBouton, JChamp, themeActuel, themeRetenu } from '.'
+import { contraste } from './contraste'
 
 const lire = (chemin: string) => readFileSync(new URL(chemin, import.meta.url), 'utf8')
 
@@ -60,5 +61,48 @@ describe('thème', () => {
 
   it('le badge de preuve ne célèbre qu’à la demande', () => {
     expect(mount(JBadgePreuve, { slots: { default: 'En ligne' } }).classes()).not.toContain('j-preuve--celebrer')
+  })
+})
+
+describe('contrastes de la charte (WCAG 2.1 AA)', () => {
+  const tokens = JSON.parse(lire('../../../../docs/design/tokens.json'))
+  const valeurs = Object.fromEntries(tokens.color.tokens.map((t: { name: string; value: unknown }) => [t.name, t.value]))
+  const couleur = (nom: string, theme: 'clair' | 'sombre'): string => {
+    const v = valeurs[nom]
+    if (typeof v === 'object') return v[theme]
+    const ref = /^\{(.+)\}$/.exec(v)
+    return ref ? couleur(ref[1]!, theme) : v
+  }
+  const PAIRES: [string, string, number][] = [
+    ['ink', 'bg', 4.5], ['ink-muted', 'surface', 4.5], ['action-ink', 'surface', 4.5], ['action-ink', 'bg', 4.5],
+    ['on-action', 'action', 4.5], ['on-proof', 'proof', 4.5], ['proof-ink', 'surface', 4.5], ['danger', 'surface', 4.5],
+    ['line-strong', 'surface', 3], ['line-strong', 'bg', 3], ['focus', 'bg', 3],
+  ]
+  for (const theme of ['clair', 'sombre'] as const) {
+    it.each(PAIRES)(`${theme} : %s sur %s tient %s:1`, (texte, fond, seuil) => {
+      expect(contraste(couleur(texte, theme), couleur(fond, theme))).toBeGreaterThanOrEqual(seuil)
+    })
+  }
+
+  it('la charte partenaire d’exemple tient aussi les seuils', () => {
+    expect(contraste('#7BC86C', '#02070A')).toBeGreaterThanOrEqual(4.5)
+    expect(contraste('#2F7A22', '#FFFFFF')).toBeGreaterThanOrEqual(4.5)
+    expect(contraste('#2F7A22', '#F4F8FA')).toBeGreaterThanOrEqual(4.5)
+    expect(contraste('#7BC86C', '#0B141A')).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it('contraste() lit aussi le format rgb() renvoyé par le navigateur', () => {
+    expect(contraste('rgb(0, 0, 0)', '#FFFFFF')).toBeCloseTo(21, 1)
+  })
+})
+
+describe('thème retenu', () => {
+  it('le choix est gardé dans ce navigateur, et une valeur inconnue revient à « systeme »', () => {
+    choisirTheme('clair')
+    expect(themeRetenu()).toBe('clair')
+    expect(themeActuel.value).toBe('clair')
+    localStorage.setItem('jamii.theme', 'violet')
+    expect(themeRetenu()).toBe('systeme')
+    choisirTheme('systeme')
   })
 })

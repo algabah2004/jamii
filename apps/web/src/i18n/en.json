@@ -131,5 +131,43 @@
       "deja_acceptee": "This question already has an accepted answer.",
       "autre": "That did not work. Try again in a moment."
     }
-  }
+  },
+  "designSystem": {
+    "titre": "Design system",
+    "intro": "Jamii's visual identity, as the app uses it. Every colour comes from docs/design/tokens.json, and contrasts are computed live.",
+    "theme": "Theme",
+    "themes": {
+      "systeme": "Same as device",
+      "clair": "Light",
+      "sombre": "Dark"
+    },
+    "marque": "Brand",
+    "marques": {
+      "jamii": "Jamii",
+      "partenaire": "Partner brand example"
+    },
+    "marqueAide": "A brand only changes the action colour. The orange used for proof stays the same everywhere.",
+    "composants": "Components",
+    "contrastes": "Contrasts",
+    "contrastesAide": "Measured on the theme and brand shown. WCAG 2.1 AA thresholds: 4.5:1 for text, 3:1 for borders and focus.",
+    "paire": "Text / background",
+    "rapport": "Ratio",
+    "seuil": "Threshold",
+    "couleurs": "Colours",
+    "typographie": "Typography",
+    "exemples": {
+      "principal": "Publish",
+      "secondaire": "Edit",
+      "discret": "Cancel",
+      "occupe": "Sending…",
+      "preuve": "Online on Systalink",
+      "celebrer": "Replay the animation",
+      "champ": "Project address",
+      "aide": "Starts with https://",
+      "erreur": "This address does not respond.",
+      "ia": "Suggested by AI",
+      "iaTexte": "Dashed until a human accepts it: it is not proof yet."
+    }
+  },
+  "theme": "Theme"
 }

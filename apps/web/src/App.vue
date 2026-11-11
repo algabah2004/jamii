@@ -4,6 +4,7 @@ import { RouterLink, RouterView } from 'vue-router'
 import { adresseConnexionGithub } from './api/client'
 import { LANGUES, type Langue } from './i18n'
 import { chargerSession, seDeconnecter, useSession } from './session'
+import { choisirTheme, themeActuel, type Theme } from './design-system'
 
 const { t, locale } = useI18n()
 const { etat, moi } = useSession()
@@ -28,6 +29,14 @@ function changerLangue(langue: Langue) {
         <span class="visuellement-cache">{{ t('langue') }}</span>
         <select :value="locale" @change="changerLangue(($event.target as HTMLSelectElement).value as Langue)">
           <option v-for="l in LANGUES" :key="l" :value="l">{{ l.toUpperCase() }}</option>
+        </select>
+      </label>
+      <label>
+        <span class="visuellement-cache">{{ t('theme') }}</span>
+        <select :value="themeActuel" data-test="theme" @change="choisirTheme(($event.target as HTMLSelectElement).value as Theme)">
+          <option value="systeme">◐ {{ t('designSystem.themes.systeme') }}</option>
+          <option value="clair">☀ {{ t('designSystem.themes.clair') }}</option>
+          <option value="sombre">☾ {{ t('designSystem.themes.sombre') }}</option>
         </select>
       </label>
       <a v-if="etat === 'non_connecte'" :href="adresseConnexionGithub($route.fullPath)" class="bouton">

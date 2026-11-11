@@ -131,5 +131,43 @@
       "deja_acceptee": "Cette question a déjà une réponse acceptée.",
       "autre": "Ça n'a pas marché. Réessaie dans un instant."
     }
-  }
+  },
+  "designSystem": {
+    "titre": "Design system",
+    "intro": "La charte de Jamii, telle que l'appli l'utilise. Chaque couleur vient de docs/design/tokens.json, et les contrastes sont calculés en direct.",
+    "theme": "Thème",
+    "themes": {
+      "systeme": "Comme l'appareil",
+      "clair": "Clair",
+      "sombre": "Sombre"
+    },
+    "marque": "Charte",
+    "marques": {
+      "jamii": "Jamii",
+      "partenaire": "Exemple de charte partenaire"
+    },
+    "marqueAide": "Une marque ne change que la couleur d'action. L'orange de la preuve reste le même partout.",
+    "composants": "Composants",
+    "contrastes": "Contrastes",
+    "contrastesAide": "Mesurés sur le thème et la charte affichés. Seuils WCAG 2.1 AA : 4,5:1 pour le texte, 3:1 pour les bords et le focus.",
+    "paire": "Texte / fond",
+    "rapport": "Rapport",
+    "seuil": "Seuil",
+    "couleurs": "Couleurs",
+    "typographie": "Typographie",
+    "exemples": {
+      "principal": "Publier",
+      "secondaire": "Modifier",
+      "discret": "Annuler",
+      "occupe": "Envoi…",
+      "preuve": "En ligne sur Systalink",
+      "celebrer": "Revoir l'animation",
+      "champ": "Adresse du projet",
+      "aide": "Commence par https://",
+      "erreur": "Cette adresse ne répond pas.",
+      "ia": "Proposé par l'IA",
+      "iaTexte": "En pointillé tant qu'un humain ne l'a pas accepté : ce n'est pas encore une preuve."
+    }
+  },
+  "theme": "Thème"
 }
