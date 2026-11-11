@@ -37,6 +37,11 @@ Trop de branches, c'est des conflits en cascade et des revues qui traînent. Don
 - **Une PR vit moins d'un jour.** Si elle grossit, on fusionne ce qui est prêt et on continue ensuite.
 - Après la fusion, la branche est supprimée automatiquement. Fais `git switch main && git pull && git fetch --prune` avant de recommencer.
 
+## Le fil de l'équipe et les demandes
+
+- **Le fil [#54](https://github.com/algabah2004/jamii/issues/54)** : chacun (ou son agent IA) y écrit un point court en fin de session, et le lit en début de session. C'est là qu'on voit où en sont les autres.
+- **Une demande à un autre membre** est un ticket avec l'étiquette `demande`, attribué à la personne. Elle passe avant son propre travail. On la ferme quand c'est fait.
+
 ## Les étiquettes
 
 | Type | Domaine | Priorité |
