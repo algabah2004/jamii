@@ -196,7 +196,33 @@ class ProfilsTest {
 		assertThat(jdbc.queryForObject("SELECT count(*) FROM profil WHERE utilisateur_id = ?", Integer.class, id)).isZero();
 	}
 
-	// ---------- Tableau de bord Systalink ----------
+	// ---------- Recherche de coéquipiers ----------
+
+	@Test
+	void cherche_par_competences_pays_et_disponibilite_parmi_les_profils_publies() {
+		String marque = "test-" + UUID.randomUUID().toString().substring(0, 8);
+		UUID dakar = profilPublie("Dakar", "SN", "disponible", marque, "kotlin");
+		UUID nairobi = profilPublie("Nairobi", "KE", "occupe", marque, "kotlin");
+		UUID lagos = profilPublie("Lagos", "NG", "disponible", marque);
+		UUID prive = creerCompte("Privé", "prive-" + marque);
+		var vuPrive = connecte(prive);
+		profilGenere(vuPrive);
+		patch(vuPrive, "{\"competencesDeclarees\":[\"%s\"],\"version\":%d}".formatted(marque, version(vuPrive)));
+
+		var moi = connecte(dakar);
+		assertThat(chercher(moi, "competence=" + marque)).as("ni moi, ni le profil privé")
+			.containsExactly(lagos.toString(), nairobi.toString());
+
+		var autre = compte("recruteur-" + marque);
+		assertThat(chercher(autre, "competence=" + marque)).as("disponibles d'abord, puis les plus récents")
+			.containsExactly(lagos.toString(), dakar.toString(), nairobi.toString())
+			.doesNotContain(prive.toString());
+		assertThat(chercher(autre, "competence=" + marque + "&competence=Kotlin")).as("toutes les compétences")
+			.containsExactly(dakar.toString(), nairobi.toString());
+		assertThat(chercher(autre, "competence=" + marque + "&pays=KE&pays=NG"))
+			.containsExactly(lagos.toString(), nairobi.toString());
+		assertThat(chercher(autre, "competence=" + marque + "&disponibilite=occupe")).containsExactly(nairobi.toString());
+	}
 
 	@Test
 	void le_tableau_de_bord_compte_les_inscrits_par_pays_declare() {
@@ -214,6 +240,32 @@ class ProfilsTest {
 			.doesNotContainKey(null);
 	}
 
+	@Test
+	void la_recherche_se_parcourt_page_par_page() {
+		String marque = "page-" + UUID.randomUUID().toString().substring(0, 8);
+		for (int i = 0; i < 3; i++) {
+			profilPublie("Dev " + i, "CI", "disponible", marque);
+		}
+		var moi = compte("lecteur-" + marque);
+		String page1 = contenu(mvc.get().uri("/api/profils?limite=2&competence=" + marque).with(moi).exchange());
+		String curseur = JsonPath.read(page1, "$.curseurSuivant");
+		assertThat(JsonPath.<java.util.List<?>>read(page1, "$.elements")).hasSize(2);
+
+		MvcTestResult page2 = mvc.get().uri("/api/profils?limite=2&competence=" + marque + "&curseur=" + curseur).with(moi)
+			.exchange();
+		assertThat(page2).bodyJson().extractingPath("$.elements").asArray().hasSize(1);
+		assertThat(page2).bodyJson().extractingPath("$.curseurSuivant").isNull();
+	}
+
+	@Test
+	void recherche_refuse_les_filtres_invalides() {
+		MvcTestResult reponse = mvc.get().uri("/api/profils?pays=ZZ&disponibilite=bof&limite=500")
+			.with(compte("filtres")).exchange();
+		assertThat(reponse).hasStatus(HttpStatus.BAD_REQUEST);
+		assertThat(mvc.get().uri("/api/profils?curseur=n-importe-quoi").with(compte("curseur")))
+			.hasStatus(HttpStatus.BAD_REQUEST);
+	}
+
 	// ---------- Outils ----------
 
 	private UUID profilPublie(String nom, String pays, String disponibilite, String... competences) {
@@ -225,6 +277,12 @@ class ProfilsTest {
 			.formatted(pays, disponibilite, liste, version(p)))).hasStatusOk();
 		mvc.post().uri("/api/me/profil/publier").with(p).with(csrf()).exchange();
 		return id;
+	}
+
+	private java.util.List<String> chercher(RequestPostProcessor qui, String filtres) {
+		MvcTestResult reponse = mvc.get().uri("/api/profils?" + filtres).with(qui).exchange();
+		assertThat(reponse).hasStatusOk();
+		return JsonPath.read(contenu(reponse), "$.elements[*].utilisateurId");
 	}
 
 	private RequestPostProcessor profilGenere(String login) {

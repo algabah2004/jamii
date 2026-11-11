@@ -78,4 +78,11 @@ final class Vues {
 
 	}
 
+	record ProfilResume(UUID utilisateurId, String nom, String avatarUrl, String pays, String ville,
+			String disponibilite, Integer heuresParSemaine, List<String> competences, int projetsEnLigne) {
+	}
+
+	record Page<T>(List<T> elements, String curseurSuivant) {
+	}
+
 }
