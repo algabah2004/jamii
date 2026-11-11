@@ -8,12 +8,29 @@
 Avant toute chose :
 1. **Identifie le développeur** : `gh api user -q .login`, à défaut l'e-mail ou le nom de `git config user.name`. Si tu n'es pas sûr, **demande-lui son pseudo GitHub**.
 2. **Trouve son bloc** dans `docs/blocs/README.md`, puis lis **son plan** (`docs/blocs/<bloc>.md`). Si `gh` est disponible, lis aussi les derniers commentaires de son ticket de suivi (`gh issue view <n> --comments`).
-3. **Commence par lui résumer, en 5 lignes maximum** :
+3. **Lis le fil de l'équipe et les demandes qui lui sont adressées** (ticket [#54](https://github.com/algabah2004/jamii/issues/54)) :
+   ```bash
+   gh issue view 54 --comments                    # où en sont les autres blocs
+   gh issue list --label demande --assignee @me   # ce que les autres attendent de lui
+   ```
+   Une demande ouverte **passe avant son propre travail** : quelqu'un est bloqué en l'attendant. Signale-la dès ton résumé.
+4. **Commence par lui résumer, en 5 lignes maximum** :
    - son bloc et son but ;
    - où il en est (cases cochées, branches et PR ouvertes : `gh pr list --author @me`) ;
    - **la prochaine étape concrète** que tu proposes ;
    - un éventuel blocage ou une dépendance envers un autre bloc.
-4. Si c'est le **chef de projet** (`algabah2004`) : résume plutôt l'état de **tous** les blocs (tickets #17 à #20, PR ouvertes, étiquettes `bloqué`) et ce qui attend sa revue.
+5. Si c'est le **chef de projet** (`algabah2004`) : résume plutôt l'état de **tous** les blocs (fil #54, tickets #17 à #20, PR ouvertes, étiquettes `demande` et `bloqué`) et ce qui attend sa revue.
+
+### À la fin de chaque session : préviens les autres
+
+- **Écris un point dans le fil #54** (`gh issue comment 54 --body "…"`), au format donné dans le ticket : fait, ensuite, bloqué par, ce qui change pour les autres. Un seul commentaire court, et aucun s'il n'y a rien de nouveau. Montre-le à ton développeur avant de l'envoyer.
+- **Tu as besoin de quelque chose d'un autre bloc ?** Ne touche pas à son territoire et ne laisse pas un commentaire perdu dans son ticket : ouvre **une demande**, attribuée à la bonne personne.
+  ```bash
+  gh issue create --label demande --assignee <pseudo> \
+    --title "Demande à @<pseudo> : <ce qu'il faut, en une ligne>" \
+    --body "Pourquoi, ce qui est attendu précisément, pour quand, et ce que ça bloque."
+  ```
+- **Une demande traitée se ferme**, avec le numéro de la PR qui y répond. Sans réponse sous 12 heures, ajoute l'étiquette `bloqué` : le chef de projet tranche.
 
 Le plan est un **point de départ** : si ton développeur veut le changer, aide-le à réécrire son fichier `docs/blocs/<bloc>.md` dans une PR. Ne change jamais le but ni le critère « terminé quand » sans l'accord du chef de projet.
 
