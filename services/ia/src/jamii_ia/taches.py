@@ -7,6 +7,9 @@ from uuid import UUID, uuid4
 
 import asyncpg
 
+# Identifiant arbitraire du verrou PostgreSQL qui sérialise les dépôts (limite exacte).
+_VERROU_LIMITE = 7420_2611_10
+
 
 class CleReutiliseeError(Exception):
     """La clé d'idempotence a déjà servi pour une entrée différente."""
@@ -32,8 +35,13 @@ class DepotTaches:
     ) -> tuple[dict[str, Any], bool]:
         """Renvoie (tâche, créée). `créée` est faux si la clé avait déjà servi pour cette entrée."""
         marque = empreinte(type_tache, entree)
-        async with self._pool.acquire() as connexion:
+        async with self._pool.acquire() as connexion, connexion.transaction():
             existante = await self._par_cle(connexion, cle)
+            if existante is None:
+                # Verrou le temps de la transaction : le comptage et l'insertion ne peuvent pas
+                # être entrelacés par un autre dépôt, donc la limite reste exacte.
+                await connexion.execute("SELECT pg_advisory_xact_lock($1)", _VERROU_LIMITE)
+                existante = await self._par_cle(connexion, cle)
             if existante is None:
                 await self._verifier_limite(connexion)
                 creee = await connexion.fetchrow(
@@ -72,8 +80,7 @@ class DepotTaches:
         return await connexion.fetchrow("SELECT * FROM ia.taches WHERE cle_idempotence = $1", cle)
 
     async def _verifier_limite(self, connexion: asyncpg.Connection) -> None:
-        # Compte approximatif sous forte concurrence : suffisant pour un dernier rempart,
-        # la limite précise par utilisateur est faite par l'API.
+        # Appelé sous le verrou de `deposer`. La limite par utilisateur reste faite par l'API.
         nombre = await connexion.fetchval(
             "SELECT count(*) FROM ia.taches WHERE cree_le > now() - interval '1 hour'"
         )
