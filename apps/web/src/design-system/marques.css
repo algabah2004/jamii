@@ -1,0 +1,26 @@
+/*
+ * Chartes de marque (« brandable », docs/integration-systalink.md) : une marque ne change QUE l'action.
+ * L'orange de la preuve reste le même partout, pour rester digne de confiance.
+ * Choix par la configuration (VITE_MARQUE) ou, pour la démonstration, sur la page /design-system.
+ * « partenaire » est un exemple : la charte officielle de Systalink reste à recevoir.
+ */
+:root[data-marque='partenaire'] {
+  --action: #7BC86C;      /* texte midnight dessus : 9,9:1 (calculé) */
+  --action-ink: #2F7A22;  /* sur blanc 5,3:1, sur bg 5,0:1 (calculé) */
+  --action-soft: #E4F4E0;
+  --focus: #2F7A22;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-marque='partenaire']:not([data-theme='clair']) {
+    --action-ink: #7BC86C;
+    --action-soft: #16301A;
+    --focus: #7BC86C;
+  }
+}
+
+:root[data-marque='partenaire'][data-theme='sombre'] {
+  --action-ink: #7BC86C;
+  --action-soft: #16301A;
+  --focus: #7BC86C;
+}

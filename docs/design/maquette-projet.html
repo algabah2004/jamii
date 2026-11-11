@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maquette projet d'équipe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@600;700&family=Noto+Sans:wght@400;600&display=swap">
+<style>
+/* ===== Tokens Jamii (source : tokens.json v2), les mêmes que identite-visuelle.html ===== */
+:root{
+  --midnight:#02070A;--bg:#F4F8FA;--surface:#FFFFFF;--surface-raised:#EAF1F5;--line:#D3DEE5;--line-strong:#74868F;
+  --ink:#02070A;--ink-muted:#4B5D69;--action:#0297DE;--on-action:#02070A;--action-ink:#0270A6;--action-soft:#DDF0FA;
+  --proof:#FC734D;--on-proof:#02070A;--proof-ink:#B4431F;--proof-soft:#FFE6DD;--focus:#0270A6;--danger:#C0264B;
+  --font-display:"Familjen Grotesk","Noto Sans",system-ui,sans-serif;--font-text:"Noto Sans",system-ui,sans-serif;
+  --radius-sm:6px;--radius-md:12px;--radius-pill:999px;
+  --motion-fast:120ms;--motion-base:220ms;--motion-celebrate:700ms;
+  --ease-out:cubic-bezier(.2,.8,.2,1);--ease-pop:cubic-bezier(.34,1.56,.64,1);color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#02070A;--surface:#0B141A;--surface-raised:#121E26;--line:#1F2E38;--line-strong:#5A7080;--ink:#EEF4F7;--ink-muted:#9DB0BC;
+  --action-ink:#0297DE;--action-soft:#0B2A3B;--proof-ink:#FC734D;--proof-soft:#3A1D14;--focus:#0297DE;--danger:#FF6B8A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#02070A;--surface:#0B141A;--surface-raised:#121E26;--line:#1F2E38;--line-strong:#5A7080;--ink:#EEF4F7;--ink-muted:#9DB0BC;
+  --action-ink:#0297DE;--action-soft:#0B2A3B;--proof-ink:#FC734D;--proof-soft:#3A1D14;--focus:#0297DE;--danger:#FF6B8A;color-scheme:dark}
+@media (prefers-reduced-motion:reduce){:root{--motion-fast:0ms;--motion-base:0ms;--motion-celebrate:0ms}}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-text);font-size:16px;line-height:1.55;padding-inline:16px}
+main{max-width:1080px;margin:0 auto;padding-block:40px 80px;display:flex;flex-direction:column;gap:48px}
+h1,h2,h3{font-family:var(--font-display);text-wrap:balance;line-height:1.15;margin:0}
+h1{font-size:clamp(1.8rem,4.5vw,2.6rem);letter-spacing:-.02em}
+h2{font-size:1.5rem}
+h3{font-size:1.1rem}
+p{margin:0;max-width:68ch}
+a{color:var(--action-ink)}
+.muted{color:var(--ink-muted)}
+.small{font-size:.875rem;line-height:1.45}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+button,input,textarea{font:inherit;color:inherit}
+
+/* Composants : les mêmes règles que src/design-system */
+.btn{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:8px 16px;border-radius:var(--radius-md);border:1px solid transparent;font-weight:600;font-size:.875rem;cursor:pointer;transition:background-color var(--motion-fast) var(--ease-out),transform var(--motion-fast) var(--ease-out);text-decoration:none}
+.btn:active{transform:translateY(1px)}
+.btn-p{background:var(--action);color:var(--on-action)}
+.btn-s{background:var(--surface);color:var(--ink);border-color:var(--line-strong)}
+.btn-d{background:transparent;color:var(--action-ink);padding-inline:8px}
+.btn[disabled]{opacity:.55;cursor:not-allowed}
+.carte{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-md);padding:24px;display:flex;flex-direction:column;gap:16px}
+.etiquette{display:inline-flex;padding:2px 12px;border-radius:var(--radius-pill);background:var(--surface-raised);font-size:.875rem}
+.preuve{display:inline-flex;align-items:center;gap:6px;padding:2px 12px;border-radius:var(--radius-pill);background:var(--proof);color:var(--on-proof);font-weight:600;font-size:.875rem}
+.preuve.pop{animation:pop var(--motion-celebrate) var(--ease-pop) 1}
+@keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+.ia{background:var(--action-soft);border:1px dashed var(--line-strong);border-radius:var(--radius-md);padding:16px}
+.alerte{border-inline-start:4px solid var(--danger);background:var(--surface);border-radius:var(--radius-sm);padding:12px 16px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.rang{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.champ{display:grid;gap:4px}
+.champ label{font-weight:600;font-size:.875rem}
+.champ input,.champ textarea{min-height:44px;padding:8px 12px;background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--radius-sm)}
+
+/* Barre de la maquette (hors produit) */
+.outils{position:sticky;top:0;z-index:2;background:var(--bg);border-bottom:1px solid var(--line);padding-block:12px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.segment{display:inline-flex;border:1px solid var(--line-strong);border-radius:var(--radius-pill);overflow:hidden}
+.segment button{border:0;background:transparent;padding:6px 14px;min-height:36px;cursor:pointer}
+.segment button[aria-pressed="true"]{background:var(--action);color:var(--on-action);font-weight:600}
+
+/* Écran projet */
+.entete{display:grid;gap:12px}
+.fil{display:flex;flex-wrap:wrap;gap:8px;font-size:.875rem}
+.statut{font-weight:600}
+.statut::before{content:"";display:inline-block;width:.6em;height:.6em;border-radius:50%;background:var(--action);margin-inline-end:6px}
+.grille{display:grid;gap:24px;grid-template-columns:minmax(0,2fr) minmax(0,1fr)}
+@media (max-width:820px){.grille{grid-template-columns:1fr}}
+.colonne{display:flex;flex-direction:column;gap:24px;min-width:0}
+.role{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding-block:12px;border-top:1px solid var(--line)}
+.role:first-of-type{border-top:0;padding-top:0}
+.equipe{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.equipe li{display:flex;gap:12px;align-items:center}
+.avatar{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-weight:700;background:var(--surface-raised);flex:none}
+.taches{display:grid;gap:12px;grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:640px){.taches{grid-template-columns:1fr}}
+.col h3{font-size:.95rem;margin-bottom:8px}
+.col ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.tache{background:var(--surface-raised);border-radius:var(--radius-sm);padding:10px 12px;display:grid;gap:4px;font-size:.925rem}
+.tache .meta{font-size:.8rem;color:var(--ink-muted)}
+.jalons{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.jalons li{display:flex;gap:10px;align-items:baseline}
+.jalons .ok{color:var(--proof-ink);font-weight:700}
+.etape{display:grid;gap:12px}
+.datacloud{border:2px solid var(--action);border-radius:var(--radius-md);padding:16px;display:grid;gap:8px}
+.reco{font-size:.8rem;font-weight:600;color:var(--action-ink);text-transform:uppercase;letter-spacing:.04em}
+.succes{display:grid;gap:8px;justify-items:start}
+.cache{display:none !important}
+.vide{border:1px dashed var(--line-strong);border-radius:var(--radius-md);padding:16px;color:var(--ink-muted)}
+.avis{display:grid;gap:12px}
+.choix{display:flex;gap:8px;flex-wrap:wrap}
+.choix label{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line-strong);border-radius:var(--radius-pill);padding:6px 14px;cursor:pointer}
+table{width:100%;border-collapse:collapse;font-size:.925rem}
+th,td{text-align:start;vertical-align:top;padding:10px 12px;border-bottom:1px solid var(--line)}
+.notes{display:grid;gap:16px}
+.notes ul{margin:0;padding-inline-start:1.2em;display:grid;gap:6px}
+</style>
+</head>
+<body>
+<main>
+  <header class="entete">
+    <p class="muted small">Maquette · Bloc #19 · Contrats suivis : <code>contracts/projets.yaml</code> et <code>contracts/deploiement.yaml</code></p>
+    <h1>Le projet d'équipe</h1>
+    <p class="muted">L'écran où une équipe naît d'une demande de PME, se répartit le travail et met le projet en ligne. Chaque bouton n'apparaît qu'à qui peut s'en servir (champ <code>moi</code> du contrat), et le serveur vérifie de toute façon.</p>
+  </header>
+
+  <div class="outils" role="group" aria-label="Réglages de la maquette">
+    <div class="segment" role="group" aria-label="Vu par">
+      <button type="button" data-vue="visiteur" aria-pressed="false">Un visiteur</button>
+      <button type="button" data-vue="membre" aria-pressed="true">Un membre</button>
+      <button type="button" data-vue="porteur" aria-pressed="false">La porteuse</button>
+    </div>
+    <button type="button" class="btn btn-s" id="theme">Thème sombre</button>
+  </div>
+
+  <!-- ================= L'ÉCRAN ================= -->
+  <article class="colonne" aria-label="Écran du projet">
+    <div class="entete">
+      <p class="fil"><a href="#">← Projets</a><span class="muted">·</span><span class="muted">Né d'une demande de PME : <a href="#">« Vendre mes tenues en ligne », Atelier Ndèye, Thiès</a></span></p>
+      <h2 style="font-size:2rem">Boutique en ligne pour une couturière de Thiès</h2>
+      <p class="rang"><span class="statut">En cours</span><span class="muted">· porté par Awa Diop · 3 membres, 2 pays · dernière activité il y a 2 heures</span></p>
+      <p>Catalogue des tenues, commandes par WhatsApp et paiement à la livraison ou par Mobile Money. Pour une PME de 3 personnes, sur un téléphone d'entrée de gamme et un réseau qui coupe.</p>
+    </div>
+
+    <div class="alerte vue-membre vue-porteur" role="status">
+      <span><strong>Une échéance est dépassée :</strong> « Paiement Mobile Money » devait être livré hier.</span>
+      <span class="rang"><button type="button" class="btn btn-s">Changer la date</button><button type="button" class="btn btn-d">Demander de l'aide à la communauté</button></span>
+    </div>
+
+    <div class="grille">
+      <div class="colonne">
+        <!-- Rôles recherchés -->
+        <section class="carte" aria-labelledby="t-roles">
+          <h3 id="t-roles">Rôles recherchés</h3>
+          <div class="role">
+            <div>
+              <strong>Designer UX</strong>
+              <p class="rang small"><span class="etiquette">ux-design</span><span class="etiquette">figma</span></p>
+            </div>
+            <span class="vue-visiteur"><button type="button" class="btn btn-p" id="candidater">Candidater</button></span>
+            <span class="vue-membre muted small">Ouvert</span>
+            <span class="vue-porteur"><button type="button" class="btn btn-s">Modifier le rôle</button></span>
+          </div>
+          <div class="role">
+            <div><strong>Développeur back-end</strong><p class="rang small"><span class="etiquette">node.js</span><span class="etiquette">postgresql</span></p></div>
+            <span class="muted small">Pourvu par Koffi Yao</span>
+          </div>
+          <form class="carte cache" id="form-candidature" style="padding:16px">
+            <div class="champ"><label for="motivation">Pourquoi toi, pour ce rôle ?</label>
+              <textarea id="motivation" rows="3" maxlength="1000">J'ai conçu l'appli de commandes d'un marché à Abidjan, testée avec 12 vendeuses.</textarea></div>
+            <p class="muted small">La porteuse voit ton profil publié et ce message. Elle accepte ou refuse, et tu es prévenu dans les deux cas.</p>
+            <p class="rang"><button type="submit" class="btn btn-p">Envoyer ma candidature</button><button type="button" class="btn btn-d" id="annuler-candidature">Annuler</button></p>
+          </form>
+          <p class="muted small cache" id="candidature-envoyee" role="status">✅ Candidature envoyée. Tu la retrouves dans « Mes candidatures ».</p>
+        </section>
+
+        <!-- Candidatures reçues (porteur) -->
+        <section class="carte vue-porteur" aria-labelledby="t-cand">
+          <h3 id="t-cand">Candidatures reçues · 1</h3>
+          <div class="role">
+            <div><strong>Aya Kouassi</strong> <span class="muted small">pour Designer UX · Côte d'Ivoire</span>
+              <p class="small">« J'ai conçu l'appli de commandes d'un marché à Abidjan, testée avec 12 vendeuses. »</p>
+              <p class="small"><a href="#">Voir son profil</a> · 11 sur 12 tâches livrées à la date prévue</p></div>
+            <span class="rang"><button type="button" class="btn btn-p">Accepter</button><button type="button" class="btn btn-s">Refuser</button></span>
+          </div>
+        </section>
+
+        <!-- Tâches -->
+        <section class="carte vue-membre vue-porteur" aria-labelledby="t-taches">
+          <div class="rang" style="justify-content:space-between"><h3 id="t-taches">Tâches</h3><button type="button" class="btn btn-s">Ajouter une tâche</button></div>
+          <div class="taches">
+            <div class="col"><h3>À faire</h3><ul>
+              <li class="tache"><span>Page « Mes commandes » hors ligne</span><span class="meta">Personne · pour le 18 nov.</span><button type="button" class="btn btn-d" style="justify-self:start;min-height:32px">Je la prends</button></li>
+            </ul></div>
+            <div class="col"><h3>En cours</h3><ul>
+              <li class="tache"><span>Paiement Mobile Money</span><span class="meta" style="color:var(--danger)">Koffi · pour le 11 nov. (dépassée)</span></li>
+              <li class="tache" id="tache-awa"><span>Catalogue avec photos légères</span><span class="meta">Awa · pour le 14 nov.</span><button type="button" class="btn btn-d" style="justify-self:start;min-height:32px" id="livrer">Marquer livrée</button></li>
+            </ul></div>
+            <div class="col"><h3>Livrées</h3><ul id="livrees">
+              <li class="tache"><span>Maquettes validées par l'atelier</span><span class="meta"><span class="preuve" style="font-size:.75rem">✓ Livrée à temps</span></span></li>
+            </ul></div>
+          </div>
+          <p class="muted small">« Livrée à temps » compte dans l'indice de fiabilité de la personne : c'est une preuve, pas une note. Elle se conteste depuis le profil.</p>
+        </section>
+
+        <!-- Mise en ligne -->
+        <section class="carte vue-membre vue-porteur" aria-labelledby="t-ligne">
+          <h3 id="t-ligne">Mettre en ligne</h3>
+          <div class="etape" id="etape-choix">
+            <div class="datacloud">
+              <span class="reco">Recommandé</span>
+              <strong>Héberger sur DataCloud de Systalink</strong>
+              <p class="small">Un hébergement à Dakar, au plus près de tes utilisateurs. Tu crées le service chez Systalink, puis tu colles ici l'adresse obtenue.</p>
+              <p class="rang"><a class="btn btn-p" href="#" id="ouvrir-datacloud">Ouvrir DataCloud</a></p>
+            </div>
+            <div class="champ"><label for="adresse">Ou : l'adresse publique de ton projet</label>
+              <input id="adresse" type="url" value="https://atelier-ndeye.exemple.sn" inputmode="url"></div>
+            <p class="rang"><button type="button" class="btn btn-s" id="verifier">Vérifier l'adresse</button></p>
+            <p class="muted small">Jamii appelle l'adresse depuis ses serveurs (jamais une adresse interne) et l'affiche seulement si elle répond. Elle est revérifiée chaque jour : sans réponse depuis 24 heures, le projet sort de la vitrine.</p>
+          </div>
+          <p class="cache" id="etape-verif" role="status">Vérification de l'adresse…</p>
+          <div class="succes cache" id="etape-ok" role="status">
+            <span class="preuve pop" id="badge-ligne">✓ Hébergé sur Systalink</span>
+            <strong>✅ Ton projet est en ligne : <a href="#">atelier-ndeye.exemple.sn</a></strong>
+            <p class="small muted">Il apparaît maintenant dans la vitrine et sur le profil de chaque membre de l'équipe, avec le lien vérifié.</p>
+            <p class="small muted">Le badge Systalink n'apparaît que si l'adresse est sur un domaine DataCloud (liste fixée par la configuration, <code>DATACLOUD_DOMAINES</code>). Adresse d'exemple.</p>
+          </div>
+        </section>
+
+        <!-- Avis entre coéquipiers -->
+        <section class="carte vue-membre vue-porteur" aria-labelledby="t-avis">
+          <h3 id="t-avis">Ton avis sur tes coéquipiers</h3>
+          <form class="avis" id="form-avis">
+            <p class="small">Referais-tu équipe avec <strong>Koffi Yao</strong> ? Pas de note : un oui ou un non, et pourquoi.</p>
+            <div class="choix" role="radiogroup" aria-label="Referais-tu équipe ?">
+              <label><input type="radio" name="sens" value="positif" checked> Oui</label>
+              <label><input type="radio" name="sens" value="negatif"> Non</label>
+            </div>
+            <div class="champ"><label for="pourquoi">Pourquoi ?</label><textarea id="pourquoi" rows="2">Il a repris le paiement quand le réseau coupait, sans qu'on le lui demande.</textarea></div>
+            <p class="muted small">Koffi voit ton avis sur son profil, avec ton nom. Un avis se donne une fois par projet.</p>
+            <p><button type="submit" class="btn btn-s">Donner mon avis</button></p>
+          </form>
+          <p class="cache" id="avis-ok" role="status">✅ Merci. Ton avis apparaît sur le profil de Koffi.</p>
+        </section>
+      </div>
+
+      <div class="colonne">
+        <section class="carte" aria-labelledby="t-equipe">
+          <h3 id="t-equipe">L'équipe</h3>
+          <ul class="equipe">
+            <li><span class="avatar">AD</span><span><strong>Awa Diop</strong><br><span class="small muted">Porteuse · mobile Flutter · Sénégal</span></span></li>
+            <li><span class="avatar">KY</span><span><strong>Koffi Yao</strong><br><span class="small muted">Développeur back-end · Côte d'Ivoire</span></span></li>
+            <li><span class="avatar">FN</span><span><strong>Fatou Ndiaye</strong><br><span class="small muted">Tests avec l'atelier · Sénégal</span></span></li>
+          </ul>
+          <p class="vue-membre vue-porteur"><button type="button" class="btn btn-d">Quitter l'équipe</button></p>
+          <p class="vue-porteur"><button type="button" class="btn btn-d">Transmettre le projet</button></p>
+        </section>
+
+        <section class="carte vue-membre vue-porteur" aria-labelledby="t-jalons">
+          <h3 id="t-jalons">Jalons</h3>
+          <ul class="jalons">
+            <li><span class="ok">✓</span><span>Maquettes validées par l'atelier <span class="small muted">· 8 nov.</span></span></li>
+            <li><span class="muted">○</span><span>Première commande réelle <span class="small muted">· 15 nov.</span></span></li>
+            <li><span class="muted">○</span><span>Projet en ligne pour la démo <span class="small muted">· 15 nov.</span></span></li>
+          </ul>
+        </section>
+
+        <section class="carte vue-membre vue-porteur" aria-labelledby="t-ia">
+          <h3 id="t-ia">Plan proposé</h3>
+          <div class="ia">
+            <p class="small"><strong>✨ Proposé par l'IA</strong> à partir de la demande de l'atelier. L'équipe l'a repris en tâches et jalons, et peut tout changer.</p>
+          </div>
+        </section>
+
+        <div class="vide vue-visiteur small">Les tâches, les jalons et la mise en ligne ne sont visibles que par l'équipe. Rejoins un rôle pour y participer.</div>
+      </div>
+    </div>
+  </article>
+
+  <!-- ================= LES CHOIX ================= -->
+  <section class="notes" aria-labelledby="t-choix">
+    <h2 id="t-choix">Ce que la maquette décide</h2>
+    <table>
+      <thead><tr><th>Choix</th><th>Pourquoi</th><th>Écarté</th></tr></thead>
+      <tbody>
+        <tr><td>Les boutons dépendent de <code>moi.estMembre</code> et <code>moi.estPorteur</code></td><td>Personne ne voit une action qu'il ne peut pas faire. Le serveur revérifie chaque droit.</td><td>Tout montrer puis répondre 403</td></tr>
+        <tr><td>DataCloud recommandé en premier, une autre adresse acceptée</td><td>Systalink est mis en avant au bon moment, sans être imposé (AGENTS.md §3)</td><td>DataCloud obligatoire ; DataCloud caché dans une liste</td></tr>
+        <tr><td>« En ligne » seulement après une vérification réussie, revérifiée chaque jour</td><td>Une preuve se mérite : un lien déclaré ne prouve rien (contrat de déploiement)</td><td>Badge dès la déclaration</td></tr>
+        <tr><td>Avis : oui ou non, avec une raison signée</td><td>Pas de note globale. Un avis signé s'assume et se conteste</td><td>Étoiles sur 5, avis anonymes</td></tr>
+        <tr><td>Alerte de continuité en haut, avec deux sorties</td><td>Le projet ne meurt pas en silence après le hackathon</td><td>Courriel de relance seulement</td></tr>
+        <tr><td>Le plan de l'IA en pointillé, signé « Proposé par l'IA »</td><td>L'IA propose, l'équipe décide</td><td>Plan présenté comme celui de l'équipe</td></tr>
+      </tbody>
+    </table>
+    <h3>Pistes d'amélioration</h3>
+    <ul>
+      <li>🔴 Risque : l'accès réel à DataCloud dépend de l'achat du produit (bloc #20). Sans lui, la démo passe par une autre adresse.</li>
+      <li>🟡 À tester avec un commerçant : comprend-il « Jalon » ? Sinon, « Étape ».</li>
+      <li>💡 « Demander de l'aide à la communauté » pourrait préremplir une question avec la tâche en retard (proposition 0003).</li>
+      <li>❓ Les membres voient-ils toutes les candidatures, ou seulement la porteuse ? Le contrat dit « porteur uniquement ».</li>
+    </ul>
+  </section>
+</main>
+
+<script>
+const racine = document.documentElement
+const vues = ['visiteur', 'membre', 'porteur']
+function montrer(vue) {
+  document.querySelectorAll('[data-vue]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.vue === vue)))
+  for (const v of vues) {
+    document.querySelectorAll('.vue-' + v).forEach((el) => {
+      const pour = vues.filter((x) => el.classList.contains('vue-' + x))
+      el.classList.toggle('cache', !pour.includes(vue))
+    })
+  }
+}
+document.querySelectorAll('[data-vue]').forEach((b) => b.addEventListener('click', () => montrer(b.dataset.vue)))
+montrer('membre')
+
+const bouton = document.getElementById('theme')
+function sombre() { return racine.dataset.theme ? racine.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches }
+function libelle() { bouton.textContent = sombre() ? 'Thème clair' : 'Thème sombre' }
+bouton.addEventListener('click', () => { racine.dataset.theme = sombre() ? 'light' : 'dark'; libelle() })
+libelle()
+
+const form = document.getElementById('form-candidature')
+document.getElementById('candidater').addEventListener('click', () => { form.classList.remove('cache'); document.getElementById('motivation').focus() })
+document.getElementById('annuler-candidature').addEventListener('click', () => form.classList.add('cache'))
+form.addEventListener('submit', (e) => { e.preventDefault(); form.classList.add('cache'); document.getElementById('candidater').disabled = true; document.getElementById('candidature-envoyee').classList.remove('cache') })
+
+document.getElementById('livrer').addEventListener('click', () => {
+  const t = document.getElementById('tache-awa')
+  t.querySelector('button').remove()
+  t.querySelector('.meta').innerHTML = '<span class="preuve pop" style="font-size:.75rem">✓ Livrée à temps</span>'
+  document.getElementById('livrees').prepend(t)
+})
+
+document.getElementById('ouvrir-datacloud').addEventListener('click', (e) => e.preventDefault())
+document.getElementById('verifier').addEventListener('click', () => {
+  document.getElementById('etape-choix').classList.add('cache')
+  document.getElementById('etape-verif').classList.remove('cache')
+  setTimeout(() => {
+    document.getElementById('etape-verif').classList.add('cache')
+    document.getElementById('etape-ok').classList.remove('cache')
+  }, 1200)
+})
+
+document.getElementById('form-avis').addEventListener('submit', (e) => { e.preventDefault(); e.target.classList.add('cache'); document.getElementById('avis-ok').classList.remove('cache') })
+</script>
+</body>
+</html>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { JBouton } from '../../design-system'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute } from 'vue-router'
@@ -110,7 +111,7 @@ async function repondre() {
     </div>
     <div v-else-if="etat === 'indisponible'" role="alert">
       <p>{{ t('etat.indisponible') }}</p>
-      <button type="button" @click="charger()">{{ t('etat.reessayer') }}</button>
+      <JBouton variante="secondaire" @click="charger()">{{ t('etat.reessayer') }}</JBouton>
     </div>
 
     <article v-else-if="publication">
@@ -141,12 +142,12 @@ async function repondre() {
           <p v-else class="discret">{{ r.auteur?.nom ?? t('communautes.compteSupprime') }} · {{ ilYa(r.creeLe, locale) }}</p>
           <p class="texte">{{ r.contenu }}</p>
           <p v-if="r.proposeeParIa && !r.acceptee && publication.moi.estAuteur" class="discret">{{ t('question.attendUnPair') }}</p>
-          <button v-if="peutValider(r)" type="button" class="principal" data-test="valider" @click="agir('valider', r.id)">
+          <JBouton v-if="peutValider(r)" class="principal" data-test="valider" @click="agir('valider', r.id)">
             {{ t('question.valider') }}
-          </button>
-          <button v-if="peutAccepter(r)" type="button" class="principal" data-test="accepter" @click="agir('accepter', r.id)">
+          </JBouton>
+          <JBouton v-if="peutAccepter(r)" class="principal" data-test="accepter" @click="agir('accepter', r.id)">
             {{ t('question.accepter') }}
-          </button>
+          </JBouton>
         </li>
       </ul>
 
@@ -155,9 +156,9 @@ async function repondre() {
           {{ t('question.taReponse') }}
           <textarea v-model="nouvelleReponse" rows="4" maxlength="10000" required />
         </label>
-        <button type="submit" class="principal" :disabled="nouvelleReponse.trim().length < 10 || envoi">
+        <JBouton type="submit" class="principal" :desactive="nouvelleReponse.trim().length < 10" :occupe="!!envoi">
           {{ t('question.repondre') }}
-        </button>
+        </JBouton>
       </form>
       <p v-else class="discret">{{ t('communautes.rejoindrePourPublier') }}</p>
     </article>
@@ -166,20 +167,17 @@ async function repondre() {
 
 <style scoped>
 .texte { white-space: pre-wrap; }
-.discret { color: #4a5a65; font-size: 0.875rem; }
-.message { background: #eaf1f5; border-radius: 0.375rem; padding: 0.5rem 0.75rem; }
-.attente { background: #eaf1f5; border-radius: 0.375rem; padding: 0.75rem; font-weight: 600; }
+.discret { color: var(--ink-muted); font-size: 0.875rem; }
+.message { background: var(--surface-raised); border-radius: 0.375rem; padding: 0.5rem 0.75rem; }
+.attente { background: var(--surface-raised); border-radius: 0.375rem; padding: 0.75rem; font-weight: 600; }
 .reponses { list-style: none; padding: 0; margin: 0 0 1.5rem; display: grid; gap: 0.75rem; }
-.reponses li { background: #fff; border: 1px solid #d3dee5; border-radius: 0.5rem; padding: 1rem; }
-.reponses li.ia { border-style: dashed; }
+.reponses li { background: var(--surface); border: 1px solid var(--line); border-radius: 0.5rem; padding: 1rem; }
+.reponses li.ia { border: 1px dashed var(--line-strong); background: var(--action-soft); } /* charte : proposition de l'IA, pas encore une preuve */
 /* Orange = la preuve (tokens.json) : la réponse acceptée. */
-.reponses li.acceptee { border: 2px solid #fc734d; border-style: solid; }
-.badge-acceptee { display: inline-block; background: #fc734d; color: #02070a; font-weight: 600; font-size: 0.875rem; padding: 0.125rem 0.5rem; border-radius: 999px; margin: 0 0 0.5rem; }
+.reponses li.acceptee { border: 2px solid var(--proof); border-style: solid; }
+.badge-acceptee { display: inline-block; background: var(--proof); color: var(--on-action); font-weight: 600; font-size: 0.875rem; padding: 0.125rem 0.5rem; border-radius: 999px; margin: 0 0 0.5rem; }
 .etiquette-ia { font-weight: 600; font-size: 0.875rem; margin: 0 0 0.5rem; }
-.principal { background: #0297de; color: #02070a; border: 0; border-radius: 0.375rem; padding: 0.5rem 1rem; font-weight: 600; cursor: pointer; }
-.principal:disabled { opacity: 0.5; cursor: not-allowed; }
 .formulaire { display: grid; gap: 0.75rem; }
 .formulaire label { display: grid; gap: 0.25rem; font-weight: 600; }
-.formulaire textarea { font: inherit; padding: 0.5rem; border: 1px solid #8a9aa5; border-radius: 0.375rem; }
 .formulaire .principal { justify-self: start; }
 </style>

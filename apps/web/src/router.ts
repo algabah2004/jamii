@@ -41,6 +41,12 @@ export const routes: RouteRecordRaw[] = [
     name: 'systalink',
     component: () => import('./features/systalink/TableauDeBordPage.vue'),
   },
+  {
+    // Public : la charte et ses composants, pour l'équipe et le jury (#19).
+    path: '/design-system',
+    name: 'design-system',
+    component: () => import('./design-system/DemonstrationPage.vue'),
+  },
   { path: '/:chemin(.*)*', name: 'introuvable', component: () => import('./pages/IntrouvablePage.vue') },
 ]
 

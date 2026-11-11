@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { JBouton } from '../../design-system'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
@@ -85,7 +86,7 @@ function filtrer(ouvertes: boolean) {
     </div>
     <div v-else-if="etat === 'indisponible'" role="alert">
       <p>{{ t('etat.indisponible') }}</p>
-      <button type="button" @click="charger">{{ t('etat.reessayer') }}</button>
+      <JBouton variante="secondaire" @click="charger">{{ t('etat.reessayer') }}</JBouton>
     </div>
 
     <template v-else-if="communaute">
@@ -99,9 +100,9 @@ function filtrer(ouvertes: boolean) {
           <p>{{ communaute.description }}</p>
           <p class="discret">{{ t('communautes.membres', { n: communaute.nombreMembres }, communaute.nombreMembres) }}</p>
         </div>
-        <button type="button" data-test="adhesion" :disabled="adhesionEnCours" @click="basculerAdhesion">
+        <JBouton :variante="communaute.membre ? 'secondaire' : 'principal'" data-test="adhesion" :occupe="adhesionEnCours" @click="basculerAdhesion">
           {{ communaute.membre ? t('communautes.quitter') : t('communautes.rejoindre') }}
-        </button>
+        </JBouton>
       </header>
 
       <form v-if="communaute.membre" class="formulaire" data-test="publier" @submit.prevent="publier">
@@ -123,7 +124,7 @@ function filtrer(ouvertes: boolean) {
         </label>
         <p class="discret">{{ t('communautes.aideIa') }}</p>
         <p v-if="envoi === 'erreur'" role="alert">{{ t('communautes.erreurPublier') }}</p>
-        <button type="submit" class="principal" :disabled="!valide || envoi === 'envoi'">{{ t('communautes.publier') }}</button>
+        <JBouton type="submit" class="principal" :desactive="!valide" :occupe="envoi === 'envoi'">{{ t('communautes.publier') }}</JBouton>
       </form>
       <p v-else class="discret">{{ t('communautes.rejoindrePourPublier') }}</p>
 
@@ -151,19 +152,17 @@ function filtrer(ouvertes: boolean) {
 <style scoped>
 .entete-communaute { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 1rem; }
 .entete-communaute h1 { margin: 0 0 0.25rem; }
-.formulaire { display: grid; gap: 0.75rem; background: #fff; border: 1px solid #d3dee5; border-radius: 0.5rem; padding: 1rem; margin: 1.5rem 0; }
+.formulaire { display: grid; gap: 0.75rem; background: var(--surface); border: 1px solid var(--line); border-radius: 0.5rem; padding: 1rem; margin: 1.5rem 0; }
 .formulaire h2 { margin: 0; font-size: 1.125rem; }
 .formulaire label { display: grid; gap: 0.25rem; font-weight: 600; }
-.formulaire input, .formulaire textarea, .formulaire select { font: inherit; padding: 0.5rem; border: 1px solid #8a9aa5; border-radius: 0.375rem; }
-.principal { justify-self: start; background: #0297de; color: #02070a; border: 0; border-radius: 0.375rem; padding: 0.5rem 1rem; font-weight: 600; cursor: pointer; }
-.principal:disabled { opacity: 0.5; cursor: not-allowed; }
 .filtres { display: flex; gap: 0.5rem; margin: 1rem 0; }
-.filtres button { border: 1px solid #d3dee5; background: #fff; color: inherit; border-radius: 999px; padding: 0.375rem 0.75rem; cursor: pointer; }
-.filtres button[aria-pressed='true'] { background: #0297de; border-color: #0297de; font-weight: 600; }
+.filtres button { border: 1px solid var(--line); background: var(--surface); color: inherit; border-radius: 999px; padding: 0.375rem 0.75rem; cursor: pointer; }
+.filtres button[aria-pressed='true'] { background: var(--action); color: var(--on-action); border-color: var(--action); font-weight: 600; }
 .publications { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.5rem; }
-.publications li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem; background: #fff; border: 1px solid #d3dee5; border-radius: 0.5rem; padding: 0.75rem 1rem; }
-.type { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: #4a5a65; }
+.publications li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem; background: var(--surface); border: 1px solid var(--line); border-radius: 0.5rem; padding: 0.75rem 1rem; }
+.type { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--ink-muted); }
 /* Orange = la preuve (tokens.json) : une réponse acceptée. Texte midnight sur orange. */
-.acceptee { background: #fc734d; color: #02070a; font-size: 0.75rem; font-weight: 600; padding: 0 0.5rem; border-radius: 999px; }
-.discret { color: #4a5a65; font-size: 0.875rem; }
+.acceptee { background: var(--proof); color: var(--on-action); font-size: 0.75rem; font-weight: 600; padding: 0 0.5rem; border-radius: 999px; }
+.discret { color: var(--ink-muted); font-size: 0.875rem; }
+.formulaire .principal { justify-self: start; }
 </style>

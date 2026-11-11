@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { JBouton } from '../../design-system'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
@@ -70,7 +71,7 @@ function filtrer(datacloud: boolean) {
     <p v-if="etat === 'chargement'" role="status">{{ t('etat.chargement') }}</p>
     <div v-else-if="etat === 'indisponible'" role="alert">
       <p>{{ t('etat.indisponible') }}</p>
-      <button type="button" @click="charger()">{{ t('etat.reessayer') }}</button>
+      <JBouton variante="secondaire" @click="charger()">{{ t('etat.reessayer') }}</JBouton>
     </div>
     <p v-else-if="projets.length === 0" data-test="vide">{{ t('vitrine.vide') }}</p>
 
@@ -94,7 +95,7 @@ function filtrer(datacloud: boolean) {
               :href="lienSur(p.url)!"
               target="_blank"
               rel="noopener noreferrer nofollow ugc"
-              class="bouton"
+              class="j-bouton j-bouton--principal"
             >
               {{ t('vitrine.voir') }}
             </a>
@@ -102,27 +103,24 @@ function filtrer(datacloud: boolean) {
           </p>
         </li>
       </ul>
-      <button v-if="curseur" type="button" class="suite" :disabled="chargeLaSuite" @click="charger(true)">
+      <JBouton v-if="curseur" variante="secondaire" class="suite" :occupe="chargeLaSuite" @click="charger(true)">
         {{ chargeLaSuite ? t('etat.chargement') : t('vitrine.plus') }}
-      </button>
+      </JBouton>
     </template>
   </section>
 </template>
 
 <style scoped>
-/* Valeurs de docs/design/tokens.json (thème clair). Le design system (#19) les fournira en variables. */
-.vitrine { --surface: #fff; --ligne: #d3dee5; --action: #0297de; --preuve: #fc734d; --discret: #4a5a65; }
 .filtres { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .filtres button { border: 1px solid var(--ligne); background: var(--surface); color: inherit; border-radius: 999px; padding: 0.375rem 0.75rem; cursor: pointer; }
-.filtres button[aria-pressed='true'] { background: var(--action); border-color: var(--action); font-weight: 600; }
+.filtres button[aria-pressed='true'] { background: var(--action); color: var(--on-action); border-color: var(--action); font-weight: 600; }
 .cartes { list-style: none; padding: 0; margin: 1.5rem 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: 1rem; }
 .carte { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--ligne); border-radius: 0.5rem; padding: 1rem; }
 .carte h2 { font-size: 1.125rem; margin: 0.25rem 0; }
 .carte p { margin: 0.375rem 0; }
 /* Orange = la preuve (tokens.json) : le projet tourne sur DataCloud. Texte midnight sur orange (7,4:1). */
-.badge { align-self: flex-start; background: var(--preuve); color: #02070a; font-size: 0.8125rem; font-weight: 600; padding: 0.125rem 0.5rem; border-radius: 999px; }
+.badge { align-self: flex-start; background: var(--preuve); color: var(--on-action); font-size: 0.8125rem; font-weight: 600; padding: 0.125rem 0.5rem; border-radius: 999px; }
 .pied { margin-top: auto !important; padding-top: 0.5rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; }
-.bouton { background: var(--action); color: #02070a; padding: 0.375rem 0.75rem; border-radius: 0.375rem; text-decoration: none; font-weight: 600; }
 .discret { color: var(--discret); font-size: 0.875rem; }
-.suite { display: block; margin: 0 auto; border: 1px solid var(--ligne); background: var(--surface); color: inherit; border-radius: 0.375rem; padding: 0.5rem 1rem; cursor: pointer; }
+.suite { display: flex; margin: 0 auto; }
 </style>
