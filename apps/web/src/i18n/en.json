@@ -1,0 +1,29 @@
+{
+  "menu": {
+    "profil": "Profile",
+    "principal": "Main menu"
+  },
+  "connexion": {
+    "github": "Sign in with GitHub",
+    "deconnexion": "Sign out"
+  },
+  "accueil": {
+    "titre": "Find your team, build your project, put it online.",
+    "texte": "Jamii brings African developers together: communities to help each other, small business requests to deliver as a team, and projects that live on after the hackathon.",
+    "bienvenue": "Welcome back, {nom}."
+  },
+  "profil": {
+    "titre": "Profile",
+    "vide": "Your profile will fill up with your languages and public GitHub projects, and the projects you put online on Jamii."
+  },
+  "etat": {
+    "chargement": "Loading…",
+    "indisponible": "Jamii is not responding right now. Try again in a moment.",
+    "reessayer": "Try again"
+  },
+  "introuvable": {
+    "titre": "This page does not exist.",
+    "retour": "Back to home"
+  },
+  "langue": "Language"
+}
