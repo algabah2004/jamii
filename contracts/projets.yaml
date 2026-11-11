@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Jamii · Projets d'équipe
-  version: 0.1.0
+  version: 0.2.0
   summary: Projets nés d'une idée ou d'une demande de PME, rôles recherchés, candidatures, équipe, tâches, jalons et continuité.
   description: |
     Responsable : @sowibrr (bloc #17). Règles communes : docs/api-conventions.md. Modèle : docs/modele-donnees.md §4.
@@ -13,7 +13,7 @@ info:
 
     **Codes d'erreur métier** (champ `code` de `Erreur`, réponse 409) : `transition_invalide`, `modification_concurrente`,
     `demande_deja_prise`, `propre_projet`, `role_pourvu`, `candidature_existante`, `porteur_doit_transmettre`,
-    `pas_membre`, `reprise_impossible`.
+    `pas_membre`, `reprise_impossible`, `avis_trop_tot`, `avis_existant`.
 servers:
   - url: http://localhost:8080
 
@@ -314,6 +314,45 @@ paths:
         '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
         '409': { $ref: './socle.yaml#/components/responses/Conflit' }
 
+  /api/projets/{projetId}/membres/{utilisateurId}/avis:
+    parameters:
+      - $ref: '#/components/parameters/ProjetId'
+      - { name: utilisateurId, in: path, required: true, schema: { type: string, format: uuid }, description: La personne qui reçoit l'avis. }
+    post:
+      tags: [equipe]
+      operationId: donnerAvis
+      summary: Donner un avis à un coéquipier (membres)
+      description: |
+        Les deux personnes sont ou ont été membres du projet : un membre parti peut donner et recevoir un avis.
+        On ne se donne pas d'avis à soi-même (`403`).
+
+        Possible seulement quand la personne a **au moins une tâche livrée** dans ce projet, ou quand le projet est
+        `livre`. Avant : `409 avis_trop_tot`. Un seul avis par auteur, par personne et par projet : `409 avis_existant`.
+        L'avis ne se modifie pas. Celui qui le reçoit peut le contester depuis son profil (profils.yaml).
+
+        Publie l'événement `AvisCoequipier` (modele-donnees.md §6). Le module `profils` en fait une preuve.
+        Limité à 20 avis par jour et par personne.
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreationAvis' }
+      responses:
+        '201':
+          description: Avis enregistré.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Avis' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+        '429': { $ref: './socle.yaml#/components/responses/TropDeRequetes' }
+
   /api/projets/{projetId}/jalons:
     parameters:
       - $ref: '#/components/parameters/ProjetId'
@@ -610,6 +649,31 @@ components:
       required: [type, creeLe]
       properties:
         type: { type: string, enum: [inactif, membre_parti, echeance_depassee] }
+        creeLe: { type: string, format: date-time }
+
+    SensAvis:
+      type: string
+      description: 'Pas de note sur 5 : l''avis dit seulement si on referait équipe, et pourquoi.'
+      enum: [positif, negatif]
+
+    CreationAvis:
+      type: object
+      additionalProperties: false
+      required: [sens, texte]
+      properties:
+        sens: { $ref: '#/components/schemas/SensAvis' }
+        texte: { type: string, minLength: 10, maxLength: 280, description: 'Ce qui s''est bien ou mal passé, en une ou deux phrases.' }
+
+    Avis:
+      type: object
+      required: [id, projetId, auteur, destinataire, sens, texte, creeLe]
+      properties:
+        id: { type: string, format: uuid }
+        projetId: { type: string, format: uuid }
+        auteur: { $ref: '#/components/schemas/PersonneResume' }
+        destinataire: { $ref: '#/components/schemas/PersonneResume' }
+        sens: { $ref: '#/components/schemas/SensAvis' }
+        texte: { type: string }
         creeLe: { type: string, format: date-time }
 
     Jalon:
