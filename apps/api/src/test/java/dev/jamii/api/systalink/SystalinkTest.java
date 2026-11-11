@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 
-import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 
@@ -22,6 +21,7 @@ import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
 
 import dev.jamii.api.TestcontainersConfiguration;
+import dev.jamii.api.auth.Annuaire;
 
 /** Les routes de contracts/systalink.yaml, sur un vrai PostgreSQL. */
 @SpringBootTest
@@ -41,23 +41,16 @@ class SystalinkTest {
 	@Autowired
 	JdbcClient base;
 
-	/** Ce que les modules auth/profils, projets et deploiement répondront une fois branchés. */
+	@Autowired
+	Annuaire annuaire;
+
+	/** Ce que les modules profils et deploiement répondront une fois branchés (projets reste absent). */
 	@TestConfiguration(proxyBeanMethods = false)
 	static class ModulesSimules {
 
 		@Bean
-		ChiffresDesModules.Inscrits inscrits() {
-			return new ChiffresDesModules.Inscrits() {
-				@Override
-				public long compter(Instant depuis) {
-					return depuis == null ? 30 : 12;
-				}
-
-				@Override
-				public Map<String, Long> parPays() {
-					return Map.of("SN", 22L, "CI", 3L);
-				}
-			};
+		ChiffresDesModules.PaysDesInscrits pays() {
+			return () -> Map.of("SN", 6L, "CI", 3L);
 		}
 
 		@Bean
@@ -96,10 +89,12 @@ class SystalinkTest {
 		assertThat(reponse.getResponse().getHeader("Cache-Control")).isEqualTo("max-age=300, public");
 		var json = assertThat(reponse).bodyJson();
 		json.extractingPath("$.periode").isEqualTo("semaine");
-		json.extractingPath("$.inscrits.total").isEqualTo(30);
-		json.extractingPath("$.inscrits.nouveaux").isEqualTo(12);
+		// Le total vient du vrai module auth (Annuaire), dont la table est partagée avec les autres tests.
+		long total = annuaire.compterInscrits(null);
+		json.extractingPath("$.inscrits.total").isEqualTo((int) total);
 		json.extractingPath("$.inscrits.parPays[0].pays").isEqualTo("SN");
-		json.extractingPath("$.inscrits.autres").as("la Côte d'Ivoire (3) et les sans-pays").isEqualTo(8);
+		json.extractingPath("$.inscrits.parPays.length()").as("la Côte d'Ivoire (3) passe dans autres").isEqualTo(1);
+		json.extractingPath("$.inscrits.autres").isEqualTo((int) Math.max(0, total - 6));
 		json.extractingPath("$.projets.crees").as("module projets pas encore branché : 0, pas un chiffre inventé")
 			.isEqualTo(0);
 		json.extractingPath("$.projets.surDatacloud").isEqualTo(7);

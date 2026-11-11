@@ -55,6 +55,21 @@ class Utilisateur {
 		return u;
 	}
 
+	/**
+	 * Compte créé par un lien de connexion. Le nom est neutre, volontairement : le début de l'adresse
+	 * (awa.diallo@…) serait montré aux autres membres. La personne le choisit ensuite dans son profil.
+	 */
+	static Utilisateur depuisEmail(String email, Instant maintenant) {
+		Utilisateur u = new Utilisateur();
+		u.id = UUID.randomUUID();
+		u.email = email;
+		u.nom = "Nouveau membre";
+		u.roles.add(Role.MEMBRE);
+		u.creeLe = maintenant;
+		u.misAJourLe = maintenant;
+		return u;
+	}
+
 	/** Recopie ce que GitHub dit du compte à chaque connexion : le login, le nom et l'avatar peuvent changer. */
 	void majDepuisGithub(String login, String nomAffiche, String avatarUrl, Instant maintenant) {
 		this.loginGithub = login;
