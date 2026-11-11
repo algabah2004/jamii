@@ -109,5 +109,27 @@
     "reponseAcceptee": "Réponse acceptée",
     "reponses": "aucune réponse | {n} réponse | {n} réponses",
     "compteSupprime": "compte supprimé"
+  },
+  "question": {
+    "retourCommunaute": "← Retour à la communauté",
+    "iaPrepare": "L'IA prépare une réponse…",
+    "iaIndisponible": "L'IA n'a pas proposé de réponse. Les membres de la communauté peuvent répondre.",
+    "proposeeParIa": "Proposée par l'IA · à vérifier par un pair",
+    "proposeeParIaVerifiee": "Proposée par l'IA",
+    "attendUnPair": "Un autre membre de la communauté doit vérifier cette réponse.",
+    "valideePar": "validée par {nom}",
+    "valider": "Valider cette réponse",
+    "accepter": "Accepter cette réponse",
+    "merciValidation": "Merci ! Ta validation rend cette réponse fiable pour tout le monde.",
+    "merciAcceptation": "🎉 Réponse acceptée. Elle apparaît maintenant sur le profil de son auteur.",
+    "taReponse": "Ta réponse",
+    "repondre": "Répondre",
+    "erreurs": {
+      "pas_membre": "Rejoins la communauté pour faire ça.",
+      "pas_auteur_question": "Seul l'auteur de la question peut accepter une réponse.",
+      "propre_question": "Tu ne peux pas valider la réponse à ta propre question : un autre membre doit le faire.",
+      "deja_acceptee": "Cette question a déjà une réponse acceptée.",
+      "autre": "Ça n'a pas marché. Réessaie dans un instant."
+    }
   }
 }

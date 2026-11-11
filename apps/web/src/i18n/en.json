@@ -109,5 +109,27 @@
     "reponseAcceptee": "Accepted answer",
     "reponses": "no answer | {n} answer | {n} answers",
     "compteSupprime": "deleted account"
+  },
+  "question": {
+    "retourCommunaute": "← Back to the community",
+    "iaPrepare": "The AI is preparing an answer…",
+    "iaIndisponible": "The AI did not suggest an answer. Community members can answer.",
+    "proposeeParIa": "Suggested by the AI · to be checked by a peer",
+    "proposeeParIaVerifiee": "Suggested by the AI",
+    "attendUnPair": "Another community member must check this answer.",
+    "valideePar": "checked by {nom}",
+    "valider": "Confirm this answer",
+    "accepter": "Accept this answer",
+    "merciValidation": "Thank you! Your check makes this answer reliable for everyone.",
+    "merciAcceptation": "🎉 Answer accepted. It now appears on its author’s profile.",
+    "taReponse": "Your answer",
+    "repondre": "Answer",
+    "erreurs": {
+      "pas_membre": "Join the community to do this.",
+      "pas_auteur_question": "Only the author of the question can accept an answer.",
+      "propre_question": "You cannot confirm the answer to your own question: another member must do it.",
+      "deja_acceptee": "This question already has an accepted answer.",
+      "autre": "That did not work. Try again in a moment."
+    }
   }
 }
