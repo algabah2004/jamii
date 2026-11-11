@@ -56,6 +56,11 @@ server:
 jamii:
   # Adresse du front : on y renvoie l'utilisateur après la connexion.
   web-url: ${WEB_URL:http://localhost:5173}
+  email:
+    # simule : n'envoie rien (local et tests). Un adaptateur SMTP viendra avec le choix du service de messagerie.
+    fournisseur: ${EMAIL_FOURNISSEUR:simule}
+    # Local seulement : affiche le lien de connexion dans la console. Jamais en production (le lien est un mot de passe).
+    afficher-lien: ${EMAIL_AFFICHER_LIEN:false}
 
 # Seule la santé est exposée, sur /health (contrat : contracts/socle.yaml).
 # /health/liveness et /health/readiness servent de sondes à DataCloud.
