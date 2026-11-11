@@ -88,9 +88,19 @@ jobs:
         run: |
           uv sync --locked --no-dev
           uvx --from cyclonedx-bom==8.0.1 cyclonedx-py environment .venv/bin/python --of JSON -o bom.json
+      - name: SBOM du front (npm)
+        if: hashFiles('apps/web/package-lock.json') != ''
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - if: hashFiles('apps/web/package-lock.json') != ''
+        working-directory: apps/web
+        run: |
+          npm ci --ignore-scripts
+          npm sbom --sbom-format cyclonedx > bom.json
       - name: Aucune licence GPL, AGPL ou LGPL
         run: |
-          boms=$(ls apps/api/target/bom.json services/ia/bom.json 2>/dev/null || true)
+          boms=$(ls apps/api/target/bom.json services/ia/bom.json apps/web/bom.json 2>/dev/null || true)
           if [ -z "$boms" ]; then echo "Aucune dépendance à vérifier pour l'instant."; exit 0; fi
           python3 .github/scripts/verifier_licences.py $boms
 
@@ -129,5 +139,24 @@ jobs:
       - run: uv run ruff format --check .
       - run: uv run pytest
 
-  # Le job build et tests de web sera ajouté ici
-  # quand leur stack sera validée (#6).
+  web:
+    name: Front (types, tests et build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci
+      # Les types du client viennent des contrats : s'ils ont changé sans régénération, on échoue.
+      - name: Types du client à jour avec contracts/
+        run: |
+          npm run api:types
+          git diff --exit-code -- src/api/generated || { echo "::error::Lance npm run api:types dans apps/web et commite le résultat"; exit 1; }
+      - run: npm test
+      - run: npm run build
