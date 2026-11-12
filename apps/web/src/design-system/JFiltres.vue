@@ -1,14 +1,17 @@
 <script setup lang="ts" generic="T extends string">
 /**
  * Choix d'un filtre parmi quelques-uns (2 à 4) : des pastilles, une seule active à la fois.
+ * `onglets` : la même chose soulignée, pour filtrer un fil (moins de couleur, plus calme).
  * Chaque pastille est un bouton à aria-pressed, dans un groupe nommé pour les lecteurs d'écran.
  */
-defineProps<{ libelle: string; options: { valeur: T; texte: string }[] }>()
+withDefaults(defineProps<{ libelle: string; options: { valeur: T; texte: string }[]; variante?: 'pastilles' | 'onglets' }>(), {
+  variante: 'pastilles',
+})
 const valeur = defineModel<T>({ required: true })
 </script>
 
 <template>
-  <div class="j-filtres filtres" role="group" :aria-label="libelle">
+  <div class="j-filtres filtres" :class="`j-filtres--${variante}`" role="group" :aria-label="libelle">
     <button
       v-for="o in options"
       :key="o.valeur"
@@ -33,6 +36,15 @@ const valeur = defineModel<T>({ required: true })
   font-size: var(--type-label-size); font-weight: var(--type-label-weight);
   cursor: pointer;
 }
+.j-filtres button { transition: background var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out), border-color var(--motion-fast) var(--ease-out); }
 .j-filtres button:hover { border-color: var(--action); }
 .j-filtres button[aria-pressed='true'] { background: var(--action); border-color: var(--action); color: var(--on-action); }
+.j-filtres--onglets { gap: var(--space-6); border-bottom: 1px solid var(--line); }
+.j-filtres--onglets button {
+  min-height: 44px; padding: 0 var(--space-1); margin-bottom: -1px;
+  border: 0; border-bottom: 2px solid transparent; border-radius: 0;
+  background: none; color: var(--ink-muted);
+}
+.j-filtres--onglets button:hover { border-color: transparent; color: var(--ink); }
+.j-filtres--onglets button[aria-pressed='true'] { background: none; color: var(--ink); border-bottom-color: var(--action); }
 </style>
