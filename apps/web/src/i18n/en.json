@@ -246,6 +246,13 @@
       "poser": "You ask the community your question.",
       "ia": "The AI suggests a first answer, marked “to be checked”. It does not count on anyone’s profile.",
       "accepter": "A member checks it or answers better. You accept the best answer: it counts on its author’s profile."
+    },
+    "espace": {
+      "mesCommunautes": "My communities",
+      "decouvrir": "Discover communities",
+      "invite": "Ask a question or start a discussion…",
+      "premier": "No one has answered yet",
+      "apropos": "About"
     }
   },
   "question": {
@@ -319,5 +326,18 @@
     "liens": "Useful links",
     "charte": "Design system",
     "cadev": "Project presented at CADEV 2026. Jamii runs on the Systalink cloud."
+  },
+  "signaler": {
+    "bouton": "Report",
+    "pourquoi": "Why report this message?",
+    "envoyer": "Send the report",
+    "merci": "Thanks, a moderator will look at it.",
+    "erreur": "The report could not be sent. Try again in a moment.",
+    "motifs": {
+      "spam": "Spam or advertising",
+      "irrespectueux": "Disrespectful",
+      "hors_sujet": "Off topic",
+      "autre": "Other reason"
+    }
   }
 }

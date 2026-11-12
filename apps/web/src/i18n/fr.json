@@ -246,6 +246,13 @@
       "poser": "Tu poses ta question à la communauté.",
       "ia": "L'IA propose une première réponse, marquée « à vérifier ». Elle ne compte sur le profil de personne.",
       "accepter": "Un membre la vérifie ou répond mieux. Tu acceptes la meilleure réponse : elle compte sur le profil de son auteur."
+    },
+    "espace": {
+      "mesCommunautes": "Mes communautés",
+      "decouvrir": "Découvrir des communautés",
+      "invite": "Pose une question ou lance une discussion…",
+      "premier": "Personne n'a encore répondu",
+      "apropos": "À propos"
     }
   },
   "question": {
@@ -319,5 +326,18 @@
     "liens": "Liens utiles",
     "charte": "Charte graphique",
     "cadev": "Projet présenté à la CADEV 2026. Jamii fonctionne sur le cloud Systalink."
+  },
+  "signaler": {
+    "bouton": "Signaler",
+    "pourquoi": "Pourquoi signaler ce message ?",
+    "envoyer": "Envoyer le signalement",
+    "merci": "Merci, un modérateur va regarder.",
+    "erreur": "Le signalement n'a pas pu être envoyé. Réessaie dans un instant.",
+    "motifs": {
+      "spam": "Spam ou publicité",
+      "irrespectueux": "Irrespectueux",
+      "hors_sujet": "Hors sujet",
+      "autre": "Autre raison"
+    }
   }
 }

@@ -7,12 +7,15 @@ import { api } from '../../api/client'
 import type { components } from '../../api/generated/communautes'
 import { nomPays } from '../systalink/calculs'
 import { ilYa } from '../vitrine/vitrine'
+import { useSession } from '../../session'
 import { monogramme } from './communautes'
+import EspaceCommunautes from './EspaceCommunautes.vue'
 
 type Communaute = components['schemas']['Communaute']
 type PublicationResume = components['schemas']['PublicationResume']
 
 const { t, locale } = useI18n()
+const { moi } = useSession()
 const route = useRoute()
 const router = useRouter()
 
@@ -86,7 +89,7 @@ const formulaireOuvert = ref(false)
 </script>
 
 <template>
-  <section>
+  <EspaceCommunautes :actuelle="slug">
     <JSquelette v-if="etat === 'chargement' && !communaute" :nombre="4" />
     <div v-else-if="etat === 'introuvable'" class="etat-vide">
       <h1>{{ t('introuvable.titre') }}</h1>
@@ -98,172 +101,213 @@ const formulaireOuvert = ref(false)
     </div>
 
     <template v-else-if="communaute">
-      <p class="retour"><RouterLink to="/communautes">{{ t('communautes.retour') }}</RouterLink></p>
-      <header class="page-tete">
-        <div class="page-tete__texte titre-communaute">
-          <span class="monogramme" :class="{ 'monogramme--antenne': communaute.pays }" aria-hidden="true">{{ monogramme(communaute.nom) }}</span>
-          <div>
+      <header class="banniere" :class="{ 'banniere--antenne': communaute.pays }">
+        <!-- La couverture : le nom en très grand, en filigrane. Décoratif. -->
+        <div class="banniere__couverture" aria-hidden="true"><span>{{ communaute.nom }}</span></div>
+        <div class="banniere__corps">
+          <span class="banniere__monogramme" aria-hidden="true">{{ monogramme(communaute.nom) }}</span>
+          <div class="banniere__texte">
             <h1>{{ communaute.nom }}</h1>
-            <p>{{ communaute.description }}</p>
+            <p class="banniere__meta">
+              {{ t('communautes.membres', { n: communaute.nombreMembres }, communaute.nombreMembres) }}
+              <template v-if="communaute.pays"> · 📍 {{ t('communautes.antenne', { pays: nomPays(communaute.pays, locale) }) }}</template>
+            </p>
           </div>
-        </div>
-        <div class="page-tete__actions">
-          <JBouton variante="secondaire" data-test="adhesion" :occupe="adhesionEnCours" @click="basculerAdhesion">
+          <JBouton
+            :variante="communaute.membre ? 'secondaire' : 'principal'"
+            data-test="adhesion"
+            :occupe="adhesionEnCours"
+            @click="basculerAdhesion"
+          >
             {{ communaute.membre ? t('communautes.quitter') : t('communautes.rejoindre') }}
           </JBouton>
-          <JBouton v-if="communaute.membre && !formulaireOuvert" data-test="ouvrir-formulaire" @click="formulaireOuvert = true">
-            {{ t('communautes.poser') }}
-          </JBouton>
         </div>
+        <p class="banniere__description">{{ communaute.description }}</p>
       </header>
 
-      <div class="mise-en-page">
-        <div class="fil">
-          <form v-if="communaute.membre && formulaireOuvert" class="carte formulaire" data-test="publier" @submit.prevent="publier">
-            <h2>{{ t('communautes.poser') }}</h2>
-            <JFiltres
-              v-model="formulaire.type"
-              :libelle="t('communautes.type')"
-              :options="[
-                { valeur: 'question', texte: t('communautes.types.question') },
-                { valeur: 'discussion', texte: t('communautes.types.discussion') },
-              ]"
-            />
-            <JChamp v-model="formulaire.titre" :libelle="t('communautes.champTitre')" :maxlength="150" requis />
-            <JChamp
-              v-model="formulaire.contenu"
-              :libelle="t('communautes.champContenu')"
-              :aide="formulaire.type === 'question' ? t('communautes.aideIa') : undefined"
-              multiligne
-              :lignes="5"
-              :maxlength="10000"
-              requis
-            />
-            <p v-if="envoi === 'erreur'" role="alert" class="erreur">{{ t('communautes.erreurPublier') }}</p>
-            <div class="commandes">
-              <JBouton type="submit" :desactive="!valide" :occupe="envoi === 'envoi'">{{ t('communautes.publier') }}</JBouton>
-              <JBouton variante="discret" @click="formulaireOuvert = false">{{ t('communautes.annuler') }}</JBouton>
-            </div>
-          </form>
-          <div v-else-if="!communaute.membre" class="invitation">
-            <p>{{ t('communautes.rejoindrePourPublier') }}</p>
-            <JBouton :occupe="adhesionEnCours" @click="basculerAdhesion">{{ t('communautes.rejoindre') }}</JBouton>
-          </div>
-
+      <!-- Le compositeur, comme sur un réseau social : une ligne qui invite, le formulaire complet au clic. -->
+      <form v-if="communaute.membre && formulaireOuvert" class="compositeur compositeur--ouvert" data-test="publier" @submit.prevent="publier">
+        <div class="compositeur__tete">
+          <JAvatar v-if="moi" :nom="moi.nom" :url="moi.avatarUrl" :taille="40" />
           <JFiltres
-            v-model="filtre"
-            :libelle="t('communautes.filtre')"
+            v-model="formulaire.type"
+            :libelle="t('communautes.type')"
             :options="[
-              { valeur: 'toutes', texte: t('communautes.toutes') },
-              { valeur: 'ouvertes', texte: t('communautes.ouvertes') },
+              { valeur: 'question', texte: t('communautes.types.question') },
+              { valeur: 'discussion', texte: t('communautes.types.discussion') },
             ]"
           />
-
-          <JSquelette v-if="etat === 'chargement'" :nombre="3" />
-          <div v-else-if="publications.length === 0" class="etat-vide">
-            <p data-test="vide">{{ t('communautes.vide') }}</p>
-          </div>
-          <ul v-else class="publications" data-test="publications">
-            <li v-for="p in publications" :key="p.id" :class="{ acceptee: p.accepteeLe }">
-              <div class="ligne">
-                <JAvatar :nom="p.auteur?.nom ?? '?'" :url="p.auteur?.avatarUrl" :taille="32" />
-                <span class="discret">
-                  <strong class="auteur">{{ p.auteur?.nom ?? t('communautes.compteSupprime') }}</strong> · {{ ilYa(p.creeLe, locale) }}
-                </span>
-                <span class="type">{{ t(`communautes.types.${p.type}`) }}</span>
-              </div>
-              <h3><RouterLink :to="`/publications/${p.id}`" class="lien-publication">{{ p.titre }}</RouterLink></h3>
-              <div class="ligne">
-                <JBadgePreuve v-if="p.accepteeLe">✓ {{ t('communautes.reponseAcceptee') }}</JBadgePreuve>
-                <span class="discret">💬 {{ t('communautes.reponses', { n: p.nombreReponses }, p.nombreReponses) }}</span>
-              </div>
-            </li>
-          </ul>
         </div>
-
-        <aside class="apropos">
-          <dl class="carte chiffres">
-            <div>
-              <dt>{{ t('communautes.chiffres.membres') }}</dt>
-              <dd>{{ communaute.nombreMembres.toLocaleString(locale) }}</dd>
-            </div>
-            <div>
-              <dt>{{ t('communautes.chiffres.questionsOuvertes') }}</dt>
-              <dd>{{ communaute.questionsOuvertes }}</dd>
-            </div>
-            <p v-if="communaute.pays" class="antenne">📍 {{ t('communautes.antenne', { pays: nomPays(communaute.pays, locale) }) }}</p>
-          </dl>
-          <section class="carte fonctionnement" aria-labelledby="fonctionnement">
-            <h2 id="fonctionnement">{{ t('communautes.fonctionnement.titre') }}</h2>
-            <ol>
-              <li>{{ t('communautes.fonctionnement.poser') }}</li>
-              <li>{{ t('communautes.fonctionnement.ia') }}</li>
-              <li>
-                {{ t('communautes.fonctionnement.accepter') }}
-                <JBadgePreuve class="exemple">✓ {{ t('communautes.reponseAcceptee') }}</JBadgePreuve>
-              </li>
-            </ol>
-          </section>
-        </aside>
+        <JChamp v-model="formulaire.titre" :libelle="t('communautes.champTitre')" :maxlength="150" requis />
+        <JChamp
+          v-model="formulaire.contenu"
+          :libelle="t('communautes.champContenu')"
+          :aide="formulaire.type === 'question' ? t('communautes.aideIa') : undefined"
+          multiligne
+          :lignes="5"
+          :maxlength="10000"
+          requis
+        />
+        <p v-if="envoi === 'erreur'" role="alert" class="erreur">{{ t('communautes.erreurPublier') }}</p>
+        <div class="compositeur__commandes">
+          <JBouton variante="discret" @click="formulaireOuvert = false">{{ t('communautes.annuler') }}</JBouton>
+          <JBouton type="submit" :desactive="!valide" :occupe="envoi === 'envoi'">{{ t('communautes.publier') }}</JBouton>
+        </div>
+      </form>
+      <div v-else-if="communaute.membre" class="compositeur">
+        <JAvatar v-if="moi" :nom="moi.nom" :url="moi.avatarUrl" :taille="40" />
+        <button type="button" class="compositeur__invite" data-test="ouvrir-formulaire" @click="formulaireOuvert = true">
+          {{ t('communautes.espace.invite') }}
+        </button>
       </div>
+      <div v-else class="compositeur compositeur--rejoindre">
+        <p>{{ t('communautes.rejoindrePourPublier') }}</p>
+        <JBouton :occupe="adhesionEnCours" @click="basculerAdhesion">{{ t('communautes.rejoindre') }}</JBouton>
+      </div>
+
+      <div class="onglets">
+        <JFiltres
+          v-model="filtre"
+          :libelle="t('communautes.filtre')"
+          :options="[
+            { valeur: 'toutes', texte: t('communautes.toutes') },
+            { valeur: 'ouvertes', texte: t('communautes.ouvertes') },
+          ]"
+        />
+      </div>
+
+      <JSquelette v-if="etat === 'chargement'" :nombre="3" />
+      <div v-else-if="publications.length === 0" class="etat-vide">
+        <p data-test="vide">{{ t('communautes.vide') }}</p>
+      </div>
+      <ul v-else class="fils" data-test="publications">
+        <li v-for="p in publications" :key="p.id" class="fil" :class="{ 'fil--resolu': p.accepteeLe }">
+          <div class="fil__auteur">
+            <JAvatar :nom="p.auteur?.nom ?? '?'" :url="p.auteur?.avatarUrl" :taille="40" />
+            <div>
+              <strong>{{ p.auteur?.nom ?? t('communautes.compteSupprime') }}</strong>
+              <span>{{ ilYa(p.creeLe, locale) }}</span>
+            </div>
+            <span class="fil__type" :class="`fil__type--${p.type}`">{{ t(`communautes.types.${p.type}`) }}</span>
+          </div>
+          <h2 class="fil__titre"><RouterLink :to="`/publications/${p.id}`" class="fil__lien">{{ p.titre }}</RouterLink></h2>
+          <div class="fil__pied">
+            <span class="fil__reponses">
+              <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M3 4.5A1.5 1.5 0 0 1 4.5 3h11A1.5 1.5 0 0 1 17 4.5v8a1.5 1.5 0 0 1-1.5 1.5H8l-4 3v-3h.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" /></svg>
+              {{ t('communautes.reponses', { n: p.nombreReponses }, p.nombreReponses) }}
+            </span>
+            <JBadgePreuve v-if="p.accepteeLe">✓ {{ t('communautes.reponseAcceptee') }}</JBadgePreuve>
+            <span v-else-if="p.type === 'question' && p.nombreReponses === 0" class="fil__appel">{{ t('communautes.espace.premier') }}</span>
+          </div>
+        </li>
+      </ul>
     </template>
-  </section>
+
+    <template v-if="communaute" #contexte>
+      <section class="carte contexte" aria-labelledby="apropos">
+        <h2 id="apropos">{{ t('communautes.espace.apropos') }}</h2>
+        <dl class="chiffres">
+          <div>
+            <dt>{{ t('communautes.chiffres.membres') }}</dt>
+            <dd>{{ communaute.nombreMembres.toLocaleString(locale) }}</dd>
+          </div>
+          <div>
+            <dt>{{ t('communautes.chiffres.questionsOuvertes') }}</dt>
+            <dd>{{ communaute.questionsOuvertes }}</dd>
+          </div>
+        </dl>
+      </section>
+      <section class="carte contexte" aria-labelledby="fonctionnement">
+        <h2 id="fonctionnement">{{ t('communautes.fonctionnement.titre') }}</h2>
+        <ol class="etapes">
+          <li>{{ t('communautes.fonctionnement.poser') }}</li>
+          <li>{{ t('communautes.fonctionnement.ia') }}</li>
+          <li>
+            {{ t('communautes.fonctionnement.accepter') }}
+            <JBadgePreuve class="exemple">✓ {{ t('communautes.reponseAcceptee') }}</JBadgePreuve>
+          </li>
+        </ol>
+      </section>
+    </template>
+  </EspaceCommunautes>
 </template>
 
 <style scoped>
-.retour { margin-bottom: var(--space-4); }
-.titre-communaute { display: flex; gap: var(--space-4); align-items: flex-start; }
-.monogramme {
-  flex-shrink: 0; display: grid; place-items: center;
-  width: 64px; height: 64px; border-radius: var(--radius-lg);
-  background: var(--action-soft); color: var(--action-ink);
-  font-family: var(--font-display); font-weight: 700; font-size: 1.5rem; letter-spacing: -0.5px;
+/* Bannière : une couverture typographique (le nom en filigrane), le monogramme qui la chevauche. */
+.banniere { overflow: hidden; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); }
+.banniere__couverture {
+  height: 112px; overflow: hidden; position: relative;
+  background: var(--action); color: var(--on-action);
 }
-.monogramme--antenne { background: var(--surface-raised); color: var(--ink); }
+.banniere--antenne .banniere__couverture { background: var(--ink); color: var(--bg); }
+.banniere__couverture span {
+  position: absolute; left: -0.06em; bottom: -0.32em; white-space: nowrap;
+  font-family: var(--font-display); font-weight: 700; font-size: 7.5rem; line-height: 1; letter-spacing: -0.05em;
+  opacity: 0.16;
+}
+.banniere__corps { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-3) var(--space-4); padding: var(--space-3) var(--space-6) 0; }
+.banniere__monogramme {
+  display: grid; place-items: center; width: 72px; height: 72px; flex-shrink: 0;
+  position: relative; margin-top: -48px; border-radius: var(--radius-lg); border: 4px solid var(--surface);
+  background: var(--action-soft); color: var(--action-ink);
+  font-family: var(--font-display); font-weight: 700; font-size: 1.625rem; letter-spacing: -0.5px;
+}
+.banniere--antenne .banniere__monogramme { background: var(--surface-raised); color: var(--ink); }
+.banniere__texte { flex: 1 1 14rem; min-width: 0; padding-bottom: var(--space-1); }
+.banniere h1 { margin: 0; font-size: clamp(1.5rem, 3vw, 1.875rem); line-height: 1.15; letter-spacing: -0.5px; }
+.banniere__meta { margin: 0; color: var(--ink-muted); font-size: var(--type-body-sm-size); }
+.banniere__description { margin: var(--space-3) 0 0; padding: 0 var(--space-6) var(--space-6); color: var(--ink-muted); }
 
-.mise-en-page { display: grid; gap: var(--space-8); grid-template-columns: minmax(0, 1fr) 18rem; align-items: start; }
-@media (max-width: 900px) { .mise-en-page { grid-template-columns: 1fr; } .apropos { order: -1; } .fonctionnement { display: none; } }
-.fil { display: grid; gap: var(--space-4); }
-
-.formulaire { display: grid; gap: var(--space-4); }
-.formulaire h2 { margin: 0; font-size: var(--type-h3-size); }
-.commandes { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
+.compositeur { display: flex; gap: var(--space-3); align-items: center; padding: var(--space-4); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); }
+.compositeur__invite {
+  flex: 1; min-height: 44px; text-align: start; padding: 0 var(--space-4);
+  background: var(--surface-raised); border: 1px solid transparent; border-radius: var(--radius-pill);
+  color: var(--ink-muted); cursor: text;
+}
+.compositeur__invite:hover { border-color: var(--line-strong); }
+.compositeur--ouvert { display: grid; gap: var(--space-4); align-items: stretch; padding: var(--space-6); border-color: var(--action); }
+.compositeur__tete { display: flex; gap: var(--space-3); align-items: center; flex-wrap: wrap; }
+.compositeur__commandes { display: flex; gap: var(--space-2); justify-content: flex-end; }
+.compositeur--rejoindre { justify-content: space-between; flex-wrap: wrap; background: var(--action-soft); border-color: transparent; }
+.compositeur--rejoindre p { margin: 0; font-weight: 600; }
 .erreur { color: var(--danger); font-weight: 600; margin: 0; }
-.invitation { display: flex; flex-wrap: wrap; gap: var(--space-3) var(--space-6); align-items: center; justify-content: space-between; padding: var(--space-4) var(--space-6); background: var(--action-soft); border-radius: var(--radius-md); }
-.invitation p { margin: 0; font-weight: 600; }
 
-.publications { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--space-3); }
-.publications li {
-  position: relative; display: grid; gap: var(--space-2);
-  padding: var(--space-4) var(--space-6);
-  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md);
+.onglets { padding-top: var(--space-2); }
+
+.fils { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
+.fil {
+  position: relative; display: grid; gap: var(--space-3);
+  padding: var(--space-4) var(--space-6) var(--space-4);
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg);
   transition: border-color var(--motion-fast) var(--ease-out);
 }
-.publications li:hover { border-color: var(--line-strong); }
-.publications li:has(:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
-/* Orange = la preuve : une question qui a sa réponse acceptée porte un liseré orange. */
-.publications li.acceptee { border-inline-start: 4px solid var(--proof); }
-.publications h3 { margin: 0; font-size: 1.125rem; line-height: 1.35; }
-/* Toute la ligne mène à la question ; le titre reste le seul nom du lien. */
-.lien-publication { color: var(--ink); text-decoration: none; }
-.lien-publication::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
-.lien-publication:focus-visible { outline: none; }
-.publications li:hover .lien-publication { color: var(--action-ink); }
-.ligne { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
-.auteur { color: var(--ink); }
-.type { margin-inline-start: auto; padding: 0 var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-pill); font-size: var(--type-label-size); color: var(--ink-muted); }
-.discret { color: var(--ink-muted); font-size: var(--type-body-sm-size); }
+.fil:hover { border-color: var(--line-strong); }
+.fil:has(:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
+.fil__auteur { display: flex; align-items: center; gap: var(--space-3); }
+.fil__auteur > div { display: grid; line-height: 1.3; min-width: 0; }
+.fil__auteur strong { font-size: var(--type-body-sm-size); }
+.fil__auteur span { color: var(--ink-muted); font-size: var(--type-body-sm-size); }
+.fil__type { margin-inline-start: auto; padding: 2px var(--space-3); border-radius: var(--radius-pill); font-size: var(--type-label-size); font-weight: 600; background: var(--surface-raised); color: var(--ink-muted); }
+.fil__type--question { background: var(--action-soft); color: var(--ink); }
+.fil__titre { margin: 0; font-size: 1.1875rem; line-height: 1.35; letter-spacing: -0.2px; }
+/* Toute la carte mène au fil ; le titre reste le seul nom du lien. */
+.fil__lien { color: var(--ink); text-decoration: none; }
+.fil__lien::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
+.fil__lien:focus-visible { outline: none; }
+.fil:hover .fil__lien { color: var(--action-ink); }
+.fil__pied { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); padding-top: var(--space-3); border-top: 1px solid var(--line); }
+.fil__reponses { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--ink-muted); font-size: var(--type-body-sm-size); font-weight: 600; }
+.fil__appel { color: var(--action-ink); font-size: var(--type-body-sm-size); font-weight: 600; }
+/* Orange = la preuve : un fil résolu porte un liseré orange. */
+.fil--resolu { box-shadow: inset 4px 0 0 var(--proof); }
 
-.apropos { display: grid; gap: var(--space-4); position: sticky; top: calc(64px + var(--space-6)); }
-@media (max-width: 900px) { .apropos { position: static; } }
-.chiffres { display: flex; flex-wrap: wrap; gap: var(--space-4) var(--space-8); margin: 0; padding: var(--space-6); }
+.contexte { padding: var(--space-6); display: grid; gap: var(--space-3); }
+.contexte h2 { margin: 0; font-size: 1.0625rem; }
+.chiffres { display: flex; gap: var(--space-6); margin: 0; }
 .chiffres div { display: flex; flex-direction: column-reverse; }
 .chiffres dt { color: var(--ink-muted); font-size: var(--type-body-sm-size); }
 .chiffres dd { margin: 0; font-family: var(--font-display); font-size: 1.75rem; font-weight: 700; line-height: 1.15; font-variant-numeric: tabular-nums; }
-.antenne { flex-basis: 100%; margin: 0; color: var(--ink-muted); font-size: var(--type-body-sm-size); }
-.fonctionnement { padding: var(--space-6); }
-.fonctionnement h2 { font-size: 1.0625rem; margin-bottom: var(--space-3); }
-.fonctionnement ol { margin: 0; padding-inline-start: 1.25rem; display: grid; gap: var(--space-3); color: var(--ink-muted); font-size: var(--type-body-sm-size); }
-.fonctionnement ol ::marker { color: var(--ink); font-weight: 700; }
+.etapes { margin: 0; padding-inline-start: 1.25rem; display: grid; gap: var(--space-3); color: var(--ink-muted); font-size: var(--type-body-sm-size); }
+.etapes ::marker { color: var(--ink); font-weight: 700; }
 .exemple { display: flex; width: fit-content; margin-top: var(--space-2); }
 </style>

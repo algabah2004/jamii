@@ -137,6 +137,25 @@ describe('Question : l’IA propose, un pair valide', () => {
   })
 })
 
+describe('Signaler', () => {
+  it('envoie le motif choisi au modérateur et remercie', async () => {
+    let recu: unknown = null
+    serveur.use(
+      http.post('/api/signalements', async ({ request }) => {
+        recu = await request.json()
+        return new HttpResponse(null, { status: 202 })
+      }),
+    )
+    const { page } = await ouvrir(QUESTION_DE_KOFFI)
+    await vi.waitFor(() => expect(page.find('[data-test="signaler"]').exists()).toBe(true))
+    await page.get('[data-test="signaler"]').trigger('click')
+    await page.get('input[value="hors_sujet"]').setValue(true)
+    await page.get('.signaler__panneau').trigger('submit')
+    await vi.waitFor(() => expect(page.find('[data-test="signale"]').exists()).toBe(true))
+    expect(recu).toEqual({ cibleType: 'publication', cibleId: QUESTION_DE_KOFFI.split('/').pop(), motif: 'hors_sujet' })
+  })
+})
+
 describe('monogramme', () => {
   it('prend l’initiale des deux premiers mots utiles', () => {
     expect(monogramme('Flutter et Dart')).toBe('FD')

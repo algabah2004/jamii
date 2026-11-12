@@ -6,6 +6,9 @@ import { RouterLink, useRoute } from 'vue-router'
 import { api } from '../../api/client'
 import type { components } from '../../api/generated/communautes'
 import { ilYa } from '../vitrine/vitrine'
+import { useSession } from '../../session'
+import BoutonSignaler from './BoutonSignaler.vue'
+import EspaceCommunautes from './EspaceCommunautes.vue'
 
 type Publication = components['schemas']['Publication']
 type Reponse = components['schemas']['Reponse']
@@ -15,6 +18,7 @@ const INTERVALLE_IA_MS = 3000
 const ATTENTE_IA_MAX_MS = 60_000
 
 const { t, locale } = useI18n()
+const { moi } = useSession()
 const route = useRoute()
 const id = computed(() => String(route.params.id))
 
@@ -90,6 +94,12 @@ async function agir(action: 'valider' | 'accepter', reponseId: string) {
 }
 
 const nouvelleReponse = ref('')
+const zoneReponse = ref<HTMLElement | null>(null)
+/** « Répondre » sous la question : amène à la zone de réponse et y place le curseur. */
+function allerRepondre() {
+  zoneReponse.value?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  zoneReponse.value?.querySelector('textarea')?.focus({ preventScroll: true })
+}
 const envoi = ref(false)
 async function repondre() {
   if (nouvelleReponse.value.trim().length < 10) return
@@ -106,8 +116,8 @@ async function repondre() {
 </script>
 
 <template>
-  <section>
-    <JSquelette v-if="etat === 'chargement' && !publication" :nombre="2" />
+  <EspaceCommunautes :actuelle="publication?.communaute">
+    <JSquelette v-if="etat === 'chargement' && !publication" :nombre="3" />
     <div v-else-if="etat === 'introuvable'" class="etat-vide">
       <h1>{{ t('introuvable.titre') }}</h1>
       <RouterLink to="/communautes">{{ t('communautes.retour') }}</RouterLink>
@@ -117,87 +127,159 @@ async function repondre() {
       <JBouton variante="secondaire" @click="charger()">{{ t('etat.reessayer') }}</JBouton>
     </div>
 
-    <article v-else-if="publication" class="publication">
+    <template v-else-if="publication">
       <p class="retour"><RouterLink :to="`/communautes/${publication.communaute}`">{{ t('question.retourCommunaute') }}</RouterLink></p>
-      <p class="statut">
-        <span class="etiquette">{{ t(`communautes.types.${publication.type}`) }}</span>
-        <JBadgePreuve v-if="dejaAcceptee">✓ {{ t('communautes.reponseAcceptee') }}</JBadgePreuve>
-        <span v-else-if="publication.type === 'question'" class="etiquette etiquette--ouverte">{{ t('question.ouverte') }}</span>
-      </p>
-      <h1>{{ publication.titre }}</h1>
-      <p class="auteur">
-        <JAvatar :nom="publication.auteur?.nom ?? '?'" :url="publication.auteur?.avatarUrl" :taille="32" />
-        <span class="discret"><strong>{{ publication.auteur?.nom ?? t('communautes.compteSupprime') }}</strong> · {{ ilYa(publication.creeLe, locale) }}</span>
-      </p>
-      <!-- Texte brut, affiché échappé (jamais v-html) : aucun HTML d'un utilisateur ne s'exécute. -->
-      <p class="texte texte--question">{{ publication.contenu }}</p>
 
-      <p v-if="message" role="status" class="message">{{ message }}</p>
+      <!-- Le message d'origine. -->
+      <article class="message-origine" :class="{ 'message-origine--resolu': dejaAcceptee }" aria-labelledby="titre-fil">
+        <header class="auteur">
+          <JAvatar :nom="publication.auteur?.nom ?? '?'" :url="publication.auteur?.avatarUrl" :taille="44" />
+          <div class="auteur__texte">
+            <strong>{{ publication.auteur?.nom ?? t('communautes.compteSupprime') }}</strong>
+            <span>{{ ilYa(publication.creeLe, locale) }}</span>
+          </div>
+          <span class="etiquette">{{ t(`communautes.types.${publication.type}`) }}</span>
+        </header>
+        <h1 id="titre-fil">{{ publication.titre }}</h1>
+        <!-- Texte brut, affiché échappé (jamais v-html) : aucun HTML d'un utilisateur ne s'exécute. -->
+        <p class="texte">{{ publication.contenu }}</p>
+        <footer class="barre">
+          <JBadgePreuve v-if="dejaAcceptee">✓ {{ t('communautes.reponseAcceptee') }}</JBadgePreuve>
+          <span v-else-if="publication.type === 'question'" class="statut-ouvert">{{ t('question.ouverte') }}</span>
+          <span class="barre__espace" />
+          <button v-if="publication.moi.estMembre" type="button" class="barre__action" @click="allerRepondre">{{ t('question.repondre') }}</button>
+          <BoutonSignaler cible-type="publication" :cible-id="publication.id" />
+        </footer>
+      </article>
 
-      <p v-if="publication.propositionIa?.statut === 'en_attente' && !iaTropLongue" role="status" class="attente" data-test="ia-attente">
-        ✨ {{ t('question.iaPrepare') }}
+      <p v-if="message" role="status" class="annonce">{{ message }}</p>
+      <p v-if="publication.propositionIa?.statut === 'en_attente' && !iaTropLongue" role="status" class="annonce annonce--ia" data-test="ia-attente">
+        <span class="points-attente" aria-hidden="true"><i /><i /><i /></span> {{ t('question.iaPrepare') }}
       </p>
-      <p v-else-if="publication.propositionIa?.statut === 'indisponible' || iaTropLongue" class="discret" data-test="ia-indisponible">
+      <p v-else-if="publication.propositionIa?.statut === 'indisponible' || iaTropLongue" class="annonce annonce--discrete" data-test="ia-indisponible">
         {{ t('question.iaIndisponible') }}
       </p>
 
-      <h2>{{ t('communautes.reponses', { n: reponses.length }, reponses.length) }}</h2>
-      <ul class="reponses" data-test="reponses">
-        <li v-for="r in reponses" :key="r.id" :class="{ acceptee: r.acceptee, ia: r.proposeeParIa }">
-          <p v-if="r.acceptee" class="badge-acceptee" data-test="acceptee">
-            <JBadgePreuve :celebrer="vientDEtreAcceptee === r.id">
-              ✓ {{ t('communautes.reponseAcceptee') }}<template v-if="r.valideePar"> · {{ t('question.valideePar', { nom: r.valideePar.nom }) }}</template>
-            </JBadgePreuve>
-          </p>
-          <p v-if="r.proposeeParIa" class="etiquette-ia" data-test="etiquette-ia">✨ {{ t(r.valideePar ? 'question.proposeeParIaVerifiee' : 'question.proposeeParIa') }}</p>
-          <p v-else class="auteur">
-            <JAvatar :nom="r.auteur?.nom ?? '?'" :url="r.auteur?.avatarUrl" :taille="28" />
-            <span class="discret"><strong>{{ r.auteur?.nom ?? t('communautes.compteSupprime') }}</strong> · {{ ilYa(r.creeLe, locale) }}</span>
-          </p>
-          <p class="texte">{{ r.contenu }}</p>
-          <p v-if="r.proposeeParIa && !r.acceptee && publication.moi.estAuteur" class="discret">{{ t('question.attendUnPair') }}</p>
-          <JBouton v-if="peutValider(r)" class="principal" data-test="valider" @click="agir('valider', r.id)">
-            {{ t('question.valider') }}
-          </JBouton>
-          <JBouton v-if="peutAccepter(r)" class="principal" data-test="accepter" @click="agir('accepter', r.id)">
-            {{ t('question.accepter') }}
-          </JBouton>
-        </li>
-      </ul>
+      <h2 class="separateur">{{ t('communautes.reponses', { n: reponses.length }, reponses.length) }}</h2>
 
-      <form v-if="publication.moi.estMembre" class="carte formulaire" @submit.prevent="repondre">
-        <JChamp v-model="nouvelleReponse" :libelle="t('question.taReponse')" multiligne :maxlength="10000" requis />
-        <JBouton type="submit" class="principal" :desactive="nouvelleReponse.trim().length < 10" :occupe="!!envoi">
-          {{ t('question.repondre') }}
-        </JBouton>
+      <!-- Le fil : chaque réponse est reliée à la suivante par une ligne, comme une conversation. -->
+      <ol class="fil" data-test="reponses">
+        <li v-for="r in reponses" :key="r.id" class="reponse" :class="{ acceptee: r.acceptee, ia: r.proposeeParIa }">
+          <span v-if="r.proposeeParIa" class="avatar-ia" aria-hidden="true">✨</span>
+          <JAvatar v-else :nom="r.auteur?.nom ?? '?'" :url="r.auteur?.avatarUrl" :taille="40" />
+          <div class="bulle">
+            <div class="bulle__tete">
+              <p v-if="r.proposeeParIa" class="etiquette-ia" data-test="etiquette-ia">{{ t(r.valideePar ? 'question.proposeeParIaVerifiee' : 'question.proposeeParIa') }}</p>
+              <p v-else class="auteur__texte">
+                <strong>{{ r.auteur?.nom ?? t('communautes.compteSupprime') }}</strong>
+                <span>{{ ilYa(r.creeLe, locale) }}</span>
+              </p>
+              <p v-if="r.acceptee" class="badge-acceptee" data-test="acceptee">
+                <JBadgePreuve :celebrer="vientDEtreAcceptee === r.id">
+                  ✓ {{ t('communautes.reponseAcceptee') }}<template v-if="r.valideePar"> · {{ t('question.valideePar', { nom: r.valideePar.nom }) }}</template>
+                </JBadgePreuve>
+              </p>
+            </div>
+            <p class="texte">{{ r.contenu }}</p>
+            <p v-if="r.proposeeParIa && !r.acceptee && publication.moi.estAuteur" class="note">{{ t('question.attendUnPair') }}</p>
+            <div class="bulle__actions">
+              <JBouton v-if="peutValider(r)" class="principal" data-test="valider" @click="agir('valider', r.id)">
+                {{ t('question.valider') }}
+              </JBouton>
+              <JBouton v-if="peutAccepter(r)" class="principal" data-test="accepter" @click="agir('accepter', r.id)">
+                {{ t('question.accepter') }}
+              </JBouton>
+              <BoutonSignaler v-if="!r.proposeeParIa" cible-type="reponse" :cible-id="r.id" />
+            </div>
+          </div>
+        </li>
+      </ol>
+
+      <form v-if="publication.moi.estMembre" ref="zoneReponse" class="compositeur" @submit.prevent="repondre">
+        <JAvatar v-if="moi" :nom="moi.nom" :url="moi.avatarUrl" :taille="40" />
+        <div class="compositeur__corps">
+          <JChamp v-model="nouvelleReponse" :libelle="t('question.taReponse')" multiligne :lignes="3" :maxlength="10000" requis />
+          <JBouton type="submit" class="principal" :desactive="nouvelleReponse.trim().length < 10" :occupe="!!envoi">
+            {{ t('question.repondre') }}
+          </JBouton>
+        </div>
       </form>
-      <p v-else class="discret">{{ t('communautes.rejoindrePourPublier') }}</p>
-    </article>
-  </section>
+      <p v-else class="annonce annonce--discrete">{{ t('communautes.rejoindrePourPublier') }}</p>
+    </template>
+
+    <template v-if="publication" #contexte>
+      <section class="carte contexte" aria-labelledby="fonctionnement">
+        <h2 id="fonctionnement">{{ t('communautes.fonctionnement.titre') }}</h2>
+        <ol class="etapes">
+          <li>{{ t('communautes.fonctionnement.poser') }}</li>
+          <li>{{ t('communautes.fonctionnement.ia') }}</li>
+          <li>{{ t('communautes.fonctionnement.accepter') }}</li>
+        </ol>
+      </section>
+    </template>
+  </EspaceCommunautes>
 </template>
 
 <style scoped>
-.publication { max-width: 46rem; }
-.retour { margin-bottom: var(--space-4); }
-.statut { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; margin-bottom: var(--space-3); }
-.etiquette--ouverte { background: var(--action-soft); }
-.publication h1 { font-size: clamp(1.75rem, 3.6vw, 2.25rem); line-height: 1.15; letter-spacing: -0.6px; margin-bottom: var(--space-4); }
-.publication h2 { margin-top: var(--space-8); font-size: var(--type-h3-size); }
-.texte { white-space: pre-wrap; margin: 0; }
-.texte--question { margin: var(--space-6) 0; font-size: 1.0625rem; line-height: 1.65; }
-.discret { color: var(--ink-muted); font-size: var(--type-body-sm-size); }
-.message { background: var(--surface-raised); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); font-weight: 600; }
-.attente { display: flex; align-items: center; gap: var(--space-2); background: var(--action-soft); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); font-weight: 600; }
-.reponses { list-style: none; padding: 0; margin: 0 0 var(--space-8); display: grid; gap: var(--space-4); }
-.reponses li { display: grid; gap: var(--space-3); justify-items: start; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md); padding: var(--space-6); }
-.reponses li > * { margin: 0; }
-.reponses li .texte { justify-self: stretch; }
-.reponses li.ia { border: 1px dashed var(--line-strong); background: var(--action-soft); } /* charte : proposition de l'IA, pas encore une preuve */
-/* Orange = la preuve (tokens.json) : la réponse acceptée. */
-.reponses li.acceptee { border: 2px solid var(--proof); }
+.retour { margin: 0; font-size: var(--type-body-sm-size); }
+.texte { white-space: pre-wrap; margin: 0; overflow-wrap: anywhere; }
+
+.message-origine { display: grid; gap: var(--space-4); padding: var(--space-6); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); }
+.message-origine--resolu { box-shadow: inset 4px 0 0 var(--proof); }
+.message-origine h1 { margin: 0; font-size: clamp(1.5rem, 3vw, 1.875rem); line-height: 1.2; letter-spacing: -0.5px; }
+.message-origine .texte { font-size: 1.0625rem; line-height: 1.65; }
+.auteur { display: flex; align-items: center; gap: var(--space-3); }
+.auteur .etiquette { margin-inline-start: auto; }
+.auteur__texte { display: grid; line-height: 1.3; margin: 0; }
+.auteur__texte strong { font-size: var(--type-body-sm-size); }
+.auteur__texte span { color: var(--ink-muted); font-size: var(--type-body-sm-size); }
+.barre { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); padding-top: var(--space-3); border-top: 1px solid var(--line); }
+.barre__espace { flex: 1; }
+.barre__action { background: none; border: 0; padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); color: var(--action-ink); font-size: var(--type-body-sm-size); font-weight: 600; cursor: pointer; }
+.barre__action:hover { background: var(--action-soft); }
+.statut-ouvert { padding: 2px var(--space-3); border-radius: var(--radius-pill); background: var(--action-soft); font-size: var(--type-label-size); font-weight: 600; }
+
+.annonce { margin: 0; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--surface-raised); font-weight: 600; }
+.annonce--ia { display: flex; align-items: center; gap: var(--space-3); background: var(--action-soft); }
+.annonce--discrete { background: transparent; border: 1px dashed var(--line-strong); color: var(--ink-muted); font-weight: 400; }
+/* L'IA écrit : trois points qui respirent (immobiles si le mouvement est réduit). */
+.points-attente { display: inline-flex; gap: 4px; }
+.points-attente i { width: 6px; height: 6px; border-radius: 50%; background: var(--action-ink); animation: respire 1.2s var(--ease-out) infinite; }
+.points-attente i:nth-child(2) { animation-delay: 0.15s; }
+.points-attente i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes respire { 50% { opacity: 0.25; transform: translateY(-2px); } }
+@media (prefers-reduced-motion: reduce) { .points-attente i { animation: none; } }
+
+.separateur { display: flex; align-items: center; gap: var(--space-3); margin: var(--space-2) 0 0; font-size: 1rem; color: var(--ink-muted); }
+.separateur::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+
+.fil { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-4); }
+.reponse { position: relative; display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: var(--space-3); }
+/* La ligne du fil, d'un avatar au suivant. */
+.reponse:not(:last-child)::before { content: ''; position: absolute; left: 19px; top: 48px; bottom: calc(-1 * var(--space-4)); width: 2px; background: var(--line); border-radius: 2px; }
+.avatar-ia { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--action-soft); border: 1px dashed var(--line-strong); font-size: 1.125rem; }
+.bulle { display: grid; gap: var(--space-3); justify-items: start; padding: var(--space-4) var(--space-6); background: var(--surface); border: 1px solid var(--line); border-radius: 4px var(--radius-lg) var(--radius-lg) var(--radius-lg); }
+.bulle > * { margin: 0; }
+.bulle .texte { justify-self: stretch; }
+.bulle__tete { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); justify-self: stretch; }
+.bulle__tete > * { margin: 0; }
+.bulle__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); justify-self: stretch; }
+.bulle__actions:empty { display: none; }
+.bulle__actions .signaler { margin-inline-start: auto; }
+/* Charte : la proposition de l'IA est en pointillé, ce n'est pas encore une preuve. */
+.reponse.ia .bulle { border: 1px dashed var(--line-strong); background: var(--action-soft); }
+/* Orange = la preuve : la réponse acceptée. */
+.reponse.acceptee .bulle { border: 2px solid var(--proof); }
 .etiquette-ia { font-weight: 600; font-size: var(--type-body-sm-size); }
-.auteur { display: flex; align-items: center; gap: var(--space-2); }
-.auteur strong { color: var(--ink); }
-.formulaire { display: grid; gap: var(--space-4); justify-items: start; }
-.formulaire > :first-child { justify-self: stretch; }
+.note { color: var(--ink-muted); font-size: var(--type-body-sm-size); }
+
+.compositeur { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: var(--space-3); padding: var(--space-4); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); }
+.compositeur:focus-within { border-color: var(--action); }
+.compositeur__corps { display: grid; gap: var(--space-3); justify-items: end; }
+.compositeur__corps > :first-child { justify-self: stretch; }
+
+.contexte { padding: var(--space-6); display: grid; gap: var(--space-3); }
+.contexte h2 { margin: 0; font-size: 1.0625rem; }
+.etapes { margin: 0; padding-inline-start: 1.25rem; display: grid; gap: var(--space-3); color: var(--ink-muted); font-size: var(--type-body-sm-size); }
+.etapes ::marker { color: var(--ink); font-weight: 700; }
 </style>
