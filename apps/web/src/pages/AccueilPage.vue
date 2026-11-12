@@ -82,11 +82,11 @@ const chiffres = computed(() => {
         </dl>
 
         <div class="scene__actions">
-          <RouterLink v-if="etat === 'connecte'" to="/profil" class="bouton-rond">
-            <span class="bouton-rond__point" aria-hidden="true" />{{ t('accueil.voirProfil') }}
+          <RouterLink v-if="etat === 'connecte'" to="/profil" class="bouton-scene">
+            <span class="bouton-scene__point" aria-hidden="true" />{{ t('accueil.voirProfil') }}
           </RouterLink>
-          <a v-else :href="adresseConnexionGithub(retour)" class="bouton-rond" data-test="connexion">
-            <span class="bouton-rond__point" aria-hidden="true" />{{ t('accueil.scene.commencer') }}
+          <a v-else :href="adresseConnexionGithub(retour)" class="bouton-scene" data-test="connexion">
+            <span class="bouton-scene__point" aria-hidden="true" />{{ t('accueil.scene.commencer') }}
           </a>
           <RouterLink :to="etat === 'connecte' ? '/communautes' : '/vitrine'" class="scene__lien">
             {{ etat === 'connecte' ? t('accueil.voirCommunautes') : t('accueil.voirVitrine') }}
@@ -221,23 +221,21 @@ const chiffres = computed(() => {
 .scene__chiffres dd { margin: 0; font-family: var(--font-editorial); font-size: 2.25rem; line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; text-shadow: var(--ombre-texte); }
 .scene__chiffres dt { margin-top: var(--space-1); color: var(--ink); font-size: var(--type-body-sm-size); font-weight: 500; text-shadow: var(--ombre-texte); }
 
-.scene__actions { display: grid; justify-items: center; gap: var(--space-2); margin-top: var(--space-4); }
-/* Le bouton rond, lumineux : l'unique action de la scène. */
-.bouton-rond {
-  display: grid; place-items: center; align-content: center; gap: var(--space-1);
-  width: 116px; height: 116px; border-radius: 50%;
-  /* Verre sombre : le texte blanc s'y lit, quel que soit le halo derrière. */
-  background: radial-gradient(circle at 50% 25%, color-mix(in srgb, var(--midnight) 35%, transparent), color-mix(in srgb, var(--midnight) 72%, transparent) 80%);
-  border: 1.5px solid color-mix(in srgb, var(--ink) 75%, transparent);
-  box-shadow: 0 0 0 10px color-mix(in srgb, var(--ink) 10%, transparent), 0 0 70px color-mix(in oklch, var(--proof) 60%, var(--ink));
-  backdrop-filter: blur(8px);
-  color: var(--ink); font-weight: 700; text-decoration: none; text-align: center; padding: var(--space-3); line-height: 1.25;
-  text-shadow: var(--ombre-texte);
+.scene__actions { display: grid; justify-items: center; gap: var(--space-4); margin-top: var(--space-6); }
+/* L'unique action de la scène : une capsule blanche pleine, qui ressort nettement sur le bleu. */
+.bouton-scene {
+  display: inline-flex; align-items: center; gap: var(--space-3);
+  min-height: 52px; padding: 0 var(--space-8) 0 var(--space-6);
+  border-radius: var(--radius-pill);
+  background: #fff; color: var(--midnight);
+  font-weight: 700; font-size: 1.0625rem; text-decoration: none;
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--midnight) 35%, transparent), 0 0 0 6px color-mix(in srgb, #fff 14%, transparent);
   transition: transform var(--motion-base) var(--ease-out), box-shadow var(--motion-base) var(--ease-out);
 }
-.bouton-rond:hover { transform: scale(1.04); box-shadow: 0 0 0 14px color-mix(in srgb, var(--ink) 8%, transparent), 0 0 80px color-mix(in srgb, var(--proof) 70%, transparent); }
-.bouton-rond:focus-visible { outline: 2px solid var(--ink); outline-offset: 6px; }
-.bouton-rond__point { width: 8px; height: 8px; border-radius: 50%; background: var(--proof); box-shadow: 0 0 12px var(--proof); }
+.bouton-scene:hover { transform: translateY(-2px); box-shadow: 0 14px 36px color-mix(in srgb, var(--midnight) 40%, transparent), 0 0 0 8px color-mix(in srgb, #fff 18%, transparent); }
+.bouton-scene:active { transform: scale(0.97); }
+.bouton-scene:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
+.bouton-scene__point { width: 8px; height: 8px; border-radius: 50%; background: var(--cantaloupe); box-shadow: 0 0 0 4px color-mix(in srgb, var(--cantaloupe) 22%, transparent); }
 .scene__lien { color: var(--ink); font-weight: 600; text-underline-offset: 0.25em; text-shadow: var(--ombre-texte); }
 /* Petit texte posé sur l'orange : il a sa propre pastille sombre, sinon il disparaît. */
 .scene__rassurance, .apercu__etiquette {
