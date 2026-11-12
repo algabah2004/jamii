@@ -286,6 +286,8 @@
       "pas_auteur_question": "Seul l'auteur de la question peut accepter une réponse.",
       "propre_question": "Tu ne peux pas valider la réponse à ta propre question : un autre membre doit le faire.",
       "deja_acceptee": "Cette question a déjà une réponse acceptée.",
+      "propre_reponse": "Tu ne peux pas accepter ta propre réponse : seule l'aide d'un autre membre compte sur un profil.",
+      "proposee_par_ia": "La réponse de l'IA ne s'accepte pas : un autre membre doit la vérifier.",
       "autre": "Ça n'a pas marché. Réessaie dans un instant."
     },
     "ouverte": "Question ouverte"

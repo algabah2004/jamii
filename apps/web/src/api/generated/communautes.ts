@@ -152,7 +152,8 @@ export interface paths {
         /**
          * L'auteur de la question accepte une réponse humaine
          * @description Une seule réponse acceptée par question (`409 deja_acceptee`). L'auteur de la réponse reçoit une preuve
-         *     `reponse_acceptee` sur son profil. La réponse de l'IA ne s'accepte pas ici : elle se **valide** par un pair.
+         *     `reponse_acceptee` sur son profil. La réponse de l'IA ne s'accepte pas ici (`409 proposee_par_ia`) : elle se
+         *     **valide** par un pair. On n'accepte pas sa propre réponse (`409 propre_reponse`).
          */
         post: operations["accepterReponse"];
         delete?: never;

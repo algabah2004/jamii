@@ -28,7 +28,9 @@ info:
 
     **Codes d'erreur métier** (champ `code` de `Erreur`) : `pas_membre` (403), `pas_auteur_question` (403),
     `propre_question` (409, valider la réponse de l'IA à sa propre question), `deja_acceptee` (409),
-    `pas_une_question` (409), `pas_proposee_par_ia` (409), `deja_signale` (409).
+    `pas_une_question` (409), `pas_proposee_par_ia` (409, valider une réponse humaine), `proposee_par_ia` (409,
+    accepter la réponse de l'IA au lieu de la faire valider), `propre_reponse` (409, accepter sa propre réponse :
+    sinon on se donnerait une preuve sur son profil), `deja_signale` (409).
 servers:
   - url: http://localhost:8080
 
@@ -211,7 +213,8 @@ paths:
       summary: L'auteur de la question accepte une réponse humaine
       description: |
         Une seule réponse acceptée par question (`409 deja_acceptee`). L'auteur de la réponse reçoit une preuve
-        `reponse_acceptee` sur son profil. La réponse de l'IA ne s'accepte pas ici : elle se **valide** par un pair.
+        `reponse_acceptee` sur son profil. La réponse de l'IA ne s'accepte pas ici (`409 proposee_par_ia`) : elle se
+        **valide** par un pair. On n'accepte pas sa propre réponse (`409 propre_reponse`).
       security:
         - session: []
           csrf: []

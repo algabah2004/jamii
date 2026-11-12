@@ -67,6 +67,11 @@ jamii:
     source: ${GITHUB_SOURCE:github}
     # Facultatif mais conseillé en production : sans jeton, GitHub limite à 60 requêtes par heure pour tout le serveur.
     jeton: ${GITHUB_TOKEN:}
+  # Module communautes (#18) : qui propose une réponse à une question.
+  communautes:
+    # simulee (sans réseau : local, tests, démo) ou aucune (la question reste ouverte aux humains).
+    # L'adaptateur du service IA de l'équipe (#69) s'ajoutera ici.
+    ia: ${COMMUNAUTES_IA:simulee}
 
 # Seule la santé est exposée, sur /health (contrat : contracts/socle.yaml).
 # /health/liveness et /health/readiness servent de sondes à DataCloud.
