@@ -55,7 +55,7 @@ const { t, locale } = useI18n()
   height: 100%;
   display: flex; flex-direction: column; gap: var(--space-3);
   padding: var(--space-6);
-  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg);
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--ombre-carte);
   transition: border-color var(--motion-fast) var(--ease-out);
 }
 .projet:hover { border-color: var(--line-strong); }

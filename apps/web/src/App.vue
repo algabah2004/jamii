@@ -143,7 +143,7 @@ main:focus { outline: none; }
 .page-leave-to { opacity: 0; }
 .hors-ligne { display: grid; gap: var(--space-3); justify-items: start; }
 
-.pied { border-top: 1px solid var(--line); background: var(--surface); }
+.pied { border-top: 1px solid var(--line); background: color-mix(in srgb, var(--surface) 70%, transparent); }
 .pied__interieur { display: flex; flex-wrap: wrap; gap: var(--space-4) var(--space-12); align-items: flex-start; padding-block: var(--space-8); }
 .pied__marque { flex: 1 1 18rem; display: grid; gap: var(--space-2); }
 .pied__marque p { margin: 0; color: var(--ink-muted); max-width: 28rem; }

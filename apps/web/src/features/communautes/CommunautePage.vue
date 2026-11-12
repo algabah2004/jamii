@@ -233,7 +233,7 @@ const formulaireOuvert = ref(false)
 
 <style scoped>
 /* Bannière : une couverture douce (une trame de points sur le bleu clair de la charte), pas d'aplat criard. */
-.banniere { overflow: hidden; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); }
+.banniere { overflow: hidden; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--ombre-carte); }
 .banniere__couverture {
   height: 96px;
   background:
@@ -260,7 +260,7 @@ const formulaireOuvert = ref(false)
 .banniere__description { margin: var(--space-3) 0 0; padding: 0 var(--space-6) var(--space-6); color: var(--ink-muted); }
 
 /* Le fil : un seul panneau, des lignes de séparation, comme un fil d'actualité. */
-.flux { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden; }
+.flux { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--ombre-carte); overflow: hidden; }
 .compositeur { display: flex; gap: var(--space-3); align-items: center; padding: var(--space-4) var(--space-6); }
 .compositeur__invite {
   flex: 1; min-height: 44px; text-align: start; padding: 0 var(--space-4);
@@ -311,7 +311,7 @@ const formulaireOuvert = ref(false)
 .deplie-enter-active, .deplie-leave-active { transition: opacity var(--motion-fast) var(--ease-out); }
 .deplie-enter-from, .deplie-leave-to { opacity: 0; }
 
-.contexte { display: grid; gap: var(--space-3); padding: var(--space-6); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); }
+.contexte { display: grid; gap: var(--space-3); padding: var(--space-6); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--ombre-carte); }
 .contexte h2 { margin: 0; font-size: 1rem; }
 .contexte h3 { margin: 0; font-size: 1rem; }
 .contexte__illustration { margin: var(--space-3) calc(-1 * var(--space-2)) 0; padding-top: var(--space-4); border-top: 1px solid var(--line); }

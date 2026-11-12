@@ -264,7 +264,7 @@ const chiffres = computed(() => {
 .maquette__pastilles b { padding: 2px var(--space-3); border-radius: var(--radius-pill); background: var(--proof); color: var(--on-proof); font-size: 0.75rem; }
 .maquette__pastilles em { width: 48px; border-radius: var(--radius-pill); background: color-mix(in srgb, var(--ink) 12%, transparent); }
 .apercu__projet { text-align: start; background: color-mix(in srgb, var(--proof-soft) 78%, transparent); }
-.apercu__projet :deep(.projet) { background: transparent; border: 0; }
+.apercu__projet :deep(.projet) { background: transparent; border: 0; box-shadow: none; }
 .apercu--gauche { transform: rotateY(14deg) rotateZ(-3deg) translateY(18px); transform-origin: right bottom; }
 .apercu--droite { transform: rotateY(-14deg) rotateZ(3deg) translateY(18px); transform-origin: left bottom; }
 .apercu--gauche:hover { transform: rotateY(8deg) rotateZ(-2deg) translateY(6px); }
