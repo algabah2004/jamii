@@ -6,7 +6,7 @@ import { JAvatar, JBouton, JChamp, JDeplier, JSquelette } from '../../design-sys
 import { useSession } from '../../session'
 import { nomPays } from '../systalink/calculs'
 import { ilYa } from '../vitrine/vitrine'
-import { avantTirage, deposerIdee, estMembre, joursRestants, LIMITES, lireCercle, ordreDePassage, positionsAnneau, pourcentage, rejoindreCercle, tirerAuSort, tourEnCours, type Cercle, type Resultat } from './cercles'
+import { avantTirage, deposerIdee, livrerTour, estMembre, joursRestants, LIMITES, lireCercle, ordreDePassage, positionsAnneau, pourcentage, rejoindreCercle, tirerAuSort, tourEnCours, type Cercle, type Resultat } from './cercles'
 
 /*
  * La page d'un cercle : qui en fait partie, l'ordre de passage, le tour en cours et le message du Griot.
@@ -45,9 +45,9 @@ const preparation = computed(() => (cercle.value ? avantTirage(cercle.value) : n
 const monIdee = computed(() => cercle.value?.membres.find((m) => m.utilisateurId === moi.value?.id)?.idee ?? null)
 
 // Une seule action à la fois ; l'erreur dit ce qui bloque, avec le code renvoyé par l'API.
-const action = ref<'repos' | 'rejoindre' | 'idee' | 'tirage'>('repos')
+const action = ref<'repos' | 'rejoindre' | 'idee' | 'tirage' | 'livrer'>('repos')
 const erreur = ref<string | null>(null)
-async function agir(quoi: 'rejoindre' | 'idee' | 'tirage', appel: () => Promise<Resultat>) {
+async function agir(quoi: 'rejoindre' | 'idee' | 'tirage' | 'livrer', appel: () => Promise<Resultat>) {
   action.value = quoi
   erreur.value = null
   try {
@@ -55,6 +55,7 @@ async function agir(quoi: 'rejoindre' | 'idee' | 'tirage', appel: () => Promise<
     if (r.ok) {
       cercle.value = r.cercle
       if (quoi === 'idee') ideeOuverte.value = false
+      if (quoi === 'livrer') confirmerLivraison.value = false
     } else erreur.value = t(`cercles.erreurs.${r.code ?? 'autre'}`, t('cercles.erreurs.autre'))
   } catch {
     erreur.value = t('etat.indisponible')
@@ -62,6 +63,22 @@ async function agir(quoi: 'rejoindre' | 'idee' | 'tirage', appel: () => Promise<
     action.value = 'repos'
   }
 }
+
+// Livrer : réservé au bénéficiaire du tour et au créateur (contrat), avec une confirmation qui dit ce qui va se passer.
+const peutLivrer = computed(() => !!tour.value && (tour.value.beneficiaireId === moi.value?.id || createur.value))
+const confirmerLivraison = ref(false)
+const suivant = computed(() => {
+  const n = tour.value?.numero
+  const t2 = n ? cercle.value?.tours.find((x) => x.numero === n + 1) : null
+  return t2 ? (ordre.value.find((m) => m.utilisateurId === t2.beneficiaireId) ?? null) : null
+})
+const dernierLivre = ref<string | null>(null)
+async function livrer() {
+  const nom = beneficiaire.value?.nom.split(' ')[0] ?? ''
+  await agir('livrer', () => livrerTour(cercle.value!.id, tour.value!.numero))
+  if (!erreur.value) dernierLivre.value = nom
+}
+const livres = computed(() => cercle.value?.tours.filter((x) => x.statut === 'livre') ?? [])
 
 const idee = ref({ titre: '', description: '' })
 const ideeOuverte = ref(false)
@@ -121,6 +138,11 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
         </figure>
 
         <div class="cote">
+          <p v-if="dernierLivre" class="livre carte" role="status" data-test="livre">
+            <strong>{{ t('cercles.livreTitre', { nom: dernierLivre }) }}</strong>
+            {{ t('cercles.livreTexte') }}
+            <RouterLink to="/vitrine">{{ t('cercles.voirVitrine') }}</RouterLink>
+          </p>
           <section v-if="tour && beneficiaire" class="carte tour" aria-labelledby="tour-titre" data-test="tour">
             <p class="tour__surtitre">{{ t('cercles.tourDe', { n: tour.numero, nom: beneficiaire.nom.split(' ')[0] }) }}</p>
             <h2 id="tour-titre">{{ tour.titre }}</h2>
@@ -138,6 +160,26 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
               </span>
               <span class="visuellement-cache">({{ t('vitrine.nouvelOnglet') }})</span>
             </a>
+            <template v-if="peutLivrer">
+              <JDeplier>
+                <JBouton v-if="!confirmerLivraison" variante="secondaire" data-test="livrer" @click="confirmerLivraison = true">{{ t('cercles.livrer') }}</JBouton>
+              </JDeplier>
+              <JDeplier>
+                <div v-if="confirmerLivraison" class="confirmation" data-test="confirmer-livraison">
+                  <p>{{ suivant ? t('cercles.livrerConfirmation', { nom: beneficiaire.nom.split(' ')[0], suivant: suivant.nom.split(' ')[0] }) : t('cercles.livrerDernier', { nom: beneficiaire.nom.split(' ')[0] }) }}</p>
+                  <div class="commandes">
+                    <JBouton :occupe="action === 'livrer'" data-test="confirmer" @click="livrer">{{ t('cercles.livrerOui') }}</JBouton>
+                    <JBouton variante="discret" @click="confirmerLivraison = false">{{ t('communautes.annuler') }}</JBouton>
+                  </div>
+                </div>
+              </JDeplier>
+              <p v-if="erreur" role="alert" class="erreur">{{ erreur }}</p>
+            </template>
+          </section>
+          <section v-else-if="cercle.statut === 'termine'" class="carte tour" data-test="termine">
+            <h2>{{ t('cercles.termine') }}</h2>
+            <p class="texte-discret">{{ t('cercles.termineAide', { n: livres.length }) }}</p>
+            <RouterLink to="/vitrine">{{ t('cercles.voirVitrine') }}</RouterLink>
           </section>
           <section v-else-if="!cercle.tirageFait && preparation" class="carte tour" aria-labelledby="avant-titre" data-test="attente-tirage">
             <h2 id="avant-titre">{{ t('cercles.avantTirage') }}</h2>
@@ -244,6 +286,9 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
 .mon-idee p { margin: 0; }
 .commandes { display: flex; flex-wrap: wrap; gap: var(--space-3); }
 .erreur { margin: 0; color: var(--danger); font-weight: 600; }
+.confirmation { display: grid; gap: var(--space-3); padding: var(--space-4); border-radius: var(--radius-md); background: var(--proof-soft); }
+.confirmation p { margin: 0; }
+.livre { display: grid; gap: var(--space-1); margin: 0; padding: var(--space-4) var(--space-6); border-left: 4px solid var(--proof); animation: apparait var(--motion-celebrate) var(--ease-pop) both; }
 
 .cote { display: grid; gap: var(--space-4); }
 .tour { display: grid; gap: var(--space-3); padding: var(--space-6); }

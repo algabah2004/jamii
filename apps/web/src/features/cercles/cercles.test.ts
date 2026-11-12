@@ -125,3 +125,32 @@ describe('du cercle vide au tirage', () => {
     await vi.waitFor(() => expect(page.find('[role="alert"]').text()).toBe('Le cercle est déjà complet.'))
   })
 })
+
+describe('livrer un tour', () => {
+  it('demande confirmation, livre le tour et ouvre celui du membre suivant', async () => {
+    const { page } = await ouvrir('/cercles/cercle-dakar')
+    await vi.waitFor(() => expect(page.find('[data-test="livrer"]').exists()).toBe(true))
+    await page.find('[data-test="livrer"]').trigger('click')
+    expect(page.find('[data-test="confirmer-livraison"]').text()).toContain('le tour de Kofi commence')
+    await page.find('[data-test="confirmer"]').trigger('click')
+    await vi.waitFor(() => expect(page.find('[data-test="livre"]').text()).toContain('Le projet de Awa est livré.'))
+    expect(page.find('[data-test="tour"]').text()).toContain('Tour 2 · le projet de Kofi')
+    expect(page.find('.ordre__ligne--livre').text()).toContain('Awa Diop')
+  })
+
+  it("laisse le créateur livrer le tour d'un autre membre, et le cache à un simple membre", async () => {
+    const { page } = await ouvrir('/cercles/cercle-dakar')
+    await vi.waitFor(() => expect(page.find('[data-test="livrer"]').exists()).toBe(true))
+    await page.find('[data-test="livrer"]').trigger('click')
+    await page.find('[data-test="confirmer"]').trigger('click')
+    // Tour 2 : Kofi en est le bénéficiaire, mais Awa reste la créatrice du cercle : elle peut encore livrer.
+    await vi.waitFor(() => expect(page.find('[data-test="tour"]').text()).toContain('Tour 2'))
+    expect(page.find('[data-test="livrer"]').exists()).toBe(true)
+
+    const { cercleDakar } = await import('../../mocks/cercles')
+    serveur.use(http.get('/api/cercles/:id', () => HttpResponse.json({ ...cercleDakar, createurId: 'quelqu-un-d-autre', tours: cercleDakar.tours.map((x, i) => (i === 0 ? { ...x, beneficiaireId: cercleDakar.membres[1]!.utilisateurId } : x)) })))
+    const autre = await ouvrir('/cercles/cercle-dakar')
+    await vi.waitFor(() => expect(autre.page.find('[data-test="tour"]').exists()).toBe(true))
+    expect(autre.page.find('[data-test="livrer"]').exists()).toBe(false)
+  })
+})

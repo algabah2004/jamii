@@ -130,6 +130,20 @@ export const handlersCercles = [
     moi.idee = (await request.json()) as MembreCercle['idee']
     return HttpResponse.json(c)
   }),
+  http.post('/api/cercles/:id/tours/:numero/livrer', ({ params }) => {
+    const c = cercles.find((x) => x.id === params.id)
+    if (!c) return erreur('introuvable', 404)
+    const i = c.tours.findIndex((t) => t.numero === Number(params.numero))
+    if (i < 0 || c.tours[i]!.statut !== 'en_cours') return erreur('tour_non_en_cours')
+    c.tours[i] = { ...c.tours[i]!, statut: 'livre', avancement: { ...c.tours[i]!.avancement, faites: c.tours[i]!.avancement.total } }
+    const suivant = c.tours[i + 1]
+    if (suivant) {
+      const m = c.membres.find((x) => x.utilisateurId === suivant.beneficiaireId)!
+      c.tours[i + 1] = { ...tour(suivant.numero, m, 'en_cours', 0), avancement: { faites: 0, total: 10 } }
+    } else c.statut = 'termine'
+    c.messageGriot = null
+    return HttpResponse.json(c)
+  }),
   http.post('/api/cercles/:id/tirage', ({ params }) => {
     const c = cercles.find((x) => x.id === params.id)
     if (!c) return erreur('introuvable', 404)

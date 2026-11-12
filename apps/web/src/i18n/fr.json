@@ -463,7 +463,8 @@
       "tirage_deja_fait": "L'ordre a déjà été tiré.",
       "cercle_incomplet": "Il manque encore des membres.",
       "idees_manquantes": "Chaque membre doit d'abord déposer son idée.",
-      "autre": "Ça n'a pas marché. Réessaie dans un instant."
+      "autre": "Ça n'a pas marché. Réessaie dans un instant.",
+      "tour_non_en_cours": "Ce tour n'est plus en cours."
     },
     "nouveau": {
       "titre": "Créer un cercle",
@@ -476,6 +477,15 @@
       "tailleAide": "{n} tours de deux semaines : chacun reçoit son projet.",
       "creer": "Créer le cercle"
     },
-    "membresTitre": "Les membres"
+    "membresTitre": "Les membres",
+    "livrer": "Livrer le tour",
+    "livrerOui": "Oui, livrer",
+    "livrerConfirmation": "Le projet de {nom} est terminé ? Il est remis à {nom}, et le tour de {suivant} commence.",
+    "livrerDernier": "Le projet de {nom} est terminé ? C'est le dernier tour : le cercle sera terminé.",
+    "livreTitre": "Le projet de {nom} est livré.",
+    "livreTexte": "Il passera dans la vitrine dès sa mise en ligne, avec le nom de son équipe.",
+    "voirVitrine": "Voir la vitrine",
+    "termine": "Le cercle est terminé.",
+    "termineAide": "{n} projets livrés, un par membre. Le cercle peut repartir pour un nouveau tour de table."
   }
 }

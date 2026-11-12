@@ -137,6 +137,7 @@ async function envoyer(chemin: string, methode: 'POST' | 'PUT', corps?: unknown)
 export const creerCercle = (c: { nom: string; ville: string; taille: number }) => envoyer('/api/cercles', 'POST', { nom: c.nom.trim(), ville: c.ville.trim(), taille: c.taille })
 export const rejoindreCercle = (id: string) => envoyer(`/api/cercles/${encodeURIComponent(id)}/membres`, 'POST')
 export const deposerIdee = (id: string, idee: IdeeMembre) => envoyer(`/api/cercles/${encodeURIComponent(id)}/membres/moi/idee`, 'PUT', { titre: idee.titre.trim(), description: idee.description.trim() })
+export const livrerTour = (id: string, numero: number) => envoyer(`/api/cercles/${encodeURIComponent(id)}/tours/${numero}/livrer`, 'POST')
 export const tirerAuSort = (id: string) => envoyer(`/api/cercles/${encodeURIComponent(id)}/tirage`, 'POST')
 
 export async function lireCercles(): Promise<CercleResume[]> {
