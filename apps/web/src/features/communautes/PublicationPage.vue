@@ -75,10 +75,14 @@ function peutValider(r: Reponse) {
 }
 function peutAccepter(r: Reponse) {
   const p = publication.value
-  return Boolean(p && !r.proposeeParIa && r.auteur && !dejaAcceptee.value && p.moi.estAuteur && p.type === 'question')
+  // Pas sur sa propre réponse : on ne se donne pas une preuve à soi-même (409 propre_reponse).
+  return Boolean(p && !r.proposeeParIa && r.auteur && r.auteur.id !== p.auteur?.id && !dejaAcceptee.value
+    && p.moi.estAuteur && p.type === 'question')
 }
 
-const MESSAGES_ERREUR = new Set(['pas_membre', 'pas_auteur_question', 'propre_question', 'deja_acceptee'])
+const MESSAGES_ERREUR = new Set([
+  'pas_membre', 'pas_auteur_question', 'propre_question', 'propre_reponse', 'proposee_par_ia', 'deja_acceptee',
+])
 async function agir(action: 'valider' | 'accepter', reponseId: string) {
   message.value = null
   const chemin = action === 'valider' ? '/api/reponses/{reponseId}/valider' : '/api/reponses/{reponseId}/accepter'

@@ -110,6 +110,23 @@ describe('Question : l’IA propose, un pair valide', () => {
     expect(page.find('[data-test="acceptee"]').exists()).toBe(true)
   })
 
+  it("l'auteur d'une question ne voit pas « Accepter » sur sa propre réponse", async () => {
+    serveur.use(
+      http.get('/api/publications/:id', () =>
+        HttpResponse.json({
+          id: 'q', communaute: 'flutter', type: 'question', titre: 'Une question', contenu: 'Le détail.',
+          auteur: { id: 'awa', nom: 'Awa Diop', avatarUrl: null }, nombreReponses: 1, accepteeLe: null,
+          creeLe: new Date().toISOString(), projetId: null, reponseAccepteeId: null, propositionIa: { statut: 'indisponible' },
+          moi: { estAuteur: true, estMembre: true },
+          reponses: [{ id: 'r', contenu: 'Trouvé tout seul.', auteur: { id: 'awa', nom: 'Awa Diop', avatarUrl: null },
+            proposeeParIa: false, valideePar: null, acceptee: false, creeLe: new Date().toISOString() }],
+        }),
+      ),
+    )
+    const { page } = await ouvrir('/publications/q')
+    expect(page.find('[data-test="accepter"]').exists()).toBe(false)
+  })
+
   it('explique un refus du serveur avec des mots simples', async () => {
     serveur.use(
       http.post('/api/reponses/:id/valider', () =>

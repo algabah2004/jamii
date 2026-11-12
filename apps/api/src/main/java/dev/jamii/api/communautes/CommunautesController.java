@@ -3,12 +3,10 @@ package dev.jamii.api.communautes;
 import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Stream;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -75,10 +73,17 @@ class CommunautesController {
 
 	private final Projets projets;
 
-	CommunautesController(GestionCommunautes gestion, Annuaire annuaire, Projets projets) {
+	private final VuesPublications vues;
+
+	private final PropositionsIa ia;
+
+	CommunautesController(GestionCommunautes gestion, Annuaire annuaire, Projets projets, VuesPublications vues,
+			PropositionsIa ia) {
 		this.gestion = gestion;
 		this.annuaire = annuaire;
 		this.projets = projets;
+		this.vues = vues;
+		this.ia = ia;
 	}
 
 	@GetMapping("/api/communautes")
@@ -141,7 +146,7 @@ class CommunautesController {
 		var page = lignes.subList(0, Math.min(taille, lignes.size()));
 		Map<UUID, Compte> comptes = annuaire.lire(page.stream().map(GestionCommunautes.Resume::auteurId).filter(id -> id != null).toList());
 		String suivant = suite ? new GestionCommunautes.Curseur(page.getLast().creeLe().toString(), page.getLast().id().toString()).encoder() : null;
-		return ResponseEntity.ok(new Page<>(page.stream().map(r -> resume(r, comptes)).toList(), suivant));
+		return ResponseEntity.ok(new Page<>(page.stream().map(r -> VuesPublications.resume(r, comptes)).toList(), suivant));
 	}
 
 	@PostMapping("/api/communautes/{slug}/publications")
@@ -181,15 +186,16 @@ class CommunautesController {
 		Instant maintenant = Instant.now();
 		long attente = gestion.attenteAvantPublication(moi.id(), maintenant);
 		if (attente > 0) {
-			ResponseEntity<ProblemDetail> trop = probleme(HttpStatus.TOO_MANY_REQUESTS, "trop_de_requetes",
-					"Trop de publications en peu de temps", null);
-			return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).header("Retry-After", String.valueOf(attente)).body(trop.getBody());
+			return Problemes.tropDeRequetes(attente, "Trop de publications en peu de temps");
 		}
-		// La réponse de l'IA arrive avec la tâche `reponse_question` du service IA (#69) : d'ici là, la question
-		// reste ouverte aux réponses humaines, comme le prévoit le contrat quand l'IA ne répond pas.
+		boolean question = "question".equals(demande.type());
 		UUID id = gestion.publier(fiche.get().id(), moi.id(), demande.type(), titre, contenu, demande.projetId(),
-				"question".equals(demande.type()) ? "indisponible" : null, maintenant);
-		return ResponseEntity.created(URI.create("/api/publications/" + id)).body(publication(id, moi.id()));
+				question ? ia.statutInitial() : null, maintenant);
+		if (question) {
+			// Après l'enregistrement : la question est visible tout de suite, la réponse de l'IA suit (contrat).
+			ia.demander(id, new ReponsesIa.Question(titre, contenu, fiche.get().theme()));
+		}
+		return ResponseEntity.created(URI.create("/api/publications/" + id)).body(vues.publication(id, moi.id()));
 	}
 
 	@GetMapping("/api/publications/{publicationId}")
@@ -197,36 +203,7 @@ class CommunautesController {
 		if (gestion.lirePublication(publicationId).isEmpty()) {
 			return introuvable();
 		}
-		return ResponseEntity.ok(publication(publicationId, moi.id()));
-	}
-
-	private Publication publication(UUID id, UUID moi) {
-		var detail = gestion.lirePublication(id).orElseThrow();
-		var reponses = gestion.reponses(id);
-		Set<UUID> personnes = new HashSet<>();
-		Stream.concat(Stream.of(detail.resume().auteurId()),
-				reponses.stream().flatMap(r -> Stream.of(r.auteurId(), r.valideeParId())))
-			.filter(p -> p != null).forEach(personnes::add);
-		Map<UUID, Compte> comptes = annuaire.lire(personnes);
-		var r = resume(detail.resume(), comptes);
-		List<Reponse> liste = reponses.stream()
-			.map(x -> new Reponse(x.id(), x.contenu(), personne(x.auteurId(), comptes), x.proposeeParIa(),
-					personne(x.valideeParId(), comptes), x.id().equals(detail.reponseAccepteeId()), x.creeLe()))
-			.toList();
-		return new Publication(r.id(), r.communaute(), r.type(), r.titre(), r.auteur(), r.nombreReponses(), r.accepteeLe(),
-				r.creeLe(), detail.contenu(), detail.projetId(), detail.reponseAccepteeId(),
-				detail.propositionIa() == null ? null : new PropositionIa(detail.propositionIa()), liste,
-				new Moi(moi.equals(detail.resume().auteurId()), gestion.estMembre(detail.communauteId(), moi)));
-	}
-
-	private static PublicationResume resume(GestionCommunautes.Resume r, Map<UUID, Compte> comptes) {
-		return new PublicationResume(r.id(), r.communaute(), r.type(), r.titre(), personne(r.auteurId(), comptes),
-				r.nombreReponses(), r.accepteeLe(), r.creeLe());
-	}
-
-	private static PersonneResume personne(UUID id, Map<UUID, Compte> comptes) {
-		Compte c = id == null ? null : comptes.get(id);
-		return c == null ? null : new PersonneResume(c.id(), c.nom(), c.avatarUrl());
+		return ResponseEntity.ok(vues.publication(publicationId, moi.id()));
 	}
 
 	private static Communaute communaute(GestionCommunautes.Fiche f) {
@@ -257,24 +234,16 @@ class CommunautesController {
 	}
 
 	private static ResponseEntity<ProblemDetail> validation(String champ) {
-		return probleme(HttpStatus.BAD_REQUEST, "validation", "Certains champs sont invalides",
-				List.of(Map.of("champ", champ, "code", "valeur_invalide")));
+		return Problemes.validation(champ, "valeur_invalide");
 	}
 
 	private static ResponseEntity<ProblemDetail> introuvable() {
-		return probleme(HttpStatus.NOT_FOUND, "introuvable", "Ressource introuvable", null);
+		return Problemes.introuvable();
 	}
 
 	private static ResponseEntity<ProblemDetail> probleme(HttpStatus statut, String code, String titre,
 			List<Map<String, String>> erreurs) {
-		ProblemDetail erreur = ProblemDetail.forStatus(statut);
-		erreur.setType(URI.create("urn:jamii:erreur:" + code));
-		erreur.setTitle(titre);
-		erreur.setProperty("code", code);
-		if (erreurs != null) {
-			erreur.setProperty("erreurs", erreurs);
-		}
-		return ResponseEntity.status(statut).body(erreur);
+		return Problemes.probleme(statut, code, titre, erreurs);
 	}
 
 }

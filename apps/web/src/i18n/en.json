@@ -284,6 +284,8 @@
       "pas_auteur_question": "Only the author of the question can accept an answer.",
       "propre_question": "You cannot confirm the answer to your own question: another member must do it.",
       "deja_acceptee": "This question already has an accepted answer.",
+      "propre_reponse": "You cannot accept your own answer: only help from another member counts on a profile.",
+      "proposee_par_ia": "The AI answer cannot be accepted: another member has to check it.",
       "autre": "That did not work. Try again in a moment."
     },
     "ouverte": "Open question"

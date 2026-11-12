@@ -7,7 +7,6 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -27,7 +26,7 @@ import dev.jamii.api.auth.Role;
 import dev.jamii.api.auth.UtilisateurConnecte;
 
 /** Les routes des communautés et des publications (contracts/communautes.yaml), sur un vrai PostgreSQL. */
-@SpringBootTest
+@SpringBootTest(properties = "jamii.communautes.ia-reflexion=0s")
 @AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)
 class CommunautesTest {
@@ -149,9 +148,8 @@ class CommunautesTest {
 		assertThat(lue).bodyJson().extractingPath("$.titre").isEqualTo("Comment garder les données <b>hors ligne</b> ?");
 		assertThat(lue).bodyJson().extractingPath("$.auteur.nom").isEqualTo("Awa Diop");
 		assertThat(lue).bodyJson().extractingPath("$.communaute").isEqualTo(slug);
-		// Tant que le service IA ne sait pas répondre (#69), la question reste ouverte aux humains.
-		assertThat(lue).bodyJson().extractingPath("$.propositionIa.statut").isEqualTo("indisponible");
-		assertThat(lue).bodyJson().extractingPath("$.reponses").isEqualTo(List.of());
+		// La question est publiée tout de suite ; la réponse de l'IA suit en arrière-plan (ReponsesTest).
+		assertThat(creee).bodyJson().extractingPath("$.propositionIa.statut").isEqualTo("en_attente");
 		assertThat(lue).bodyJson().extractingPath("$.moi.estAuteur").isEqualTo(false);
 		assertThat(lue).bodyJson().extractingPath("$.moi.estMembre").isEqualTo(false);
 		assertThat(get(awa, "/api/communautes/{s}", slug)).bodyJson().extractingPath("$.questionsOuvertes").isEqualTo(1);
