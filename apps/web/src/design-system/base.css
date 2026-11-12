@@ -93,3 +93,8 @@ img, svg { max-width: 100%; }
 .etat-vide { display: grid; justify-items: center; gap: var(--space-3); text-align: center; padding: var(--space-12) var(--space-6); background: var(--surface); border: 1px dashed var(--line-strong); border-radius: var(--radius-lg); }
 .etat-vide p { margin: 0; max-width: 32rem; color: var(--ink-muted); }
 .etat-vide .j-illustration { max-width: 12rem; }
+
+/* Illustration d'en-tête de page : à droite du titre sur ordinateur, masquée sur téléphone (le titre suffit). */
+.page-tete__illustration { width: 15rem; flex-shrink: 0; margin-block: calc(-1 * var(--space-4)) calc(-1 * var(--space-2)); }
+.page-tete__texte > .j-filtres { margin-top: var(--space-4); }
+@media (max-width: 760px) { .page-tete__illustration { display: none; } }

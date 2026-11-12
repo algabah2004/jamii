@@ -41,9 +41,18 @@
       "badge": "Verified",
       "texte": "On Jamii, orange always means the same thing: it is proven. A project that responds, a task delivered on time, an answer accepted by the person who asked."
     },
-    "direct": {
-      "titre": "Online and verified, right now",
-      "lien": "See the whole showcase"
+    "scene": {
+      "titre1": "Find your team.",
+      "titre2": "Put your project",
+      "titreAccent": "online",
+      "commencer": "Start with GitHub",
+      "membres": "members",
+      "pays": "countries",
+      "enLigne": "projects online",
+      "surSystalink": "hosted on Systalink",
+      "apercuCommunautes": "Communities",
+      "apercuEnLigne": "Online and verified",
+      "apercuProfil": "Proven profile"
     }
   },
   "profil": {
@@ -252,7 +261,8 @@
       "decouvrir": "Discover communities",
       "invite": "Ask a question or start a discussion…",
       "premier": "No one has answered yet",
-      "apropos": "About"
+      "apropos": "About",
+      "fil": "Community feed"
     }
   },
   "question": {

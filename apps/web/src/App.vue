@@ -12,7 +12,7 @@ const { etat, moi } = useSession()
 
 <template>
   <a href="#contenu" class="aller-au-contenu">{{ t('menu.allerAuContenu') }}</a>
-  <header class="entete">
+  <header class="entete" :class="{ 'entete--scene zone-sombre': $route.name === 'accueil' }">
     <div class="entete__interieur">
       <RouterLink to="/" class="marque">Jamii<span class="marque__point" aria-hidden="true" /></RouterLink>
       <nav :aria-label="t('menu.principal')">
@@ -43,7 +43,12 @@ const { etat, moi } = useSession()
       <p>{{ t('etat.indisponible') }}</p>
       <JBouton variante="secondaire" @click="chargerSession">{{ t('etat.reessayer') }}</JBouton>
     </div>
-    <RouterView v-else />
+    <!-- Passage d'une page à l'autre : un fondu court, sans rien remonter quand seul le filtre change. -->
+    <RouterView v-else v-slot="{ Component, route: courante }">
+      <Transition name="page" mode="out-in">
+        <component :is="Component" :key="courante.path" />
+      </Transition>
+    </RouterView>
   </main>
 
   <footer class="pied">
@@ -65,7 +70,7 @@ const { etat, moi } = useSession()
 
 <style>
 /* Le cadre commun : en-tête, contenu et pied alignés sur la même largeur (variables du design system, #19). */
-#app { min-height: 100vh; display: flex; flex-direction: column; }
+#app { min-height: 100vh; display: flex; flex-direction: column; overflow-x: clip; }
 .entete__interieur, main, .pied__interieur { width: 100%; max-width: 72rem; margin-inline: auto; padding-inline: var(--space-6); }
 @media (max-width: 720px) { .entete__interieur, main, .pied__interieur { padding-inline: var(--space-4); } }
 
@@ -104,6 +109,9 @@ const { etat, moi } = useSession()
 .deconnexion { background: none; border: 0; padding: var(--space-2); color: var(--ink-muted); font-size: var(--type-body-sm-size); cursor: pointer; white-space: nowrap; }
 .deconnexion:hover { color: var(--ink); text-decoration: underline; }
 
+/* Sur l'accueil, l'en-tête se pose sur la scène sombre : transparent, puis voilé au défilement. */
+.entete--scene { background: color-mix(in srgb, var(--bg) 55%, transparent); border-bottom-color: color-mix(in srgb, var(--ink) 10%, transparent); }
+
 /* Écran étroit : la marque et les réglages sur la première ligne, le menu entier sur la seconde. */
 @media (max-width: 720px) {
   .entete__interieur { padding-block: var(--space-2); }
@@ -117,6 +125,9 @@ const { etat, moi } = useSession()
 
 main { flex: 1; padding-block: var(--space-8) var(--space-12); }
 main:focus { outline: none; }
+.page-enter-active, .page-leave-active { transition: opacity var(--motion-fast) var(--ease-out), transform var(--motion-base) var(--ease-out); }
+.page-enter-from { opacity: 0; transform: translateY(6px); }
+.page-leave-to { opacity: 0; }
 .hors-ligne { display: grid; gap: var(--space-3); justify-items: start; }
 
 .pied { border-top: 1px solid var(--line); background: var(--surface); }

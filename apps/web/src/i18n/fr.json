@@ -13,7 +13,7 @@
   },
   "accueil": {
     "titre": "Trouve ton équipe, construis ton projet, mets-le en ligne.",
-    "texte": "Jamii réunit les développeurs africains : des communautés pour s'entraider, des demandes de PME à réaliser en équipe, et des projets qui vivent après le hackathon.",
+    "texte": "Jamii réunit les développeurs africains : des communautés pour s'entraider, des demandes de PME à réaliser en équipe, et des projets qui vivent après le hackathon.",
     "bienvenue": "Bon retour, {nom}.",
     "voirProfil": "Voir mon profil",
     "voirCommunautes": "Trouver une communauté",
@@ -39,11 +39,20 @@
     },
     "principe": {
       "badge": "Vérifié",
-      "texte": "Sur Jamii, l'orange veut toujours dire la même chose : c'est prouvé. Un projet qui répond, une tâche livrée à temps, une réponse acceptée par la personne qui l'a posée."
+      "texte": "Sur Jamii, l'orange veut toujours dire la même chose : c'est prouvé. Un projet qui répond, une tâche livrée à temps, une réponse acceptée par la personne qui l'a posée."
     },
-    "direct": {
-      "titre": "En ligne et vérifié, en ce moment",
-      "lien": "Voir toute la vitrine"
+    "scene": {
+      "titre1": "Trouve ton équipe.",
+      "titre2": "Mets ton projet",
+      "titreAccent": "en ligne",
+      "commencer": "Commencer avec GitHub",
+      "membres": "membres",
+      "pays": "pays représentés",
+      "enLigne": "projets en ligne",
+      "surSystalink": "hébergés sur Systalink",
+      "apercuCommunautes": "Communautés",
+      "apercuEnLigne": "En ligne et vérifié",
+      "apercuProfil": "Profil prouvé"
     }
   },
   "profil": {
@@ -59,7 +68,7 @@
       "sansGithub": "Ton compte n'est pas relié à GitHub. Connecte-toi avec GitHub pour générer ton profil.",
       "tropSouvent": "Tu as déjà mis ton profil à jour plusieurs fois cette heure-ci. Réessaie un peu plus tard.",
       "erreurs": {
-        "github_indisponible": "GitHub ne répond pas pour le moment. Ton profil précédent est conservé : réessaie dans quelques minutes.",
+        "github_indisponible": "GitHub ne répond pas pour le moment. Ton profil précédent est conservé : réessaie dans quelques minutes.",
         "github_refus": "GitHub ne trouve plus ton compte. Vérifie ton identifiant GitHub, puis réessaie."
       },
       "lu": {
@@ -76,8 +85,8 @@
     },
     "heures": "{n} h par semaine",
     "visibilite": {
-      "prive": "🔒 Ton profil est privé : toi seul le vois.",
-      "publie": "✅ Ton profil est publié : les membres connectés le voient et peuvent te proposer une équipe.",
+      "prive": "🔒 Ton profil est privé : toi seul le vois.",
+      "publie": "✅ Ton profil est publié : les membres connectés le voient et peuvent te proposer une équipe.",
       "publier": "Publier mon profil",
       "retirer": "Rendre mon profil privé"
     },
@@ -91,11 +100,11 @@
       "disponibilite": "Disponibilité",
       "heures": "Heures par semaine (1 à 60)",
       "competences": "Autres compétences",
-      "competencesAide": "Séparées par des virgules, 20 au plus. Exemple : UX design, Mobile Money",
+      "competencesAide": "Séparées par des virgules, 20 au plus. Exemple : UX design, Mobile Money",
       "enregistrer": "Enregistrer",
       "annuler": "Annuler",
       "enregistre": "Ton profil est enregistré.",
-      "conflit": "Ton profil a changé dans un autre onglet. Voici la dernière version : refais ta modification.",
+      "conflit": "Ton profil a changé dans un autre onglet. Voici la dernière version : refais ta modification.",
       "invalide": "Cette valeur n'est pas acceptée."
     },
     "langages": {
@@ -130,14 +139,14 @@
         "projet_en_ligne": "projet en ligne vérifié | projets en ligne vérifiés"
       },
       "contestees": "dont {n} en cours de vérification | dont {n} en cours de vérification",
-      "vide": "Pas encore de preuve. Elles s'ajoutent toutes seules, à mesure que tu participes :",
+      "vide": "Pas encore de preuve. Elles s'ajoutent toutes seules, à mesure que tu participes :",
       "comment": {
-        "projet_en_ligne": "un projet mis en ligne avec ton équipe, et qui répond ;",
-        "tache_livree_a_temps": "une tâche livrée à la date prévue ;",
-        "reponse_acceptee": "une réponse acceptée dans une communauté ;",
+        "projet_en_ligne": "un projet mis en ligne avec ton équipe, et qui répond ;",
+        "tache_livree_a_temps": "une tâche livrée à la date prévue ;",
+        "reponse_acceptee": "une réponse acceptée dans une communauté ;",
         "avis_coequipier": "un coéquipier qui referait équipe avec toi."
       },
-      "sansNote": "Pas de note globale : chaque point se vérifie, et se conteste s'il est faux."
+      "sansNote": "Pas de note globale : chaque point se vérifie, et se conteste s'il est faux."
     }
   },
   "etat": {
@@ -153,7 +162,7 @@
   "langue": "Langue",
   "systalink": {
     "titre": "Espace Systalink",
-    "intro": "Ce que Jamii apporte au cloud Systalink. Les chiffres sont agrégés et anonymes : aucune personne n'y apparaît.",
+    "intro": "Ce que Jamii apporte au cloud Systalink. Les chiffres sont agrégés et anonymes : aucune personne n'y apparaît.",
     "periode": "Période",
     "periodes": {
       "semaine": "7 derniers jours",
@@ -170,13 +179,13 @@
     "autresPays": "Autres pays",
     "seuilPays": "Un pays apparaît à partir de 5 inscrits, pour que personne ne puisse être reconnu.",
     "moments": "Services Systalink proposés",
-    "momentsIntro": "Jamii propose un service Systalink au bon moment : DataCloud pour mettre un projet en ligne, Orion pour le site d'une PME… Voici combien de fois, et combien de personnes l'ont suivi.",
+    "momentsIntro": "Jamii propose un service Systalink au bon moment : DataCloud pour mettre un projet en ligne, Orion pour le site d'une PME… Voici combien de fois, et combien de personnes l'ont suivi.",
     "service": "Service",
     "proposes": "Proposé",
     "acceptes": "Suivi",
     "taux": "Taux",
     "momentsVide": "Aucun service proposé sur cette période.",
-    "nonMesure": "Le passage à une offre payante n'est pas mesuré : Jamii ne voit pas les achats faits chez Systalink.",
+    "nonMesure": "Le passage à une offre payante n'est pas mesuré : Jamii ne voit pas les achats faits chez Systalink.",
     "calculeLe": "Calculé le {date}",
     "services": {
       "datacloud": "DataCloud",
@@ -195,7 +204,7 @@
     "surSystalink": "Hébergés sur Systalink",
     "hebergeSurSystalink": "Hébergé sur Systalink",
     "pourUnePme": "Réalisé pour une PME",
-    "equipe": "Équipe : {noms}",
+    "equipe": "Équipe : {noms}",
     "voir": "Voir le projet",
     "verifie": "Vérifié {quand}",
     "plus": "Voir plus de projets",
@@ -228,7 +237,7 @@
     "filtre": "Afficher",
     "toutes": "Tout",
     "ouvertes": "Questions sans réponse acceptée",
-    "vide": "Rien ici pour le moment. Pose la première question !",
+    "vide": "Rien ici pour le moment. Pose la première question !",
     "reponseAcceptee": "Réponse acceptée",
     "reponses": "aucune réponse | {n} réponse | {n} réponses",
     "compteSupprime": "compte supprimé",
@@ -244,15 +253,16 @@
     "fonctionnement": {
       "titre": "Comment ça marche",
       "poser": "Tu poses ta question à la communauté.",
-      "ia": "L'IA propose une première réponse, marquée « à vérifier ». Elle ne compte sur le profil de personne.",
-      "accepter": "Un membre la vérifie ou répond mieux. Tu acceptes la meilleure réponse : elle compte sur le profil de son auteur."
+      "ia": "L'IA propose une première réponse, marquée « à vérifier ». Elle ne compte sur le profil de personne.",
+      "accepter": "Un membre la vérifie ou répond mieux. Tu acceptes la meilleure réponse : elle compte sur le profil de son auteur."
     },
     "espace": {
       "mesCommunautes": "Mes communautés",
       "decouvrir": "Découvrir des communautés",
       "invite": "Pose une question ou lance une discussion…",
       "premier": "Personne n'a encore répondu",
-      "apropos": "À propos"
+      "apropos": "À propos",
+      "fil": "Fil de la communauté"
     }
   },
   "question": {
@@ -265,14 +275,14 @@
     "valideePar": "validée par {nom}",
     "valider": "Valider cette réponse",
     "accepter": "Accepter cette réponse",
-    "merciValidation": "Merci ! Ta validation rend cette réponse fiable pour tout le monde.",
+    "merciValidation": "Merci ! Ta validation rend cette réponse fiable pour tout le monde.",
     "merciAcceptation": "🎉 Réponse acceptée. Elle apparaît maintenant sur le profil de son auteur.",
     "taReponse": "Ta réponse",
     "repondre": "Répondre",
     "erreurs": {
       "pas_membre": "Rejoins la communauté pour faire ça.",
       "pas_auteur_question": "Seul l'auteur de la question peut accepter une réponse.",
-      "propre_question": "Tu ne peux pas valider la réponse à ta propre question : un autre membre doit le faire.",
+      "propre_question": "Tu ne peux pas valider la réponse à ta propre question : un autre membre doit le faire.",
       "deja_acceptee": "Cette question a déjà une réponse acceptée.",
       "autre": "Ça n'a pas marché. Réessaie dans un instant."
     },
@@ -295,7 +305,7 @@
     "marqueAide": "Une marque ne change que la couleur d'action. L'orange de la preuve reste le même partout.",
     "composants": "Composants",
     "contrastes": "Contrastes",
-    "contrastesAide": "Mesurés sur le thème et la charte affichés. Seuils WCAG 2.1 AA : 4,5:1 pour le texte, 3:1 pour les bords et le focus.",
+    "contrastesAide": "Mesurés sur le thème et la charte affichés. Seuils WCAG 2.1 AA : 4,5:1 pour le texte, 3:1 pour les bords et le focus.",
     "paire": "Texte / fond",
     "rapport": "Rapport",
     "seuil": "Seuil",
@@ -312,7 +322,7 @@
       "aide": "Commence par https://",
       "erreur": "Cette adresse ne répond pas.",
       "ia": "Proposé par l'IA",
-      "iaTexte": "En pointillé tant qu'un humain ne l'a pas accepté : ce n'est pas encore une preuve."
+      "iaTexte": "En pointillé tant qu'un humain ne l'a pas accepté : ce n'est pas encore une preuve."
     }
   },
   "theme": "Thème",
@@ -322,14 +332,14 @@
     "sombre": "Sombre"
   },
   "pied": {
-    "mission": "La plateforme d'échange des développeurs africains : s'entraider, faire équipe et mettre ses projets en ligne.",
+    "mission": "La plateforme d'échange des développeurs africains : s'entraider, faire équipe et mettre ses projets en ligne.",
     "liens": "Liens utiles",
     "charte": "Charte graphique",
     "cadev": "Projet présenté à la CADEV 2026. Jamii fonctionne sur le cloud Systalink."
   },
   "signaler": {
     "bouton": "Signaler",
-    "pourquoi": "Pourquoi signaler ce message ?",
+    "pourquoi": "Pourquoi signaler ce message ?",
     "envoyer": "Envoyer le signalement",
     "merci": "Merci, un modérateur va regarder.",
     "erreur": "Le signalement n'a pas pu être envoyé. Réessaie dans un instant.",
