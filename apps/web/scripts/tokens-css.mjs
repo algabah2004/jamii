@@ -40,6 +40,10 @@ export function genererCss(tokens) {
     .filter((t) => resoudre(t.value, 'clair') !== resoudre(t.value, 'sombre'))
     .map((t) => `  --${t.name}: ${resoudre(t.value, 'sombre')};`)
     .join('\n')
+  const zoneClaire = tokens.color.tokens
+    .filter((t) => resoudre(t.value, 'clair') !== resoudre(t.value, 'sombre'))
+    .map((t) => `  --${t.name}: ${resoudre(t.value, 'clair')};`)
+    .join('\n')
   const durees = tokens.motion.tokens.filter((t) => t.name.startsWith('motion-'))
   return `/* Généré par scripts/tokens-css.mjs depuis docs/design/tokens.json (v${tokens.version}). Ne pas modifier à la main : npm run tokens. */
 
@@ -67,6 +71,13 @@ ${couleurs('sombre')}
   color-scheme: dark;
 ${zoneSombre}
   background: var(--bg);
+  color: var(--ink);
+}
+
+/* Zone toujours claire (cartes de verre posées sur une scène sombre). */
+.zone-claire {
+  color-scheme: light;
+${zoneClaire}
   color: var(--ink);
 }
 

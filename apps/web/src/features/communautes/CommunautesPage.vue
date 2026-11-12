@@ -93,7 +93,7 @@ const groupes = computed(() =>
   position: relative;
   display: flex; flex-direction: column; gap: var(--space-2);
   padding: var(--space-6);
-  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg);
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--ombre-carte);
   transition: border-color var(--motion-fast) var(--ease-out), transform var(--motion-fast) var(--ease-out);
 }
 .communaute:hover { border-color: var(--action); }

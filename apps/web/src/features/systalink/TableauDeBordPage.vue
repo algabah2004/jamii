@@ -160,7 +160,7 @@ const maxPays = computed(() => Math.max(1, ...pays.value.map((p) => p.nombre)))
 .principal .jauge { margin-top: var(--space-3); max-width: 22rem; }
 
 .tuiles { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); margin: 0; }
-.tuiles > div { display: flex; flex-direction: column; justify-content: space-between; gap: var(--space-1); padding: var(--space-6); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); }
+.tuiles > div { display: flex; flex-direction: column; justify-content: space-between; gap: var(--space-1); padding: var(--space-6); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--ombre-carte); }
 .tuiles dt { color: var(--ink-muted); font-size: var(--type-body-sm-size); font-weight: 600; }
 .tuiles dd { margin: 0; }
 .tuiles__nombre { font-family: var(--font-display); font-size: 2.25rem; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }

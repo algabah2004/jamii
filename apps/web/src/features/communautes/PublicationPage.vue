@@ -229,7 +229,7 @@ async function repondre() {
 </template>
 
 <style scoped>
-.discussion { display: grid; gap: var(--space-4); padding-bottom: var(--space-4); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden; }
+.discussion { display: grid; gap: var(--space-4); padding-bottom: var(--space-4); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--ombre-carte); overflow: hidden; }
 .discussion > .annonce, .discussion > .separateur, .discussion > .fil { margin-inline: var(--space-6); }
 .retour { margin: 0; font-size: var(--type-body-sm-size); }
 .texte { white-space: pre-wrap; margin: 0; overflow-wrap: anywhere; }

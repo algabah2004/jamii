@@ -36,7 +36,7 @@ withDefaults(
   min-height: 44px; /* cible tactile WCAG 2.5.5 */
   padding: var(--space-2) var(--space-4);
   border: 1px solid transparent;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-pill); /* capsule, comme les commandes du Liquid Glass */
   font-family: var(--font-text);
   font-size: var(--type-label-size); line-height: var(--type-label-line); font-weight: var(--type-label-weight);
   text-decoration: none;

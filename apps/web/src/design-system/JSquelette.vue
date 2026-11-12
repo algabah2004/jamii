@@ -27,7 +27,7 @@ const { t } = useI18n()
 .j-squelette__bloc {
   display: grid; gap: var(--space-3);
   padding: var(--space-6);
-  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md);
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md); box-shadow: var(--ombre-carte);
 }
 .j-squelette--cartes .j-squelette__bloc { min-height: 12rem; align-content: start; }
 .j-squelette__trait {

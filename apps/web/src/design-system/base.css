@@ -5,6 +5,7 @@
 body {
   margin: 0;
   background: var(--bg);
+  position: relative; isolation: isolate;
   color: var(--ink);
   font-family: var(--font-text);
   font-size: var(--type-body-size);
@@ -53,9 +54,12 @@ img, svg { max-width: 100%; }
 .carte {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   padding: var(--space-6);
+  box-shadow: var(--ombre-carte);
 }
+/* Une ombre douce et large : la carte flotte au-dessus des lueurs, sans bord dur. */
+:root { --ombre-carte: 0 1px 2px color-mix(in srgb, var(--midnight) 5%, transparent), 0 10px 30px color-mix(in srgb, var(--midnight) 7%, transparent); }
 
 /* Étiquette de compétence. */
 .etiquette {
@@ -118,17 +122,16 @@ img, svg { max-width: 100%; }
     0 12px 40px color-mix(in srgb, var(--midnight) 12%, transparent);
 }
 .verre--teinte { background: color-mix(in srgb, var(--action-soft) 60%, transparent); }
-/* Le fond qui donne au verre quelque chose à réfracter : deux lueurs aux couleurs de la marque. */
-.fond-verre { position: relative; isolation: isolate; }
-.fond-verre::before {
+/* Le fond de toute l'appli : des lueurs aux couleurs de la marque, que l'en-tête de verre floute en défilant.
+   (.fond-verre reste pour compatibilité : le fond est désormais global, sur body.) */
+.fond-verre { position: relative; }
+body::before {
   content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
   background:
     radial-gradient(38% 42% at 12% 18%, color-mix(in srgb, var(--electric-blue) 40%, transparent), transparent 70%),
     radial-gradient(34% 40% at 88% 28%, color-mix(in srgb, var(--cantaloupe) 34%, transparent), transparent 70%),
     radial-gradient(40% 40% at 62% 96%, color-mix(in srgb, var(--electric-blue) 20%, transparent), transparent 70%);
 }
-/* Commandes en capsule sur les écrans en verre. */
-.fond-verre .j-bouton { border-radius: var(--radius-pill); }
 /* Transparence réduite : le verre devient opaque. Contraste augmenté : un vrai bord, pas de transparence. */
 @media (prefers-reduced-transparency: reduce) {
   .verre { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
