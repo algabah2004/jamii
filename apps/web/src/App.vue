@@ -43,7 +43,12 @@ const { etat, moi } = useSession()
       <p>{{ t('etat.indisponible') }}</p>
       <JBouton variante="secondaire" @click="chargerSession">{{ t('etat.reessayer') }}</JBouton>
     </div>
-    <RouterView v-else />
+    <!-- Passage d'une page à l'autre : un fondu court, sans rien remonter quand seul le filtre change. -->
+    <RouterView v-else v-slot="{ Component, route: courante }">
+      <Transition name="page" mode="out-in">
+        <component :is="Component" :key="courante.path" />
+      </Transition>
+    </RouterView>
   </main>
 
   <footer class="pied">
@@ -117,6 +122,9 @@ const { etat, moi } = useSession()
 
 main { flex: 1; padding-block: var(--space-8) var(--space-12); }
 main:focus { outline: none; }
+.page-enter-active, .page-leave-active { transition: opacity var(--motion-fast) var(--ease-out), transform var(--motion-base) var(--ease-out); }
+.page-enter-from { opacity: 0; transform: translateY(6px); }
+.page-leave-to { opacity: 0; }
 .hors-ligne { display: grid; gap: var(--space-3); justify-items: start; }
 
 .pied { border-top: 1px solid var(--line); background: var(--surface); }

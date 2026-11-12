@@ -130,8 +130,10 @@ async function repondre() {
     <template v-else-if="publication">
       <p class="retour"><RouterLink :to="`/communautes/${publication.communaute}`">{{ t('question.retourCommunaute') }}</RouterLink></p>
 
+      <!-- Toute la discussion dans un seul panneau : le message, les réponses, puis la zone de réponse. -->
+      <section class="discussion" :class="{ 'discussion--resolue': dejaAcceptee }">
       <!-- Le message d'origine. -->
-      <article class="message-origine" :class="{ 'message-origine--resolu': dejaAcceptee }" aria-labelledby="titre-fil">
+      <article class="message-origine" aria-labelledby="titre-fil">
         <header class="auteur">
           <JAvatar :nom="publication.auteur?.nom ?? '?'" :url="publication.auteur?.avatarUrl" :taille="44" />
           <div class="auteur__texte">
@@ -205,6 +207,7 @@ async function repondre() {
         </div>
       </form>
       <p v-else class="annonce annonce--discrete">{{ t('communautes.rejoindrePourPublier') }}</p>
+      </section>
     </template>
 
     <template v-if="publication" #contexte>
@@ -221,11 +224,14 @@ async function repondre() {
 </template>
 
 <style scoped>
+.discussion { display: grid; gap: var(--space-4); padding-bottom: var(--space-4); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden; }
+.discussion > .annonce, .discussion > .separateur, .discussion > .fil { margin-inline: var(--space-6); }
 .retour { margin: 0; font-size: var(--type-body-sm-size); }
 .texte { white-space: pre-wrap; margin: 0; overflow-wrap: anywhere; }
 
-.message-origine { display: grid; gap: var(--space-4); padding: var(--space-6); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); }
-.message-origine--resolu { box-shadow: inset 4px 0 0 var(--proof); }
+.message-origine { display: grid; gap: var(--space-4); padding: var(--space-6) var(--space-6) 0; }
+/* Orange = la preuve : une discussion résolue porte un liseré orange. */
+.discussion--resolue { box-shadow: inset 4px 0 0 var(--proof); }
 .message-origine h1 { margin: 0; font-size: clamp(1.5rem, 3vw, 1.875rem); line-height: 1.2; letter-spacing: -0.5px; }
 .message-origine .texte { font-size: 1.0625rem; line-height: 1.65; }
 .auteur { display: flex; align-items: center; gap: var(--space-3); }
@@ -233,7 +239,7 @@ async function repondre() {
 .auteur__texte { display: grid; line-height: 1.3; margin: 0; }
 .auteur__texte strong { font-size: var(--type-body-sm-size); }
 .auteur__texte span { color: var(--ink-muted); font-size: var(--type-body-sm-size); }
-.barre { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); padding-top: var(--space-3); border-top: 1px solid var(--line); }
+.barre { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
 .barre__espace { flex: 1; }
 .barre__action { background: none; border: 0; padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); color: var(--action-ink); font-size: var(--type-body-sm-size); font-weight: 600; cursor: pointer; }
 .barre__action:hover { background: var(--action-soft); }
@@ -241,7 +247,7 @@ async function repondre() {
 
 .annonce { margin: 0; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--surface-raised); font-weight: 600; }
 .annonce--ia { display: flex; align-items: center; gap: var(--space-3); background: var(--action-soft); }
-.annonce--discrete { background: transparent; border: 1px dashed var(--line-strong); color: var(--ink-muted); font-weight: 400; }
+.annonce--discrete { background: transparent; padding: 0; color: var(--ink-muted); font-weight: 400; font-size: var(--type-body-sm-size); }
 /* L'IA écrit : trois points qui respirent (immobiles si le mouvement est réduit). */
 .points-attente { display: inline-flex; gap: 4px; }
 .points-attente i { width: 6px; height: 6px; border-radius: 50%; background: var(--action-ink); animation: respire 1.2s var(--ease-out) infinite; }
@@ -258,7 +264,7 @@ async function repondre() {
 /* La ligne du fil, d'un avatar au suivant. */
 .reponse:not(:last-child)::before { content: ''; position: absolute; left: 19px; top: 48px; bottom: calc(-1 * var(--space-4)); width: 2px; background: var(--line); border-radius: 2px; }
 .avatar-ia { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--action-soft); border: 1px dashed var(--line-strong); font-size: 1.125rem; }
-.bulle { display: grid; gap: var(--space-3); justify-items: start; padding: var(--space-4) var(--space-6); background: var(--surface); border: 1px solid var(--line); border-radius: 4px var(--radius-lg) var(--radius-lg) var(--radius-lg); }
+.bulle { display: grid; gap: var(--space-2); justify-items: start; padding: var(--space-3) var(--space-4); background: var(--surface-raised); border: 1px solid transparent; border-radius: 4px var(--radius-lg) var(--radius-lg) var(--radius-lg); }
 .bulle > * { margin: 0; }
 .bulle .texte { justify-self: stretch; }
 .bulle__tete { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); justify-self: stretch; }
@@ -273,8 +279,7 @@ async function repondre() {
 .etiquette-ia { font-weight: 600; font-size: var(--type-body-sm-size); }
 .note { color: var(--ink-muted); font-size: var(--type-body-sm-size); }
 
-.compositeur { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: var(--space-3); padding: var(--space-4); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); }
-.compositeur:focus-within { border-color: var(--action); }
+.compositeur { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: var(--space-3); padding: var(--space-4) var(--space-6) 0; border-top: 1px solid var(--line); }
 .compositeur__corps { display: grid; gap: var(--space-3); justify-items: end; }
 .compositeur__corps > :first-child { justify-self: stretch; }
 
