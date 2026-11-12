@@ -428,8 +428,8 @@
     "joursRestants": "dernier jour | 1 jour restant | {n} jours restants",
     "depot": "Le dépôt du projet",
     "avantTirage": "L'ordre de passage n'est pas encore tiré.",
-    "avantTirageAide": "Le cercle est complet, le tirage peut avoir lieu. | Il manque 1 membre avant le tirage. | Il manque {n} membres avant le tirage.",
-    "griot": "Le Griot",
+    "avantTirageAide": "Le cercle est complet. | Il manque 1 membre. | Il manque {n} membres.",
+    "griot": "Le Griot, l'assistant qui résume le tour",
     "ordre": "Ordre de passage",
     "pasDIdee": "Idée pas encore déposée",
     "confiance": "Confiance {n} %",
@@ -444,6 +444,38 @@
       "a_venir": "À venir",
       "en_cours": "En cours",
       "livre": "Livré"
-    }
+    },
+    "etapeMembres": "{n} membres sur {taille}",
+    "etapeIdees": "{n} idées déposées sur {total}",
+    "rejoindre": "Rejoindre le cercle",
+    "monIdee": "Mon idée :",
+    "deposerIdee": "Déposer mon idée",
+    "modifierIdee": "Modifier mon idée",
+    "ideeTitre": "Le projet que tu veux voir naître",
+    "ideeDescription": "En quelques phrases",
+    "ideeAide": "Pour qui, et ce qu'il doit faire. Le cercle le construira pendant ton tour.",
+    "enregistrerIdee": "Enregistrer mon idée",
+    "tirer": "Tirer l'ordre au sort",
+    "tirageAide": "Possible quand le cercle est complet et que chacun a déposé son idée. Le tirage est fait une seule fois, par le serveur.",
+    "erreurs": {
+      "cercle_complet": "Le cercle est déjà complet.",
+      "deja_membre": "Tu fais déjà partie de ce cercle.",
+      "tirage_deja_fait": "L'ordre a déjà été tiré.",
+      "cercle_incomplet": "Il manque encore des membres.",
+      "idees_manquantes": "Chaque membre doit d'abord déposer son idée.",
+      "autre": "Ça n'a pas marché. Réessaie dans un instant."
+    },
+    "nouveau": {
+      "titre": "Créer un cercle",
+      "intro": "Tu en seras le premier membre. Les autres le rejoignent, chacun dépose son idée, puis tu tires l'ordre au sort.",
+      "nom": "Nom du cercle",
+      "nomAide": "Par exemple, Cercle de Dakar.",
+      "ville": "Ville",
+      "taille": "Combien serez-vous ?",
+      "personnes": "{n} personnes",
+      "tailleAide": "{n} tours de deux semaines : chacun reçoit son projet.",
+      "creer": "Créer le cercle"
+    },
+    "membresTitre": "Les membres"
   }
 }

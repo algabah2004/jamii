@@ -2,16 +2,18 @@
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute } from 'vue-router'
-import { JAvatar, JBouton, JSquelette } from '../../design-system'
+import { JAvatar, JBouton, JChamp, JDeplier, JSquelette } from '../../design-system'
+import { useSession } from '../../session'
 import { nomPays } from '../systalink/calculs'
 import { ilYa } from '../vitrine/vitrine'
-import { joursRestants, lireCercle, ordreDePassage, positionsAnneau, pourcentage, tourEnCours, type Cercle } from './cercles'
+import { avantTirage, deposerIdee, estMembre, joursRestants, LIMITES, lireCercle, ordreDePassage, positionsAnneau, pourcentage, rejoindreCercle, tirerAuSort, tourEnCours, type Cercle, type Resultat } from './cercles'
 
 /*
  * La page d'un cercle : qui en fait partie, l'ordre de passage, le tour en cours et le message du Griot.
  * L'anneau montre la règle de la tontine d'un coup d'œil : chacun son tour, et Systalink au centre, garant.
  */
 const { t, locale } = useI18n()
+const { moi } = useSession()
 const route = useRoute()
 const id = computed(() => String(route.params.id))
 
@@ -32,8 +34,42 @@ watch(id, charger, { immediate: true })
 const ordre = computed(() => (cercle.value ? ordreDePassage(cercle.value) : []))
 const tour = computed(() => (cercle.value ? tourEnCours(cercle.value) : null))
 const beneficiaire = computed(() => ordre.value.find((m) => m.utilisateurId === tour.value?.beneficiaireId) ?? null)
-const places = computed(() => positionsAnneau(ordre.value.length))
+// Avant le tirage, l'anneau montre aussi les places libres : on voit combien il manque de monde.
+const places = computed(() => positionsAnneau(cercle.value ? Math.max(cercle.value.taille, ordre.value.length) : 0))
+const placesLibres = computed(() => places.value.slice(ordre.value.length))
 const tourDe = (utilisateurId: string) => cercle.value?.tours.find((x) => x.beneficiaireId === utilisateurId) ?? null
+
+const membre = computed(() => (cercle.value ? estMembre(cercle.value, moi.value?.id) : false))
+const createur = computed(() => !!cercle.value && cercle.value.createurId === moi.value?.id)
+const preparation = computed(() => (cercle.value ? avantTirage(cercle.value) : null))
+const monIdee = computed(() => cercle.value?.membres.find((m) => m.utilisateurId === moi.value?.id)?.idee ?? null)
+
+// Une seule action à la fois ; l'erreur dit ce qui bloque, avec le code renvoyé par l'API.
+const action = ref<'repos' | 'rejoindre' | 'idee' | 'tirage'>('repos')
+const erreur = ref<string | null>(null)
+async function agir(quoi: 'rejoindre' | 'idee' | 'tirage', appel: () => Promise<Resultat>) {
+  action.value = quoi
+  erreur.value = null
+  try {
+    const r = await appel()
+    if (r.ok) {
+      cercle.value = r.cercle
+      if (quoi === 'idee') ideeOuverte.value = false
+    } else erreur.value = t(`cercles.erreurs.${r.code ?? 'autre'}`, t('cercles.erreurs.autre'))
+  } catch {
+    erreur.value = t('etat.indisponible')
+  } finally {
+    action.value = 'repos'
+  }
+}
+
+const idee = ref({ titre: '', description: '' })
+const ideeOuverte = ref(false)
+function ouvrirIdee() {
+  idee.value = { titre: monIdee.value?.titre ?? '', description: monIdee.value?.description ?? '' }
+  ideeOuverte.value = true
+}
+const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.ideeTitreMin && idee.value.description.trim().length >= LIMITES.ideeDescriptionMin)
 </script>
 
 <template>
@@ -69,6 +105,7 @@ const tourDe = (utilisateurId: string) => cercle.value?.tours.find((x) => x.bene
               <strong>Systalink</strong>
               <span>{{ t('cercles.garant') }}</span>
             </div>
+            <span v-for="(p, i) in placesLibres" :key="`libre-${i}`" class="anneau__libre" :style="{ left: `${p.x}%`, top: `${p.y}%` }" aria-hidden="true" />
             <div
               v-for="(m, i) in ordre"
               :key="m.utilisateurId"
@@ -102,14 +139,44 @@ const tourDe = (utilisateurId: string) => cercle.value?.tours.find((x) => x.bene
               <span class="visuellement-cache">({{ t('vitrine.nouvelOnglet') }})</span>
             </a>
           </section>
-          <section v-else-if="!cercle.tirageFait" class="carte tour" data-test="attente-tirage">
-            <h2>{{ t('cercles.avantTirage') }}</h2>
-            <p class="texte-discret">{{ t('cercles.avantTirageAide', { n: cercle.taille - cercle.membres.length }, cercle.taille - cercle.membres.length) }}</p>
+          <section v-else-if="!cercle.tirageFait && preparation" class="carte tour" aria-labelledby="avant-titre" data-test="attente-tirage">
+            <h2 id="avant-titre">{{ t('cercles.avantTirage') }}</h2>
+            <ul class="etapes-tirage">
+              <li :class="{ fait: !preparation.manquants }">{{ t('cercles.etapeMembres', { n: cercle.membres.length, taille: cercle.taille }) }}</li>
+              <li :class="{ fait: !preparation.sansIdee }">{{ t('cercles.etapeIdees', { n: cercle.membres.length - preparation.sansIdee, total: cercle.membres.length }) }}</li>
+            </ul>
+            <p class="texte-discret">{{ t('cercles.avantTirageAide', { n: preparation.manquants }, preparation.manquants) }}</p>
+
+            <JBouton v-if="!membre && preparation.manquants" :occupe="action === 'rejoindre'" data-test="rejoindre" @click="agir('rejoindre', () => rejoindreCercle(cercle!.id))">{{ t('cercles.rejoindre') }}</JBouton>
+
+            <template v-if="membre">
+              <JDeplier>
+                <div v-if="!ideeOuverte" class="mon-idee" data-test="mon-idee">
+                  <p v-if="monIdee"><strong>{{ t('cercles.monIdee') }}</strong> {{ monIdee.titre }}</p>
+                  <JBouton :variante="monIdee ? 'secondaire' : 'principal'" data-test="ouvrir-idee" @click="ouvrirIdee">{{ monIdee ? t('cercles.modifierIdee') : t('cercles.deposerIdee') }}</JBouton>
+                </div>
+              </JDeplier>
+              <JDeplier>
+                <form v-if="ideeOuverte" class="formulaire-idee" data-test="form-idee" @submit.prevent="agir('idee', () => deposerIdee(cercle!.id, idee))">
+                  <JChamp v-model="idee.titre" :libelle="t('cercles.ideeTitre')" :maxlength="LIMITES.ideeTitreMax" requis />
+                  <JChamp v-model="idee.description" :libelle="t('cercles.ideeDescription')" :aide="t('cercles.ideeAide')" multiligne :lignes="4" :maxlength="LIMITES.ideeDescriptionMax" requis />
+                  <div class="commandes">
+                    <JBouton type="submit" :desactive="!ideeValide" :occupe="action === 'idee'">{{ t('cercles.enregistrerIdee') }}</JBouton>
+                    <JBouton variante="secondaire" @click="ideeOuverte = false">{{ t('communautes.annuler') }}</JBouton>
+                  </div>
+                </form>
+              </JDeplier>
+            </template>
+
+            <!-- Le tirage est fait par le serveur, une seule fois : ici on ne fait que le demander. -->
+            <JBouton v-if="createur" :desactive="!preparation.pret" :occupe="action === 'tirage'" data-test="tirer" @click="agir('tirage', () => tirerAuSort(cercle!.id))">{{ t('cercles.tirer') }}</JBouton>
+            <p v-if="createur" class="texte-discret">{{ t('cercles.tirageAide') }}</p>
+            <p v-if="erreur" role="alert" class="erreur">{{ erreur }}</p>
           </section>
 
           <!-- Le Griot propose, le cercle décide : son message est présenté comme un résumé, pas comme une décision. -->
           <section v-if="cercle.messageGriot" class="griot zone-sombre" aria-labelledby="griot-titre" data-test="griot">
-            <h2 id="griot-titre" class="griot__qui">{{ t('cercles.griot') }} · {{ cercle.nom }}</h2>
+            <h2 id="griot-titre" class="griot__qui">{{ t('cercles.griot') }}</h2>
             <p class="griot__texte">{{ cercle.messageGriot.texte }}</p>
             <p class="griot__quand">{{ ilYa(cercle.messageGriot.le, locale) }}</p>
           </section>
@@ -117,17 +184,17 @@ const tourDe = (utilisateurId: string) => cercle.value?.tours.find((x) => x.bene
       </div>
 
       <section class="ordre" aria-labelledby="ordre-titre">
-        <h2 id="ordre-titre">{{ t('cercles.ordre') }}</h2>
+        <h2 id="ordre-titre">{{ cercle.tirageFait ? t('cercles.ordre') : t('cercles.membresTitre') }}</h2>
         <ol class="ordre__liste" data-test="ordre">
           <li v-for="m in ordre" :key="m.utilisateurId" class="carte ordre__ligne" :class="`ordre__ligne--${tourDe(m.utilisateurId)?.statut ?? 'a_venir'}`">
-            <span class="ordre__numero">{{ m.ordre ?? '–' }}</span>
+            <span v-if="cercle.tirageFait" class="ordre__numero">{{ m.ordre }}</span>
             <JAvatar :nom="m.nom" :url="m.avatarUrl" :taille="40" />
             <span class="ordre__qui">
               <strong>{{ m.nom }}</strong>
               <span>{{ m.idee?.titre ?? t('cercles.pasDIdee') }}</span>
             </span>
             <span class="ordre__confiance" :title="t('cercles.confianceAide')">{{ t('cercles.confiance', { n: m.confiance }) }}</span>
-            <span class="ordre__statut">{{ t(`cercles.statutTour.${tourDe(m.utilisateurId)?.statut ?? 'a_venir'}`) }}</span>
+            <span v-if="cercle.tirageFait" class="ordre__statut">{{ t(`cercles.statutTour.${tourDe(m.utilisateurId)?.statut ?? 'a_venir'}`) }}</span>
           </li>
         </ol>
       </section>
@@ -166,6 +233,17 @@ const tourDe = (utilisateurId: string) => cercle.value?.tours.find((x) => x.bene
 /* Le bénéficiaire du tour : un halo orange, la couleur de la preuve. */
 .anneau__membre--tour :deep(.j-avatar) { box-shadow: 0 0 0 3px var(--surface), 0 0 0 7px var(--proof), 0 0 26px color-mix(in srgb, var(--proof) 55%, transparent); }
 .anneau__membre--livre { opacity: 0.6; }
+/* Au tirage, chacun glisse jusqu'à sa place : on voit l'ordre se former. */
+.anneau__membre { transition: left calc(var(--motion-celebrate) * 1.4) var(--ease-pop), top calc(var(--motion-celebrate) * 1.4) var(--ease-pop); }
+.anneau__libre { position: absolute; translate: -50% -50%; width: 52px; height: 52px; border-radius: 50%; border: 2px dashed var(--line-strong); background: var(--surface); }
+.etapes-tirage { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
+.etapes-tirage li { display: flex; align-items: center; gap: var(--space-2); }
+.etapes-tirage li::before { content: ''; width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--line-strong); flex: none; }
+.etapes-tirage li.fait::before { content: '✓'; display: grid; place-items: center; font-size: 0.75rem; line-height: 1; font-weight: 700; border-color: var(--action); background: var(--action); color: var(--on-action); }
+.mon-idee, .formulaire-idee { display: grid; gap: var(--space-3); }
+.mon-idee p { margin: 0; }
+.commandes { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+.erreur { margin: 0; color: var(--danger); font-weight: 600; }
 
 .cote { display: grid; gap: var(--space-4); }
 .tour { display: grid; gap: var(--space-3); padding: var(--space-6); }
