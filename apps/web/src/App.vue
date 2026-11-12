@@ -120,6 +120,8 @@ main, .pied__interieur { padding-inline: var(--space-6); }
 
 /* Sur l'accueil, la capsule prend les couleurs sombres de la scène (classe zone-sombre). */
 .entete.entete--scene { background: transparent; }
+/* Sur la scène, les liens passent au-dessus de lumières vives : texte plus franc. */
+.entete--scene { --ink-muted: color-mix(in srgb, var(--ink) 88%, transparent); }
 
 /* Écran étroit : la marque et les réglages sur la première ligne, le menu entier sur la seconde. */
 @media (max-width: 720px) {
