@@ -218,7 +218,8 @@
     "vide": "Rien ici pour le moment. Pose la première question !",
     "reponseAcceptee": "Réponse acceptée",
     "reponses": "aucune réponse | {n} réponse | {n} réponses",
-    "compteSupprime": "compte supprimé"
+    "compteSupprime": "compte supprimé",
+    "annuler": "Annuler"
   },
   "question": {
     "retourCommunaute": "← Retour à la communauté",

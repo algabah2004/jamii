@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { JBouton } from '../../design-system'
+import { JAvatar, JBadgePreuve, JBouton, JChamp } from '../../design-system'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute } from 'vue-router'
@@ -21,6 +21,8 @@ const id = computed(() => String(route.params.id))
 const publication = ref<Publication | null>(null)
 const etat = ref<'chargement' | 'pret' | 'introuvable' | 'indisponible'>('chargement')
 const message = ref<string | null>(null)
+/** La réponse qui vient d'être validée ou acceptée : son badge apparaît avec la célébration de la charte. */
+const vientDEtreAcceptee = ref<string | null>(null)
 /** Vrai quand l'IA n'a pas répondu en une minute : on arrête de relire, et on le dit. */
 const iaTropLongue = ref(false)
 
@@ -79,6 +81,7 @@ async function agir(action: 'valider' | 'accepter', reponseId: string) {
   const { data, error } = await api.POST(chemin, { params: { path: { reponseId } } })
   if (data) {
     publication.value = data
+    vientDEtreAcceptee.value = reponseId
     message.value = t(action === 'valider' ? 'question.merciValidation' : 'question.merciAcceptation')
     return
   }
@@ -117,8 +120,9 @@ async function repondre() {
     <article v-else-if="publication">
       <p><RouterLink :to="`/communautes/${publication.communaute}`">{{ t('question.retourCommunaute') }}</RouterLink></p>
       <h1>{{ publication.titre }}</h1>
-      <p class="discret">
-        {{ publication.auteur?.nom ?? t('communautes.compteSupprime') }} · {{ ilYa(publication.creeLe, locale) }}
+      <p class="auteur">
+        <JAvatar :nom="publication.auteur?.nom ?? '?'" :url="publication.auteur?.avatarUrl" :taille="32" />
+        <span class="discret"><strong>{{ publication.auteur?.nom ?? t('communautes.compteSupprime') }}</strong> · {{ ilYa(publication.creeLe, locale) }}</span>
       </p>
       <!-- Texte brut, affiché échappé (jamais v-html) : aucun HTML d'un utilisateur ne s'exécute. -->
       <p class="texte">{{ publication.contenu }}</p>
@@ -136,10 +140,15 @@ async function repondre() {
       <ul class="reponses" data-test="reponses">
         <li v-for="r in reponses" :key="r.id" :class="{ acceptee: r.acceptee, ia: r.proposeeParIa }">
           <p v-if="r.acceptee" class="badge-acceptee" data-test="acceptee">
-            ✓ {{ t('communautes.reponseAcceptee') }}<template v-if="r.valideePar"> · {{ t('question.valideePar', { nom: r.valideePar.nom }) }}</template>
+            <JBadgePreuve :celebrer="vientDEtreAcceptee === r.id">
+              ✓ {{ t('communautes.reponseAcceptee') }}<template v-if="r.valideePar"> · {{ t('question.valideePar', { nom: r.valideePar.nom }) }}</template>
+            </JBadgePreuve>
           </p>
           <p v-if="r.proposeeParIa" class="etiquette-ia" data-test="etiquette-ia">✨ {{ t(r.valideePar ? 'question.proposeeParIaVerifiee' : 'question.proposeeParIa') }}</p>
-          <p v-else class="discret">{{ r.auteur?.nom ?? t('communautes.compteSupprime') }} · {{ ilYa(r.creeLe, locale) }}</p>
+          <p v-else class="auteur">
+            <JAvatar :nom="r.auteur?.nom ?? '?'" :url="r.auteur?.avatarUrl" :taille="28" />
+            <span class="discret"><strong>{{ r.auteur?.nom ?? t('communautes.compteSupprime') }}</strong> · {{ ilYa(r.creeLe, locale) }}</span>
+          </p>
           <p class="texte">{{ r.contenu }}</p>
           <p v-if="r.proposeeParIa && !r.acceptee && publication.moi.estAuteur" class="discret">{{ t('question.attendUnPair') }}</p>
           <JBouton v-if="peutValider(r)" class="principal" data-test="valider" @click="agir('valider', r.id)">
@@ -152,10 +161,7 @@ async function repondre() {
       </ul>
 
       <form v-if="publication.moi.estMembre" class="formulaire" @submit.prevent="repondre">
-        <label>
-          {{ t('question.taReponse') }}
-          <textarea v-model="nouvelleReponse" rows="4" maxlength="10000" required />
-        </label>
+        <JChamp v-model="nouvelleReponse" :libelle="t('question.taReponse')" multiligne :maxlength="10000" requis />
         <JBouton type="submit" class="principal" :desactive="nouvelleReponse.trim().length < 10" :occupe="!!envoi">
           {{ t('question.repondre') }}
         </JBouton>
@@ -175,9 +181,10 @@ async function repondre() {
 .reponses li.ia { border: 1px dashed var(--line-strong); background: var(--action-soft); } /* charte : proposition de l'IA, pas encore une preuve */
 /* Orange = la preuve (tokens.json) : la réponse acceptée. */
 .reponses li.acceptee { border: 2px solid var(--proof); border-style: solid; }
-.badge-acceptee { display: inline-block; background: var(--proof); color: var(--on-action); font-weight: 600; font-size: 0.875rem; padding: 0.125rem 0.5rem; border-radius: 999px; margin: 0 0 0.5rem; }
+.badge-acceptee { margin: 0 0 var(--space-2); }
+.auteur { display: flex; align-items: center; gap: var(--space-2); }
+.auteur strong { color: var(--ink); }
 .etiquette-ia { font-weight: 600; font-size: 0.875rem; margin: 0 0 0.5rem; }
 .formulaire { display: grid; gap: 0.75rem; }
-.formulaire label { display: grid; gap: 0.25rem; font-weight: 600; }
 .formulaire .principal { justify-self: start; }
 </style>

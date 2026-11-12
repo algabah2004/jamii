@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { JBouton } from '../../design-system'
+import { JAvatar, JBadgePreuve, JBouton, JChamp, JFiltres } from '../../design-system'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
@@ -50,7 +50,9 @@ async function basculerAdhesion() {
     ? await api.DELETE('/api/communautes/{slug}/adhesion', options)
     : await api.POST('/api/communautes/{slug}/adhesion', options)
   adhesionEnCours.value = false
-  if (response.ok) await charger()
+  if (!response.ok) return
+  formulaireOuvert.value = !communaute.value.membre
+  await charger()
 }
 
 // Formulaire « Poser une question » : mêmes limites que le contrat, vérifiées aussi par le serveur.
@@ -69,12 +71,17 @@ async function publier() {
   if (!data) return void (envoi.value = 'erreur')
   envoi.value = 'repos'
   formulaire.value = { type: 'question', titre: '', contenu: '' }
+  formulaireOuvert.value = false
   await router.push(`/publications/${data.id}`)
 }
 
-function filtrer(ouvertes: boolean) {
-  void router.replace({ query: ouvertes ? { filtre: 'ouvertes' } : {} })
-}
+const filtre = computed({
+  get: () => (seulementOuvertes.value ? 'ouvertes' : 'toutes') as 'toutes' | 'ouvertes',
+  set: (v) => void router.replace({ query: v === 'ouvertes' ? { filtre: 'ouvertes' } : {} }),
+})
+
+/** Comme dans la maquette : les échanges d'abord, le formulaire s'ouvre à la demande (et dès qu'on rejoint). */
+const formulaireOuvert = ref(false)
 </script>
 
 <template>
@@ -94,55 +101,78 @@ function filtrer(ouvertes: boolean) {
       <header class="entete-communaute">
         <div>
           <h1>{{ communaute.nom }}</h1>
-          <p v-if="communaute.pays" class="discret">
-            {{ t('communautes.antenne', { pays: nomPays(communaute.pays, locale) }) }}
+          <p class="discret">
+            {{ t('communautes.membres', { n: communaute.nombreMembres }, communaute.nombreMembres) }}
+            <template v-if="communaute.pays"> · {{ t('communautes.antenne', { pays: nomPays(communaute.pays, locale) }) }}</template>
           </p>
           <p>{{ communaute.description }}</p>
-          <p class="discret">{{ t('communautes.membres', { n: communaute.nombreMembres }, communaute.nombreMembres) }}</p>
         </div>
-        <JBouton :variante="communaute.membre ? 'secondaire' : 'principal'" data-test="adhesion" :occupe="adhesionEnCours" @click="basculerAdhesion">
-          {{ communaute.membre ? t('communautes.quitter') : t('communautes.rejoindre') }}
-        </JBouton>
+        <div class="commandes">
+          <JBouton variante="secondaire" data-test="adhesion" :occupe="adhesionEnCours" @click="basculerAdhesion">
+            {{ communaute.membre ? t('communautes.quitter') : t('communautes.rejoindre') }}
+          </JBouton>
+          <JBouton
+            v-if="communaute.membre && !formulaireOuvert"
+            data-test="ouvrir-formulaire"
+            @click="formulaireOuvert = true"
+          >
+            {{ t('communautes.poser') }}
+          </JBouton>
+        </div>
       </header>
 
-      <form v-if="communaute.membre" class="formulaire" data-test="publier" @submit.prevent="publier">
+      <form v-if="communaute.membre && formulaireOuvert" class="carte formulaire" data-test="publier" @submit.prevent="publier">
         <h2>{{ t('communautes.poser') }}</h2>
-        <label>
-          {{ t('communautes.type') }}
-          <select v-model="formulaire.type">
-            <option value="question">{{ t('communautes.types.question') }}</option>
-            <option value="discussion">{{ t('communautes.types.discussion') }}</option>
-          </select>
-        </label>
-        <label>
-          {{ t('communautes.champTitre') }}
-          <input v-model="formulaire.titre" maxlength="150" required />
-        </label>
-        <label>
-          {{ t('communautes.champContenu') }}
-          <textarea v-model="formulaire.contenu" rows="5" maxlength="10000" required />
-        </label>
-        <p class="discret">{{ t('communautes.aideIa') }}</p>
-        <p v-if="envoi === 'erreur'" role="alert">{{ t('communautes.erreurPublier') }}</p>
-        <JBouton type="submit" class="principal" :desactive="!valide" :occupe="envoi === 'envoi'">{{ t('communautes.publier') }}</JBouton>
+        <JFiltres
+          v-model="formulaire.type"
+          :libelle="t('communautes.type')"
+          :options="[
+            { valeur: 'question', texte: t('communautes.types.question') },
+            { valeur: 'discussion', texte: t('communautes.types.discussion') },
+          ]"
+        />
+        <JChamp v-model="formulaire.titre" :libelle="t('communautes.champTitre')" :maxlength="150" requis />
+        <JChamp
+          v-model="formulaire.contenu"
+          :libelle="t('communautes.champContenu')"
+          :aide="formulaire.type === 'question' ? t('communautes.aideIa') : undefined"
+          multiligne
+          :lignes="5"
+          :maxlength="10000"
+          requis
+        />
+        <p v-if="envoi === 'erreur'" role="alert" class="erreur">{{ t('communautes.erreurPublier') }}</p>
+        <div class="commandes">
+          <JBouton type="submit" :desactive="!valide" :occupe="envoi === 'envoi'">{{ t('communautes.publier') }}</JBouton>
+          <JBouton variante="discret" @click="formulaireOuvert = false">{{ t('communautes.annuler') }}</JBouton>
+        </div>
       </form>
-      <p v-else class="discret">{{ t('communautes.rejoindrePourPublier') }}</p>
+      <p v-else-if="!communaute.membre" class="discret">{{ t('communautes.rejoindrePourPublier') }}</p>
 
-      <div class="filtres" role="group" :aria-label="t('communautes.filtre')">
-        <button type="button" :aria-pressed="!seulementOuvertes" @click="filtrer(false)">{{ t('communautes.toutes') }}</button>
-        <button type="button" :aria-pressed="seulementOuvertes" @click="filtrer(true)">{{ t('communautes.ouvertes') }}</button>
-      </div>
+      <JFiltres
+        v-model="filtre"
+        :libelle="t('communautes.filtre')"
+        :options="[
+          { valeur: 'toutes', texte: t('communautes.toutes') },
+          { valeur: 'ouvertes', texte: t('communautes.ouvertes') },
+        ]"
+      />
 
-      <p v-if="publications.length === 0" data-test="vide">{{ t('communautes.vide') }}</p>
+      <p v-if="publications.length === 0" class="carte vide" data-test="vide">{{ t('communautes.vide') }}</p>
       <ul v-else class="publications" data-test="publications">
-        <li v-for="p in publications" :key="p.id">
-          <span class="type">{{ t(`communautes.types.${p.type}`) }}</span>
-          <span v-if="p.accepteeLe" class="acceptee">{{ t('communautes.reponseAcceptee') }}</span>
-          <RouterLink :to="`/publications/${p.id}`">{{ p.titre }}</RouterLink>
-          <span class="discret">
-            {{ p.auteur?.nom ?? t('communautes.compteSupprime') }} · {{ ilYa(p.creeLe, locale) }} ·
-            {{ t('communautes.reponses', { n: p.nombreReponses }, p.nombreReponses) }}
-          </span>
+        <li v-for="p in publications" :key="p.id" class="carte" :class="{ acceptee: p.accepteeLe }">
+          <div class="ligne">
+            <JAvatar :nom="p.auteur?.nom ?? '?'" :url="p.auteur?.avatarUrl" :taille="32" />
+            <span class="discret">
+              <strong class="auteur">{{ p.auteur?.nom ?? t('communautes.compteSupprime') }}</strong> · {{ ilYa(p.creeLe, locale) }}
+            </span>
+            <span class="type">{{ t(`communautes.types.${p.type}`) }}</span>
+          </div>
+          <h3><RouterLink :to="`/publications/${p.id}`">{{ p.titre }}</RouterLink></h3>
+          <div class="ligne">
+            <JBadgePreuve v-if="p.accepteeLe">✓ {{ t('communautes.reponseAcceptee') }}</JBadgePreuve>
+            <span class="discret">{{ t('communautes.reponses', { n: p.nombreReponses }, p.nombreReponses) }}</span>
+          </div>
         </li>
       </ul>
     </template>
@@ -150,19 +180,23 @@ function filtrer(ouvertes: boolean) {
 </template>
 
 <style scoped>
-.entete-communaute { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 1rem; }
-.entete-communaute h1 { margin: 0 0 0.25rem; }
-.formulaire { display: grid; gap: 0.75rem; background: var(--surface); border: 1px solid var(--line); border-radius: 0.5rem; padding: 1rem; margin: 1.5rem 0; }
-.formulaire h2 { margin: 0; font-size: 1.125rem; }
-.formulaire label { display: grid; gap: 0.25rem; font-weight: 600; }
-.filtres { display: flex; gap: 0.5rem; margin: 1rem 0; }
-.filtres button { border: 1px solid var(--line); background: var(--surface); color: inherit; border-radius: 999px; padding: 0.375rem 0.75rem; cursor: pointer; }
-.filtres button[aria-pressed='true'] { background: var(--action); color: var(--on-action); border-color: var(--action); font-weight: 600; }
-.publications { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.5rem; }
-.publications li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem; background: var(--surface); border: 1px solid var(--line); border-radius: 0.5rem; padding: 0.75rem 1rem; }
-.type { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--ink-muted); }
-/* Orange = la preuve (tokens.json) : une réponse acceptée. Texte midnight sur orange. */
-.acceptee { background: var(--proof); color: var(--on-action); font-size: 0.75rem; font-weight: 600; padding: 0 0.5rem; border-radius: 999px; }
-.discret { color: var(--ink-muted); font-size: 0.875rem; }
-.formulaire .principal { justify-self: start; }
+.entete-communaute { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: var(--space-4); margin-bottom: var(--space-6); }
+.entete-communaute h1 { margin: 0 0 var(--space-1); }
+.commandes { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
+.formulaire { display: grid; gap: var(--space-4); margin-bottom: var(--space-6); }
+.formulaire h2 { margin: 0; }
+.erreur { color: var(--danger); font-weight: 600; margin: 0; }
+.j-filtres { margin-bottom: var(--space-4); }
+.publications { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--space-3); }
+.publications li { display: grid; gap: var(--space-2); padding: var(--space-4) var(--space-6); }
+/* Orange = la preuve : une question qui a sa réponse acceptée porte un liseré orange. */
+.publications li.acceptee { border-inline-start: 4px solid var(--proof); }
+.publications h3 { margin: 0; }
+.publications h3 a { color: var(--ink); text-decoration: none; }
+.publications h3 a:hover { color: var(--action-ink); text-decoration: underline; }
+.ligne { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.auteur { color: var(--ink); }
+.type { margin-inline-start: auto; padding: 0 var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-pill); font-size: var(--type-label-size); color: var(--ink-muted); }
+.vide { text-align: center; color: var(--ink-muted); }
+.discret { color: var(--ink-muted); font-size: var(--type-body-sm-size); }
 </style>

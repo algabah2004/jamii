@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { JBouton } from '../../design-system'
+import { JBouton, JFiltres } from '../../design-system'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
@@ -50,17 +50,13 @@ const maxPays = computed(() => Math.max(1, ...pays.value.map((p) => p.nombre)))
     <header>
       <h1>{{ t('systalink.titre') }}</h1>
       <p>{{ t('systalink.intro') }}</p>
-      <div class="periodes" role="group" :aria-label="t('systalink.periode')">
-        <button
-          v-for="p in PERIODES"
-          :key="p"
-          type="button"
-          :aria-pressed="p === periode"
-          @click="choisirPeriode(p)"
-        >
-          {{ t(`systalink.periodes.${p}`) }}
-        </button>
-      </div>
+      <JFiltres
+        class="periodes"
+        :model-value="periode"
+        :libelle="t('systalink.periode')"
+        :options="PERIODES.map((p) => ({ valeur: p, texte: t(`systalink.periodes.${p}`) }))"
+        @update:model-value="choisirPeriode"
+      />
     </header>
 
     <p v-if="etat === 'chargement' && !tableau" role="status">{{ t('etat.chargement') }}</p>
@@ -140,9 +136,6 @@ const maxPays = computed(() => Math.max(1, ...pays.value.map((p) => p.nombre)))
 </template>
 
 <style scoped>
-.periodes { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-.periodes button { border: 1px solid var(--ligne); background: var(--surface); color: inherit; border-radius: 999px; padding: 0.375rem 0.75rem; cursor: pointer; }
-.periodes button[aria-pressed='true'] { background: var(--action); color: var(--on-action); border-color: var(--action); font-weight: 600; }
 .principal, .tuiles > div { background: var(--surface); border: 1px solid var(--ligne); border-radius: 0.5rem; padding: 1rem; }
 .principal { margin: 1.5rem 0 1rem; }
 .principal p { margin: 0.25rem 0; }

@@ -56,6 +56,8 @@ describe('Communautés', () => {
 
   it('poser une question mène à la question, où l’IA prépare une réponse', async () => {
     const { page, routeur } = await ouvrir('/communautes/flutter')
+    expect(page.find('[data-test="publier"]').exists()).toBe(false)
+    await page.get('[data-test="ouvrir-formulaire"]').trigger('click')
     await page.get('[data-test="publier"] input').setValue('Comment tester un provider Riverpod ?')
     await page.get('[data-test="publier"] textarea').setValue('Je ne sais pas comment simuler le réseau dans mes tests.')
     await page.get('[data-test="publier"]').trigger('submit')

@@ -85,5 +85,12 @@ function changerLangue(langue: Langue) {
   background: var(--action); color: var(--on-action); border-radius: var(--radius-md);
   text-decoration: none; font-weight: var(--type-label-weight);
 }
+/* Écran étroit : la marque et les réglages sur la première ligne, le menu entier sur la seconde,
+   au lieu d'un menu rogné (« Syst… »). Il défile encore si une langue a des libellés plus longs. */
+@media (max-width: 720px) {
+  .entete { row-gap: var(--space-2); }
+  .actions { margin-inline-start: auto; }
+  .entete nav { order: 3; flex: 1 1 100%; gap: var(--space-6); }
+}
 main { max-width: 60rem; margin: 0 auto; padding: var(--space-6) var(--space-4); }
 </style>

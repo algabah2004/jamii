@@ -3,7 +3,7 @@ import { computed, useId } from 'vue'
 
 /**
  * Champ de formulaire avec son libellé, son aide et son erreur, reliés pour les lecteurs d'écran
- * (label for, aria-describedby, aria-invalid). `multiligne` donne une zone de texte.
+ * (label for, aria-describedby, aria-invalid). `multiligne` donne une zone de texte de `lignes` lignes.
  */
 const props = withDefaults(
   defineProps<{
@@ -14,8 +14,9 @@ const props = withDefaults(
     multiligne?: boolean
     requis?: boolean
     maxlength?: number
+    lignes?: number
   }>(),
-  { aide: undefined, erreur: undefined, type: 'text', multiligne: false, requis: false, maxlength: undefined },
+  { aide: undefined, erreur: undefined, type: 'text', multiligne: false, requis: false, maxlength: undefined, lignes: 4 },
 )
 const valeur = defineModel<string>({ default: '' })
 
@@ -32,7 +33,7 @@ const decrit = computed(
       v-if="multiligne"
       :id="id"
       v-model="valeur"
-      rows="4"
+      :rows="lignes"
       :required="requis"
       :maxlength="maxlength"
       :aria-describedby="decrit"

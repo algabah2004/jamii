@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import { genererCss } from '../../scripts/tokens-css.mjs'
-import { appliquerTheme, choisirTheme, JAvatar, JBadgePreuve, JBouton, JChamp, JIllustration, themeActuel, themeRetenu } from '.'
+import { appliquerTheme, choisirTheme, JAvatar, JBadgePreuve, JBouton, JChamp, JFiltres, JIllustration, themeActuel, themeRetenu } from '.'
 import { contraste } from './contraste'
 
 const lire = (chemin: string) => readFileSync(new URL(chemin, import.meta.url), 'utf8')
@@ -36,6 +36,23 @@ describe('JChamp', () => {
     expect(champ.get('textarea').attributes('aria-invalid')).toBeUndefined()
     await champ.get('textarea').setValue('Développeuse Flutter')
     expect(champ.emitted('update:modelValue')?.[0]).toEqual(['Développeuse Flutter'])
+  })
+})
+
+describe('JFiltres', () => {
+  const options = [{ valeur: 'tout', texte: 'Tout' }, { valeur: 'ouvertes', texte: 'Ouvertes' }]
+
+  it('nomme le groupe et marque un seul choix comme actif', () => {
+    const filtres = mount(JFiltres, { props: { libelle: 'Afficher', options, modelValue: 'tout' } })
+    expect(filtres.attributes('role')).toBe('group')
+    expect(filtres.attributes('aria-label')).toBe('Afficher')
+    expect(filtres.findAll('button').map((b) => b.attributes('aria-pressed'))).toEqual(['true', 'false'])
+  })
+
+  it('annonce le nouveau choix au clic', async () => {
+    const filtres = mount(JFiltres, { props: { libelle: 'Afficher', options, modelValue: 'tout' } })
+    await filtres.findAll('button')[1]!.trigger('click')
+    expect(filtres.emitted('update:modelValue')).toEqual([['ouvertes']])
   })
 })
 
