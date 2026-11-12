@@ -3,7 +3,7 @@ import { computed, onBeforeUnmount, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { api } from '../../api/client'
 import { RouterLink } from 'vue-router'
-import { JAvatar, JBadgePreuve, JBouton, JChamp, JIllustration } from '../../design-system'
+import { JAvatar, JBadgePreuve, JBouton, JChamp, JIllustration, JSquelette } from '../../design-system'
 import { useSession } from '../../session'
 import { nomPays } from '../systalink/calculs'
 import { DISPONIBILITES, lireCompetences, PAYS_AFRIQUE, pourcentage, type Disponibilite, type MonProfil } from './profils'
@@ -141,25 +141,34 @@ async function enregistrer() {
 
 <template>
   <section class="mon-profil">
-    <p v-if="etat === 'chargement'" role="status">{{ t('etat.chargement') }}</p>
+    <JSquelette v-if="etat === 'chargement'" :nombre="2" />
 
-    <div v-else-if="etat === 'indisponible'" role="alert">
+    <div v-else-if="etat === 'indisponible'" role="alert" class="etat-vide">
       <p>{{ t('etat.indisponible') }}</p>
       <JBouton variante="secondaire" @click="charger()">{{ t('etat.reessayer') }}</JBouton>
     </div>
 
     <!-- Pas encore de profil : on propose de le générer, en disant ce qu'on lit. -->
-    <div v-else-if="etat === 'aucun'" class="carte accueil-profil" data-test="sans-profil">
-      <h1>{{ t('profil.generation.titre') }}</h1>
-      <p>{{ t('profil.generation.texte') }}</p>
-      <p v-if="sansGithub" class="texte-discret">{{ t('profil.generation.sansGithub') }}</p>
-      <template v-else>
-        <p v-if="enCours" role="status" data-test="en-cours">{{ t('profil.generation.enCours') }}</p>
-        <JBouton v-else :occupe="occupe" data-test="generer" @click="generer">{{ t('profil.generation.bouton') }}</JBouton>
-        <p class="texte-discret">{{ t('profil.generation.prive') }}</p>
-      </template>
-      <p v-if="echec" role="alert">{{ t(`profil.generation.erreurs.${echec}`) }}</p>
-      <p v-if="message" role="alert">{{ message }}</p>
+    <div v-else-if="etat === 'aucun'" class="accueil-profil" data-test="sans-profil">
+      <div class="accueil-profil__texte">
+        <h1>{{ t('profil.generation.titre') }}</h1>
+        <p class="accueil-profil__intro">{{ t('profil.generation.texte') }}</p>
+        <ul class="accueil-profil__lu">
+          <li v-for="cle in ['langages', 'sujets', 'etoiles']" :key="cle">✓ {{ t(`profil.generation.lu.${cle}`) }}</li>
+          <li class="jamais">✕ {{ t('profil.generation.lu.jamais') }}</li>
+        </ul>
+        <p v-if="sansGithub" class="texte-discret">{{ t('profil.generation.sansGithub') }}</p>
+        <template v-else>
+          <p v-if="enCours" role="status" class="en-cours" data-test="en-cours">{{ t('profil.generation.enCours') }}</p>
+          <JBouton v-else :occupe="occupe" data-test="generer" @click="generer">{{ t('profil.generation.bouton') }}</JBouton>
+          <p class="texte-discret">{{ t('profil.generation.prive') }}</p>
+        </template>
+        <p v-if="echec" role="alert" class="erreur">{{ t(`profil.generation.erreurs.${echec}`) }}</p>
+        <p v-if="message" role="alert" class="erreur">{{ message }}</p>
+      </div>
+      <div class="accueil-profil__visuel">
+        <JIllustration nom="profil-prouve" />
+      </div>
     </div>
 
     <template v-else-if="profil">
@@ -320,7 +329,17 @@ async function enregistrer() {
 
 <style scoped>
 .mon-profil { display: grid; gap: var(--space-6); }
-.accueil-profil { max-width: 36rem; display: grid; gap: var(--space-2); justify-items: start; }
+.accueil-profil { display: grid; gap: var(--space-8); grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); align-items: center; padding-top: var(--space-4); }
+@media (max-width: 760px) { .accueil-profil { grid-template-columns: 1fr; } .accueil-profil__visuel { order: -1; max-width: 18rem; } }
+.accueil-profil__texte { display: grid; gap: var(--space-4); justify-items: start; }
+.accueil-profil__texte > * { margin: 0; }
+.accueil-profil h1 { font-size: clamp(2rem, 4.5vw, 2.75rem); line-height: 1.1; letter-spacing: -0.8px; }
+.accueil-profil__intro { font-size: 1.0625rem; color: var(--ink-muted); max-width: 34rem; }
+.accueil-profil__lu { list-style: none; padding: 0; display: grid; gap: var(--space-2); font-weight: 600; }
+.accueil-profil__lu .jamais { color: var(--ink-muted); font-weight: 400; }
+.accueil-profil__visuel { padding: var(--space-8); background: var(--action-soft); border-radius: var(--radius-lg); }
+.en-cours { font-weight: 600; color: var(--action-ink); }
+.erreur { color: var(--danger); font-weight: 600; }
 .identite { flex-direction: row; display: flex; gap: var(--space-6); align-items: center; flex-wrap: wrap; }
 .identite__texte { display: grid; gap: var(--space-1); min-width: 0; flex: 1; }
 .identite__texte h1, .identite__texte p { margin: 0; }

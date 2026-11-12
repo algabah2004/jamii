@@ -61,6 +61,12 @@
       "erreurs": {
         "github_indisponible": "GitHub is not responding right now. Your previous profile is kept: try again in a few minutes.",
         "github_refus": "GitHub can no longer find your account. Check your GitHub username, then try again."
+      },
+      "lu": {
+        "langages": "Your languages, measured on your public repositories",
+        "sujets": "The topics of your repositories",
+        "etoiles": "The stars of your repositories",
+        "jamais": "Never your private repositories"
       }
     },
     "disponibilite": {
