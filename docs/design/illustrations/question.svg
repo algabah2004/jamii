@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 360" role="img" aria-labelledby="t"><title id="t">Une question, une réponse proposée par l'IA, vérifiée par un membre</title>
+<path fill="#DDF0FA" d="M62 158c12-82 112-122 202-110s166 64 164 146-74 136-184 134S48 244 62 158z"/>
+<ellipse cx="240" cy="322" rx="190" ry="13" fill="#C9E3F1"/>
+<!-- bulle de la question -->
+<rect x="44" y="30" width="120" height="64" rx="16" fill="#FFFFFF" stroke="#B9CBD6" stroke-width="2"/><path fill="#FFFFFF" d="M80 92l8 14 12-14z"/>
+<text x="74" y="76" text-anchor="middle" font-family="Familjen Grotesk, system-ui, sans-serif" font-size="38" font-weight="700" fill="#0297DE">?</text>
+<rect x="96" y="50" width="52" height="8" rx="4" fill="#02070A"/><rect x="96" y="66" width="36" height="6" rx="3" fill="#8A9BA6"/>
+<!-- proposition de l'IA : en pointillé, pas encore une preuve -->
+<rect x="232" y="70" width="196" height="112" rx="18" fill="#FFFFFF" stroke="#0297DE" stroke-width="3" stroke-dasharray="8 7"/>
+<path fill="#0297DE" d="M262 92c2 9 5 12 14 14-9 2-12 5-14 14-2-9-5-12-14-14 9-2 12-5 14-14z"/>
+<path fill="#5DBDEB" d="M282 84c1 5 3 7 8 8-5 1-7 3-8 8-1-5-3-7-8-8 5-1 7-3 8-8z"/>
+<rect x="296" y="98" width="110" height="8" rx="4" fill="#02070A"/>
+<rect x="252" y="128" width="154" height="6" rx="3" fill="#8A9BA6"/><rect x="252" y="142" width="130" height="6" rx="3" fill="#8A9BA6"/>
+<rect x="252" y="156" width="86" height="12" rx="6" fill="#F4F8FA"/>
+<path d="M174 64c22-4 40 4 54 18" stroke="#0297DE" stroke-width="5" fill="none" stroke-linecap="round" stroke-dasharray="2 11"/>
+<!-- le membre qui vérifie -->
+<circle cx="410" cy="214" r="30" fill="#8D5524"/>
+<path fill="#02070A" d="M380 210c-2-24 12-36 30-36s32 12 30 32c-8-8-18-12-30-12s-22 6-30 16z"/>
+<path fill="#0297DE" d="M360 316c0-54 20-78 50-78s50 24 50 78z"/>
+<circle cx="440" cy="182" r="18" fill="#FC734D"/><path d="M432 182l5 5 11-11" stroke="#02070A" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<!-- la personne qui pose la question, à son ordinateur -->
+<rect x="46" y="250" width="170" height="10" rx="4" fill="#02070A"/><rect x="62" y="260" width="8" height="56" fill="#02070A"/><rect x="194" y="260" width="8" height="56" fill="#02070A"/>
+<path fill="#1F2E38" d="M136 196h72l6 54h-84z"/><circle cx="172" cy="223" r="6" fill="#5DBDEB"/>
+<path fill="#5DBDEB" d="M50 250c0-50 14-80 44-80s42 30 42 80z"/>
+<rect x="84" y="150" width="18" height="24" rx="6" fill="#5C3A21"/>
+<circle cx="93" cy="132" r="24" fill="#5C3A21"/>
+<circle cx="80" cy="112" r="12" fill="#02070A"/><circle cx="94" cy="106" r="13" fill="#02070A"/><circle cx="108" cy="114" r="11" fill="#02070A"/>
+<path fill="#5C3A21" d="M128 208c10 6 16 14 20 24h-12c-4-8-8-12-14-16z"/>
+</svg>

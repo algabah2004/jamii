@@ -59,11 +59,13 @@ const miennes = computed(() => communautes.value.filter((c) => c.membre || c.slu
 <style scoped>
 .espace { display: grid; gap: var(--space-6); grid-template-columns: 13.5rem minmax(0, 1fr) 17rem; align-items: start; }
 .espace__fil { min-width: 0; display: grid; gap: var(--space-4); }
-.espace__communautes, .espace__contexte { position: sticky; top: calc(64px + var(--space-6)); display: grid; gap: var(--space-4); }
+.espace__communautes, .espace__contexte { position: sticky; top: calc(64px + var(--space-6)); display: grid; gap: var(--space-4); min-width: 0; }
+.espace__communautes li { min-width: 0; }
 
 .espace__titre { margin: 0 0 var(--space-2); padding-inline: var(--space-3); color: var(--ink-muted); font-size: var(--type-body-sm-size); font-weight: 600; }
 .espace__communautes ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
 .raccourci {
+  min-width: 0;
   display: flex; align-items: center; gap: var(--space-3);
   padding: var(--space-2) var(--space-3); border-radius: var(--radius-md);
   color: var(--ink); text-decoration: none; font-weight: 600; font-size: var(--type-body-sm-size);
