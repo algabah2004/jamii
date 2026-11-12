@@ -179,6 +179,10 @@ const chiffres = computed(() => {
     color-mix(in srgb, var(--ink) 16%, transparent) 0 1px, transparent 1px 3px,
     color-mix(in srgb, var(--bg) 12%, transparent) 3px 5px, transparent 5px 7px);
   mix-blend-mode: soft-light;
+  opacity: 0.55;
+  /* Aucune strie derrière le texte : elles brouillaient les lettres. */
+  mask-image: radial-gradient(46% 42% at 50% 38%, transparent 55%, #000 100%);
+  -webkit-mask-image: radial-gradient(46% 42% at 50% 38%, transparent 55%, #000 100%);
 }
 /* Quelques étoiles dans le ciel, en haut à droite. */
 .scene__lumiere::before {
@@ -194,9 +198,11 @@ const chiffres = computed(() => {
 
 .scene__contenu {
   position: relative; max-width: 72rem; margin: 0 auto;
+  /* Une ombre sombre sous chaque texte : il reste lisible sur le bleu vif comme sur l'orange. */
+  --ombre-texte: 0 1px 2px color-mix(in srgb, var(--midnight) 70%, transparent), 0 0 18px color-mix(in srgb, var(--midnight) 55%, transparent);
   display: grid; justify-items: center; text-align: center; gap: var(--space-3);
 }
-.scene__bonjour { margin: 0; color: var(--ink-muted); font-weight: 600; }
+.scene__bonjour { margin: 0; color: var(--ink); font-weight: 600; text-shadow: var(--ombre-texte); }
 .scene__titre {
   margin: 0; max-width: 20ch;
   font-family: var(--font-editorial); font-weight: 400;
@@ -206,32 +212,40 @@ const chiffres = computed(() => {
   animation: monte var(--motion-celebrate) var(--ease-out) both;
 }
 .scene__titre em { font-style: italic; }
-.scene__intro { margin: 0; max-width: 34rem; text-shadow: 0 1px 16px var(--bg); color: color-mix(in srgb, var(--ink) 82%, transparent); font-size: 1.0625rem; line-height: 1.6; }
+.scene__intro { margin: 0; max-width: 34rem; text-shadow: var(--ombre-texte); color: var(--ink); font-weight: 500; font-size: 1.0625rem; line-height: 1.6; }
 
 .scene__chiffres { position: absolute; top: 34%; display: grid; gap: var(--space-6); margin: 0; }
 .scene__chiffres--gauche { left: var(--space-4); text-align: start; }
 .scene__chiffres--droite { right: var(--space-4); text-align: end; }
 .scene__chiffres div { display: flex; flex-direction: column-reverse; }
-.scene__chiffres dd { margin: 0; font-family: var(--font-editorial); font-size: 2.25rem; line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
-.scene__chiffres dt { margin-top: var(--space-1); color: color-mix(in srgb, var(--ink) 70%, transparent); font-size: var(--type-body-sm-size); }
+.scene__chiffres dd { margin: 0; font-family: var(--font-editorial); font-size: 2.25rem; line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; text-shadow: var(--ombre-texte); }
+.scene__chiffres dt { margin-top: var(--space-1); color: var(--ink); font-size: var(--type-body-sm-size); font-weight: 500; text-shadow: var(--ombre-texte); }
 
 .scene__actions { display: grid; justify-items: center; gap: var(--space-2); margin-top: var(--space-4); }
 /* Le bouton rond, lumineux : l'unique action de la scène. */
 .bouton-rond {
   display: grid; place-items: center; align-content: center; gap: var(--space-1);
   width: 116px; height: 116px; border-radius: 50%;
-  background: radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--ink) 55%, transparent), color-mix(in srgb, var(--ink) 18%, transparent) 72%);
+  /* Verre sombre : le texte blanc s'y lit, quel que soit le halo derrière. */
+  background: radial-gradient(circle at 50% 25%, color-mix(in srgb, var(--midnight) 35%, transparent), color-mix(in srgb, var(--midnight) 72%, transparent) 80%);
   border: 1.5px solid color-mix(in srgb, var(--ink) 75%, transparent);
   box-shadow: 0 0 0 10px color-mix(in srgb, var(--ink) 10%, transparent), 0 0 70px color-mix(in oklch, var(--proof) 60%, var(--ink));
   backdrop-filter: blur(8px);
-  color: var(--ink); font-weight: 600; text-decoration: none; text-align: center; padding: var(--space-3); line-height: 1.25;
+  color: var(--ink); font-weight: 700; text-decoration: none; text-align: center; padding: var(--space-3); line-height: 1.25;
+  text-shadow: var(--ombre-texte);
   transition: transform var(--motion-base) var(--ease-out), box-shadow var(--motion-base) var(--ease-out);
 }
 .bouton-rond:hover { transform: scale(1.04); box-shadow: 0 0 0 14px color-mix(in srgb, var(--ink) 8%, transparent), 0 0 80px color-mix(in srgb, var(--proof) 70%, transparent); }
 .bouton-rond:focus-visible { outline: 2px solid var(--ink); outline-offset: 6px; }
 .bouton-rond__point { width: 8px; height: 8px; border-radius: 50%; background: var(--proof); box-shadow: 0 0 12px var(--proof); }
-.scene__lien { color: var(--ink); font-weight: 600; text-underline-offset: 0.25em; }
-.scene__rassurance { margin: 0; color: color-mix(in srgb, var(--ink) 70%, transparent); font-size: var(--type-body-sm-size); }
+.scene__lien { color: var(--ink); font-weight: 600; text-underline-offset: 0.25em; text-shadow: var(--ombre-texte); }
+/* Petit texte posé sur l'orange : il a sa propre pastille sombre, sinon il disparaît. */
+.scene__rassurance, .apercu__etiquette {
+  padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--midnight) 58%, transparent); backdrop-filter: blur(10px);
+  color: var(--ink); font-size: var(--type-body-sm-size); font-weight: 500;
+}
+.scene__rassurance { margin: 0; }
 
 .apercus {
   position: relative; max-width: 72rem; margin: var(--space-8) auto 0;
@@ -239,7 +253,7 @@ const chiffres = computed(() => {
   perspective: 1200px;
 }
 .apercu { display: grid; gap: var(--space-2); color: var(--ink); text-decoration: none; transition: transform var(--motion-base) var(--ease-out); }
-.apercu__etiquette { display: flex; align-items: center; gap: var(--space-2); font-size: var(--type-body-sm-size); color: color-mix(in srgb, var(--ink) 82%, transparent); }
+.apercu__etiquette { display: inline-flex; justify-self: start; align-items: center; gap: var(--space-2); }
 .apercu__etiquette::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .apercu__fenetre, .apercu__projet {
   display: block; border-radius: var(--radius-lg) var(--radius-lg) 0 0;
