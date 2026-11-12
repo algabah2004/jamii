@@ -27,7 +27,7 @@ Les noms reprennent [vocabulaire.md](vocabulaire.md) : Profil, Communauté, Dema
 |---|---|---|
 | `auth` (socle) | #17 @sowibrr | `utilisateur`, `utilisateur_role`, `spring_session*` ✅ déjà dans [#31](https://github.com/algabah2004/jamii/pull/31) · `jeton_connexion` (lien par e-mail) |
 | `demandes` | #17 @sowibrr | `demande` |
-| `projets` | #17 @sowibrr | `projet`, `role_recherche`, `candidature`, `membre_equipe`, `jalon`, `tache`, `avis_coequipier`, `alerte_continuite` |
+| `projets` | #17 @sowibrr | `projet`, `role_recherche`, `candidature`, `membre_equipe`, `jalon`, `tache`, `avis_coequipier`, `alerte_continuite`, `cercle`, `cercle_membre` |
 | `profils` | #19 @rev22rse22 | `profil`, `competence_profil`, `preuve_fiabilite` |
 | `communautes` | #18 @Amar233-ui | `communaute`, `adhesion`, `publication`, `reponse`, `signalement` |
 | `deploiement` | #20 @boubacarsidibe | `deploiement` |
@@ -116,6 +116,13 @@ erDiagram
 `id`, `projet_id`, `auteur_id` → utilisateur, `destinataire_id` → utilisateur, `sens` (`positif` | `negatif`), `texte` (280 caractères au plus), `cree_le`.
 - Un seul avis par auteur, par destinataire et par projet : index unique (`projet_id`, `auteur_id`, `destinataire_id`), et CHECK `auteur_id <> destinataire_id`.
 - Possible quand le destinataire a une tâche `livree` dans le projet, ou quand le projet est `livre`. L'avis ne se modifie pas : on le conteste depuis le profil (#19).
+
+### `cercle` et `cercle_membre` (Tech Tontine, `contracts/cercles.yaml`)
+- `cercle` : `id`, `nom`, `ville`, `taille` (4 à 6), `createur_id` → utilisateur, `statut` (`ouvert` | `en_cours` | `termine`), `tour_en_cours` (NULL avant le tirage), `tirage_le` (NULL avant le tirage), `cree_le`, `version`.
+- `cercle_membre` : (`cercle_id`, `utilisateur_id`) clé primaire, `rejoint_le`, `idee_titre`, `idee_description` (NULL tant que l'idée n'est pas déposée), `rang` (1 à `taille`, NULL avant le tirage), `projet_id` (le projet de son tour, sans clé étrangère : règle commune n° 4), `livre_le`, `depot_*` (fournisseur et adresses du dépôt Git, NULL tant qu'il n'existe pas).
+- **Un tour, c'est le projet d'un membre** : pas de table `tour`. Le tour `n` est le membre de rang `n`, et son `projet_id` se remplit à l'ouverture du tour. Aucune colonne ajoutée à `projet`.
+- Unicité : (`cercle_id`, `rang`) unique quand `rang` n'est pas NULL. Le tirage et la livraison sont des `UPDATE` conditionnels (`WHERE tirage_le IS NULL`, `WHERE tour_en_cours = :n`) : rejouer la requête ne tire pas deux fois et ne livre pas deux tours.
+- Le tirage mélange les membres côté serveur avec `SecureRandom`. On enregistre l'ordre (`rang`) et le moment (`tirage_le`), jamais une graine.
 
 ### `alerte_continuite`
 `id`, `projet_id`, `type` (`inactif` | `membre_parti` | `echeance_depassee`), `cree_le`, `resolue_le`.
