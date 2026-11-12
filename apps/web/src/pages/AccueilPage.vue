@@ -1,15 +1,14 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute } from 'vue-router'
 import { adresseConnexionGithub, api } from '../api/client'
 import { JIllustration } from '../design-system'
-import type { TableauDeBord } from '../features/systalink/calculs'
 import CarteProjet from '../features/vitrine/CarteProjet.vue'
 import type { ProjetEnVitrine } from '../features/vitrine/vitrine'
 import { useSession } from '../session'
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const { etat, moi } = useSession()
 const route = useRoute()
 // Après une redirection du garde (« connexion requise »), on revient là où la personne voulait aller.
@@ -22,18 +21,8 @@ const ETAPES = [
   { cle: 'enLigne', illustration: 'en-ligne', lien: '/vitrine' },
 ] as const
 
-// La scène ne montre que des chiffres et des projets réels, lus dans les API publiques.
-// Si l'une ne répond pas, sa partie disparaît : l'accueil reste utilisable.
-const tableau = ref<TableauDeBord | null>(null)
+// Le projet de la scène est un vrai projet en ligne, lu dans la vitrine. Si elle ne répond pas, une maquette le remplace.
 const projet = ref<ProjetEnVitrine | null>(null)
-void (async () => {
-  try {
-    const { data } = await api.GET('/api/systalink/tableau-de-bord', { params: { query: { periode: 'tout' } } })
-    tableau.value = data ?? null
-  } catch {
-    tableau.value = null
-  }
-})()
 void (async () => {
   try {
     const { data } = await api.GET('/api/vitrine', { params: { query: { limite: 1, hebergeur: 'datacloud' } } })
@@ -43,22 +32,6 @@ void (async () => {
   }
 })()
 
-const nombre = (n: number) => n.toLocaleString(locale.value)
-const chiffres = computed(() => {
-  const tb = tableau.value
-  if (!tb) return null
-  const pays = tb.inscrits.parPays.length
-  return {
-    gauche: [
-      { valeur: nombre(tb.inscrits.total), libelle: t('accueil.scene.membres') },
-      { valeur: tb.inscrits.autres > 0 ? `${pays}+` : String(pays), libelle: t('accueil.scene.pays') },
-    ],
-    droite: [
-      { valeur: nombre(tb.projets.enLigne), libelle: t('accueil.scene.enLigne') },
-      { valeur: nombre(tb.projets.surDatacloud), libelle: t('accueil.scene.surSystalink') },
-    ],
-  }
-})
 </script>
 
 <template>
@@ -74,12 +47,6 @@ const chiffres = computed(() => {
         </h1>
         <p class="scene__intro">{{ t('accueil.texte') }}</p>
 
-        <dl v-if="chiffres" class="scene__chiffres scene__chiffres--gauche" data-test="chiffres">
-          <div v-for="c in chiffres.gauche" :key="c.libelle"><dt>{{ c.libelle }}</dt><dd>{{ c.valeur }}</dd></div>
-        </dl>
-        <dl v-if="chiffres" class="scene__chiffres scene__chiffres--droite">
-          <div v-for="c in chiffres.droite" :key="c.libelle"><dt>{{ c.libelle }}</dt><dd>{{ c.valeur }}</dd></div>
-        </dl>
 
         <div class="scene__actions">
           <RouterLink v-if="etat === 'connecte'" to="/profil" class="bouton-scene">
@@ -211,12 +178,6 @@ const chiffres = computed(() => {
 .scene__titre em { font-style: italic; }
 .scene__intro { margin: 0; max-width: 34rem; text-shadow: var(--ombre-texte); color: var(--ink); font-weight: 500; font-size: 1.0625rem; line-height: 1.6; }
 
-.scene__chiffres { position: absolute; top: 34%; display: grid; gap: var(--space-6); margin: 0; }
-.scene__chiffres--gauche { left: var(--space-4); text-align: start; }
-.scene__chiffres--droite { right: var(--space-4); text-align: end; }
-.scene__chiffres div { display: flex; flex-direction: column-reverse; }
-.scene__chiffres dd { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 2.25rem; letter-spacing: -0.02em; line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; text-shadow: var(--ombre-texte); }
-.scene__chiffres dt { margin-top: var(--space-1); color: var(--ink); font-size: var(--type-body-sm-size); font-weight: 500; text-shadow: var(--ombre-texte); }
 
 .scene__actions { display: grid; justify-items: center; gap: var(--space-4); margin-top: var(--space-6); }
 /* L'unique action de la scène : une capsule blanche pleine, qui ressort nettement sur le bleu. */
@@ -280,8 +241,6 @@ const chiffres = computed(() => {
 .apercu--droite:hover { transform: rotateY(-8deg) rotateZ(2deg) translateY(6px); }
 
 @media (max-width: 960px) {
-  .scene__chiffres { position: static; display: flex; gap: var(--space-8); justify-content: center; text-align: center; }
-  .scene__chiffres--gauche, .scene__chiffres--droite { text-align: center; }
   .apercus { grid-template-columns: 1fr; max-width: 26rem; }
   .apercu--gauche, .apercu--droite { display: none; }
 }
