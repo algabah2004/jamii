@@ -218,7 +218,8 @@
     "vide": "Nothing here yet. Ask the first question!",
     "reponseAcceptee": "Accepted answer",
     "reponses": "no answer | {n} answer | {n} answers",
-    "compteSupprime": "deleted account"
+    "compteSupprime": "deleted account",
+    "annuler": "Cancel"
   },
   "question": {
     "retourCommunaute": "← Back to the community",
