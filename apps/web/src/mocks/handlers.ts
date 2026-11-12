@@ -5,6 +5,7 @@ import { handlersVitrine } from './vitrine'
 import { handlersCommunautes } from './communautes'
 import { handlersProfils } from './profils'
 import { handlersDemandes } from './demandes'
+import { handlersCercles } from './cercles'
 
 type Moi = components['schemas']['Moi']
 type TableauDeBord = ComposantsSystalink['schemas']['TableauDeBord']
@@ -52,6 +53,7 @@ export const handlers = [
   ...handlersCommunautes,
   ...handlersProfils,
   ...handlersDemandes,
+  ...handlersCercles,
   http.get('/api/me', () =>
     connecte
       ? HttpResponse.json(moiDemo)
