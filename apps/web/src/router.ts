@@ -29,6 +29,20 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('./features/communautes/PublicationPage.vue'),
     meta: { connexionRequise: true },
   },
+  // Une PME décrit son besoin, l'assistant propose un plan (étape 3 de la démo). Connexion requise
+  // (GitHub ou e-mail : une PME n'a pas besoin de compte GitHub).
+  {
+    path: '/demandes/nouvelle',
+    name: 'nouvelle-demande',
+    component: () => import('./features/demandes/NouvelleDemandePage.vue'),
+    meta: { connexionRequise: true },
+  },
+  {
+    path: '/demandes/:id',
+    name: 'demande',
+    component: () => import('./features/demandes/DemandePage.vue'),
+    meta: { connexionRequise: true },
+  },
   {
     // Public : seulement ce que chaque projet montre déjà à tous (contracts/vitrine.yaml).
     path: '/vitrine',

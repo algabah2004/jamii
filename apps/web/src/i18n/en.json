@@ -5,7 +5,8 @@
     "systalink": "Systalink space",
     "vitrine": "Showcase",
     "communautes": "Communities",
-    "allerAuContenu": "Skip to content"
+    "allerAuContenu": "Skip to content",
+    "demandes": "Requests"
   },
   "connexion": {
     "github": "Sign in with GitHub",
@@ -348,6 +349,69 @@
       "irrespectueux": "Disrespectful",
       "hors_sujet": "Off topic",
       "autre": "Other reason"
+    }
+  },
+  "demandes": {
+    "nouvelle": {
+      "titre": "Describe your need",
+      "intro": "Explain in your own words what your business needs. The assistant turns it into a clear plan, then a team of developers can build it.",
+      "champTitre": "In one sentence, what do you need?",
+      "aideTitre": "For example: an online shop for my workshop.",
+      "champDescription": "Tell us: who will use it, what it must do, what matters to you",
+      "aideDescription": "At least {n} characters. No technical words needed.",
+      "duree": "How soon would you like it?",
+      "semaines": "{n} week | {n} weeks",
+      "jeNeSaisPas": "I don't know",
+      "envoyer": "Get a plan",
+      "rassurance": "Free. Nothing is published without your agreement.",
+      "erreur": "Your request could not be sent. Try again in a moment.",
+      "exemplesTitre": "For inspiration",
+      "ensuiteTitre": "What happens next?",
+      "ensuite1": "The assistant suggests a plan: what to do, how long it takes, and with whom.",
+      "ensuite2": "You read it. Nothing is decided without you.",
+      "ensuite3": "A team of Jamii developers takes the project and puts it online."
+    },
+    "exemples": [
+      {
+        "titre": "An online shop for my sewing workshop",
+        "description": "I sew clothes in Thiès. I want to show my designs with their prices, receive orders on WhatsApp and get paid by Mobile Money."
+      },
+      {
+        "titre": "Track our group’s contributions",
+        "description": "We are 30 women in a savings group. We want to see who has paid and everyone’s turn from a basic phone."
+      },
+      {
+        "titre": "Online booking for my practice",
+        "description": "My patients call all day long. I want them to pick a slot online and get an SMS reminder the day before."
+      }
+    ],
+    "plan": {
+      "autre": "← Describe another need",
+      "prepare": "The assistant is preparing your plan…",
+      "prepareAide": "It reads your request and splits it into steps. This takes a few seconds.",
+      "echec": "The plan could not be prepared.",
+      "echecAide": "Your request is saved. Try again in a moment.",
+      "propose": "Plan suggested by the assistant · to read, nothing is decided",
+      "repli": "The assistant was not available: here is a plan template to complete with the team.",
+      "resume": "What the team will build",
+      "fonctionnalites": "Features",
+      "jalons": "Steps",
+      "semaine": "Week {n}",
+      "roles": "Profiles to find",
+      "rolesAide": "These roles will be offered to Jamii developers.",
+      "services": "Suggested Systalink services",
+      "servicesAide": "Suggestions, never an obligation: the plan works without them.",
+      "horsPerimetre": "Not in this project",
+      "decision": "Happy with this plan? A team can form around it.",
+      "lancer": "Start the project with this plan",
+      "lance": "Project started. The roles to find are offered to developers.",
+      "dejaPrise": "A team has already started a project on this request.",
+      "erreurLancement": "The project could not be started. Try again in a moment."
+    },
+    "priorites": {
+      "indispensable": "Must have",
+      "utile": "Useful",
+      "plus_tard": "Later"
     }
   }
 }

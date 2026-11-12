@@ -17,6 +17,7 @@ const { etat, moi } = useSession()
       <RouterLink to="/" class="marque">Jamii<span class="marque__point" aria-hidden="true" /></RouterLink>
       <nav :aria-label="t('menu.principal')">
         <RouterLink v-if="etat === 'connecte'" to="/communautes">{{ t('menu.communautes') }}</RouterLink>
+        <RouterLink v-if="etat === 'connecte'" to="/demandes/nouvelle" :class="{ 'router-link-active': $route.path.startsWith('/demandes') }">{{ t('menu.demandes') }}</RouterLink>
         <RouterLink to="/vitrine">{{ t('menu.vitrine') }}</RouterLink>
         <RouterLink to="/systalink">{{ t('menu.systalink') }}</RouterLink>
       </nav>
