@@ -38,7 +38,7 @@ async function envoyer() {
 
 <template>
   <section class="nouvelle fond-verre">
-    <header class="page-tete">
+    <header class="page-tete motif motif--croix">
       <div class="page-tete__texte">
         <h1>{{ t('demandes.nouvelle.titre') }}</h1>
         <p>{{ t('demandes.nouvelle.intro') }}</p>

@@ -55,7 +55,7 @@ function filtrer(datacloud: boolean) {
 
 <template>
   <section class="vitrine">
-    <header class="page-tete">
+    <header class="page-tete motif motif--capsules">
       <div class="page-tete__texte">
         <h1>{{ t('vitrine.titre') }}</h1>
         <p>{{ t('vitrine.intro') }}</p>

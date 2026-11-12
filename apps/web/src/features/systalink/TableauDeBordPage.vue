@@ -47,7 +47,7 @@ const maxPays = computed(() => Math.max(1, ...pays.value.map((p) => p.nombre)))
 
 <template>
   <section class="tableau">
-    <header class="page-tete">
+    <header class="page-tete motif motif--points">
       <div class="page-tete__texte">
         <h1>{{ t('systalink.titre') }}</h1>
         <p>{{ t('systalink.intro') }}</p>
@@ -70,7 +70,7 @@ const maxPays = computed(() => Math.max(1, ...pays.value.map((p) => p.nombre)))
 
     <template v-else-if="tableau">
       <div class="chiffres" :aria-busy="etat === 'chargement' || undefined">
-        <div class="principal zone-sombre" data-test="datacloud">
+        <div class="principal zone-sombre motif motif--points" data-test="datacloud">
           <p class="principal__libelle">{{ t('systalink.surDatacloud') }}</p>
           <p class="chiffre">{{ tableau.projets.surDatacloud }}</p>
           <template v-if="partDatacloud !== null">

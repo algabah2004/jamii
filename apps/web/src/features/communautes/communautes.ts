@@ -10,3 +10,17 @@ export function monogramme(nom: string): string {
   if (mots.length === 1) return mots[0]!.slice(0, 2).toUpperCase()
   return mots.slice(0, 2).map((m) => m[0]!.toUpperCase()).join('')
 }
+
+/** Les motifs de la charte qu'une communauté peut recevoir. */
+export const MOTIFS_COMMUNAUTE = ['reseau', 'ondes', 'capsules', 'croix', 'points'] as const
+export type MotifCommunaute = (typeof MOTIFS_COMMUNAUTE)[number]
+
+/**
+ * Le motif d'une communauté, tiré de son nom court : toujours le même pour une communauté donnée,
+ * et des communautés voisines ont des motifs différents. Purement décoratif.
+ */
+export function motifDe(slug: string): MotifCommunaute {
+  let h = 0
+  for (const c of slug) h = (h * 31 + c.charCodeAt(0)) >>> 0
+  return MOTIFS_COMMUNAUTE[h % MOTIFS_COMMUNAUTE.length]!
+}
