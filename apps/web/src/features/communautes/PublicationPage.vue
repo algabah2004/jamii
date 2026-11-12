@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { JAvatar, JBadgePreuve, JBouton, JChamp } from '../../design-system'
+import { JAvatar, JBadgePreuve, JBouton, JChamp, JSquelette } from '../../design-system'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute } from 'vue-router'
@@ -107,25 +107,30 @@ async function repondre() {
 
 <template>
   <section>
-    <p v-if="etat === 'chargement' && !publication" role="status">{{ t('etat.chargement') }}</p>
-    <div v-else-if="etat === 'introuvable'">
+    <JSquelette v-if="etat === 'chargement' && !publication" :nombre="2" />
+    <div v-else-if="etat === 'introuvable'" class="etat-vide">
       <h1>{{ t('introuvable.titre') }}</h1>
       <RouterLink to="/communautes">{{ t('communautes.retour') }}</RouterLink>
     </div>
-    <div v-else-if="etat === 'indisponible'" role="alert">
+    <div v-else-if="etat === 'indisponible'" role="alert" class="etat-vide">
       <p>{{ t('etat.indisponible') }}</p>
       <JBouton variante="secondaire" @click="charger()">{{ t('etat.reessayer') }}</JBouton>
     </div>
 
-    <article v-else-if="publication">
-      <p><RouterLink :to="`/communautes/${publication.communaute}`">{{ t('question.retourCommunaute') }}</RouterLink></p>
+    <article v-else-if="publication" class="publication">
+      <p class="retour"><RouterLink :to="`/communautes/${publication.communaute}`">{{ t('question.retourCommunaute') }}</RouterLink></p>
+      <p class="statut">
+        <span class="etiquette">{{ t(`communautes.types.${publication.type}`) }}</span>
+        <JBadgePreuve v-if="dejaAcceptee">✓ {{ t('communautes.reponseAcceptee') }}</JBadgePreuve>
+        <span v-else-if="publication.type === 'question'" class="etiquette etiquette--ouverte">{{ t('question.ouverte') }}</span>
+      </p>
       <h1>{{ publication.titre }}</h1>
       <p class="auteur">
         <JAvatar :nom="publication.auteur?.nom ?? '?'" :url="publication.auteur?.avatarUrl" :taille="32" />
         <span class="discret"><strong>{{ publication.auteur?.nom ?? t('communautes.compteSupprime') }}</strong> · {{ ilYa(publication.creeLe, locale) }}</span>
       </p>
       <!-- Texte brut, affiché échappé (jamais v-html) : aucun HTML d'un utilisateur ne s'exécute. -->
-      <p class="texte">{{ publication.contenu }}</p>
+      <p class="texte texte--question">{{ publication.contenu }}</p>
 
       <p v-if="message" role="status" class="message">{{ message }}</p>
 
@@ -160,7 +165,7 @@ async function repondre() {
         </li>
       </ul>
 
-      <form v-if="publication.moi.estMembre" class="formulaire" @submit.prevent="repondre">
+      <form v-if="publication.moi.estMembre" class="carte formulaire" @submit.prevent="repondre">
         <JChamp v-model="nouvelleReponse" :libelle="t('question.taReponse')" multiligne :maxlength="10000" requis />
         <JBouton type="submit" class="principal" :desactive="nouvelleReponse.trim().length < 10" :occupe="!!envoi">
           {{ t('question.repondre') }}
@@ -172,19 +177,27 @@ async function repondre() {
 </template>
 
 <style scoped>
-.texte { white-space: pre-wrap; }
-.discret { color: var(--ink-muted); font-size: 0.875rem; }
-.message { background: var(--surface-raised); border-radius: 0.375rem; padding: 0.5rem 0.75rem; }
-.attente { background: var(--surface-raised); border-radius: 0.375rem; padding: 0.75rem; font-weight: 600; }
-.reponses { list-style: none; padding: 0; margin: 0 0 1.5rem; display: grid; gap: 0.75rem; }
-.reponses li { background: var(--surface); border: 1px solid var(--line); border-radius: 0.5rem; padding: 1rem; }
+.publication { max-width: 46rem; }
+.retour { margin-bottom: var(--space-4); }
+.statut { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; margin-bottom: var(--space-3); }
+.etiquette--ouverte { background: var(--action-soft); }
+.publication h1 { font-size: clamp(1.75rem, 3.6vw, 2.25rem); line-height: 1.15; letter-spacing: -0.6px; margin-bottom: var(--space-4); }
+.publication h2 { margin-top: var(--space-8); font-size: var(--type-h3-size); }
+.texte { white-space: pre-wrap; margin: 0; }
+.texte--question { margin: var(--space-6) 0; font-size: 1.0625rem; line-height: 1.65; }
+.discret { color: var(--ink-muted); font-size: var(--type-body-sm-size); }
+.message { background: var(--surface-raised); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); font-weight: 600; }
+.attente { display: flex; align-items: center; gap: var(--space-2); background: var(--action-soft); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); font-weight: 600; }
+.reponses { list-style: none; padding: 0; margin: 0 0 var(--space-8); display: grid; gap: var(--space-4); }
+.reponses li { display: grid; gap: var(--space-3); justify-items: start; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md); padding: var(--space-6); }
+.reponses li > * { margin: 0; }
+.reponses li .texte { justify-self: stretch; }
 .reponses li.ia { border: 1px dashed var(--line-strong); background: var(--action-soft); } /* charte : proposition de l'IA, pas encore une preuve */
 /* Orange = la preuve (tokens.json) : la réponse acceptée. */
-.reponses li.acceptee { border: 2px solid var(--proof); border-style: solid; }
-.badge-acceptee { margin: 0 0 var(--space-2); }
+.reponses li.acceptee { border: 2px solid var(--proof); }
+.etiquette-ia { font-weight: 600; font-size: var(--type-body-sm-size); }
 .auteur { display: flex; align-items: center; gap: var(--space-2); }
 .auteur strong { color: var(--ink); }
-.etiquette-ia { font-weight: 600; font-size: 0.875rem; margin: 0 0 0.5rem; }
-.formulaire { display: grid; gap: 0.75rem; }
-.formulaire .principal { justify-self: start; }
+.formulaire { display: grid; gap: var(--space-4); justify-items: start; }
+.formulaire > :first-child { justify-self: stretch; }
 </style>

@@ -7,6 +7,7 @@ import { i18n } from '../../i18n'
 import { creerRouteur } from '../../router'
 import { chargerSession } from '../../session'
 import App from '../../App.vue'
+import { monogramme } from './communautes'
 
 // Questions des données de démo (src/mocks/communautes.ts).
 const QUESTION_DE_KOFFI = '/publications/7a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d' // l'IA a proposé, personne n'a validé
@@ -133,5 +134,18 @@ describe('Question : l’IA propose, un pair valide', () => {
     const { page } = await ouvrir('/publications/q')
     expect(page.find('main img').exists()).toBe(false)
     expect(page.text()).toContain('<img src=x onerror="alert(1)">')
+  })
+})
+
+describe('monogramme', () => {
+  it('prend l’initiale des deux premiers mots utiles', () => {
+    expect(monogramme('Flutter et Dart')).toBe('FD')
+    expect(monogramme('Fintech et paiement mobile')).toBe('FP')
+    expect(monogramme('IA appliquée')).toBe('IA')
+  })
+
+  it('garde deux lettres pour un nom d’un seul mot, et ne plante pas sur un nom vide', () => {
+    expect(monogramme('Kotlin')).toBe('KO')
+    expect(monogramme('')).toBe('')
   })
 })
