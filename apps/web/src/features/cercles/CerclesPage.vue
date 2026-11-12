@@ -29,6 +29,7 @@ void charger()
       <div class="page-tete__texte">
         <h1>{{ t('cercles.titre') }}</h1>
         <p>{{ t('cercles.intro') }}</p>
+        <RouterLink to="/cercles/nouveau" class="j-bouton j-bouton--principal creer" data-test="nouveau">{{ t('cercles.nouveau.titre') }}</RouterLink>
       </div>
     </header>
 
@@ -59,6 +60,7 @@ void charger()
 <style scoped>
 .cercles { display: grid; gap: var(--space-6); }
 .cercles ul { list-style: none; margin: 0; padding: 0; }
+.creer { margin-top: var(--space-4); justify-self: start; width: fit-content; }
 .resume { display: grid; gap: var(--space-2); padding: var(--space-6); color: var(--ink); text-decoration: none; height: 100%; }
 .resume__haut { display: flex; justify-content: space-between; align-items: center; gap: var(--space-3); font-size: 1.125rem; }
 .resume__statut { padding: 2px var(--space-3); border-radius: var(--radius-pill); font-size: var(--type-body-sm-size); font-weight: 600; background: var(--action-soft); color: var(--action-ink); white-space: nowrap; }

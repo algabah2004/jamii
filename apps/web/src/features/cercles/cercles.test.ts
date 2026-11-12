@@ -81,3 +81,47 @@ describe('la page du cercle', () => {
     expect(page.find('nav a[href="/cercles"]').exists()).toBe(true)
   })
 })
+
+describe('du cercle vide au tirage', () => {
+  it("crée un cercle, dépose son idée, puis tire l'ordre au sort : le premier tour commence", async () => {
+    const { page, routeur } = await ouvrir('/cercles/nouveau')
+    const champs = page.findAll('[data-test="nouveau-cercle"] input:not([type="radio"])')
+    await champs[0]!.setValue('Cercle de Thiès')
+    await champs[1]!.setValue('Thiès')
+    await page.find('input[type="radio"][value="4"]').setValue(true)
+    await page.find('[data-test="nouveau-cercle"]').trigger('submit')
+    await vi.waitFor(() => expect(routeur.currentRoute.value.name).toBe('cercle'))
+    await vi.waitFor(() => expect(page.find('[data-test="attente-tirage"]').exists()).toBe(true))
+
+    // Les 3 autres membres ont déjà déposé leur idée ; le tirage attend la mienne.
+    expect(page.find('[data-test="tirer"]').attributes('disabled')).toBeDefined()
+    await page.find('[data-test="ouvrir-idee"]').trigger('click')
+    const form = page.find('[data-test="form-idee"]')
+    await form.find('input').setValue('Appli de covoiturage étudiant')
+    await form.find('textarea').setValue('Pour les étudiants de Thiès qui vont à Dakar chaque semaine.')
+    await form.trigger('submit')
+    await vi.waitFor(() => expect(page.find('[data-test="mon-idee"]').text()).toContain('Appli de covoiturage étudiant'))
+
+    await page.find('[data-test="tirer"]').trigger('click')
+    await vi.waitFor(() => expect(page.find('[data-test="tour"]').exists()).toBe(true))
+    expect(page.findAll('[data-test="ordre"] li .ordre__numero').map((n) => n.text())).toEqual(['1', '2', '3', '4'])
+  })
+
+  it('rejoint un cercle ouvert, et dit pourquoi quand il est complet', async () => {
+    const { page } = await ouvrir('/cercles/cercle-abidjan')
+    await vi.waitFor(() => expect(page.find('[data-test="rejoindre"]').exists()).toBe(true))
+    await page.find('[data-test="rejoindre"]').trigger('click')
+    await vi.waitFor(() => expect(page.findAll('.anneau__membre')).toHaveLength(4))
+    expect(page.find('[data-test="rejoindre"]').exists()).toBe(false)
+    expect(page.find('[data-test="ouvrir-idee"]').exists()).toBe(true)
+    expect(page.find('[data-test="tirer"]').exists()).toBe(false) // seul le créateur tire au sort
+  })
+
+  it("explique un refus de l'API au lieu d'échouer en silence", async () => {
+    serveur.use(http.post('/api/cercles/:id/membres', () => HttpResponse.json({ code: 'cercle_complet' }, { status: 409 })))
+    const { page } = await ouvrir('/cercles/cercle-abidjan')
+    await vi.waitFor(() => expect(page.find('[data-test="rejoindre"]').exists()).toBe(true))
+    await page.find('[data-test="rejoindre"]').trigger('click')
+    await vi.waitFor(() => expect(page.find('[role="alert"]').text()).toBe('Le cercle est déjà complet.'))
+  })
+})

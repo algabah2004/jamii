@@ -428,8 +428,8 @@
     "joursRestants": "last day | 1 day left | {n} days left",
     "depot": "The project repository",
     "avantTirage": "The turn order has not been drawn yet.",
-    "avantTirageAide": "The circle is full, the draw can take place. | 1 more member is needed before the draw. | {n} more members are needed before the draw.",
-    "griot": "The Griot",
+    "avantTirageAide": "The circle is full. | 1 more member is needed. | {n} more members are needed.",
+    "griot": "The Griot, the assistant that sums up the turn",
     "ordre": "Turn order",
     "pasDIdee": "No idea shared yet",
     "confiance": "Trust {n}%",
@@ -444,6 +444,38 @@
       "a_venir": "Upcoming",
       "en_cours": "In progress",
       "livre": "Delivered"
-    }
+    },
+    "etapeMembres": "{n} of {taille} members",
+    "etapeIdees": "{n} of {total} ideas shared",
+    "rejoindre": "Join the circle",
+    "monIdee": "My idea:",
+    "deposerIdee": "Share my idea",
+    "modifierIdee": "Edit my idea",
+    "ideeTitre": "The project you want to see built",
+    "ideeDescription": "In a few sentences",
+    "ideeAide": "Who it is for and what it should do. The circle builds it during your turn.",
+    "enregistrerIdee": "Save my idea",
+    "tirer": "Draw the turn order",
+    "tirageAide": "Possible once the circle is full and everyone has shared an idea. The server draws the order once.",
+    "erreurs": {
+      "cercle_complet": "The circle is already full.",
+      "deja_membre": "You are already in this circle.",
+      "tirage_deja_fait": "The order has already been drawn.",
+      "cercle_incomplet": "Some members are still missing.",
+      "idees_manquantes": "Every member must share an idea first.",
+      "autre": "That did not work. Try again in a moment."
+    },
+    "nouveau": {
+      "titre": "Create a circle",
+      "intro": "You will be its first member. Others join, everyone shares an idea, then you draw the turn order.",
+      "nom": "Circle name",
+      "nomAide": "For example, Dakar circle.",
+      "ville": "City",
+      "taille": "How many of you?",
+      "personnes": "{n} people",
+      "tailleAide": "{n} two-week turns: everyone gets their project built.",
+      "creer": "Create the circle"
+    },
+    "membresTitre": "Members"
   }
 }

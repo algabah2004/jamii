@@ -37,6 +37,12 @@ export const routes: RouteRecordRaw[] = [
     meta: { connexionRequise: true },
   },
   {
+    path: '/cercles/nouveau',
+    name: 'nouveau-cercle',
+    component: () => import('./features/cercles/NouveauCerclePage.vue'),
+    meta: { connexionRequise: true },
+  },
+  {
     path: '/cercles/:id',
     name: 'cercle',
     component: () => import('./features/cercles/CerclePage.vue'),
