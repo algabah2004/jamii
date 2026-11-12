@@ -41,9 +41,18 @@
       "badge": "Vérifié",
       "texte": "Sur Jamii, l'orange veut toujours dire la même chose : c'est prouvé. Un projet qui répond, une tâche livrée à temps, une réponse acceptée par la personne qui l'a posée."
     },
-    "direct": {
-      "titre": "En ligne et vérifié, en ce moment",
-      "lien": "Voir toute la vitrine"
+    "scene": {
+      "titre1": "Trouve ton équipe.",
+      "titre2": "Mets ton projet",
+      "titreAccent": "en ligne",
+      "commencer": "Commencer avec GitHub",
+      "membres": "membres",
+      "pays": "pays représentés",
+      "enLigne": "projets en ligne",
+      "surSystalink": "hébergés sur Systalink",
+      "apercuCommunautes": "Communautés",
+      "apercuEnLigne": "En ligne et vérifié",
+      "apercuProfil": "Profil prouvé"
     }
   },
   "profil": {
