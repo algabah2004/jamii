@@ -99,16 +99,26 @@ const chiffres = computed(() => {
       <div class="apercus">
         <RouterLink to="/communautes" class="apercu apercu--gauche">
           <span class="apercu__etiquette">{{ t('accueil.scene.apercuCommunautes') }}</span>
-          <span class="apercu__fenetre"><JIllustration nom="communaute" /></span>
+          <span class="apercu__fenetre maquette" aria-hidden="true">
+            <span v-for="(a, i) in ['KY', 'AD', 'CO']" :key="a" class="maquette__ligne">
+              <span class="maquette__avatar">{{ a }}</span>
+              <span class="maquette__textes"><i class="trait trait--fort" :style="{ width: `${78 - i * 14}%` }" /><i class="trait" :style="{ width: `${48 + i * 9}%` }" /></span>
+              <span v-if="i === 2" class="maquette__preuve">✓</span>
+            </span>
+          </span>
         </RouterLink>
         <div class="apercu apercu--centre">
           <span class="apercu__etiquette">{{ t('accueil.scene.apercuEnLigne') }}</span>
           <CarteProjet v-if="projet" :projet="projet" :niveau="2" class="apercu__projet" />
-          <span v-else class="apercu__fenetre"><JIllustration nom="nuage" /></span>
+          <span v-else class="apercu__fenetre maquette" aria-hidden="true"><span class="maquette__pastilles"><b>✓</b></span><i class="trait trait--fort" style="width: 70%" /><i class="trait" style="width: 90%" /><i class="trait" style="width: 60%" /></span>
         </div>
         <RouterLink to="/profil" class="apercu apercu--droite">
           <span class="apercu__etiquette">{{ t('accueil.scene.apercuProfil') }}</span>
-          <span class="apercu__fenetre"><JIllustration nom="profil-prouve" /></span>
+          <span class="apercu__fenetre maquette" aria-hidden="true">
+            <span class="maquette__ligne"><span class="maquette__avatar maquette__avatar--grand">AD</span><span class="maquette__textes"><i class="trait trait--fort" style="width: 62%" /><i class="trait" style="width: 40%" /></span></span>
+            <span v-for="(l, i) in [72, 48, 30]" :key="i" class="maquette__jauge"><i :style="{ width: `${l}%` }" /></span>
+            <span class="maquette__pastilles"><b>✓ 3</b><b>✓ 12</b><em /></span>
+          </span>
         </RouterLink>
       </div>
     </section>
@@ -142,17 +152,20 @@ const chiffres = computed(() => {
 .scene__lumiere {
   position: absolute; inset: 0; z-index: -1; pointer-events: none;
   background:
-    radial-gradient(36% 30% at 50% 74%, var(--proof), transparent 78%),
-    radial-gradient(80% 50% at 50% 82%, color-mix(in srgb, var(--proof) 70%, transparent), transparent 72%),
-    radial-gradient(11% 46% at 50% 44%, color-mix(in srgb, var(--action) 70%, var(--ink)), transparent 80%),
-    radial-gradient(30% 58% at 50% 44%, color-mix(in srgb, var(--action) 85%, transparent), transparent 75%),
-    radial-gradient(60% 70% at 50% 40%, color-mix(in srgb, var(--action) 30%, transparent), transparent 75%);
+    radial-gradient(20% 16% at 50% 66%, color-mix(in srgb, var(--proof) 80%, var(--ink)), transparent 75%),
+    radial-gradient(60% 34% at 50% 72%, var(--proof), transparent 72%),
+    radial-gradient(110% 40% at 50% 100%, color-mix(in srgb, var(--proof) 75%, transparent), transparent 75%),
+    radial-gradient(12% 40% at 50% 34%, color-mix(in srgb, var(--action) 65%, var(--ink)), transparent 78%),
+    radial-gradient(40% 46% at 50% 36%, var(--action), transparent 74%), radial-gradient(70% 50% at 50% 52%, color-mix(in srgb, var(--action) 45%, var(--proof)), transparent 75%),
+    linear-gradient(var(--bg), var(--bg));
 }
+/* Les traits : de fines lignes claires, plus visibles là où il y a de la lumière. */
 .scene__lumiere::after {
   content: ''; position: absolute; inset: 0;
-  background: repeating-linear-gradient(90deg, color-mix(in srgb, var(--bg) 35%, transparent) 0 2px, transparent 2px 6px);
-  mask-image: radial-gradient(70% 80% at 50% 60%, #000 30%, transparent 80%);
-  -webkit-mask-image: radial-gradient(70% 80% at 50% 60%, #000 30%, transparent 80%);
+  background: repeating-linear-gradient(90deg, color-mix(in srgb, var(--ink) 22%, transparent) 0 1px, transparent 1px 9px);
+  mix-blend-mode: overlay;
+  mask-image: radial-gradient(60% 85% at 50% 55%, #000 25%, transparent 78%);
+  -webkit-mask-image: radial-gradient(60% 85% at 50% 55%, #000 25%, transparent 78%);
 }
 
 .scene__contenu {
@@ -206,12 +219,26 @@ const chiffres = computed(() => {
 .apercu__etiquette::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .apercu__fenetre, .apercu__projet {
   display: block; border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  background: color-mix(in srgb, var(--bg) 45%, transparent);
   border: 1px solid color-mix(in srgb, var(--ink) 22%, transparent); border-bottom: 0;
   backdrop-filter: blur(14px);
   box-shadow: 0 -20px 60px color-mix(in srgb, var(--bg) 60%, transparent);
 }
 .apercu__fenetre { padding: var(--space-4) var(--space-4) 0; }
+/* Des bouts d'interface abstraits : lignes, visages, jauges, preuves. Décoratifs, sans faux contenu. */
+.maquette { display: grid; gap: var(--space-3); padding: var(--space-6) var(--space-6) var(--space-8); }
+.maquette__ligne { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2); border-radius: var(--radius-md); background: color-mix(in srgb, var(--ink) 6%, transparent); }
+.maquette__avatar { flex-shrink: 0; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--action-soft); color: var(--action-ink); font-size: 0.75rem; font-weight: 700; }
+.maquette__avatar--grand { width: 44px; height: 44px; background: var(--action); color: var(--on-action); }
+.maquette__textes { flex: 1; display: grid; gap: 6px; }
+.trait { display: block; height: 7px; border-radius: var(--radius-pill); background: color-mix(in srgb, var(--ink) 22%, transparent); }
+.trait--fort { height: 9px; background: color-mix(in srgb, var(--ink) 60%, transparent); }
+.maquette__preuve { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--proof); color: var(--on-proof); font-size: 0.75rem; font-weight: 700; }
+.maquette__jauge { display: block; height: 8px; border-radius: var(--radius-pill); background: color-mix(in srgb, var(--ink) 12%, transparent); overflow: hidden; }
+.maquette__jauge i { display: block; height: 100%; border-radius: inherit; background: var(--action); }
+.maquette__pastilles { display: flex; gap: var(--space-2); }
+.maquette__pastilles b { padding: 2px var(--space-3); border-radius: var(--radius-pill); background: var(--proof); color: var(--on-proof); font-size: 0.75rem; }
+.maquette__pastilles em { width: 48px; border-radius: var(--radius-pill); background: color-mix(in srgb, var(--ink) 12%, transparent); }
 .apercu__projet { text-align: start; }
 .apercu--gauche { transform: rotateY(14deg) rotateZ(-3deg) translateY(18px); transform-origin: right bottom; }
 .apercu--droite { transform: rotateY(-14deg) rotateZ(3deg) translateY(18px); transform-origin: left bottom; }
