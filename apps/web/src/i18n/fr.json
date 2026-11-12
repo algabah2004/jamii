@@ -61,6 +61,12 @@
       "erreurs": {
         "github_indisponible": "GitHub ne répond pas pour le moment. Ton profil précédent est conservé : réessaie dans quelques minutes.",
         "github_refus": "GitHub ne trouve plus ton compte. Vérifie ton identifiant GitHub, puis réessaie."
+      },
+      "lu": {
+        "langages": "Tes langages, calculés sur tes dépôts publics",
+        "sujets": "Les sujets de tes dépôts",
+        "etoiles": "Les étoiles de tes dépôts",
+        "jamais": "Jamais tes dépôts privés"
       }
     },
     "disponibilite": {
