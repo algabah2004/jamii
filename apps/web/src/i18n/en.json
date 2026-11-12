@@ -1,5 +1,6 @@
 {
   "menu": {
+    "cercles": "Circles",
     "profil": "Profile",
     "principal": "Main menu",
     "systalink": "Systalink space",
@@ -411,6 +412,38 @@
       "indispensable": "Must have",
       "utile": "Useful",
       "plus_tard": "Later"
+    }
+  },
+  "cercles": {
+    "titre": "Circles",
+    "intro": "4 to 6 developers build each member's project, one turn at a time. Systalink guarantees the circle.",
+    "tous": "All circles",
+    "aucun": "You are not part of a circle yet.",
+    "sousTitre": "{n} members · {ville}, {pays}",
+    "garant": "guarantor",
+    "anneauDescription": "Turn order: {ordre}.",
+    "tourDe": "Turn {n} · {nom}'s project",
+    "avancement": "Turn progress",
+    "taches": "{faites} of {total} tasks",
+    "joursRestants": "last day | 1 day left | {n} days left",
+    "depot": "The project repository",
+    "avantTirage": "The turn order has not been drawn yet.",
+    "avantTirageAide": "The circle is full, the draw can take place. | 1 more member is needed before the draw. | {n} more members are needed before the draw.",
+    "griot": "The Griot",
+    "ordre": "Turn order",
+    "pasDIdee": "No idea shared yet",
+    "confiance": "Trust {n}%",
+    "confianceAide": "Tasks delivered on time, attendance and reviews from other members",
+    "membres": "{n} of {taille} members",
+    "statut": {
+      "ouvert": "Looking for members",
+      "en_cours": "In progress",
+      "termine": "Finished"
+    },
+    "statutTour": {
+      "a_venir": "Upcoming",
+      "en_cours": "In progress",
+      "livre": "Delivered"
     }
   }
 }

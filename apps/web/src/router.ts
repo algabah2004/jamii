@@ -29,6 +29,19 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('./features/communautes/PublicationPage.vue'),
     meta: { connexionRequise: true },
   },
+  // La Tech Tontine (docs/priorites.md) : les cercles et leurs tours. Connexion requise.
+  {
+    path: '/cercles',
+    name: 'cercles',
+    component: () => import('./features/cercles/CerclesPage.vue'),
+    meta: { connexionRequise: true },
+  },
+  {
+    path: '/cercles/:id',
+    name: 'cercle',
+    component: () => import('./features/cercles/CerclePage.vue'),
+    meta: { connexionRequise: true },
+  },
   // Une PME décrit son besoin, l'assistant propose un plan (étape 3 de la démo). Connexion requise
   // (GitHub ou e-mail : une PME n'a pas besoin de compte GitHub).
   {

@@ -1,5 +1,6 @@
 {
   "menu": {
+    "cercles": "Cercles",
     "profil": "Profil",
     "principal": "Menu principal",
     "systalink": "Espace Systalink",
@@ -411,6 +412,38 @@
       "indispensable": "Indispensable",
       "utile": "Utile",
       "plus_tard": "Plus tard"
+    }
+  },
+  "cercles": {
+    "titre": "Cercles",
+    "intro": "4 à 6 développeurs construisent, à tour de rôle, le projet de chacun. Systalink est garant du cercle.",
+    "tous": "Tous les cercles",
+    "aucun": "Tu ne fais encore partie d'aucun cercle.",
+    "sousTitre": "{n} membres · {ville}, {pays}",
+    "garant": "garant",
+    "anneauDescription": "Ordre de passage : {ordre}.",
+    "tourDe": "Tour {n} · le projet de {nom}",
+    "avancement": "Avancement du tour",
+    "taches": "{faites} tâches sur {total}",
+    "joursRestants": "dernier jour | 1 jour restant | {n} jours restants",
+    "depot": "Le dépôt du projet",
+    "avantTirage": "L'ordre de passage n'est pas encore tiré.",
+    "avantTirageAide": "Le cercle est complet, le tirage peut avoir lieu. | Il manque 1 membre avant le tirage. | Il manque {n} membres avant le tirage.",
+    "griot": "Le Griot",
+    "ordre": "Ordre de passage",
+    "pasDIdee": "Idée pas encore déposée",
+    "confiance": "Confiance {n} %",
+    "confianceAide": "Tâches livrées à temps, présence et avis des autres membres",
+    "membres": "{n} membres sur {taille}",
+    "statut": {
+      "ouvert": "Cherche des membres",
+      "en_cours": "En cours",
+      "termine": "Terminé"
+    },
+    "statutTour": {
+      "a_venir": "À venir",
+      "en_cours": "En cours",
+      "livre": "Livré"
     }
   }
 }
