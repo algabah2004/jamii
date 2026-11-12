@@ -147,6 +147,25 @@
   color: var(--ink);
 }
 
+/* Zone toujours claire (cartes de verre posées sur une scène sombre). */
+.zone-claire {
+  color-scheme: light;
+  --bg: #F4F8FA;
+  --surface: #FFFFFF;
+  --surface-raised: #EAF1F5;
+  --line: #D3DEE5;
+  --line-strong: #74868F;
+  --ink: #02070A;
+  --ink-muted: #4B5D69;
+  --action-ink: #0270A6;
+  --action-soft: #DDF0FA;
+  --proof-ink: #B4431F;
+  --proof-soft: #FFE6DD;
+  --focus: #0270A6;
+  --danger: #C0264B;
+  color: var(--ink);
+}
+
 /* Mouvement réduit : toutes les durées à 0, le contenu reste le même. */
 @media (prefers-reduced-motion: reduce) {
   :root {

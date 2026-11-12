@@ -99,7 +99,7 @@ const chiffres = computed(() => {
       <div class="apercus">
         <RouterLink to="/communautes" class="apercu apercu--gauche">
           <span class="apercu__etiquette">{{ t('accueil.scene.apercuCommunautes') }}</span>
-          <span class="apercu__fenetre maquette" aria-hidden="true">
+          <span class="apercu__fenetre maquette zone-claire" aria-hidden="true">
             <span v-for="(a, i) in ['KY', 'AD', 'CO']" :key="a" class="maquette__ligne">
               <span class="maquette__avatar">{{ a }}</span>
               <span class="maquette__textes"><i class="trait trait--fort" :style="{ width: `${78 - i * 14}%` }" /><i class="trait" :style="{ width: `${48 + i * 9}%` }" /></span>
@@ -109,12 +109,12 @@ const chiffres = computed(() => {
         </RouterLink>
         <div class="apercu apercu--centre">
           <span class="apercu__etiquette">{{ t('accueil.scene.apercuEnLigne') }}</span>
-          <CarteProjet v-if="projet" :projet="projet" :niveau="2" class="apercu__projet" />
-          <span v-else class="apercu__fenetre maquette" aria-hidden="true"><span class="maquette__pastilles"><b>✓</b></span><i class="trait trait--fort" style="width: 70%" /><i class="trait" style="width: 90%" /><i class="trait" style="width: 60%" /></span>
+          <div v-if="projet" class="apercu__projet zone-claire"><CarteProjet :projet="projet" :niveau="2" /></div>
+          <span v-else class="apercu__fenetre maquette zone-claire" aria-hidden="true"><span class="maquette__pastilles"><b>✓</b></span><i class="trait trait--fort" style="width: 70%" /><i class="trait" style="width: 90%" /><i class="trait" style="width: 60%" /></span>
         </div>
         <RouterLink to="/profil" class="apercu apercu--droite">
           <span class="apercu__etiquette">{{ t('accueil.scene.apercuProfil') }}</span>
-          <span class="apercu__fenetre maquette" aria-hidden="true">
+          <span class="apercu__fenetre maquette zone-claire" aria-hidden="true">
             <span class="maquette__ligne"><span class="maquette__avatar maquette__avatar--grand">AD</span><span class="maquette__textes"><i class="trait trait--fort" style="width: 62%" /><i class="trait" style="width: 40%" /></span></span>
             <span v-for="(l, i) in [72, 48, 30]" :key="i" class="maquette__jauge"><i :style="{ width: `${l}%` }" /></span>
             <span class="maquette__pastilles"><b>✓ 3</b><b>✓ 12</b><em /></span>
@@ -151,21 +151,45 @@ const chiffres = computed(() => {
 /* Des traits de lumière verticaux, révélés par deux halos : bleu au centre, orange en bas. */
 .scene__lumiere {
   position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  /* Les trois couleurs de la marque, exactes : Midnight #02070A, Electric Blue #0297DE, Cantaloupe #FC734D.
+     Les autres teintes n'en sont que des versions plus claires ou plus profondes. */
+  --nuit: var(--midnight);
+  --bleu: var(--electric-blue);
+  --orange: var(--cantaloupe);
+  --bleu-profond: color-mix(in srgb, var(--electric-blue) 32%, var(--midnight));
+  --bleu-lumiere: color-mix(in srgb, var(--electric-blue) 50%, white);
+  --peche: color-mix(in srgb, var(--cantaloupe) 40%, white);
+  --orange-profond: color-mix(in srgb, var(--cantaloupe) 82%, var(--midnight));
   background:
-    radial-gradient(20% 16% at 50% 66%, color-mix(in srgb, var(--proof) 80%, var(--ink)), transparent 75%),
-    radial-gradient(60% 34% at 50% 72%, var(--proof), transparent 72%),
-    radial-gradient(110% 40% at 50% 100%, color-mix(in srgb, var(--proof) 75%, transparent), transparent 75%),
-    radial-gradient(12% 40% at 50% 34%, color-mix(in srgb, var(--action) 65%, var(--ink)), transparent 78%),
-    radial-gradient(40% 46% at 50% 36%, var(--action), transparent 74%), radial-gradient(70% 50% at 50% 52%, color-mix(in srgb, var(--action) 45%, var(--proof)), transparent 75%),
-    linear-gradient(var(--bg), var(--bg));
+    /* le cœur clair, presque blanc, où le bleu devient orange : derrière le bouton */
+    radial-gradient(14% 11% at 50% 58%, var(--peche), transparent 85%),
+    radial-gradient(40% 26% at 50% 66%, var(--orange), transparent 80%),
+    radial-gradient(70% 30% at 50% 78%, color-mix(in srgb, var(--cantaloupe) 85%, transparent), transparent 80%),
+    radial-gradient(120% 40% at 50% 100%, var(--orange-profond), transparent 85%),
+    /* la colonne de lumière Electric Blue, sur toute la hauteur */
+    radial-gradient(7% 46% at 50% 34%, var(--bleu-lumiere), transparent 85%),
+    radial-gradient(24% 62% at 50% 34%, var(--bleu), transparent 80%),
+    /* les côtés : Midnight en haut, puis le bleu qui s'intensifie vers le bas */
+    linear-gradient(180deg, var(--nuit) 0%, var(--nuit) 12%, var(--bleu-profond) 34%, var(--bleu) 58%, var(--bleu) 100%);
 }
-/* Les traits : de fines lignes claires, plus visibles là où il y a de la lumière. */
+/* Les stries : fines, claires et sombres en alternance, sur toute la scène, comme des rayons. */
 .scene__lumiere::after {
   content: ''; position: absolute; inset: 0;
-  background: repeating-linear-gradient(90deg, color-mix(in srgb, var(--ink) 22%, transparent) 0 1px, transparent 1px 9px);
-  mix-blend-mode: overlay;
-  mask-image: radial-gradient(60% 85% at 50% 55%, #000 25%, transparent 78%);
-  -webkit-mask-image: radial-gradient(60% 85% at 50% 55%, #000 25%, transparent 78%);
+  background: repeating-linear-gradient(90deg,
+    color-mix(in srgb, var(--ink) 16%, transparent) 0 1px, transparent 1px 3px,
+    color-mix(in srgb, var(--bg) 12%, transparent) 3px 5px, transparent 5px 7px);
+  mix-blend-mode: soft-light;
+}
+/* Quelques étoiles dans le ciel, en haut à droite. */
+.scene__lumiere::before {
+  content: ''; position: absolute; inset: 0 0 60% 55%;
+  background:
+    radial-gradient(1.5px 1.5px at 20% 30%, var(--ink), transparent),
+    radial-gradient(1px 1px at 45% 18%, var(--ink), transparent),
+    radial-gradient(1.5px 1.5px at 70% 42%, var(--ink), transparent),
+    radial-gradient(1px 1px at 85% 12%, var(--ink), transparent),
+    radial-gradient(1px 1px at 60% 65%, var(--ink), transparent);
+  opacity: 0.7;
 }
 
 .scene__contenu {
@@ -196,9 +220,9 @@ const chiffres = computed(() => {
 .bouton-rond {
   display: grid; place-items: center; align-content: center; gap: var(--space-1);
   width: 116px; height: 116px; border-radius: 50%;
-  background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--ink) 34%, transparent), color-mix(in srgb, var(--ink) 10%, transparent) 70%);
-  border: 1px solid color-mix(in srgb, var(--ink) 45%, transparent);
-  box-shadow: 0 0 0 10px color-mix(in srgb, var(--ink) 6%, transparent), 0 0 60px color-mix(in srgb, var(--proof) 55%, transparent);
+  background: radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--ink) 55%, transparent), color-mix(in srgb, var(--ink) 18%, transparent) 72%);
+  border: 1.5px solid color-mix(in srgb, var(--ink) 75%, transparent);
+  box-shadow: 0 0 0 10px color-mix(in srgb, var(--ink) 10%, transparent), 0 0 70px color-mix(in oklch, var(--proof) 60%, var(--ink));
   backdrop-filter: blur(8px);
   color: var(--ink); font-weight: 600; text-decoration: none; text-align: center; padding: var(--space-3); line-height: 1.25;
   transition: transform var(--motion-base) var(--ease-out), box-shadow var(--motion-base) var(--ease-out);
@@ -219,15 +243,15 @@ const chiffres = computed(() => {
 .apercu__etiquette::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .apercu__fenetre, .apercu__projet {
   display: block; border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  background: color-mix(in srgb, var(--bg) 45%, transparent);
-  border: 1px solid color-mix(in srgb, var(--ink) 22%, transparent); border-bottom: 0;
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--surface) 85%, transparent); border-bottom: 0;
   backdrop-filter: blur(14px);
   box-shadow: 0 -20px 60px color-mix(in srgb, var(--bg) 60%, transparent);
 }
 .apercu__fenetre { padding: var(--space-4) var(--space-4) 0; }
 /* Des bouts d'interface abstraits : lignes, visages, jauges, preuves. Décoratifs, sans faux contenu. */
 .maquette { display: grid; gap: var(--space-3); padding: var(--space-6) var(--space-6) var(--space-8); }
-.maquette__ligne { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2); border-radius: var(--radius-md); background: color-mix(in srgb, var(--ink) 6%, transparent); }
+.maquette__ligne { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2); border-radius: var(--radius-md); background: var(--surface); box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 10%, transparent); }
 .maquette__avatar { flex-shrink: 0; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--action-soft); color: var(--action-ink); font-size: 0.75rem; font-weight: 700; }
 .maquette__avatar--grand { width: 44px; height: 44px; background: var(--action); color: var(--on-action); }
 .maquette__textes { flex: 1; display: grid; gap: 6px; }
@@ -239,7 +263,8 @@ const chiffres = computed(() => {
 .maquette__pastilles { display: flex; gap: var(--space-2); }
 .maquette__pastilles b { padding: 2px var(--space-3); border-radius: var(--radius-pill); background: var(--proof); color: var(--on-proof); font-size: 0.75rem; }
 .maquette__pastilles em { width: 48px; border-radius: var(--radius-pill); background: color-mix(in srgb, var(--ink) 12%, transparent); }
-.apercu__projet { text-align: start; }
+.apercu__projet { text-align: start; background: color-mix(in srgb, var(--proof-soft) 78%, transparent); }
+.apercu__projet :deep(.projet) { background: transparent; border: 0; }
 .apercu--gauche { transform: rotateY(14deg) rotateZ(-3deg) translateY(18px); transform-origin: right bottom; }
 .apercu--droite { transform: rotateY(-14deg) rotateZ(3deg) translateY(18px); transform-origin: left bottom; }
 .apercu--gauche:hover { transform: rotateY(8deg) rotateZ(-2deg) translateY(6px); }
