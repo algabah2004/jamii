@@ -5,7 +5,8 @@
     "systalink": "Espace Systalink",
     "vitrine": "Vitrine",
     "communautes": "Communautés",
-    "allerAuContenu": "Aller au contenu"
+    "allerAuContenu": "Aller au contenu",
+    "demandes": "Demandes"
   },
   "connexion": {
     "github": "Se connecter avec GitHub",
@@ -348,6 +349,69 @@
       "irrespectueux": "Irrespectueux",
       "hors_sujet": "Hors sujet",
       "autre": "Autre raison"
+    }
+  },
+  "demandes": {
+    "nouvelle": {
+      "titre": "Décris ton besoin",
+      "intro": "Explique avec tes mots ce dont ton entreprise a besoin. L'assistant en fait un plan clair, puis une équipe de développeurs peut le réaliser.",
+      "champTitre": "En une phrase, de quoi as-tu besoin ?",
+      "aideTitre": "Par exemple : une boutique en ligne pour mon atelier.",
+      "champDescription": "Raconte : qui l’utilisera, ce que ça doit faire, ce qui compte pour toi",
+      "aideDescription": "Au moins {n} caractères. Pas besoin de mots techniques.",
+      "duree": "En combien de temps aimerais-tu l’avoir ?",
+      "semaines": "{n} semaine | {n} semaines",
+      "jeNeSaisPas": "Je ne sais pas",
+      "envoyer": "Obtenir un plan",
+      "rassurance": "Gratuit. Rien n’est publié sans ton accord.",
+      "erreur": "Ta demande n'a pas pu être envoyée. Réessaie dans un instant.",
+      "exemplesTitre": "Pour t’inspirer",
+      "ensuiteTitre": "Et ensuite ?",
+      "ensuite1": "L’assistant propose un plan : ce qu’il faut faire, en combien de temps, et avec qui.",
+      "ensuite2": "Tu le relis. Rien n’est décidé sans toi.",
+      "ensuite3": "Une équipe de développeurs de Jamii prend le projet et le met en ligne."
+    },
+    "exemples": [
+      {
+        "titre": "Une boutique en ligne pour mon atelier de couture",
+        "description": "Je couds des vêtements à Thiès. Je veux montrer mes modèles avec leurs prix, recevoir les commandes sur WhatsApp et être payée par Mobile Money."
+      },
+      {
+        "titre": "Suivre les cotisations de notre groupement",
+        "description": "Nous sommes 30 femmes dans une tontine. Nous voulons voir qui a payé et le tour de chacune depuis un téléphone simple."
+      },
+      {
+        "titre": "Prise de rendez-vous pour mon cabinet",
+        "description": "Mes patients appellent toute la journée. Je veux qu’ils choisissent un créneau en ligne et reçoivent un rappel par SMS la veille."
+      }
+    ],
+    "plan": {
+      "autre": "← Décrire un autre besoin",
+      "prepare": "L’assistant prépare ton plan…",
+      "prepareAide": "Il lit ta demande et la découpe en étapes. Cela prend quelques secondes.",
+      "echec": "Le plan n'a pas pu être préparé.",
+      "echecAide": "Ta demande est bien enregistrée. Réessaie dans un instant.",
+      "propose": "Plan proposé par l’assistant · à relire, rien n’est décidé",
+      "repli": "L'assistant n'était pas disponible : voici un modèle de plan à compléter avec l'équipe.",
+      "resume": "Ce que l’équipe va construire",
+      "fonctionnalites": "Les fonctionnalités",
+      "jalons": "Les étapes",
+      "semaine": "Semaine {n}",
+      "roles": "Les profils à trouver",
+      "rolesAide": "Ces rôles seront proposés aux développeurs de Jamii.",
+      "services": "Services Systalink suggérés",
+      "servicesAide": "Des suggestions, jamais une obligation : le plan marche sans.",
+      "horsPerimetre": "Pas dans ce projet",
+      "decision": "Ce plan te convient ? Une équipe peut se former autour.",
+      "lancer": "Lancer le projet avec ce plan",
+      "lance": "Projet lancé. Les rôles à trouver sont proposés aux développeurs.",
+      "dejaPrise": "Une équipe a déjà lancé un projet sur cette demande.",
+      "erreurLancement": "Le projet n'a pas pu être lancé. Réessaie dans un instant."
+    },
+    "priorites": {
+      "indispensable": "Indispensable",
+      "utile": "Utile",
+      "plus_tard": "Plus tard"
     }
   }
 }

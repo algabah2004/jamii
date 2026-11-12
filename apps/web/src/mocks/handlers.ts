@@ -4,6 +4,7 @@ import type { components as ComposantsSystalink } from '../api/generated/systali
 import { handlersVitrine } from './vitrine'
 import { handlersCommunautes } from './communautes'
 import { handlersProfils } from './profils'
+import { handlersDemandes } from './demandes'
 
 type Moi = components['schemas']['Moi']
 type TableauDeBord = ComposantsSystalink['schemas']['TableauDeBord']
@@ -50,6 +51,7 @@ export const handlers = [
   ...handlersVitrine,
   ...handlersCommunautes,
   ...handlersProfils,
+  ...handlersDemandes,
   http.get('/api/me', () =>
     connecte
       ? HttpResponse.json(moiDemo)

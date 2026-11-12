@@ -98,3 +98,35 @@ img, svg { max-width: 100%; }
 .page-tete__illustration { width: 15rem; flex-shrink: 0; margin-block: calc(-1 * var(--space-4)) calc(-1 * var(--space-2)); }
 .page-tete__texte > .j-filtres { margin-top: var(--space-4); }
 @media (max-width: 760px) { .page-tete__illustration { display: none; } }
+
+/*
+ * Verre (inspiré du Liquid Glass d'Apple, en CSS) : une surface translucide qui floute et sature ce qu'il y a
+ * derrière, un reflet clair sur le bord haut, une ombre douce. Réservé aux panneaux qui flottent au-dessus
+ * d'un fond (.fond-verre). Opaque si l'utilisateur réduit la transparence.
+ */
+.verre {
+  background: color-mix(in srgb, var(--surface) 58%, transparent);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid color-mix(in srgb, var(--surface) 70%, transparent);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 60%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--ink) 5%, transparent),
+    0 12px 40px color-mix(in srgb, var(--midnight) 12%, transparent);
+}
+.verre--teinte { background: color-mix(in srgb, var(--action-soft) 60%, transparent); }
+/* Le fond qui donne au verre quelque chose à réfracter : deux lueurs aux couleurs de la marque. */
+.fond-verre { position: relative; isolation: isolate; }
+.fond-verre::before {
+  content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(38% 42% at 12% 18%, color-mix(in srgb, var(--electric-blue) 40%, transparent), transparent 70%),
+    radial-gradient(34% 40% at 88% 28%, color-mix(in srgb, var(--cantaloupe) 34%, transparent), transparent 70%),
+    radial-gradient(40% 40% at 62% 96%, color-mix(in srgb, var(--electric-blue) 20%, transparent), transparent 70%);
+}
+/* Commandes en capsule sur les écrans en verre. */
+.fond-verre .j-bouton { border-radius: var(--radius-pill); }
+@media (prefers-reduced-transparency: reduce) {
+  .verre { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
