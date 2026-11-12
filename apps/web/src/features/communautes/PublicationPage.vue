@@ -169,7 +169,7 @@ async function repondre() {
       <h2 class="separateur">{{ t('communautes.reponses', { n: reponses.length }, reponses.length) }}</h2>
 
       <!-- Le fil : chaque réponse est reliée à la suivante par une ligne, comme une conversation. -->
-      <ol class="fil" data-test="reponses">
+      <TransitionGroup tag="ol" name="reponse" class="fil" data-test="reponses">
         <li v-for="r in reponses" :key="r.id" class="reponse" :class="{ acceptee: r.acceptee, ia: r.proposeeParIa }">
           <span v-if="r.proposeeParIa" class="avatar-ia" aria-hidden="true">✨</span>
           <JAvatar v-else :nom="r.auteur?.nom ?? '?'" :url="r.auteur?.avatarUrl" :taille="40" />
@@ -199,7 +199,7 @@ async function repondre() {
             </div>
           </div>
         </li>
-      </ol>
+      </TransitionGroup>
 
       <form v-if="publication.moi.estMembre" ref="zoneReponse" class="compositeur" @submit.prevent="repondre">
         <JAvatar v-if="moi" :nom="moi.nom" :url="moi.avatarUrl" :taille="40" />
@@ -277,6 +277,9 @@ async function repondre() {
 .bulle__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); justify-self: stretch; }
 .bulle__actions:empty { display: none; }
 .bulle__actions .signaler { margin-inline-start: auto; }
+.reponse-enter-active { transition: opacity var(--motion-base) var(--ease-out), transform calc(var(--motion-base) * 1.4) var(--ease-out); }
+.reponse-enter-from { opacity: 0; transform: translateY(10px) scale(0.98); }
+.reponse-move { transition: transform var(--motion-base) var(--ease-out); }
 /* Charte : la proposition de l'IA est en pointillé, ce n'est pas encore une preuve. */
 .reponse.ia .bulle { border: 1px dashed var(--line-strong); background: var(--action-soft); }
 /* Orange = la preuve : la réponse acceptée. */

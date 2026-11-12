@@ -94,7 +94,7 @@ img, svg { max-width: 100%; }
 .grille-cartes { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr)); }
 
 /* État vide ou erreur : une invitation à agir, centrée, avec une illustration. */
-.etat-vide { display: grid; justify-items: center; gap: var(--space-3); text-align: center; padding: var(--space-12) var(--space-6); background: var(--surface); border: 1px dashed var(--line-strong); border-radius: var(--radius-lg); }
+.etat-vide { position: relative; isolation: isolate; display: grid; justify-items: center; gap: var(--space-3); text-align: center; padding: var(--space-12) var(--space-6); background: var(--surface); border: 1px dashed var(--line-strong); border-radius: var(--radius-lg); }
 .etat-vide p { margin: 0; max-width: 32rem; color: var(--ink-muted); }
 .etat-vide .j-illustration { max-width: 12rem; }
 
@@ -139,3 +139,44 @@ body::before {
 @media (prefers-contrast: more) {
   .verre { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; border-color: var(--line-strong); }
 }
+
+/* Défilement doux (ancres, « Répondre »), sauf si l'utilisateur réduit le mouvement. */
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+
+/* Une carte cliquable se soulève légèrement au survol. */
+.carte-cliquable { transition: transform var(--motion-base) var(--ease-out), box-shadow var(--motion-base) var(--ease-out), border-color var(--motion-fast) var(--ease-out); }
+.carte-cliquable:hover { transform: translateY(-2px); box-shadow: 0 2px 4px color-mix(in srgb, var(--midnight) 6%, transparent), 0 18px 40px color-mix(in srgb, var(--midnight) 12%, transparent); }
+
+/*
+ * Motifs de la charte (docs/design/motifs, source unique) : une trame discrète posée derrière un bloc.
+ * Le dessin sert de masque, la couleur vient du thème (--motif-couleur), et il s'efface vers les bords.
+ * Purement décoratifs : jamais d'information portée par un motif.
+ *   <div class="motif motif--reseau"> … </div>
+ */
+.motif { position: relative; isolation: isolate; }
+.motif::after {
+  content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; border-radius: inherit;
+  background-color: var(--motif-couleur, var(--action-ink));
+  opacity: var(--motif-opacite, 0.14);
+  -webkit-mask-image: var(--motif), var(--motif-fondu, radial-gradient(120% 100% at 100% 0%, #000 25%, transparent 75%));
+  mask-image: var(--motif), var(--motif-fondu, radial-gradient(120% 100% at 100% 0%, #000 25%, transparent 75%));
+  -webkit-mask-size: var(--motif-taille, auto), 100% 100%;
+  mask-size: var(--motif-taille, auto), 100% 100%;
+  -webkit-mask-repeat: repeat, no-repeat;
+  mask-repeat: repeat, no-repeat;
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+}
+.motif--points { --motif: url('../../../../docs/design/motifs/points.svg'); --motif-taille: 16px; }
+.motif--capsules { --motif: url('../../../../docs/design/motifs/capsules.svg'); --motif-taille: 56px 40px; }
+.motif--ondes { --motif: url('../../../../docs/design/motifs/ondes.svg'); --motif-taille: 64px 28px; }
+.motif--reseau { --motif: url('../../../../docs/design/motifs/reseau.svg'); --motif-taille: 96px; }
+.motif--croix { --motif: url('../../../../docs/design/motifs/croix.svg'); --motif-taille: 28px; }
+/* Fondus : depuis un coin (par défaut), depuis le haut, ou partout. */
+.motif--haut { --motif-fondu: linear-gradient(#000, transparent 85%); }
+.motif--plein { --motif-fondu: linear-gradient(#000, #000); }
+
+/* Les états vides portent une onde discrète : un vide accueillant plutôt qu'un trou. */
+.etat-vide::after { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; border-radius: inherit; background-color: var(--action-ink); opacity: 0.08;
+  -webkit-mask: url('../../../../docs/design/motifs/ondes.svg') repeat 0 0 / 64px 28px; mask: url('../../../../docs/design/motifs/ondes.svg') repeat 0 0 / 64px 28px; }
+.page-tete.motif { padding: var(--space-6); margin-inline: calc(-1 * var(--space-6)); border-radius: var(--radius-lg); }

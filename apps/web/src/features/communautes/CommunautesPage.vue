@@ -6,7 +6,7 @@ import { RouterLink } from 'vue-router'
 import { api } from '../../api/client'
 import type { components } from '../../api/generated/communautes'
 import { nomPays } from '../systalink/calculs'
-import { monogramme } from './communautes'
+import { monogramme, motifDe } from './communautes'
 
 type Communaute = components['schemas']['Communaute']
 
@@ -38,7 +38,7 @@ const groupes = computed(() =>
 
 <template>
   <section>
-    <header class="page-tete">
+    <header class="page-tete motif motif--reseau">
       <div class="page-tete__texte">
         <h1>{{ t('communautes.titre') }}</h1>
         <p>{{ t('communautes.intro') }}</p>
@@ -55,7 +55,7 @@ const groupes = computed(() =>
       <section v-for="g in groupes" :key="g.cle" class="groupe" :aria-labelledby="`groupe-${g.cle}`">
         <h2 :id="`groupe-${g.cle}`">{{ t(`communautes.groupes.${g.cle}`) }}</h2>
         <ul class="grille-cartes" data-test="communautes">
-          <li v-for="c in g.liste" :key="c.id" class="communaute">
+          <li v-for="c in g.liste" :key="c.id" class="communaute carte-cliquable motif" :class="`motif--${motifDe(c.slug)}`">
             <div class="communaute__tete">
               <span class="communaute__monogramme" :class="{ 'communaute__monogramme--antenne': c.pays }" aria-hidden="true">
                 {{ monogramme(c.nom) }}
@@ -90,6 +90,7 @@ const groupes = computed(() =>
 .groupe h2 { font-size: var(--type-h3-size); line-height: var(--type-h3-line); margin-bottom: var(--space-4); }
 
 .communaute {
+  --motif-opacite: 0.24;
   position: relative;
   display: flex; flex-direction: column; gap: var(--space-2);
   padding: var(--space-6);

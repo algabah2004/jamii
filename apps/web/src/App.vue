@@ -54,7 +54,7 @@ const { etat, moi } = useSession()
     </RouterView>
   </main>
 
-  <footer class="pied">
+  <footer class="pied motif motif--ondes motif--haut">
     <div class="pied__interieur">
       <div class="pied__marque">
         <RouterLink to="/" class="marque">Jamii<span class="marque__point" aria-hidden="true" /></RouterLink>
@@ -138,8 +138,9 @@ main, .pied__interieur { padding-inline: var(--space-6); }
 
 main { flex: 1; padding-block: var(--space-8) var(--space-12); }
 main:focus { outline: none; }
-.page-enter-active, .page-leave-active { transition: opacity var(--motion-fast) var(--ease-out), transform var(--motion-base) var(--ease-out); }
-.page-enter-from { opacity: 0; transform: translateY(6px); }
+.page-enter-active { transition: opacity var(--motion-base) var(--ease-out), transform calc(var(--motion-base) * 1.4) var(--ease-out); }
+.page-leave-active { transition: opacity var(--motion-fast) var(--ease-out); }
+.page-enter-from { opacity: 0; transform: translateY(10px); }
 .page-leave-to { opacity: 0; }
 .hors-ligne { display: grid; gap: var(--space-3); justify-items: start; }
 

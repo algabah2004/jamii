@@ -41,9 +41,12 @@ withDefaults(
   font-size: var(--type-label-size); line-height: var(--type-label-line); font-weight: var(--type-label-weight);
   text-decoration: none;
   cursor: pointer;
-  transition: background-color var(--motion-fast) var(--ease-out), transform var(--motion-fast) var(--ease-out);
+  transition: background-color var(--motion-fast) var(--ease-out), border-color var(--motion-fast) var(--ease-out),
+    box-shadow var(--motion-base) var(--ease-out), transform var(--motion-base) var(--ease-pop), opacity var(--motion-base) var(--ease-out);
 }
-.j-bouton:active:not(:disabled) { transform: translateY(1px); }
+/* L'appui répond : le bouton s'enfonce un instant, puis revient avec un petit rebond. */
+.j-bouton:active:not(:disabled) { transform: scale(0.96); transition-duration: var(--motion-fast); }
+.j-bouton--principal:hover:not(:disabled) { box-shadow: 0 6px 18px color-mix(in srgb, var(--action) 35%, transparent); }
 .j-bouton:disabled { cursor: not-allowed; opacity: 0.55; }
 .j-bouton[aria-busy='true'] { cursor: progress; }
 

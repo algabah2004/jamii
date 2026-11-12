@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { JAvatar, JBadgePreuve, JBouton, JChamp, JFiltres, JIllustration, JSquelette } from '../../design-system'
-import { computed, ref, watch } from 'vue'
+import { JAvatar, JBadgePreuve, JBouton, JChamp, JDeplier, JFiltres, JIllustration, JSquelette } from '../../design-system'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { api } from '../../api/client'
@@ -8,7 +8,7 @@ import type { components } from '../../api/generated/communautes'
 import { nomPays } from '../systalink/calculs'
 import { ilYa } from '../vitrine/vitrine'
 import { useSession } from '../../session'
-import { monogramme } from './communautes'
+import { monogramme, motifDe } from './communautes'
 import EspaceCommunautes from './EspaceCommunautes.vue'
 
 type Communaute = components['schemas']['Communaute']
@@ -86,6 +86,11 @@ const filtre = computed({
 
 /** Comme dans la maquette : les échanges d'abord, le formulaire s'ouvre à la demande (et dès qu'on rejoint). */
 const formulaireOuvert = ref(false)
+const zoneFormulaire = ref<HTMLElement | null>(null)
+/** À l'ouverture, le curseur va directement dans le titre. */
+watch(formulaireOuvert, (ouvert) => {
+  if (ouvert) void nextTick(() => zoneFormulaire.value?.querySelector('input')?.focus({ preventScroll: true }))
+})
 </script>
 
 <template>
@@ -102,7 +107,7 @@ const formulaireOuvert = ref(false)
 
     <template v-else-if="communaute">
       <header class="banniere" :class="{ 'banniere--antenne': communaute.pays }">
-        <div class="banniere__couverture" aria-hidden="true" />
+        <div class="banniere__couverture motif motif--plein" :class="`motif--${motifDe(slug)}`" aria-hidden="true" />
         <div class="banniere__corps">
           <span class="banniere__monogramme" aria-hidden="true">{{ monogramme(communaute.nom) }}</span>
           <div class="banniere__texte">
@@ -126,46 +131,53 @@ const formulaireOuvert = ref(false)
 
       <!-- Un seul fil continu : publier en haut, les onglets, puis les discussions séparées par une ligne. -->
       <section class="flux" :aria-label="t('communautes.espace.fil')">
-        <Transition name="deplie" mode="out-in">
-          <form v-if="communaute.membre && formulaireOuvert" key="ouvert" class="compositeur compositeur--ouvert" data-test="publier" @submit.prevent="publier">
-            <div class="compositeur__tete">
-              <JAvatar v-if="moi" :nom="moi.nom" :url="moi.avatarUrl" :taille="40" />
-              <JFiltres
-                v-model="formulaire.type"
-                :libelle="t('communautes.type')"
-                :options="[
-                  { valeur: 'question', texte: t('communautes.types.question') },
-                  { valeur: 'discussion', texte: t('communautes.types.discussion') },
-                ]"
+        <!-- Le formulaire se déplie à la place de l'invitation, en douceur : la page ne saute pas. -->
+        <JDeplier>
+          <div v-if="communaute.membre && formulaireOuvert" ref="zoneFormulaire">
+            <form class="compositeur compositeur--ouvert" data-test="publier" @submit.prevent="publier">
+              <div class="compositeur__tete">
+                <JAvatar v-if="moi" :nom="moi.nom" :url="moi.avatarUrl" :taille="40" />
+                <JFiltres
+                  v-model="formulaire.type"
+                  :libelle="t('communautes.type')"
+                  :options="[
+                    { valeur: 'question', texte: t('communautes.types.question') },
+                    { valeur: 'discussion', texte: t('communautes.types.discussion') },
+                  ]"
+                />
+              </div>
+              <JChamp v-model="formulaire.titre" :libelle="t('communautes.champTitre')" :maxlength="150" requis />
+              <JChamp
+                v-model="formulaire.contenu"
+                :libelle="t('communautes.champContenu')"
+                :aide="formulaire.type === 'question' ? t('communautes.aideIa') : undefined"
+                multiligne
+                :lignes="5"
+                :maxlength="10000"
+                requis
               />
-            </div>
-            <JChamp v-model="formulaire.titre" :libelle="t('communautes.champTitre')" :maxlength="150" requis />
-            <JChamp
-              v-model="formulaire.contenu"
-              :libelle="t('communautes.champContenu')"
-              :aide="formulaire.type === 'question' ? t('communautes.aideIa') : undefined"
-              multiligne
-              :lignes="5"
-              :maxlength="10000"
-              requis
-            />
-            <p v-if="envoi === 'erreur'" role="alert" class="erreur">{{ t('communautes.erreurPublier') }}</p>
-            <div class="compositeur__commandes">
-              <JBouton variante="discret" @click="formulaireOuvert = false">{{ t('communautes.annuler') }}</JBouton>
-              <JBouton type="submit" :desactive="!valide" :occupe="envoi === 'envoi'">{{ t('communautes.publier') }}</JBouton>
-            </div>
-          </form>
-          <div v-else-if="communaute.membre" key="ferme" class="compositeur">
-            <JAvatar v-if="moi" :nom="moi.nom" :url="moi.avatarUrl" :taille="40" />
-            <button type="button" class="compositeur__invite" data-test="ouvrir-formulaire" @click="formulaireOuvert = true">
-              {{ t('communautes.espace.invite') }}
-            </button>
+              <p v-if="envoi === 'erreur'" role="alert" class="erreur">{{ t('communautes.erreurPublier') }}</p>
+              <div class="compositeur__commandes">
+                <JBouton variante="discret" @click="formulaireOuvert = false">{{ t('communautes.annuler') }}</JBouton>
+                <JBouton type="submit" :desactive="!valide" :occupe="envoi === 'envoi'">{{ t('communautes.publier') }}</JBouton>
+              </div>
+            </form>
           </div>
-          <div v-else key="rejoindre" class="compositeur compositeur--rejoindre">
-            <p>{{ t('communautes.rejoindrePourPublier') }}</p>
-            <JBouton :occupe="adhesionEnCours" @click="basculerAdhesion">{{ t('communautes.rejoindre') }}</JBouton>
+        </JDeplier>
+        <JDeplier>
+          <div v-if="communaute.membre && !formulaireOuvert">
+            <div class="compositeur">
+              <JAvatar v-if="moi" :nom="moi.nom" :url="moi.avatarUrl" :taille="40" />
+              <button type="button" class="compositeur__invite" data-test="ouvrir-formulaire" @click="formulaireOuvert = true">
+                {{ t('communautes.espace.invite') }}
+              </button>
+            </div>
           </div>
-        </Transition>
+        </JDeplier>
+        <div v-if="!communaute.membre" class="compositeur compositeur--rejoindre">
+          <p>{{ t('communautes.rejoindrePourPublier') }}</p>
+          <JBouton :occupe="adhesionEnCours" @click="basculerAdhesion">{{ t('communautes.rejoindre') }}</JBouton>
+        </div>
 
         <JFiltres
           v-model="filtre"
@@ -235,16 +247,10 @@ const formulaireOuvert = ref(false)
 /* Bannière : une couverture douce (une trame de points sur le bleu clair de la charte), pas d'aplat criard. */
 .banniere { overflow: hidden; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--ombre-carte); }
 .banniere__couverture {
-  height: 96px;
-  background:
-    radial-gradient(color-mix(in srgb, var(--action-ink) 28%, transparent) 1px, transparent 1.6px) 0 0 / 14px 14px,
-    linear-gradient(120deg, color-mix(in srgb, var(--action) 30%, var(--action-soft)), var(--action-soft) 70%);
+  height: 96px; --motif-opacite: 0.32;
+  background: linear-gradient(120deg, color-mix(in srgb, var(--action) 30%, var(--action-soft)), var(--action-soft) 70%);
 }
-.banniere--antenne .banniere__couverture {
-  background:
-    radial-gradient(color-mix(in srgb, var(--ink) 18%, transparent) 1px, transparent 1.6px) 0 0 / 14px 14px,
-    var(--surface-raised);
-}
+.banniere--antenne .banniere__couverture { --motif-couleur: var(--ink); --motif-opacite: 0.18; background: var(--surface-raised); }
 .banniere__corps { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-3) var(--space-4); padding: var(--space-3) var(--space-6) 0; }
 .banniere__monogramme {
   position: relative; margin-top: -44px;
@@ -307,9 +313,11 @@ const formulaireOuvert = ref(false)
 
 /* Les discussions arrivent une à une, très vite (rien si le mouvement est réduit). */
 .fil-enter-active { transition: opacity var(--motion-base) var(--ease-out), transform var(--motion-base) var(--ease-out); transition-delay: calc(var(--rang) * 30ms); }
-.fil-enter-from { opacity: 0; transform: translateY(6px); }
-.deplie-enter-active, .deplie-leave-active { transition: opacity var(--motion-fast) var(--ease-out); }
-.deplie-enter-from, .deplie-leave-to { opacity: 0; }
+.fil-enter-from { opacity: 0; transform: translateY(8px); }
+.fil-leave-active { transition: opacity var(--motion-fast) var(--ease-out); position: absolute; width: 100%; }
+.fil-leave-to { opacity: 0; }
+.fil-move { transition: transform var(--motion-base) var(--ease-out); }
+
 
 .contexte { display: grid; gap: var(--space-3); padding: var(--space-6); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--ombre-carte); }
 .contexte h2 { margin: 0; font-size: 1rem; }

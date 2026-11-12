@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import { genererCss } from '../../scripts/tokens-css.mjs'
-import { appliquerTheme, choisirTheme, JAvatar, JBadgePreuve, JBouton, JChamp, JFiltres, JIllustration, themeActuel, themeRetenu } from '.'
+import { appliquerTheme, choisirTheme, JAvatar, JBadgePreuve, JBouton, JChamp, JDeplier, JFiltres, JIllustration, themeActuel, themeRetenu } from '.'
 import { contraste } from './contraste'
 
 const lire = (chemin: string) => readFileSync(new URL(chemin, import.meta.url), 'utf8')
@@ -53,6 +53,19 @@ describe('JFiltres', () => {
     const filtres = mount(JFiltres, { props: { libelle: 'Afficher', options, modelValue: 'tout' } })
     await filtres.findAll('button')[1]!.trigger('click')
     expect(filtres.emitted('update:modelValue')).toEqual([['ouvertes']])
+  })
+})
+
+describe('JDeplier', () => {
+  it('montre et cache son contenu (immédiat sans animation, comme en mouvement réduit)', async () => {
+    const { defineComponent, h, ref } = await import('vue')
+    const ouvert = ref(false)
+    const Hote = defineComponent(() => () => h(JDeplier, null, { default: () => (ouvert.value ? h('p', { class: 'contenu' }, 'Bonjour') : null) }))
+    const hote = mount(Hote)
+    expect(hote.find('.contenu').exists()).toBe(false)
+    ouvert.value = true
+    await hote.vm.$nextTick()
+    expect(hote.find('.contenu').text()).toBe('Bonjour')
   })
 })
 

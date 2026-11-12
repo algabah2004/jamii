@@ -7,7 +7,7 @@ import { i18n } from '../../i18n'
 import { creerRouteur } from '../../router'
 import { chargerSession } from '../../session'
 import App from '../../App.vue'
-import { monogramme } from './communautes'
+import { monogramme, motifDe, MOTIFS_COMMUNAUTE } from './communautes'
 
 // Questions des données de démo (src/mocks/communautes.ts).
 const QUESTION_DE_KOFFI = '/publications/7a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d' // l'IA a proposé, personne n'a validé
@@ -183,5 +183,13 @@ describe('monogramme', () => {
   it('garde deux lettres pour un nom d’un seul mot, et ne plante pas sur un nom vide', () => {
     expect(monogramme('Kotlin')).toBe('KO')
     expect(monogramme('')).toBe('')
+  })
+})
+
+describe('motifDe', () => {
+  it('donne toujours le même motif à une communauté, parmi ceux de la charte', () => {
+    expect(motifDe('flutter')).toBe(motifDe('flutter'))
+    expect(MOTIFS_COMMUNAUTE).toContain(motifDe('antenne-dakar'))
+    expect(new Set(['flutter', 'fintech', 'ia', 'antenne-dakar'].map(motifDe)).size).toBeGreaterThan(1)
   })
 })

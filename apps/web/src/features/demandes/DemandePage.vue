@@ -93,7 +93,7 @@ const messageErreur = computed(() =>
     </div>
 
     <template v-else-if="demande">
-      <header class="tete">
+      <header class="tete motif motif--croix">
         <h1>{{ demande.titre }}</h1>
         <!-- Texte brut, affiché échappé : les mots de la PME, jamais interprétés. -->
         <blockquote class="carte besoin">{{ demande.description }}</blockquote>

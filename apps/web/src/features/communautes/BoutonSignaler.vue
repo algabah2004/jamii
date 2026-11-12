@@ -41,6 +41,7 @@ async function envoyer() {
       <button type="button" class="signaler__bouton" :aria-expanded="ouvert" data-test="signaler" @click="ouvert = !ouvert">
         {{ t('signaler.bouton') }}
       </button>
+      <Transition name="panneau">
       <form v-if="ouvert" class="signaler__panneau" @submit.prevent="envoyer">
         <fieldset>
           <legend>{{ t('signaler.pourquoi') }}</legend>
@@ -54,6 +55,7 @@ async function envoyer() {
           <JBouton type="submit" variante="secondaire" :desactive="!motif" :occupe="etat === 'envoi'">{{ t('signaler.envoyer') }}</JBouton>
         </div>
       </form>
+      </Transition>
     </template>
   </div>
 </template>
@@ -71,6 +73,10 @@ async function envoyer() {
 fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
 legend { font-weight: 600; margin-bottom: var(--space-2); }
 label { display: flex; gap: var(--space-2); align-items: center; cursor: pointer; }
+.panneau-enter-active { transition: opacity var(--motion-fast) var(--ease-out), transform var(--motion-base) var(--ease-pop); }
+.panneau-leave-active { transition: opacity var(--motion-fast) var(--ease-out), transform var(--motion-fast) var(--ease-out); }
+.panneau-enter-from, .panneau-leave-to { opacity: 0; transform: translateY(-4px) scale(0.96); }
+.signaler__panneau { transform-origin: top right; }
 .signaler__commandes { display: flex; justify-content: flex-end; gap: var(--space-2); }
 .signaler__merci { margin: 0; color: var(--ink-muted); font-size: var(--type-body-sm-size); }
 .signaler__erreur { margin: 0; color: var(--danger); font-weight: 600; font-size: var(--type-body-sm-size); }
