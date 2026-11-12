@@ -141,7 +141,8 @@
   },
   "introuvable": {
     "titre": "Cette page n'existe pas.",
-    "retour": "Revenir à l'accueil"
+    "retour": "Revenir à l'accueil",
+    "texte": "L'adresse est peut-être mal écrite, ou la page a été déplacée."
   },
   "langue": "Langue",
   "systalink": {
@@ -225,7 +226,21 @@
     "reponseAcceptee": "Réponse acceptée",
     "reponses": "aucune réponse | {n} réponse | {n} réponses",
     "compteSupprime": "compte supprimé",
-    "annuler": "Annuler"
+    "annuler": "Annuler",
+    "groupes": {
+      "miennes": "Tes communautés",
+      "aDecouvrir": "À découvrir"
+    },
+    "chiffres": {
+      "membres": "membres",
+      "questionsOuvertes": "questions ouvertes"
+    },
+    "fonctionnement": {
+      "titre": "Comment ça marche",
+      "poser": "Tu poses ta question à la communauté.",
+      "ia": "L'IA propose une première réponse, marquée « à vérifier ». Elle ne compte sur le profil de personne.",
+      "accepter": "Un membre la vérifie ou répond mieux. Tu acceptes la meilleure réponse : elle compte sur le profil de son auteur."
+    }
   },
   "question": {
     "retourCommunaute": "← Retour à la communauté",
@@ -247,7 +262,8 @@
       "propre_question": "Tu ne peux pas valider la réponse à ta propre question : un autre membre doit le faire.",
       "deja_acceptee": "Cette question a déjà une réponse acceptée.",
       "autre": "Ça n'a pas marché. Réessaie dans un instant."
-    }
+    },
+    "ouverte": "Question ouverte"
   },
   "designSystem": {
     "titre": "Design system",

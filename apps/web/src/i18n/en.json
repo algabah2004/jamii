@@ -141,7 +141,8 @@
   },
   "introuvable": {
     "titre": "This page does not exist.",
-    "retour": "Back to home"
+    "retour": "Back to home",
+    "texte": "The address may be mistyped, or the page has moved."
   },
   "langue": "Language",
   "systalink": {
@@ -225,7 +226,21 @@
     "reponseAcceptee": "Accepted answer",
     "reponses": "no answer | {n} answer | {n} answers",
     "compteSupprime": "deleted account",
-    "annuler": "Cancel"
+    "annuler": "Cancel",
+    "groupes": {
+      "miennes": "Your communities",
+      "aDecouvrir": "To discover"
+    },
+    "chiffres": {
+      "membres": "members",
+      "questionsOuvertes": "open questions"
+    },
+    "fonctionnement": {
+      "titre": "How it works",
+      "poser": "You ask the community your question.",
+      "ia": "The AI suggests a first answer, marked “to be checked”. It does not count on anyone’s profile.",
+      "accepter": "A member checks it or answers better. You accept the best answer: it counts on its author’s profile."
+    }
   },
   "question": {
     "retourCommunaute": "← Back to the community",
@@ -247,7 +262,8 @@
       "propre_question": "You cannot confirm the answer to your own question: another member must do it.",
       "deja_acceptee": "This question already has an accepted answer.",
       "autre": "That did not work. Try again in a moment."
-    }
+    },
+    "ouverte": "Open question"
   },
   "designSystem": {
     "titre": "Design system",
