@@ -134,8 +134,8 @@ const chiffres = computed(() => {
 .scene {
   position: relative; isolation: isolate; overflow: hidden;
   margin-inline: calc(50% - 50vw);
-  margin-top: calc(-1 * (64px + var(--space-8)));
-  padding: calc(64px + var(--space-8)) var(--space-6) 0;
+  margin-top: calc(-1 * (68px + var(--space-8)));
+  padding: calc(68px + var(--space-8)) var(--space-6) 0;
   background: var(--bg);
 }
 /* Des traits de lumière verticaux, révélés par deux halos : bleu au centre, orange en bas. */
