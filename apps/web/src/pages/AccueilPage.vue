@@ -92,13 +92,12 @@ const chiffres = computed(() => {
             {{ etat === 'connecte' ? t('accueil.voirCommunautes') : t('accueil.voirVitrine') }}
           </RouterLink>
         </div>
-        <p class="scene__rassurance">{{ t('accueil.rassurance') }}</p>
+        <p v-if="etat !== 'connecte'" class="scene__rassurance">{{ t('accueil.rassurance') }}</p>
       </div>
 
       <!-- Trois aperçus de Jamii posés en bas de la scène, légèrement inclinés. -->
       <div class="apercus">
-        <RouterLink to="/communautes" class="apercu apercu--gauche">
-          <span class="apercu__etiquette">{{ t('accueil.scene.apercuCommunautes') }}</span>
+        <RouterLink to="/communautes" class="apercu apercu--gauche" :aria-label="t('accueil.scene.apercuCommunautes')">
           <span class="apercu__fenetre maquette zone-claire" aria-hidden="true">
             <span v-for="(a, i) in ['KY', 'AD', 'CO']" :key="a" class="maquette__ligne">
               <span class="maquette__avatar">{{ a }}</span>
@@ -108,12 +107,10 @@ const chiffres = computed(() => {
           </span>
         </RouterLink>
         <div class="apercu apercu--centre">
-          <span class="apercu__etiquette">{{ t('accueil.scene.apercuEnLigne') }}</span>
           <div v-if="projet" class="apercu__projet zone-claire"><CarteProjet :projet="projet" :niveau="2" /></div>
           <span v-else class="apercu__fenetre maquette zone-claire" aria-hidden="true"><span class="maquette__pastilles"><b>✓</b></span><i class="trait trait--fort" style="width: 70%" /><i class="trait" style="width: 90%" /><i class="trait" style="width: 60%" /></span>
         </div>
-        <RouterLink to="/profil" class="apercu apercu--droite">
-          <span class="apercu__etiquette">{{ t('accueil.scene.apercuProfil') }}</span>
+        <RouterLink to="/profil" class="apercu apercu--droite" :aria-label="t('accueil.scene.apercuProfil')">
           <span class="apercu__fenetre maquette zone-claire" aria-hidden="true">
             <span class="maquette__ligne"><span class="maquette__avatar maquette__avatar--grand">AD</span><span class="maquette__textes"><i class="trait trait--fort" style="width: 62%" /><i class="trait" style="width: 40%" /></span></span>
             <span v-for="(l, i) in [72, 48, 30]" :key="i" class="maquette__jauge"><i :style="{ width: `${l}%` }" /></span>
@@ -238,7 +235,7 @@ const chiffres = computed(() => {
 .bouton-scene__point { width: 8px; height: 8px; border-radius: 50%; background: var(--cantaloupe); box-shadow: 0 0 0 4px color-mix(in srgb, var(--cantaloupe) 22%, transparent); }
 .scene__lien { color: var(--ink); font-weight: 600; text-underline-offset: 0.25em; text-shadow: var(--ombre-texte); }
 /* Petit texte posé sur l'orange : il a sa propre pastille sombre, sinon il disparaît. */
-.scene__rassurance, .apercu__etiquette {
+.scene__rassurance {
   padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--midnight) 58%, transparent); backdrop-filter: blur(10px);
   color: var(--ink); font-size: var(--type-body-sm-size); font-weight: 500;
@@ -251,8 +248,6 @@ const chiffres = computed(() => {
   perspective: 1200px;
 }
 .apercu { display: grid; gap: var(--space-2); color: var(--ink); text-decoration: none; transition: transform var(--motion-base) var(--ease-out); }
-.apercu__etiquette { display: inline-flex; justify-self: start; align-items: center; gap: var(--space-2); }
-.apercu__etiquette::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .apercu__fenetre, .apercu__projet {
   display: block; border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   background: color-mix(in srgb, var(--surface) 72%, transparent);
@@ -277,6 +272,8 @@ const chiffres = computed(() => {
 .maquette__pastilles em { width: 48px; border-radius: var(--radius-pill); background: color-mix(in srgb, var(--ink) 12%, transparent); }
 .apercu__projet { text-align: start; background: color-mix(in srgb, var(--proof-soft) 78%, transparent); }
 .apercu__projet :deep(.projet) { background: transparent; border: 0; box-shadow: none; }
+/* Sur l'accueil, la carte n'est qu'un aperçu : on garde preuves, titre et équipe, le détail est dans la vitrine. */
+.apercu__projet :deep(.projet__accroche), .apercu__projet :deep(.projet__pays), .apercu__projet :deep(.projet__verifie) { display: none; }
 .apercu--gauche { transform: rotateY(14deg) rotateZ(-3deg) translateY(18px); transform-origin: right bottom; }
 .apercu--droite { transform: rotateY(-14deg) rotateZ(3deg) translateY(18px); transform-origin: left bottom; }
 .apercu--gauche:hover { transform: rotateY(8deg) rotateZ(-2deg) translateY(6px); }

@@ -15,7 +15,7 @@
   },
   "accueil": {
     "titre": "Find your team, build your project, put it online.",
-    "texte": "Jamii brings African developers together: communities to help each other, small business requests to deliver as a team, and projects that live on after the hackathon.",
+    "texte": "The platform for African developers: help each other, deliver for small businesses, and keep your projects online.",
     "bienvenue": "Welcome back, {nom}.",
     "voirProfil": "See my profile",
     "voirCommunautes": "Find a community",
@@ -25,17 +25,17 @@
     "pilier": {
       "profil": {
         "titre": "A profile that proves",
-        "texte": "Your GitHub languages and repositories, your projects actually online and what your teammates say about you. No CV to fill in.",
+        "texte": "Your repositories, your live projects and what your teammates say. No CV.",
         "lien": "Create my profile"
       },
       "equipe": {
         "titre": "A team, communities",
-        "texte": "Ask a question, help others, find teammates from other countries, or answer a small business request.",
+        "texte": "Ask questions, help others, find teammates.",
         "lien": "See communities"
       },
       "enLigne": {
         "titre": "A project that lives",
-        "texte": "Put your project online, on Systalink or elsewhere. Jamii checks that it responds, and shows it in the showcase.",
+        "texte": "Jamii checks that it responds and shows it in the showcase.",
         "lien": "See the showcase"
       }
     },

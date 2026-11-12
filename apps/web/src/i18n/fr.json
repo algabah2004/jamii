@@ -15,7 +15,7 @@
   },
   "accueil": {
     "titre": "Trouve ton équipe, construis ton projet, mets-le en ligne.",
-    "texte": "Jamii réunit les développeurs africains : des communautés pour s'entraider, des demandes de PME à réaliser en équipe, et des projets qui vivent après le hackathon.",
+    "texte": "La plateforme des développeurs africains : s'entraider, livrer pour des PME, et garder ses projets en ligne.",
     "bienvenue": "Bon retour, {nom}.",
     "voirProfil": "Voir mon profil",
     "voirCommunautes": "Trouver une communauté",
@@ -25,17 +25,17 @@
     "pilier": {
       "profil": {
         "titre": "Un profil qui prouve",
-        "texte": "Tes langages et tes dépôts GitHub, tes projets réellement en ligne et ce que tes coéquipiers disent de toi. Pas de CV à remplir.",
+        "texte": "Tes dépôts, tes projets en ligne et l'avis de tes coéquipiers. Pas de CV.",
         "lien": "Créer mon profil"
       },
       "equipe": {
         "titre": "Une équipe, des communautés",
-        "texte": "Pose une question, aide les autres, trouve des coéquipiers d'autres pays, ou réponds à la demande d'une PME.",
+        "texte": "Pose tes questions, aide les autres, trouve des coéquipiers.",
         "lien": "Voir les communautés"
       },
       "enLigne": {
         "titre": "Un projet qui vit",
-        "texte": "Mets ton projet en ligne, sur Systalink ou ailleurs. Jamii vérifie qu'il répond, et le montre dans la vitrine.",
+        "texte": "Jamii vérifie qu'il répond et le montre dans la vitrine.",
         "lien": "Voir la vitrine"
       }
     },
