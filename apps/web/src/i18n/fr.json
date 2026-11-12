@@ -4,7 +4,8 @@
     "principal": "Menu principal",
     "systalink": "Espace Systalink",
     "vitrine": "Vitrine",
-    "communautes": "Communautés"
+    "communautes": "Communautés",
+    "allerAuContenu": "Aller au contenu"
   },
   "connexion": {
     "github": "Se connecter avec GitHub",
@@ -39,6 +40,10 @@
     "principe": {
       "badge": "Vérifié",
       "texte": "Sur Jamii, l'orange veut toujours dire la même chose : c'est prouvé. Un projet qui répond, une tâche livrée à temps, une réponse acceptée par la personne qui l'a posée."
+    },
+    "direct": {
+      "titre": "En ligne et vérifié, en ce moment",
+      "lien": "Voir toute la vitrine"
     }
   },
   "profil": {
@@ -187,7 +192,8 @@
     "voir": "Voir le projet",
     "verifie": "Vérifié {quand}",
     "plus": "Voir plus de projets",
-    "vide": "Aucun projet en ligne pour le moment."
+    "vide": "Aucun projet en ligne pour le moment.",
+    "nouvelOnglet": "nouvel onglet"
   },
   "communautes": {
     "titre": "Communautés",
@@ -285,5 +291,11 @@
     "systeme": "Auto",
     "clair": "Clair",
     "sombre": "Sombre"
+  },
+  "pied": {
+    "mission": "La plateforme d'échange des développeurs africains : s'entraider, faire équipe et mettre ses projets en ligne.",
+    "liens": "Liens utiles",
+    "charte": "Charte graphique",
+    "cadev": "Projet présenté à la CADEV 2026. Jamii fonctionne sur le cloud Systalink."
   }
 }

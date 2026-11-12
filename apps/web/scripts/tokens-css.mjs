@@ -32,6 +32,12 @@ export function genererCss(tokens) {
     ...tokens.radius.tokens.map((t) => `  --${t.name}: ${t.value};`),
     ...tokens.motion.tokens.map((t) => `  --${t.name}: ${t.value};`),
   ].join('\n')
+  // Une zone sombre dans une page claire (bandeau « en ligne en ce moment ») : seules les couleurs
+  // qui changent d'un thème à l'autre sont redéclarées, pour qu'une charte partenaire garde son action.
+  const zoneSombre = tokens.color.tokens
+    .filter((t) => resoudre(t.value, 'clair') !== resoudre(t.value, 'sombre'))
+    .map((t) => `  --${t.name}: ${resoudre(t.value, 'sombre')};`)
+    .join('\n')
   const durees = tokens.motion.tokens.filter((t) => t.name.startsWith('motion-'))
   return `/* Généré par scripts/tokens-css.mjs depuis docs/design/tokens.json (v${tokens.version}). Ne pas modifier à la main : npm run tokens. */
 
@@ -52,6 +58,14 @@ ${couleurs('sombre').replaceAll('\n  ', '\n    ').replace(/^ {2}/, '    ')}
 :root[data-theme='sombre'] {
   color-scheme: dark;
 ${couleurs('sombre')}
+}
+
+/* Zone toujours sombre, quel que soit le thème de la page. */
+.zone-sombre {
+  color-scheme: dark;
+${zoneSombre}
+  background: var(--bg);
+  color: var(--ink);
 }
 
 /* Mouvement réduit : toutes les durées à 0, le contenu reste le même. */

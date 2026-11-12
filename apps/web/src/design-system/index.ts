@@ -15,6 +15,7 @@ export { default as JBouton } from './JBouton.vue'
 export { default as JChamp } from './JChamp.vue'
 export { default as JFiltres } from './JFiltres.vue'
 export { default as JIllustration } from './JIllustration.vue'
+export { default as JSquelette } from './JSquelette.vue'
 
 export type Theme = 'clair' | 'sombre' | 'systeme'
 export type Marque = 'jamii' | 'partenaire'
