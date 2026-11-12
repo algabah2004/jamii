@@ -21,6 +21,8 @@ export function genererCss(tokens) {
   const fixes = [
     `  --font-display: ${tokens.type.families.display};`,
     `  --font-text: ${tokens.type.families.text};`,
+    // Titre éditorial (accueil) : facultatif dans tokens.json.
+    ...(tokens.type.families.editorial ? [`  --font-editorial: ${tokens.type.families.editorial};`] : []),
     ...tokens.type.groups.flatMap((g) =>
       g.styles.flatMap((s) => [
         `  --type-${s.name}-size: ${s.fontSize};`,
