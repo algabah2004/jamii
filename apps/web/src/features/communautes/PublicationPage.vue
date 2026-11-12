@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { JAvatar, JBadgePreuve, JBouton, JChamp, JSquelette } from '../../design-system'
+import { JAvatar, JBadgePreuve, JBouton, JChamp, JIllustration, JSquelette } from '../../design-system'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute } from 'vue-router'
@@ -212,6 +212,7 @@ async function repondre() {
 
     <template v-if="publication" #contexte>
       <section class="carte contexte" aria-labelledby="fonctionnement">
+        <JIllustration nom="question" />
         <h2 id="fonctionnement">{{ t('communautes.fonctionnement.titre') }}</h2>
         <ol class="etapes">
           <li>{{ t('communautes.fonctionnement.poser') }}</li>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { JAvatar, JBadgePreuve, JBouton, JChamp, JFiltres, JSquelette } from '../../design-system'
+import { JAvatar, JBadgePreuve, JBouton, JChamp, JFiltres, JIllustration, JSquelette } from '../../design-system'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
@@ -179,7 +179,10 @@ const formulaireOuvert = ref(false)
         />
 
         <JSquelette v-if="etat === 'chargement'" :nombre="3" class="flux__squelette" />
-        <p v-else-if="publications.length === 0" class="flux__vide" data-test="vide">{{ t('communautes.vide') }}</p>
+        <div v-else-if="publications.length === 0" class="flux__vide">
+          <JIllustration nom="communaute" />
+          <p data-test="vide">{{ t('communautes.vide') }}</p>
+        </div>
         <TransitionGroup v-else tag="ul" name="fil" class="fils" data-test="publications" appear>
           <li v-for="(p, i) in publications" :key="p.id" class="fil" :style="{ '--rang': i }">
             <JAvatar :nom="p.auteur?.nom ?? '?'" :url="p.auteur?.avatarUrl" :taille="40" />
@@ -216,6 +219,7 @@ const formulaireOuvert = ref(false)
             <dd>{{ communaute.questionsOuvertes }}</dd>
           </div>
         </dl>
+        <JIllustration nom="question" class="contexte__illustration" />
         <h3>{{ t('communautes.fonctionnement.titre') }}</h3>
         <ol class="etapes">
           <li>{{ t('communautes.fonctionnement.poser') }}</li>
@@ -275,7 +279,9 @@ const formulaireOuvert = ref(false)
 .flux__onglets { padding: 0 var(--space-6); border-top: 1px solid var(--line); }
 .flux__squelette { padding: var(--space-4); }
 .flux__squelette :deep(.j-squelette__bloc) { border: 0; padding: var(--space-4); }
-.flux__vide { margin: 0; padding: var(--space-12) var(--space-6); text-align: center; color: var(--ink-muted); }
+.flux__vide { display: grid; justify-items: center; gap: var(--space-3); padding: var(--space-8) var(--space-6) var(--space-12); text-align: center; color: var(--ink-muted); }
+.flux__vide p { margin: 0; }
+.flux__vide .j-illustration { width: 14rem; }
 
 .fils { list-style: none; margin: 0; padding: 0; }
 .fil {
@@ -307,7 +313,8 @@ const formulaireOuvert = ref(false)
 
 .contexte { display: grid; gap: var(--space-3); padding: var(--space-6); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); }
 .contexte h2 { margin: 0; font-size: 1rem; }
-.contexte h3 { margin: var(--space-3) 0 0; padding-top: var(--space-4); border-top: 1px solid var(--line); font-size: 1rem; }
+.contexte h3 { margin: 0; font-size: 1rem; }
+.contexte__illustration { margin: var(--space-3) calc(-1 * var(--space-2)) 0; padding-top: var(--space-4); border-top: 1px solid var(--line); }
 .chiffres { display: flex; gap: var(--space-6); margin: 0; }
 .chiffres div { display: flex; flex-direction: column-reverse; }
 .chiffres dt { color: var(--ink-muted); font-size: var(--type-body-sm-size); }

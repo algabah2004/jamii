@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute } from 'vue-router'
 import { adresseConnexionGithub, api } from '../api/client'
-import { JBadgePreuve, JIllustration, JSquelette } from '../design-system'
+import { JIllustration } from '../design-system'
+import type { TableauDeBord } from '../features/systalink/calculs'
 import CarteProjet from '../features/vitrine/CarteProjet.vue'
 import type { ProjetEnVitrine } from '../features/vitrine/vitrine'
 import { useSession } from '../session'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const { etat, moi } = useSession()
 const route = useRoute()
 // Après une redirection du garde (« connexion requise »), on revient là où la personne voulait aller.
@@ -17,65 +18,99 @@ const retour = typeof route.query.retour === 'string' ? route.query.retour : '/p
 /** Le parcours d'un développeur sur Jamii : c'est une suite, d'où la numérotation. */
 const ETAPES = [
   { cle: 'profil', illustration: 'profil-prouve', lien: '/profil' },
-  { cle: 'equipe', illustration: 'equipe', lien: '/communautes' },
+  { cle: 'equipe', illustration: 'communaute', lien: '/communautes' },
   { cle: 'enLigne', illustration: 'en-ligne', lien: '/vitrine' },
 ] as const
 
-// La preuve dès l'accueil : de vrais projets en ligne, lus dans la vitrine publique.
-// Si la vitrine ne répond pas ou est vide, le bandeau disparaît : l'accueil reste utilisable.
-const projets = ref<ProjetEnVitrine[]>([])
-const vitrine = ref<'chargement' | 'pret' | 'absente'>('chargement')
-async function chargerVitrine() {
+// La scène ne montre que des chiffres et des projets réels, lus dans les API publiques.
+// Si l'une ne répond pas, sa partie disparaît : l'accueil reste utilisable.
+const tableau = ref<TableauDeBord | null>(null)
+const projet = ref<ProjetEnVitrine | null>(null)
+void (async () => {
   try {
-    const { data } = await api.GET('/api/vitrine', { params: { query: { limite: 3 } } })
-    projets.value = data?.elements ?? []
-    vitrine.value = projets.value.length ? 'pret' : 'absente'
+    const { data } = await api.GET('/api/systalink/tableau-de-bord', { params: { query: { periode: 'tout' } } })
+    tableau.value = data ?? null
   } catch {
-    vitrine.value = 'absente'
+    tableau.value = null
   }
-}
-void chargerVitrine()
+})()
+void (async () => {
+  try {
+    const { data } = await api.GET('/api/vitrine', { params: { query: { limite: 1, hebergeur: 'datacloud' } } })
+    projet.value = data?.elements?.[0] ?? null
+  } catch {
+    projet.value = null
+  }
+})()
+
+const nombre = (n: number) => n.toLocaleString(locale.value)
+const chiffres = computed(() => {
+  const tb = tableau.value
+  if (!tb) return null
+  const pays = tb.inscrits.parPays.length
+  return {
+    gauche: [
+      { valeur: nombre(tb.inscrits.total), libelle: t('accueil.scene.membres') },
+      { valeur: tb.inscrits.autres > 0 ? `${pays}+` : String(pays), libelle: t('accueil.scene.pays') },
+    ],
+    droite: [
+      { valeur: nombre(tb.projets.enLigne), libelle: t('accueil.scene.enLigne') },
+      { valeur: nombre(tb.projets.surDatacloud), libelle: t('accueil.scene.surSystalink') },
+    ],
+  }
+})
 </script>
 
 <template>
   <div class="accueil">
-    <section class="hero">
-      <div class="hero__texte">
-        <p v-if="moi" class="hero__bonjour">{{ t('accueil.bienvenue', { nom: moi.nom }) }}</p>
-        <h1 class="hero__titre">{{ t('accueil.titre') }}</h1>
-        <p class="hero__intro">{{ t('accueil.texte') }}</p>
-        <div class="hero__actions">
-          <template v-if="etat === 'connecte'">
-            <RouterLink to="/profil" class="j-bouton j-bouton--principal">{{ t('accueil.voirProfil') }}</RouterLink>
-            <RouterLink to="/communautes" class="j-bouton j-bouton--secondaire">{{ t('accueil.voirCommunautes') }}</RouterLink>
-          </template>
-          <template v-else>
-            <a :href="adresseConnexionGithub(retour)" class="j-bouton j-bouton--principal" data-test="connexion">
-              {{ t('connexion.github') }}
-            </a>
-            <RouterLink to="/vitrine" class="j-bouton j-bouton--secondaire">{{ t('accueil.voirVitrine') }}</RouterLink>
-          </template>
-        </div>
-        <p class="texte-discret">{{ t('accueil.rassurance') }}</p>
-      </div>
-      <JIllustration nom="equipe" class="hero__illustration" />
-    </section>
+    <!-- La scène : le bleu de l'action descend vers l'orange de la preuve, là où sont posés les projets en ligne. -->
+    <section class="scene zone-sombre" aria-labelledby="titre-accueil">
+      <div class="scene__lumiere" aria-hidden="true" />
+      <div class="scene__contenu">
+        <p v-if="moi" class="scene__bonjour">{{ t('accueil.bienvenue', { nom: moi.nom }) }}</p>
+        <h1 id="titre-accueil" class="scene__titre">
+          {{ t('accueil.scene.titre1') }}<br />
+          {{ t('accueil.scene.titre2') }} <em>{{ t('accueil.scene.titreAccent') }}</em>.
+        </h1>
+        <p class="scene__intro">{{ t('accueil.texte') }}</p>
 
-    <section v-if="vitrine !== 'absente'" class="direct zone-sombre" aria-labelledby="direct-titre" data-test="direct">
-      <div class="direct__texte">
-        <div class="direct__titre">
-          <JBadgePreuve>✓ {{ t('accueil.principe.badge') }}</JBadgePreuve>
-          <h2 id="direct-titre">{{ t('accueil.direct.titre') }}</h2>
+        <dl v-if="chiffres" class="scene__chiffres scene__chiffres--gauche" data-test="chiffres">
+          <div v-for="c in chiffres.gauche" :key="c.libelle"><dt>{{ c.libelle }}</dt><dd>{{ c.valeur }}</dd></div>
+        </dl>
+        <dl v-if="chiffres" class="scene__chiffres scene__chiffres--droite">
+          <div v-for="c in chiffres.droite" :key="c.libelle"><dt>{{ c.libelle }}</dt><dd>{{ c.valeur }}</dd></div>
+        </dl>
+
+        <div class="scene__actions">
+          <RouterLink v-if="etat === 'connecte'" to="/profil" class="bouton-rond">
+            <span class="bouton-rond__point" aria-hidden="true" />{{ t('accueil.voirProfil') }}
+          </RouterLink>
+          <a v-else :href="adresseConnexionGithub(retour)" class="bouton-rond" data-test="connexion">
+            <span class="bouton-rond__point" aria-hidden="true" />{{ t('accueil.scene.commencer') }}
+          </a>
+          <RouterLink :to="etat === 'connecte' ? '/communautes' : '/vitrine'" class="scene__lien">
+            {{ etat === 'connecte' ? t('accueil.voirCommunautes') : t('accueil.voirVitrine') }}
+          </RouterLink>
         </div>
-        <div class="direct__principe">
-          <p>{{ t('accueil.principe.texte') }}</p>
-          <RouterLink to="/vitrine" class="direct__lien">{{ t('accueil.direct.lien') }}</RouterLink>
-        </div>
+        <p class="scene__rassurance">{{ t('accueil.rassurance') }}</p>
       </div>
-      <JSquelette v-if="vitrine === 'chargement'" forme="cartes" :nombre="3" class="direct__projets" />
-      <ul v-else class="direct__projets">
-        <li v-for="p in projets" :key="p.projetId"><CarteProjet :projet="p" :niveau="3" /></li>
-      </ul>
+
+      <!-- Trois aperçus de Jamii posés en bas de la scène, légèrement inclinés. -->
+      <div class="apercus">
+        <RouterLink to="/communautes" class="apercu apercu--gauche">
+          <span class="apercu__etiquette">{{ t('accueil.scene.apercuCommunautes') }}</span>
+          <span class="apercu__fenetre"><JIllustration nom="communaute" /></span>
+        </RouterLink>
+        <div class="apercu apercu--centre">
+          <span class="apercu__etiquette">{{ t('accueil.scene.apercuEnLigne') }}</span>
+          <CarteProjet v-if="projet" :projet="projet" :niveau="2" class="apercu__projet" />
+          <span v-else class="apercu__fenetre"><JIllustration nom="nuage" /></span>
+        </div>
+        <RouterLink to="/profil" class="apercu apercu--droite">
+          <span class="apercu__etiquette">{{ t('accueil.scene.apercuProfil') }}</span>
+          <span class="apercu__fenetre"><JIllustration nom="profil-prouve" /></span>
+        </RouterLink>
+      </div>
     </section>
 
     <section class="parcours" aria-labelledby="parcours-titre">
@@ -95,41 +130,104 @@ void chargerVitrine()
 <style scoped>
 .accueil { display: grid; gap: var(--space-12); }
 
-.hero { display: grid; gap: var(--space-8); align-items: center; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); padding-top: var(--space-4); }
-.hero__texte { display: grid; gap: var(--space-4); justify-items: start; }
-.hero__bonjour { margin: 0; color: var(--action-ink); font-weight: 600; }
-.hero__titre {
-  margin: 0;
-  font-size: clamp(2.5rem, 6.4vw, 4.25rem);
-  line-height: 1.02;
-  letter-spacing: -0.035em;
-  animation: entree var(--motion-celebrate) var(--ease-out) both;
+/* La scène occupe toute la largeur et passe sous l'en-tête (rendu transparent sur l'accueil, App.vue). */
+.scene {
+  position: relative; isolation: isolate; overflow: hidden;
+  margin-inline: calc(50% - 50vw);
+  margin-top: calc(-1 * (64px + var(--space-8)));
+  padding: calc(64px + var(--space-8)) var(--space-6) 0;
+  background: var(--bg);
 }
-.hero__intro { margin: 0; font-size: 1.1875rem; line-height: 1.55; color: var(--ink-muted); max-width: 36rem; }
-.hero__actions { display: flex; flex-wrap: wrap; gap: var(--space-3); padding-top: var(--space-2); }
-@media (max-width: 760px) {
-  .hero { grid-template-columns: 1fr; }
-  .hero__illustration { order: -1; max-width: 18rem; }
+/* Des traits de lumière verticaux, révélés par deux halos : bleu au centre, orange en bas. */
+.scene__lumiere {
+  position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(36% 30% at 50% 74%, var(--proof), transparent 78%),
+    radial-gradient(80% 50% at 50% 82%, color-mix(in srgb, var(--proof) 70%, transparent), transparent 72%),
+    radial-gradient(11% 46% at 50% 44%, color-mix(in srgb, var(--action) 70%, var(--ink)), transparent 80%),
+    radial-gradient(30% 58% at 50% 44%, color-mix(in srgb, var(--action) 85%, transparent), transparent 75%),
+    radial-gradient(60% 70% at 50% 40%, color-mix(in srgb, var(--action) 30%, transparent), transparent 75%);
+}
+.scene__lumiere::after {
+  content: ''; position: absolute; inset: 0;
+  background: repeating-linear-gradient(90deg, color-mix(in srgb, var(--bg) 35%, transparent) 0 2px, transparent 2px 6px);
+  mask-image: radial-gradient(70% 80% at 50% 60%, #000 30%, transparent 80%);
+  -webkit-mask-image: radial-gradient(70% 80% at 50% 60%, #000 30%, transparent 80%);
 }
 
-/* Le seul moment fort de la page : un bandeau sombre où l'orange prouve ce qu'il promet. */
-.direct {
-  display: grid; gap: var(--space-8);
-  padding: var(--space-8);
-  border: 1px solid var(--line); border-radius: var(--radius-lg);
+.scene__contenu {
+  position: relative; max-width: 72rem; margin: 0 auto;
+  display: grid; justify-items: center; text-align: center; gap: var(--space-3);
 }
-.direct__texte { display: flex; flex-wrap: wrap; gap: var(--space-4) var(--space-12); align-items: flex-end; justify-content: space-between; }
-.direct__titre { display: grid; gap: var(--space-3); justify-items: start; }
-.direct__titre h2 { margin: 0; font-size: clamp(1.75rem, 3.4vw, 2.25rem); line-height: 1.1; letter-spacing: -0.6px; }
-.direct__principe { flex: 0 1 30rem; display: grid; gap: var(--space-2); justify-items: start; }
-.direct__principe p { margin: 0; color: var(--ink-muted); }
-.direct__lien { font-weight: 600; color: var(--action-ink); }
-.direct__projets { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-4); grid-template-columns: repeat(3, minmax(0, 1fr)); }
-@media (max-width: 960px) { .direct { padding: var(--space-6); } .direct__projets { grid-template-columns: 1fr; } }
+.scene__bonjour { margin: 0; color: var(--ink-muted); font-weight: 600; }
+.scene__titre {
+  margin: 0; max-width: 20ch;
+  font-family: var(--font-editorial); font-weight: 400;
+  font-size: clamp(2.75rem, 6.6vw, 5.25rem); line-height: 1; letter-spacing: -0.02em;
+  color: var(--ink); text-wrap: balance;
+  text-shadow: 0 2px 40px color-mix(in srgb, var(--bg) 70%, transparent);
+  animation: monte var(--motion-celebrate) var(--ease-out) both;
+}
+.scene__titre em { font-style: italic; }
+.scene__intro { margin: 0; max-width: 34rem; text-shadow: 0 1px 16px var(--bg); color: color-mix(in srgb, var(--ink) 82%, transparent); font-size: 1.0625rem; line-height: 1.6; }
+
+.scene__chiffres { position: absolute; top: 34%; display: grid; gap: var(--space-6); margin: 0; }
+.scene__chiffres--gauche { left: var(--space-4); text-align: start; }
+.scene__chiffres--droite { right: var(--space-4); text-align: end; }
+.scene__chiffres div { display: flex; flex-direction: column-reverse; }
+.scene__chiffres dd { margin: 0; font-family: var(--font-editorial); font-size: 2.25rem; line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
+.scene__chiffres dt { margin-top: var(--space-1); color: color-mix(in srgb, var(--ink) 70%, transparent); font-size: var(--type-body-sm-size); }
+
+.scene__actions { display: grid; justify-items: center; gap: var(--space-2); margin-top: var(--space-4); }
+/* Le bouton rond, lumineux : l'unique action de la scène. */
+.bouton-rond {
+  display: grid; place-items: center; align-content: center; gap: var(--space-1);
+  width: 116px; height: 116px; border-radius: 50%;
+  background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--ink) 34%, transparent), color-mix(in srgb, var(--ink) 10%, transparent) 70%);
+  border: 1px solid color-mix(in srgb, var(--ink) 45%, transparent);
+  box-shadow: 0 0 0 10px color-mix(in srgb, var(--ink) 6%, transparent), 0 0 60px color-mix(in srgb, var(--proof) 55%, transparent);
+  backdrop-filter: blur(8px);
+  color: var(--ink); font-weight: 600; text-decoration: none; text-align: center; padding: var(--space-3); line-height: 1.25;
+  transition: transform var(--motion-base) var(--ease-out), box-shadow var(--motion-base) var(--ease-out);
+}
+.bouton-rond:hover { transform: scale(1.04); box-shadow: 0 0 0 14px color-mix(in srgb, var(--ink) 8%, transparent), 0 0 80px color-mix(in srgb, var(--proof) 70%, transparent); }
+.bouton-rond:focus-visible { outline: 2px solid var(--ink); outline-offset: 6px; }
+.bouton-rond__point { width: 8px; height: 8px; border-radius: 50%; background: var(--proof); box-shadow: 0 0 12px var(--proof); }
+.scene__lien { color: var(--ink); font-weight: 600; text-underline-offset: 0.25em; }
+.scene__rassurance { margin: 0; color: color-mix(in srgb, var(--ink) 70%, transparent); font-size: var(--type-body-sm-size); }
+
+.apercus {
+  position: relative; max-width: 72rem; margin: var(--space-8) auto 0;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-6); align-items: end;
+  perspective: 1200px;
+}
+.apercu { display: grid; gap: var(--space-2); color: var(--ink); text-decoration: none; transition: transform var(--motion-base) var(--ease-out); }
+.apercu__etiquette { display: flex; align-items: center; gap: var(--space-2); font-size: var(--type-body-sm-size); color: color-mix(in srgb, var(--ink) 82%, transparent); }
+.apercu__etiquette::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.apercu__fenetre, .apercu__projet {
+  display: block; border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ink) 22%, transparent); border-bottom: 0;
+  backdrop-filter: blur(14px);
+  box-shadow: 0 -20px 60px color-mix(in srgb, var(--bg) 60%, transparent);
+}
+.apercu__fenetre { padding: var(--space-4) var(--space-4) 0; }
+.apercu__projet { text-align: start; }
+.apercu--gauche { transform: rotateY(14deg) rotateZ(-3deg) translateY(18px); transform-origin: right bottom; }
+.apercu--droite { transform: rotateY(-14deg) rotateZ(3deg) translateY(18px); transform-origin: left bottom; }
+.apercu--gauche:hover { transform: rotateY(8deg) rotateZ(-2deg) translateY(6px); }
+.apercu--droite:hover { transform: rotateY(-8deg) rotateZ(2deg) translateY(6px); }
+
+@media (max-width: 960px) {
+  .scene__chiffres { position: static; display: flex; gap: var(--space-8); justify-content: center; text-align: center; }
+  .scene__chiffres--gauche, .scene__chiffres--droite { text-align: center; }
+  .apercus { grid-template-columns: 1fr; max-width: 26rem; }
+  .apercu--gauche, .apercu--droite { display: none; }
+}
 
 .parcours h2 { margin-bottom: var(--space-6); }
 .etapes { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-8); grid-template-columns: repeat(3, minmax(0, 1fr)); counter-reset: etape; }
-.etape { display: grid; gap: var(--space-2); align-content: start; justify-items: start; counter-increment: etape; position: relative; }
+.etape { display: grid; gap: var(--space-2); align-content: start; justify-items: start; counter-increment: etape; }
 .etape__illustration { width: 100%; max-width: 13rem; margin-bottom: var(--space-2); }
 .etape h3 { margin: 0; display: flex; gap: var(--space-2); align-items: baseline; }
 /* Le numéro de l'étape, en orange comme la preuve qu'on gagne à chaque étape. */
@@ -138,5 +236,5 @@ void chargerVitrine()
 .etape__lien { font-weight: 600; margin-top: var(--space-1); }
 @media (max-width: 760px) { .etapes { grid-template-columns: 1fr; } .etape__illustration { max-width: 10rem; } }
 
-@keyframes entree { from { opacity: 0; transform: translateY(12px); } }
+@keyframes monte { from { opacity: 0; transform: translateY(14px); filter: blur(4px); } }
 </style>

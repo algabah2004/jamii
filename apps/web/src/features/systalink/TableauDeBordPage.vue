@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { JBouton, JFiltres, JSquelette } from '../../design-system'
+import { JBouton, JFiltres, JIllustration, JSquelette } from '../../design-system'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
@@ -51,14 +51,15 @@ const maxPays = computed(() => Math.max(1, ...pays.value.map((p) => p.nombre)))
       <div class="page-tete__texte">
         <h1>{{ t('systalink.titre') }}</h1>
         <p>{{ t('systalink.intro') }}</p>
+        <JFiltres
+          class="periodes"
+          :model-value="periode"
+          :libelle="t('systalink.periode')"
+          :options="PERIODES.map((p) => ({ valeur: p, texte: t(`systalink.periodes.${p}`) }))"
+          @update:model-value="choisirPeriode"
+        />
       </div>
-      <JFiltres
-        class="periodes"
-        :model-value="periode"
-        :libelle="t('systalink.periode')"
-        :options="PERIODES.map((p) => ({ valeur: p, texte: t(`systalink.periodes.${p}`) }))"
-        @update:model-value="choisirPeriode"
-      />
+      <JIllustration nom="nuage" class="page-tete__illustration" />
     </header>
 
     <JSquelette v-if="etat === 'chargement' && !tableau" forme="cartes" :nombre="4" />

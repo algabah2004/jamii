@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { JBouton, JSquelette } from '../../design-system'
+import { JBouton, JIllustration, JSquelette } from '../../design-system'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
@@ -43,6 +43,7 @@ const groupes = computed(() =>
         <h1>{{ t('communautes.titre') }}</h1>
         <p>{{ t('communautes.intro') }}</p>
       </div>
+      <JIllustration nom="communaute" class="page-tete__illustration" />
     </header>
 
     <JSquelette v-if="etat === 'chargement'" forme="cartes" :nombre="4" />
