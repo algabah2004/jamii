@@ -4,7 +4,8 @@
     "principal": "Main menu",
     "systalink": "Systalink space",
     "vitrine": "Showcase",
-    "communautes": "Communities"
+    "communautes": "Communities",
+    "allerAuContenu": "Skip to content"
   },
   "connexion": {
     "github": "Sign in with GitHub",
@@ -39,6 +40,10 @@
     "principe": {
       "badge": "Verified",
       "texte": "On Jamii, orange always means the same thing: it is proven. A project that responds, a task delivered on time, an answer accepted by the person who asked."
+    },
+    "direct": {
+      "titre": "Online and verified, right now",
+      "lien": "See the whole showcase"
     }
   },
   "profil": {
@@ -187,7 +192,8 @@
     "voir": "View the project",
     "verifie": "Checked {quand}",
     "plus": "See more projects",
-    "vide": "No project online yet."
+    "vide": "No project online yet.",
+    "nouvelOnglet": "new tab"
   },
   "communautes": {
     "titre": "Communities",
@@ -285,5 +291,11 @@
     "systeme": "Auto",
     "clair": "Light",
     "sombre": "Dark"
+  },
+  "pied": {
+    "mission": "The exchange platform for African developers: help each other, team up and put your projects online.",
+    "liens": "Useful links",
+    "charte": "Design system",
+    "cadev": "Project presented at CADEV 2026. Jamii runs on the Systalink cloud."
   }
 }

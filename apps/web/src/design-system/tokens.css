@@ -126,6 +126,26 @@
   --discret: var(--ink-muted);
 }
 
+/* Zone toujours sombre, quel que soit le thème de la page. */
+.zone-sombre {
+  color-scheme: dark;
+  --bg: #02070A;
+  --surface: #0B141A;
+  --surface-raised: #121E26;
+  --line: #1F2E38;
+  --line-strong: #5A7080;
+  --ink: #EEF4F7;
+  --ink-muted: #9DB0BC;
+  --action-ink: #0297DE;
+  --action-soft: #0B2A3B;
+  --proof-ink: #FC734D;
+  --proof-soft: #3A1D14;
+  --focus: #0297DE;
+  --danger: #FF6B8A;
+  background: var(--bg);
+  color: var(--ink);
+}
+
 /* Mouvement réduit : toutes les durées à 0, le contenu reste le même. */
 @media (prefers-reduced-motion: reduce) {
   :root {
