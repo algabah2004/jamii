@@ -23,12 +23,20 @@ Le score de confiance, c'est l'indice de fiabilité du profil, déjà là.
 
 Ce qui est nouveau côté API : **une table `cercle`, une table `cercle_membre`, une colonne `tour` sur `projet`**. Rien de plus.
 
+## Gitea : le code du cercle hébergé sur la plateforme
+
+Chaque tour a son **dépôt Git sur le Gitea de Jamii**, et DataCloud le déploie depuis ce dépôt : du code à la mise en ligne sans quitter Jamii.
+- **Licence :** Gitea est sous MIT, donc autorisé. **Pas Forgejo**, qui est sous GPL depuis la v9.
+- **Architecture :** une interface `DepotCode` avec deux adaptateurs, GitHub (existant) et Gitea. Le choix se fait par la configuration (`DEPOT_CODE=gitea|github`). Le jeton admin Gitea va dans `.env`, jamais dans le code.
+- **Connexion :** Gitea utilise la connexion GitHub, donc pas de nouveau mot de passe.
+- **Repli :** si Gitea n'est pas en ligne vendredi à 18 h, le tour affiche un lien vers un dépôt GitHub, et la démo tient quand même.
+
 ## La démo (3 minutes)
 
 1. Awa crée son cercle, 5 autres le rejoignent.
-2. L'ordre de passage est tiré au sort. Le Griot transforme l'idée d'Awa en plan pour le tour, en réutilisant `plan_projet`.
-3. Le tour avance : tâches cochées, message du soir du Griot.
-4. Livraison : le projet passe dans la vitrine avec le label « Né dans une Tech Tontine Systalink ».
+2. L'ordre de passage est tiré au sort. Jamii crée le dépôt du tour sur Gitea. Le Griot transforme l'idée d'Awa en plan pour le tour, en réutilisant `plan_projet`.
+3. Le tour avance : commits sur le dépôt Gitea, tâches cochées, message du soir du Griot.
+4. Livraison : DataCloud déploie le dépôt Gitea, puis le projet passe dans la vitrine avec le label « Né dans une Tech Tontine Systalink ».
 5. L'espace Systalink affiche les cercles actifs.
 
 ## Pour plus tard (hors démo)
@@ -47,14 +55,16 @@ Ce qui est nouveau côté API : **une table `cercle`, une table `cercle_membre`,
    - `POST /api/cercles/{id}/membres` : rejoindre, avec un 409 `cercle_complet` ;
    - `PUT /api/cercles/{id}/membres/moi/idee` : déposer son idée (titre et description) ;
    - `POST /api/cercles/{id}/tirage` : le créateur tire l'ordre au sort, une seule fois, avec un 409 `tirage_deja_fait` ; le serveur crée le projet du tour 1 ;
-   - `POST /api/cercles/{id}/tours/{n}/livrer` : clôturer le tour, ce qui ouvre le tour suivant.
+   - `POST /api/cercles/{id}/tours/{n}/livrer` : clôturer le tour, ce qui ouvre le tour suivant ;
+   - chaque tour expose `depot` : `{ fournisseur: gitea|github, url, cloneUrl }`, ou `null` s'il n'y en a pas encore.
 2. **Vendredi : le module `cercles`** dans `apps/api`, avec la migration Flyway et les tests. Le tirage au sort se fait côté serveur, avec `SecureRandom`, et il est enregistré.
 3. Les candidatures de l'étape 4 passent après : dans un cercle, l'équipe est déjà formée.
 
 ### @boubacarsidibe : le Griot (IA) et DataCloud
 1. **Toujours en premier : l'API et le service IA en ligne sur DataCloud**, avec l'URL de `/health` postée dans #54. Sans ça, pas de soumission.
-2. **Sortir #37 du brouillon** (plan PME) : c'est la même tâche `plan_projet` qui planifie un tour.
-3. Nouvelle tâche IA `resume_tour` dans `contracts/ia.yaml` :
+2. **Déployer aussi Gitea sur DataCloud**, depuis l'image officielle `gitea/gitea` : base Postgres, connexion GitHub activée, URL postée dans #54. **Tester d'abord le stockage persistant** : si le conteneur redémarre sans volume, les dépôts sont perdus. Le résultat va dans `docs/systalink-services.md`.
+3. **Sortir #37 du brouillon** (plan PME) : c'est la même tâche `plan_projet` qui planifie un tour.
+4. Nouvelle tâche IA `resume_tour` dans `contracts/ia.yaml` :
    - en entrée : les tâches du tour (faites ou restantes, et par qui) et le jour du tour ;
    - en sortie : un message court (« Jour 3 du tour d'Awa : 7 tâches sur 12… ») ;
    - un repli sans IA, calculé à partir des chiffres.
@@ -69,6 +79,7 @@ Ce qui est nouveau côté API : **une table `cercle`, une table `cercle_membre`,
 2. **Créer et rejoindre un cercle, déposer son idée, tirer l'ordre au sort** (avec une animation de tirage).
 3. **Le tour** : il réutilise l'écran du plan PME (priorités, jalons, tâches) ; puis « Livrer le tour » mène à la vitrine avec le label.
 4. L'accueil et le menu : « Cercles » en première entrée.
+5. **Vendredi : l'adaptateur Gitea dans l'API.** Au tirage au sort, il crée l'organisation du cercle et le dépôt de chaque tour, puis ajoute les membres (API REST de Gitea). Le tour affiche le lien du dépôt et ses derniers commits, et « Livrer » déploie ce dépôt sur DataCloud.
 
 ### @algabah2004 : chef de projet
 1. **Valider ce plan** et mettre à jour :
@@ -85,6 +96,7 @@ sowibrr ────── cercles.yaml (ce soir) ──▶ rev22rse22 branche s
 sowibrr ────── module cercles ──────────▶ la démo de bout en bout
 boubacarsidibe ─ DataCloud ─────────────▶ la soumission elle-même
 boubacarsidibe ─ #37 + resume_tour ─────▶ étapes 2 et 3 de la démo
+boubacarsidibe ─ Gitea sur DataCloud ────▶ rev22rse22 (adaptateur Gitea), étape 3 de la démo
 algabah2004 ─── vocabulaire et concept ─▶ tous les agents IA (sinon ils refusent le thème)
 ```
 
@@ -94,6 +106,7 @@ Pas de reproche : on réorganise pour livrer.
 - **Pas de contrat `cercles.yaml` ce soir** : rev22rse22 en écrit une première version, à partir de ses données factices, et sowibrr la relit.
 - **Pas de module `cercles` vendredi à 14 h** : la démo des cercles tourne sur données factices, et le reste de la démo reste branché sur l'API.
 - **Pas d'URL DataCloud vendredi** : le chef de projet reprend le déploiement.
+- **Pas de Gitea en ligne vendredi à 18 h** : le tour affiche un lien GitHub, et Gitea passe après la CADEV.
 - Un blocage de plus de 2 h se signale **tout de suite** dans #54, avec l'étiquette `bloqué`.
 
 ## La suite
