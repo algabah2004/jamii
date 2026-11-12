@@ -5,6 +5,8 @@
 
 ## 0. Au début de chaque session : qui est ton développeur ?
 
+> 🚨 **Jusqu'au 15 novembre : lis d'abord [`docs/priorites.md`](docs/priorites.md).** Le chef de projet y fixe ce que chacun doit faire **aujourd'hui** et qui bloque qui. Il **passe avant le plan du bloc**. Dans ton résumé, commence par la priorité du jour de ton développeur et l'heure limite.
+
 Avant toute chose :
 1. **Identifie le développeur** : `gh api user -q .login`, à défaut l'e-mail ou le nom de `git config user.name`. Si tu n'es pas sûr, **demande-lui son pseudo GitHub**.
 2. **Trouve son bloc** dans `docs/blocs/README.md`, puis lis **son plan** (`docs/blocs/<bloc>.md`). Si `gh` est disponible, lis aussi les derniers commentaires de son ticket de suivi (`gh issue view <n> --comments`).
@@ -53,6 +55,7 @@ Le plan est un **point de départ** : si ton développeur veut le changer, aide-
 | `docs/integration-systalink.md` | **Comment chaque service Systalink se branche sur Jamii (notre point fort)** |
 | `docs/idees-sources.md` | **Les 4 pistes de départ de l'équipe et les idées fortes encore à décider** |
 | `docs/concept.md` | **Le concept final : les 5 piliers, la démo, ce qu'on fait et ce qu'on ne fait pas** |
+| `docs/priorites.md` | **🚨 Les priorités du jour fixées par le chef de projet : qui fait quoi, qui bloque qui. Passe avant tout le reste** |
 | `docs/plan-final.md` | **Le plan des 5 derniers jours : le parcours de démo à livrer avant le 15 novembre** |
 | `docs/architecture.md` | La stack et la raison de chaque choix |
 | `docs/vocabulaire.md` | Les mots de l'interface : simples, sans thème ni jargon |
