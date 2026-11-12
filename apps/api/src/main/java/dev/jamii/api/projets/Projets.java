@@ -2,6 +2,7 @@ package dev.jamii.api.projets;
 
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -42,6 +43,38 @@ public class Projets implements ChiffresDesModules.Projets {
 			.optional()
 			.map(membre -> membre ? AccesAuProjet.MEMBRE : AccesAuProjet.LECTEUR)
 			.orElse(AccesAuProjet.INTROUVABLE);
+	}
+
+	/**
+	 * Crée le projet d'un tour de cercle : `porteur` en est le porteur, tous les `membres` (porteur compris) sont dans
+	 * l'équipe, et il démarre `en_cours` puisque l'équipe est déjà formée. Appelé par le module cercles.
+	 */
+	@Transactional
+	public UUID creerPourCercle(UUID porteur, List<UUID> membres, String titre, String description, Instant maintenant) {
+		UUID id = UUID.randomUUID();
+		Timestamp t = Timestamp.from(maintenant);
+		base.sql("""
+				INSERT INTO projet (id, titre, description, origine, porteur_id, statut, derniere_activite_le, cree_le, mis_a_jour_le)
+				VALUES (:id, :titre, :description, 'idee', :porteur, 'en_cours', :t, :t, :t)
+				""")
+			.param("id", id).param("titre", titre).param("description", description).param("porteur", porteur)
+			.param("t", t).update();
+		for (UUID membre : membres) {
+			base.sql("INSERT INTO membre_equipe (projet_id, utilisateur_id, rejoint_le) VALUES (:projet, :membre, :t)")
+				.param("projet", id).param("membre", membre).param("t", t).update();
+		}
+		return id;
+	}
+
+	/** Le tour est livré : le projet passe à `livre` (sauf s'il a été abandonné). Renvoie faux si rien n'a changé. */
+	@Transactional
+	public boolean marquerLivre(UUID projetId, Instant maintenant) {
+		Timestamp t = Timestamp.from(maintenant);
+		return base.sql("""
+				UPDATE projet SET statut = 'livre', derniere_activite_le = :t, mis_a_jour_le = :t, version = version + 1
+				WHERE id = :id AND statut NOT IN ('livre', 'abandonne')
+				""")
+			.param("id", projetId).param("t", t).update() > 0;
 	}
 
 	/** Projets créés à partir de `depuis` (tous si `depuis` est null), abandonnés compris : ils ont été créés. */
