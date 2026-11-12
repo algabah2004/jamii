@@ -463,7 +463,8 @@
       "tirage_deja_fait": "The order has already been drawn.",
       "cercle_incomplet": "Some members are still missing.",
       "idees_manquantes": "Every member must share an idea first.",
-      "autre": "That did not work. Try again in a moment."
+      "autre": "That did not work. Try again in a moment.",
+      "tour_non_en_cours": "This turn is no longer in progress."
     },
     "nouveau": {
       "titre": "Create a circle",
@@ -476,6 +477,15 @@
       "tailleAide": "{n} two-week turns: everyone gets their project built.",
       "creer": "Create the circle"
     },
-    "membresTitre": "Members"
+    "membresTitre": "Members",
+    "livrer": "Deliver the turn",
+    "livrerOui": "Yes, deliver",
+    "livrerConfirmation": "Is {nom}'s project finished? It is handed over to {nom}, and {suivant}'s turn begins.",
+    "livrerDernier": "Is {nom}'s project finished? This is the last turn: the circle will be finished.",
+    "livreTitre": "{nom}'s project is delivered.",
+    "livreTexte": "It will appear in the showcase once it is online, with its team's name.",
+    "voirVitrine": "See the showcase",
+    "termine": "The circle is finished.",
+    "termineAide": "{n} projects delivered, one per member. The circle can start a new round."
   }
 }
