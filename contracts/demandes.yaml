@@ -1,0 +1,141 @@
+openapi: 3.1.0
+info:
+  title: Jamii · Demandes de PME
+  version: 0.1.0
+  summary: Une PME décrit son besoin, l'IA propose un plan, l'équipe lance le projet.
+  description: |
+    Responsable : @sowibrr (bloc #17). Règles communes : docs/api-conventions.md. Demande #88. Modèle : docs/modele-donnees.md.
+
+    **Le parcours** (étape 3 de la démo) :
+    1. La PME décrit son besoin : `POST /api/demandes`. L'API enregistre la demande et **dépose la tâche `plan_projet`**
+       (`source: demande_pme`) dans le service IA (`ia.yaml`, interne : le navigateur ne l'appelle jamais).
+    2. Le navigateur relit `GET /api/demandes/{id}` toutes les 2 secondes, une minute au plus, jusqu'à
+       `plan.statut` = `terminee` ou `echouee`.
+    3. « Lancer le projet avec ce plan » appelle `POST /api/projets` avec `origine: demande` et `demandeId`
+       (`projets.yaml`). Le `409 demande_deja_prise` y est géré.
+
+    **Connexion** : requise, par GitHub ou par e-mail. Une PME n'a pas besoin de compte GitHub.
+
+    **Qui voit une demande** : son auteur seulement. Pour tout autre utilisateur, la demande n'existe pas (`404`, jamais
+    `403`, pour ne pas révéler qu'elle existe). Une liste publique des demandes, pour que des équipes les choisissent,
+    n'est pas dans ce contrat : elle demande une décision (voir la PR).
+
+    **Le plan vient du service IA, jamais du navigateur.** L'API relit l'état de la tâche à chaque `GET` : il n'y a pas de
+    copie du plan en base. Si le service IA ne répond pas, la demande reste visible avec `plan.statut` = `echouee`
+    (`delai_depasse`) : on ne perd jamais le texte de la PME. Un plan calculé sans IA (`origine: repli`) est signalé à la
+    PME.
+
+    **Texte de la PME** : `titre` et `description` sont du texte brut, affiché échappé. Ils sont envoyés au service IA comme
+    des **données**, jamais comme des consignes.
+
+    **Données personnelles** : le texte d'une demande est une donnée personnelle de son auteur. Il fait partie de l'export
+    (`GET /api/me/export`) et il est supprimé avec le compte (`DELETE /api/me`).
+
+    **CSRF** : toute requête POST envoie l'en-tête `X-XSRF-TOKEN` (socle.yaml, schéma `csrf`).
+servers:
+  - url: http://localhost:8080
+
+security:
+  - session: []
+
+tags:
+  - { name: demandes, description: Décrire un besoin et suivre le plan proposé. }
+
+paths:
+  /api/demandes:
+    post:
+      tags: [demandes]
+      operationId: creerDemande
+      summary: Décrire un besoin (la PME devient l'auteure de la demande)
+      description: |
+        Répond `201` tout de suite, avant la fin du plan : `plan.statut` vaut `en_attente`. La limite est celle de
+        `ia.yaml` : **10 plans par heure et par utilisateur** (`429` avec `Retry-After`). Une demande refusée par la
+        limite n'est pas enregistrée.
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NouvelleDemande' }
+      responses:
+        '201':
+          description: Demande enregistrée, plan en attente.
+          headers: { Location: { schema: { type: string } } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Demande' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '429': { $ref: './socle.yaml#/components/responses/TropDeRequetes' }
+
+  /api/demandes/{demandeId}:
+    parameters:
+      - name: demandeId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [demandes]
+      operationId: lireDemande
+      summary: La demande et l'état de son plan (à relire toutes les 2 secondes pendant une minute)
+      description: "La réponse n'est jamais mise en cache (`Cache-Control: no-store`)."
+      responses:
+        '200':
+          description: La demande.
+          headers:
+            Cache-Control: { schema: { type: string, examples: ['no-store'] } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Demande' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+
+components:
+  securitySchemes:
+    session: { $ref: './socle.yaml#/components/securitySchemes/session' }
+    csrf: { $ref: './socle.yaml#/components/securitySchemes/csrf' }
+
+  schemas:
+    NouvelleDemande:
+      type: object
+      additionalProperties: false
+      required: [titre, description]
+      properties:
+        titre: { type: string, minLength: 3, maxLength: 120 }
+        description: { type: string, minLength: 20, maxLength: 4000, description: 'Le besoin, avec les mots de la PME. Texte brut.' }
+        dureeSemaines: { type: [integer, 'null'], minimum: 1, maximum: 26, description: 'Durée souhaitée, si connue.' }
+
+    Demande:
+      type: object
+      required: [id, titre, description, dureeSemaines, creeLe, plan]
+      properties:
+        id: { type: string, format: uuid }
+        titre: { type: string }
+        description: { type: string, description: 'Texte brut, affiché échappé.' }
+        dureeSemaines: { type: [integer, 'null'] }
+        creeLe: { type: string, format: date-time }
+        projetId:
+          type: [string, 'null']
+          format: uuid
+          description: Le projet lancé à partir de cette demande (`projets.yaml`), s'il y en a un. Absent ou `null` sinon.
+        plan: { $ref: '#/components/schemas/PlanDeLaDemande' }
+
+    PlanDeLaDemande:
+      type: object
+      description: L'état de la tâche `plan_projet`, relu par l'API dans le service IA.
+      required: [statut]
+      properties:
+        statut: { type: string, enum: [en_attente, en_cours, terminee, echouee] }
+        origine:
+          type: string
+          description: 'Présent si `terminee`. `repli` : plan calculé sans IA, à montrer à la PME. `cache` : plan déjà produit pour la même demande.'
+          enum: [ia, cache, repli]
+        resultat:
+          description: Présent si `terminee`.
+          $ref: './ia.yaml#/components/schemas/PlanProjet'
+        erreurCode:
+          type: string
+          description: 'Présent si `echouee`. `delai_depasse` couvre aussi un service IA qui ne répond pas.'
+          enum: [entree_refusee, resultat_invalide, delai_depasse]
