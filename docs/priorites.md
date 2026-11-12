@@ -1,75 +1,105 @@
 # Priorités du moment
 
-> **Mis à jour le jeudi 12 novembre 2026, 13 h, par le chef de projet.**
+> **Mis à jour le jeudi 12 novembre 2026, au soir, sur décision de l'équipe : la Tech Tontine devient le module principal.** À valider par le chef de projet.
 > **Agents IA :** lisez ce fichier **avant le plan du bloc**. S'il contredit `docs/blocs/<bloc>.md`, **ce fichier gagne**. Dites tout de suite à votre développeur ce qu'il doit faire aujourd'hui et ce qu'il bloque.
+> Le contrat des cercles est demandé dans #98.
 
-## Où on en est
+> Décision de l'équipe du jeudi 12 novembre. Gel samedi 14 à 12 h. **Rien n'est supprimé** : les communautés, les demandes de PME, la vitrine, les profils et l'espace Systalink restent, et les cercles s'appuient sur eux.
 
-**Il reste 3 jours.** Gel des fonctionnalités **samedi 14 à 12 h**, soumission **dimanche 15 avant 12 h GMT** (limite officielle 17 h, on garde 5 h de marge).
+## L'idée en une phrase
 
-Le front est beau et les tests passent (99 sur 99). Mais **la démo ne tient pas encore debout** : les étapes qui font la différence auprès du jury ne sont pas codées.
+Un **cercle** de 4 à 6 développeurs construit, **à tour de rôle**, le projet de chacun. Systalink est le garant. L'IA (le Griot) planifie le tour et le résume.
 
-| Étape de la démo ([plan-final.md](plan-final.md)) | État |
-|---|---|
-| 1. Connexion GitHub | ✅ |
-| 2. Profil prouvé | ✅ |
-| 3. Une PME décrit son besoin → plan proposé | 🔴 **PR #37 encore en brouillon** |
-| 4. Rôles et candidatures | 🔴 **Rien dans l'API** (le contrat existe : `contracts/projets.yaml`) |
-| 5. Mise en ligne → vitrine | 🟡 Module prêt, il manque le service vitrine (#67) |
-| 6. Tableau de bord Systalink | ✅ |
-| 7. Communautés | 🟡 Écrans sur données factices, pas de module API |
-| **Jamii en ligne sur DataCloud** | 🔴 **Pas d'URL publique.** C'est exigé par le règlement : sans ça, pas de soumission |
+## Le choix qui rend ça faisable en 48 h
 
-**Depuis hier 20 h, une seule personne a poussé du code.** On ne peut pas se permettre une journée blanche.
+**Un tour = un projet qui existe déjà.** Le cercle n'est qu'une liste de membres et un ordre de passage. Le projet du tour réutilise tout ce qui est codé :
+- l'équipe ;
+- les tâches et les jalons ;
+- les avis ;
+- la mise en ligne ;
+- la vitrine.
 
-## Ce que chacun fait aujourd'hui (avant 20 h)
+Le score de confiance, c'est l'indice de fiabilité du profil, déjà là.
 
-Une demande qui bloque quelqu'un passe **avant** tout le reste.
+Ce qui est nouveau côté API : **une table `cercle`, une table `cercle_membre`, une colonne `tour` sur `projet`**. Rien de plus.
 
-### @boubacarsidibe : tu tiens deux étapes critiques
-1. **Sortir #37 du brouillon** et la rendre fusionnable : sans elle, pas d'étape 3, le cœur de Jamii.
-2. **Déployer l'API et le service IA sur DataCloud**, puis poster l'URL de `/health` dans #54.
-3. Ensuite : #69 (tâche IA `reponse_question`), **qui bloque Amar**, puis #65.
+## La démo (3 minutes)
 
-### @sowibrr : l'étape 4 est à toi
-1. **Rôles et candidatures dans l'API**, selon `contracts/projets.yaml` (publier un rôle, candidater, accepter ou refuser).
-2. #67 (service public des projets pour la vitrine), **qui bloque Amar**.
-3. Vérifier si #62 est réglé par #63, et le fermer si oui.
+1. Awa crée son cercle, 5 autres le rejoignent.
+2. L'ordre de passage est tiré au sort. Le Griot transforme l'idée d'Awa en plan pour le tour, en réutilisant `plan_projet`.
+3. Le tour avance : tâches cochées, message du soir du Griot.
+4. Livraison : le projet passe dans la vitrine avec le label « Né dans une Tech Tontine Systalink ».
+5. L'espace Systalink affiche les cercles actifs.
 
-### @Amar233-ui : brancher tes écrans sur de vraies données
-1. **Le module `communautes` de l'API** : il ne dépend de personne, tu peux le faire tout de suite.
-2. Dès que #67 est fusionnée : le module `vitrine`.
-3. Ensuite : le test Playwright du parcours de la démo.
+## Pour plus tard (hors démo)
 
-### @rev22rse22 : tu es en avance, tu prends les écrans qui manquent
-Plus de refonte d'écrans existants : ils sont assez bien pour la démo.
-1. **L'écran « une PME décrit son besoin → plan proposé »**, sur données factices tout de suite (contrat `contracts/ia.yaml` et `projets.yaml`), branché sur l'API quand #37 arrive.
-2. **L'écran des rôles et candidatures** d'un projet, sur données factices, branché quand sowibrr livre l'étape 4.
+- le Griot sur WhatsApp ;
+- les cercles « Or » ;
+- le recrutement automatique ;
+- le vote d'exclusion.
+
+## Qui fait quoi, d'ici vendredi 13 à 20 h
+
+### @sowibrr : l'API des cercles (le cœur)
+1. **Aujourd'hui avant 20 h : le contrat `contracts/cercles.yaml`.** Il doit couvrir :
+   - `POST /api/cercles` : créer un cercle (`nom`, `ville`, `taille` de 4 à 6) ; le créateur en devient membre ;
+   - `GET /api/cercles` (mes cercles et les cercles ouverts) et `GET /api/cercles/{id}` (membres, ordre, tour en cours, projet de chaque tour) ;
+   - `POST /api/cercles/{id}/membres` : rejoindre, avec un 409 `cercle_complet` ;
+   - `PUT /api/cercles/{id}/membres/moi/idee` : déposer son idée (titre et description) ;
+   - `POST /api/cercles/{id}/tirage` : le créateur tire l'ordre au sort, une seule fois, avec un 409 `tirage_deja_fait` ; le serveur crée le projet du tour 1 ;
+   - `POST /api/cercles/{id}/tours/{n}/livrer` : clôturer le tour, ce qui ouvre le tour suivant.
+2. **Vendredi : le module `cercles`** dans `apps/api`, avec la migration Flyway et les tests. Le tirage au sort se fait côté serveur, avec `SecureRandom`, et il est enregistré.
+3. Les candidatures de l'étape 4 passent après : dans un cercle, l'équipe est déjà formée.
+
+### @boubacarsidibe : le Griot (IA) et DataCloud
+1. **Toujours en premier : l'API et le service IA en ligne sur DataCloud**, avec l'URL de `/health` postée dans #54. Sans ça, pas de soumission.
+2. **Sortir #37 du brouillon** (plan PME) : c'est la même tâche `plan_projet` qui planifie un tour.
+3. Nouvelle tâche IA `resume_tour` dans `contracts/ia.yaml` :
+   - en entrée : les tâches du tour (faites ou restantes, et par qui) et le jour du tour ;
+   - en sortie : un message court (« Jour 3 du tour d'Awa : 7 tâches sur 12… ») ;
+   - un repli sans IA, calculé à partir des chiffres.
+
+### @Amar233-ui : les communautés réelles, puis les cercles dans l'espace Systalink
+1. Le module `communautes` de l'API (inchangé, il ne dépend de personne).
+2. Dans l'espace Systalink : un bloc « Cercles actifs », avec le nombre de cercles et de tours livrés et les pays. Sur données factices d'abord.
+3. Le test Playwright du parcours de la démo, mis à jour pour les cercles.
+
+### @rev22rse22 : tous les écrans des cercles (sur données factices, branchés quand l'API arrive)
+1. **La page du cercle** : l'anneau des membres et l'ordre de passage, Systalink garant au centre, le tour en cours, le message du Griot.
+2. **Créer et rejoindre un cercle, déposer son idée, tirer l'ordre au sort** (avec une animation de tirage).
+3. **Le tour** : il réutilise l'écran du plan PME (priorités, jalons, tâches) ; puis « Livrer le tour » mène à la vitrine avec le label.
+4. L'accueil et le menu : « Cercles » en première entrée.
 
 ### @algabah2004 : chef de projet
-Relire et fusionner au fil de l'eau, préparer les données de démo pour demain, et les interviews (#10).
+1. **Valider ce plan** et mettre à jour :
+   - `docs/concept.md` : les cercles passent de la feuille de route au pilier principal ;
+   - `docs/plan-final.md` : la nouvelle démo ;
+   - `docs/vocabulaire.md` : autoriser « cercle », « tour », « Griot » et « Tech Tontine », en définissant chaque mot.
+2. Relire `contracts/cercles.yaml` en priorité, ce soir.
+3. Les données de démo : 3 cercles, dont celui de Dakar, avec Awa, Kofi, Fatou, Moussa, Nia et Yann.
 
 ## Qui bloque qui
 
 ```
-boubacarsidibe ─ #37 plan PME ──────▶ étape 3 de la démo, écran de rev22rse22
-boubacarsidibe ─ DataCloud ─────────▶ la soumission elle-même
-boubacarsidibe ─ #69 réponse IA ────▶ Amar233-ui (communautés réelles)
-sowibrr ──────── candidatures ──────▶ étape 4 de la démo, écran de rev22rse22
-sowibrr ──────── #67 vitrine ───────▶ Amar233-ui (vitrine réelle)
+sowibrr ────── cercles.yaml (ce soir) ──▶ rev22rse22 branche ses écrans, Amar233-ui son bloc Systalink
+sowibrr ────── module cercles ──────────▶ la démo de bout en bout
+boubacarsidibe ─ DataCloud ─────────────▶ la soumission elle-même
+boubacarsidibe ─ #37 + resume_tour ─────▶ étapes 2 et 3 de la démo
+algabah2004 ─── vocabulaire et concept ─▶ tous les agents IA (sinon ils refusent le thème)
 ```
 
-## Si ce n'est pas fait ce soir à 20 h
+## Si ce n'est pas fait à temps
 
 Pas de reproche : on réorganise pour livrer.
-- Sans nouvelle de **#37** ou du **déploiement** : le chef de projet les reprend.
-- Sans **candidatures** dans l'API : rev22rse22 les reprend (il a déjà écrit du back : #72, #75).
-- Un blocage de plus de 2 h se signale **tout de suite** dans #54, avec l'étiquette `bloqué`. Un silence nous coûte plus cher qu'un problème.
+- **Pas de contrat `cercles.yaml` ce soir** : rev22rse22 en écrit une première version, à partir de ses données factices, et sowibrr la relit.
+- **Pas de module `cercles` vendredi à 14 h** : la démo des cercles tourne sur données factices, et le reste de la démo reste branché sur l'API.
+- **Pas d'URL DataCloud vendredi** : le chef de projet reprend le déploiement.
+- Un blocage de plus de 2 h se signale **tout de suite** dans #54, avec l'étiquette `bloqué`.
 
 ## La suite
 
 | Jour | Objectif |
 |---|---|
-| **Ven 13** | Étapes 3 à 5 branchées de bout en bout. **Données de démo** (une soixantaine de profils et de projets) |
+| **Ven 13** | Cercles de bout en bout (création, tirage, tour, livraison vers la vitrine). **Données de démo** |
 | **Sam 14** | **Gel à 12 h.** Corrections, répétition, vidéo de secours, README final |
 | **Dim 15** | Soumission avant 12 h GMT, puis **chacun vote** (sinon le projet est exclu) |
