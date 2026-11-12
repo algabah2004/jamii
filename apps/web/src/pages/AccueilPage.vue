@@ -205,8 +205,8 @@ const chiffres = computed(() => {
 .scene__bonjour { margin: 0; color: var(--ink); font-weight: 600; text-shadow: var(--ombre-texte); }
 .scene__titre {
   margin: 0; max-width: 20ch;
-  font-family: var(--font-editorial); font-weight: 400;
-  font-size: clamp(2.75rem, 6.6vw, 5.25rem); line-height: 1; letter-spacing: -0.02em;
+  font-family: var(--font-display); font-weight: 700;
+  font-size: clamp(2.5rem, 6vw, 4.75rem); line-height: 1.04; letter-spacing: -0.035em;
   color: var(--ink); text-wrap: balance;
   text-shadow: 0 2px 40px color-mix(in srgb, var(--bg) 70%, transparent);
   animation: monte var(--motion-celebrate) var(--ease-out) both;
@@ -218,7 +218,7 @@ const chiffres = computed(() => {
 .scene__chiffres--gauche { left: var(--space-4); text-align: start; }
 .scene__chiffres--droite { right: var(--space-4); text-align: end; }
 .scene__chiffres div { display: flex; flex-direction: column-reverse; }
-.scene__chiffres dd { margin: 0; font-family: var(--font-editorial); font-size: 2.25rem; line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; text-shadow: var(--ombre-texte); }
+.scene__chiffres dd { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 2.25rem; letter-spacing: -0.02em; line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; text-shadow: var(--ombre-texte); }
 .scene__chiffres dt { margin-top: var(--space-1); color: var(--ink); font-size: var(--type-body-sm-size); font-weight: 500; text-shadow: var(--ombre-texte); }
 
 .scene__actions { display: grid; justify-items: center; gap: var(--space-4); margin-top: var(--space-6); }
