@@ -13,13 +13,15 @@ const { etat, moi } = useSession()
 <template>
   <a href="#contenu" class="aller-au-contenu">{{ t('menu.allerAuContenu') }}</a>
   <header class="entete" :class="{ 'entete--scene zone-sombre': $route.name === 'accueil' }">
-    <div class="entete__interieur">
+    <div class="entete__interieur verre">
       <RouterLink to="/" class="marque">Jamii<span class="marque__point" aria-hidden="true" /></RouterLink>
       <nav :aria-label="t('menu.principal')">
         <RouterLink v-if="etat === 'connecte'" to="/communautes">{{ t('menu.communautes') }}</RouterLink>
         <RouterLink v-if="etat === 'connecte'" to="/demandes/nouvelle" :class="{ 'router-link-active': $route.path.startsWith('/demandes') }">{{ t('menu.demandes') }}</RouterLink>
         <RouterLink to="/vitrine">{{ t('menu.vitrine') }}</RouterLink>
-        <RouterLink to="/systalink">{{ t('menu.systalink') }}</RouterLink>
+        <RouterLink to="/systalink" :aria-label="t('menu.systalink')">
+          <span class="lien-long" aria-hidden="true">{{ t('menu.systalink') }}</span><span class="lien-court" aria-hidden="true">{{ t('menu.systalinkCourt') }}</span>
+        </RouterLink>
       </nav>
       <div class="actions">
         <ReglagesAffichage class="reglages--entete" />
@@ -72,28 +74,32 @@ const { etat, moi } = useSession()
 <style>
 /* Le cadre commun : en-tête, contenu et pied alignés sur la même largeur (variables du design system, #19). */
 #app { min-height: 100vh; display: flex; flex-direction: column; overflow-x: clip; }
-.entete__interieur, main, .pied__interieur { width: 100%; max-width: 72rem; margin-inline: auto; padding-inline: var(--space-6); }
-@media (max-width: 720px) { .entete__interieur, main, .pied__interieur { padding-inline: var(--space-4); } }
+.entete__interieur, main, .pied__interieur { width: 100%; max-width: 72rem; margin-inline: auto; }
+main, .pied__interieur { padding-inline: var(--space-6); }
+@media (max-width: 720px) { main, .pied__interieur { padding-inline: var(--space-4); } }
 
 .aller-au-contenu { position: absolute; left: var(--space-4); top: -4rem; z-index: 20; padding: var(--space-2) var(--space-4); background: var(--action); color: var(--on-action); border-radius: var(--radius-md); font-weight: 600; }
 .aller-au-contenu:focus { top: var(--space-2); }
 
-.entete {
-  position: sticky; top: 0; z-index: 10;
-  background: color-mix(in srgb, var(--surface) 88%, transparent);
-  backdrop-filter: saturate(1.4) blur(10px);
-  border-bottom: 1px solid var(--line);
+.entete { position: sticky; top: 0; z-index: 10; padding: var(--space-3) var(--space-4) 0; pointer-events: none; }
+/* La capsule de navigation : du verre, parce que le contenu défile dessous (couche d'interface). */
+.entete__interieur {
+  pointer-events: auto;
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-8);
+  min-height: 56px; max-width: 70rem;
+  padding-inline: var(--space-6) var(--space-2);
+  border-radius: var(--radius-pill);
 }
-.entete__interieur { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-8); min-height: 64px; }
-.entete nav { flex: 1; display: flex; gap: var(--space-6); white-space: nowrap; overflow-x: auto; align-self: stretch; }
+.entete nav { flex: 1; display: flex; align-items: center; gap: var(--space-1); white-space: nowrap; overflow-x: auto; }
+
+/* Les liens sont des capsules ; la page active est une goutte de verre teintée. */
 .entete nav a {
-  display: flex; align-items: center;
+  display: flex; align-items: center; min-height: 40px; padding: 0 var(--space-4); border-radius: var(--radius-pill);
   color: var(--ink-muted); text-decoration: none; font-weight: 600;
-  border-bottom: 2px solid transparent; margin-bottom: -1px;
-  transition: color var(--motion-fast) var(--ease-out);
+  transition: color var(--motion-fast) var(--ease-out), background var(--motion-fast) var(--ease-out);
 }
-.entete nav a:hover { color: var(--ink); }
-.entete nav a.router-link-active { color: var(--ink); border-bottom-color: var(--action); }
+.entete nav a:hover { color: var(--ink); background: color-mix(in srgb, var(--ink) 6%, transparent); }
+.entete nav a.router-link-active { color: var(--ink); background: color-mix(in srgb, var(--action) 16%, transparent); }
 /* Le menu défile sur mobile : l'anneau de focus passe à l'intérieur pour ne pas être rogné. */
 .entete nav a:focus-visible { outline-offset: -2px; }
 
@@ -102,6 +108,8 @@ const { etat, moi } = useSession()
 .marque__point { width: 0.3em; height: 0.3em; border-radius: 50%; background: var(--proof); }
 
 .actions { display: flex; align-items: center; gap: var(--space-2); }
+/* Libellé long sur ordinateur, court sur téléphone (le nom accessible reste le libellé complet). */
+.lien-court { display: none; }
 /* Sur ordinateur, la langue et le thème sont dans l'en-tête ; sur téléphone, dans le pied de page. */
 .pied .reglages--pied { display: none; }
 .bouton-entete { min-height: 36px; white-space: nowrap; }
@@ -110,14 +118,18 @@ const { etat, moi } = useSession()
 .deconnexion { background: none; border: 0; padding: var(--space-2); color: var(--ink-muted); font-size: var(--type-body-sm-size); cursor: pointer; white-space: nowrap; }
 .deconnexion:hover { color: var(--ink); text-decoration: underline; }
 
-/* Sur l'accueil, l'en-tête se pose sur la scène sombre : transparent, puis voilé au défilement. */
-.entete--scene { background: color-mix(in srgb, var(--bg) 55%, transparent); border-bottom-color: color-mix(in srgb, var(--ink) 10%, transparent); }
+/* Sur l'accueil, la capsule prend les couleurs sombres de la scène (classe zone-sombre). */
+.entete.entete--scene { background: transparent; }
 
 /* Écran étroit : la marque et les réglages sur la première ligne, le menu entier sur la seconde. */
 @media (max-width: 720px) {
-  .entete__interieur { padding-block: var(--space-2); }
+  .entete { padding: var(--space-2) var(--space-2) 0; }
+  .entete__interieur { padding-block: var(--space-2); padding-inline: var(--space-4) var(--space-2); border-radius: var(--radius-lg); }
   .actions { margin-inline-start: auto; }
-  .entete nav { order: 3; flex: 1 1 100%; min-height: 40px; gap: var(--space-4); scrollbar-width: none; }
+  .entete nav { order: 3; flex: 1 1 100%; min-height: 40px; gap: 0; scrollbar-width: none; }
+  .entete nav a { padding: 0 var(--space-2); font-size: var(--type-body-sm-size); }
+  .lien-long { display: none; }
+  .lien-court { display: inline; }
   .entete .reglages--entete { display: none; }
   .pied .reglages--pied { display: flex; }
   .moi__nom { display: none; }

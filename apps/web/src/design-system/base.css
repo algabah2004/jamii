@@ -100,9 +100,11 @@ img, svg { max-width: 100%; }
 @media (max-width: 760px) { .page-tete__illustration { display: none; } }
 
 /*
- * Verre (inspiré du Liquid Glass d'Apple, en CSS) : une surface translucide qui floute et sature ce qu'il y a
- * derrière, un reflet clair sur le bord haut, une ombre douce. Réservé aux panneaux qui flottent au-dessus
- * d'un fond (.fond-verre). Opaque si l'utilisateur réduit la transparence.
+ * Verre (d'après le Liquid Glass d'Apple, en CSS) : une surface translucide qui floute et sature ce qui
+ * défile derrière, un reflet clair sur le bord haut, une ombre douce.
+ * Règle d'Apple (HIG Materials) : le verre est la couche d'interface qui flotte au-dessus du contenu
+ * (en-tête, barre d'action flottante). Jamais sur le contenu lui-même : cartes, listes et textes
+ * restent sur des surfaces pleines (.carte), plus lisibles.
  */
 .verre {
   background: color-mix(in srgb, var(--surface) 58%, transparent);
@@ -127,6 +129,10 @@ img, svg { max-width: 100%; }
 }
 /* Commandes en capsule sur les écrans en verre. */
 .fond-verre .j-bouton { border-radius: var(--radius-pill); }
+/* Transparence réduite : le verre devient opaque. Contraste augmenté : un vrai bord, pas de transparence. */
 @media (prefers-reduced-transparency: reduce) {
   .verre { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+@media (prefers-contrast: more) {
+  .verre { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; border-color: var(--line-strong); }
 }

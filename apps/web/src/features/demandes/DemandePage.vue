@@ -96,17 +96,17 @@ const messageErreur = computed(() =>
       <header class="tete">
         <h1>{{ demande.titre }}</h1>
         <!-- Texte brut, affiché échappé : les mots de la PME, jamais interprétés. -->
-        <blockquote class="verre besoin">{{ demande.description }}</blockquote>
+        <blockquote class="carte besoin">{{ demande.description }}</blockquote>
       </header>
 
-      <div v-if="enPreparation" class="verre attente" role="status" data-test="plan-attente">
+      <div v-if="enPreparation" class="carte attente" role="status" data-test="plan-attente">
         <span class="points" aria-hidden="true"><i /><i /><i /></span>
         <div>
           <strong>{{ t('demandes.plan.prepare') }}</strong>
           <p>{{ t('demandes.plan.prepareAide') }}</p>
         </div>
       </div>
-      <div v-else-if="!plan" role="alert" class="verre attente attente--echec" data-test="plan-echec">
+      <div v-else-if="!plan" role="alert" class="carte attente attente--echec" data-test="plan-echec">
         <div>
           <strong>{{ t('demandes.plan.echec') }}</strong>
           <p>{{ t('demandes.plan.echecAide') }}</p>
@@ -116,9 +116,9 @@ const messageErreur = computed(() =>
 
       <template v-if="plan">
         <p class="proposition" data-test="plan-propose">✨ {{ t('demandes.plan.propose') }}</p>
-        <p v-if="demande.plan.origine === 'repli'" class="verre repli" role="status" data-test="plan-repli">{{ t('demandes.plan.repli') }}</p>
+        <p v-if="demande.plan.origine === 'repli'" class="carte repli" role="status" data-test="plan-repli">{{ t('demandes.plan.repli') }}</p>
 
-        <section class="verre bloc" aria-labelledby="resume">
+        <section class="carte bloc" aria-labelledby="resume">
           <h2 id="resume">{{ t('demandes.plan.resume') }}</h2>
           <p class="resume">{{ plan.cahierDesCharges.resume }}</p>
           <ul class="objectifs">
@@ -129,7 +129,7 @@ const messageErreur = computed(() =>
         <section class="bloc-nu" aria-labelledby="fonctionnalites">
           <h2 id="fonctionnalites">{{ t('demandes.plan.fonctionnalites') }}</h2>
           <div class="priorites">
-            <div v-for="g in fonctionnalites" :key="g.priorite" class="verre priorite" :class="`priorite--${g.priorite}`" data-test="priorite">
+            <div v-for="g in fonctionnalites" :key="g.priorite" class="carte priorite" :class="`priorite--${g.priorite}`" data-test="priorite">
               <h3>{{ t(`demandes.priorites.${g.priorite}`) }}</h3>
               <ul>
                 <li v-for="f in g.liste" :key="f.titre"><strong>{{ f.titre }}</strong><span>{{ f.description }}</span></li>
@@ -141,7 +141,7 @@ const messageErreur = computed(() =>
         <section class="bloc-nu" aria-labelledby="jalons">
           <h2 id="jalons">{{ t('demandes.plan.jalons') }}</h2>
           <ol class="jalons" data-test="jalons">
-            <li v-for="j in jalons" :key="j.titre" class="verre jalon">
+            <li v-for="j in jalons" :key="j.titre" class="carte jalon">
               <span class="jalon__semaine">{{ t('demandes.plan.semaine', { n: j.semaine }) }}</span>
               <h3>{{ j.titre }}</h3>
               <p>{{ j.livrable }}</p>
@@ -156,7 +156,7 @@ const messageErreur = computed(() =>
         </section>
 
         <div class="deux">
-          <section v-if="plan.rolesManquants.length" class="verre bloc" aria-labelledby="roles">
+          <section v-if="plan.rolesManquants.length" class="carte bloc" aria-labelledby="roles">
             <h2 id="roles">{{ t('demandes.plan.roles') }}</h2>
             <p class="texte-discret">{{ t('demandes.plan.rolesAide') }}</p>
             <ul class="roles" data-test="roles">
@@ -167,7 +167,7 @@ const messageErreur = computed(() =>
               </li>
             </ul>
           </section>
-          <section v-if="plan.servicesSuggeres.length" class="verre bloc" aria-labelledby="services">
+          <section v-if="plan.servicesSuggeres.length" class="carte bloc" aria-labelledby="services">
             <h2 id="services">{{ t('demandes.plan.services') }}</h2>
             <p class="texte-discret">{{ t('demandes.plan.servicesAide') }}</p>
             <ul class="services">

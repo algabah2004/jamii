@@ -47,7 +47,7 @@ async function envoyer() {
     </header>
 
     <div class="mise-en-page">
-      <form class="verre formulaire" data-test="demande" @submit.prevent="envoyer">
+      <form class="carte formulaire" data-test="demande" @submit.prevent="envoyer">
         <JChamp
           v-model="demande.titre"
           :libelle="t('demandes.nouvelle.champTitre')"
@@ -79,7 +79,7 @@ async function envoyer() {
       </form>
 
       <aside class="cote">
-        <section class="verre bloc" aria-labelledby="exemples">
+        <section class="carte bloc" aria-labelledby="exemples">
           <h2 id="exemples">{{ t('demandes.nouvelle.exemplesTitre') }}</h2>
           <ul class="exemples">
             <li v-for="e in exemples" :key="e.titre">
@@ -90,7 +90,7 @@ async function envoyer() {
             </li>
           </ul>
         </section>
-        <section class="verre bloc" aria-labelledby="ensuite">
+        <section class="carte bloc" aria-labelledby="ensuite">
           <h2 id="ensuite">{{ t('demandes.nouvelle.ensuiteTitre') }}</h2>
           <ol class="etapes">
             <li>{{ t('demandes.nouvelle.ensuite1') }}</li>
