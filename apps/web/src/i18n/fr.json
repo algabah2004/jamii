@@ -506,7 +506,22 @@
       "ouverts": "Aucun cercle ne cherche de membres pour l'instant. Crée le tien."
     },
     "ouvrir": "Ouvrir le cercle",
-    "trouverMembres": "Trouver des membres"
+    "trouverMembres": "Trouver des membres",
+    "partage": {
+      "titre": "Publier dans une communauté",
+      "aide": "Les membres de tes communautés verront le cercle et pourront le rejoindre en un clic.",
+      "publier": "Publier dans une communauté",
+      "communaute": "Communauté",
+      "champTitre": "Titre",
+      "champTexte": "Texte",
+      "titreParDefaut": "Le {cercle} est complet | Le {cercle} cherche 1 membre | Le {cercle} cherche {n} membres",
+      "contenuParDefaut": "On construit à tour de rôle le projet de chaque membre, à {ville}. Il reste de la place : rejoins-nous ici {lien}",
+      "publie": "Publié dans {communaute}.",
+      "voir": "Voir la publication",
+      "erreur": "La publication n'est pas partie. Réessaie.",
+      "aucuneCommunaute": "Rejoins d'abord une communauté pour y publier.",
+      "carte": "Cercle de la Tech Tontine"
+    }
   },
   "reseau": {
     "competences": "Compétences",
@@ -560,6 +575,41 @@
       "ecrire": "Ton message à {nom}",
       "envoyer": "Envoyer",
       "lien": "Messages | Messages, {n} non lu | Messages, {n} non lus"
+    },
+    "onglets": {
+      "titre": "Activité",
+      "notifications": "Notifications",
+      "messages": "Messages",
+      "contacts": "Contacts",
+      "lien": "Notifications | Notifications, {n} nouvelle | Notifications, {n} nouvelles"
+    },
+    "notifications": {
+      "vide": "Rien de neuf pour l'instant. Rejoins un cercle ou écris à un développeur.",
+      "nouvelle": "nouvelle",
+      "message_recu": "{nom} t'a écrit.",
+      "invitation_cercle": "{nom} t'invite à rejoindre « {cercle} ».",
+      "demande_contact": "{nom} veut t'ajouter à ses contacts.",
+      "contact_accepte": "{nom} a accepté ta demande de contact.",
+      "membre_rejoint": "{nom} a rejoint « {cercle} ».",
+      "tirage_effectue": "L'ordre de passage de « {cercle} » est tiré.",
+      "tour_livre": "Un tour de « {cercle} » est livré.",
+      "cercle_recommande": "« {cercle} » a besoin de ton profil."
+    },
+    "contacts": {
+      "recues": "Demandes reçues",
+      "mes": "Mes contacts",
+      "envoyees": "Demandes envoyées",
+      "vide": "Pas encore de contacts. Ajoute quelqu'un depuis une conversation.",
+      "accepter": "Accepter",
+      "refuser": "Refuser",
+      "annuler": "Annuler la demande",
+      "ajouter": "Ajouter aux contacts",
+      "ecrire": "Écrire",
+      "erreur": "L'action n'a pas abouti. Réessaie.",
+      "statut": {
+        "envoyee": "Demande envoyée",
+        "accepte": "Dans tes contacts"
+      }
     }
   }
 }

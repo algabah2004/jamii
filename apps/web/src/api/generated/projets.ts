@@ -283,7 +283,10 @@ export interface paths {
         /** Les jalons du projet, dans l'ordre (membres uniquement) */
         get: operations["listerJalons"];
         put?: never;
-        /** Ajouter un jalon (membres) */
+        /**
+         * Ajouter un jalon (membres)
+         * @description Sans `ordre`, le jalon se place après les autres. Sans `statut`, il est `prevu`.
+         */
         post: operations["creerJalon"];
         delete?: never;
         options?: never;
@@ -1133,7 +1136,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["EcritureJalon"];
+                "application/json": components["schemas"]["EcritureJalon"] & unknown;
             };
         };
         responses: {
@@ -1150,6 +1153,8 @@ export interface operations {
             401: components["responses"]["NonConnecte"];
             403: components["responses"]["Interdit"];
             404: components["responses"]["Introuvable"];
+            /** @description `limite_atteinte` : le projet a déjà 50 jalons. */
+            409: components["responses"]["Conflit"];
         };
     };
     modifierJalon: {
@@ -1230,7 +1235,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["EcritureTache"];
+                "application/json": components["schemas"]["EcritureTache"] & unknown;
             };
         };
         responses: {
@@ -1247,7 +1252,7 @@ export interface operations {
             401: components["responses"]["NonConnecte"];
             403: components["responses"]["Interdit"];
             404: components["responses"]["Introuvable"];
-            /** @description `pas_membre` : l'assigné ne fait pas partie de l'équipe. */
+            /** @description `pas_membre` : l'assigné ne fait pas partie de l'équipe. `limite_atteinte` : le projet a déjà 500 tâches. */
             409: components["responses"]["Conflit"];
         };
     };

@@ -13,7 +13,8 @@ const { etat, moi } = useSession()
 
 // Les pastilles : relues toutes les 30 s tant qu'on est connecté et que l'onglet est visible (features/reseau/activite.ts).
 const activite = useActivite()
-const nonLus = computed(() => activite.value?.messagesNonLus ?? 0)
+// Toute nouveauté (message, invitation, demande de contact) crée une notification : une seule pastille suffit.
+const nonLus = computed(() => activite.value?.notificationsNonLues ?? 0)
 watch(etat, (e) => (e === 'connecte' ? suivreActivite() : arreterActivite()), { immediate: true })
 </script>
 
@@ -38,8 +39,8 @@ watch(etat, (e) => (e === 'connecte' ? suivreActivite() : arreterActivite()), { 
         </a>
         <template v-else-if="etat === 'connecte' && moi">
           <!-- Le profil se reconnaît à son visage : l'avatar mène au profil, le nom reste lisible par tous. -->
-          <RouterLink to="/messages" class="icone-entete" data-test="lien-messages" :aria-label="t('reseau.messages.lien', { n: nonLus }, nonLus)">
-            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 6h16v11H8l-4 3z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" /></svg>
+          <RouterLink to="/notifications" class="icone-entete" :class="{ 'router-link-active': ['/messages', '/contacts'].some((p) => $route.path.startsWith(p)) }" data-test="lien-activite" :aria-label="t('reseau.onglets.lien', { n: nonLus }, nonLus)">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20.5a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" /></svg>
             <span v-if="nonLus" class="icone-entete__pastille" aria-hidden="true">{{ nonLus > 9 ? '9+' : nonLus }}</span>
           </RouterLink>
           <RouterLink to="/profil" class="moi" data-test="mon-profil">

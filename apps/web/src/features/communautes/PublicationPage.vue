@@ -9,6 +9,7 @@ import { ilYa } from '../vitrine/vitrine'
 import { useSession } from '../../session'
 import BoutonSignaler from './BoutonSignaler.vue'
 import EspaceCommunautes from './EspaceCommunautes.vue'
+import CarteCercleLien from '../cercles/CarteCercleLien.vue'
 
 type Publication = components['schemas']['Publication']
 type Reponse = components['schemas']['Reponse']
@@ -149,6 +150,8 @@ async function repondre() {
         <h1 id="titre-fil">{{ publication.titre }}</h1>
         <!-- Texte brut, affiché échappé (jamais v-html) : aucun HTML d'un utilisateur ne s'exécute. -->
         <p class="texte">{{ publication.contenu }}</p>
+        <!-- Le lien d'un cercle (Tech Tontine) devient une carte « Rejoindre le cercle » (bloc #19). -->
+        <CarteCercleLien :texte="publication.contenu" />
         <footer class="barre">
           <JBadgePreuve v-if="dejaAcceptee">✓ {{ t('communautes.reponseAcceptee') }}</JBadgePreuve>
           <span v-else-if="publication.type === 'question'" class="statut-ouvert">{{ t('question.ouverte') }}</span>
