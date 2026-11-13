@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /** Les erreurs du contrat projets.yaml, au format RFC 9457 avec `code`, pour tous les contrôleurs du module. */
-@RestControllerAdvice(assignableTypes = { RecrutementController.class, ListeProjetsController.class })
+@RestControllerAdvice(assignableTypes = { RecrutementController.class, ListeProjetsController.class, EquipeController.class })
 class ErreursProjetsAdvice {
 
 	@ExceptionHandler(ErreurProjets.class)
