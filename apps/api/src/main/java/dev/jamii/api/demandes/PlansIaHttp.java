@@ -38,19 +38,21 @@ class PlansIaHttp implements PlansIa {
 	@Override
 	public UUID deposer(UUID cle, Entree entree) {
 		Map<String, Object> corps = new LinkedHashMap<>();
-		corps.put("source", "demande_pme");
 		corps.put("titre", entree.titre());
 		corps.put("description", entree.description());
 		corps.put("langue", "fr");
-		if (entree.dureeSemaines() != null) {
-			corps.put("dureeSemaines", entree.dureeSemaines());
+		if (entree.secteur() != null) {
+			corps.put("secteur", entree.secteur());
+		}
+		if (entree.pays() != null) {
+			corps.put("pays", entree.pays());
 		}
 		// 202 : tâche créée. 200 : la même clé avait déjà servi, la tâche existante est renvoyée.
 		JsonNode tache = client.post()
 			.uri("/taches")
 			.header("Idempotency-Key", cle.toString())
 			.contentType(MediaType.APPLICATION_JSON)
-			.body(Map.of("type", "plan_projet", "entree", corps))
+			.body(Map.of("type", "orientation_besoin", "entree", corps))
 			.retrieve()
 			.body(JsonNode.class);
 		return UUID.fromString(tache.get("id").asString());

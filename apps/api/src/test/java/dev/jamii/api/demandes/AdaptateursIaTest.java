@@ -28,7 +28,7 @@ class AdaptateursIaTest {
 
 	private static final JsonMapper JSON = new JsonMapper();
 
-	private static final PlansIa.Entree ENTREE = new PlansIa.Entree("Boutique de couture", "Je vends mes créations en ligne.", 8);
+	private static final PlansIa.Entree ENTREE = new PlansIa.Entree("Boutique de couture", "Je vends mes créations en ligne.", 8, "commerce", "SN");
 
 	/** Une horloge que le test fait avancer. */
 	private static final class Horloge extends Clock {
@@ -68,9 +68,12 @@ class AdaptateursIaTest {
 
 		assertThat(fini.statut()).isEqualTo("terminee");
 		assertThat(fini.origine()).as("un plan simulé est annoncé comme un repli").isEqualTo("repli");
-		assertThat(fini.resultat().get("jalons")).hasSize(3);
-		assertThat(fini.resultat().get("jalons").get(2).get("semaine").asInt()).isEqualTo(8);
-		assertThat(fini.resultat().get("cahierDesCharges").get("resume").asString()).contains("Je vends mes créations");
+		assertThat(fini.resultat().get("services")).as("le repli ne pousse aucun service").isEmpty();
+		assertThat(fini.resultat().get("secteur").asString()).isEqualTo("commerce");
+		JsonNode plan = fini.resultat().get("plan");
+		assertThat(plan.get("jalons")).hasSize(3);
+		assertThat(plan.get("jalons").get(2).get("semaine").asInt()).isEqualTo(8);
+		assertThat(plan.get("cahierDesCharges").get("resume").asString()).contains("Je vends mes créations");
 	}
 
 	@Test
@@ -130,13 +133,13 @@ class AdaptateursIaTest {
 			assertThat(requete.autorisation()).isEqualTo("Bearer jeton-secret");
 			assertThat(requete.cle()).isEqualTo(cle.toString());
 			JsonNode corps = JSON.readTree(requete.corps());
-			assertThat(corps.get("type").asString()).isEqualTo("plan_projet");
-			assertThat(corps.get("entree").get("source").asString()).isEqualTo("demande_pme");
+			assertThat(corps.get("type").asString()).isEqualTo("orientation_besoin");
 			assertThat(corps.get("entree").get("titre").asString()).isEqualTo("Boutique de couture");
-			assertThat(corps.get("entree").get("dureeSemaines").asInt()).isEqualTo(8);
+			assertThat(corps.get("entree").get("secteur").asString()).isEqualTo("commerce");
+			assertThat(corps.get("entree").get("pays").asString()).isEqualTo("SN");
 			assertThat(corps.get("entree").get("langue").asString()).isEqualTo("fr");
-			assertThat(corps.get("entree").propertyNames()).containsExactlyInAnyOrder("source", "titre", "description", "langue",
-					"dureeSemaines");
+			assertThat(corps.get("entree").propertyNames()).containsExactlyInAnyOrder("titre", "description", "langue",
+					"secteur", "pays");
 		}
 		finally {
 			serveur.stop(0);

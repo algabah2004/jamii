@@ -61,7 +61,23 @@ class PlansIaSimules implements PlansIa {
 		if (age.compareTo(attente) < 0) {
 			return new Etat("en_cours", null, null, null);
 		}
-		return new Etat("terminee", "repli", plan(tache.entree()), null);
+		return new Etat("terminee", "repli", orientation(tache.entree()), null);
+	}
+
+	/**
+	 * Une orientation de repli, comme celle du vrai service sans IA : des développeurs et un plan générique, aucun service
+	 * Systalink poussé (on ne devine pas).
+	 */
+	private JsonNode orientation(Entree entree) {
+		ObjectNode orientation = json.createObjectNode();
+		String description = entree.description().strip().replaceAll("\\s+", " ");
+		orientation.put("resume", description.length() > 600 ? description.substring(0, 599) + "…" : description);
+		orientation.put("secteur", entree.secteur() == null ? "autre" : entree.secteur());
+		orientation.putArray("services");
+		orientation.put("developpeursNecessaires", true);
+		orientation.putArray("competences").add("typescript").add("spring").add("design");
+		orientation.set("plan", plan(entree));
+		return orientation;
 	}
 
 	private JsonNode plan(Entree entree) {
