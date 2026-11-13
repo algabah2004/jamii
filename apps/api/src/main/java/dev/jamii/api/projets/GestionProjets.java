@@ -43,6 +43,25 @@ class GestionProjets {
 		return id;
 	}
 
+	/**
+	 * Le projet né d'une demande de PME : même chose qu'une idée, avec `demande_id`. L'index unique partiel
+	 * `projet_demande_active` refuse un second projet actif sur la même demande (DuplicateKeyException).
+	 */
+	@Transactional
+	UUID creerDepuisUneDemande(UUID porteur, String titre, String description, UUID demandeId, Instant maintenant) {
+		UUID id = UUID.randomUUID();
+		Timestamp t = Timestamp.from(maintenant);
+		base.sql("""
+				INSERT INTO projet (id, titre, description, origine, demande_id, porteur_id, derniere_activite_le, cree_le, mis_a_jour_le)
+				VALUES (:id, :titre, :description, 'demande', :demande, :porteur, :t, :t, :t)
+				""")
+			.param("id", id).param("titre", titre).param("description", description).param("demande", demandeId)
+			.param("porteur", porteur).param("t", t).update();
+		base.sql("INSERT INTO membre_equipe (projet_id, utilisateur_id, rejoint_le) VALUES (:projet, :porteur, :t)")
+			.param("projet", id).param("porteur", porteur).param("t", t).update();
+		return id;
+	}
+
 	@Transactional(readOnly = true)
 	Optional<Fiche> lire(UUID id) {
 		return base.sql("""
