@@ -53,6 +53,23 @@ public class ProfilsPublies {
 		return recherche.competences(publies);
 	}
 
+	/** Combien de profils publiés ont chacune de ces compétences : ce qui manque sur le continent (tendances). */
+	public Map<String, Long> compterParCompetence(Collection<String> competences) {
+		Map<String, Long> nombres = new java.util.HashMap<>();
+		if (competences.isEmpty()) {
+			return nombres;
+		}
+		jdbc.query("""
+				SELECT c.competence, count(DISTINCT c.utilisateur_id) AS n FROM competence_profil c
+				JOIN profil p ON p.utilisateur_id = c.utilisateur_id
+				WHERE p.publie AND c.competence IN (:competences) GROUP BY c.competence
+				""", new MapSqlParameterSource("competences", competences),
+				ligne -> {
+					nombres.put(ligne.getString("competence"), ligne.getLong("n"));
+				});
+		return nombres;
+	}
+
 	private List<Resume> lire(String condition, MapSqlParameterSource params, int limite) {
 		record Ligne(UUID id, String pays, String ville, String disponibilite, Integer heures) {
 		}

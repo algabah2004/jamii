@@ -52,9 +52,12 @@ class DemandesController {
 
 	private final Recommandations recommandations;
 
-	DemandesController(GestionDemandes gestion, Recommandations recommandations) {
+	private final WebhookSystalink webhook;
+
+	DemandesController(GestionDemandes gestion, Recommandations recommandations, WebhookSystalink webhook) {
 		this.gestion = gestion;
 		this.recommandations = recommandations;
+		this.webhook = webhook;
 	}
 
 	@PostMapping("/api/demandes")
@@ -125,6 +128,9 @@ class DemandesController {
 
 	private Demande vue(GestionDemandes.Fiche fiche) {
 		var etat = gestion.orientation(fiche, Instant.now());
+		if (fiche.offresSystalink() || "terminee".equals(etat.statut())) {
+			webhook.signalerSiPret(fiche.id());
+		}
 		var orientation = new EtatDeLaTache(etat.statut(), etat.origine(), etat.resultat(), etat.erreurCode());
 		// `plan` reste pour les écrans existants : c'est le plan de l'orientation.
 		JsonNode plan = etat.resultat() == null || etat.resultat().path("plan").isNull() ? null : etat.resultat().get("plan");

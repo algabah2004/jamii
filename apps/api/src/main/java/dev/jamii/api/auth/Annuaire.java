@@ -45,6 +45,16 @@ public class Annuaire {
 		return depuis == null ? utilisateurs.count() : utilisateurs.countByCreeLeGreaterThanEqual(depuis);
 	}
 
+	/**
+	 * L'e-mail d'un compte, **seulement** pour le joindre avec son accord explicite (les clients suivis de Systalink,
+	 * contracts/systalink.yaml) ou pour un contrôle d'accès. Vide pour un compte GitHub sans e-mail connu. Ne jamais
+	 * l'afficher à un autre utilisateur.
+	 */
+	@Transactional(readOnly = true)
+	public Optional<String> emailDeContact(UUID id) {
+		return utilisateurs.findById(id).map(Utilisateur::email).filter(e -> !e.isBlank());
+	}
+
 	private static Compte enCompte(Utilisateur u) {
 		return new Compte(u.id(), u.nom(), u.avatarUrl(), u.loginGithub());
 	}
