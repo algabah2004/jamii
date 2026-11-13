@@ -28,7 +28,9 @@ final class Vues {
 	record Langage(String nom, BigDecimal part) {
 	}
 
-	record CompetenceProfil(String competence, String source) {
+	/** `niveau` et `preuves` : seulement pour la source `ia`, absents sinon. */
+	@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY)
+	record CompetenceProfil(String competence, String source, String niveau, List<String> preuves) {
 	}
 
 	record DepotGithub(String nom, String url, String description, String langage, int etoiles, Instant misAJourLe) {
@@ -53,27 +55,38 @@ final class Vues {
 					List.of(), p.misAJourLe());
 		}
 
-		/** Une compétence n'apparaît qu'une fois : si GitHub la montre, c'est la source la plus parlante. */
+		/**
+		 * Une compétence n'apparaît qu'une fois, avec la source la plus parlante : celle gardée de la carte IA (niveau
+		 * et preuves), puis GitHub, puis la déclaration.
+		 */
 		private static List<CompetenceProfil> competences(dev.jamii.api.profils.Profil p) {
-			var parNom = new java.util.TreeMap<String, String>();
-			p.competences().forEach(c -> parNom.merge(c.competence(), c.source(),
-					(a, b) -> "github".equals(a) || "github".equals(b) ? "github" : a));
-			return parNom.entrySet().stream()
-				.sorted(Comparator.comparing((java.util.Map.Entry<String, String> e) -> !"github".equals(e.getValue()))
-					.thenComparing(java.util.Map.Entry::getKey))
-				.map(e -> new CompetenceProfil(e.getKey(), e.getValue()))
+			var parNom = new java.util.TreeMap<String, dev.jamii.api.profils.Profil.CompetenceProfil>();
+			p.competences().forEach(c -> parNom.merge(c.competence(), c, (a, b) -> rang(a) <= rang(b) ? a : b));
+			return parNom.values()
+				.stream()
+				.sorted(Comparator.comparingInt(ProfilPublic::rang)
+					.thenComparing(dev.jamii.api.profils.Profil.CompetenceProfil::competence))
+				.map(c -> new CompetenceProfil(c.competence(), c.source(), c.niveau(), c.listePreuves()))
 				.toList();
+		}
+
+		private static int rang(dev.jamii.api.profils.Profil.CompetenceProfil c) {
+			return switch (c.source()) {
+				case "ia" -> 0;
+				case "github" -> 1;
+				default -> 2;
+			};
 		}
 
 	}
 
 	/** Schéma MonProfil : le profil, plus ce que moi seul vois. */
 	record MonProfil(@JsonUnwrapped ProfilPublic profil, boolean publie, boolean afficherResumeIa, String resumeIaPropose,
-			Generation generation, int version) {
+			List<CartesIa.Proposee> competencesProposees, Generation generation, int version) {
 
 		static MonProfil depuis(dev.jamii.api.profils.Profil p, Compte compte) {
 			return new MonProfil(ProfilPublic.depuis(p, compte), p.publie(), p.afficherResumeIa(), p.resumeIa(),
-					Generation.depuis(p), p.version());
+					p.competencesProposees(), Generation.depuis(p), p.version());
 		}
 
 	}

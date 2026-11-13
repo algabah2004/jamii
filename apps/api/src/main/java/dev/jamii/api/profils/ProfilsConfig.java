@@ -1,6 +1,7 @@
 package dev.jamii.api.profils;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.util.concurrent.Executors;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -29,11 +30,23 @@ class ProfilsConfig {
 		};
 	}
 
+	/** IA_FOURNISSEUR, comme pour le plan des demandes : simule (par défaut) ou service. */
 	@Bean
-	GenerationProfils generationProfils(ProfilRepository profils, Annuaire comptes, SourceGithub github,
+	CartesIa cartesIa(@Value("${jamii.ia.fournisseur:simule}") String fournisseur, @Value("${jamii.ia.url:}") String url,
+			@Value("${jamii.ia.jeton:}") String jeton, @Value("${jamii.ia.delai:3s}") Duration delai) {
+		return switch (fournisseur) {
+			case "simule" -> new CartesIaSimulees();
+			// Moins que GENERATION_PERDUE : la génération se termine toujours avant d'être tenue pour perdue.
+			case "service" -> new CartesIaHttp(url, jeton, delai, Duration.ofSeconds(75), Duration.ofSeconds(2));
+			default -> throw new IllegalStateException("IA_FOURNISSEUR inconnu : " + fournisseur + " (simule ou service)");
+		};
+	}
+
+	@Bean
+	GenerationProfils generationProfils(ProfilRepository profils, Annuaire comptes, SourceGithub github, CartesIa cartes,
 			PlatformTransactionManager transactions) {
 		// Un fil virtuel par génération : il attend surtout GitHub, et ne coûte presque rien pendant ce temps.
-		return new GenerationProfils(profils, comptes, github, new TransactionTemplate(transactions),
+		return new GenerationProfils(profils, comptes, github, cartes, new TransactionTemplate(transactions),
 				Executors.newVirtualThreadPerTaskExecutor(), Clock.systemUTC());
 	}
 

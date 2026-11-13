@@ -5,7 +5,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
@@ -37,6 +39,8 @@ class GenerationProfils {
 
 	private final SourceGithub github;
 
+	private final CartesIa cartes;
+
 	private final TransactionTemplate transactions;
 
 	private final Executor executeur;
@@ -46,11 +50,12 @@ class GenerationProfils {
 	/** Limite par compte, en mémoire : suffisant avec une seule instance de l'API (à revoir si on en lance plusieurs). */
 	private final Map<UUID, Deque<Instant>> lancements = new ConcurrentHashMap<>();
 
-	GenerationProfils(ProfilRepository profils, Annuaire comptes, SourceGithub github, TransactionTemplate transactions,
-			Executor executeur, Clock horloge) {
+	GenerationProfils(ProfilRepository profils, Annuaire comptes, SourceGithub github, CartesIa cartes,
+			TransactionTemplate transactions, Executor executeur, Clock horloge) {
 		this.profils = profils;
 		this.comptes = comptes;
 		this.github = github;
+		this.cartes = cartes;
 		this.transactions = transactions;
 		this.executeur = executeur;
 		this.horloge = horloge;
@@ -102,8 +107,10 @@ class GenerationProfils {
 
 	void executer(UUID utilisateurId, String login) {
 		AnalyseGithub.Resultat resultat;
+		List<SourceGithub.Depot> depots;
 		try {
-			resultat = AnalyseGithub.analyser(github.depotsPublics(login));
+			depots = github.depotsPublics(login);
+			resultat = AnalyseGithub.analyser(depots);
 		}
 		catch (SourceGithub.CompteIntrouvable e) {
 			terminerEnEchec(utilisateurId, "github_refus");
@@ -115,8 +122,31 @@ class GenerationProfils {
 			terminerEnEchec(utilisateurId, "github_indisponible");
 			return;
 		}
-		transactions.executeWithoutResult(statut -> profils.findById(utilisateurId)
-			.ifPresent(p -> p.appliquerGithub(resultat, horloge.instant())));
+		List<CartesIa.Proposee> carte = carte(utilisateurId, depots, resultat);
+		transactions.executeWithoutResult(statut -> profils.findById(utilisateurId).ifPresent(p -> {
+			p.appliquerGithub(resultat, horloge.instant());
+			p.proposerCompetences(carte);
+		}));
+	}
+
+	/**
+	 * La carte de compétences proposée par l'IA, à partir des seuls faits publics. Si l'IA ne répond pas, le profil
+	 * est quand même généré, sans carte : l'IA aide, elle ne bloque jamais.
+	 */
+	private List<CartesIa.Proposee> carte(UUID utilisateurId, List<SourceGithub.Depot> depots,
+			AnalyseGithub.Resultat resultat) {
+		Set<String> declarees = transactions.execute(statut -> profils.findById(utilisateurId)
+			.map(p -> p.competences().stream().filter(c -> "declaree".equals(c.source())).map(Profil.CompetenceProfil::competence)
+				.collect(java.util.stream.Collectors.toSet()))
+			.orElse(Set.of()));
+		try {
+			return cartes.proposer(UUID.randomUUID(), CartesIa.entree(depots, resultat.langages(), declarees));
+		}
+		catch (RuntimeException e) {
+			LOG.warn("Carte de compétences du profil {} : service IA indisponible ({})", utilisateurId,
+					e.getClass().getSimpleName());
+			return List.of();
+		}
 	}
 
 	private void terminerEnEchec(UUID utilisateurId, String erreur) {

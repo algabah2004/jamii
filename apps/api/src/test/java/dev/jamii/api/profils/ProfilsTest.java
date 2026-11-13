@@ -163,6 +163,53 @@ class ProfilsTest {
 		assertThat(mvc.get().uri("/api/me/profil").with(aicha)).bodyJson().extractingPath("$.pays").isNull();
 	}
 
+	// ---------- Carte de compétences proposée par l'IA ----------
+
+	@Test
+	void la_carte_proposee_reste_privee_jusqu_a_ce_que_je_garde_une_competence() {
+		UUID idNana = creerCompte("Nana", "nana");
+		var nana = connecte(idNana);
+		String profil = contenu(mvc.get().uri("/api/me/profil").with(profilGenere(nana)).exchange());
+
+		assertThat(JsonPath.<java.util.List<String>>read(profil, "$.competencesProposees[*].competence"))
+			.containsExactly("dart", "typescript", "html");
+		assertThat(JsonPath.<String>read(profil, "$.competencesProposees[0].niveau")).isEqualTo("intermediaire");
+		assertThat(JsonPath.<java.util.List<String>>read(profil, "$.competencesProposees[0].preuves"))
+			.as("les preuves sont des dépôts publics, jamais le fork").containsExactly("marche-facile", "agri-alertes");
+		assertThat(JsonPath.<java.util.List<String>>read(profil, "$.competences[?(@.source=='ia')].competence")).isEmpty();
+
+		MvcTestResult garde = patch(nana, "{\"competencesIaRetenues\":[\"dart\"],\"version\":%d}".formatted(version(nana)));
+		assertThat(garde).hasStatusOk();
+		mvc.post().uri("/api/me/profil/publier").with(nana).with(csrf()).exchange();
+
+		String public_ = contenu(mvc.get().uri("/api/profils/{id}", idNana).with(compte("visiteur-carte")).exchange());
+		assertThat(public_).doesNotContain("competencesProposees", "typescript\",\"niveau");
+		assertThat(JsonPath.<java.util.List<String>>read(public_, "$.competences[?(@.source=='ia')].competence"))
+			.containsExactly("dart");
+		assertThat(JsonPath.<java.util.List<String>>read(public_, "$.competences[?(@.source=='ia')].niveau"))
+			.containsExactly("intermediaire");
+		assertThat(JsonPath.<java.util.List<String>>read(public_, "$.competences[?(@.source=='github')].preuves"))
+			.as("niveau et preuves seulement pour ia").isEmpty();
+
+		mvc.post().uri("/api/me/profil/generation").with(nana).with(csrf()).exchange();
+		assertThat(JsonPath.<java.util.List<String>>read(attendreFinGeneration(nana),
+				"$.competences[?(@.source=='ia')].competence")).as("une nouvelle génération garde mon choix").containsExactly("dart");
+
+		assertThat(patch(nana, "{\"competencesIaRetenues\":[],\"version\":%d}".formatted(version(nana)))).hasStatusOk();
+		assertThat(JsonPath.<java.util.List<String>>read(contenu(mvc.get().uri("/api/me/profil").with(nana).exchange()),
+				"$.competences[?(@.source=='ia')]")).isEmpty();
+	}
+
+	@Test
+	void on_ne_garde_que_ce_que_l_ia_a_propose() {
+		var omar = profilGenere("omar");
+		MvcTestResult refus = patch(omar,
+				"{\"competencesIaRetenues\":[\"dart\",\"cobol\"],\"version\":%d}".formatted(version(omar)));
+		assertThat(refus).hasStatus(HttpStatus.BAD_REQUEST);
+		assertThat(refus).bodyJson().extractingPath("$.erreurs[*].champ").asArray().containsExactly("competencesIaRetenues[1]");
+		assertThat(refus).bodyJson().extractingPath("$.erreurs[0].code").isEqualTo("non_proposee");
+	}
+
 	// ---------- Publication et confidentialité ----------
 
 	@Test
