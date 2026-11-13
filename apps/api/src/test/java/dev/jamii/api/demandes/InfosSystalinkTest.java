@@ -182,11 +182,11 @@ class InfosSystalinkTest {
 		});
 		serveur.start();
 		try {
-			String secret = "secret-partage-0123456789";
+			String cleDeTest = UUID.randomUUID().toString();
 			var horloge = new org.springframework.beans.factory.support.StaticListableBeanFactory();
 			horloge.addBean("horloge", Clock.fixed(Instant.parse("2026-11-13T10:00:00Z"), ZoneOffset.UTC));
 			var webhook = new WebhookSystalink(base, infos, json, horloge.getBeanProvider(Clock.class),
-					"http://127.0.0.1:" + serveur.getAddress().getPort() + "/jamii", secret);
+					"http://127.0.0.1:" + serveur.getAddress().getPort() + "/jamii", cleDeTest);
 			UtilisateurConnecte awa = utilisateur("Awa", "awa." + UUID.randomUUID() + "@ex.sn", null);
 			UUID id = demande(awa, "commerce", true, "Une boutique veut vendre en ligne");
 
