@@ -1,0 +1,353 @@
+openapi: 3.1.0
+info:
+  title: Jamii · Cercles (Tech Tontine)
+  version: 0.1.0
+  summary: Un cercle de 4 à 6 développeurs construit, à tour de rôle, le projet de chacun.
+  description: |
+    Responsable : @sowibrr (bloc #17). Règles communes : docs/api-conventions.md. Plan : docs/priorites.md, demande #98.
+
+    **Le principe** : un **tour est un projet qui existe déjà** (`projets.yaml`). Le cercle n'ajoute qu'une liste de
+    membres et un ordre de passage. L'équipe, les tâches, les jalons, les avis, la mise en ligne et la vitrine d'un tour
+    sont ceux du projet : on les lit et on les modifie avec les routes de `projets.yaml`, à partir du `projetId` du tour.
+
+    **Le déroulement** :
+    1. Quelqu'un crée un cercle (`taille` de 4 à 6) et en devient le **créateur** et le premier membre.
+    2. Les autres le rejoignent (`ouvert`). Chacun dépose son **idée** (titre et description).
+    3. Quand le cercle est complet et que chacun a déposé son idée, le créateur **tire l'ordre au sort**, une seule fois.
+       Le cercle passe à `en_cours` et le projet du tour 1 est créé, avec comme porteur le membre du rang 1, tous les
+       membres dans l'équipe, et son idée comme titre et description.
+    4. Le tour avance. Quand l'équipe a fini, on **livre** le tour : le suivant s'ouvre et son projet est créé. Après le
+       dernier tour, le cercle passe à `termine`.
+
+    **Le tirage** est fait par le serveur, avec un générateur aléatoire cryptographique (`SecureRandom`), jamais par le
+    navigateur. Il est **enregistré** : `tirage.effectueLe` et `tirage.parId` disent quand et par qui, et l'ordre ne
+    change plus jamais.
+
+    **Droits** : tout utilisateur connecté voit un cercle (nom, ville, membres, tours). Seuls les membres du cercle voient
+    les **idées** des autres. Seul le créateur tire au sort. Le tour peut être livré par le membre à qui il appartient
+    ou par le créateur.
+
+    **CSRF** : toute requête POST, PUT, PATCH ou DELETE envoie l'en-tête `X-XSRF-TOKEN` (socle.yaml, schéma `csrf`).
+
+    **Codes d'erreur métier** (champ `code` de `Erreur`, réponse 409) : `cercle_complet`, `deja_membre`,
+    `tirage_deja_fait`, `cercle_incomplet`, `idees_manquantes`, `tour_non_en_cours`, `cercle_termine`.
+
+    **Dépôt de code** : chaque tour peut avoir un dépôt Git (`depot`), sur le Gitea de Jamii ou sur GitHub selon la
+    configuration du serveur (`DEPOT_CODE`). `depot` vaut `null` tant qu'il n'existe pas : le front n'affiche alors rien.
+servers:
+  - url: http://localhost:8080
+
+security:
+  - session: []
+
+tags:
+  - { name: cercles, description: 'Créer, trouver et rejoindre un cercle.' }
+  - { name: tirage, description: 'Déposer son idée, tirer l''ordre au sort.' }
+  - { name: tours, description: Faire avancer les tours. }
+
+paths:
+  /api/cercles:
+    get:
+      tags: [cercles]
+      operationId: listerCercles
+      summary: Mes cercles, ou les cercles qui accueillent encore des membres (les plus récents d'abord)
+      parameters:
+        - $ref: './socle.yaml#/components/parameters/Curseur'
+        - $ref: './socle.yaml#/components/parameters/Limite'
+        - name: portee
+          in: query
+          description: '`mes` : les cercles dont je suis membre. `ouverts` : ceux qui ont encore de la place et pas encore de tirage (par défaut).'
+          schema: { type: string, enum: [mes, ouverts], default: ouverts }
+      responses:
+        '200':
+          description: Une page de cercles.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: './socle.yaml#/components/schemas/Page'
+                  - properties: { elements: { type: array, items: { $ref: '#/components/schemas/CercleResume' } } }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+    post:
+      tags: [cercles]
+      operationId: creerCercle
+      summary: Créer un cercle (j'en deviens le créateur et le premier membre)
+      description: Limité à 5 cercles créés par jour et par personne.
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreationCercle' }
+      responses:
+        '201':
+          description: Cercle créé, au statut `ouvert`.
+          headers: { Location: { schema: { type: string } } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Cercle' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '429': { $ref: './socle.yaml#/components/responses/TropDeRequetes' }
+
+  /api/cercles/{cercleId}:
+    parameters:
+      - $ref: '#/components/parameters/CercleId'
+    get:
+      tags: [cercles]
+      operationId: lireCercle
+      summary: Le cercle, ses membres, l'ordre de passage, le tour en cours et le projet de chaque tour
+      responses:
+        '200':
+          description: Le cercle.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Cercle' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+
+  /api/cercles/{cercleId}/membres:
+    parameters:
+      - $ref: '#/components/parameters/CercleId'
+    post:
+      tags: [cercles]
+      operationId: rejoindreCercle
+      summary: Rejoindre un cercle
+      description: |
+        Sans corps. Possible tant que le cercle est `ouvert` et pas complet.
+        `409 cercle_complet` si la dernière place vient d'être prise, `409 deja_membre`, ou `409 tirage_deja_fait`
+        si l'ordre est déjà tiré (le cercle est alors fermé aux nouveaux membres).
+      security:
+        - session: []
+          csrf: []
+      responses:
+        '200':
+          description: Tu es membre. Le cercle mis à jour.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Cercle' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/cercles/{cercleId}/membres/moi/idee:
+    parameters:
+      - $ref: '#/components/parameters/CercleId'
+    put:
+      tags: [tirage]
+      operationId: deposerIdee
+      summary: Déposer (ou remplacer) mon idée pour ce cercle
+      description: |
+        Membres seulement. L'idée devient le titre et la description du projet de mon tour. Elle se remplace tant que
+        le tirage n'est pas fait ; après, `409 tirage_deja_fait`.
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Idee' }
+      responses:
+        '200':
+          description: Idée enregistrée.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MembreCercle' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { description: Tu n'es pas membre de ce cercle., $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/cercles/{cercleId}/tirage:
+    parameters:
+      - $ref: '#/components/parameters/CercleId'
+    post:
+      tags: [tirage]
+      operationId: tirerOrdre
+      summary: Tirer l'ordre de passage au sort (le créateur, une seule fois)
+      description: |
+        Sans corps. Le serveur mélange les membres avec `SecureRandom`, enregistre l'ordre et le moment du tirage, puis
+        crée le projet du tour 1. Conditions, dans cet ordre :
+        - `403` si tu n'es pas le créateur ;
+        - `409 tirage_deja_fait` si l'ordre est déjà tiré (rien ne change) ;
+        - `409 cercle_incomplet` s'il manque des membres (`taille` n'est pas atteinte) ;
+        - `409 idees_manquantes` si un membre n'a pas déposé d'idée.
+      security:
+        - session: []
+          csrf: []
+      responses:
+        '200':
+          description: Ordre tiré. Le cercle est `en_cours`, le tour 1 a son projet.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Cercle' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/cercles/{cercleId}/tours/{numero}/livrer:
+    parameters:
+      - $ref: '#/components/parameters/CercleId'
+      - name: numero
+        in: path
+        required: true
+        description: Le numéro du tour, à partir de 1. Ce doit être le tour en cours.
+        schema: { type: integer, minimum: 1, maximum: 6 }
+    post:
+      tags: [tours]
+      operationId: livrerTour
+      summary: Livrer le tour en cours (ce qui ouvre le suivant)
+      description: |
+        Sans corps. Le tour passe à `livre`, le suivant à `en_cours` et son projet est créé. Après le dernier tour, le
+        cercle passe à `termine`. Réservé au membre à qui appartient le tour, ou au créateur (`403` sinon).
+        `409 tour_non_en_cours` si ce n'est pas le tour en cours (déjà livré, ou pas encore ouvert), et
+        `409 cercle_termine` si tout est déjà livré. Rejouer la même requête ne livre jamais deux tours : la
+        seconde répond `409`.
+      security:
+        - session: []
+          csrf: []
+      responses:
+        '200':
+          description: Tour livré. Le cercle mis à jour.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Cercle' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+
+components:
+  securitySchemes:
+    session: { $ref: './socle.yaml#/components/securitySchemes/session' }
+    csrf: { $ref: './socle.yaml#/components/securitySchemes/csrf' }
+
+  parameters:
+    CercleId:
+      name: cercleId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+  schemas:
+    StatutCercle:
+      type: string
+      description: '`ouvert` : on rejoint et on dépose son idée. `en_cours` : l''ordre est tiré, les tours se suivent. `termine` : tous les tours sont livrés.'
+      enum: [ouvert, en_cours, termine]
+
+    StatutTour:
+      type: string
+      enum: [a_venir, en_cours, livre]
+
+    CreationCercle:
+      type: object
+      additionalProperties: false
+      required: [nom, ville, taille]
+      properties:
+        nom: { type: string, minLength: 3, maxLength: 80, examples: ['Cercle de Dakar'] }
+        ville: { type: string, minLength: 2, maxLength: 80, description: Texte libre. }
+        taille: { type: integer, minimum: 4, maximum: 6, description: 'Nombre de membres, créateur compris.' }
+
+    Idee:
+      type: object
+      additionalProperties: false
+      required: [titre, description]
+      properties:
+        titre: { type: string, minLength: 3, maxLength: 120 }
+        description: { type: string, minLength: 10, maxLength: 5000, description: 'Texte brut, affiché échappé.' }
+
+    CercleResume:
+      type: object
+      required: [id, nom, ville, taille, statut, nombreMembres, createur, creeLe]
+      properties:
+        id: { type: string, format: uuid }
+        nom: { type: string }
+        ville: { type: string }
+        taille: { type: integer, minimum: 4, maximum: 6 }
+        statut: { $ref: '#/components/schemas/StatutCercle' }
+        nombreMembres: { type: integer, minimum: 1, maximum: 6 }
+        createur: { $ref: './projets.yaml#/components/schemas/PersonneResume' }
+        creeLe: { type: string, format: date-time }
+
+    Cercle:
+      allOf:
+        - $ref: '#/components/schemas/CercleResume'
+        - type: object
+          required: [membres, tours, tourEnCours, tirage, moi]
+          properties:
+            membres:
+              type: array
+              description: Dans l'ordre de passage une fois le tirage fait, sinon dans l'ordre d'arrivée.
+              items: { $ref: '#/components/schemas/MembreCercle' }
+            tours:
+              type: array
+              description: Vide avant le tirage. Ensuite, un tour par membre, dans l'ordre.
+              items: { $ref: '#/components/schemas/Tour' }
+            tourEnCours: { type: [integer, 'null'], minimum: 1, description: '`null` avant le tirage et après le dernier tour.' }
+            tirage:
+              oneOf:
+                - $ref: '#/components/schemas/Tirage'
+                - type: 'null'
+            moi:
+              type: object
+              description: Ma place dans ce cercle, pour afficher les bons boutons (les droits restent vérifiés par le serveur).
+              required: [estCreateur, estMembre]
+              properties:
+                estCreateur: { type: boolean }
+                estMembre: { type: boolean }
+
+    MembreCercle:
+      type: object
+      required: [personne, rang, aDeposeIdee, rejointLe]
+      properties:
+        personne: { $ref: './projets.yaml#/components/schemas/PersonneResume' }
+        rang: { type: [integer, 'null'], minimum: 1, maximum: 6, description: Ordre de passage. `null` avant le tirage. }
+        aDeposeIdee: { type: boolean }
+        idee:
+          description: Visible seulement pour les membres du cercle. Absente pour les autres.
+          oneOf:
+            - $ref: '#/components/schemas/Idee'
+            - type: 'null'
+        rejointLe: { type: string, format: date-time }
+
+    Tour:
+      type: object
+      required: [numero, statut, beneficiaire, projetId, depot, livreLe]
+      properties:
+        numero: { type: integer, minimum: 1, maximum: 6 }
+        statut: { $ref: '#/components/schemas/StatutTour' }
+        beneficiaire:
+          description: Le membre dont le projet est construit pendant ce tour (le porteur du projet).
+          $ref: './projets.yaml#/components/schemas/PersonneResume'
+        projetId:
+          type: [string, 'null']
+          format: uuid
+          description: Le projet du tour (`projets.yaml`). `null` tant que le tour est `a_venir`.
+        depot:
+          description: Le dépôt Git du tour. `null` tant qu'il n'existe pas.
+          oneOf:
+            - $ref: '#/components/schemas/Depot'
+            - type: 'null'
+        livreLe: { type: [string, 'null'], format: date-time }
+
+    Depot:
+      type: object
+      required: [fournisseur, url, cloneUrl]
+      properties:
+        fournisseur: { type: string, enum: [gitea, github] }
+        url: { type: string, format: uri, pattern: '^https://', description: La page du dépôt. }
+        cloneUrl: { type: string, format: uri, pattern: '^https://', description: L'adresse à cloner. }
+
+    Tirage:
+      type: object
+      description: Quand et par qui l'ordre a été tiré. Enregistré, jamais modifié.
+      required: [effectueLe, parId]
+      properties:
+        effectueLe: { type: string, format: date-time }
+        parId: { type: string, format: uuid, description: Le créateur du cercle. }
