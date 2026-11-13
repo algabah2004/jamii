@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import dev.jamii.api.auth.Annuaire;
 import dev.jamii.api.auth.Compte;
 import dev.jamii.api.auth.UtilisateurConnecte;
+import dev.jamii.api.demandes.Demandes;
 
 /** POST /api/projets et GET /api/projets/{projetId} (contracts/projets.yaml). */
 @RestController
@@ -49,10 +51,13 @@ class ProjetsController {
 
 	private final Annuaire annuaire;
 
-	ProjetsController(GestionProjets gestion, Projets projets, Annuaire annuaire) {
+	private final Demandes demandes;
+
+	ProjetsController(GestionProjets gestion, Projets projets, Annuaire annuaire, Demandes demandes) {
 		this.gestion = gestion;
 		this.projets = projets;
 		this.annuaire = annuaire;
+		this.demandes = demandes;
 	}
 
 	@PostMapping("/api/projets")
@@ -79,11 +84,22 @@ class ProjetsController {
 		if (!erreurs.isEmpty()) {
 			return probleme(HttpStatus.BAD_REQUEST, "validation", "Certains champs sont invalides", erreurs);
 		}
-		if (!idee) {
-			// Les demandes de PME n'existent pas encore : aucune `demandeId` ne peut être connue (contrat : 404).
-			return introuvable();
+		UUID id;
+		if (idee) {
+			id = gestion.creerDepuisUneIdee(moi.id(), titre, description, Instant.now());
 		}
-		UUID id = gestion.creerDepuisUneIdee(moi.id(), titre, description, Instant.now());
+		else {
+			// Une demande n'est visible que de son auteur : pour tout autre, elle est inconnue (contrat : 404).
+			if (!demandes.estAuteur(demande.demandeId(), moi.id())) {
+				return introuvable();
+			}
+			try {
+				id = gestion.creerDepuisUneDemande(moi.id(), titre, description, demande.demandeId(), Instant.now());
+			}
+			catch (DuplicateKeyException dejaPrise) {
+				return probleme(HttpStatus.CONFLICT, "demande_deja_prise", "Une équipe a déjà un projet actif sur cette demande", null);
+			}
+		}
 		return ResponseEntity.created(URI.create("/api/projets/" + id)).body(charger(id, moi.id()));
 	}
 

@@ -61,6 +61,12 @@ jamii:
     fournisseur: ${EMAIL_FOURNISSEUR:simule}
     # Local seulement : affiche le lien de connexion dans la console. Jamais en production (le lien est un mot de passe).
     afficher-lien: ${EMAIL_AFFICHER_LIEN:false}
+  # Service IA de l'équipe (contracts/ia.yaml), appelé par l'API seulement. Plan des demandes de PME (#88).
+  ia:
+    # simule (sans réseau : local, tests, démo) ou service (le service IA, en HTTP avec le jeton interne).
+    fournisseur: ${IA_FOURNISSEUR:simule}
+    url: ${IA_URL:}
+    jeton: ${IA_JETON_INTERNE:}
   # Module profils (#19) : lecture des données publiques GitHub pour générer le profil.
   github:
     # github (l'API de GitHub) ou simule (données factices : tests, démo sans réseau).
