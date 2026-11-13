@@ -162,8 +162,10 @@ paths:
       operationId: supprimerMonCompte
       summary: Supprime mon compte et mes données personnelles
       description: |
-        La session est fermée tout de suite. Chaque module efface ou anonymise ensuite ses données
-        (tâche de fond). Les contenus utiles aux autres (réponses acceptées) restent, signés « compte supprimé ».
+        Tout est fait avant la réponse, en une seule transaction : rien ne reste à moitié supprimé.
+        Les projets et cercles du compte passent au membre arrivé le plus tôt ; ceux où il était seul sont
+        supprimés. Toutes ses sessions sont fermées, sur tous les appareils. Les contenus utiles aux autres
+        (publications, réponses) restent, signés « compte supprimé ».
       security:
         - session: []
           csrf: []
