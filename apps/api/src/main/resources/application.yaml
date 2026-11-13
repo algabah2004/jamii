@@ -73,6 +73,13 @@ jamii:
     source: ${GITHUB_SOURCE:github}
     # Facultatif mais conseillé en production : sans jeton, GitHub limite à 60 requêtes par heure pour tout le serveur.
     jeton: ${GITHUB_TOKEN:}
+  # Dépôt Git de chaque tour de cercle (module cercles). aucun : les tours n'ont pas de dépôt (depot: null).
+  depot-code:
+    fournisseur: ${DEPOT_CODE:aucun}
+    github:
+      organisation: ${GITHUB_DEPOTS_ORGANISATION:}
+      jeton: ${GITHUB_DEPOTS_JETON:}
+      prives: ${GITHUB_DEPOTS_PRIVES:false}
   # Module communautes (#18) : qui propose une réponse à une question.
   communautes:
     # simulee (sans réseau : local, tests, démo) ou aucune (la question reste ouverte aux humains).
