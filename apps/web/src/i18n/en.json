@@ -177,6 +177,15 @@
     "parPays": "Members by country",
     "autresPays": "Other countries",
     "seuilPays": "A country appears once it has 5 members, so that no one can be identified.",
+    "cercles": {
+      "titre": "Active circles",
+      "intro": "Circles of 4 to 6 developers build each member's project, one turn at a time. Every delivered turn is a project completed as a team.",
+      "actifs": "Active circles",
+      "termines": "no circle completed | 1 circle completed | {n} circles completed",
+      "toursLivres": "Delivered turns",
+      "membres": "Circle members",
+      "parPays": "Where their members come from"
+    },
     "moments": "Systalink services offered",
     "momentsIntro": "Jamii offers a Systalink service at the right moment: DataCloud to put a project online, Orion for a small business website… Here is how often, and how many people followed it.",
     "service": "Service",

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { lirePeriode, momentsTries, nomPays, pourcentage } from './calculs'
+import { lignesPays, lirePeriode, momentsTries, nomPays, pourcentage } from './calculs'
 import { tableauDemo } from '../../mocks/handlers'
 
 describe('pourcentage', () => {
@@ -36,5 +36,18 @@ describe('nomPays', () => {
   it('traduit le code ISO dans la langue de l’interface', () => {
     expect(nomPays('SN', 'fr')).toBe('Sénégal')
     expect(nomPays('KE', 'en')).toBe('Kenya')
+  })
+})
+
+describe('lignesPays', () => {
+  it('trie du plus grand au plus petit et met « Autres pays » en dernier, marqué comme regroupement', () => {
+    const lignes = lignesPays([{ pays: 'CI', nombre: 6 }, { pays: 'SN', nombre: 9 }], 3, 'fr', 'Autres pays')
+    expect(lignes.map((l) => l.nombre)).toEqual([9, 6, 3])
+    expect(lignes[0]!.nom).toBe('Sénégal')
+    expect(lignes.at(-1)).toEqual({ nom: 'Autres pays', nombre: 3, regroupe: true })
+  })
+
+  it("n'ajoute pas de ligne « Autres pays » vide", () => {
+    expect(lignesPays([{ pays: 'SN', nombre: 5 }], 0, 'fr', 'Autres pays')).toHaveLength(1)
   })
 })

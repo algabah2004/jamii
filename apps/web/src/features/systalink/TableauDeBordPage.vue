@@ -4,7 +4,8 @@ import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { api } from '../../api/client'
-import { PERIODES, lirePeriode, momentsTries, nomPays, pourcentage, type Periode, type TableauDeBord } from './calculs'
+import { PERIODES, lignesPays, lirePeriode, momentsTries, pourcentage, type Periode, type TableauDeBord } from './calculs'
+import ListePays from './ListePays.vue'
 
 const { t, locale, d } = useI18n()
 const route = useRoute()
@@ -35,14 +36,16 @@ const partDatacloud = computed(() =>
   tableau.value ? pourcentage(tableau.value.projets.surDatacloud, tableau.value.projets.enLigne) : null,
 )
 const moments = computed(() => (tableau.value ? momentsTries(tableau.value) : []))
-const pays = computed(() => {
-  if (!tableau.value) return []
-  const { parPays, autres } = tableau.value.inscrits
-  const lignes = parPays.map((p) => ({ nom: nomPays(p.pays, locale.value), nombre: p.nombre, regroupe: false }))
-  if (autres > 0) lignes.push({ nom: t('systalink.autresPays'), nombre: autres, regroupe: true })
-  return lignes
-})
-const maxPays = computed(() => Math.max(1, ...pays.value.map((p) => p.nombre)))
+const pays = computed(() =>
+  tableau.value
+    ? lignesPays(tableau.value.inscrits.parPays, tableau.value.inscrits.autres, locale.value, t('systalink.autresPays'))
+    : [],
+)
+const paysCercles = computed(() =>
+  tableau.value
+    ? lignesPays(tableau.value.cercles.membres.parPays, tableau.value.cercles.membres.autres, locale.value, t('systalink.autresPays'))
+    : [],
+)
 </script>
 
 <template>
@@ -97,6 +100,33 @@ const maxPays = computed(() => Math.max(1, ...pays.value.map((p) => p.nombre)))
         </dl>
       </div>
 
+      <section class="carte bloc cercles" aria-labelledby="cercles" data-test="cercles">
+        <div class="cercles__texte">
+          <h2 id="cercles">{{ t('systalink.cercles.titre') }}</h2>
+          <p class="texte-discret">{{ t('systalink.cercles.intro') }}</p>
+          <dl class="cercles__chiffres">
+            <div>
+              <dt>{{ t('systalink.cercles.actifs') }}</dt>
+              <dd class="tuiles__nombre">{{ tableau.cercles.actifs }}</dd>
+              <dd class="note">{{ t('systalink.cercles.termines', { n: tableau.cercles.termines }, tableau.cercles.termines) }}</dd>
+            </div>
+            <div>
+              <dt>{{ t('systalink.cercles.toursLivres') }}</dt>
+              <dd class="tuiles__nombre">{{ tableau.cercles.toursLivres }}</dd>
+              <dd class="tuiles__evolution">{{ t('systalink.nouveaux', { n: tableau.cercles.nouveauxToursLivres }) }}</dd>
+            </div>
+            <div>
+              <dt>{{ t('systalink.cercles.membres') }}</dt>
+              <dd class="tuiles__nombre">{{ tableau.cercles.membres.total }}</dd>
+            </div>
+          </dl>
+        </div>
+        <div v-if="paysCercles.length" class="cercles__pays">
+          <h3>{{ t('systalink.cercles.parPays') }}</h3>
+          <ListePays :lignes="paysCercles" data-test="pays-cercles" />
+        </div>
+      </section>
+
       <div class="details">
         <section class="carte bloc" aria-labelledby="moments">
           <h2 id="moments">{{ t('systalink.moments') }}</h2>
@@ -128,13 +158,8 @@ const maxPays = computed(() => Math.max(1, ...pays.value.map((p) => p.nombre)))
 
         <section class="carte bloc" aria-labelledby="par-pays">
           <h2 id="par-pays">{{ t('systalink.parPays') }}</h2>
-          <ul class="pays" data-test="pays">
-            <li v-for="p in pays" :key="p.nom" :class="{ regroupe: p.regroupe }">
-              <span>{{ p.nom }}</span>
-              <span class="jauge" aria-hidden="true"><span :style="{ width: `${(p.nombre / maxPays) * 100}%` }" /></span>
-              <span class="nombre">{{ p.nombre }}</span>
-            </li>
-          </ul>
+          <ListePays :lignes="pays" data-test="pays" />
+
           <p class="note">{{ t('systalink.seuilPays') }}</p>
         </section>
       </div>
@@ -174,6 +199,17 @@ const maxPays = computed(() => Math.max(1, ...pays.value.map((p) => p.nombre)))
 .note { color: var(--ink-muted); font-size: var(--type-body-sm-size); }
 .calcul { margin-top: var(--space-6); }
 
+/* Les cercles de la Tech Tontine : les chiffres à gauche, d'où viennent leurs membres à droite. */
+.cercles { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); align-items: start; gap: var(--space-6); margin-top: var(--space-6); }
+@media (max-width: 860px) { .cercles { grid-template-columns: 1fr; } }
+.cercles__texte { display: grid; gap: var(--space-3); }
+.cercles__texte > p { margin: 0; }
+.cercles__chiffres { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); margin: 0; }
+.cercles__chiffres dt { color: var(--ink-muted); font-size: var(--type-body-sm-size); font-weight: 600; }
+.cercles__chiffres dd { margin: 0; }
+.cercles__pays { display: grid; gap: var(--space-3); }
+.cercles__pays h3 { margin: 0; font-size: var(--type-body-size); }
+
 table { width: 100%; border-collapse: collapse; }
 th, td { text-align: start; padding: var(--space-3) var(--space-2); border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
 thead th { color: var(--ink-muted); font-size: var(--type-body-sm-size); font-weight: 600; }
@@ -184,10 +220,6 @@ thead th { color: var(--ink-muted); font-size: var(--type-body-sm-size); font-we
 .jauge > span { display: block; height: 100%; background: var(--action); border-radius: var(--radius-pill); }
 /* Orange = la preuve (tokens.json) : un projet en ligne sur DataCloud. */
 .jauge--preuve > span { background: var(--proof); }
-.pays { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--space-3); }
-.pays li { display: grid; grid-template-columns: minmax(6rem, 9rem) 1fr 2.5rem; align-items: center; gap: var(--space-3); }
-/* « Autres pays » est un regroupement, pas un pays : barre neutre. */
-.regroupe .jauge > span { background: var(--line-strong); }
 /* Sur téléphone, la jauge du taux serait illisible : le pourcentage écrit suffit. */
 @media (max-width: 30rem) { .avec-jauge .jauge { display: none; } }
 </style>
