@@ -237,6 +237,11 @@ export interface components {
             resumeIaPropose?: string | null;
             generation: components["schemas"]["Generation"];
             version: number;
+            /**
+             * @description La carte de compétences proposée par l'IA (`ia.yaml`, `analyse_profil`), à la génération du profil.
+             *     Rien n'est public tant que la personne ne l'a pas gardé (`competencesIaRetenues`). Vide si l'IA n'a pas répondu.
+             */
+            competencesProposees?: components["schemas"]["items"][];
         };
         ModificationProfil: {
             bio?: string | null;
@@ -246,6 +251,8 @@ export interface components {
             heuresParSemaine?: number | null;
             competencesDeclarees?: components["schemas"]["Competence"][];
             afficherResumeIa?: boolean;
+            /** @description Les compétences de `competencesProposees` que la personne garde. Remplace la liste entière. */
+            competencesIaRetenues?: components["schemas"]["Competence"][];
             version: number;
         };
         Generation: {
@@ -270,10 +277,17 @@ export interface components {
         CompetenceProfil: {
             competence: components["schemas"]["Competence"];
             /**
-             * @description `github` : déduite des dépôts. `declaree` : ajoutée par la personne.
+             * @description `github` : déduite des dépôts. `declaree` : ajoutée par la personne. `ia` : proposée par l'IA (carte de compétences) et gardée par la personne.
              * @enum {string}
              */
-            source: "github" | "declaree";
+            source: "github" | "declaree" | "ia";
+            /**
+             * @description Seulement pour `ia`.
+             * @enum {string|null}
+             */
+            niveau?: "debutant" | "intermediaire" | "confirme" | null;
+            /** @description Seulement pour `ia` : les dépôts publics qui la prouvent. Affiché « Proposé par l'IA à partir des dépôts publics ». */
+            preuves?: string[];
         };
         ProjetDuProfil: {
             /** Format: uuid */
@@ -347,6 +361,14 @@ export interface components {
         };
         /** @description En minuscules, sans espace inutile (`flutter`, `postgresql`, `ux-design`). */
         Competence: string;
+        items: {
+            competence: components["schemas"]["Competence"];
+            /** @enum {string} */
+            niveau: "debutant" | "intermediaire" | "confirme";
+            /** @description Des noms de dépôts **de l'entrée**, jamais inventés. Une compétence sans preuve est retirée. */
+            preuves: string[];
+            raison: string;
+        };
         ErreurChamp: {
             /** @description Chemin du champ, par exemple `roles[0].titre`. */
             champ: string;
