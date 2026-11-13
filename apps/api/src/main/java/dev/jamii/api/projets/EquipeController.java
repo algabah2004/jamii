@@ -2,6 +2,7 @@ package dev.jamii.api.projets;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -10,7 +11,9 @@ import java.util.UUID;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -23,6 +26,8 @@ import dev.jamii.api.auth.UtilisateurConnecte;
 class EquipeController {
 
 	private static final Set<String> STATUTS_TACHE = Set.of("a_faire", "en_cours", "livree");
+
+	private static final Set<String> CHAMPS_MODIFIABLES = Set.of("titre", "jalonId", "assigneeId", "echeance", "statut", "version");
 
 	record Jalon(UUID id, String titre, LocalDate echeance, String statut, int ordre) {
 	}
@@ -81,12 +86,80 @@ class EquipeController {
 			}
 		});
 		Map<UUID, Compte> comptes = annuaire.lire(assignes);
-		return new PageTaches(page.elements().stream().map(t -> {
-			Compte c = t.assigneeId() == null ? null : comptes.get(t.assigneeId());
-			var personne = c == null ? null : new ProjetsController.PersonneResume(c.id(), c.nom(), c.avatarUrl());
-			return new Tache(t.id(), t.titre(), t.jalonId(), personne, t.statut(), t.echeance(), t.livreeLe(), t.proposeeParIa(),
-					t.version(), t.creeLe());
-		}).toList(), page.curseurSuivant());
+		return new PageTaches(page.elements().stream().map(t -> vue(t, comptes)).toList(), page.curseurSuivant());
+	}
+
+	/** Fusion JSON (RFC 7396) : seuls les champs présents changent ; `version` est obligatoire. */
+	@PatchMapping(path = "/api/projets/{projetId}/taches/{tacheId}", consumes = { "application/merge-patch+json", "application/json" })
+	Tache modifierTache(@PathVariable UUID projetId, @PathVariable UUID tacheId, @RequestBody Map<String, Object> patch,
+			@AuthenticationPrincipal UtilisateurConnecte moi) {
+		List<Map<String, String>> erreurs = new ArrayList<>();
+		for (String cle : patch.keySet()) {
+			if (!CHAMPS_MODIFIABLES.contains(cle)) {
+				erreurs.add(Map.of("champ", cle, "code", "inconnu"));
+			}
+		}
+		String titre = null;
+		if (patch.containsKey("titre")) {
+			titre = patch.get("titre") instanceof String s ? s.strip() : "";
+			if (titre.length() < 3 || titre.length() > 200) {
+				erreurs.add(Map.of("champ", "titre", "code", "longueur_invalide"));
+			}
+		}
+		UUID jalonId = identifiant(patch, "jalonId", erreurs);
+		UUID assigneeId = identifiant(patch, "assigneeId", erreurs);
+		LocalDate echeance = null;
+		if (patch.get("echeance") != null) {
+			try {
+				echeance = LocalDate.parse((String) patch.get("echeance"));
+			}
+			catch (RuntimeException e) {
+				erreurs.add(Map.of("champ", "echeance", "code", "format_invalide"));
+			}
+		}
+		String statut = null;
+		if (patch.containsKey("statut")) {
+			statut = patch.get("statut") instanceof String s ? s : "";
+			if (!STATUTS_TACHE.contains(statut)) {
+				erreurs.add(Map.of("champ", "statut", "code", "valeur_invalide"));
+			}
+		}
+		int version = 0;
+		if (!(patch.get("version") instanceof Integer v)) {
+			erreurs.add(Map.of("champ", "version", "code", patch.containsKey("version") ? "format_invalide" : "obligatoire"));
+		}
+		else {
+			version = v;
+		}
+		if (!erreurs.isEmpty()) {
+			throw ErreurProjets.validation(erreurs);
+		}
+		var modification = new TachesEtJalons.Modification(titre, patch.containsKey("jalonId"), jalonId, patch.containsKey("assigneeId"),
+				assigneeId, patch.containsKey("echeance"), echeance, statut, version);
+		var tache = equipe.modifier(projetId, tacheId, moi.id(), modification, Instant.now());
+		return vue(tache, tache.assigneeId() == null ? Map.of() : annuaire.lire(Set.of(tache.assigneeId())));
+	}
+
+	/** Un identifiant facultatif : absent ou null donnent null ; autre chose qu'un UUID est une erreur. */
+	private static UUID identifiant(Map<String, Object> patch, String champ, List<Map<String, String>> erreurs) {
+		Object valeur = patch.get(champ);
+		if (valeur == null) {
+			return null;
+		}
+		try {
+			return UUID.fromString((String) valeur);
+		}
+		catch (RuntimeException e) {
+			erreurs.add(Map.of("champ", champ, "code", "format_invalide"));
+			return null;
+		}
+	}
+
+	private static Tache vue(TachesEtJalons.Tache t, Map<UUID, Compte> comptes) {
+		Compte c = t.assigneeId() == null ? null : comptes.get(t.assigneeId());
+		var personne = c == null ? null : new ProjetsController.PersonneResume(c.id(), c.nom(), c.avatarUrl());
+		return new Tache(t.id(), t.titre(), t.jalonId(), personne, t.statut(), t.echeance(), t.livreeLe(), t.proposeeParIa(),
+				t.version(), t.creeLe());
 	}
 
 }
