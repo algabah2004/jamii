@@ -1,15 +1,16 @@
 <script setup lang="ts">
+import { JBouton, JFiltres, JIllustration, JSquelette } from '../../design-system'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { api } from '../../api/client'
-import { nomPays } from '../systalink/calculs'
-import { ilYa, lienSur, type ProjetEnVitrine } from './vitrine'
+import CarteProjet from './CarteProjet.vue'
+import type { ProjetEnVitrine } from './vitrine'
 
 /** Une page de 12 cartes : 4 rangées de 3 sur ordinateur. */
 const LIMITE = 12
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 
@@ -54,75 +55,45 @@ function filtrer(datacloud: boolean) {
 
 <template>
   <section class="vitrine">
-    <header>
-      <h1>{{ t('vitrine.titre') }}</h1>
-      <p>{{ t('vitrine.intro') }}</p>
-      <div class="filtres" role="group" :aria-label="t('vitrine.filtre')">
-        <button type="button" :aria-pressed="!seulementSystalink" @click="filtrer(false)">
-          {{ t('vitrine.tous') }}
-        </button>
-        <button type="button" :aria-pressed="seulementSystalink" @click="filtrer(true)">
-          {{ t('vitrine.surSystalink') }}
-        </button>
+    <header class="page-tete motif motif--capsules">
+      <div class="page-tete__texte">
+        <h1>{{ t('vitrine.titre') }}</h1>
+        <p>{{ t('vitrine.intro') }}</p>
       </div>
+      <JFiltres
+        :model-value="seulementSystalink ? 'systalink' : 'tous'"
+        :libelle="t('vitrine.filtre')"
+        :options="[
+          { valeur: 'tous', texte: t('vitrine.tous') },
+          { valeur: 'systalink', texte: t('vitrine.surSystalink') },
+        ]"
+        @update:model-value="(v) => filtrer(v === 'systalink')"
+      />
     </header>
 
-    <p v-if="etat === 'chargement'" role="status">{{ t('etat.chargement') }}</p>
-    <div v-else-if="etat === 'indisponible'" role="alert">
+    <JSquelette v-if="etat === 'chargement'" forme="cartes" :nombre="6" />
+    <div v-else-if="etat === 'indisponible'" role="alert" class="etat-vide">
       <p>{{ t('etat.indisponible') }}</p>
-      <button type="button" @click="charger()">{{ t('etat.reessayer') }}</button>
+      <JBouton variante="secondaire" @click="charger()">{{ t('etat.reessayer') }}</JBouton>
     </div>
-    <p v-else-if="projets.length === 0" data-test="vide">{{ t('vitrine.vide') }}</p>
+    <div v-else-if="projets.length === 0" class="etat-vide">
+      <JIllustration nom="en-ligne" />
+      <p data-test="vide">{{ t('vitrine.vide') }}</p>
+    </div>
 
     <template v-else>
-      <ul class="cartes" data-test="projets">
-        <li v-for="p in projets" :key="p.projetId" class="carte">
-          <p v-if="p.hebergeur === 'datacloud'" class="badge" data-test="badge-systalink">
-            {{ t('vitrine.hebergeSurSystalink') }}
-          </p>
-          <h2>{{ p.titre }}</h2>
-          <p v-if="p.origine === 'demande'" class="discret">{{ t('vitrine.pourUnePme') }}</p>
-          <p>{{ p.accroche }}</p>
-          <p class="discret">
-            {{ t('vitrine.equipe', { noms: p.equipe.map((m) => m.nom).join(', ') }) }}
-            <br />
-            {{ p.paysEquipe.map((code) => nomPays(code, locale)).join(' · ') }}
-          </p>
-          <p class="pied">
-            <a
-              v-if="lienSur(p.url)"
-              :href="lienSur(p.url)!"
-              target="_blank"
-              rel="noopener noreferrer nofollow ugc"
-              class="bouton"
-            >
-              {{ t('vitrine.voir') }}
-            </a>
-            <span class="discret">{{ t('vitrine.verifie', { quand: ilYa(p.verifieLe, locale) }) }}</span>
-          </p>
+      <ul class="grille-cartes" data-test="projets">
+        <li v-for="p in projets" :key="p.projetId">
+          <CarteProjet :projet="p" />
         </li>
       </ul>
-      <button v-if="curseur" type="button" class="suite" :disabled="chargeLaSuite" @click="charger(true)">
+      <JBouton v-if="curseur" variante="secondaire" class="suite" :occupe="chargeLaSuite" @click="charger(true)">
         {{ chargeLaSuite ? t('etat.chargement') : t('vitrine.plus') }}
-      </button>
+      </JBouton>
     </template>
   </section>
 </template>
 
 <style scoped>
-/* Valeurs de docs/design/tokens.json (thème clair). Le design system (#19) les fournira en variables. */
-.vitrine { --surface: #fff; --ligne: #d3dee5; --action: #0297de; --preuve: #fc734d; --discret: #4a5a65; }
-.filtres { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-.filtres button { border: 1px solid var(--ligne); background: var(--surface); color: inherit; border-radius: 999px; padding: 0.375rem 0.75rem; cursor: pointer; }
-.filtres button[aria-pressed='true'] { background: var(--action); border-color: var(--action); font-weight: 600; }
-.cartes { list-style: none; padding: 0; margin: 1.5rem 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: 1rem; }
-.carte { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--ligne); border-radius: 0.5rem; padding: 1rem; }
-.carte h2 { font-size: 1.125rem; margin: 0.25rem 0; }
-.carte p { margin: 0.375rem 0; }
-/* Orange = la preuve (tokens.json) : le projet tourne sur DataCloud. Texte midnight sur orange (7,4:1). */
-.badge { align-self: flex-start; background: var(--preuve); color: #02070a; font-size: 0.8125rem; font-weight: 600; padding: 0.125rem 0.5rem; border-radius: 999px; }
-.pied { margin-top: auto !important; padding-top: 0.5rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; }
-.bouton { background: var(--action); color: #02070a; padding: 0.375rem 0.75rem; border-radius: 0.375rem; text-decoration: none; font-weight: 600; }
-.discret { color: var(--discret); font-size: 0.875rem; }
-.suite { display: block; margin: 0 auto; border: 1px solid var(--ligne); background: var(--surface); color: inherit; border-radius: 0.375rem; padding: 0.5rem 1rem; cursor: pointer; }
+.suite { display: flex; margin: var(--space-8) auto 0; }
 </style>

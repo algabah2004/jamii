@@ -1,9 +1,14 @@
 {
   "menu": {
+    "cercles": "Circles",
     "profil": "Profile",
     "principal": "Main menu",
     "systalink": "Systalink space",
-    "vitrine": "Showcase"
+    "vitrine": "Showcase",
+    "communautes": "Communities",
+    "allerAuContenu": "Skip to content",
+    "demandes": "Requests",
+    "systalinkCourt": "Systalink"
   },
   "connexion": {
     "github": "Sign in with GitHub",
@@ -11,12 +16,137 @@
   },
   "accueil": {
     "titre": "Find your team, build your project, put it online.",
-    "texte": "Jamii brings African developers together: communities to help each other, small business requests to deliver as a team, and projects that live on after the hackathon.",
-    "bienvenue": "Welcome back, {nom}."
+    "texte": "The platform for African developers: help each other, deliver for small businesses, and keep your projects online.",
+    "bienvenue": "Welcome back, {nom}.",
+    "voirProfil": "See my profile",
+    "voirCommunautes": "Find a community",
+    "voirVitrine": "See projects online",
+    "rassurance": "Free. Your profile stays private until you publish it.",
+    "piliers": "What you can do on Jamii",
+    "pilier": {
+      "profil": {
+        "titre": "A profile that proves",
+        "texte": "Your repositories, your live projects and what your teammates say. No CV.",
+        "lien": "Create my profile"
+      },
+      "equipe": {
+        "titre": "A team, communities",
+        "texte": "Ask questions, help others, find teammates.",
+        "lien": "See communities"
+      },
+      "enLigne": {
+        "titre": "A project that lives",
+        "texte": "Jamii checks that it responds and shows it in the showcase.",
+        "lien": "See the showcase"
+      }
+    },
+    "principe": {
+      "badge": "Verified",
+      "texte": "On Jamii, orange always means the same thing: it is proven. A project that responds, a task delivered on time, an answer accepted by the person who asked."
+    },
+    "scene": {
+      "titre1": "Find your team.",
+      "titre2": "Put your project",
+      "titreAccent": "online",
+      "commencer": "Start with GitHub",
+      "apercuCommunautes": "Communities",
+      "apercuEnLigne": "Online and verified",
+      "apercuProfil": "Proven profile"
+    }
   },
   "profil": {
     "titre": "Profile",
-    "vide": "Your profile will fill up with your languages and public GitHub projects, and the projects you put online on Jamii."
+    "vide": "Your profile will fill up with your public GitHub languages and projects, and the projects you put online on Jamii.",
+    "generation": {
+      "titre": "Create your profile from GitHub",
+      "texte": "Jamii reads your public repositories (languages, topics, stars) to fill in your profile. Nothing private is read, and you can complete everything afterwards.",
+      "bouton": "Generate my profile from GitHub",
+      "regenerer": "Update from GitHub",
+      "enCours": "Reading your GitHub repositories…",
+      "prive": "Your profile stays private until you publish it.",
+      "sansGithub": "Your account is not linked to GitHub. Sign in with GitHub to generate your profile.",
+      "tropSouvent": "You have already updated your profile several times this hour. Try again a little later.",
+      "erreurs": {
+        "github_indisponible": "GitHub is not responding right now. Your previous profile is kept: try again in a few minutes.",
+        "github_refus": "GitHub can no longer find your account. Check your GitHub username, then try again."
+      },
+      "lu": {
+        "langages": "Your languages, measured on your public repositories",
+        "sujets": "The topics of your repositories",
+        "etoiles": "The stars of your repositories",
+        "jamais": "Never your private repositories"
+      }
+    },
+    "disponibilite": {
+      "disponible": "Available",
+      "occupe": "Busy at the moment",
+      "indisponible": "Not available"
+    },
+    "heures": "{n} h per week",
+    "visibilite": {
+      "prive": "🔒 Your profile is private: only you can see it.",
+      "publie": "✅ Your profile is published: signed-in members can see it and invite you to a team.",
+      "publier": "Publish my profile",
+      "retirer": "Make my profile private"
+    },
+    "modifier": {
+      "bouton": "Edit",
+      "titre": "What you declare yourself",
+      "bio": "About you",
+      "pays": "Country",
+      "paysAucun": "I'd rather not say",
+      "ville": "City",
+      "disponibilite": "Availability",
+      "heures": "Hours per week (1 to 60)",
+      "competences": "Other skills",
+      "competencesAide": "Separated by commas, 20 at most. Example: UX design, Mobile Money",
+      "enregistrer": "Save",
+      "annuler": "Cancel",
+      "enregistre": "Your profile is saved.",
+      "conflit": "Your profile changed in another tab. Here is the latest version: please make your change again.",
+      "invalide": "This value is not accepted."
+    },
+    "langages": {
+      "titre": "Languages",
+      "estimation": "Estimated from the size of your public GitHub repositories (forks excluded)."
+    },
+    "competences": {
+      "titre": "Skills",
+      "declaree": "(declared)",
+      "source": "Deduced from your GitHub repositories, plus the ones you add."
+    },
+    "projets": {
+      "titre": "Projects on Jamii",
+      "vide": "No project yet. The projects you put online with your team will appear here, with the verified link.",
+      "inspiration": "See projects already online",
+      "equipe": "team {pays}",
+      "surSystalink": "Hosted on Systalink",
+      "enLigne": "Online"
+    },
+    "depots": {
+      "titre": "GitHub repositories",
+      "etoiles": "no stars | {n} star | {n} stars",
+      "pasUnePreuve": "Repositories show what you code. Only a project that is online and verified counts as proof."
+    },
+    "fiabilite": {
+      "titre": "Why you can count on {prenom}",
+      "sur": "{n} of {sur}",
+      "types": {
+        "tache_livree_a_temps": "task delivered on the planned date | tasks delivered on the planned date",
+        "avis_coequipier": "positive teammate review | positive teammate reviews",
+        "reponse_acceptee": "accepted answer | accepted answers",
+        "projet_en_ligne": "verified project online | verified projects online"
+      },
+      "contestees": "including {n} being checked | including {n} being checked",
+      "vide": "No proof yet. It adds up on its own as you take part:",
+      "comment": {
+        "projet_en_ligne": "a project put online with your team, that responds;",
+        "tache_livree_a_temps": "a task delivered on the planned date;",
+        "reponse_acceptee": "an answer accepted in a community;",
+        "avis_coequipier": "a teammate who would work with you again."
+      },
+      "sansNote": "No overall score: each point can be checked, and disputed if it is wrong."
+    }
   },
   "etat": {
     "chargement": "Loading…",
@@ -25,7 +155,8 @@
   },
   "introuvable": {
     "titre": "This page does not exist.",
-    "retour": "Back to home"
+    "retour": "Back to home",
+    "texte": "The address may be mistyped, or the page has moved."
   },
   "langue": "Language",
   "systalink": {
@@ -46,6 +177,15 @@
     "parPays": "Members by country",
     "autresPays": "Other countries",
     "seuilPays": "A country appears once it has 5 members, so that no one can be identified.",
+    "cercles": {
+      "titre": "Active circles",
+      "intro": "Circles of 4 to 6 developers build each member's project, one turn at a time. Every delivered turn is a project completed as a team.",
+      "actifs": "Active circles",
+      "termines": "no circle completed | 1 circle completed | {n} circles completed",
+      "toursLivres": "Delivered turns",
+      "membres": "Circle members",
+      "parPays": "Where their members come from"
+    },
     "moments": "Systalink services offered",
     "momentsIntro": "Jamii offers a Systalink service at the right moment: DataCloud to put a project online, Orion for a small business website… Here is how often, and how many people followed it.",
     "service": "Service",
@@ -76,6 +216,350 @@
     "voir": "View the project",
     "verifie": "Checked {quand}",
     "plus": "See more projects",
-    "vide": "No project online yet."
+    "vide": "No project online yet.",
+    "nouvelOnglet": "new tab"
+  },
+  "communautes": {
+    "titre": "Communities",
+    "intro": "Ask questions, help others and show your projects, with developers from across the continent.",
+    "antenne": "Local chapter · {pays}",
+    "membres": "{n} member | {n} members",
+    "questionsOuvertes": "no open question | {n} open question | {n} open questions",
+    "tuEnFaisPartie": "You are a member",
+    "retour": "← All communities",
+    "rejoindre": "Join",
+    "quitter": "Leave",
+    "poser": "Ask a question",
+    "type": "Type",
+    "types": {
+      "question": "Question",
+      "discussion": "Discussion",
+      "montre_ton_projet": "Show your project"
+    },
+    "champTitre": "Title (at least 10 characters)",
+    "champContenu": "Explain your problem (at least 20 characters)",
+    "aideIa": "For a question, the AI will suggest an answer. A community member will have to check it.",
+    "publier": "Publish",
+    "erreurPublier": "Your post could not be sent. Try again in a moment.",
+    "rejoindrePourPublier": "Join the community to post and answer.",
+    "filtre": "Show",
+    "toutes": "Everything",
+    "ouvertes": "Questions without an accepted answer",
+    "vide": "Nothing here yet. Ask the first question!",
+    "reponseAcceptee": "Accepted answer",
+    "reponses": "no answer | {n} answer | {n} answers",
+    "compteSupprime": "deleted account",
+    "annuler": "Cancel",
+    "groupes": {
+      "miennes": "Your communities",
+      "aDecouvrir": "To discover"
+    },
+    "chiffres": {
+      "membres": "members",
+      "questionsOuvertes": "open questions"
+    },
+    "fonctionnement": {
+      "titre": "How it works",
+      "poser": "You ask the community your question.",
+      "ia": "The AI suggests a first answer, marked “to be checked”. It does not count on anyone’s profile.",
+      "accepter": "A member checks it or answers better. You accept the best answer: it counts on its author’s profile."
+    },
+    "espace": {
+      "mesCommunautes": "My communities",
+      "decouvrir": "Discover communities",
+      "invite": "Ask a question or start a discussion…",
+      "premier": "No one has answered yet",
+      "apropos": "About",
+      "fil": "Community feed"
+    }
+  },
+  "question": {
+    "retourCommunaute": "← Back to the community",
+    "iaPrepare": "The AI is preparing an answer…",
+    "iaIndisponible": "The AI did not suggest an answer. Community members can answer.",
+    "proposeeParIa": "Suggested by the AI · to be checked by a peer",
+    "proposeeParIaVerifiee": "Suggested by the AI",
+    "attendUnPair": "Another community member must check this answer.",
+    "valideePar": "checked by {nom}",
+    "valider": "Confirm this answer",
+    "accepter": "Accept this answer",
+    "merciValidation": "Thank you! Your check makes this answer reliable for everyone.",
+    "merciAcceptation": "🎉 Answer accepted. It now appears on its author’s profile.",
+    "taReponse": "Your answer",
+    "repondre": "Answer",
+    "erreurs": {
+      "pas_membre": "Join the community to do this.",
+      "pas_auteur_question": "Only the author of the question can accept an answer.",
+      "propre_question": "You cannot confirm the answer to your own question: another member must do it.",
+      "deja_acceptee": "This question already has an accepted answer.",
+      "propre_reponse": "You cannot accept your own answer: only help from another member counts on a profile.",
+      "proposee_par_ia": "The AI answer cannot be accepted: another member has to check it.",
+      "autre": "That did not work. Try again in a moment."
+    },
+    "ouverte": "Open question"
+  },
+  "designSystem": {
+    "titre": "Design system",
+    "intro": "Jamii's visual identity, as the app uses it. Every colour comes from docs/design/tokens.json, and contrasts are computed live.",
+    "theme": "Theme",
+    "themes": {
+      "systeme": "Same as device",
+      "clair": "Light",
+      "sombre": "Dark"
+    },
+    "marque": "Brand",
+    "marques": {
+      "jamii": "Jamii",
+      "partenaire": "Partner brand example"
+    },
+    "marqueAide": "A brand only changes the action colour. The orange used for proof stays the same everywhere.",
+    "composants": "Components",
+    "contrastes": "Contrasts",
+    "contrastesAide": "Measured on the theme and brand shown. WCAG 2.1 AA thresholds: 4.5:1 for text, 3:1 for borders and focus.",
+    "paire": "Text / background",
+    "rapport": "Ratio",
+    "seuil": "Threshold",
+    "couleurs": "Colours",
+    "typographie": "Typography",
+    "exemples": {
+      "principal": "Publish",
+      "secondaire": "Edit",
+      "discret": "Cancel",
+      "occupe": "Sending…",
+      "preuve": "Hosted on Systalink",
+      "celebrer": "Replay the animation",
+      "champ": "Project address",
+      "aide": "Starts with https://",
+      "erreur": "This address does not respond.",
+      "ia": "Suggested by AI",
+      "iaTexte": "Dashed until a human accepts it: it is not proof yet."
+    }
+  },
+  "theme": "Theme",
+  "themeCourt": {
+    "systeme": "Auto",
+    "clair": "Light",
+    "sombre": "Dark"
+  },
+  "pied": {
+    "mission": "The exchange platform for African developers: help each other, team up and put your projects online.",
+    "liens": "Useful links",
+    "charte": "Design system",
+    "cadev": "Project presented at CADEV 2026. Jamii runs on the Systalink cloud."
+  },
+  "signaler": {
+    "bouton": "Report",
+    "pourquoi": "Why report this message?",
+    "envoyer": "Send the report",
+    "merci": "Thanks, a moderator will look at it.",
+    "erreur": "The report could not be sent. Try again in a moment.",
+    "motifs": {
+      "spam": "Spam or advertising",
+      "irrespectueux": "Disrespectful",
+      "hors_sujet": "Off topic",
+      "autre": "Other reason"
+    }
+  },
+  "demandes": {
+    "nouvelle": {
+      "titre": "Describe your need",
+      "intro": "Explain in your own words what your business needs. The assistant turns it into a clear plan, then a team of developers can build it.",
+      "champTitre": "In one sentence, what do you need?",
+      "aideTitre": "For example: an online shop for my workshop.",
+      "champDescription": "Tell us: who will use it, what it must do, what matters to you",
+      "aideDescription": "At least {n} characters. No technical words needed.",
+      "duree": "How soon would you like it?",
+      "semaines": "{n} week | {n} weeks",
+      "jeNeSaisPas": "I don't know",
+      "envoyer": "Get a plan",
+      "rassurance": "Free. Nothing is published without your agreement.",
+      "erreur": "Your request could not be sent. Try again in a moment.",
+      "exemplesTitre": "For inspiration",
+      "ensuiteTitre": "What happens next?",
+      "ensuite1": "The assistant suggests a plan: what to do, how long it takes, and with whom.",
+      "ensuite2": "You read it. Nothing is decided without you.",
+      "ensuite3": "A team of Jamii developers takes the project and puts it online."
+    },
+    "exemples": [
+      {
+        "titre": "An online shop for my sewing workshop",
+        "description": "I sew clothes in Thiès. I want to show my designs with their prices, receive orders on WhatsApp and get paid by Mobile Money."
+      },
+      {
+        "titre": "Track our group’s contributions",
+        "description": "We are 30 women in a savings group. We want to see who has paid and everyone’s turn from a basic phone."
+      },
+      {
+        "titre": "Online booking for my practice",
+        "description": "My patients call all day long. I want them to pick a slot online and get an SMS reminder the day before."
+      }
+    ],
+    "plan": {
+      "autre": "← Describe another need",
+      "prepare": "The assistant is preparing your plan…",
+      "prepareAide": "It reads your request and splits it into steps. This takes a few seconds.",
+      "echec": "The plan could not be prepared.",
+      "echecAide": "Your request is saved. Try again in a moment.",
+      "propose": "Plan suggested by the assistant · to read, nothing is decided",
+      "repli": "The assistant was not available: here is a plan template to complete with the team.",
+      "resume": "What the team will build",
+      "fonctionnalites": "Features",
+      "jalons": "Steps",
+      "semaine": "Week {n}",
+      "roles": "Profiles to find",
+      "rolesAide": "These roles will be offered to Jamii developers.",
+      "services": "Suggested Systalink services",
+      "servicesAide": "Suggestions, never an obligation: the plan works without them.",
+      "horsPerimetre": "Not in this project",
+      "decision": "Happy with this plan? A team can form around it.",
+      "lancer": "Start the project with this plan",
+      "lance": "Project started. The roles to find are offered to developers.",
+      "dejaPrise": "A team has already started a project on this request.",
+      "erreurLancement": "The project could not be started. Try again in a moment."
+    },
+    "priorites": {
+      "indispensable": "Must have",
+      "utile": "Useful",
+      "plus_tard": "Later"
+    }
+  },
+  "cercles": {
+    "titre": "Circles",
+    "intro": "4 to 6 developers build each member's project, one turn at a time. Systalink guarantees the circle.",
+    "tous": "All circles",
+    "sousTitre": "{n} members · {ville}",
+    "garant": "guarantor",
+    "anneauDescription": "Turn order: {ordre}.",
+    "tourDe": "Turn {n} · {nom}'s project",
+    "avancement": "Turn progress",
+    "taches": "{faites} of {total} tasks",
+    "joursRestants": "last day | 1 day left | {n} days left",
+    "depot": "The project repository",
+    "avantTirage": "The turn order has not been drawn yet.",
+    "avantTirageAide": "The circle is full. | 1 more member is needed. | {n} more members are needed.",
+    "ordre": "Turn order",
+    "pasDIdee": "No idea shared yet",
+    "membres": "{n} of {taille} members",
+    "statut": {
+      "ouvert": "Looking for members",
+      "en_cours": "In progress",
+      "termine": "Finished"
+    },
+    "statutTour": {
+      "a_venir": "Upcoming",
+      "en_cours": "In progress",
+      "livre": "Delivered"
+    },
+    "etapeMembres": "{n} of {taille} members",
+    "etapeIdees": "{n} of {total} ideas shared",
+    "rejoindre": "Join the circle",
+    "monIdee": "My idea:",
+    "deposerIdee": "Share my idea",
+    "modifierIdee": "Edit my idea",
+    "ideeTitre": "The project you want to see built",
+    "ideeDescription": "In a few sentences",
+    "ideeAide": "Who it is for and what it should do. The circle builds it during your turn.",
+    "enregistrerIdee": "Save my idea",
+    "tirer": "Draw the turn order",
+    "tirageAide": "Possible once the circle is full and everyone has shared an idea. The server draws the order once.",
+    "erreurs": {
+      "cercle_complet": "The circle is already full.",
+      "deja_membre": "You are already in this circle.",
+      "tirage_deja_fait": "The order has already been drawn.",
+      "cercle_incomplet": "Some members are still missing.",
+      "idees_manquantes": "Every member must share an idea first.",
+      "autre": "That did not work. Try again in a moment.",
+      "tour_non_en_cours": "This turn is no longer in progress."
+    },
+    "nouveau": {
+      "titre": "Create a circle",
+      "intro": "You will be its first member. Others join, everyone shares an idea, then you draw the turn order.",
+      "nom": "Circle name",
+      "nomAide": "For example, Dakar circle.",
+      "ville": "City",
+      "taille": "How many of you?",
+      "personnes": "{n} people",
+      "tailleAide": "{n} two-week turns: everyone gets their project built.",
+      "creer": "Create the circle"
+    },
+    "membresTitre": "Members",
+    "livrer": "Deliver the turn",
+    "livrerOui": "Yes, deliver",
+    "livrerConfirmation": "Is {nom}'s project finished? It is handed over to {nom}, and {suivant}'s turn begins.",
+    "livrerDernier": "Is {nom}'s project finished? This is the last turn: the circle will be finished.",
+    "livreTitre": "{nom}'s project is delivered.",
+    "livreTexte": "It will appear in the showcase once it is online, with its team's name.",
+    "voirVitrine": "See the showcase",
+    "termine": "The circle is finished.",
+    "termineAide": "{n} projects delivered, one per member. The circle can start a new round.",
+    "projetDe": "{nom}'s project",
+    "point": "Where the turn stands",
+    "pointTexte": "Day {jour} of {nom}'s turn: {faites} of {total} tasks delivered.",
+    "ideeDeposee": "Idea shared",
+    "creePar": "Created by {nom}",
+    "groupes": {
+      "mes": "My circles",
+      "ouverts": "Circles looking for members"
+    },
+    "vide": {
+      "mes": "You are not part of a circle yet.",
+      "ouverts": "No circle is looking for members right now. Create yours."
+    },
+    "ouvrir": "Open the circle",
+    "trouverMembres": "Find members"
+  },
+  "reseau": {
+    "competences": "Skills",
+    "heures": "{n} h per week",
+    "pourToi": {
+      "titre": "Circles that need you",
+      "aide": "Picked from your skills and your city."
+    },
+    "raisonsCercle": {
+      "competence_manquante": "They need {competences}, which you know",
+      "meme_ville": "In your city",
+      "disponible": "You are available",
+      "presque_complet": "Only one place left"
+    },
+    "raisonsProfil": {
+      "competence_manquante": "Knows {competences}, which the circle lacks",
+      "meme_ville": "In the circle's city",
+      "disponible": "Available now",
+      "presque_complet": "The circle needs only one more person"
+    },
+    "profils": {
+      "titre": "Profiles the circle needs",
+      "aide": "Available developers who bring what the circle doesn't have yet: {competences}.",
+      "vide": "No available profile matches yet. Share the circle's link in a community.",
+      "inviter": "Invite to the circle",
+      "invite": "Invitation sent",
+      "message": "Your message to {nom}",
+      "messageParDefaut": "Hi {nom}, our “{cercle}” is looking for someone who knows {competences}. Would you like to join us?",
+      "envoyer": "Send the invitation",
+      "envoye": "Invitation sent. {nom} will see it in their messages."
+    },
+    "erreurs": {
+      "cercle_ferme": "The circle is full, or the order has already been drawn.",
+      "pas_membre_du_cercle": "Only members of the circle can invite.",
+      "soi_meme": "You can't write to yourself.",
+      "introuvable": "This person no longer exists.",
+      "autre": "The invitation wasn't sent. Try again.",
+      "autreMessage": "The message wasn't sent. Try again."
+    },
+    "messages": {
+      "titre": "Messages",
+      "intro": "Write to any developer, with or without a circle.",
+      "vide": "No messages yet. Invite someone from an open circle, or wait for an invitation.",
+      "toi": "You:",
+      "invitationRecue": "Invites you to join “{cercle}”",
+      "nonLus": "{n} unread message | {n} unread messages",
+      "tous": "All messages",
+      "premier": "Write the first message to {nom}.",
+      "invitation": "Invitation to join the circle",
+      "cercleFerme": "This circle no longer accepts members.",
+      "ecrire": "Your message to {nom}",
+      "envoyer": "Send",
+      "lien": "Messages | Messages, {n} unread | Messages, {n} unread"
+    }
   }
 }

@@ -39,7 +39,9 @@ Tout passe par des variables d'environnement (voir [`.env.example`](../../.env.e
 | `POSTGRES_PASSWORD` | Mot de passe de la base | **aucun** : pas de mot de passe dans le code |
 | `POSTGRES_SSLMODE` | Chiffrement de la connexion (`require` ou `verify-full` en production) | `prefer` |
 | `PORT`, puis `API_PORT` | Port d'écoute. `PORT` est celui qu'impose l'hébergeur, s'il y en a un | `8080` |
-
+| `DEPOT_CODE` | Dépôt Git de chaque tour de cercle : `aucun` (le tour n'a pas de dépôt) ou `github` | `aucun` |
+| `GITHUB_DEPOTS_ORGANISATION`, `GITHUB_DEPOTS_JETON` | Avec `DEPOT_CODE=github` : l'organisation qui reçoit les dépôts, et un jeton qui peut y créer des dépôts et inviter des membres. L'API refuse de démarrer s'il en manque un | aucun |
+| `GITHUB_DEPOTS_PRIVES` | `true` : dépôts privés | `false` |
 | `JAVA_TOOL_OPTIONS` | Réglages de la JVM, lus par Java lui-même (voir ci-dessous) | aucun |
 
 En local, `./mvnw spring-boot:run` n'a besoin d'aucune de ces variables : la connexion vient de docker compose. Elles servent au déploiement.
@@ -57,6 +59,21 @@ Mesuré en local dans un conteneur limité à 512 Mo et 1 CPU, avec la connexion
 
 L'API tient dans 512 Mo. En revanche, l'offre Free se met en veille : la première requête après une veille attend le démarrage, plus de 20 s.
 
+## Données de démo
+
+Le profil `demo` charge au démarrage 6 membres et 3 cercles :
+- **Dakar** : 6 membres, le tour d'Awa livré et celui de Kofi en cours ;
+- **Abidjan** : encore ouvert, 3 membres sur 4, donc quelqu'un peut le rejoindre ;
+- **Nairobi** : terminé, avec ses 4 projets livrés.
+
+```bash
+SPRING_PROFILES_ACTIVE=demo EMAIL_AFFICHER_LIEN=true ./mvnw spring-boot:run
+```
+
+Les données ne viennent **jamais** d'une migration : sans le profil `demo`, une base n'en voit rien. Relancer l'API ne crée pas de doublons. Les comptes de démo n'ont pas de login GitHub, donc aucune invitation ne part vers un vrai compte. Leurs adresses sont sur un domaine réservé, qui ne reçoit rien (`awa@demo.jamii.test`, `kofi@…`, `fatou@…`, `moussa@…`, `nia@…`, `yann@…`).
+
+Pour se connecter comme Awa : demander un lien de connexion pour `awa@demo.jamii.test`, puis ouvrir le lien affiché dans la console (`EMAIL_AFFICHER_LIEN=true`, en local seulement).
+
 ## Santé
 
 | Route | Usage |
@@ -72,7 +89,7 @@ Aucun autre endpoint Actuator n'est exposé.
 Tout le code est dans le module `auth` (`dev.jamii.api.auth`).
 
 - **Connexion GitHub** : `GET /api/auth/github?retour=/chemin`. Pour l'essayer en local, crée une [OAuth App GitHub](https://github.com/settings/developers) avec l'adresse de retour `http://localhost:8080/api/auth/github/retour`, puis remplis `GITHUB_CLIENT_ID` et `GITHUB_CLIENT_SECRET`. Sans ces variables, l'API démarre quand même, mais la connexion GitHub échoue.
-- **Connexion par lien e-mail** : `POST /api/auth/lien-email` puis `POST /api/auth/lien-email/confirmation`. Le lien vaut 15 minutes et ne sert qu'une fois ; seule son empreinte est en base. Limites : 5 demandes par heure et par adresse (en base), 20 par heure et par IP (en mémoire : une seule instance). L'envoi passe par `EnvoiEmail`. Pour l'instant, seul l'adaptateur simulé existe : en local, mets `EMAIL_AFFICHER_LIEN=true` dans `.env` pour voir le lien dans la console de l'API ; sans cela, rien n'est écrit.
+- **Connexion par lien e-mail** : `POST /api/auth/lien-email` puis `POST /api/auth/lien-email/confirmation`. Le lien vaut 15 minutes et ne sert qu'une fois ; seule son empreinte est en base. Limites : 5 demandes par heure et par adresse (en base), 20 par heure et par IP (en mémoire : une seule instance). L'envoi passe par `EnvoiEmail`, choisi par `EMAIL_FOURNISSEUR` : `simule` en local (mets `EMAIL_AFFICHER_LIEN=true` dans `.env` pour voir le lien dans la console de l'API ; sans cela, rien n'est écrit) ou `brevo` en production, avec `BREVO_API_KEY` et `EMAIL_EXPEDITEUR` (une adresse vérifiée chez Brevo). Sans ces deux variables, l'API refuse de démarrer en mode `brevo`.
 - **Session** : cookie `JAMII_SESSION` (HttpOnly, Secure, SameSite=Lax), stockée dans PostgreSQL et expirée après 7 jours sans activité.
 - **CSRF** : tout `POST`, `PUT`, `PATCH` ou `DELETE` renvoie la valeur du cookie `XSRF-TOKEN` dans l'en-tête `X-XSRF-TOKEN`.
 - **Tout est fermé par défaut.** Une route publique s'ouvre explicitement dans `SecuriteConfig`, en GET seulement et avec le chemin exact. Aujourd'hui : `/health`, `/api/auth/**`, `GET /api/systalink/tableau-de-bord` et `GET /api/vitrine`. Pour en ouvrir une autre, il faut `security: []` dans son contrat et un test dans `SecuriteTest`.

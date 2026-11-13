@@ -1,0 +1,428 @@
+openapi: 3.1.0
+info:
+  title: Jamii · Réseau (contacts, messages, notifications, recommandations)
+  version: 0.1.0
+  summary: Ce qui relie les développeurs entre eux, en dehors des cercles comme pour les remplir.
+  description: |
+    Responsable : @rev22rse22 (bloc #19). Règles communes : docs/api-conventions.md. Plan : docs/priorites.md.
+
+    **Les recommandations** relient un cercle et des profils publiés (`profils.yaml`) :
+    - à un développeur, les cercles **ouverts** dont les membres n'ont pas encore ses compétences, ceux de sa ville d'abord ;
+    - à un membre d'un cercle ouvert, les profils publiés et `disponible` qui apportent une compétence qui manque au cercle.
+    Le calcul est fait par l'API, sans IA : compétences en commun, ville, disponibilité. `raisons` dit pourquoi, en codes
+    que le front traduit (« Il connaît Flutter, qui manque au cercle »). Un profil non publié n'est jamais recommandé.
+
+    **Les messages** : n'importe quel utilisateur connecté peut écrire à un autre. Une conversation est désignée par
+    l'**autre personne** (`personneId`) : il n'y a qu'une conversation par paire. Un message peut porter une **invitation
+    à un cercle** (`cercleId`) : le destinataire voit le cercle et le bouton « Rejoindre le cercle », qui appelle
+    `POST /api/cercles/{cercleId}/membres` (cercles.yaml). Contre le spam : 30 messages par heure et par personne, et
+    10 premières prises de contact (premier message à quelqu'un) par jour.
+
+    **Les contacts** : une demande, puis une acceptation. Les deux personnes deviennent contacts l'une de l'autre.
+    Refuser une demande ou retirer un contact, c'est la même route (`DELETE`).
+
+    **Les notifications** sont créées par l'API, jamais par le navigateur : message reçu, demande de contact reçue ou
+    acceptée, quelqu'un a rejoint mon cercle, l'ordre de mon cercle est tiré, un tour est livré, un cercle recommandé
+    vient d'ouvrir. Le front lit `GET /api/me/activite` toutes les 30 secondes **quand l'onglet est visible**, pour
+    afficher les pastilles du menu : c'est ce qui rend la plateforme vivante sans WebSocket.
+
+    **Vie privée** : jamais d'e-mail. Les messages ne sont lisibles que par leurs deux personnes. Ils partent dans
+    l'export du compte et sont supprimés avec lui (`/api/me/export`, socle.yaml).
+
+    **CSRF** : toute requête POST, PUT, PATCH ou DELETE envoie l'en-tête `X-XSRF-TOKEN` (socle.yaml, schéma `csrf`).
+
+    **Codes d'erreur métier** (champ `code` de `Erreur`, réponse 409) : `deja_contact`, `demande_deja_envoyee`,
+    `soi_meme`, `cercle_ferme` (invitation à un cercle complet ou déjà tiré), `pas_membre_du_cercle` (on n'invite
+    qu'à un cercle dont on est membre).
+servers:
+  - url: http://localhost:8080
+
+security:
+  - session: []
+
+tags:
+  - { name: recommandations, description: 'Les cercles pour moi, les profils pour mon cercle.' }
+  - { name: messages, description: 'Écrire à quelqu''un, inviter dans un cercle.' }
+  - { name: contacts, description: 'Ajouter quelqu''un à ses contacts.' }
+  - { name: notifications, description: 'Ce qui s''est passé depuis ma dernière visite.' }
+
+paths:
+  /api/recommandations/cercles:
+    get:
+      tags: [recommandations]
+      operationId: cerclesRecommandes
+      summary: Les cercles ouverts qui ont besoin de mon profil, les plus pertinents d'abord
+      description: Liste vide si je n'ai pas de profil publié. Jamais un cercle dont je suis déjà membre.
+      parameters:
+        - { name: limite, in: query, schema: { type: integer, minimum: 1, maximum: 20, default: 6 } }
+      responses:
+        '200':
+          description: Les cercles recommandés.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [elements]
+                properties:
+                  elements: { type: array, items: { $ref: '#/components/schemas/CercleRecommande' } }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+
+  /api/recommandations/profils:
+    get:
+      tags: [recommandations]
+      operationId: profilsRecommandes
+      summary: Les profils qui apportent ce qui manque à un cercle ouvert dont je suis membre
+      parameters:
+        - { name: cercleId, in: query, required: true, schema: { type: string, format: uuid } }
+        - { name: limite, in: query, schema: { type: integer, minimum: 1, maximum: 20, default: 6 } }
+      responses:
+        '200':
+          description: Les profils recommandés. Liste vide si le cercle est complet ou déjà tiré.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [elements, competencesManquantes]
+                properties:
+                  competencesManquantes:
+                    type: array
+                    description: Les compétences que le cercle n'a pas encore, d'après les idées déposées et les profils des membres.
+                    items: { $ref: './projets.yaml#/components/schemas/Competence' }
+                  elements: { type: array, items: { $ref: '#/components/schemas/ProfilRecommande' } }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+
+  /api/conversations:
+    get:
+      tags: [messages]
+      operationId: listerConversations
+      summary: Mes conversations, la plus récente d'abord
+      parameters:
+        - $ref: './socle.yaml#/components/parameters/Curseur'
+        - $ref: './socle.yaml#/components/parameters/Limite'
+      responses:
+        '200':
+          description: Une page de conversations.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: './socle.yaml#/components/schemas/Page'
+                  - properties: { elements: { type: array, items: { $ref: '#/components/schemas/Conversation' } } }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+
+  /api/conversations/{personneId}/messages:
+    parameters:
+      - $ref: '#/components/parameters/PersonneId'
+    get:
+      tags: [messages]
+      operationId: lireMessages
+      summary: Les messages échangés avec une personne, les plus récents d'abord
+      description: Lire la conversation la marque comme lue. Une page vide si on ne s'est jamais écrit.
+      parameters:
+        - $ref: './socle.yaml#/components/parameters/Curseur'
+        - $ref: './socle.yaml#/components/parameters/Limite'
+      responses:
+        '200':
+          description: Une page de messages et la personne.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: './socle.yaml#/components/schemas/Page'
+                  - required: [personne]
+                    properties:
+                      personne: { $ref: '#/components/schemas/Personne' }
+                      elements: { type: array, items: { $ref: '#/components/schemas/Message' } }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+    post:
+      tags: [messages]
+      operationId: envoyerMessage
+      summary: Écrire à une personne, avec une invitation à un cercle si on veut
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NouveauMessage' }
+      responses:
+        '201':
+          description: Envoyé. Le destinataire reçoit une notification.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Message' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+        '429': { $ref: './socle.yaml#/components/responses/TropDeRequetes' }
+
+  /api/me/contacts:
+    get:
+      tags: [contacts]
+      operationId: listerContacts
+      summary: Mes contacts, ou les demandes de contact reçues ou envoyées
+      parameters:
+        - name: statut
+          in: query
+          description: '`accepte` : mes contacts (par défaut). `recue` : les demandes à qui je dois répondre. `envoyee` : celles qui attendent une réponse.'
+          schema: { type: string, enum: [accepte, recue, envoyee], default: accepte }
+        - $ref: './socle.yaml#/components/parameters/Curseur'
+        - $ref: './socle.yaml#/components/parameters/Limite'
+      responses:
+        '200':
+          description: Une page de contacts.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: './socle.yaml#/components/schemas/Page'
+                  - properties: { elements: { type: array, items: { $ref: '#/components/schemas/Contact' } } }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+
+  /api/contacts/{personneId}:
+    parameters:
+      - $ref: '#/components/parameters/PersonneId'
+    get:
+      tags: [contacts]
+      operationId: lireLienContact
+      summary: Où j'en suis avec cette personne (pour le bouton de son profil)
+      responses:
+        '200':
+          description: Le lien, `aucun` si on n'est pas en contact.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LienContact' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+    put:
+      tags: [contacts]
+      operationId: ajouterContact
+      summary: Demander à être en contact, ou accepter sa demande si elle m'en a envoyé une
+      description: Sans corps. Idempotent. `409 soi_meme` si c'est moi.
+      security:
+        - session: []
+          csrf: []
+      responses:
+        '200':
+          description: Le lien après l'action (`envoyee`, ou `accepte` si la personne l'avait déjà demandé).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LienContact' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+        '429': { $ref: './socle.yaml#/components/responses/TropDeRequetes' }
+    delete:
+      tags: [contacts]
+      operationId: retirerContact
+      summary: Refuser une demande, annuler la mienne ou retirer un contact
+      security:
+        - session: []
+          csrf: []
+      responses:
+        '204': { description: 'Plus de lien. Idempotent : `204` même s''il n''y en avait pas.' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+
+  /api/me/activite:
+    get:
+      tags: [notifications]
+      operationId: lireActivite
+      summary: Les compteurs des pastilles du menu (appelé toutes les 30 secondes, onglet visible)
+      responses:
+        '200':
+          description: Les compteurs.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Activite' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+
+  /api/me/notifications:
+    get:
+      tags: [notifications]
+      operationId: listerNotifications
+      summary: Mes notifications, les plus récentes d'abord (gardées 30 jours)
+      parameters:
+        - $ref: './socle.yaml#/components/parameters/Curseur'
+        - $ref: './socle.yaml#/components/parameters/Limite'
+      responses:
+        '200':
+          description: Une page de notifications.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: './socle.yaml#/components/schemas/Page'
+                  - properties: { elements: { type: array, items: { $ref: '#/components/schemas/Notification' } } }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+
+  /api/me/notifications/lues:
+    post:
+      tags: [notifications]
+      operationId: marquerNotificationsLues
+      summary: Marquer toutes mes notifications comme lues (à l'ouverture de la liste)
+      security:
+        - session: []
+          csrf: []
+      responses:
+        '204': { description: Toutes lues. }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+
+components:
+  securitySchemes:
+    session: { $ref: './socle.yaml#/components/securitySchemes/session' }
+    csrf: { $ref: './socle.yaml#/components/securitySchemes/csrf' }
+
+  parameters:
+    PersonneId:
+      name: personneId
+      in: path
+      required: true
+      description: L'identifiant de l'autre personne.
+      schema: { type: string, format: uuid }
+
+  schemas:
+    Personne:
+      type: object
+      description: Ce que le réseau montre d'une personne. Jamais son e-mail.
+      required: [id, nom]
+      properties:
+        id: { type: string, format: uuid }
+        nom: { type: string }
+        avatarUrl: { type: [string, 'null'], format: uri }
+        ville: { type: [string, 'null'] }
+
+    RaisonRecommandation:
+      type: string
+      description: |
+        Pourquoi c'est recommandé, traduit par le front.
+        `competence_manquante` : la personne a une compétence qui manque au cercle (`competences` dit lesquelles).
+        `meme_ville` : même ville. `disponible` : la personne s'est dite disponible. `presque_complet` : il reste une place.
+      enum: [competence_manquante, meme_ville, disponible, presque_complet]
+
+    CercleRecommande:
+      type: object
+      required: [cercle, raisons, competences]
+      properties:
+        cercle: { $ref: './cercles.yaml#/components/schemas/CercleResume' }
+        raisons: { type: array, minItems: 1, items: { $ref: '#/components/schemas/RaisonRecommandation' } }
+        competences:
+          type: array
+          description: Mes compétences qui manquent à ce cercle.
+          items: { $ref: './projets.yaml#/components/schemas/Competence' }
+
+    ProfilRecommande:
+      type: object
+      required: [profil, raisons, competences, lien]
+      properties:
+        profil: { $ref: './profils.yaml#/components/schemas/ProfilResume' }
+        raisons: { type: array, minItems: 1, items: { $ref: '#/components/schemas/RaisonRecommandation' } }
+        competences:
+          type: array
+          description: Ses compétences qui manquent au cercle.
+          items: { $ref: './projets.yaml#/components/schemas/Competence' }
+        invite: { type: boolean, description: 'Un membre du cercle lui a déjà envoyé une invitation à ce cercle.' }
+        lien: { $ref: '#/components/schemas/StatutLien' }
+
+    NouveauMessage:
+      type: object
+      required: [texte]
+      properties:
+        texte: { type: string, minLength: 1, maxLength: 2000 }
+        cercleId:
+          type: string
+          format: uuid
+          description: Pour inviter la personne à un cercle ouvert dont je suis membre.
+
+    Message:
+      type: object
+      required: [id, deMoi, texte, envoyeLe]
+      properties:
+        id: { type: string, format: uuid }
+        deMoi: { type: boolean, description: "C'est moi qui l'ai écrit." }
+        texte: { type: string }
+        invitation:
+          oneOf:
+            - $ref: '#/components/schemas/InvitationCercle'
+            - { type: 'null' }
+        envoyeLe: { type: string, format: date-time }
+        luLe: { type: [string, 'null'], format: date-time, description: Quand le destinataire l'a lu. }
+
+    InvitationCercle:
+      type: object
+      description: Le cercle tel qu'il est maintenant, pour savoir s'il reste de la place.
+      required: [cercle]
+      properties:
+        cercle: { $ref: './cercles.yaml#/components/schemas/CercleResume' }
+
+    Conversation:
+      type: object
+      required: [personne, dernierMessage, nonLus]
+      properties:
+        personne: { $ref: '#/components/schemas/Personne' }
+        dernierMessage: { $ref: '#/components/schemas/Message' }
+        nonLus: { type: integer, minimum: 0 }
+
+    StatutLien:
+      type: string
+      description: '`aucun`, `envoyee` (j''ai demandé), `recue` (elle m''a demandé), `accepte` (contacts).'
+      enum: [aucun, envoyee, recue, accepte]
+
+    LienContact:
+      type: object
+      required: [statut]
+      properties:
+        statut: { $ref: '#/components/schemas/StatutLien' }
+        depuis: { type: [string, 'null'], format: date-time }
+
+    Contact:
+      type: object
+      required: [personne, statut, depuis]
+      properties:
+        personne: { $ref: '#/components/schemas/Personne' }
+        statut: { $ref: '#/components/schemas/StatutLien' }
+        depuis: { type: string, format: date-time }
+        competences:
+          type: array
+          maxItems: 5
+          description: Ses principales compétences, si son profil est publié.
+          items: { $ref: './projets.yaml#/components/schemas/Competence' }
+
+    Activite:
+      type: object
+      required: [notificationsNonLues, messagesNonLus, demandesContact]
+      properties:
+        notificationsNonLues: { type: integer, minimum: 0 }
+        messagesNonLus: { type: integer, minimum: 0 }
+        demandesContact: { type: integer, minimum: 0, description: Demandes de contact reçues en attente. }
+
+    TypeNotification:
+      type: string
+      enum: [message_recu, invitation_cercle, demande_contact, contact_accepte, membre_rejoint, tirage_effectue, tour_livre, cercle_recommande]
+
+    Notification:
+      type: object
+      description: |
+        Le front écrit la phrase à partir de `type`, `personne` et `cercle`, et mène à `lien`
+        (chemin du front : `/messages/{id}`, `/cercles/{id}`, `/contacts`).
+      required: [id, type, lien, creeLe, lue]
+      properties:
+        id: { type: string, format: uuid }
+        type: { $ref: '#/components/schemas/TypeNotification' }
+        personne:
+          oneOf:
+            - $ref: '#/components/schemas/Personne'
+            - { type: 'null' }
+        cercle:
+          oneOf:
+            - { $ref: './cercles.yaml#/components/schemas/CercleResume' }
+            - { type: 'null' }
+        lien: { type: string, pattern: '^/[a-z0-9/-]*$', examples: ['/cercles/a0c1e2c1-0000-4000-8000-00000000da4a'] }
+        creeLe: { type: string, format: date-time }
+        lue: { type: boolean }

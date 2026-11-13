@@ -4,8 +4,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 
+import java.time.Instant;
+import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,7 +55,44 @@ class SystalinkTest {
 
 		@Bean
 		ChiffresDesModules.PaysDesInscrits pays() {
-			return () -> Map.of("SN", 6L, "CI", 3L);
+			return new ChiffresDesModules.PaysDesInscrits() {
+				@Override
+				public Map<String, Long> parPays() {
+					return Map.of("SN", 6L, "CI", 3L);
+				}
+
+				@Override
+				public Map<String, Long> parPays(Collection<UUID> parmi) {
+					// Les 7 membres des cercles : 5 au Sénégal, 1 au Kenya, 1 sans pays déclaré.
+					return parmi.size() == 7 ? Map.of("SN", 5L, "KE", 1L) : Map.of();
+				}
+			};
+		}
+
+		@Bean
+		ChiffresDesModules.Cercles cercles() {
+			Set<UUID> membres = Stream.generate(UUID::randomUUID).limit(7).collect(Collectors.toSet());
+			return new ChiffresDesModules.Cercles() {
+				@Override
+				public long actifs() {
+					return 2;
+				}
+
+				@Override
+				public long termines() {
+					return 1;
+				}
+
+				@Override
+				public long toursLivres(Instant depuis) {
+					return depuis == null ? 8 : 3;
+				}
+
+				@Override
+				public Set<UUID> membres() {
+					return membres;
+				}
+			};
 		}
 
 		@Bean
@@ -77,7 +119,7 @@ class SystalinkTest {
 	}
 
 	@Test
-	void le_tableau_agrege_les_modules_et_les_moments() {
+	void le_tableau_agrege_les_modules_et_les_moments() throws Exception {
 		var propose = moments.proposer(ServiceSystalink.DATACLOUD, ContexteMoment.PROJET, UUID.randomUUID());
 		moments.proposer(ServiceSystalink.DATACLOUD, ContexteMoment.PROJET, UUID.randomUUID());
 		moments.proposer(ServiceSystalink.ORION, ContexteMoment.DEMANDE, UUID.randomUUID());
@@ -98,6 +140,16 @@ class SystalinkTest {
 		json.extractingPath("$.projets.crees").as("module projets pas encore branché : 0, pas un chiffre inventé")
 			.isEqualTo(0);
 		json.extractingPath("$.projets.surDatacloud").isEqualTo(7);
+		json.extractingPath("$.cercles.actifs").isEqualTo(2);
+		json.extractingPath("$.cercles.termines").isEqualTo(1);
+		json.extractingPath("$.cercles.toursLivres").isEqualTo(8);
+		json.extractingPath("$.cercles.nouveauxToursLivres").as("sur la semaine demandée").isEqualTo(3);
+		json.extractingPath("$.cercles.membres.total").isEqualTo(7);
+		json.extractingPath("$.cercles.membres.parPays[0].pays").isEqualTo("SN");
+		json.extractingPath("$.cercles.membres.parPays.length()").as("le Kenya (1) passe dans autres").isEqualTo(1);
+		json.extractingPath("$.cercles.membres.autres").as("1 au Kenya et 1 sans pays").isEqualTo(2);
+		assertThat(reponse.getResponse().getContentAsString()).as("aucun identifiant de membre ne sort de l'API")
+			.doesNotContainPattern("[0-9a-f]{8}-[0-9a-f]{4}-");
 		json.extractingPath("$.moments[0].service").isEqualTo("datacloud");
 		json.extractingPath("$.moments[0].proposes").isEqualTo(2);
 		json.extractingPath("$.moments[0].acceptes").isEqualTo(1);

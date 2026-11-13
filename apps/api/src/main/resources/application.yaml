@@ -57,10 +57,39 @@ jamii:
   # Adresse du front : on y renvoie l'utilisateur après la connexion.
   web-url: ${WEB_URL:http://localhost:5173}
   email:
-    # simule : n'envoie rien (local et tests). Un adaptateur SMTP viendra avec le choix du service de messagerie.
+    # simule : n'envoie rien (local et tests). brevo : l'API HTTP de Brevo (production).
     fournisseur: ${EMAIL_FOURNISSEUR:simule}
+    # Adresse vérifiée chez Brevo, et nom affiché au destinataire.
+    expediteur: ${EMAIL_EXPEDITEUR:}
+    nom-expediteur: ${EMAIL_NOM_EXPEDITEUR:Jamii}
+    brevo:
+      cle: ${BREVO_API_KEY:}
     # Local seulement : affiche le lien de connexion dans la console. Jamais en production (le lien est un mot de passe).
     afficher-lien: ${EMAIL_AFFICHER_LIEN:false}
+  # Service IA de l'équipe (contracts/ia.yaml), appelé par l'API seulement. Plan des demandes de PME (#88).
+  ia:
+    # simule (sans réseau : local, tests, démo) ou service (le service IA, en HTTP avec le jeton interne).
+    fournisseur: ${IA_FOURNISSEUR:simule}
+    url: ${IA_URL:}
+    jeton: ${IA_JETON_INTERNE:}
+  # Module profils (#19) : lecture des données publiques GitHub pour générer le profil.
+  github:
+    # github (l'API de GitHub) ou simule (données factices : tests, démo sans réseau).
+    source: ${GITHUB_SOURCE:github}
+    # Facultatif mais conseillé en production : sans jeton, GitHub limite à 60 requêtes par heure pour tout le serveur.
+    jeton: ${GITHUB_TOKEN:}
+  # Dépôt Git de chaque tour de cercle (module cercles). aucun : les tours n'ont pas de dépôt (depot: null).
+  depot-code:
+    fournisseur: ${DEPOT_CODE:aucun}
+    github:
+      organisation: ${GITHUB_DEPOTS_ORGANISATION:}
+      jeton: ${GITHUB_DEPOTS_JETON:}
+      prives: ${GITHUB_DEPOTS_PRIVES:false}
+  # Module communautes (#18) : qui propose une réponse à une question.
+  communautes:
+    # simulee (sans réseau : local, tests, démo) ou aucune (la question reste ouverte aux humains).
+    # L'adaptateur du service IA de l'équipe (#69) s'ajoutera ici.
+    ia: ${COMMUNAUTES_IA:simulee}
 
 # Seule la santé est exposée, sur /health (contrat : contracts/socle.yaml).
 # /health/liveness et /health/readiness servent de sondes à DataCloud.

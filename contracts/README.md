@@ -8,6 +8,7 @@
 | `projets.yaml` | @sowibrr | Projets d'équipe (depuis une idée ou une demande de PME), rôles, candidatures, tâches, continuité |
 | `communautes.yaml` | @Amar233-ui | Communautés, questions-réponses, discussions, modération |
 | `profils.yaml` | @rev22rse22 | Profil prouvé, indice de fiabilité, recherche de coéquipiers |
+| `reseau.yaml` | @rev22rse22 | Recommandations cercles et profils, messages, contacts, notifications |
 | `deploiement.yaml` | @boubacarsidibe | Mise en ligne des projets sur DataCloud |
 | `systalink.yaml` | @Amar233-ui | Statistiques agrégées du tableau de bord Systalink |
 | `vitrine.yaml` | @Amar233-ui | Les projets en ligne nés sur Jamii (lecture publique) |

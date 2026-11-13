@@ -14,10 +14,13 @@
     "preview": "vite preview",
     "test": "vitest run",
     "typecheck": "vue-tsc --noEmit",
-    "api:types": "openapi-typescript ../../contracts/socle.yaml -o src/api/generated/socle.ts && openapi-typescript ../../contracts/systalink.yaml -o src/api/generated/systalink.ts && openapi-typescript ../../contracts/vitrine.yaml -o src/api/generated/vitrine.ts",
-    "msw:init": "msw init public --save"
+    "api:types": "openapi-typescript ../../contracts/socle.yaml -o src/api/generated/socle.ts && openapi-typescript ../../contracts/systalink.yaml -o src/api/generated/systalink.ts && openapi-typescript ../../contracts/vitrine.yaml -o src/api/generated/vitrine.ts && openapi-typescript ../../contracts/communautes.yaml -o src/api/generated/communautes.ts && openapi-typescript ../../contracts/profils.yaml -o src/api/generated/profils.ts && openapi-typescript ../../contracts/projets.yaml -o src/api/generated/projets.ts && openapi-typescript ../../contracts/cercles.yaml -o src/api/generated/cercles.ts && openapi-typescript ../../contracts/reseau.yaml -o src/api/generated/reseau.ts",
+    "msw:init": "msw init public --save",
+    "tokens": "node scripts/tokens-css.mjs"
   },
   "dependencies": {
+    "@fontsource/familjen-grotesk": "5.3.0",
+    "@fontsource/noto-sans": "5.3.0",
     "openapi-fetch": "^0.17.0",
     "vue": "^3.5.45",
     "vue-i18n": "^11.4.18",

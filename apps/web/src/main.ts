@@ -1,10 +1,12 @@
 import { createApp } from 'vue'
 import App from './App.vue'
+import { demarrerDesignSystem } from './design-system'
 import { i18n } from './i18n'
 import { creerRouteur } from './router'
 import { chargerSession } from './session'
 
 async function demarrer() {
+  demarrerDesignSystem()
   // `npm run dev:factice` : l'API est simulée par MSW, pour avancer sans le back.
   if (import.meta.env.MODE === 'factice') {
     const { worker } = await import('./mocks/browser')

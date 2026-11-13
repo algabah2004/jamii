@@ -1,15 +1,260 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { RouterLink, useRoute } from 'vue-router'
+import { adresseConnexionGithub, api } from '../api/client'
+import { JIllustration } from '../design-system'
+import CarteProjet from '../features/vitrine/CarteProjet.vue'
+import type { ProjetEnVitrine } from '../features/vitrine/vitrine'
 import { useSession } from '../session'
 
 const { t } = useI18n()
-const { moi } = useSession()
+const { etat, moi } = useSession()
+const route = useRoute()
+// Après une redirection du garde (« connexion requise »), on revient là où la personne voulait aller.
+const retour = typeof route.query.retour === 'string' ? route.query.retour : '/profil'
+
+/** Le parcours d'un développeur sur Jamii : c'est une suite, d'où la numérotation. */
+const ETAPES = [
+  { cle: 'profil', illustration: 'profil-prouve', lien: '/profil' },
+  { cle: 'equipe', illustration: 'communaute', lien: '/communautes' },
+  { cle: 'enLigne', illustration: 'en-ligne', lien: '/vitrine' },
+] as const
+
+// Le projet de la scène est un vrai projet en ligne, lu dans la vitrine. Si elle ne répond pas, une maquette le remplace.
+const projet = ref<ProjetEnVitrine | null>(null)
+void (async () => {
+  try {
+    const { data } = await api.GET('/api/vitrine', { params: { query: { limite: 1, hebergeur: 'datacloud' } } })
+    projet.value = data?.elements?.[0] ?? null
+  } catch {
+    projet.value = null
+  }
+})()
+
 </script>
 
 <template>
-  <section>
-    <h1>{{ t('accueil.titre') }}</h1>
-    <p v-if="moi">{{ t('accueil.bienvenue', { nom: moi.nom }) }}</p>
-    <p>{{ t('accueil.texte') }}</p>
-  </section>
+  <div class="accueil">
+    <!-- La scène : le bleu de l'action descend vers l'orange de la preuve, là où sont posés les projets en ligne. -->
+    <section class="scene zone-sombre" aria-labelledby="titre-accueil">
+      <div class="scene__lumiere" aria-hidden="true" />
+      <div class="scene__contenu">
+        <p v-if="moi" class="scene__bonjour">{{ t('accueil.bienvenue', { nom: moi.nom }) }}</p>
+        <h1 id="titre-accueil" class="scene__titre">
+          {{ t('accueil.scene.titre1') }}<br />
+          {{ t('accueil.scene.titre2') }} <em>{{ t('accueil.scene.titreAccent') }}</em>.
+        </h1>
+        <p class="scene__intro">{{ t('accueil.texte') }}</p>
+
+
+        <div class="scene__actions">
+          <RouterLink v-if="etat === 'connecte'" to="/profil" class="bouton-scene">
+            <span class="bouton-scene__point" aria-hidden="true" />{{ t('accueil.voirProfil') }}
+          </RouterLink>
+          <a v-else :href="adresseConnexionGithub(retour)" class="bouton-scene" data-test="connexion">
+            <span class="bouton-scene__point" aria-hidden="true" />{{ t('accueil.scene.commencer') }}
+          </a>
+          <RouterLink :to="etat === 'connecte' ? '/communautes' : '/vitrine'" class="scene__lien">
+            {{ etat === 'connecte' ? t('accueil.voirCommunautes') : t('accueil.voirVitrine') }}
+          </RouterLink>
+        </div>
+        <p v-if="etat !== 'connecte'" class="scene__rassurance">{{ t('accueil.rassurance') }}</p>
+      </div>
+
+      <!-- Trois aperçus de Jamii posés en bas de la scène, légèrement inclinés. -->
+      <div class="apercus">
+        <RouterLink to="/communautes" class="apercu apercu--gauche" :aria-label="t('accueil.scene.apercuCommunautes')">
+          <span class="apercu__fenetre maquette zone-claire" aria-hidden="true">
+            <span v-for="(a, i) in ['KY', 'AD', 'CO']" :key="a" class="maquette__ligne">
+              <span class="maquette__avatar">{{ a }}</span>
+              <span class="maquette__textes"><i class="trait trait--fort" :style="{ width: `${78 - i * 14}%` }" /><i class="trait" :style="{ width: `${48 + i * 9}%` }" /></span>
+              <span v-if="i === 2" class="maquette__preuve">✓</span>
+            </span>
+          </span>
+        </RouterLink>
+        <div class="apercu apercu--centre">
+          <div v-if="projet" class="apercu__projet zone-claire"><CarteProjet :projet="projet" :niveau="2" /></div>
+          <span v-else class="apercu__fenetre maquette zone-claire" aria-hidden="true"><span class="maquette__pastilles"><b>✓</b></span><i class="trait trait--fort" style="width: 70%" /><i class="trait" style="width: 90%" /><i class="trait" style="width: 60%" /></span>
+        </div>
+        <RouterLink to="/profil" class="apercu apercu--droite" :aria-label="t('accueil.scene.apercuProfil')">
+          <span class="apercu__fenetre maquette zone-claire" aria-hidden="true">
+            <span class="maquette__ligne"><span class="maquette__avatar maquette__avatar--grand">AD</span><span class="maquette__textes"><i class="trait trait--fort" style="width: 62%" /><i class="trait" style="width: 40%" /></span></span>
+            <span v-for="(l, i) in [72, 48, 30]" :key="i" class="maquette__jauge"><i :style="{ width: `${l}%` }" /></span>
+            <span class="maquette__pastilles"><b>✓ 3</b><b>✓ 12</b><em /></span>
+          </span>
+        </RouterLink>
+      </div>
+    </section>
+
+    <section class="parcours" aria-labelledby="parcours-titre">
+      <h2 id="parcours-titre">{{ t('accueil.piliers') }}</h2>
+      <ol class="etapes">
+        <li v-for="e in ETAPES" :key="e.cle" class="etape">
+          <JIllustration :nom="e.illustration" class="etape__illustration" />
+          <h3>{{ t(`accueil.pilier.${e.cle}.titre`) }}</h3>
+          <p>{{ t(`accueil.pilier.${e.cle}.texte`) }}</p>
+          <RouterLink :to="e.lien" class="etape__lien">{{ t(`accueil.pilier.${e.cle}.lien`) }}</RouterLink>
+        </li>
+      </ol>
+    </section>
+  </div>
 </template>
+
+<style scoped>
+.accueil { display: grid; gap: var(--space-12); }
+
+/* La scène occupe toute la largeur et passe sous l'en-tête (rendu transparent sur l'accueil, App.vue). */
+.scene {
+  position: relative; isolation: isolate; overflow: hidden;
+  margin-inline: calc(50% - 50vw);
+  margin-top: calc(-1 * (68px + var(--space-8)));
+  padding: calc(68px + var(--space-8)) var(--space-6) 0;
+  background: var(--bg);
+}
+/* Des traits de lumière verticaux, révélés par deux halos : bleu au centre, orange en bas. */
+.scene__lumiere {
+  position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  /* Les trois couleurs de la marque, exactes : Midnight #02070A, Electric Blue #0297DE, Cantaloupe #FC734D.
+     Les autres teintes n'en sont que des versions plus claires ou plus profondes. */
+  --nuit: var(--midnight);
+  --bleu: var(--electric-blue);
+  --orange: var(--cantaloupe);
+  --bleu-profond: color-mix(in srgb, var(--electric-blue) 32%, var(--midnight));
+  --bleu-lumiere: color-mix(in srgb, var(--electric-blue) 50%, white);
+  --peche: color-mix(in srgb, var(--cantaloupe) 40%, white);
+  --orange-profond: color-mix(in srgb, var(--cantaloupe) 82%, var(--midnight));
+  background:
+    /* le cœur clair, presque blanc, où le bleu devient orange : derrière le bouton */
+    radial-gradient(14% 11% at 50% 58%, var(--peche), transparent 85%),
+    radial-gradient(40% 26% at 50% 66%, var(--orange), transparent 80%),
+    radial-gradient(70% 30% at 50% 78%, color-mix(in srgb, var(--cantaloupe) 85%, transparent), transparent 80%),
+    radial-gradient(120% 40% at 50% 100%, var(--orange-profond), transparent 85%),
+    /* la colonne de lumière Electric Blue, sur toute la hauteur */
+    radial-gradient(7% 46% at 50% 34%, var(--bleu-lumiere), transparent 85%),
+    radial-gradient(24% 62% at 50% 34%, var(--bleu), transparent 80%),
+    /* les côtés : Midnight en haut, puis le bleu qui s'intensifie vers le bas */
+    linear-gradient(180deg, var(--nuit) 0%, var(--nuit) 12%, var(--bleu-profond) 34%, var(--bleu) 58%, var(--bleu) 100%);
+}
+/* Les stries : fines, claires et sombres en alternance, sur toute la scène, comme des rayons. */
+.scene__lumiere::after {
+  content: ''; position: absolute; inset: 0;
+  background: repeating-linear-gradient(90deg,
+    color-mix(in srgb, var(--ink) 16%, transparent) 0 1px, transparent 1px 3px,
+    color-mix(in srgb, var(--bg) 12%, transparent) 3px 5px, transparent 5px 7px);
+  mix-blend-mode: soft-light;
+  opacity: 0.55;
+  /* Aucune strie derrière le texte : elles brouillaient les lettres. */
+  mask-image: radial-gradient(46% 42% at 50% 38%, transparent 55%, #000 100%);
+  -webkit-mask-image: radial-gradient(46% 42% at 50% 38%, transparent 55%, #000 100%);
+}
+/* Quelques étoiles dans le ciel, en haut à droite. */
+.scene__lumiere::before {
+  content: ''; position: absolute; inset: 0 0 60% 55%;
+  background:
+    radial-gradient(1.5px 1.5px at 20% 30%, var(--ink), transparent),
+    radial-gradient(1px 1px at 45% 18%, var(--ink), transparent),
+    radial-gradient(1.5px 1.5px at 70% 42%, var(--ink), transparent),
+    radial-gradient(1px 1px at 85% 12%, var(--ink), transparent),
+    radial-gradient(1px 1px at 60% 65%, var(--ink), transparent);
+  opacity: 0.7;
+}
+
+.scene__contenu {
+  position: relative; max-width: 72rem; margin: 0 auto;
+  /* Une ombre sombre sous chaque texte : il reste lisible sur le bleu vif comme sur l'orange. */
+  --ombre-texte: 0 1px 2px color-mix(in srgb, var(--midnight) 70%, transparent), 0 0 18px color-mix(in srgb, var(--midnight) 55%, transparent);
+  display: grid; justify-items: center; text-align: center; gap: var(--space-3);
+}
+.scene__bonjour { margin: 0; color: var(--ink); font-weight: 600; text-shadow: var(--ombre-texte); }
+.scene__titre {
+  margin: 0; max-width: 20ch;
+  font-family: var(--font-display); font-weight: 700;
+  font-size: clamp(2.5rem, 6vw, 4.75rem); line-height: 1.04; letter-spacing: -0.035em;
+  color: var(--ink); text-wrap: balance;
+  text-shadow: 0 2px 40px color-mix(in srgb, var(--bg) 70%, transparent);
+  animation: monte var(--motion-celebrate) var(--ease-out) both;
+}
+.scene__titre em { font-style: italic; }
+.scene__intro { margin: 0; max-width: 34rem; text-shadow: var(--ombre-texte); color: var(--ink); font-weight: 500; font-size: 1.0625rem; line-height: 1.6; }
+
+
+.scene__actions { display: grid; justify-items: center; gap: var(--space-4); margin-top: var(--space-6); }
+/* L'unique action de la scène : une capsule blanche pleine, qui ressort nettement sur le bleu. */
+.bouton-scene {
+  display: inline-flex; align-items: center; gap: var(--space-3);
+  min-height: 52px; padding: 0 var(--space-8) 0 var(--space-6);
+  border-radius: var(--radius-pill);
+  background: #fff; color: var(--midnight);
+  font-weight: 700; font-size: 1.0625rem; text-decoration: none;
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--midnight) 35%, transparent), 0 0 0 6px color-mix(in srgb, #fff 14%, transparent);
+  transition: transform var(--motion-base) var(--ease-out), box-shadow var(--motion-base) var(--ease-out);
+}
+.bouton-scene:hover { transform: translateY(-2px); box-shadow: 0 14px 36px color-mix(in srgb, var(--midnight) 40%, transparent), 0 0 0 8px color-mix(in srgb, #fff 18%, transparent); }
+.bouton-scene:active { transform: scale(0.97); }
+.bouton-scene:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
+.bouton-scene__point { width: 8px; height: 8px; border-radius: 50%; background: var(--cantaloupe); box-shadow: 0 0 0 4px color-mix(in srgb, var(--cantaloupe) 22%, transparent); }
+.scene__lien { color: var(--ink); font-weight: 600; text-underline-offset: 0.25em; text-shadow: var(--ombre-texte); }
+/* Petit texte posé sur l'orange : il a sa propre pastille sombre, sinon il disparaît. */
+.scene__rassurance {
+  padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--midnight) 58%, transparent); backdrop-filter: blur(10px);
+  color: var(--ink); font-size: var(--type-body-sm-size); font-weight: 500;
+}
+.scene__rassurance { margin: 0; }
+
+.apercus {
+  position: relative; max-width: 72rem; margin: var(--space-8) auto 0;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-6); align-items: end;
+  perspective: 1200px;
+}
+.apercu { display: grid; gap: var(--space-2); color: var(--ink); text-decoration: none; transition: transform var(--motion-base) var(--ease-out); }
+.apercu__fenetre, .apercu__projet {
+  display: block; border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--surface) 85%, transparent); border-bottom: 0;
+  backdrop-filter: blur(14px);
+  box-shadow: 0 -20px 60px color-mix(in srgb, var(--bg) 60%, transparent);
+}
+.apercu__fenetre { padding: var(--space-4) var(--space-4) 0; }
+/* Des bouts d'interface abstraits : lignes, visages, jauges, preuves. Décoratifs, sans faux contenu. */
+.maquette { display: grid; gap: var(--space-3); padding: var(--space-6) var(--space-6) var(--space-8); }
+.maquette__ligne { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2); border-radius: var(--radius-md); background: var(--surface); box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 10%, transparent); }
+.maquette__avatar { flex-shrink: 0; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--action-soft); color: var(--action-ink); font-size: 0.75rem; font-weight: 700; }
+.maquette__avatar--grand { width: 44px; height: 44px; background: var(--action); color: var(--on-action); }
+.maquette__textes { flex: 1; display: grid; gap: 6px; }
+.trait { display: block; height: 7px; border-radius: var(--radius-pill); background: color-mix(in srgb, var(--ink) 22%, transparent); }
+.trait--fort { height: 9px; background: color-mix(in srgb, var(--ink) 60%, transparent); }
+.maquette__preuve { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--proof); color: var(--on-proof); font-size: 0.75rem; font-weight: 700; }
+.maquette__jauge { display: block; height: 8px; border-radius: var(--radius-pill); background: color-mix(in srgb, var(--ink) 12%, transparent); overflow: hidden; }
+.maquette__jauge i { display: block; height: 100%; border-radius: inherit; background: var(--action); }
+.maquette__pastilles { display: flex; gap: var(--space-2); }
+.maquette__pastilles b { padding: 2px var(--space-3); border-radius: var(--radius-pill); background: var(--proof); color: var(--on-proof); font-size: 0.75rem; }
+.maquette__pastilles em { width: 48px; border-radius: var(--radius-pill); background: color-mix(in srgb, var(--ink) 12%, transparent); }
+.apercu__projet { text-align: start; background: color-mix(in srgb, var(--proof-soft) 78%, transparent); }
+.apercu__projet :deep(.projet) { background: transparent; border: 0; box-shadow: none; }
+/* Sur l'accueil, la carte n'est qu'un aperçu : on garde preuves, titre et équipe, le détail est dans la vitrine. */
+.apercu__projet :deep(.projet__accroche), .apercu__projet :deep(.projet__pays), .apercu__projet :deep(.projet__verifie) { display: none; }
+.apercu--gauche { transform: rotateY(14deg) rotateZ(-3deg) translateY(18px); transform-origin: right bottom; }
+.apercu--droite { transform: rotateY(-14deg) rotateZ(3deg) translateY(18px); transform-origin: left bottom; }
+.apercu--gauche:hover { transform: rotateY(8deg) rotateZ(-2deg) translateY(6px); }
+.apercu--droite:hover { transform: rotateY(-8deg) rotateZ(2deg) translateY(6px); }
+
+@media (max-width: 960px) {
+  .apercus { grid-template-columns: 1fr; max-width: 26rem; }
+  .apercu--gauche, .apercu--droite { display: none; }
+}
+
+.parcours h2 { margin-bottom: var(--space-6); }
+.etapes { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-8); grid-template-columns: repeat(3, minmax(0, 1fr)); counter-reset: etape; }
+.etape { display: grid; gap: var(--space-2); align-content: start; justify-items: start; counter-increment: etape; }
+.etape__illustration { width: 100%; max-width: 13rem; margin-bottom: var(--space-2); }
+.etape h3 { margin: 0; display: flex; gap: var(--space-2); align-items: baseline; }
+/* Le numéro de l'étape, en orange comme la preuve qu'on gagne à chaque étape. */
+.etape h3::before { content: counter(etape); color: var(--proof-ink); font-variant-numeric: tabular-nums; }
+.etape p { margin: 0; color: var(--ink-muted); }
+.etape__lien { font-weight: 600; margin-top: var(--space-1); }
+@media (max-width: 760px) { .etapes { grid-template-columns: 1fr; } .etape__illustration { max-width: 10rem; } }
+
+@keyframes monte { from { opacity: 0; transform: translateY(14px); filter: blur(4px); } }
+</style>

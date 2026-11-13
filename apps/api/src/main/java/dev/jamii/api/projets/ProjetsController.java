@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import dev.jamii.api.auth.Annuaire;
 import dev.jamii.api.auth.Compte;
 import dev.jamii.api.auth.UtilisateurConnecte;
+import dev.jamii.api.demandes.Demandes;
 
 /** POST /api/projets et GET /api/projets/{projetId} (contracts/projets.yaml). */
 @RestController
@@ -39,7 +41,7 @@ class ProjetsController {
 	/** Schéma `Projet` du contrat. Rôles et alertes arrivent avec leurs routes : listes vides en attendant. */
 	record Projet(UUID id, String titre, String origine, String statut, PersonneResume porteur,
 			List<String> competencesRecherchees, int nombreMembres, Instant creeLe, String description, UUID demandeId,
-			UUID projetRepris, List<Object> roles, List<MembreEquipe> equipe, List<Object> alertes,
+			UUID projetRepris, List<RecrutementController.RoleRecherche> roles, List<MembreEquipe> equipe, List<Object> alertes,
 			Instant derniereActiviteLe, int version, Moi moi) {
 	}
 
@@ -49,10 +51,17 @@ class ProjetsController {
 
 	private final Annuaire annuaire;
 
-	ProjetsController(GestionProjets gestion, Projets projets, Annuaire annuaire) {
+	private final Recrutement recrutement;
+
+	private final Demandes demandes;
+
+	ProjetsController(GestionProjets gestion, Projets projets, Annuaire annuaire, Demandes demandes,
+			Recrutement recrutement) {
 		this.gestion = gestion;
 		this.projets = projets;
 		this.annuaire = annuaire;
+		this.demandes = demandes;
+		this.recrutement = recrutement;
 	}
 
 	@PostMapping("/api/projets")
@@ -79,11 +88,22 @@ class ProjetsController {
 		if (!erreurs.isEmpty()) {
 			return probleme(HttpStatus.BAD_REQUEST, "validation", "Certains champs sont invalides", erreurs);
 		}
-		if (!idee) {
-			// Les demandes de PME n'existent pas encore : aucune `demandeId` ne peut être connue (contrat : 404).
-			return introuvable();
+		UUID id;
+		if (idee) {
+			id = gestion.creerDepuisUneIdee(moi.id(), titre, description, Instant.now());
 		}
-		UUID id = gestion.creerDepuisUneIdee(moi.id(), titre, description, Instant.now());
+		else {
+			// Une demande n'est visible que de son auteur : pour tout autre, elle est inconnue (contrat : 404).
+			if (!demandes.estAuteur(demande.demandeId(), moi.id())) {
+				return introuvable();
+			}
+			try {
+				id = gestion.creerDepuisUneDemande(moi.id(), titre, description, demande.demandeId(), Instant.now());
+			}
+			catch (DuplicateKeyException dejaPrise) {
+				return probleme(HttpStatus.CONFLICT, "demande_deja_prise", "Une équipe a déjà un projet actif sur cette demande", null);
+			}
+		}
 		return ResponseEntity.created(URI.create("/api/projets/" + id)).body(charger(id, moi.id()));
 	}
 
@@ -99,15 +119,20 @@ class ProjetsController {
 		var fiche = gestion.lire(projetId).orElseThrow();
 		var equipe = gestion.equipe(projetId);
 		Map<UUID, Compte> comptes = annuaire.lire(equipe.stream().map(GestionProjets.Membre::utilisateurId).toList());
+		var roles = recrutement.roles(projetId);
+		Map<UUID, String> titres = recrutement.titresDesRolesOccupes(projetId);
+		// Les compétences cherchées : celles des rôles encore ouverts, sans doublon.
+		List<String> recherchees = roles.stream().filter(r -> "ouvert".equals(r.statut())).flatMap(r -> r.competences().stream())
+			.distinct().sorted().toList();
 		List<MembreEquipe> membres = equipe.stream()
 			.filter(m -> comptes.containsKey(m.utilisateurId()))
-			.map(m -> new MembreEquipe(personne(comptes.get(m.utilisateurId())), null,
+			.map(m -> new MembreEquipe(personne(comptes.get(m.utilisateurId())), titres.get(m.utilisateurId()),
 					m.utilisateurId().equals(fiche.porteurId()), m.rejointLe()))
 			.toList();
 		PersonneResume porteur = annuaire.lire(fiche.porteurId()).map(ProjetsController::personne).orElseThrow();
 		boolean estMembre = equipe.stream().anyMatch(m -> m.utilisateurId().equals(moi));
-		return new Projet(fiche.id(), fiche.titre(), fiche.origine(), fiche.statut(), porteur, List.of(), membres.size(),
-				fiche.creeLe(), fiche.description(), fiche.demandeId(), fiche.projetReprisId(), List.of(), membres, List.of(),
+		return new Projet(fiche.id(), fiche.titre(), fiche.origine(), fiche.statut(), porteur, recherchees, membres.size(),
+				fiche.creeLe(), fiche.description(), fiche.demandeId(), fiche.projetReprisId(), roles.stream().map(RecrutementController::vue).toList(), membres, List.of(),
 				fiche.derniereActiviteLe(), fiche.version(), new Moi(fiche.porteurId().equals(moi), estMembre));
 	}
 

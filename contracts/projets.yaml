@@ -13,7 +13,7 @@ info:
 
     **Codes d'erreur métier** (champ `code` de `Erreur`, réponse 409) : `transition_invalide`, `modification_concurrente`,
     `demande_deja_prise`, `propre_projet`, `role_pourvu`, `candidature_existante`, `porteur_doit_transmettre`,
-    `pas_membre`, `reprise_impossible`, `avis_trop_tot`, `avis_existant`.
+    `pas_membre`, `reprise_impossible`, `avis_trop_tot`, `avis_existant`, `deja_membre` (candidater quand on est déjà dans l'équipe).
 servers:
   - url: http://localhost:8080
 
@@ -536,7 +536,10 @@ components:
       properties:
         id: { type: string, format: uuid }
         titre: { type: string }
-        origine: { type: string, enum: [idee, demande] }
+        origine:
+          type: string
+          enum: [idee, demande, cercle]
+          description: '`cercle` : le projet d''un tour de cercle, créé au tirage. Seuls `idee` et `demande` se créent par `POST /api/projets`.'
         statut: { $ref: '#/components/schemas/StatutProjet' }
         porteur: { $ref: '#/components/schemas/PersonneResume' }
         competencesRecherchees: { type: array, description: Compétences des rôles encore ouverts., items: { $ref: '#/components/schemas/Competence' } }

@@ -7,7 +7,72 @@ export const routes: RouteRecordRaw[] = [
   {
     path: '/profil',
     name: 'profil',
-    component: () => import('./pages/ProfilPage.vue'),
+    component: () => import('./features/profils/MonProfilPage.vue'),
+    meta: { connexionRequise: true },
+  },
+  // Communautés : connexion requise (contracts/communautes.yaml).
+  {
+    path: '/communautes',
+    name: 'communautes',
+    component: () => import('./features/communautes/CommunautesPage.vue'),
+    meta: { connexionRequise: true },
+  },
+  {
+    path: '/communautes/:slug',
+    name: 'communaute',
+    component: () => import('./features/communautes/CommunautePage.vue'),
+    meta: { connexionRequise: true },
+  },
+  {
+    path: '/publications/:id',
+    name: 'publication',
+    component: () => import('./features/communautes/PublicationPage.vue'),
+    meta: { connexionRequise: true },
+  },
+  // La Tech Tontine (docs/priorites.md) : les cercles et leurs tours. Connexion requise.
+  {
+    path: '/cercles',
+    name: 'cercles',
+    component: () => import('./features/cercles/CerclesPage.vue'),
+    meta: { connexionRequise: true },
+  },
+  {
+    path: '/cercles/nouveau',
+    name: 'nouveau-cercle',
+    component: () => import('./features/cercles/NouveauCerclePage.vue'),
+    meta: { connexionRequise: true },
+  },
+  {
+    path: '/cercles/:id',
+    name: 'cercle',
+    component: () => import('./features/cercles/CerclePage.vue'),
+    meta: { connexionRequise: true },
+  },
+  // Le réseau (contracts/reseau.yaml) : écrire à un développeur, recevoir une invitation à un cercle.
+  {
+    path: '/messages',
+    name: 'messages',
+    component: () => import('./features/reseau/MessagesPage.vue'),
+    meta: { connexionRequise: true },
+  },
+  {
+    path: '/messages/:personneId',
+    name: 'conversation',
+    component: () => import('./features/reseau/ConversationPage.vue'),
+    meta: { connexionRequise: true },
+  },
+  // Une PME décrit son besoin, l'assistant propose un plan (étape 3 de la démo). Connexion requise
+  // (GitHub ou e-mail : une PME n'a pas besoin de compte GitHub).
+  {
+    path: '/demandes/nouvelle',
+    name: 'nouvelle-demande',
+    component: () => import('./features/demandes/NouvelleDemandePage.vue'),
+    meta: { connexionRequise: true },
+  },
+  {
+    path: '/demandes/:id',
+    name: 'demande',
+    component: () => import('./features/demandes/DemandePage.vue'),
     meta: { connexionRequise: true },
   },
   {
@@ -21,6 +86,12 @@ export const routes: RouteRecordRaw[] = [
     path: '/systalink',
     name: 'systalink',
     component: () => import('./features/systalink/TableauDeBordPage.vue'),
+  },
+  {
+    // Public : la charte et ses composants, pour l'équipe et le jury (#19).
+    path: '/design-system',
+    name: 'design-system',
+    component: () => import('./design-system/DemonstrationPage.vue'),
   },
   { path: '/:chemin(.*)*', name: 'introuvable', component: () => import('./pages/IntrouvablePage.vue') },
 ]

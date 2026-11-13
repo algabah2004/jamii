@@ -2,6 +2,11 @@ import { http, HttpResponse } from 'msw'
 import type { components } from '../api/generated/socle'
 import type { components as ComposantsSystalink } from '../api/generated/systalink'
 import { handlersVitrine } from './vitrine'
+import { handlersCommunautes } from './communautes'
+import { handlersProfils } from './profils'
+import { handlersDemandes } from './demandes'
+import { handlersCercles } from './cercles'
+import { handlersReseau } from './reseau'
 
 type Moi = components['schemas']['Moi']
 type TableauDeBord = ComposantsSystalink['schemas']['TableauDeBord']
@@ -35,6 +40,14 @@ export const tableauDemo: TableauDeBord = {
     autres: 8,
   },
   projets: { crees: 23, nouveaux: 17, enLigne: 9, surDatacloud: 7 },
+  // Les 3 cercles de la démo (dont celui de Dakar), plus un cercle déjà terminé.
+  cercles: {
+    actifs: 3,
+    termines: 1,
+    toursLivres: 7,
+    nouveauxToursLivres: 4,
+    membres: { total: 22, parPays: [{ pays: 'SN', nombre: 9 }, { pays: 'CI', nombre: 6 }], autres: 7 },
+  },
   moments: [
     { service: 'datacloud', proposes: 12, acceptes: 7 },
     { service: 'orion', proposes: 5, acceptes: 2 },
@@ -46,6 +59,11 @@ let connecte = true
 
 export const handlers = [
   ...handlersVitrine,
+  ...handlersCommunautes,
+  ...handlersProfils,
+  ...handlersDemandes,
+  ...handlersCercles,
+  ...handlersReseau,
   http.get('/api/me', () =>
     connecte
       ? HttpResponse.json(moiDemo)

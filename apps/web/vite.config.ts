@@ -8,6 +8,8 @@ export default defineConfig({
   plugins: [vue()],
   server: {
     port: 5173,
+    // La charte (tokens et illustrations) reste dans docs/design, source unique : on n'autorise que ce dossier.
+    fs: { allow: ['.', '../../docs/design'] },
     proxy: {
       '/api': { target: process.env.API_URL ?? 'http://localhost:8080', changeOrigin: false },
     },

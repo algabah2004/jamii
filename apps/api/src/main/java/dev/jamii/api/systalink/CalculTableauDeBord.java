@@ -6,6 +6,8 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.beans.factory.ObjectProvider;
@@ -33,18 +35,22 @@ class CalculTableauDeBord {
 
 	private final ObjectProvider<ChiffresDesModules.Deploiements> deploiements;
 
+	private final ObjectProvider<ChiffresDesModules.Cercles> cercles;
+
 	private final Clock horloge;
 
 	private final Map<Periode, TableauDeBord> cache = new ConcurrentHashMap<>();
 
 	CalculTableauDeBord(JdbcClient base, Annuaire annuaire, ObjectProvider<ChiffresDesModules.PaysDesInscrits> pays,
 			ObjectProvider<ChiffresDesModules.Projets> projets,
-			ObjectProvider<ChiffresDesModules.Deploiements> deploiements, ObjectProvider<Clock> horloge) {
+			ObjectProvider<ChiffresDesModules.Deploiements> deploiements,
+			ObjectProvider<ChiffresDesModules.Cercles> cercles, ObjectProvider<Clock> horloge) {
 		this.base = base;
 		this.annuaire = annuaire;
 		this.pays = pays;
 		this.projets = projets;
 		this.deploiements = deploiements;
+		this.cercles = cercles;
 		this.horloge = horloge.getIfAvailable(Clock::systemUTC);
 	}
 
@@ -73,7 +79,18 @@ class CalculTableauDeBord {
 				annuaire.compterInscrits(debut), lesPays == null ? Map.of() : lesPays.parPays());
 		var lesProjets = new TableauDeBord.Projets(p == null ? 0 : p.compter(null), p == null ? 0 : p.compter(debut),
 				d == null ? 0 : d.projetsEnLigne(), d == null ? 0 : d.projetsSurDatacloud());
-		return new TableauDeBord(periode, maintenant, lesInscrits, lesProjets, moments(debut));
+		return new TableauDeBord(periode, maintenant, lesInscrits, lesProjets, cercles(debut, lesPays), moments(debut));
+	}
+
+	private TableauDeBord.Cercles cercles(Instant debut, ChiffresDesModules.PaysDesInscrits lesPays) {
+		var c = cercles.getIfAvailable();
+		if (c == null) {
+			return TableauDeBord.Cercles.AUCUN;
+		}
+		Set<UUID> membres = c.membres();
+		var parPays = lesPays == null || membres.isEmpty() ? Map.<String, Long>of() : lesPays.parPays(membres);
+		return new TableauDeBord.Cercles(c.actifs(), c.termines(), c.toursLivres(null), c.toursLivres(debut),
+				TableauDeBord.Membres.anonymiser(membres.size(), parPays));
 	}
 
 	private List<TableauDeBord.Moment> moments(Instant debut) {

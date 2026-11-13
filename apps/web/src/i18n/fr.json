@@ -1,9 +1,14 @@
 {
   "menu": {
+    "cercles": "Cercles",
     "profil": "Profil",
     "principal": "Menu principal",
     "systalink": "Espace Systalink",
-    "vitrine": "Vitrine"
+    "vitrine": "Vitrine",
+    "communautes": "Communautés",
+    "allerAuContenu": "Aller au contenu",
+    "demandes": "Demandes",
+    "systalinkCourt": "Systalink"
   },
   "connexion": {
     "github": "Se connecter avec GitHub",
@@ -11,12 +16,137 @@
   },
   "accueil": {
     "titre": "Trouve ton équipe, construis ton projet, mets-le en ligne.",
-    "texte": "Jamii réunit les développeurs africains : des communautés pour s'entraider, des demandes de PME à réaliser en équipe, et des projets qui vivent après le hackathon.",
-    "bienvenue": "Bon retour, {nom}."
+    "texte": "La plateforme des développeurs africains : s'entraider, livrer pour des PME, et garder ses projets en ligne.",
+    "bienvenue": "Bon retour, {nom}.",
+    "voirProfil": "Voir mon profil",
+    "voirCommunautes": "Trouver une communauté",
+    "voirVitrine": "Voir les projets en ligne",
+    "rassurance": "Gratuit. Ton profil reste privé jusqu'à ce que tu le publies.",
+    "piliers": "Ce que tu peux faire sur Jamii",
+    "pilier": {
+      "profil": {
+        "titre": "Un profil qui prouve",
+        "texte": "Tes dépôts, tes projets en ligne et l'avis de tes coéquipiers. Pas de CV.",
+        "lien": "Créer mon profil"
+      },
+      "equipe": {
+        "titre": "Une équipe, des communautés",
+        "texte": "Pose tes questions, aide les autres, trouve des coéquipiers.",
+        "lien": "Voir les communautés"
+      },
+      "enLigne": {
+        "titre": "Un projet qui vit",
+        "texte": "Jamii vérifie qu'il répond et le montre dans la vitrine.",
+        "lien": "Voir la vitrine"
+      }
+    },
+    "principe": {
+      "badge": "Vérifié",
+      "texte": "Sur Jamii, l'orange veut toujours dire la même chose : c'est prouvé. Un projet qui répond, une tâche livrée à temps, une réponse acceptée par la personne qui l'a posée."
+    },
+    "scene": {
+      "titre1": "Trouve ton équipe.",
+      "titre2": "Mets ton projet",
+      "titreAccent": "en ligne",
+      "commencer": "Commencer avec GitHub",
+      "apercuCommunautes": "Communautés",
+      "apercuEnLigne": "En ligne et vérifié",
+      "apercuProfil": "Profil prouvé"
+    }
   },
   "profil": {
     "titre": "Profil",
-    "vide": "Ton profil se remplira avec tes langages et tes projets publics GitHub, et les projets que tu mets en ligne sur Jamii."
+    "vide": "Ton profil se remplira avec tes langages et tes projets publics GitHub, et les projets que tu mets en ligne sur Jamii.",
+    "generation": {
+      "titre": "Crée ton profil à partir de GitHub",
+      "texte": "Jamii lit tes dépôts publics (langages, sujets, étoiles) pour remplir ton profil. Rien de privé n'est lu, et tu pourras tout compléter ensuite.",
+      "bouton": "Générer mon profil depuis GitHub",
+      "regenerer": "Mettre à jour depuis GitHub",
+      "enCours": "Lecture de tes dépôts GitHub…",
+      "prive": "Ton profil reste privé jusqu'à ce que tu le publies.",
+      "sansGithub": "Ton compte n'est pas relié à GitHub. Connecte-toi avec GitHub pour générer ton profil.",
+      "tropSouvent": "Tu as déjà mis ton profil à jour plusieurs fois cette heure-ci. Réessaie un peu plus tard.",
+      "erreurs": {
+        "github_indisponible": "GitHub ne répond pas pour le moment. Ton profil précédent est conservé : réessaie dans quelques minutes.",
+        "github_refus": "GitHub ne trouve plus ton compte. Vérifie ton identifiant GitHub, puis réessaie."
+      },
+      "lu": {
+        "langages": "Tes langages, calculés sur tes dépôts publics",
+        "sujets": "Les sujets de tes dépôts",
+        "etoiles": "Les étoiles de tes dépôts",
+        "jamais": "Jamais tes dépôts privés"
+      }
+    },
+    "disponibilite": {
+      "disponible": "Disponible",
+      "occupe": "Occupé en ce moment",
+      "indisponible": "Pas disponible"
+    },
+    "heures": "{n} h par semaine",
+    "visibilite": {
+      "prive": "🔒 Ton profil est privé : toi seul le vois.",
+      "publie": "✅ Ton profil est publié : les membres connectés le voient et peuvent te proposer une équipe.",
+      "publier": "Publier mon profil",
+      "retirer": "Rendre mon profil privé"
+    },
+    "modifier": {
+      "bouton": "Modifier",
+      "titre": "Ce que tu déclares toi-même",
+      "bio": "Présentation",
+      "pays": "Pays",
+      "paysAucun": "Je préfère ne pas le dire",
+      "ville": "Ville",
+      "disponibilite": "Disponibilité",
+      "heures": "Heures par semaine (1 à 60)",
+      "competences": "Autres compétences",
+      "competencesAide": "Séparées par des virgules, 20 au plus. Exemple : UX design, Mobile Money",
+      "enregistrer": "Enregistrer",
+      "annuler": "Annuler",
+      "enregistre": "Ton profil est enregistré.",
+      "conflit": "Ton profil a changé dans un autre onglet. Voici la dernière version : refais ta modification.",
+      "invalide": "Cette valeur n'est pas acceptée."
+    },
+    "langages": {
+      "titre": "Langages",
+      "estimation": "Estimé d'après la taille de tes dépôts publics GitHub (hors forks)."
+    },
+    "competences": {
+      "titre": "Compétences",
+      "declaree": "(déclarée)",
+      "source": "Déduites de tes dépôts GitHub, plus celles que tu ajoutes."
+    },
+    "projets": {
+      "titre": "Projets sur Jamii",
+      "vide": "Pas encore de projet. Les projets que tu mets en ligne avec ton équipe apparaîtront ici, avec le lien vérifié.",
+      "inspiration": "Voir les projets déjà en ligne",
+      "equipe": "équipe {pays}",
+      "surSystalink": "Hébergé sur Systalink",
+      "enLigne": "En ligne"
+    },
+    "depots": {
+      "titre": "Dépôts GitHub",
+      "etoiles": "aucune étoile | {n} étoile | {n} étoiles",
+      "pasUnePreuve": "Les dépôts montrent ce que tu codes. Seul un projet mis en ligne et vérifié compte comme preuve."
+    },
+    "fiabilite": {
+      "titre": "Pourquoi on peut compter sur {prenom}",
+      "sur": "{n} sur {sur}",
+      "types": {
+        "tache_livree_a_temps": "tâche livrée à la date prévue | tâches livrées à la date prévue",
+        "avis_coequipier": "avis positif de coéquipier | avis positifs de coéquipiers",
+        "reponse_acceptee": "réponse acceptée | réponses acceptées",
+        "projet_en_ligne": "projet en ligne vérifié | projets en ligne vérifiés"
+      },
+      "contestees": "dont {n} en cours de vérification | dont {n} en cours de vérification",
+      "vide": "Pas encore de preuve. Elles s'ajoutent toutes seules, à mesure que tu participes :",
+      "comment": {
+        "projet_en_ligne": "un projet mis en ligne avec ton équipe, et qui répond ;",
+        "tache_livree_a_temps": "une tâche livrée à la date prévue ;",
+        "reponse_acceptee": "une réponse acceptée dans une communauté ;",
+        "avis_coequipier": "un coéquipier qui referait équipe avec toi."
+      },
+      "sansNote": "Pas de note globale : chaque point se vérifie, et se conteste s'il est faux."
+    }
   },
   "etat": {
     "chargement": "Chargement…",
@@ -25,12 +155,13 @@
   },
   "introuvable": {
     "titre": "Cette page n'existe pas.",
-    "retour": "Revenir à l'accueil"
+    "retour": "Revenir à l'accueil",
+    "texte": "L'adresse est peut-être mal écrite, ou la page a été déplacée."
   },
   "langue": "Langue",
   "systalink": {
     "titre": "Espace Systalink",
-    "intro": "Ce que Jamii apporte au cloud Systalink. Les chiffres sont agrégés et anonymes : aucune personne n'y apparaît.",
+    "intro": "Ce que Jamii apporte au cloud Systalink. Les chiffres sont agrégés et anonymes : aucune personne n'y apparaît.",
     "periode": "Période",
     "periodes": {
       "semaine": "7 derniers jours",
@@ -46,14 +177,23 @@
     "parPays": "Inscrits par pays",
     "autresPays": "Autres pays",
     "seuilPays": "Un pays apparaît à partir de 5 inscrits, pour que personne ne puisse être reconnu.",
+    "cercles": {
+      "titre": "Cercles actifs",
+      "intro": "Des cercles de 4 à 6 développeurs construisent, à tour de rôle, le projet de chacun. Chaque tour livré est un projet mené à terme en équipe.",
+      "actifs": "Cercles actifs",
+      "termines": "aucun cercle terminé | 1 cercle terminé | {n} cercles terminés",
+      "toursLivres": "Tours livrés",
+      "membres": "Membres des cercles",
+      "parPays": "D'où viennent leurs membres"
+    },
     "moments": "Services Systalink proposés",
-    "momentsIntro": "Jamii propose un service Systalink au bon moment : DataCloud pour mettre un projet en ligne, Orion pour le site d'une PME… Voici combien de fois, et combien de personnes l'ont suivi.",
+    "momentsIntro": "Jamii propose un service Systalink au bon moment : DataCloud pour mettre un projet en ligne, Orion pour le site d'une PME… Voici combien de fois, et combien de personnes l'ont suivi.",
     "service": "Service",
     "proposes": "Proposé",
     "acceptes": "Suivi",
     "taux": "Taux",
     "momentsVide": "Aucun service proposé sur cette période.",
-    "nonMesure": "Le passage à une offre payante n'est pas mesuré : Jamii ne voit pas les achats faits chez Systalink.",
+    "nonMesure": "Le passage à une offre payante n'est pas mesuré : Jamii ne voit pas les achats faits chez Systalink.",
     "calculeLe": "Calculé le {date}",
     "services": {
       "datacloud": "DataCloud",
@@ -72,10 +212,354 @@
     "surSystalink": "Hébergés sur Systalink",
     "hebergeSurSystalink": "Hébergé sur Systalink",
     "pourUnePme": "Réalisé pour une PME",
-    "equipe": "Équipe : {noms}",
+    "equipe": "Équipe : {noms}",
     "voir": "Voir le projet",
     "verifie": "Vérifié {quand}",
     "plus": "Voir plus de projets",
-    "vide": "Aucun projet en ligne pour le moment."
+    "vide": "Aucun projet en ligne pour le moment.",
+    "nouvelOnglet": "nouvel onglet"
+  },
+  "communautes": {
+    "titre": "Communautés",
+    "intro": "Pose tes questions, aide les autres et montre tes projets, avec des devs de tout le continent.",
+    "antenne": "Antenne locale · {pays}",
+    "membres": "{n} membre | {n} membres",
+    "questionsOuvertes": "aucune question ouverte | {n} question ouverte | {n} questions ouvertes",
+    "tuEnFaisPartie": "Tu en fais partie",
+    "retour": "← Toutes les communautés",
+    "rejoindre": "Rejoindre",
+    "quitter": "Quitter",
+    "poser": "Poser une question",
+    "type": "Type",
+    "types": {
+      "question": "Question",
+      "discussion": "Discussion",
+      "montre_ton_projet": "Montre ton projet"
+    },
+    "champTitre": "Titre (10 caractères au moins)",
+    "champContenu": "Explique ton problème (20 caractères au moins)",
+    "aideIa": "Pour une question, l'IA proposera une réponse. Un membre de la communauté devra la vérifier.",
+    "publier": "Publier",
+    "erreurPublier": "La publication n'a pas pu être envoyée. Réessaie dans un instant.",
+    "rejoindrePourPublier": "Rejoins la communauté pour publier et répondre.",
+    "filtre": "Afficher",
+    "toutes": "Tout",
+    "ouvertes": "Questions sans réponse acceptée",
+    "vide": "Rien ici pour le moment. Pose la première question !",
+    "reponseAcceptee": "Réponse acceptée",
+    "reponses": "aucune réponse | {n} réponse | {n} réponses",
+    "compteSupprime": "compte supprimé",
+    "annuler": "Annuler",
+    "groupes": {
+      "miennes": "Tes communautés",
+      "aDecouvrir": "À découvrir"
+    },
+    "chiffres": {
+      "membres": "membres",
+      "questionsOuvertes": "questions ouvertes"
+    },
+    "fonctionnement": {
+      "titre": "Comment ça marche",
+      "poser": "Tu poses ta question à la communauté.",
+      "ia": "L'IA propose une première réponse, marquée « à vérifier ». Elle ne compte sur le profil de personne.",
+      "accepter": "Un membre la vérifie ou répond mieux. Tu acceptes la meilleure réponse : elle compte sur le profil de son auteur."
+    },
+    "espace": {
+      "mesCommunautes": "Mes communautés",
+      "decouvrir": "Découvrir des communautés",
+      "invite": "Pose une question ou lance une discussion…",
+      "premier": "Personne n'a encore répondu",
+      "apropos": "À propos",
+      "fil": "Fil de la communauté"
+    }
+  },
+  "question": {
+    "retourCommunaute": "← Retour à la communauté",
+    "iaPrepare": "L'IA prépare une réponse…",
+    "iaIndisponible": "L'IA n'a pas proposé de réponse. Les membres de la communauté peuvent répondre.",
+    "proposeeParIa": "Proposée par l'IA · à vérifier par un pair",
+    "proposeeParIaVerifiee": "Proposée par l'IA",
+    "attendUnPair": "Un autre membre de la communauté doit vérifier cette réponse.",
+    "valideePar": "validée par {nom}",
+    "valider": "Valider cette réponse",
+    "accepter": "Accepter cette réponse",
+    "merciValidation": "Merci ! Ta validation rend cette réponse fiable pour tout le monde.",
+    "merciAcceptation": "🎉 Réponse acceptée. Elle apparaît maintenant sur le profil de son auteur.",
+    "taReponse": "Ta réponse",
+    "repondre": "Répondre",
+    "erreurs": {
+      "pas_membre": "Rejoins la communauté pour faire ça.",
+      "pas_auteur_question": "Seul l'auteur de la question peut accepter une réponse.",
+      "propre_question": "Tu ne peux pas valider la réponse à ta propre question : un autre membre doit le faire.",
+      "deja_acceptee": "Cette question a déjà une réponse acceptée.",
+      "propre_reponse": "Tu ne peux pas accepter ta propre réponse : seule l'aide d'un autre membre compte sur un profil.",
+      "proposee_par_ia": "La réponse de l'IA ne s'accepte pas : un autre membre doit la vérifier.",
+      "autre": "Ça n'a pas marché. Réessaie dans un instant."
+    },
+    "ouverte": "Question ouverte"
+  },
+  "designSystem": {
+    "titre": "Design system",
+    "intro": "La charte de Jamii, telle que l'appli l'utilise. Chaque couleur vient de docs/design/tokens.json, et les contrastes sont calculés en direct.",
+    "theme": "Thème",
+    "themes": {
+      "systeme": "Comme l'appareil",
+      "clair": "Clair",
+      "sombre": "Sombre"
+    },
+    "marque": "Charte",
+    "marques": {
+      "jamii": "Jamii",
+      "partenaire": "Exemple de charte partenaire"
+    },
+    "marqueAide": "Une marque ne change que la couleur d'action. L'orange de la preuve reste le même partout.",
+    "composants": "Composants",
+    "contrastes": "Contrastes",
+    "contrastesAide": "Mesurés sur le thème et la charte affichés. Seuils WCAG 2.1 AA : 4,5:1 pour le texte, 3:1 pour les bords et le focus.",
+    "paire": "Texte / fond",
+    "rapport": "Rapport",
+    "seuil": "Seuil",
+    "couleurs": "Couleurs",
+    "typographie": "Typographie",
+    "exemples": {
+      "principal": "Publier",
+      "secondaire": "Modifier",
+      "discret": "Annuler",
+      "occupe": "Envoi…",
+      "preuve": "Hébergé sur Systalink",
+      "celebrer": "Revoir l'animation",
+      "champ": "Adresse du projet",
+      "aide": "Commence par https://",
+      "erreur": "Cette adresse ne répond pas.",
+      "ia": "Proposé par l'IA",
+      "iaTexte": "En pointillé tant qu'un humain ne l'a pas accepté : ce n'est pas encore une preuve."
+    }
+  },
+  "theme": "Thème",
+  "themeCourt": {
+    "systeme": "Auto",
+    "clair": "Clair",
+    "sombre": "Sombre"
+  },
+  "pied": {
+    "mission": "La plateforme d'échange des développeurs africains : s'entraider, faire équipe et mettre ses projets en ligne.",
+    "liens": "Liens utiles",
+    "charte": "Charte graphique",
+    "cadev": "Projet présenté à la CADEV 2026. Jamii fonctionne sur le cloud Systalink."
+  },
+  "signaler": {
+    "bouton": "Signaler",
+    "pourquoi": "Pourquoi signaler ce message ?",
+    "envoyer": "Envoyer le signalement",
+    "merci": "Merci, un modérateur va regarder.",
+    "erreur": "Le signalement n'a pas pu être envoyé. Réessaie dans un instant.",
+    "motifs": {
+      "spam": "Spam ou publicité",
+      "irrespectueux": "Irrespectueux",
+      "hors_sujet": "Hors sujet",
+      "autre": "Autre raison"
+    }
+  },
+  "demandes": {
+    "nouvelle": {
+      "titre": "Décris ton besoin",
+      "intro": "Explique avec tes mots ce dont ton entreprise a besoin. L'assistant en fait un plan clair, puis une équipe de développeurs peut le réaliser.",
+      "champTitre": "En une phrase, de quoi as-tu besoin ?",
+      "aideTitre": "Par exemple : une boutique en ligne pour mon atelier.",
+      "champDescription": "Raconte : qui l’utilisera, ce que ça doit faire, ce qui compte pour toi",
+      "aideDescription": "Au moins {n} caractères. Pas besoin de mots techniques.",
+      "duree": "En combien de temps aimerais-tu l’avoir ?",
+      "semaines": "{n} semaine | {n} semaines",
+      "jeNeSaisPas": "Je ne sais pas",
+      "envoyer": "Obtenir un plan",
+      "rassurance": "Gratuit. Rien n’est publié sans ton accord.",
+      "erreur": "Ta demande n'a pas pu être envoyée. Réessaie dans un instant.",
+      "exemplesTitre": "Pour t’inspirer",
+      "ensuiteTitre": "Et ensuite ?",
+      "ensuite1": "L’assistant propose un plan : ce qu’il faut faire, en combien de temps, et avec qui.",
+      "ensuite2": "Tu le relis. Rien n’est décidé sans toi.",
+      "ensuite3": "Une équipe de développeurs de Jamii prend le projet et le met en ligne."
+    },
+    "exemples": [
+      {
+        "titre": "Une boutique en ligne pour mon atelier de couture",
+        "description": "Je couds des vêtements à Thiès. Je veux montrer mes modèles avec leurs prix, recevoir les commandes sur WhatsApp et être payée par Mobile Money."
+      },
+      {
+        "titre": "Suivre les cotisations de notre groupement",
+        "description": "Nous sommes 30 femmes dans une tontine. Nous voulons voir qui a payé et le tour de chacune depuis un téléphone simple."
+      },
+      {
+        "titre": "Prise de rendez-vous pour mon cabinet",
+        "description": "Mes patients appellent toute la journée. Je veux qu’ils choisissent un créneau en ligne et reçoivent un rappel par SMS la veille."
+      }
+    ],
+    "plan": {
+      "autre": "← Décrire un autre besoin",
+      "prepare": "L’assistant prépare ton plan…",
+      "prepareAide": "Il lit ta demande et la découpe en étapes. Cela prend quelques secondes.",
+      "echec": "Le plan n'a pas pu être préparé.",
+      "echecAide": "Ta demande est bien enregistrée. Réessaie dans un instant.",
+      "propose": "Plan proposé par l’assistant · à relire, rien n’est décidé",
+      "repli": "L'assistant n'était pas disponible : voici un modèle de plan à compléter avec l'équipe.",
+      "resume": "Ce que l’équipe va construire",
+      "fonctionnalites": "Les fonctionnalités",
+      "jalons": "Les étapes",
+      "semaine": "Semaine {n}",
+      "roles": "Les profils à trouver",
+      "rolesAide": "Ces rôles seront proposés aux développeurs de Jamii.",
+      "services": "Services Systalink suggérés",
+      "servicesAide": "Des suggestions, jamais une obligation : le plan marche sans.",
+      "horsPerimetre": "Pas dans ce projet",
+      "decision": "Ce plan te convient ? Une équipe peut se former autour.",
+      "lancer": "Lancer le projet avec ce plan",
+      "lance": "Projet lancé. Les rôles à trouver sont proposés aux développeurs.",
+      "dejaPrise": "Une équipe a déjà lancé un projet sur cette demande.",
+      "erreurLancement": "Le projet n'a pas pu être lancé. Réessaie dans un instant."
+    },
+    "priorites": {
+      "indispensable": "Indispensable",
+      "utile": "Utile",
+      "plus_tard": "Plus tard"
+    }
+  },
+  "cercles": {
+    "titre": "Cercles",
+    "intro": "4 à 6 développeurs construisent, à tour de rôle, le projet de chacun. Systalink est garant du cercle.",
+    "tous": "Tous les cercles",
+    "sousTitre": "{n} membres · {ville}",
+    "garant": "garant",
+    "anneauDescription": "Ordre de passage : {ordre}.",
+    "tourDe": "Tour {n} · le projet de {nom}",
+    "avancement": "Avancement du tour",
+    "taches": "{faites} tâches sur {total}",
+    "joursRestants": "dernier jour | 1 jour restant | {n} jours restants",
+    "depot": "Le dépôt du projet",
+    "avantTirage": "L'ordre de passage n'est pas encore tiré.",
+    "avantTirageAide": "Le cercle est complet. | Il manque 1 membre. | Il manque {n} membres.",
+    "ordre": "Ordre de passage",
+    "pasDIdee": "Idée pas encore déposée",
+    "membres": "{n} membres sur {taille}",
+    "statut": {
+      "ouvert": "Cherche des membres",
+      "en_cours": "En cours",
+      "termine": "Terminé"
+    },
+    "statutTour": {
+      "a_venir": "À venir",
+      "en_cours": "En cours",
+      "livre": "Livré"
+    },
+    "etapeMembres": "{n} membres sur {taille}",
+    "etapeIdees": "{n} idées déposées sur {total}",
+    "rejoindre": "Rejoindre le cercle",
+    "monIdee": "Mon idée :",
+    "deposerIdee": "Déposer mon idée",
+    "modifierIdee": "Modifier mon idée",
+    "ideeTitre": "Le projet que tu veux voir naître",
+    "ideeDescription": "En quelques phrases",
+    "ideeAide": "Pour qui, et ce qu'il doit faire. Le cercle le construira pendant ton tour.",
+    "enregistrerIdee": "Enregistrer mon idée",
+    "tirer": "Tirer l'ordre au sort",
+    "tirageAide": "Possible quand le cercle est complet et que chacun a déposé son idée. Le tirage est fait une seule fois, par le serveur.",
+    "erreurs": {
+      "cercle_complet": "Le cercle est déjà complet.",
+      "deja_membre": "Tu fais déjà partie de ce cercle.",
+      "tirage_deja_fait": "L'ordre a déjà été tiré.",
+      "cercle_incomplet": "Il manque encore des membres.",
+      "idees_manquantes": "Chaque membre doit d'abord déposer son idée.",
+      "autre": "Ça n'a pas marché. Réessaie dans un instant.",
+      "tour_non_en_cours": "Ce tour n'est plus en cours."
+    },
+    "nouveau": {
+      "titre": "Créer un cercle",
+      "intro": "Tu en seras le premier membre. Les autres le rejoignent, chacun dépose son idée, puis tu tires l'ordre au sort.",
+      "nom": "Nom du cercle",
+      "nomAide": "Par exemple, Cercle de Dakar.",
+      "ville": "Ville",
+      "taille": "Combien serez-vous ?",
+      "personnes": "{n} personnes",
+      "tailleAide": "{n} tours de deux semaines : chacun reçoit son projet.",
+      "creer": "Créer le cercle"
+    },
+    "membresTitre": "Les membres",
+    "livrer": "Livrer le tour",
+    "livrerOui": "Oui, livrer",
+    "livrerConfirmation": "Le projet de {nom} est terminé ? Il est remis à {nom}, et le tour de {suivant} commence.",
+    "livrerDernier": "Le projet de {nom} est terminé ? C'est le dernier tour : le cercle sera terminé.",
+    "livreTitre": "Le projet de {nom} est livré.",
+    "livreTexte": "Il passera dans la vitrine dès sa mise en ligne, avec le nom de son équipe.",
+    "voirVitrine": "Voir la vitrine",
+    "termine": "Le cercle est terminé.",
+    "termineAide": "{n} projets livrés, un par membre. Le cercle peut repartir pour un nouveau tour de table.",
+    "projetDe": "Le projet de {nom}",
+    "point": "Le point du tour",
+    "pointTexte": "Jour {jour} du tour de {nom} : {faites} tâches livrées sur {total}.",
+    "ideeDeposee": "Idée déposée",
+    "creePar": "Créé par {nom}",
+    "groupes": {
+      "mes": "Mes cercles",
+      "ouverts": "Cercles qui cherchent des membres"
+    },
+    "vide": {
+      "mes": "Tu ne fais encore partie d'aucun cercle.",
+      "ouverts": "Aucun cercle ne cherche de membres pour l'instant. Crée le tien."
+    },
+    "ouvrir": "Ouvrir le cercle",
+    "trouverMembres": "Trouver des membres"
+  },
+  "reseau": {
+    "competences": "Compétences",
+    "heures": "{n} h par semaine",
+    "pourToi": {
+      "titre": "Cercles qui ont besoin de toi",
+      "aide": "Choisis d'après tes compétences et ta ville."
+    },
+    "raisonsCercle": {
+      "competence_manquante": "Il leur manque {competences}, que tu connais",
+      "meme_ville": "Dans ta ville",
+      "disponible": "Tu es disponible",
+      "presque_complet": "Plus qu'une place"
+    },
+    "raisonsProfil": {
+      "competence_manquante": "Connaît {competences}, qui manque au cercle",
+      "meme_ville": "Dans la ville du cercle",
+      "disponible": "Disponible en ce moment",
+      "presque_complet": "Le cercle n'attend plus qu'une personne"
+    },
+    "profils": {
+      "titre": "Profils qui manquent au cercle",
+      "aide": "Des développeurs disponibles qui apportent ce que le cercle n'a pas encore : {competences}.",
+      "vide": "Aucun profil disponible ne correspond pour l'instant. Partage le lien du cercle dans une communauté.",
+      "inviter": "Inviter au cercle",
+      "invite": "Invitation envoyée",
+      "message": "Ton message à {nom}",
+      "messageParDefaut": "Bonjour {nom}, notre « {cercle} » cherche quelqu'un qui connaît {competences}. Tu veux nous rejoindre ?",
+      "envoyer": "Envoyer l'invitation",
+      "envoye": "Invitation envoyée. {nom} la verra dans ses messages."
+    },
+    "erreurs": {
+      "cercle_ferme": "Le cercle est complet, ou l'ordre est déjà tiré.",
+      "pas_membre_du_cercle": "Seuls les membres du cercle peuvent inviter.",
+      "soi_meme": "Tu ne peux pas t'écrire à toi-même.",
+      "introuvable": "Cette personne n'existe plus.",
+      "autre": "L'invitation n'est pas partie. Réessaie.",
+      "autreMessage": "Le message n'est pas parti. Réessaie."
+    },
+    "messages": {
+      "titre": "Messages",
+      "intro": "Écris à n'importe quel développeur, avec ou sans cercle.",
+      "vide": "Aucun message pour l'instant. Invite quelqu'un depuis un cercle ouvert, ou attends une invitation.",
+      "toi": "Toi :",
+      "invitationRecue": "T'invite à rejoindre « {cercle} »",
+      "nonLus": "{n} message non lu | {n} messages non lus",
+      "tous": "Tous les messages",
+      "premier": "Écris le premier message à {nom}.",
+      "invitation": "Invitation à rejoindre le cercle",
+      "cercleFerme": "Ce cercle n'accepte plus de membres.",
+      "ecrire": "Ton message à {nom}",
+      "envoyer": "Envoyer",
+      "lien": "Messages | Messages, {n} non lu | Messages, {n} non lus"
+    }
   }
 }

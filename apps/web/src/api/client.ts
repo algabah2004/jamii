@@ -1,10 +1,15 @@
 import createClient, { type Middleware } from 'openapi-fetch'
 import type { paths as CheminsSocle } from './generated/socle'
 import type { paths as CheminsSystalink } from './generated/systalink'
+import type { paths as CheminsCommunautes } from './generated/communautes'
 import type { paths as CheminsVitrine } from './generated/vitrine'
+import type { paths as CheminsProfils } from './generated/profils'
+import type { paths as CheminsProjets } from './generated/projets'
+import type { paths as CheminsCercles } from './generated/cercles'
+import type { paths as CheminsReseau } from './generated/reseau'
 
 /** Un chemin par contrat : on ajoute ici chaque nouveau contrat généré. */
-type paths = CheminsSocle & CheminsSystalink & CheminsVitrine
+type paths = CheminsSocle & CheminsSystalink & CheminsVitrine & CheminsCommunautes & CheminsProfils & CheminsProjets & CheminsCercles & CheminsReseau
 
 const METHODES_PROTEGEES = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
 
