@@ -41,7 +41,7 @@ class ProjetsController {
 	/** Schéma `Projet` du contrat. Rôles et alertes arrivent avec leurs routes : listes vides en attendant. */
 	record Projet(UUID id, String titre, String origine, String statut, PersonneResume porteur,
 			List<String> competencesRecherchees, int nombreMembres, Instant creeLe, String description, UUID demandeId,
-			UUID projetRepris, List<Object> roles, List<MembreEquipe> equipe, List<Object> alertes,
+			UUID projetRepris, List<RecrutementController.RoleRecherche> roles, List<MembreEquipe> equipe, List<Object> alertes,
 			Instant derniereActiviteLe, int version, Moi moi) {
 	}
 
@@ -51,13 +51,17 @@ class ProjetsController {
 
 	private final Annuaire annuaire;
 
+	private final Recrutement recrutement;
+
 	private final Demandes demandes;
 
-	ProjetsController(GestionProjets gestion, Projets projets, Annuaire annuaire, Demandes demandes) {
+	ProjetsController(GestionProjets gestion, Projets projets, Annuaire annuaire, Demandes demandes,
+			Recrutement recrutement) {
 		this.gestion = gestion;
 		this.projets = projets;
 		this.annuaire = annuaire;
 		this.demandes = demandes;
+		this.recrutement = recrutement;
 	}
 
 	@PostMapping("/api/projets")
@@ -115,15 +119,20 @@ class ProjetsController {
 		var fiche = gestion.lire(projetId).orElseThrow();
 		var equipe = gestion.equipe(projetId);
 		Map<UUID, Compte> comptes = annuaire.lire(equipe.stream().map(GestionProjets.Membre::utilisateurId).toList());
+		var roles = recrutement.roles(projetId);
+		Map<UUID, String> titres = recrutement.titresDesRolesOccupes(projetId);
+		// Les compétences cherchées : celles des rôles encore ouverts, sans doublon.
+		List<String> recherchees = roles.stream().filter(r -> "ouvert".equals(r.statut())).flatMap(r -> r.competences().stream())
+			.distinct().sorted().toList();
 		List<MembreEquipe> membres = equipe.stream()
 			.filter(m -> comptes.containsKey(m.utilisateurId()))
-			.map(m -> new MembreEquipe(personne(comptes.get(m.utilisateurId())), null,
+			.map(m -> new MembreEquipe(personne(comptes.get(m.utilisateurId())), titres.get(m.utilisateurId()),
 					m.utilisateurId().equals(fiche.porteurId()), m.rejointLe()))
 			.toList();
 		PersonneResume porteur = annuaire.lire(fiche.porteurId()).map(ProjetsController::personne).orElseThrow();
 		boolean estMembre = equipe.stream().anyMatch(m -> m.utilisateurId().equals(moi));
-		return new Projet(fiche.id(), fiche.titre(), fiche.origine(), fiche.statut(), porteur, List.of(), membres.size(),
-				fiche.creeLe(), fiche.description(), fiche.demandeId(), fiche.projetReprisId(), List.of(), membres, List.of(),
+		return new Projet(fiche.id(), fiche.titre(), fiche.origine(), fiche.statut(), porteur, recherchees, membres.size(),
+				fiche.creeLe(), fiche.description(), fiche.demandeId(), fiche.projetReprisId(), roles.stream().map(RecrutementController::vue).toList(), membres, List.of(),
 				fiche.derniereActiviteLe(), fiche.version(), new Moi(fiche.porteurId().equals(moi), estMembre));
 	}
 
