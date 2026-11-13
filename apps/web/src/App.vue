@@ -1,13 +1,20 @@
 <script setup lang="ts">
+import { computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, RouterView } from 'vue-router'
 import { adresseConnexionGithub } from './api/client'
 import ReglagesAffichage from './components/ReglagesAffichage.vue'
 import { chargerSession, seDeconnecter, useSession } from './session'
 import { JAvatar, JBouton, JSquelette } from './design-system'
+import { arreterActivite, suivreActivite, useActivite } from './features/reseau/activite'
 
 const { t } = useI18n()
 const { etat, moi } = useSession()
+
+// Les pastilles : relues toutes les 30 s tant qu'on est connecté et que l'onglet est visible (features/reseau/activite.ts).
+const activite = useActivite()
+const nonLus = computed(() => activite.value?.messagesNonLus ?? 0)
+watch(etat, (e) => (e === 'connecte' ? suivreActivite() : arreterActivite()), { immediate: true })
 </script>
 
 <template>
@@ -31,6 +38,10 @@ const { etat, moi } = useSession()
         </a>
         <template v-else-if="etat === 'connecte' && moi">
           <!-- Le profil se reconnaît à son visage : l'avatar mène au profil, le nom reste lisible par tous. -->
+          <RouterLink to="/messages" class="icone-entete" data-test="lien-messages" :aria-label="t('reseau.messages.lien', { n: nonLus }, nonLus)">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 6h16v11H8l-4 3z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" /></svg>
+            <span v-if="nonLus" class="icone-entete__pastille" aria-hidden="true">{{ nonLus > 9 ? '9+' : nonLus }}</span>
+          </RouterLink>
           <RouterLink to="/profil" class="moi" data-test="mon-profil">
             <JAvatar :nom="moi.nom" :url="moi.avatarUrl" :taille="32" />
             <span class="moi__nom">{{ t('menu.profil') }}</span>
@@ -116,6 +127,10 @@ main, .pied__interieur { padding-inline: var(--space-6); }
 .bouton-entete { min-height: 36px; white-space: nowrap; }
 .moi { display: inline-flex; align-items: center; gap: var(--space-2); padding: 2px var(--space-3) 2px 2px; border: 1px solid var(--line); border-radius: var(--radius-pill); color: var(--ink); text-decoration: none; font-weight: 600; font-size: var(--type-body-sm-size); }
 .moi:hover, .moi.router-link-active { border-color: var(--action); }
+.icone-entete { position: relative; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; color: var(--ink); }
+.icone-entete:hover, .icone-entete.router-link-active { background: color-mix(in srgb, var(--action) 16%, transparent); }
+/* La pastille orange : quelque chose de neuf vous attend. */
+.icone-entete__pastille { position: absolute; top: 2px; right: 0; min-width: 18px; height: 18px; padding: 0 4px; border-radius: var(--radius-pill); background: var(--proof); color: var(--on-proof); font-size: 0.6875rem; font-weight: 700; line-height: 18px; text-align: center; box-shadow: 0 0 0 2px var(--surface); }
 .deconnexion { background: none; border: 0; padding: var(--space-2); color: var(--ink-muted); font-size: var(--type-body-sm-size); cursor: pointer; white-space: nowrap; }
 .deconnexion:hover { color: var(--ink); text-decoration: underline; }
 
