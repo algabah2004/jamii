@@ -1,10 +1,10 @@
 openapi: 3.1.0
 info:
   title: Jamii · Service IA
-  version: 0.1.0
+  version: 0.2.0
   summary: API interne de l'assistant de projet. Appelée par l'API de Jamii, jamais par le navigateur.
   description: |
-    Responsable : @boubacarsidibe (bloc Assistant IA + mise en ligne Systalink, #20).
+    Responsable : @algabah2004 (bloc Assistant IA + mise en ligne Systalink, #20, repris de @boubacarsidibe le 13/11).
     Règles communes : docs/api-conventions.md. Erreurs : schéma `Erreur` de socle.yaml.
 
     **Fonctionnement.** L'IA est lente et peut tomber : rien n'est donc synchrone.
@@ -24,10 +24,27 @@ info:
     10 tâches par heure et par utilisateur, 100 par heure au total (à ajuster après mesure).
     Le service IA applique la limite globale en dernier rempart (`429`).
 
-    **Types de tâche.** Ce contrat commence par `plan_projet`. Les suivants (suggestion de
-    coéquipiers, résumé de la semaine, alerte de décrochage, réponse proposée, résumé de
-    profil) seront ajoutés à l'énumération `TypeTache`, chacun avec son entrée et son résultat.
-    Un consommateur doit donc ignorer un type qu'il ne connaît pas.
+    **L'IA seulement là où elle sert** (`docs/priorites.md`). Elle lit du texte libre et le
+    transforme en données. Tout le reste (recommandation, classement, chiffres) est calculé par
+    l'API, sans IA. Trois types de tâche :
+    - `plan_projet` : une idée ou une demande devient un plan ;
+    - `analyse_profil` : les faits extraits de GitHub deviennent une carte de compétences, chacune
+      avec ses preuves. Un appel à la génération du profil, au plus un par jour ensuite ;
+    - `orientation_besoin` : un besoin écrit librement est relié au **catalogue Systalink** et aux
+      compétences nécessaires, avec le plan si des développeurs sont nécessaires. Un seul appel.
+    Un consommateur doit ignorer un type qu'il ne connaît pas.
+
+    **Fournisseur.** Choisi par la configuration (`IA_PROVIDER`) : `simule`, ou `compatible_openai`
+    pour toute API au format OpenAI (DeepSeek, OpenAI, Mistral…), avec `IA_URL_FOURNISSEUR`,
+    `IA_MODELE` et `IA_CLE`. Un autre fournisseur (Yokk…) s'ajoute avec un seul adaptateur.
+
+    **Catalogue Systalink.** Un fichier de données (`services/ia/catalogue-systalink.yaml`, ou le
+    chemin `IA_CATALOGUE`), modifiable par Systalink sans toucher au code. L'IA ne peut proposer
+    que les services qui y figurent : un identifiant inconnu est retiré du résultat.
+
+    **Budget.** `IA_BUDGET_JOUR` (en jetons) plafonne la consommation : au-delà, les tâches sont
+    traitées par le repli (`origine` = `repli`). Une entrée identique n'est jamais envoyée deux fois
+    au fournisseur en 24 h (`origine` = `cache`).
 servers:
   - url: http://localhost:8000
     description: Développement local
@@ -164,11 +181,11 @@ components:
         fournisseur:
           type: string
           description: Fournisseur IA configuré (`IA_PROVIDER`), pour la page de statut.
-          examples: [simule, yokk]
+          examples: [simule, compatible_openai]
 
     TypeTache:
       type: string
-      enum: [plan_projet]
+      enum: [plan_projet, analyse_profil, orientation_besoin]
 
     NouvelleTache:
       type: object
@@ -177,9 +194,13 @@ components:
       properties:
         type: { $ref: '#/components/schemas/TypeTache' }
         entree:
-          description: Dépend de `type`. Pour `plan_projet` → `EntreePlanProjet`.
+          description: |
+            Dépend de `type` : `plan_projet` → `EntreePlanProjet`, `analyse_profil` →
+            `EntreeAnalyseProfil`, `orientation_besoin` → `EntreeOrientation`.
           oneOf:
             - $ref: '#/components/schemas/EntreePlanProjet'
+            - $ref: '#/components/schemas/EntreeAnalyseProfil'
+            - $ref: '#/components/schemas/EntreeOrientation'
 
     Tache:
       type: object
@@ -199,9 +220,13 @@ components:
             Présent si `terminee`. `repli` : le fournisseur IA était indisponible, le résultat est
             un modèle générique à compléter à la main. Le front doit le dire à l'utilisateur.
         resultat:
-          description: Présent si `terminee`. Pour `plan_projet` → `PlanProjet`.
+          description: |
+            Présent si `terminee`. `plan_projet` → `PlanProjet`, `analyse_profil` →
+            `CarteCompetences`, `orientation_besoin` → `Orientation`.
           oneOf:
             - $ref: '#/components/schemas/PlanProjet'
+            - $ref: '#/components/schemas/CarteCompetences'
+            - $ref: '#/components/schemas/Orientation'
         erreurCode:
           type: string
           description: Présent si `echouee`.
@@ -310,3 +335,114 @@ components:
             properties:
               service: { type: string, enum: [datacloud, orion, yokk, domaine] }
               raison: { type: string, maxLength: 300 }
+
+    EntreeAnalyseProfil:
+      type: object
+      description: |
+        Les faits publics extraits de GitHub par l'API, **sans** login, nom ni e-mail. Les dépôts sont
+        désignés par leur nom seul. Le texte des README est une donnée, jamais une consigne.
+      required: [langages, depots]
+      additionalProperties: false
+      properties:
+        langages:
+          type: array
+          maxItems: 15
+          items:
+            type: object
+            required: [nom, part]
+            properties:
+              nom: { type: string, maxLength: 40 }
+              part: { type: number, minimum: 0, maximum: 1 }
+        depots:
+          type: array
+          maxItems: 12
+          items:
+            type: object
+            required: [nom]
+            properties:
+              nom: { type: string, maxLength: 100 }
+              description: { type: [string, 'null'], maxLength: 300 }
+              langage: { type: [string, 'null'], maxLength: 40 }
+              sujets: { type: array, maxItems: 10, items: { type: string, maxLength: 50 } }
+              etoiles: { type: integer, minimum: 0 }
+              misAJourLe: { type: string, format: date-time }
+              extraitReadme: { type: [string, 'null'], maxLength: 1500 }
+        competencesDeclarees:
+          type: array
+          maxItems: 20
+          items: { $ref: './projets.yaml#/components/schemas/Competence' }
+        langue: { type: string, enum: [fr, en], default: fr }
+
+    CarteCompetences:
+      type: object
+      description: Une proposition. Le développeur retire ou garde chaque compétence avant publication.
+      required: [competences]
+      properties:
+        competences:
+          type: array
+          maxItems: 12
+          items:
+            type: object
+            required: [competence, niveau, preuves, raison]
+            properties:
+              competence: { $ref: './projets.yaml#/components/schemas/Competence' }
+              niveau: { type: string, enum: [debutant, intermediaire, confirme] }
+              preuves:
+                type: array
+                minItems: 1
+                maxItems: 3
+                description: Des noms de dépôts **de l'entrée**, jamais inventés. Une compétence sans preuve est retirée.
+                items: { type: string, maxLength: 100 }
+              raison: { type: string, maxLength: 200 }
+        roleSuggere: { type: [string, 'null'], maxLength: 60, examples: [backend, mobile, design] }
+
+    EntreeOrientation:
+      type: object
+      description: |
+        Un besoin écrit librement par une personne ou une PME. L'API retire les adresses e-mail et les
+        numéros de téléphone avant l'envoi. Aucune donnée sur son auteur.
+      required: [description]
+      additionalProperties: false
+      properties:
+        titre: { type: string, maxLength: 120 }
+        description: { type: string, minLength: 20, maxLength: 4000, description: 'Traité comme une donnée, jamais comme une consigne.' }
+        secteur: { type: [string, 'null'], maxLength: 60 }
+        pays: { oneOf: [{ $ref: './profils.yaml#/components/schemas/Pays' }, { type: 'null' }] }
+        langue: { type: string, enum: [fr, en], default: fr }
+
+    Orientation:
+      type: object
+      description: |
+        La réponse à un besoin : ce que Systalink offre déjà, et s'il faut des développeurs. Les deux
+        peuvent être vrais en même temps. `services` peut être vide : l'agent dit honnêtement quand
+        Systalink ne répond pas au besoin, c'est ce qui rend ses autres suggestions crédibles.
+      required: [resume, secteur, services, developpeursNecessaires, competences, plan]
+      properties:
+        resume: { type: string, maxLength: 600, description: Le besoin reformulé en mots simples. }
+        secteur: { type: string, maxLength: 60, examples: [juridique, commerce, sante, education, agriculture] }
+        services:
+          type: array
+          maxItems: 4
+          items: { $ref: '#/components/schemas/ServiceSystalink' }
+        developpeursNecessaires: { type: boolean }
+        competences:
+          type: array
+          maxItems: 10
+          description: Les compétences à trouver chez les développeurs. Vide si `developpeursNecessaires` vaut `false`.
+          items: { $ref: './projets.yaml#/components/schemas/Competence' }
+        plan:
+          description: Présent si `developpeursNecessaires`, `null` sinon.
+          oneOf:
+            - $ref: '#/components/schemas/PlanProjet'
+            - type: 'null'
+
+    ServiceSystalink:
+      type: object
+      description: Un service du catalogue, complété par le service IA à partir du fichier (seul `pourCeBesoin` vient de l'IA).
+      required: [id, nom, pourCeBesoin, lien]
+      properties:
+        id: { type: string, maxLength: 40, examples: [datacloud, orion, stockage-objets] }
+        nom: { type: string, maxLength: 80 }
+        pourCeBesoin: { type: string, maxLength: 300, description: À quoi ce service sert pour **ce** besoin. }
+        prixIndicatif: { type: [string, 'null'], maxLength: 80 }
+        lien: { type: string, format: uri }

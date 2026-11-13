@@ -1,0 +1,55 @@
+# Catalogue des services Systalink proposés par l'orientation d'un besoin (contracts/ia.yaml, `orientation_besoin`).
+#
+# C'est un fichier de DONNÉES : Systalink peut le modifier sans toucher au code (autre chemin : IA_CATALOGUE).
+# L'IA ne peut proposer QUE les services listés ici, par leur `id` ; un identifiant inconnu est retiré du résultat.
+# `pourQuoi` est donné à l'IA pour qu'elle choisisse ; `nom`, `prixIndicatif` et `lien` sont recopiés tels quels.
+#
+# Sources : docs/systalink-services.md (vu le 10/11/2026). Les prix marqués « à confirmer » sont à vérifier par Systalink.
+
+services:
+  - id: orion
+    nom: Orion, site web créé par IA
+    pourQuoi: >-
+      Un site vitrine simple (présentation, coordonnées, services, horaires) sans développeur. Convient à une PME,
+      un cabinet, une association ou un commerce qui veut être trouvé en ligne.
+    prixIndicatif: Offre Free à vie, puis à partir de 5 000 FCFA par mois
+    lien: https://systalink.com
+
+  - id: datacloud-application
+    nom: DataCloud, hébergement d'application
+    pourQuoi: >-
+      Mettre en ligne une application web sur mesure (Java, Python, Node, PHP, Docker…) construite par des
+      développeurs, hébergée à Dakar.
+    prixIndicatif: À partir de 800 FCFA par mois (à confirmer)
+    lien: https://platform.systalink.com
+
+  - id: datacloud-base-de-donnees
+    nom: DataCloud, base de données gérée
+    pourQuoi: >-
+      Garder des données structurées en sécurité (clients, dossiers, stocks, commandes) pour une application, avec
+      sauvegardes, hébergée à Dakar.
+    prixIndicatif: null
+    lien: https://platform.systalink.com
+
+  - id: datacloud-stockage
+    nom: DataCloud, stockage de fichiers
+    pourQuoi: >-
+      Stocker et partager de nombreux fichiers et documents (PDF, photos, archives) de façon sûre, compatible avec
+      l'API S3.
+    prixIndicatif: null
+    lien: https://platform.systalink.com
+
+  - id: nom-de-domaine
+    nom: Nom de domaine
+    pourQuoi: >-
+      Une adresse web à son nom (monentreprise.sn, .com…) pour un site ou des adresses e-mail professionnelles.
+    prixIndicatif: null
+    lien: https://systalink.com
+
+  - id: systaone
+    nom: SystaONE (SystaDrive, SystaMail, SystaTalk, SystaForms)
+    pourQuoi: >-
+      Les outils de bureau d'une équipe : partage de documents, messagerie professionnelle, discussion d'équipe et
+      formulaires. Convient à un cabinet ou une PME qui perd des documents ou communique mal en interne.
+    prixIndicatif: Essai de 14 jours, puis 2 000 à 12 000 FCFA par utilisateur et par mois
+    lien: https://systalink.com

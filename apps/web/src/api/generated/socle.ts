@@ -225,8 +225,11 @@ export interface components {
             /** @description `null` à la dernière page. */
             curseurSuivant: string | null;
         };
-        /** @enum {string} */
-        Role: "membre" | "moderateur" | "admin";
+        /**
+         * @description `systalink` : accès aux clients suivis (`systalink.yaml`), accordé par la configuration `SYSTALINK_ACCES`.
+         * @enum {string}
+         */
+        Role: "membre" | "moderateur" | "admin" | "systalink";
         Moi: {
             /** Format: uuid */
             id: string;

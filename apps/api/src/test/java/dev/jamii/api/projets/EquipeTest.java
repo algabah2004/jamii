@@ -380,4 +380,137 @@ class EquipeTest {
 		assertThat(taches.get(0).get("statut").asString()).isEqualTo("livree");
 	}
 
+	// ---------------------------------------------------------------- créer des tâches et des jalons
+
+	private MvcTestResult envoyer(String chemin, UUID projet, String corps, UtilisateurConnecte qui) {
+		return mvc.post().uri("/api/projets/" + projet + chemin).contentType(MediaType.APPLICATION_JSON).content(corps)
+			.with(csrf()).with(oauth2Login().oauth2User(qui)).exchange();
+	}
+
+	private MvcTestResult modifierJalon(UUID projet, UUID jalon, String corps, UtilisateurConnecte qui) {
+		return mvc.patch().uri("/api/projets/" + projet + "/jalons/" + jalon).contentType(FUSION).content(corps)
+			.with(csrf()).with(oauth2Login().oauth2User(qui)).exchange();
+	}
+
+	@Test
+	void creer_une_tache_dans_un_jalon_et_l_assigner() throws Exception {
+		UtilisateurConnecte kofi = utilisateur("Kofi");
+		UtilisateurConnecte awa = utilisateur("Awa");
+		UUID projet = projet(kofi, awa);
+		UUID j = jalon(projet, "La maquette validée", 0, "prevu");
+		base.sql("UPDATE projet SET derniere_activite_le = '2026-01-01T00:00:00Z' WHERE id = :p").param("p", projet).update();
+
+		MvcTestResult creee = envoyer("/taches", projet,
+				"{\"titre\":\"  Écrire l'écran des pesées  \",\"jalonId\":\"" + j + "\",\"assigneeId\":\"" + awa.id() + "\",\"echeance\":\"2026-11-20\"}", kofi);
+
+		assertThat(creee).hasStatus(HttpStatus.CREATED);
+		JsonNode tache = corps(creee);
+		assertThat(creee.getResponse().getHeader("Location")).isEqualTo("/api/projets/" + projet + "/taches/" + tache.get("id").asString());
+		assertThat(tache.get("titre").asString()).isEqualTo("Écrire l'écran des pesées");
+		assertThat(tache.get("statut").asString()).isEqualTo("a_faire");
+		assertThat(tache.get("jalonId").asString()).isEqualTo(j.toString());
+		assertThat(tache.get("assignee").get("nom").asString()).isEqualTo("Awa");
+		assertThat(tache.get("echeance").asString()).isEqualTo("2026-11-20");
+		assertThat(tache.get("proposeeParIa").asBoolean()).isFalse();
+		assertThat(tache.get("version").asInt()).isZero();
+		assertThat(ids(lire("/api/projets/" + projet + "/taches", awa))).containsExactly(tache.get("id").asString());
+		assertThat(base.sql("SELECT derniere_activite_le > '2026-06-01' FROM projet WHERE id = :p").param("p", projet)
+			.query(Boolean.class).single()).as("l'activité du projet avance").isTrue();
+	}
+
+	@Test
+	void creer_une_tache_suit_les_regles_de_l_equipe() {
+		UtilisateurConnecte kofi = utilisateur("Kofi");
+		UtilisateurConnecte dehors = utilisateur("Dehors");
+		UUID projet = projet(kofi);
+		UUID jalonAutre = jalon(projet(dehors), "Un jalon d'un autre projet", 0, "prevu");
+
+		assertThat(envoyer("/taches", projet, "{\"titre\":\"Une tâche\",\"assigneeId\":\"" + dehors.id() + "\"}", kofi))
+			.hasStatus(HttpStatus.CONFLICT).bodyJson().extractingPath("$.code").isEqualTo("pas_membre");
+		assertThat(envoyer("/taches", projet, "{\"titre\":\"Une tâche\",\"jalonId\":\"" + jalonAutre + "\"}", kofi))
+			.hasStatus(HttpStatus.BAD_REQUEST);
+		assertThat(envoyer("/taches", projet, "{\"titre\":\"Une tâche\"}", dehors)).hasStatus(HttpStatus.FORBIDDEN);
+		assertThat(envoyer("/taches", UUID.randomUUID(), "{\"titre\":\"Une tâche\"}", kofi)).hasStatus(HttpStatus.NOT_FOUND);
+		assertThat(mvc.post().uri("/api/projets/" + projet + "/taches").contentType(MediaType.APPLICATION_JSON)
+			.content("{\"titre\":\"Une tâche\"}").with(oauth2Login().oauth2User(kofi))).as("sans jeton CSRF").hasStatus(HttpStatus.FORBIDDEN);
+		for (String corps : List.of("{}", "{\"titre\":\"ab\"}", "{\"titre\":null}", "{\"titre\":\"Une tâche\",\"statut\":\"livree\"}",
+				"{\"titre\":\"Une tâche\",\"proposeeParIa\":true}", "{\"titre\":\"Une tâche\",\"echeance\":\"20/11/2026\"}")) {
+			assertThat(envoyer("/taches", projet, corps, kofi)).as(corps).hasStatus(HttpStatus.BAD_REQUEST)
+				.bodyJson().extractingPath("$.code").isEqualTo("validation");
+		}
+		assertThat(base.sql("SELECT COUNT(*) FROM tache WHERE projet_id = :p").param("p", projet).query(Integer.class).single()).isZero();
+	}
+
+	@Test
+	void au_dela_de_la_limite_on_ne_cree_plus() {
+		UtilisateurConnecte kofi = utilisateur("Kofi");
+		UUID projet = projet(kofi);
+		base.sql("""
+				INSERT INTO tache (id, projet_id, titre, cree_le)
+				SELECT gen_random_uuid(), :p, 'Tâche ' || n, now() FROM generate_series(1, :n) n
+				""").param("p", projet).param("n", TachesEtJalons.TACHES_PAR_PROJET).update();
+		base.sql("""
+				INSERT INTO jalon (id, projet_id, titre, ordre, cree_le)
+				SELECT gen_random_uuid(), :p, 'Jalon ' || n, n, now() FROM generate_series(1, :n) n
+				""").param("p", projet).param("n", TachesEtJalons.JALONS_PAR_PROJET).update();
+
+		assertThat(envoyer("/taches", projet, "{\"titre\":\"Une de trop\"}", kofi))
+			.hasStatus(HttpStatus.CONFLICT).bodyJson().extractingPath("$.code").isEqualTo("limite_atteinte");
+		assertThat(envoyer("/jalons", projet, "{\"titre\":\"Un de trop\"}", kofi))
+			.hasStatus(HttpStatus.CONFLICT).bodyJson().extractingPath("$.code").isEqualTo("limite_atteinte");
+	}
+
+	@Test
+	void creer_des_jalons_se_placent_a_la_suite() throws Exception {
+		UtilisateurConnecte kofi = utilisateur("Kofi");
+		UUID projet = projet(kofi);
+
+		MvcTestResult premier = envoyer("/jalons", projet, "{\"titre\":\"La maquette validée\",\"echeance\":\"2026-11-20\"}", kofi);
+		MvcTestResult second = envoyer("/jalons", projet, "{\"titre\":\"Les pesées hors ligne\"}", kofi);
+		MvcTestResult avant = envoyer("/jalons", projet, "{\"titre\":\"Le choix du nom\",\"ordre\":0,\"statut\":\"atteint\"}", kofi);
+
+		assertThat(premier).hasStatus(HttpStatus.CREATED);
+		assertThat(premier.getResponse().getHeader("Location")).isEqualTo("/api/projets/" + projet + "/jalons/" + corps(premier).get("id").asString());
+		assertThat(corps(premier).get("ordre").asInt()).isZero();
+		assertThat(corps(premier).get("statut").asString()).isEqualTo("prevu");
+		assertThat(corps(premier).get("echeance").asString()).isEqualTo("2026-11-20");
+		assertThat(corps(second).get("ordre").asInt()).isEqualTo(1);
+		assertThat(corps(avant).get("statut").asString()).isEqualTo("atteint");
+
+		JsonNode jalons = corps(lire("/api/projets/" + projet + "/jalons", kofi));
+		assertThat(jalons.get(0).get("id").asString()).isEqualTo(corps(premier).get("id").asString());
+		assertThat(jalons.get(1).get("id").asString()).as("même ordre : le plus ancien d'abord").isEqualTo(corps(avant).get("id").asString());
+		assertThat(jalons.get(2).get("id").asString()).isEqualTo(corps(second).get("id").asString());
+	}
+
+	@Test
+	void modifier_un_jalon_ou_le_marquer_atteint() throws Exception {
+		UtilisateurConnecte kofi = utilisateur("Kofi");
+		UtilisateurConnecte awa = utilisateur("Awa");
+		UUID projet = projet(kofi, awa);
+		UUID j = jalon(projet, "La maquette validée", 0, "prevu");
+
+		MvcTestResult atteint = modifierJalon(projet, j, "{\"statut\":\"atteint\"}", awa);
+		assertThat(atteint).hasStatusOk();
+		assertThat(corps(atteint).get("statut").asString()).isEqualTo("atteint");
+		assertThat(corps(atteint).get("titre").asString()).as("absent, le titre ne change pas").isEqualTo("La maquette validée");
+		assertThat(corps(atteint).get("echeance").asString()).isEqualTo("2026-11-20");
+
+		MvcTestResult change = modifierJalon(projet, j, "{\"titre\":\"La maquette validée par la coopérative\",\"echeance\":null,\"ordre\":3}", kofi);
+		assertThat(corps(change).get("titre").asString()).isEqualTo("La maquette validée par la coopérative");
+		assertThat(corps(change).get("echeance").isNull()).isTrue();
+		assertThat(corps(change).get("ordre").asInt()).isEqualTo(3);
+		assertThat(corps(change).get("statut").asString()).isEqualTo("atteint");
+
+		UtilisateurConnecte curieux = utilisateur("Curieux");
+		UUID autre = projet(curieux);
+		assertThat(modifierJalon(projet, j, "{\"statut\":\"prevu\"}", curieux)).hasStatus(HttpStatus.FORBIDDEN);
+		assertThat(modifierJalon(autre, j, "{\"statut\":\"prevu\"}", curieux)).as("le jalon d'un autre projet").hasStatus(HttpStatus.NOT_FOUND);
+		for (String corps : List.of("{\"statut\":\"fini\"}", "{\"statut\":null}", "{\"ordre\":-1}", "{\"ordre\":null}", "{\"titre\":\"ab\"}",
+				"{\"version\":0}")) {
+			assertThat(modifierJalon(projet, j, corps, kofi)).as(corps).hasStatus(HttpStatus.BAD_REQUEST);
+		}
+		assertThat(base.sql("SELECT statut FROM jalon WHERE id = :j").param("j", j).query(String.class).single()).isEqualTo("atteint");
+	}
+
 }
