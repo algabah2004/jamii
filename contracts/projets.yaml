@@ -536,7 +536,10 @@ components:
       properties:
         id: { type: string, format: uuid }
         titre: { type: string }
-        origine: { type: string, enum: [idee, demande] }
+        origine:
+          type: string
+          enum: [idee, demande, cercle]
+          description: '`cercle` : le projet d''un tour de cercle, créé au tirage. Seuls `idee` et `demande` se créent par `POST /api/projets`.'
         statut: { $ref: '#/components/schemas/StatutProjet' }
         porteur: { $ref: '#/components/schemas/PersonneResume' }
         competencesRecherchees: { type: array, description: Compétences des rôles encore ouverts., items: { $ref: '#/components/schemas/Competence' } }

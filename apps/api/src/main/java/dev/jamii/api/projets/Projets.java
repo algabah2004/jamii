@@ -55,7 +55,7 @@ public class Projets implements ChiffresDesModules.Projets {
 		Timestamp t = Timestamp.from(maintenant);
 		base.sql("""
 				INSERT INTO projet (id, titre, description, origine, porteur_id, statut, derniere_activite_le, cree_le, mis_a_jour_le)
-				VALUES (:id, :titre, :description, 'idee', :porteur, 'en_cours', :t, :t, :t)
+				VALUES (:id, :titre, :description, 'cercle', :porteur, 'en_cours', :t, :t, :t)
 				""")
 			.param("id", id).param("titre", titre).param("description", description).param("porteur", porteur)
 			.param("t", t).update();
