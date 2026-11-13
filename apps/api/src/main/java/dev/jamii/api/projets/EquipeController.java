@@ -1,5 +1,6 @@
 package dev.jamii.api.projets;
 
+import java.net.URI;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -9,10 +10,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -27,7 +30,9 @@ class EquipeController {
 
 	private static final Set<String> STATUTS_TACHE = Set.of("a_faire", "en_cours", "livree");
 
-	private static final Set<String> CHAMPS_MODIFIABLES = Set.of("titre", "jalonId", "assigneeId", "echeance", "statut", "version");
+	private static final Set<String> STATUTS_JALON = Set.of("prevu", "atteint");
+
+	private static final Set<String> CHAMPS_JALON = Set.of("titre", "echeance", "statut", "ordre");
 
 	record Jalon(UUID id, String titre, LocalDate echeance, String statut, int ordre) {
 	}
@@ -50,9 +55,7 @@ class EquipeController {
 
 	@GetMapping("/api/projets/{projetId}/jalons")
 	List<Jalon> jalons(@PathVariable UUID projetId, @AuthenticationPrincipal UtilisateurConnecte moi) {
-		return equipe.jalons(projetId, moi.id()).stream()
-			.map(j -> new Jalon(j.id(), j.titre(), j.echeance(), j.statut(), j.ordre()))
-			.toList();
+		return equipe.jalons(projetId, moi.id()).stream().map(EquipeController::vue).toList();
 	}
 
 	@GetMapping("/api/projets/{projetId}/taches")
@@ -89,70 +92,163 @@ class EquipeController {
 		return new PageTaches(page.elements().stream().map(t -> vue(t, comptes)).toList(), page.curseurSuivant());
 	}
 
+	@PostMapping("/api/projets/{projetId}/taches")
+	ResponseEntity<Tache> creerTache(@PathVariable UUID projetId, @RequestBody Map<String, Object> corps,
+			@AuthenticationPrincipal UtilisateurConnecte moi) {
+		var lecture = new Lecture(corps, Set.of("titre", "jalonId", "assigneeId", "echeance", "version"));
+		String titre = lecture.titre(200, true);
+		UUID jalonId = lecture.identifiant("jalonId");
+		UUID assigneeId = lecture.identifiant("assigneeId");
+		LocalDate echeance = lecture.date("echeance");
+		lecture.verifier();
+		var tache = equipe.creerTache(projetId, moi.id(), titre, jalonId, assigneeId, echeance, Instant.now());
+		return ResponseEntity.created(URI.create("/api/projets/" + projetId + "/taches/" + tache.id())).body(vue(tache));
+	}
+
 	/** Fusion JSON (RFC 7396) : seuls les champs présents changent ; `version` est obligatoire. */
 	@PatchMapping(path = "/api/projets/{projetId}/taches/{tacheId}", consumes = { "application/merge-patch+json", "application/json" })
 	Tache modifierTache(@PathVariable UUID projetId, @PathVariable UUID tacheId, @RequestBody Map<String, Object> patch,
 			@AuthenticationPrincipal UtilisateurConnecte moi) {
-		List<Map<String, String>> erreurs = new ArrayList<>();
-		for (String cle : patch.keySet()) {
-			if (!CHAMPS_MODIFIABLES.contains(cle)) {
-				erreurs.add(Map.of("champ", cle, "code", "inconnu"));
-			}
-		}
-		String titre = null;
-		if (patch.containsKey("titre")) {
-			titre = patch.get("titre") instanceof String s ? s.strip() : "";
-			if (titre.length() < 3 || titre.length() > 200) {
-				erreurs.add(Map.of("champ", "titre", "code", "longueur_invalide"));
-			}
-		}
-		UUID jalonId = identifiant(patch, "jalonId", erreurs);
-		UUID assigneeId = identifiant(patch, "assigneeId", erreurs);
-		LocalDate echeance = null;
-		if (patch.get("echeance") != null) {
-			try {
-				echeance = LocalDate.parse((String) patch.get("echeance"));
-			}
-			catch (RuntimeException e) {
-				erreurs.add(Map.of("champ", "echeance", "code", "format_invalide"));
-			}
-		}
-		String statut = null;
-		if (patch.containsKey("statut")) {
-			statut = patch.get("statut") instanceof String s ? s : "";
-			if (!STATUTS_TACHE.contains(statut)) {
-				erreurs.add(Map.of("champ", "statut", "code", "valeur_invalide"));
-			}
-		}
-		int version = 0;
-		if (!(patch.get("version") instanceof Integer v)) {
-			erreurs.add(Map.of("champ", "version", "code", patch.containsKey("version") ? "format_invalide" : "obligatoire"));
-		}
-		else {
-			version = v;
-		}
-		if (!erreurs.isEmpty()) {
-			throw ErreurProjets.validation(erreurs);
-		}
+		var lecture = new Lecture(patch, Set.of("titre", "jalonId", "assigneeId", "echeance", "statut", "version"));
+		String titre = lecture.titre(200, false);
+		UUID jalonId = lecture.identifiant("jalonId");
+		UUID assigneeId = lecture.identifiant("assigneeId");
+		LocalDate echeance = lecture.date("echeance");
+		String statut = lecture.choix("statut", STATUTS_TACHE);
+		Integer version = lecture.entier("version", true);
+		lecture.verifier();
 		var modification = new TachesEtJalons.Modification(titre, patch.containsKey("jalonId"), jalonId, patch.containsKey("assigneeId"),
 				assigneeId, patch.containsKey("echeance"), echeance, statut, version);
-		var tache = equipe.modifier(projetId, tacheId, moi.id(), modification, Instant.now());
-		return vue(tache, tache.assigneeId() == null ? Map.of() : annuaire.lire(Set.of(tache.assigneeId())));
+		return vue(equipe.modifier(projetId, tacheId, moi.id(), modification, Instant.now()));
 	}
 
-	/** Un identifiant facultatif : absent ou null donnent null ; autre chose qu'un UUID est une erreur. */
-	private static UUID identifiant(Map<String, Object> patch, String champ, List<Map<String, String>> erreurs) {
-		Object valeur = patch.get(champ);
-		if (valeur == null) {
-			return null;
+	@PostMapping("/api/projets/{projetId}/jalons")
+	ResponseEntity<Jalon> creerJalon(@PathVariable UUID projetId, @RequestBody Map<String, Object> corps,
+			@AuthenticationPrincipal UtilisateurConnecte moi) {
+		var lecture = new Lecture(corps, CHAMPS_JALON);
+		String titre = lecture.titre(120, true);
+		LocalDate echeance = lecture.date("echeance");
+		String statut = lecture.choix("statut", STATUTS_JALON);
+		Integer ordre = lecture.entier("ordre", false);
+		lecture.verifier();
+		var jalon = vue(equipe.creerJalon(projetId, moi.id(), titre, echeance, statut, ordre, Instant.now()));
+		return ResponseEntity.created(URI.create("/api/projets/" + projetId + "/jalons/" + jalon.id())).body(jalon);
+	}
+
+	/** Fusion JSON (RFC 7396) : seuls les champs présents changent ; seule l'échéance accepte `null`. */
+	@PatchMapping(path = "/api/projets/{projetId}/jalons/{jalonId}", consumes = { "application/merge-patch+json", "application/json" })
+	Jalon modifierJalon(@PathVariable UUID projetId, @PathVariable UUID jalonId, @RequestBody Map<String, Object> patch,
+			@AuthenticationPrincipal UtilisateurConnecte moi) {
+		var lecture = new Lecture(patch, CHAMPS_JALON);
+		String titre = lecture.titre(120, false);
+		LocalDate echeance = lecture.date("echeance");
+		String statut = lecture.choix("statut", STATUTS_JALON);
+		Integer ordre = lecture.entier("ordre", false);
+		lecture.verifier();
+		return vue(equipe.modifierJalon(projetId, jalonId, moi.id(), titre, patch.containsKey("echeance"), echeance, statut, ordre,
+				Instant.now()));
+	}
+
+	/**
+	 * Lit et valide un corps JSON champ par champ, en réunissant toutes les erreurs dans une seule réponse 400.
+	 * Un champ absent donne null ; un champ facultatif à null aussi (l'appelant regarde `containsKey` s'il doit le vider).
+	 */
+	private static final class Lecture {
+
+		private final Map<String, Object> corps;
+
+		private final List<Map<String, String>> erreurs = new ArrayList<>();
+
+		Lecture(Map<String, Object> corps, Set<String> connus) {
+			this.corps = corps;
+			corps.keySet().stream().filter(cle -> !connus.contains(cle)).sorted().forEach(cle -> erreur(cle, "inconnu"));
 		}
-		try {
-			return UUID.fromString((String) valeur);
+
+		/** Présent, le titre ne peut pas être null ; à la création, il est obligatoire. */
+		String titre(int max, boolean obligatoire) {
+			if (!corps.containsKey("titre") && !obligatoire) {
+				return null;
+			}
+			String titre = corps.get("titre") instanceof String s ? s.strip() : "";
+			if (titre.length() < 3 || titre.length() > max) {
+				erreur("titre", "longueur_invalide");
+			}
+			return titre;
 		}
-		catch (RuntimeException e) {
-			erreurs.add(Map.of("champ", champ, "code", "format_invalide"));
-			return null;
+
+		UUID identifiant(String champ) {
+			Object valeur = corps.get(champ);
+			if (valeur == null) {
+				return null;
+			}
+			try {
+				return UUID.fromString((String) valeur);
+			}
+			catch (RuntimeException e) {
+				erreur(champ, "format_invalide");
+				return null;
+			}
 		}
+
+		LocalDate date(String champ) {
+			Object valeur = corps.get(champ);
+			if (valeur == null) {
+				return null;
+			}
+			try {
+				return LocalDate.parse((String) valeur);
+			}
+			catch (RuntimeException e) {
+				erreur(champ, "format_invalide");
+				return null;
+			}
+		}
+
+		/** Présent, le champ doit valoir l'une des valeurs (null compris : il n'accepte pas `null`). */
+		String choix(String champ, Set<String> valeurs) {
+			if (!corps.containsKey(champ)) {
+				return null;
+			}
+			String valeur = corps.get(champ) instanceof String s ? s : "";
+			if (!valeurs.contains(valeur)) {
+				erreur(champ, "valeur_invalide");
+			}
+			return valeur;
+		}
+
+		/** Un entier positif ou nul ; `null` n'est pas accepté quand le champ est présent. */
+		Integer entier(String champ, boolean obligatoire) {
+			if (!corps.containsKey(champ)) {
+				if (obligatoire) {
+					erreur(champ, "obligatoire");
+				}
+				return null;
+			}
+			if (!(corps.get(champ) instanceof Integer n) || n < 0) {
+				erreur(champ, "format_invalide");
+				return null;
+			}
+			return n;
+		}
+
+		void verifier() {
+			if (!erreurs.isEmpty()) {
+				throw ErreurProjets.validation(erreurs);
+			}
+		}
+
+		private void erreur(String champ, String code) {
+			erreurs.add(Map.of("champ", champ, "code", code));
+		}
+
+	}
+
+	private Tache vue(TachesEtJalons.Tache t) {
+		return vue(t, t.assigneeId() == null ? Map.of() : annuaire.lire(Set.of(t.assigneeId())));
+	}
+
+	private static Jalon vue(TachesEtJalons.Jalon j) {
+		return new Jalon(j.id(), j.titre(), j.echeance(), j.statut(), j.ordre());
 	}
 
 	private static Tache vue(TachesEtJalons.Tache t, Map<UUID, Compte> comptes) {
