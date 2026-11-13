@@ -51,7 +51,20 @@ Dans la démo, on en montre **2 ou 3** (DataCloud, Orion et Yokk). Les autres so
 
 Et pour **le vote du public** : un dev repart avec un **profil prouvé**, c'est-à-dire des projets réellement en ligne et une fiabilité reconnue. C'est ce qui donne envie de s'inscrire et de partager.
 
-## Le produit : 5 piliers et un espace Systalink
+## Le produit : la Tech Tontine, 5 piliers et un espace Systalink
+
+### Le module principal : la Tech Tontine · décision du 12 novembre 2026
+> Un **cercle** de 4 à 6 développeurs construit, **à tour de rôle**, le projet de chaque membre. Systalink est le garant. Le Griot, l'assistant IA, planifie et résume chaque tour.
+
+C'est la réponse la plus directe au problème : l'équipe existe **avant** le projet, chacun s'engage parce que son tour viendra, et chaque tour finit **en ligne sur DataCloud**.
+- **Un tour est un projet Jamii** : il réutilise l'équipe, les tâches, les jalons, les avis, la mise en ligne et la vitrine. Le cercle n'ajoute qu'une liste de membres et un ordre de passage ([contracts/cercles.yaml](../contracts/cercles.yaml)).
+- **L'ordre de passage est tiré au sort par le serveur**, une seule fois, et enregistré : personne ne peut le truquer.
+- **Le score de confiance**, c'est l'indice de fiabilité du profil : livrer son tour le fait monter.
+- **Le Griot** réutilise la tâche IA `plan_projet` pour le plan du tour, et `resume_tour` pour le message du soir.
+- **Systalink garant** : chaque tour livré est déployé sur DataCloud et entre dans la vitrine avec le label « Né dans une Tech Tontine Systalink ». L'espace Systalink affiche les cercles actifs.
+- **Bonus si le temps le permet** : le code du tour hébergé sur un Gitea de Jamii déployé sur DataCloud. Sinon, un dépôt GitHub. La démo ne dépend pas de Gitea.
+
+Les 5 piliers ci-dessous restent : la Tontine s'appuie sur eux.
 
 ### 1. Le profil prouvé · bloc #19
 - **Généré depuis GitHub** en quelques secondes : langages, projets, pays, forces. Pas de note globale.
@@ -89,12 +102,15 @@ L'IA **propose**, l'équipe **décide**. Elle :
 
 | Temps | Moment |
 |---|---|
-| 0:00 | Le problème : des idées, des hackathons, et des projets qui meurent |
+| 0:00 | Le problème : des idées, des hackathons, et des projets qui meurent faute d'équipe |
 | 0:20 | Connexion GitHub → **le profil prouvé** se génère |
-| 0:50 | Une PME décrit son besoin → **l'assistant** en fait un plan et propose une équipe de 3 pays |
-| 1:30 | Dans une communauté : une question, l'IA propose une réponse, un pair la valide |
-| 2:00 | **Déploiement sur DataCloud** → le projet est en ligne, il apparaît sur les profils et dans la vitrine |
-| 2:30 | **Le tableau de bord Systalink** et la page de statut : « chaque projet est un client DataCloud » |
+| 0:40 | Awa crée **son cercle** à Dakar, 5 développeurs le rejoignent, chacun dépose son idée |
+| 1:00 | **L'ordre est tiré au sort** par le serveur. Le Griot transforme l'idée d'Awa en plan pour le tour 1 |
+| 1:30 | Le tour avance : tâches cochées, message du soir du Griot |
+| 2:00 | **Livraison** : le projet est déployé sur DataCloud, il entre dans la vitrine avec « Né dans une Tech Tontine Systalink » |
+| 2:30 | **L'espace Systalink** : cercles actifs, tours livrés, projets sur DataCloud. « Chaque tour livré est un client DataCloud » |
+
+Les demandes de PME et les communautés restent dans le produit : on les montre si une question du jury y mène.
 
 Une vidéo de secours et des données de démo réalistes (une soixantaine de profils et de projets) sont prêtes, au cas où.
 
@@ -102,7 +118,7 @@ Une vidéo de secours et des données de démo réalistes (une soixantaine de pr
 
 On les mentionne sur une diapo « Et après », sans les coder :
 - **Missions payées en FCFA** (Wave, Orange Money) : séduisant, mais un paiement réel est risqué à livrer à temps.
-- **Cercles en tontine** (chacun son tour, on construit le projet d'un membre) : un format d'événement à lancer sur la base des projets d'équipe.
+- **Tech Tontine, la suite** : le Griot sur WhatsApp, les cercles « Or », le recrutement automatique des membres, le vote d'exclusion.
 - **Agents de support et d'exploitation** pour les clients Systalink.
 - **Messages vocaux et langues locales** (wolof…).
 
