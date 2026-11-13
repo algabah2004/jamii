@@ -9,12 +9,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -180,24 +177,6 @@ class RecrutementController {
 
 	private static ProjetsController.PersonneResume personne(Compte compte) {
 		return new ProjetsController.PersonneResume(compte.id(), compte.nom(), compte.avatarUrl());
-	}
-
-	// ---------------------------------------------------------------- erreurs
-
-	@ExceptionHandler(ErreurProjets.class)
-	ResponseEntity<ProblemDetail> erreur(ErreurProjets e) {
-		ProblemDetail probleme = ProblemDetail.forStatus(e.statut);
-		probleme.setType(URI.create("urn:jamii:erreur:" + e.code));
-		probleme.setTitle(e.getMessage());
-		probleme.setProperty("code", e.code);
-		if (e.erreurs != null) {
-			probleme.setProperty("erreurs", e.erreurs);
-		}
-		var reponse = ResponseEntity.status(e.statut);
-		if (e.attenteSecondes > 0) {
-			reponse = reponse.header(HttpHeaders.RETRY_AFTER, String.valueOf(e.attenteSecondes));
-		}
-		return reponse.body(probleme);
 	}
 
 }
