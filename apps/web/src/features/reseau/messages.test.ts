@@ -25,12 +25,43 @@ const KOFI = 'c1a00000-0000-4000-8000-000000000002'
 const AMINA = 'd2e00000-0000-4000-8000-000000000002'
 
 describe('les messages', () => {
-  it('montre le nombre de messages non lus dans le menu, et le retire une fois la conversation lue', async () => {
+  it('compte les nouveautés sur la cloche, et retire celle du message une fois la conversation lue', async () => {
     const { page, routeur } = await ouvrir('/cercles')
-    await vi.waitFor(() => expect(page.find('[data-test="lien-messages"]').attributes('aria-label')).toBe('Messages, 1 non lu'))
+    // L'invitation de Kofi et la demande de contact d'Ibrahima.
+    await vi.waitFor(() => expect(page.find('[data-test="lien-activite"]').attributes('aria-label')).toBe('Notifications, 2 nouvelles'))
     await routeur.push(`/messages/${KOFI}`)
     await vi.waitFor(() => expect(page.find('[data-test="fil"]').exists()).toBe(true))
-    await vi.waitFor(() => expect(page.find('[data-test="lien-messages"]').attributes('aria-label')).toBe('Messages'))
+    await vi.waitFor(() => expect(page.find('[data-test="lien-activite"]').attributes('aria-label')).toBe('Notifications, 1 nouvelle'))
+  })
+
+  it('liste les notifications avec une phrase claire, puis les marque toutes comme lues', async () => {
+    const { page } = await ouvrir('/notifications')
+    await vi.waitFor(() => expect(page.findAll('[data-test="notifications"] li')).toHaveLength(3))
+    const texte = page.find('[data-test="notifications"]').text()
+    expect(texte).toContain("Kofi Yao t'invite à rejoindre « Cercle d’Abidjan ».")
+    expect(texte).toContain("Ibrahima Fall veut t'ajouter à ses contacts.")
+    expect(page.findAll('.ligne--nouvelle')).toHaveLength(2)
+    await vi.waitFor(() => expect(page.find('[data-test="lien-activite"]').attributes('aria-label')).toBe('Notifications'))
+    expect(page.find('[data-test="onglet-contacts"]').text()).toContain('1')
+  })
+
+  it("accepte une demande de contact : la personne passe dans mes contacts, avec « Écrire »", async () => {
+    const { page } = await ouvrir('/contacts')
+    await vi.waitFor(() => expect(page.find('[data-test="contacts-recues"]').text()).toContain('Ibrahima Fall'))
+    expect(page.findAll('[data-test="contacts"] > li')).toHaveLength(1)
+    await page.find('[data-test="accepter"]').trigger('click')
+    await vi.waitFor(() => expect(page.findAll('[data-test="contacts"] > li')).toHaveLength(2))
+    expect(page.find('[data-test="contacts-recues"]').exists()).toBe(false)
+    expect(page.find('[data-test="contacts"]').text()).toContain('Écrire')
+  })
+
+  it('demande le contact depuis une conversation, puis affiche « Demande envoyée »', async () => {
+    const { page } = await ouvrir(`/messages/${KOFI}`)
+    await vi.waitFor(() => expect(page.find('[data-test="ajouter-contact"]').exists()).toBe(true))
+    await page.find('[data-test="ajouter-contact"]').trigger('click')
+    await vi.waitFor(() => expect(page.find('[data-test="lien-contact"]').text()).toBe('Demande envoyée'))
+    const amina = await ouvrir(`/messages/${AMINA}`)
+    await vi.waitFor(() => expect(amina.page.find('[data-test="lien-contact"]').text()).toBe('Dans tes contacts'))
   })
 
   it('liste les conversations, la plus récente en haut, avec l’aperçu de l’invitation', async () => {

@@ -231,4 +231,74 @@ class ReseauTest {
 			.param("id", UUID.randomUUID()).param("de", de.id()).param("a", a.id()).param("le", Timestamp.from(le)).update();
 	}
 
+	// ---------------------------------------------------------------- contacts et notifications
+
+	private MvcTestResult mettre(String uri, UtilisateurConnecte qui) {
+		return mvc.put().uri(uri).with(csrf()).with(oauth2Login().oauth2User(qui)).exchange();
+	}
+
+	private MvcTestResult supprimer(String uri, UtilisateurConnecte qui) {
+		return mvc.delete().uri(uri).with(csrf()).with(oauth2Login().oauth2User(qui)).exchange();
+	}
+
+	@Test
+	void une_demande_de_contact_se_recoit_s_accepte_et_se_retire() {
+		UtilisateurConnecte awa = utilisateur("Awa");
+		UtilisateurConnecte kofi = utilisateur("Kofi");
+
+		assertThat(mettre("/api/contacts/" + kofi.id(), awa)).hasStatusOk().bodyJson().extractingPath("$.statut").isEqualTo("envoyee");
+		// Idempotent : redemander ne change rien.
+		assertThat(mettre("/api/contacts/" + kofi.id(), awa)).bodyJson().extractingPath("$.statut").isEqualTo("envoyee");
+		assertThat(lire("/api/contacts/" + awa.id(), kofi)).bodyJson().extractingPath("$.statut").isEqualTo("recue");
+		assertThat(lire("/api/me/activite", kofi)).bodyJson().extractingPath("$.demandesContact").isEqualTo(1);
+		assertThat(lire("/api/me/contacts?statut=recue", kofi)).bodyJson().extractingPath("$.elements[0].personne.nom").isEqualTo("Awa");
+
+		// Kofi accepte en demandant à son tour : Awa en est prévenue.
+		assertThat(mettre("/api/contacts/" + awa.id(), kofi)).bodyJson().extractingPath("$.statut").isEqualTo("accepte");
+		assertThat(lire("/api/me/contacts", awa)).bodyJson().extractingPath("$.elements[0].personne.nom").isEqualTo("Kofi");
+		assertThat(lire("/api/me/notifications", awa)).bodyJson().extractingPath("$.elements[0].type").isEqualTo("contact_accepte");
+
+		assertThat(supprimer("/api/contacts/" + kofi.id(), awa)).hasStatus(HttpStatus.NO_CONTENT);
+		assertThat(lire("/api/contacts/" + kofi.id(), awa)).bodyJson().extractingPath("$.statut").isEqualTo("aucun");
+		assertThat(supprimer("/api/contacts/" + kofi.id(), awa)).hasStatus(HttpStatus.NO_CONTENT);
+		assertThat(mettre("/api/contacts/" + awa.id(), awa)).hasStatus(HttpStatus.CONFLICT);
+		assertThat(mettre("/api/contacts/" + UUID.randomUUID(), awa)).hasStatus(HttpStatus.NOT_FOUND);
+		assertThat(lire("/api/me/contacts?statut=amis", awa)).hasStatus(HttpStatus.BAD_REQUEST);
+	}
+
+	@Test
+	void les_messages_d_une_personne_font_une_seule_notification_lue_avec_la_conversation() {
+		UtilisateurConnecte awa = utilisateur("Awa");
+		UtilisateurConnecte kofi = utilisateur("Kofi");
+		for (String texte : java.util.List.of("Salut", "Tu es là ?", "Réponds-moi")) {
+			assertThat(poster("/api/conversations/" + kofi.id() + "/messages", awa, message(texte, null))).hasStatus(HttpStatus.CREATED);
+		}
+		MvcTestResult liste = lire("/api/me/notifications", kofi);
+		assertThat(liste).bodyJson().extractingPath("$.elements").asArray().hasSize(1);
+		assertThat(liste).bodyJson().extractingPath("$.elements[0].type").isEqualTo("message_recu");
+		assertThat(liste).bodyJson().extractingPath("$.elements[0].lien").isEqualTo("/messages/" + awa.id());
+		assertThat(liste).bodyJson().extractingPath("$.elements[0].personne.nom").isEqualTo("Awa");
+		assertThat(lire("/api/me/activite", kofi)).bodyJson().extractingPath("$.notificationsNonLues").isEqualTo(1);
+
+		assertThat(lire("/api/conversations/" + awa.id() + "/messages", kofi)).hasStatusOk();
+		assertThat(lire("/api/me/activite", kofi)).bodyJson().extractingPath("$.notificationsNonLues").isEqualTo(0);
+
+		// Un nouveau message après lecture refait une notification ; « tout lire » les marque toutes.
+		assertThat(poster("/api/conversations/" + kofi.id() + "/messages", awa, message("Encore", null))).hasStatus(HttpStatus.CREATED);
+		assertThat(lire("/api/me/notifications", kofi)).bodyJson().extractingPath("$.elements").asArray().hasSize(2);
+		assertThat(poster("/api/me/notifications/lues", kofi, null)).hasStatus(HttpStatus.NO_CONTENT);
+		assertThat(lire("/api/me/activite", kofi)).bodyJson().extractingPath("$.notificationsNonLues").isEqualTo(0);
+	}
+
+	@Test
+	void une_invitation_notifie_avec_son_cercle() {
+		UtilisateurConnecte awa = utilisateur("Awa");
+		String id = cercle(awa, "Ville-" + UUID.randomUUID(), 4);
+		UtilisateurConnecte kwame = utilisateur("Kwame");
+		assertThat(poster("/api/conversations/" + kwame.id() + "/messages", awa, message("Rejoins-nous", id))).hasStatus(HttpStatus.CREATED);
+		MvcTestResult liste = lire("/api/me/notifications", kwame);
+		assertThat(liste).bodyJson().extractingPath("$.elements[0].type").isEqualTo("invitation_cercle");
+		assertThat(liste).bodyJson().extractingPath("$.elements[0].cercle.id").isEqualTo(id);
+	}
+
 }

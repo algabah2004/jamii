@@ -71,6 +71,44 @@ class DonneesDemoTest {
 	}
 
 	@Test
+	void le_tour_de_kofi_avance_avec_7_taches_livrees_sur_12() {
+		String projet = "/api/projets/" + projetDuTour(DonneesDemo.DAKAR, 2);
+		var taches = mvc.get().uri(projet + "/taches?limite=100").with(oauth2Login().oauth2User(connecte(DonneesDemo.AWA)));
+
+		assertThat(taches).hasStatusOk();
+		assertThat(taches).bodyJson().extractingPath("$.elements.length()").isEqualTo(12);
+		assertThat(taches).bodyJson().extractingPath("$.elements[?(@.statut == 'livree')]").asArray().hasSize(7);
+		assertThat(taches).bodyJson().extractingPath("$.elements[?(@.statut == 'en_cours')]").asArray().hasSize(2);
+		assertThat(taches).bodyJson().extractingPath("$.elements[0].titre").isEqualTo("Rencontrer la coopérative et noter ses besoins");
+		assertThat(taches).bodyJson().extractingPath("$.elements[0].assignee.nom").isEqualTo("Kofi Mensah");
+		assertThat(taches).bodyJson().extractingPath("$.curseurSuivant").isNull();
+
+		var jalons = mvc.get().uri(projet + "/jalons").with(oauth2Login().oauth2User(connecte(DonneesDemo.KOFI)));
+		assertThat(jalons).bodyJson().extractingPath("$.length()").isEqualTo(3);
+		assertThat(jalons).bodyJson().extractingPath("$[0].statut").isEqualTo("atteint");
+		assertThat(jalons).bodyJson().extractingPath("$[1].statut").isEqualTo("prevu");
+
+		// La dernière livraison date d'il y a 2 heures : le projet est actif.
+		assertThat(compter("SELECT count(*) FROM projet WHERE id = '" + projetDuTour(DonneesDemo.DAKAR, 2)
+				+ "' AND derniere_activite_le > now() - interval '3 hours'")).isEqualTo(1);
+	}
+
+	@Test
+	void le_tour_livre_d_awa_a_toutes_ses_taches_livrees() {
+		UUID projetId = projetDuTour(DonneesDemo.DAKAR, 1);
+		String projet = "/api/projets/" + projetId;
+		var livrees = mvc.get().uri(projet + "/taches?limite=100&statut=livree").with(oauth2Login().oauth2User(connecte(DonneesDemo.AWA)));
+
+		assertThat(livrees).bodyJson().extractingPath("$.elements.length()").isEqualTo(9);
+		assertThat(compter("SELECT count(*) FROM tache WHERE projet_id = '" + projetId + "'")).isEqualTo(9);
+		assertThat(mvc.get().uri(projet + "/jalons").with(oauth2Login().oauth2User(connecte(DonneesDemo.AWA))))
+			.bodyJson().extractingPath("$[?(@.statut == 'atteint')]").asArray().hasSize(3);
+		// Toutes les livraisons tombent pendant le tour, au plus tard quand le projet est livré.
+		assertThat(compter("SELECT count(*) FROM tache t JOIN projet p ON p.id = t.projet_id WHERE t.projet_id = '" + projetId
+				+ "' AND (t.livree_le <= t.cree_le OR t.livree_le > p.derniere_activite_le)")).isZero();
+	}
+
+	@Test
 	void les_deux_autres_cercles_un_ouvert_que_l_on_peut_rejoindre_et_un_termine() {
 		assertThat(mvc.get().uri("/api/cercles/" + DonneesDemo.ABIDJAN).with(oauth2Login().oauth2User(connecte(DonneesDemo.AWA))))
 			.bodyJson().extractingPath("$.statut").isEqualTo("ouvert");
@@ -86,11 +124,13 @@ class DonneesDemoTest {
 	void recharger_ne_cree_aucun_doublon() {
 		long utilisateurs = compter("SELECT count(*) FROM utilisateur");
 		long projets = compter("SELECT count(*) FROM projet");
+		long taches = compter("SELECT count(*) FROM tache");
 
 		assertThat(demo.charger(Instant.now())).isFalse();
 
 		assertThat(compter("SELECT count(*) FROM utilisateur")).isEqualTo(utilisateurs);
 		assertThat(compter("SELECT count(*) FROM projet")).isEqualTo(projets);
+		assertThat(compter("SELECT count(*) FROM tache")).isEqualTo(taches);
 	}
 
 	@Test

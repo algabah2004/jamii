@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
   title: Jamii · Espace Systalink
-  version: 0.1.0
-  summary: Tableau de bord agrégé et anonyme, et mesure des « moments Systalink » (service proposé → accepté).
+  version: 0.2.0
+  summary: Tableau de bord, tendances du marché, clients qui ont demandé à être suivis, et mesure des « moments Systalink ».
   description: |
     Responsable : @Amar233-ui (bloc #18). Règles communes : docs/api-conventions.md. Modèle : docs/modele-donnees.md (table `moment_systalink`).
 
@@ -19,12 +19,24 @@ info:
     mettre en ligne, Orion pour le besoin simple d'une PME…), l'API crée un moment et renvoie une `PropositionSystalink`
     que le front affiche. Quand l'utilisateur suit la proposition, le front appelle `accepter`. Le moment ne garde
     **aucun identifiant d'utilisateur**.
+
+    **Tendances du marché (v0.2, #20)** : ce que les besoins décrits sur Jamii disent du marché (secteurs, pays,
+    services Systalink adaptés, compétences qui manquent). Agrégé et anonyme, lecture publique, mêmes seuils que le
+    tableau de bord : une case de moins de 5 besoins passe dans `autres`. Implémentation : module `demandes`.
+
+    **Clients suivis (v0.2, #20)** : uniquement les personnes qui ont coché « Recevoir les offres Systalink adaptées
+    à mon projet » (`demandes.yaml`, `offresSystalink`), jamais pré-cochée. Si elles retirent leur accord, elles
+    disparaissent tout de suite de la liste. Réservé au rôle `systalink` (ou `admin`), accordé par la configuration
+    (`SYSTALINK_ACCES`, liste de logins GitHub ou d'e-mails). Systalink peut les recevoir dans son propre outil de suivi
+    par un **webhook signé** (`webhooks.clientSuivi`) ou un export CSV.
 servers:
   - url: http://localhost:8080
 
 tags:
   - { name: tableau-de-bord, description: 'Chiffres agrégés pour Systalink (lecture publique).' }
   - { name: moments, description: 'Mesure de chaque service Systalink proposé, puis accepté.' }
+  - { name: tendances, description: 'Ce que les besoins décrits sur Jamii disent du marché (lecture publique, anonyme).' }
+  - { name: clients-suivis, description: 'Les personnes qui ont demandé à recevoir les offres Systalink (rôle systalink).' }
 
 paths:
   /api/systalink/tableau-de-bord:
@@ -87,6 +99,116 @@ paths:
         '403': { $ref: './socle.yaml#/components/responses/Interdit' }
         '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
         '429': { $ref: './socle.yaml#/components/responses/TropDeRequetes' }
+
+  /api/systalink/tendances:
+    get:
+      tags: [tendances]
+      operationId: tendancesSystalink
+      summary: Les tendances du marché, à partir des besoins décrits sur Jamii
+      security: []
+      parameters:
+        - name: periode
+          in: query
+          schema: { $ref: '#/components/schemas/Periode' }
+      responses:
+        '200':
+          description: Chiffres agrégés.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Tendances' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+
+  /api/systalink/clients-suivis:
+    get:
+      tags: [clients-suivis]
+      operationId: listerClientsSuivis
+      summary: Les personnes qui ont demandé à recevoir les offres Systalink, les plus récentes d'abord
+      security:
+        - session: []
+      description: Rôle `systalink` ou `admin`. Pagination par curseur (docs/api-conventions.md).
+      parameters:
+        - name: statut
+          in: query
+          schema: { $ref: '#/components/schemas/StatutClient' }
+        - name: curseur
+          in: query
+          schema: { type: string }
+        - name: limite
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        '200':
+          description: Une page.
+          headers:
+            Cache-Control: { schema: { type: string, examples: ['no-store'] } }
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [elements]
+                properties:
+                  elements: { type: array, items: { $ref: '#/components/schemas/ClientSuivi' } }
+                  curseurSuivant: { type: [string, 'null'] }
+            text/csv:
+              schema: { type: string, description: 'Avec `Accept: text/csv` : toutes les lignes du filtre, sans pagination, en UTF-8.' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+
+  /api/systalink/clients-suivis/{demandeId}:
+    patch:
+      tags: [clients-suivis]
+      operationId: suivreClient
+      summary: Noter où en est le suivi (contacté, devenu client…)
+      security:
+        - session: []
+          csrf: []
+      parameters:
+        - name: demandeId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [statut]
+              properties:
+                statut: { $ref: '#/components/schemas/StatutClient' }
+      responses:
+        '200':
+          description: Le client suivi, à jour.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ClientSuivi' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+
+webhooks:
+  clientSuivi:
+    post:
+      tags: [clients-suivis]
+      operationId: webhookClientSuivi
+      security: []
+      summary: Envoyé à l'outil de Systalink quand une personne accepte de recevoir ses offres
+      description: |
+        Adresse : `SYSTALINK_WEBHOOK_URL`. Sans elle, rien n'est envoyé. Signature :
+        `X-Jamii-Signature: sha256=<HMAC-SHA256 hexadécimal de "<X-Jamii-Horodatage>.<corps>" avec SYSTALINK_WEBHOOK_SECRET>`.
+        Le destinataire refuse un horodatage de plus de 5 minutes (rejeu). 3 essais au plus ; un échec ne bloque jamais
+        la personne. Le corps ne contient que ce que la personne a accepté de partager.
+      parameters:
+        - { name: X-Jamii-Signature, in: header, required: true, schema: { type: string } }
+        - { name: X-Jamii-Horodatage, in: header, required: true, schema: { type: integer, description: Secondes depuis 1970. } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ClientSuivi' }
+      responses:
+        '2XX': { description: Reçu. }
 
 components:
   securitySchemes:
@@ -192,3 +314,70 @@ components:
         momentId: { type: string, format: uuid, description: 'À envoyer à `accepterMomentSystalink` au clic.' }
         service: { $ref: '#/components/schemas/ServiceSystalink' }
         lien: { type: string, format: uri, description: 'Page Systalink à ouvrir, toujours en https.' }
+
+    Tendances:
+      type: object
+      required: [periode, besoins, secteurs, services, competencesManquantes, pays]
+      properties:
+        periode: { $ref: '#/components/schemas/Periode' }
+        besoins: { type: integer, minimum: 0, description: Besoins décrits sur la période. }
+        secteurs:
+          type: array
+          items:
+            type: object
+            required: [secteur, besoins]
+            properties:
+              secteur: { type: string, description: '`autres` regroupe les secteurs de moins de 5 besoins.' }
+              besoins: { type: integer, minimum: 0 }
+        services:
+          type: array
+          description: Les services Systalink adaptés, et combien de fois.
+          items:
+            type: object
+            required: [service, suggestions]
+            properties:
+              service: { type: string }
+              suggestions: { type: integer, minimum: 0 }
+        competencesManquantes:
+          type: array
+          maxItems: 10
+          description: Les compétences demandées par les besoins, et combien de profils publiés les ont. Ce qui manque sur le continent.
+          items:
+            type: object
+            required: [competence, demandes, profils]
+            properties:
+              competence: { $ref: './projets.yaml#/components/schemas/Competence' }
+              demandes: { type: integer, minimum: 0 }
+              profils: { type: integer, minimum: 0 }
+        pays:
+          type: array
+          items:
+            type: object
+            required: [pays, besoins]
+            properties:
+              pays: { type: string, description: 'Code ISO, ou `autres`.' }
+              besoins: { type: integer, minimum: 0 }
+
+    StatutClient:
+      type: string
+      enum: [nouveau, contacte, client, sans_suite]
+
+    ClientSuivi:
+      type: object
+      required: [demandeId, creeLe, resume, services, developpeursNecessaires, contact, statut]
+      properties:
+        demandeId: { type: string, format: uuid }
+        creeLe: { type: string, format: date-time }
+        resume: { type: string, description: 'Le besoin reformulé (`orientation.resume`), pas le texte d''origine.' }
+        secteur: { type: [string, 'null'] }
+        ville: { type: [string, 'null'] }
+        pays: { type: [string, 'null'] }
+        services: { type: array, items: { type: string }, description: Identifiants du catalogue. }
+        developpeursNecessaires: { type: boolean }
+        contact:
+          type: object
+          required: [nom, email]
+          properties:
+            nom: { type: string }
+            email: { type: [string, 'null'], format: email, description: '`null` si la personne s''est connectée par GitHub sans e-mail connu.' }
+        statut: { $ref: '#/components/schemas/StatutClient' }

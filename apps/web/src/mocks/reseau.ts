@@ -5,6 +5,8 @@ import { cerclesDemo, resumeCercle } from './cercles'
 type ProfilRecommande = components['schemas']['ProfilRecommande']
 type Message = components['schemas']['Message']
 type Personne = components['schemas']['Personne']
+type Notification = components['schemas']['Notification']
+type StatutLien = components['schemas']['StatutLien']
 
 // Données de démo (contracts/reseau.yaml) : personnes fictives. Awa est la personne connectée.
 const AWA = '6f1c2a4e-8b7d-4c3e-9a10-2b5d7e9f0a11'
@@ -33,6 +35,9 @@ const personne = (id: string) => personnes().find((p) => p.id === id)
 const invitations = new Map<string, Set<string>>()
 /** Par personne, les messages échangés avec Awa, les plus récents d'abord. */
 const messages = new Map<string, Message[]>()
+/** Le lien de contact entre Awa et chaque personne (absent : aucun). */
+const contacts = new Map<string, { statut: Exclude<StatutLien, 'aucun'>; depuis: string }>()
+let notifications: Notification[] = []
 let suivant = 1
 const nouvelId = () => `e3f00000-0000-4000-8000-${String(suivant++).padStart(12, '0')}`
 const ilYa = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOString()
@@ -40,6 +45,7 @@ const ilYa = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOS
 export function reinitialiserReseau() {
   invitations.clear()
   messages.clear()
+  contacts.clear()
   suivant = 1
   // Kofi invite Awa dans son cercle d'Abidjan (non lu), Amina lui a répondu hier (lu).
   const abidjan = cerclesDemo().find((c) => c.id === ABIDJAN)
@@ -50,6 +56,16 @@ export function reinitialiserReseau() {
     { id: nouvelId(), deMoi: false, texte: 'Avec plaisir, je regarde ton idée ce soir.', invitation: null, envoyeLe: ilYa(60 * 20), luLe: ilYa(60 * 19) },
     { id: nouvelId(), deMoi: true, texte: 'Bonjour Amina, tu aurais un moment pour relire les écrans de mon appli ?', invitation: null, envoyeLe: ilYa(60 * 22), luLe: ilYa(60 * 21) },
   ])
+  // Amina est un contact ; Ibrahima (Saint-Louis) a demandé à en être un.
+  const AMINA = PROFILS[1].utilisateurId
+  const IBRAHIMA = PROFILS[2].utilisateurId
+  contacts.set(AMINA, { statut: 'accepte', depuis: ilYa(60 * 19) })
+  contacts.set(IBRAHIMA, { statut: 'recue', depuis: ilYa(40) })
+  notifications = [
+    { id: nouvelId(), type: 'invitation_cercle', personne: personne(KOFI)!, cercle: abidjan ? resumeCercle(abidjan) : null, lien: `/messages/${KOFI}`, creeLe: ilYa(12), lue: false },
+    { id: nouvelId(), type: 'demande_contact', personne: personne(IBRAHIMA)!, cercle: null, lien: '/contacts', creeLe: ilYa(40), lue: false },
+    { id: nouvelId(), type: 'contact_accepte', personne: personne(AMINA)!, cercle: null, lien: '/contacts', creeLe: ilYa(60 * 19), lue: true },
+  ]
 }
 reinitialiserReseau()
 
@@ -128,11 +144,48 @@ export const handlersReseau = [
     const elements = liste.map((m) => ({ ...m }))
     // Lire la conversation la marque comme lue (la réponse garde l'état d'avant, pour montrer « nouveau »).
     liste.forEach((m) => { if (!m.deMoi && !m.luLe) m.luLe = new Date().toISOString() })
+    notifications.forEach((n) => { if (n.personne?.id === id && ['message_recu', 'invitation_cercle'].includes(n.type)) n.lue = true })
     return HttpResponse.json({ personne: p, elements, curseurSuivant: null })
   }),
 
   http.get('/api/me/activite', () => {
     const messagesNonLus = [...messages.values()].reduce((n, liste) => n + nonLus(liste), 0)
-    return HttpResponse.json({ notificationsNonLues: messagesNonLus, messagesNonLus, demandesContact: 0 })
+    const demandesContact = [...contacts.values()].filter((c) => c.statut === 'recue').length
+    return HttpResponse.json({ notificationsNonLues: notifications.filter((n) => !n.lue).length, messagesNonLus, demandesContact })
+  }),
+
+  http.get('/api/me/notifications', () => HttpResponse.json({ elements: notifications, curseurSuivant: null })),
+  http.post('/api/me/notifications/lues', () => {
+    notifications.forEach((n) => (n.lue = true))
+    return new HttpResponse(null, { status: 204 })
+  }),
+
+  http.get('/api/me/contacts', ({ request }) => {
+    const statut = new URL(request.url).searchParams.get('statut') ?? 'accepte'
+    const elements = [...contacts.entries()]
+      .filter(([, c]) => c.statut === statut)
+      .map(([id, c]) => ({ personne: personne(id)!, statut: c.statut, depuis: c.depuis, competences: [...(PROFILS.find((p) => p.utilisateurId === id)?.competences ?? [])] }))
+    return HttpResponse.json({ elements, curseurSuivant: null })
+  }),
+  http.get('/api/contacts/:personneId', ({ params }) => {
+    const id = String(params.personneId)
+    if (!personne(id)) return erreur('introuvable', 404)
+    const c = contacts.get(id)
+    return HttpResponse.json(c ?? { statut: 'aucun', depuis: null })
+  }),
+  http.put('/api/contacts/:personneId', ({ params }) => {
+    const id = String(params.personneId)
+    if (id === AWA) return erreur('soi_meme')
+    if (!personne(id)) return erreur('introuvable', 404)
+    const c = contacts.get(id)
+    // Elle m'avait demandé : j'accepte. Sinon la demande part (idempotent).
+    const statut = c?.statut === 'recue' || c?.statut === 'accepte' ? 'accepte' : 'envoyee'
+    const lien = { statut, depuis: c && statut === c.statut ? c.depuis : new Date().toISOString() } as const
+    contacts.set(id, lien)
+    return HttpResponse.json(lien)
+  }),
+  http.delete('/api/contacts/:personneId', ({ params }) => {
+    contacts.delete(String(params.personneId))
+    return new HttpResponse(null, { status: 204 })
   }),
 ]

@@ -47,12 +47,18 @@ class Messagerie {
 
 	private final LectureCercles cercles;
 
+	private final Notifications notifications;
+
 	private final Clock horloge = Clock.systemUTC();
 
-	Messagerie(JdbcClient base, Annuaire annuaire, LectureCercles cercles) {
+	/** Les notifications qu'une conversation lue rend lues. */
+	static final List<String> NOTIFICATIONS_DE_MESSAGE = List.of("message_recu", "invitation_cercle");
+
+	Messagerie(JdbcClient base, Annuaire annuaire, LectureCercles cercles, Notifications notifications) {
 		this.base = base;
 		this.annuaire = annuaire;
 		this.cercles = cercles;
+		this.notifications = notifications;
 	}
 
 	@Transactional
@@ -91,6 +97,8 @@ class Messagerie {
 			.param("cercle", cercleId)
 			.param("le", Timestamp.from(maintenant))
 			.update();
+		notifications.notifier(destinataire, cercleId == null ? "message_recu" : "invitation_cercle", moi, cercleId,
+				"/messages/" + moi);
 		return ligne;
 	}
 
@@ -175,6 +183,7 @@ class Messagerie {
 			.param("autre", autre)
 			.param("moi", moi)
 			.update();
+		notifications.marquerLuesDe(moi, autre, NOTIFICATIONS_DE_MESSAGE);
 		return page(lignes, limite, m -> new Curseur(m.envoyeLe(), m.id()));
 	}
 
