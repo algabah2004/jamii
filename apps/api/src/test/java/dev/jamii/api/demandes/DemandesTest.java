@@ -254,8 +254,10 @@ class DemandesTest {
 		IA.etats.put(tache, new PlansIa.Etat("en_cours", null, null, null));
 		assertThat(lire(pme, id)).bodyJson().extractingPath("$.plan.statut").isEqualTo("en_cours");
 
-		JsonNode plan = json.readTree("{\"cahierDesCharges\":{\"resume\":\"Un résumé\"},\"jalons\":[],\"taches\":[]}");
-		IA.etats.put(tache, new PlansIa.Etat("terminee", "repli", plan, null));
+		JsonNode orientation = json.readTree("""
+				{"resume":"Une boutique","secteur":"commerce","services":[],"developpeursNecessaires":false,"competences":[],
+				 "plan":{"cahierDesCharges":{"resume":"Un résumé"},"jalons":[],"taches":[]}}""");
+		IA.etats.put(tache, new PlansIa.Etat("terminee", "repli", orientation, null));
 		MvcTestResult fini = lire(pme, id);
 		assertThat(fini).bodyJson().extractingPath("$.plan.statut").isEqualTo("terminee");
 		assertThat(fini).bodyJson().extractingPath("$.plan.origine").isEqualTo("repli");
@@ -379,6 +381,100 @@ class DemandesTest {
 
 		assertThat(base.sql("SELECT count(*) FROM demande WHERE id = :i").param("i", UUID.fromString(id)).query(Long.class)
 			.single()).isZero();
+	}
+
+	// ---------------------------------------------------------------- orientation (v0.2)
+
+	private UtilisateurConnecte developpeur(String nom, String ville, String pays, String... competences) {
+		UtilisateurConnecte dev = utilisateur(nom);
+		Timestamp t = Timestamp.from(Instant.now());
+		base.sql("""
+				INSERT INTO profil (utilisateur_id, pays, ville, disponibilite, heures_par_semaine, publie, generation_statut, mis_a_jour_le)
+				VALUES (:u, :pays, :ville, 'disponible', 15, TRUE, 'terminee', :t)
+				""").param("u", dev.id()).param("pays", pays).param("ville", ville).param("t", t).update();
+		for (String competence : competences) {
+			base.sql("INSERT INTO competence_profil (utilisateur_id, competence, source) VALUES (:u, :c, 'declaree')")
+				.param("u", dev.id()).param("c", competence).update();
+		}
+		return dev;
+	}
+
+	@Test
+	void l_orientation_recommande_les_developpeurs_qui_couvrent_le_besoin_avec_leurs_raisons() throws Exception {
+		UtilisateurConnecte cabinet = utilisateur("Cabinet");
+		UtilisateurConnecte fatou = developpeur("Fatou", "Dakar", "SN", "react", "spring-boot");
+		UtilisateurConnecte kofi = developpeur("Kofi", "Accra", "GH", "react");
+		UtilisateurConnecte sansRapport = developpeur("Yann", "Dakar", "SN", "unity");
+		String corpsDemande = "{\"titre\":\"Suivi des dossiers\",\"description\":\"Notre cabinet perd des dossiers papier, il nous faut une application.\",\"ville\":\"Dakar\",\"pays\":\"SN\"}";
+		String id = idCree(creer(cabinet, corpsDemande));
+		JsonNode orientation = json.readTree("""
+				{"resume":"Suivre les dossiers","secteur":"juridique",
+				 "services":[{"id":"datacloud-stockage","nom":"Stockage","pourCeBesoin":"Les dossiers","lien":"https://systalink.com"}],
+				 "developpeursNecessaires":true,"competences":["react","spring"],"plan":null}""");
+		IA.etats.put(IA.parCle.get(UUID.fromString(id)), new PlansIa.Etat("terminee", "ia", orientation, null));
+
+		JsonNode demande = corps(lire(cabinet, id));
+
+		assertThat(demande.at("/orientation/resultat/services/0/id").asString()).isEqualTo("datacloud-stockage");
+		List<String> recommandes = new ArrayList<>();
+		demande.get("recommandations").forEach(r -> recommandes.add(r.get("utilisateurId").asString()));
+		assertThat(recommandes).as("Fatou couvre tout et est à Dakar : en premier")
+			.startsWith(fatou.id().toString()).contains(kofi.id().toString())
+			.doesNotContain(sansRapport.id().toString(), cabinet.id().toString());
+		JsonNode premiere = demande.get("recommandations").get(0);
+		assertThat(premiere.get("score").asInt()).isEqualTo(100);
+		assertThat(premiere.get("raisons").toString()).contains("Compétences : react, spring", "Dakar");
+		assertThat(premiere.toString()).doesNotContain("@secret.example");
+		assertThat(base.sql("SELECT orientation->>'secteur' FROM demande WHERE id = :i").param("i", UUID.fromString(id))
+			.query(String.class).single()).as("le résumé est recopié pour les tendances").isEqualTo("juridique");
+	}
+
+	@Test
+	void sans_developpeurs_necessaires_il_n_y_a_ni_plan_ni_recommandation() throws Exception {
+		UtilisateurConnecte boutique = utilisateur("Boutique");
+		developpeur("Nia", "Dakar", "SN", "react");
+		String id = idCree(creer(boutique, BESOIN));
+		JsonNode orientation = json.readTree("""
+				{"resume":"Un site vitrine","secteur":"commerce","services":[],"developpeursNecessaires":false,
+				 "competences":[],"plan":null}""");
+		IA.etats.put(IA.parCle.get(UUID.fromString(id)), new PlansIa.Etat("terminee", "ia", orientation, null));
+
+		MvcTestResult reponse = lire(boutique, id);
+
+		assertThat(reponse).bodyJson().extractingPath("$.recommandations").asArray().isEmpty();
+		assertThat(reponse).bodyJson().doesNotHavePath("$.plan.resultat");
+	}
+
+	@Test
+	void l_accord_pour_les_offres_systalink_n_est_jamais_donne_par_defaut_et_se_retire() {
+		UtilisateurConnecte pme = utilisateur("Awa");
+		String id = idCree(creer(pme, BESOIN));
+		assertThat(lire(pme, id)).bodyJson().extractingPath("$.offresSystalink").isEqualTo(false);
+
+		MvcTestResult accord = mvc.put().uri("/api/demandes/{id}/offres-systalink", id).contentType(MediaType.APPLICATION_JSON)
+			.content("{\"accepte\":true}").with(csrf()).with(oauth2Login().oauth2User(pme)).exchange();
+		assertThat(accord).hasStatusOk();
+		assertThat(accord).bodyJson().extractingPath("$.offresSystalink").isEqualTo(true);
+
+		MvcTestResult retrait = mvc.put().uri("/api/demandes/{id}/offres-systalink", id).contentType(MediaType.APPLICATION_JSON)
+			.content("{\"accepte\":false}").with(csrf()).with(oauth2Login().oauth2User(pme)).exchange();
+		assertThat(retrait).bodyJson().extractingPath("$.offresSystalink").isEqualTo(false);
+		assertThat(base.sql("SELECT offres_accord_le FROM demande WHERE id = :i").param("i", UUID.fromString(id))
+			.query(Timestamp.class).optional()).isEmpty();
+
+		MvcTestResult autre = mvc.put().uri("/api/demandes/{id}/offres-systalink", id).contentType(MediaType.APPLICATION_JSON)
+			.content("{\"accepte\":true}").with(csrf()).with(oauth2Login().oauth2User(utilisateur("Kofi"))).exchange();
+		assertThat(autre).hasStatus(HttpStatus.NOT_FOUND);
+	}
+
+	@Test
+	void ni_e_mail_ni_telephone_ne_partent_vers_l_ia() {
+		UtilisateurConnecte pme = utilisateur("Awa");
+		creer(pme, "{\"titre\":\"Mon atelier\",\"description\":\"Écrivez-moi à awa.couture@gmail.com ou au +221 77 123 45 67 pour le site.\"}");
+
+		String envoye = IA.entrees.getFirst().description();
+
+		assertThat(envoye).doesNotContain("awa.couture@gmail.com", "77 123 45 67").contains("[e-mail retiré]", "[téléphone retiré]");
 	}
 
 }
