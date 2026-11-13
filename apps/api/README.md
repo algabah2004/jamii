@@ -62,7 +62,7 @@ L'API tient dans 512 Mo. En revanche, l'offre Free se met en veille : la premiè
 ## Données de démo
 
 Le profil `demo` charge au démarrage 6 membres et 3 cercles :
-- **Dakar** : 6 membres, le tour d'Awa livré et celui de Kofi en cours ;
+- **Dakar** : 6 membres, le tour d'Awa livré (9 tâches livrées, 3 jalons atteints) et celui de Kofi en cours (7 tâches livrées sur 12, au 3ᵉ jour) ;
 - **Abidjan** : encore ouvert, 3 membres sur 4, donc quelqu'un peut le rejoindre ;
 - **Nairobi** : terminé, avec ses 4 projets livrés.
 
