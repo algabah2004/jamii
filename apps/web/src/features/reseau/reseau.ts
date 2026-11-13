@@ -63,3 +63,43 @@ export function quand(iso: string, locale: string, maintenant = new Date()): str
   const memeJour = date.toDateString() === maintenant.toDateString()
   return new Intl.DateTimeFormat(locale, memeJour ? { hour: '2-digit', minute: '2-digit' } : { day: 'numeric', month: 'short' }).format(date)
 }
+
+// --- Contacts ---
+
+export type Contact = components['schemas']['Contact']
+export type StatutLien = components['schemas']['StatutLien']
+export type Notification = components['schemas']['Notification']
+
+export async function lireContacts(statut: 'accepte' | 'recue' | 'envoyee'): Promise<Contact[]> {
+  const { data } = await api.GET('/api/me/contacts', { params: { query: { statut, limite: 100 } } })
+  if (!data) throw new Error('contacts indisponibles')
+  return data.elements ?? []
+}
+
+export async function lireLien(personneId: string): Promise<StatutLien> {
+  const { data } = await api.GET('/api/contacts/{personneId}', { params: { path: { personneId } } })
+  return data?.statut ?? 'aucun'
+}
+
+/** Demander le contact, ou accepter si la personne l'a déjà demandé. `null` si l'API refuse. */
+export async function ajouterContact(personneId: string): Promise<StatutLien | null> {
+  const { data } = await api.PUT('/api/contacts/{personneId}', { params: { path: { personneId } } })
+  return data?.statut ?? null
+}
+
+export async function retirerContact(personneId: string): Promise<boolean> {
+  const { response } = await api.DELETE('/api/contacts/{personneId}', { params: { path: { personneId } } })
+  return response.ok
+}
+
+// --- Notifications ---
+
+export async function lireNotifications(): Promise<Notification[]> {
+  const { data } = await api.GET('/api/me/notifications', { params: { query: { limite: 50 } } })
+  if (!data) throw new Error('notifications indisponibles')
+  return data.elements ?? []
+}
+
+export async function toutMarquerLu(): Promise<void> {
+  await api.POST('/api/me/notifications/lues')
+}

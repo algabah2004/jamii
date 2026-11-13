@@ -5,7 +5,7 @@ import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { JAvatar, JBouton, JChamp, JSquelette } from '../../design-system'
 import { rejoindreCercle } from '../cercles/cercles'
 import { rafraichirActivite } from './activite'
-import { envoyerMessage, LONGUEUR_MESSAGE, lireConversation, prenom, quand, type Message, type Personne } from './reseau'
+import { ajouterContact, envoyerMessage, LONGUEUR_MESSAGE, lireConversation, lireLien, prenom, quand, type Message, type Personne, type StatutLien } from './reseau'
 
 /* La conversation avec une personne : les messages, l'invitation à un cercle et la réponse. */
 const { t, locale } = useI18n()
@@ -28,6 +28,7 @@ async function charger() {
     personne.value = r.personne
     messages.value = r.messages
     etat.value = 'pret'
+    lien.value = await lireLien(r.personne.id).catch(() => null)
     // La lecture a marqué la conversation comme lue : la pastille du menu se met à jour tout de suite.
     void rafraichirActivite()
     await descendre()
@@ -40,6 +41,20 @@ watch(() => route.params.personneId, charger, { immediate: true })
 async function descendre() {
   await nextTick()
   fil.value?.lastElementChild?.scrollIntoView?.({ block: 'end' })
+}
+
+// Le lien de contact : un seul bouton, qui dit ce qu'il fera (demander, accepter) ou l'état (demande envoyée, contact).
+const lien = ref<StatutLien | null>(null)
+const ajout = ref(false)
+async function ajouter() {
+  if (!personne.value) return
+  ajout.value = true
+  try {
+    lien.value = (await ajouterContact(personne.value.id)) ?? lien.value
+    void rafraichirActivite()
+  } finally {
+    ajout.value = false
+  }
 }
 
 const texte = ref('')
@@ -102,10 +117,14 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
     <template v-else-if="personne">
       <header class="tete">
         <JAvatar :nom="personne.nom" :url="personne.avatarUrl" :taille="48" />
-        <div>
+        <div class="tete__qui">
           <h1>{{ personne.nom }}</h1>
           <p v-if="personne.ville" class="texte-discret">{{ personne.ville }}</p>
         </div>
+        <JBouton v-if="lien === 'aucun' || lien === 'recue'" :variante="lien === 'recue' ? 'principal' : 'secondaire'" :occupe="ajout" data-test="ajouter-contact" @click="ajouter">
+          {{ lien === 'recue' ? t('reseau.contacts.accepter') : t('reseau.contacts.ajouter') }}
+        </JBouton>
+        <span v-else-if="lien" class="etiquette lien-contact" data-test="lien-contact">{{ t(`reseau.contacts.statut.${lien}`) }}</span>
       </header>
 
       <div class="carte fil-carte">
@@ -141,7 +160,9 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
 <style scoped>
 .conversation { display: grid; gap: var(--space-4); max-width: 44rem; }
 .retour { margin: 0; font-size: var(--type-body-sm-size); }
-.tete { display: flex; align-items: center; gap: var(--space-3); }
+.tete { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+.tete__qui { flex: 1; min-width: 10rem; }
+.lien-contact { background: var(--action-soft); color: var(--action-ink); font-weight: 600; }
 .tete h1 { margin: 0; font-size: 1.75rem; }
 .tete p { margin: 0; }
 .fil-carte { padding: var(--space-4); display: grid; gap: var(--space-3); }
