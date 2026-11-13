@@ -59,6 +59,21 @@ Mesuré en local dans un conteneur limité à 512 Mo et 1 CPU, avec la connexion
 
 L'API tient dans 512 Mo. En revanche, l'offre Free se met en veille : la première requête après une veille attend le démarrage, plus de 20 s.
 
+## Données de démo
+
+Le profil `demo` charge au démarrage 6 membres et 3 cercles :
+- **Dakar** : 6 membres, le tour d'Awa livré et celui de Kofi en cours ;
+- **Abidjan** : encore ouvert, 3 membres sur 4, donc quelqu'un peut le rejoindre ;
+- **Nairobi** : terminé, avec ses 4 projets livrés.
+
+```bash
+SPRING_PROFILES_ACTIVE=demo EMAIL_AFFICHER_LIEN=true ./mvnw spring-boot:run
+```
+
+Les données ne viennent **jamais** d'une migration : sans le profil `demo`, une base n'en voit rien. Relancer l'API ne crée pas de doublons. Les comptes de démo n'ont pas de login GitHub, donc aucune invitation ne part vers un vrai compte. Leurs adresses sont sur un domaine réservé, qui ne reçoit rien (`awa@demo.jamii.test`, `kofi@…`, `fatou@…`, `moussa@…`, `nia@…`, `yann@…`).
+
+Pour se connecter comme Awa : demander un lien de connexion pour `awa@demo.jamii.test`, puis ouvrir le lien affiché dans la console (`EMAIL_AFFICHER_LIEN=true`, en local seulement).
+
 ## Santé
 
 | Route | Usage |
