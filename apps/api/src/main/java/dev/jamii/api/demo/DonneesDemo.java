@@ -1,9 +1,11 @@
 package dev.jamii.api.demo;
 
 import java.nio.charset.StandardCharsets;
+import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 
@@ -20,7 +22,7 @@ import dev.jamii.api.projets.Projets;
 
 /**
  * Les données de la démo (docs/priorites.md) : 6 membres et 3 cercles, dont celui de Dakar avec un tour livré et un
- * tour en cours. Chargées <b>seulement</b> avec le profil `demo` (`SPRING_PROFILES_ACTIVE=demo`), jamais par une
+ * tour en cours, chacun avec ses jalons et ses tâches. Chargées <b>seulement</b> avec le profil `demo` (`SPRING_PROFILES_ACTIVE=demo`), jamais par une
  * migration : une base de production n'en voit jamais la couleur.
  * <p>
  * Rejouable : les identifiants sont fixes, et si Awa existe déjà, rien n'est rechargé. Les comptes n'ont ni login
@@ -53,8 +55,18 @@ class DonneesDemo implements ApplicationRunner {
 	static final UUID ABIDJAN = id("cercle:abidjan");
 	static final UUID NAIROBI = id("cercle:nairobi");
 
+	private static final String LIVREE = "livree";
+
 	/** Un membre d'un cercle : son idée et, après le tirage, son rang. */
 	private record Place(Personne qui, String ideeTitre, String ideeDescription) {
+	}
+
+	/** Un jalon du tour : son échéance en jours après le début du tour. */
+	private record PlanJalon(String titre, int echeanceJour, boolean atteint) {
+	}
+
+	/** Une tâche du tour, rangée dans le jalon d'indice `jalon` ; `qui` peut être null (personne ne l'a prise). */
+	private record PlanTache(String titre, int jalon, Personne qui, String statut) {
 	}
 
 	private final JdbcClient base;
@@ -116,6 +128,36 @@ class DonneesDemo implements ApplicationRunner {
 		ouvrirTour(DAKAR, 1, places, tirage);
 		livrerTour(DAKAR, 1, maintenant.minus(Duration.ofDays(3)));
 		ouvrirTour(DAKAR, 2, places, maintenant.minus(Duration.ofDays(3)));
+		tachesDuTour(DAKAR, 1, tirage, maintenant.minus(Duration.ofDays(3)), List.of(
+				new PlanJalon("Le catalogue des pagnes", 2, true),
+				new PlanJalon("La commande par WhatsApp", 4, true),
+				new PlanJalon("Le paiement mobile et la mise en ligne", 6, true)), List.of(
+				new PlanTache("Photographier les pagnes avec les tisserandes", 0, AWA, LIVREE),
+				new PlanTache("Écrire la fiche d'un pagne : motif, taille et prix", 0, NIA, LIVREE),
+				new PlanTache("Afficher le catalogue sur un téléphone d'entrée de gamme", 0, FATOU, LIVREE),
+				new PlanTache("Préparer le message de commande WhatsApp", 1, MOUSSA, LIVREE),
+				new PlanTache("Recevoir les commandes dans un tableau pour les tisserandes", 1, KOFI, LIVREE),
+				new PlanTache("Brancher le paiement mobile", 2, YANN, LIVREE),
+				new PlanTache("Envoyer la confirmation de paiement par SMS", 2, MOUSSA, LIVREE),
+				new PlanTache("Mettre la boutique en ligne sur DataCloud", 2, YANN, LIVREE),
+				new PlanTache("Montrer la boutique aux tisserandes de Thiès", 2, AWA, LIVREE)));
+		// Le tour de Kofi en est à son 3e jour : 7 tâches sur 12 sont livrées, la dernière il y a 2 heures.
+		tachesDuTour(DAKAR, 2, maintenant.minus(Duration.ofDays(3)), maintenant.minus(Duration.ofHours(2)), List.of(
+				new PlanJalon("La maquette validée par la coopérative", 2, true),
+				new PlanJalon("Les pesées hors ligne", 8, false),
+				new PlanJalon("Les paiements et la mise en ligne", 13, false)), List.of(
+				new PlanTache("Rencontrer la coopérative et noter ses besoins", 0, KOFI, LIVREE),
+				new PlanTache("Dessiner les écrans de pesée", 0, FATOU, LIVREE),
+				new PlanTache("Faire valider la maquette par le président de la coopérative", 0, KOFI, LIVREE),
+				new PlanTache("Choisir une base locale qui marche sans réseau", 1, YANN, LIVREE),
+				new PlanTache("Écrire l'écran de saisie d'une pesée", 1, AWA, LIVREE),
+				new PlanTache("Enregistrer les pesées sans réseau", 1, YANN, "en_cours"),
+				new PlanTache("Synchroniser les pesées au retour du réseau", 1, null, "a_faire"),
+				new PlanTache("Afficher le total pesé par producteur", 1, NIA, LIVREE),
+				new PlanTache("Calculer le montant dû à chaque producteur", 2, MOUSSA, LIVREE),
+				new PlanTache("Envoyer un reçu par SMS au producteur", 2, FATOU, "en_cours"),
+				new PlanTache("Mettre l'API en ligne sur DataCloud", 2, null, "a_faire"),
+				new PlanTache("Former deux peseurs à l'application", 2, KOFI, "a_faire")));
 	}
 
 	/** Encore ouvert, 3 membres sur 4 : quelqu'un peut le rejoindre pendant la démo. */
@@ -191,11 +233,61 @@ class DonneesDemo implements ApplicationRunner {
 	}
 
 	private void livrerTour(UUID cercle, int numero, Instant quand) {
-		UUID projet = base.sql("SELECT projet_id FROM cercle_membre WHERE cercle_id = :c AND rang = :n")
-			.param("c", cercle).param("n", numero).query(UUID.class).single();
+		UUID projet = projetDuTour(cercle, numero);
 		base.sql("UPDATE cercle_membre SET livre_le = :t WHERE cercle_id = :c AND rang = :n")
 			.param("t", Timestamp.from(quand)).param("c", cercle).param("n", numero).update();
 		projets.marquerLivre(projet, quand);
+	}
+
+	/**
+	 * Les jalons et les tâches du projet d'un tour. Les tâches sont créées au début du tour ; celles qui sont livrées le
+	 * sont l'une après l'autre jusqu'à `derniereLivraison`, qui devient la dernière activité du projet.
+	 */
+	private void tachesDuTour(UUID cercle, int numero, Instant debut, Instant derniereLivraison, List<PlanJalon> jalons,
+			List<PlanTache> taches) {
+		UUID projet = projetDuTour(cercle, numero);
+		String tour = cercle + ":" + numero;
+		for (int i = 0; i < jalons.size(); i++) {
+			PlanJalon j = jalons.get(i);
+			base.sql("""
+					INSERT INTO jalon (id, projet_id, titre, echeance, statut, ordre, cree_le, version)
+					VALUES (:id, :p, :titre, :echeance, :statut, :ordre, :t, :version)
+					""")
+				.param("id", id("jalon:" + tour + ":" + i)).param("p", projet).param("titre", j.titre())
+				.param("echeance", Date.valueOf(debut.plus(Duration.ofDays(j.echeanceJour())).atZone(ZoneOffset.UTC).toLocalDate()))
+				.param("statut", j.atteint() ? "atteint" : "prevu").param("ordre", i)
+				.param("t", Timestamp.from(debut.plus(Duration.ofMinutes(i)))).param("version", j.atteint() ? 1 : 0)
+				.update();
+		}
+		long livrees = taches.stream().filter(t -> LIVREE.equals(t.statut())).count();
+		Duration pas = Duration.between(debut, derniereLivraison).dividedBy(Math.max(1, livrees));
+		int rangLivraison = 0;
+		for (int i = 0; i < taches.size(); i++) {
+			PlanTache t = taches.get(i);
+			Instant livreeLe = null;
+			if (LIVREE.equals(t.statut())) {
+				rangLivraison++;
+				livreeLe = debut.plus(pas.multipliedBy(rangLivraison));
+			}
+			base.sql("""
+					INSERT INTO tache (id, projet_id, jalon_id, titre, assignee_id, statut, livree_le, cree_le, version)
+					VALUES (:id, :p, :jalon, :titre, :assignee, :statut, :livree, :t, :version)
+					""")
+				.param("id", id("tache:" + tour + ":" + i)).param("p", projet).param("jalon", id("jalon:" + tour + ":" + t.jalon()))
+				.param("titre", t.titre()).param("assignee", t.qui() == null ? null : t.qui().id()).param("statut", t.statut())
+				.param("livree", livreeLe == null ? null : Timestamp.from(livreeLe))
+				.param("t", Timestamp.from(debut.plus(Duration.ofMinutes(10 + i))))
+				.param("version", switch (t.statut()) { case LIVREE -> 2; case "en_cours" -> 1; default -> 0; })
+				.update();
+		}
+		// Un tour livré garde sa date de livraison comme dernière activité (marquerLivre l'a posée).
+		base.sql("UPDATE projet SET derniere_activite_le = GREATEST(derniere_activite_le, :t) WHERE id = :p")
+			.param("t", Timestamp.from(derniereLivraison)).param("p", projet).update();
+	}
+
+	private UUID projetDuTour(UUID cercle, int numero) {
+		return base.sql("SELECT projet_id FROM cercle_membre WHERE cercle_id = :c AND rang = :n")
+			.param("c", cercle).param("n", numero).query(UUID.class).single();
 	}
 
 	/** Des identifiants fixes, pour que la démo se recharge à l'identique et qu'un test les retrouve. */
