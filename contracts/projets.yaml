@@ -13,7 +13,8 @@ info:
 
     **Codes d'erreur métier** (champ `code` de `Erreur`, réponse 409) : `transition_invalide`, `modification_concurrente`,
     `demande_deja_prise`, `propre_projet`, `role_pourvu`, `candidature_existante`, `porteur_doit_transmettre`,
-    `pas_membre`, `reprise_impossible`, `avis_trop_tot`, `avis_existant`, `deja_membre` (candidater quand on est déjà dans l'équipe).
+    `pas_membre`, `reprise_impossible`, `avis_trop_tot`, `avis_existant`, `deja_membre` (candidater quand on est déjà dans l'équipe),
+    `limite_atteinte` (500 tâches ou 50 jalons par projet au plus).
 servers:
   - url: http://localhost:8080
 
@@ -373,11 +374,15 @@ paths:
       tags: [equipe]
       operationId: creerJalon
       summary: Ajouter un jalon (membres)
+      description: Sans `ordre`, le jalon se place après les autres. Sans `statut`, il est `prevu`.
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/EcritureJalon' }
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/EcritureJalon'
+                - required: [titre]
       responses:
         '201':
           description: Jalon créé.
@@ -388,6 +393,7 @@ paths:
         '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
         '403': { $ref: './socle.yaml#/components/responses/Interdit' }
         '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { description: '`limite_atteinte` : le projet a déjà 50 jalons.', $ref: './socle.yaml#/components/responses/Conflit' }
 
   /api/projets/{projetId}/jalons/{jalonId}:
     parameters:
@@ -447,7 +453,10 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/EcritureTache' }
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/EcritureTache'
+                - required: [titre]
       responses:
         '201':
           description: Tâche créée, au statut `a_faire`.
@@ -458,7 +467,7 @@ paths:
         '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
         '403': { $ref: './socle.yaml#/components/responses/Interdit' }
         '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
-        '409': { description: '`pas_membre` : l''assigné ne fait pas partie de l''équipe.', $ref: './socle.yaml#/components/responses/Conflit' }
+        '409': { description: '`pas_membre` : l''assigné ne fait pas partie de l''équipe. `limite_atteinte` : le projet a déjà 500 tâches.', $ref: './socle.yaml#/components/responses/Conflit' }
 
   /api/projets/{projetId}/taches/{tacheId}:
     parameters:
