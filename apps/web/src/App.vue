@@ -124,8 +124,16 @@ main, .pied__interieur { padding-inline: var(--space-6); }
 /* Sur la scène, les liens passent au-dessus de lumières vives : texte plus franc. */
 .entete--scene { --ink-muted: color-mix(in srgb, var(--ink) 88%, transparent); }
 
+/* Entre tablette et grand écran, le menu (6 entrées) n'a pas la place avec les réglages :
+   ceux-ci passent dans le pied de page et « Espace Systalink » se raccourcit. */
+@media (max-width: 1180px) {
+  .lien-long { display: none; }
+  .lien-court { display: inline; }
+  .entete .reglages--entete { display: none; }
+  .pied .reglages--pied { display: flex; }
+}
 /* Écran étroit : la marque et les réglages sur la première ligne, le menu entier sur la seconde. */
-@media (max-width: 720px) {
+@media (max-width: 960px) {
   .entete { padding: var(--space-2) var(--space-2) 0; }
   .entete__interieur { padding-block: var(--space-2); padding-inline: var(--space-4) var(--space-2); border-radius: var(--radius-lg); }
   .actions { margin-inline-start: auto; }
@@ -137,6 +145,11 @@ main, .pied__interieur { padding-inline: var(--space-6); }
   .pied .reglages--pied { display: flex; }
   .moi__nom { display: none; }
   .moi { padding: 2px; }
+}
+/* Téléphone : les 6 entrées du menu passent sur deux lignes plutôt que d'en cacher une hors de l'écran. */
+@media (max-width: 480px) {
+  .entete nav { flex-wrap: wrap; justify-content: center; row-gap: 2px; padding-block: 2px; }
+  .entete nav a { min-height: 36px; }
 }
 
 main { flex: 1; padding-block: var(--space-8) var(--space-12); }
