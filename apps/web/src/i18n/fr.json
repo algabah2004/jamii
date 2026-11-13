@@ -427,8 +427,7 @@
     "titre": "Cercles",
     "intro": "4 à 6 développeurs construisent, à tour de rôle, le projet de chacun. Systalink est garant du cercle.",
     "tous": "Tous les cercles",
-    "aucun": "Tu ne fais encore partie d'aucun cercle.",
-    "sousTitre": "{n} membres · {ville}, {pays}",
+    "sousTitre": "{n} membres · {ville}",
     "garant": "garant",
     "anneauDescription": "Ordre de passage : {ordre}.",
     "tourDe": "Tour {n} · le projet de {nom}",
@@ -438,11 +437,8 @@
     "depot": "Le dépôt du projet",
     "avantTirage": "L'ordre de passage n'est pas encore tiré.",
     "avantTirageAide": "Le cercle est complet. | Il manque 1 membre. | Il manque {n} membres.",
-    "griot": "Le Griot, l'assistant qui résume le tour",
     "ordre": "Ordre de passage",
     "pasDIdee": "Idée pas encore déposée",
-    "confiance": "Confiance {n} %",
-    "confianceAide": "Tâches livrées à temps, présence et avis des autres membres",
     "membres": "{n} membres sur {taille}",
     "statut": {
       "ouvert": "Cherche des membres",
@@ -495,6 +491,19 @@
     "livreTexte": "Il passera dans la vitrine dès sa mise en ligne, avec le nom de son équipe.",
     "voirVitrine": "Voir la vitrine",
     "termine": "Le cercle est terminé.",
-    "termineAide": "{n} projets livrés, un par membre. Le cercle peut repartir pour un nouveau tour de table."
+    "termineAide": "{n} projets livrés, un par membre. Le cercle peut repartir pour un nouveau tour de table.",
+    "projetDe": "Le projet de {nom}",
+    "point": "Le point du tour",
+    "pointTexte": "Jour {jour} du tour de {nom} : {faites} tâches livrées sur {total}.",
+    "ideeDeposee": "Idée déposée",
+    "creePar": "Créé par {nom}",
+    "groupes": {
+      "mes": "Mes cercles",
+      "ouverts": "Cercles qui cherchent des membres"
+    },
+    "vide": {
+      "mes": "Tu ne fais encore partie d'aucun cercle.",
+      "ouverts": "Aucun cercle ne cherche de membres pour l'instant. Crée le tien."
+    }
   }
 }

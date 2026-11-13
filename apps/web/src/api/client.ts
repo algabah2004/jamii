@@ -4,9 +4,11 @@ import type { paths as CheminsSystalink } from './generated/systalink'
 import type { paths as CheminsCommunautes } from './generated/communautes'
 import type { paths as CheminsVitrine } from './generated/vitrine'
 import type { paths as CheminsProfils } from './generated/profils'
+import type { paths as CheminsProjets } from './generated/projets'
+import type { paths as CheminsCercles } from './generated/cercles'
 
 /** Un chemin par contrat : on ajoute ici chaque nouveau contrat généré. */
-type paths = CheminsSocle & CheminsSystalink & CheminsVitrine & CheminsCommunautes & CheminsProfils
+type paths = CheminsSocle & CheminsSystalink & CheminsVitrine & CheminsCommunautes & CheminsProfils & CheminsProjets & CheminsCercles
 
 const METHODES_PROTEGEES = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
 
