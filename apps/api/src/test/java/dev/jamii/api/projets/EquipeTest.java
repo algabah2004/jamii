@@ -1,6 +1,7 @@
 package dev.jamii.api.projets;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oauth2Login;
 
 import java.sql.Date;
@@ -19,6 +20,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
@@ -29,7 +31,7 @@ import dev.jamii.api.auth.UtilisateurConnecte;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
-/** GET /api/projets/{id}/jalons et /taches (contracts/projets.yaml, tag « equipe »), sur un vrai PostgreSQL. */
+/** Les jalons et les tâches d'un projet (contracts/projets.yaml, tag « equipe »), sur un vrai PostgreSQL. */
 @SpringBootTest
 @AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)
@@ -99,6 +101,13 @@ class EquipeTest {
 
 	private MvcTestResult lire(String uri, UtilisateurConnecte qui) {
 		return mvc.get().uri(uri).with(oauth2Login().oauth2User(qui)).exchange();
+	}
+
+	private static final MediaType FUSION = new MediaType("application", "merge-patch+json");
+
+	private MvcTestResult modifier(UUID projet, UUID tache, String corps, UtilisateurConnecte qui) {
+		return mvc.patch().uri("/api/projets/" + projet + "/taches/" + tache).contentType(FUSION).content(corps)
+			.with(csrf()).with(oauth2Login().oauth2User(qui)).exchange();
 	}
 
 	private JsonNode corps(MvcTestResult r) throws Exception {
@@ -242,6 +251,133 @@ class EquipeTest {
 
 		assertThat(base.sql("SELECT projet_id FROM tache WHERE id = :t").param("t", t).query(UUID.class).single()).isEqualTo(projet);
 		assertThat(base.sql("SELECT jalon_id FROM tache WHERE id = :t").param("t", t).query(UUID.class).optional()).isEmpty();
+	}
+
+	// ---------------------------------------------------------------- modifier une tâche
+
+	@Test
+	void prendre_une_tache_la_livrer_puis_revenir_en_arriere() throws Exception {
+		UtilisateurConnecte kofi = utilisateur("Kofi");
+		UtilisateurConnecte awa = utilisateur("Awa");
+		UUID projet = projet(kofi, awa);
+		UUID tache = tache(projet, "Écrire l'écran des pesées", null, null, "a_faire");
+		base.sql("UPDATE projet SET derniere_activite_le = '2026-01-01T00:00:00Z' WHERE id = :p").param("p", projet).update();
+
+		MvcTestResult prise = modifier(projet, tache, "{\"assigneeId\":\"" + awa.id() + "\",\"statut\":\"en_cours\",\"version\":0}", awa);
+		assertThat(prise).hasStatusOk();
+		assertThat(corps(prise).get("assignee").get("nom").asString()).isEqualTo("Awa");
+		assertThat(corps(prise).get("statut").asString()).isEqualTo("en_cours");
+		assertThat(corps(prise).get("version").asInt()).isEqualTo(1);
+		assertThat(corps(prise).get("livreeLe").isNull()).isTrue();
+
+		MvcTestResult livree = modifier(projet, tache, "{\"statut\":\"livree\",\"version\":1}", kofi);
+		assertThat(livree).hasStatusOk();
+		assertThat(corps(livree).get("livreeLe").asString()).isNotBlank();
+		assertThat(corps(livree).get("assignee").get("nom").asString()).as("absent, l'assignee ne change pas").isEqualTo("Awa");
+
+		MvcTestResult renommee = modifier(projet, tache, "{\"titre\":\"Écrire l'écran des pesées, hors ligne\",\"version\":2}", kofi);
+		assertThat(corps(renommee).get("livreeLe").asString()).as("la date de livraison ne bouge plus")
+			.isEqualTo(corps(livree).get("livreeLe").asString());
+
+		MvcTestResult rouverte = modifier(projet, tache, "{\"statut\":\"en_cours\",\"version\":3}", kofi);
+		assertThat(corps(rouverte).get("livreeLe").isNull()).isTrue();
+		assertThat(base.sql("SELECT derniere_activite_le > '2026-06-01' FROM projet WHERE id = :p").param("p", projet)
+			.query(Boolean.class).single()).as("l'activité du projet avance").isTrue();
+	}
+
+	@Test
+	void deux_modifications_de_la_meme_version_la_seconde_recoit_409() {
+		UtilisateurConnecte kofi = utilisateur("Kofi");
+		UtilisateurConnecte awa = utilisateur("Awa");
+		UUID projet = projet(kofi, awa);
+		UUID tache = tache(projet, "Choisir la base locale", null, null, "a_faire");
+
+		assertThat(modifier(projet, tache, "{\"assigneeId\":\"" + kofi.id() + "\",\"version\":0}", kofi)).hasStatusOk();
+		MvcTestResult tardive = modifier(projet, tache, "{\"assigneeId\":\"" + awa.id() + "\",\"version\":0}", awa);
+
+		assertThat(tardive).hasStatus(HttpStatus.CONFLICT).bodyJson().extractingPath("$.code").isEqualTo("modification_concurrente");
+		assertThat(base.sql("SELECT assignee_id FROM tache WHERE id = :t").param("t", tache).query(UUID.class).single())
+			.isEqualTo(kofi.id());
+	}
+
+	@Test
+	void null_vide_le_champ_et_absent_le_garde() throws Exception {
+		UtilisateurConnecte kofi = utilisateur("Kofi");
+		UUID projet = projet(kofi);
+		UUID j = jalon(projet, "La maquette validée", 0, "prevu");
+		UUID tache = tache(projet, "Une tâche complète", j, kofi, "a_faire");
+		assertThat(modifier(projet, tache, "{\"echeance\":\"2026-11-30\",\"version\":0}", kofi)).hasStatusOk();
+
+		MvcTestResult videe = modifier(projet, tache, "{\"jalonId\":null,\"assigneeId\":null,\"version\":1}", kofi);
+
+		assertThat(videe).hasStatusOk();
+		assertThat(corps(videe).get("jalonId").isNull()).isTrue();
+		assertThat(corps(videe).get("assignee").isNull()).isTrue();
+		assertThat(corps(videe).get("echeance").asString()).isEqualTo("2026-11-30");
+		assertThat(corps(modifier(projet, tache, "{\"echeance\":null,\"version\":2}", kofi)).get("echeance").isNull()).isTrue();
+	}
+
+	@Test
+	void on_n_assigne_qu_un_membre_et_on_ne_vise_qu_un_jalon_du_projet() {
+		UtilisateurConnecte kofi = utilisateur("Kofi");
+		UtilisateurConnecte dehors = utilisateur("Dehors");
+		UUID projet = projet(kofi);
+		UUID autre = projet(dehors);
+		UUID jalonAutre = jalon(autre, "Un jalon d'un autre projet", 0, "prevu");
+		UUID tache = tache(projet, "Une tâche", null, null, "a_faire");
+
+		assertThat(modifier(projet, tache, "{\"assigneeId\":\"" + dehors.id() + "\",\"version\":0}", kofi))
+			.hasStatus(HttpStatus.CONFLICT).bodyJson().extractingPath("$.code").isEqualTo("pas_membre");
+		MvcTestResult mauvaisJalon = modifier(projet, tache, "{\"jalonId\":\"" + jalonAutre + "\",\"version\":0}", kofi);
+		assertThat(mauvaisJalon).hasStatus(HttpStatus.BAD_REQUEST);
+		assertThat(mauvaisJalon).bodyJson().extractingPath("$.erreurs[0].champ").isEqualTo("jalonId");
+		assertThat(base.sql("SELECT version FROM tache WHERE id = :t").param("t", tache).query(Integer.class).single()).isZero();
+	}
+
+	@Test
+	void modifier_est_reserve_a_l_equipe() {
+		UtilisateurConnecte kofi = utilisateur("Kofi");
+		UtilisateurConnecte curieux = utilisateur("Curieux");
+		UUID projet = projet(kofi);
+		UUID autre = projet(curieux);
+		UUID tache = tache(projet, "Une tâche de l'équipe", null, null, "a_faire");
+		String prendre = "{\"statut\":\"en_cours\",\"version\":0}";
+
+		assertThat(modifier(projet, tache, prendre, curieux)).hasStatus(HttpStatus.FORBIDDEN);
+		assertThat(modifier(autre, tache, prendre, curieux)).as("la tâche d'un autre projet").hasStatus(HttpStatus.NOT_FOUND);
+		assertThat(modifier(projet, UUID.randomUUID(), prendre, kofi)).hasStatus(HttpStatus.NOT_FOUND);
+		assertThat(mvc.patch().uri("/api/projets/" + projet + "/taches/" + tache).contentType(FUSION).content(prendre)
+			.with(oauth2Login().oauth2User(kofi))).as("sans jeton CSRF").hasStatus(HttpStatus.FORBIDDEN);
+		assertThat(base.sql("SELECT statut FROM tache WHERE id = :t").param("t", tache).query(String.class).single()).isEqualTo("a_faire");
+	}
+
+	@Test
+	void une_modification_invalide_repond_400_et_ne_change_rien() {
+		UtilisateurConnecte kofi = utilisateur("Kofi");
+		UUID projet = projet(kofi);
+		UUID tache = tache(projet, "Une tâche", null, null, "a_faire");
+		for (String corps : List.of("{\"statut\":\"en_cours\"}", "{\"version\":\"0\"}", "{\"version\":0,\"auteur\":\"moi\"}",
+				"{\"statut\":\"fini\",\"version\":0}", "{\"titre\":\"ab\",\"version\":0}", "{\"echeance\":\"demain\",\"version\":0}",
+				"{\"assigneeId\":\"pas-un-id\",\"version\":0}", "{\"titre\":null,\"version\":0}", "{\"statut\":null,\"version\":0}")) {
+			MvcTestResult reponse = modifier(projet, tache, corps, kofi);
+			assertThat(reponse).as(corps).hasStatus(HttpStatus.BAD_REQUEST).hasContentType("application/problem+json");
+			assertThat(reponse).as(corps).bodyJson().extractingPath("$.code").isEqualTo("validation");
+		}
+		assertThat(base.sql("SELECT version FROM tache WHERE id = :t").param("t", tache).query(Integer.class).single()).isZero();
+	}
+
+	@Test
+	void mes_taches_sont_dans_l_export_de_mes_donnees() throws Exception {
+		UtilisateurConnecte awa = utilisateur("Awa");
+		UUID projet = projet(awa);
+		UUID tache = tache(projet, "Écrire l'écran des pesées", null, awa, "livree");
+		tache(projet, "Une tâche de personne", null, null, "a_faire");
+
+		JsonNode taches = corps(mvc.get().uri("/api/me/export").with(oauth2Login().oauth2User(awa)).exchange()).get("projets").get("taches");
+
+		assertThat(taches).hasSize(1);
+		assertThat(taches.get(0).get("id").asString()).isEqualTo(tache.toString());
+		assertThat(taches.get(0).get("statut").asString()).isEqualTo("livree");
 	}
 
 }
