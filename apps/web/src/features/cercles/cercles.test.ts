@@ -97,6 +97,18 @@ describe('la page du cercle', () => {
     await vi.waitFor(() => expect(autre.page.find('[role="alert"]').exists()).toBe(true))
   })
 
+  it("met en avant le tour en cours de mes cercles, avec ses membres et son avancement", async () => {
+    const { page } = await ouvrir('/cercles')
+    await vi.waitFor(() => expect(page.find('[data-test="vedette"]').text()).toContain('7 tâches sur 12'))
+    const vedette = page.find('[data-test="vedette"]')
+    expect(vedette.text()).toContain('Tour 1 · le projet de Awa')
+    expect(vedette.text()).toContain('Appli de covoiturage étudiant')
+    expect(vedette.attributes('href')).toBe(`/cercles/${ID_DAKAR}`)
+    expect(vedette.findAll('.visages__un')).toHaveLength(6)
+    // Mes cercles disent où ils en sont : le tour en cours, ou les membres qui manquent.
+    expect(page.find('[data-test="cercles-mes"]').text()).toContain('Il manque 2 membres.')
+  })
+
   it('sépare mes cercles de ceux qui cherchent des membres', async () => {
     const { page } = await ouvrir('/cercles')
     await vi.waitFor(() => expect(page.findAll('[data-test="cercles-mes"] li')).toHaveLength(2))

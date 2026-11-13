@@ -504,7 +504,9 @@
     "vide": {
       "mes": "You are not part of a circle yet.",
       "ouverts": "No circle is looking for members right now. Create yours."
-    }
+    },
+    "ouvrir": "Open the circle",
+    "trouverMembres": "Find members"
   },
   "reseau": {
     "competences": "Skills",

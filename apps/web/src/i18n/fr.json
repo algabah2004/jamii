@@ -504,7 +504,9 @@
     "vide": {
       "mes": "Tu ne fais encore partie d'aucun cercle.",
       "ouverts": "Aucun cercle ne cherche de membres pour l'instant. Crée le tien."
-    }
+    },
+    "ouvrir": "Ouvrir le cercle",
+    "trouverMembres": "Trouver des membres"
   },
   "reseau": {
     "competences": "Compétences",
