@@ -4,6 +4,8 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
+from jamii_ia.modeles import TYPES_TACHE
+
 # Codes de validation de Pydantic → codes stables du contrat.
 _CODES_CHAMP = {
     "missing": "obligatoire",
@@ -56,9 +58,15 @@ def brancher_erreurs(app: FastAPI) -> None:
         # On renvoie le chemin du champ et un code, jamais la valeur reçue.
         erreurs = [
             {
-                "champ": ".".join(str(morceau) for morceau in e["loc"][1:]) or str(e["loc"][0]),
+                "champ": _champ(e["loc"]),
                 "code": _CODES_CHAMP.get(e["type"], "format_invalide"),
             }
             for e in erreur.errors()
         ]
         return _probleme(requete, 400, "validation", "Certains champs sont invalides", erreurs)
+
+
+def _champ(chemin: tuple) -> str:
+    # Sans « body » ni l'étiquette du type de tâche ajoutée par l'union discriminée.
+    morceaux = [str(m) for m in chemin[1:] if str(m) not in TYPES_TACHE]
+    return ".".join(morceaux) or str(chemin[0])

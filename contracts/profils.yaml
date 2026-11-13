@@ -344,6 +344,12 @@ components:
             resumeIaPropose: { type: [string, 'null'], description: 'Le résumé de l''IA, même masqué, pour que je puisse le relire.' }
             generation: { $ref: '#/components/schemas/Generation' }
             version: { type: integer, minimum: 0 }
+            competencesProposees:
+              type: array
+              description: |
+                La carte de compétences proposée par l'IA (`ia.yaml`, `analyse_profil`), à la génération du profil.
+                Rien n'est public tant que la personne ne l'a pas gardé (`competencesIaRetenues`). Vide si l'IA n'a pas répondu.
+              items: { $ref: './ia.yaml#/components/schemas/CarteCompetences/properties/competences/items' }
 
     ModificationProfil:
       type: object
@@ -361,6 +367,12 @@ components:
           uniqueItems: true
           items: { $ref: './projets.yaml#/components/schemas/Competence' }
         afficherResumeIa: { type: boolean }
+        competencesIaRetenues:
+          type: array
+          maxItems: 12
+          uniqueItems: true
+          description: Les compétences de `competencesProposees` que la personne garde. Remplace la liste entière.
+          items: { $ref: './projets.yaml#/components/schemas/Competence' }
         version: { type: integer, minimum: 0 }
 
     Generation:
@@ -387,7 +399,13 @@ components:
       required: [competence, source]
       properties:
         competence: { $ref: './projets.yaml#/components/schemas/Competence' }
-        source: { type: string, enum: [github, declaree], description: '`github` : déduite des dépôts. `declaree` : ajoutée par la personne.' }
+        source: { type: string, enum: [github, declaree, ia], description: '`github` : déduite des dépôts. `declaree` : ajoutée par la personne. `ia` : proposée par l''IA (carte de compétences) et gardée par la personne.' }
+        niveau: { type: [string, 'null'], enum: [debutant, intermediaire, confirme, null], description: Seulement pour `ia`. }
+        preuves:
+          type: array
+          maxItems: 3
+          description: 'Seulement pour `ia` : les dépôts publics qui la prouvent. Affiché « Proposé par l''IA à partir des dépôts publics ».'
+          items: { type: string }
 
     ProjetDuProfil:
       type: object

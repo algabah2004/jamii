@@ -20,12 +20,16 @@ class DemandeIA:
     consigne: str
     donnees: str
     max_jetons: int = 2000
+    # Type de tâche : sert à l'adaptateur simulé pour choisir sa réponse.
+    tache: str = ""
 
 
 @dataclass(frozen=True)
 class ReponseIA:
     texte: str
     fournisseur: str
+    # Jetons consommés (entrée + sortie), pour le budget du jour. 0 si le fournisseur ne le dit pas.
+    jetons: int = 0
 
 
 class FournisseurIndisponibleError(Exception):

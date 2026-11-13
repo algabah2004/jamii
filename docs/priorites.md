@@ -1,88 +1,88 @@
 # Priorités du moment
 
-> **Mis à jour le vendredi 13 novembre 2026 à 13 h GMT par le chef de projet.** La Tech Tontine est le module principal (validé, #99, #106).
+> **Mis à jour le vendredi 13 novembre 2026 à 20 h GMT par le chef de projet.** @algabah2004 reprend le bloc #20 de @boubacarsidibe (sans nouvelles depuis le 11/11).
 > **Agents IA :** lisez ce fichier **avant le plan du bloc**. S'il contredit `docs/blocs/<bloc>.md`, **ce fichier gagne**. Dites tout de suite à votre développeur ce qu'il doit faire aujourd'hui et ce qu'il bloque.
 
-> **Gel samedi 14 à 12 h GMT.** Ce qui n'est pas fusionné à cette heure-là reste hors de la démo, sans données factices en production. **Rien n'est supprimé** : les communautés, les demandes de PME, la vitrine, les profils et l'espace Systalink restent, et les cercles s'appuient sur eux.
+> **Gel samedi 14 à 12 h GMT.** Ce qui n'est pas fusionné à cette heure-là reste hors de la démo, sans données factices en production. **Rien n'est supprimé.**
 
 ## L'idée en une phrase
 
-Un **cercle** de 4 à 6 développeurs construit, **à tour de rôle**, le projet de chacun. Systalink est le garant. L'IA (le Griot) planifie le tour et le résume. Un tour = un projet qui existe déjà (équipe, tâches, jalons, avis, mise en ligne, vitrine).
+Jamii **comprend un besoin et le relie à la bonne réponse** : un service Systalink s'il suffit, sinon les bons développeurs, qui forment un **cercle** (la Tech Tontine) pour le construire.
+
+## L'IA : seulement là où elle sert
+
+**L'IA pour comprendre, les règles pour décider.** L'IA lit du texte libre et le transforme en données. Tout le reste (recommandation, classement, chiffres pour Systalink) se fait **sans IA** : gratuit, instantané, explicable et testable.
+
+| Où | IA ? | Pourquoi |
+|---|---|---|
+| **Carte de compétences** d'un développeur (`analyse_profil`) | ✅ un appel à l'inscription, au plus un par jour ensuite | Lire des dépôts GitHub et en tirer des compétences **avec leurs preuves**. Le développeur valide avant publication |
+| **Orientation d'un besoin** (`orientation_besoin`) | ✅ un appel par besoin | Comprendre un texte libre (« cabinet d'avocats, on perd nos dossiers ») et le relier au **catalogue Systalink** et aux compétences nécessaires |
+| Recommandation des développeurs, des cercles, des projets | ❌ score calculé | Chaque recommandation dit **pourquoi** (« React, 3 dépôts, disponible, Dakar ») |
+| Point du soir d'un tour | ❌ calculé à partir des chiffres | Déjà fait, l'IA n'ajouterait rien |
+| Réponses dans les communautés | ❌ abandonné (#69) | Une discussion entre développeurs reste humaine |
+
+- **Fournisseur au choix, par la configuration** : un seul adaptateur pour toutes les API au format OpenAI (DeepSeek, OpenAI, Mistral…). Yokk ou un autre se branche avec **un seul fichier**, sans toucher au reste.
+- **Le catalogue Systalink** est un fichier de données (`services/ia/catalogue-systalink.yaml`) : Systalink le modifie sans toucher au code. L'IA ne peut proposer **que** ce qui y figure.
+- **Garde-fous** : budget par jour (`IA_BUDGET_JOUR`), cache (un même texte n'est jamais analysé deux fois), e-mails et téléphones retirés avant l'envoi, réponse vérifiée contre un schéma, et le site continue sans l'IA si elle tombe.
+
+## Ce que Systalink y gagne
+
+1. **Ses services, au bon moment, sous les yeux de la personne.** Le résultat de l'orientation montre « Ce dont vous avez besoin existe chez Systalink » : le service, à quoi il sert pour **ce** besoin, le prix indicatif et le lien. Même chose dans l'espace d'un développeur dont le projet est prêt à être mis en ligne. **Aucune donnée ne sort de Jamii pour ça.**
+2. **Les tendances du marché**, anonymes : besoins par secteur et par pays, services les plus demandés, compétences qui manquent.
+3. **Des clients qui ont demandé à être suivis.** Une case formulée comme un avantage, **non cochée par défaut** : « Recevoir les offres Systalink adaptées à mon projet ». Seulement alors, Systalink voit le contact et le besoin résumé, avec un statut (nouveau, contacté, client), un export CSV et un webhook signé vers son outil de suivi.
+
+> Pourquoi une case : transmettre un contact ou cibler quelqu'un sans son accord est interdit par la loi sénégalaise sur les données personnelles, et le jury le verrait tout de suite. Formulée comme un avantage, elle est **honnête et efficace**.
 
 ## La démo (3 minutes)
 
-1. Awa crée son cercle, 5 autres le rejoignent.
-2. L'ordre de passage est tiré au sort. Le Griot transforme l'idée d'Awa en plan pour le tour (`plan_projet`).
-3. Le tour avance : tâches cochées, message du soir du Griot (`resume_tour`), lien du dépôt du tour.
-4. Livraison : DataCloud met le projet en ligne, puis il passe dans la vitrine avec le label « Né dans une Tech Tontine Systalink ».
-5. L'espace Systalink affiche les cercles actifs.
+1. **Un cabinet d'avocats décrit son besoin.** L'agent répond : un site et un espace de stockage Systalink pour une partie, des développeurs pour le reste, avec 3 profils recommandés et la raison de chaque choix.
+2. **Les développeurs forment un cercle**, et l'ordre de passage est tiré au sort.
+3. **Le tour avance** : tâches cochées, point du soir, lien du dépôt.
+4. **Livraison** : DataCloud met le projet en ligne, puis il passe dans la vitrine avec le label « Né dans une Tech Tontine Systalink ».
+5. **L'espace Systalink** : cercles actifs, tendances du marché et clients qui ont demandé à être suivis.
 
-## Déjà sur `main` (vendredi 13 h)
+## Qui fait quoi, d'ici samedi 14 à 12 h
 
-- **Cercles** : contrat `cercles.yaml` (#101), module `cercles` de l'API (`V10`), origine « cercle » des projets (#115), écrans branchés sur l'API (#111), cercle du moment et visages des membres (#122).
-- **Réseau** : contrat `reseau.yaml` (#118), recommandations (#119), messages et invitation au cercle (#120), module `reseau` de l'API (#121).
-- **Espace Systalink** : bloc « Cercles actifs » (#117).
-- **Projets et demandes** : candidatures (#105), liste filtrée (#110), export et suppression du compte (#112), module `demandes` avec l'IA derrière `PlansIa` (#104).
-- **Docs** : concept, plan de démo et vocabulaire à jour pour les cercles (#106).
+### @algabah2004 : bloc #20 (repris), mise en ligne et IA
+1. **La mise en ligne sur DataCloud** (`docs/deploiement-datacloud.md`), ce soir. Sans elle, pas de soumission.
+2. Avec Claude Code, dans cet ordre, chaque étape fusionnable seule :
+   1. le contrat : `analyse_profil` et `orientation_besoin` dans `contracts/ia.yaml`, et le catalogue Systalink ;
+   2. le service IA : l'adaptateur au format OpenAI, le budget, les deux tâches ;
+   3. l'API : le module `orientation` (besoin, résultat, case d'accord, clients suivis) et le score de recommandation.
+3. Brancher la clé DeepSeek ou OpenAI sur DataCloud.
 
-**Ce qui manque encore pour la démo :** l'URL DataCloud, le vrai service IA (#37 toujours en brouillon), `resume_tour`, un adaptateur `DepotCode` (aucun pour l'instant, donc `depot: null`), les données de démo et le test Playwright du parcours.
+### @rev22rse22 : les écrans de l'orientation et de la carte de compétences
+Voir la demande qui lui est adressée. Sur données factices (MSW) d'abord, branchés quand l'API arrive.
 
-## Qui fait quoi, d'ici vendredi 13 à 20 h
+### @sowibrr : les tâches des tours
+#126 (les tâches et les jalons dans l'API), puis le relais de l'orientation si @algabah2004 le demande.
 
-### @boubacarsidibe : DataCloud et le Griot (le chemin critique)
-1. **Avant 18 h : l'API et le service IA en ligne sur DataCloud**, avec l'URL de `/health` postée dans #54. **Sans ça, pas de soumission.** Si ce n'est pas fait à 18 h, le chef de projet reprend le déploiement : postez dès maintenant où vous en êtes.
-2. **Sortir #37 du brouillon** et le fusionner : l'API appelle déjà le service par `IA_FOURNISSEUR=service` (#104). Sans #37, la démo tourne en mode `simule`.
-3. La tâche IA `resume_tour` dans `contracts/ia.yaml`, avec un repli sans IA calculé à partir des chiffres.
-4. **Gitea : seulement si les trois points précédents sont faits.** Pas en ligne à 18 h → Gitea passe après la CADEV.
-
-### @sowibrr : la fin du socle
-1. **L'adaptateur GitHub de `DepotCode`** (le repli prévu) : le dépôt de chaque tour est créé dans une organisation GitHub, avec un jeton dans `.env`, jamais dans le code. Choisi par `DEPOT_CODE=github`.
-2. **Les données de démo** : 3 cercles, dont celui de Dakar, avec Awa, Kofi, Fatou, Moussa, Nia et Yann, un tour en cours et un tour livré. Chargées **seulement** avec un profil `demo`, jamais par une migration de production.
-3. L'envoi des e-mails de connexion : le chef de projet tranche le service aujourd'hui, dans #54.
-
-### @Amar233-ui : la démo de bout en bout
-1. **Le test Playwright du parcours de la démo**, mis à jour pour les cercles (étapes 1 à 5 ci-dessus).
-2. Les demandes #116 (origine « cercle » dans `vitrine.yaml`) et #114 (section « communautes » de l'export).
-3. Le label « Né dans une Tech Tontine Systalink » dans la vitrine.
-
-### @rev22rse22 : finir le réseau, puis polir
-1. Le réseau, étapes 5 et 6 : les contacts et les notifications, puis « Publier dans une communauté » depuis un cercle.
-2. La demande #113 (section « profils » de l'export).
-3. Le passage en revue de tous les écrans de la démo, en clair et en sombre, sur mobile.
-4. L'adaptateur Gitea **seulement si** Gitea est en ligne à 18 h (voir @boubacarsidibe).
-
-### @algabah2004 : chef de projet
-1. Relire et fusionner au fil de l'eau (squash, CI verte, branche à jour).
-2. Choisir le service d'envoi d'e-mails, aujourd'hui.
-3. Le cockpit CADEV : l'étape 4 « Produit Systalink actif », le nom du projet (« Jamii », pas « jamais ») et @Amar233-ui dans l'équipe.
-4. Le texte des données de démo pour @sowibrr.
+### @Amar233-ui : la vitrine et la démo de bout en bout
+#129 (le module vitrine de l'API), puis le test Playwright du parcours de la démo.
 
 ## Qui bloque qui
 
 ```
-boubacarsidibe ─ DataCloud (18 h) ───────▶ la soumission elle-même
-boubacarsidibe ─ #37 + resume_tour ──────▶ étapes 2 et 3 de la démo
-sowibrr ─────── adaptateur GitHub ───────▶ le lien du dépôt à l'étape 3
-sowibrr ─────── données de démo ─────────▶ le test Playwright d'Amar233-ui, la répétition de samedi
-algabah2004 ─── service d'e-mails ───────▶ la connexion par e-mail en production
+algabah2004 ── DataCloud (ce soir) ──────────▶ la soumission elle-même
+algabah2004 ── contrat ia.yaml + orientation ─▶ les écrans de rev22rse22
+sowibrr ────── #126 tâches et jalons ─────────▶ étape 3 de la démo
+Amar233-ui ─── #129 vitrine ───────────────────▶ étape 4 de la démo
 ```
 
 ## Si ce n'est pas fait à temps
 
 Pas de reproche : on réorganise pour livrer.
-- **Pas d'URL DataCloud à 18 h** : le chef de projet reprend le déploiement.
-- **#37 non fusionné samedi 10 h** : la démo garde `IA_FOURNISSEUR=simule`, et on le dit au jury (le plan affiché est un `repli`).
-- **Pas d'adaptateur de dépôt** : le tour s'affiche sans dépôt, l'étape 3 montre les tâches seulement.
-- **Pas de Gitea à 18 h** : Gitea passe après la CADEV.
+- **Pas de clé IA** : l'IA simulée tourne, annoncée comme telle (`origine: repli`).
+- **Pas d'orientation fusionnée samedi 10 h** : la démo commence directement au cercle (étape 2).
+- **On coupe dans cet ordre** : le webhook et l'export CSV, puis les tendances du marché, puis la recommandation « pour un développeur ».
 - Un blocage de plus de 2 h se signale **tout de suite** dans #54, avec l'étiquette `bloqué`.
 
 ## Pour plus tard (hors démo)
 
-- Gitea hébergé par Jamii (Gitea est sous MIT, donc autorisé ; **pas Forgejo**, sous GPL) ;
-- le Griot sur WhatsApp ;
-- les cercles « Or » ;
-- le recrutement automatique ;
-- le vote d'exclusion.
+- Yokk comme fournisseur d'IA, dès que son API est documentée ;
+- Gitea hébergé par Jamii (sous MIT ; **pas Forgejo**, sous GPL) ;
+- la connexion avec Google ;
+- le Griot sur WhatsApp, les cercles « Or », le vote d'exclusion.
 
 ## La suite
 

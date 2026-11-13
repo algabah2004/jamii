@@ -74,6 +74,7 @@ def reglages_de_test(url_base: str, **surcharges: object) -> Reglages:
         "IA_PROVIDER": "simule",
         "IA_JETON_INTERNE": JETON,
         "DATABASE_URL": url_base,
+        "IA_TRAVAILLEUR": "false",
     } | surcharges
     return Reglages(**valeurs)
 
