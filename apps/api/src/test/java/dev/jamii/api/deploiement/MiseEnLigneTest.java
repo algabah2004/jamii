@@ -46,6 +46,7 @@ class MiseEnLigneTest {
 	static class Simulations {
 
 		@Bean
+		@Primary
 		AccesProjets accesProjets() {
 			return (projet, qui) -> !PROJETS.contains(projet) ? AccesProjets.Acces.INTROUVABLE
 					: AWA.equals(qui) ? AccesProjets.Acces.MEMBRE : AccesProjets.Acces.LECTEUR;
