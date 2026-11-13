@@ -39,7 +39,9 @@ Tout passe par des variables d'environnement (voir [`.env.example`](../../.env.e
 | `POSTGRES_PASSWORD` | Mot de passe de la base | **aucun** : pas de mot de passe dans le code |
 | `POSTGRES_SSLMODE` | Chiffrement de la connexion (`require` ou `verify-full` en production) | `prefer` |
 | `PORT`, puis `API_PORT` | Port d'écoute. `PORT` est celui qu'impose l'hébergeur, s'il y en a un | `8080` |
-
+| `DEPOT_CODE` | Dépôt Git de chaque tour de cercle : `aucun` (le tour n'a pas de dépôt) ou `github` | `aucun` |
+| `GITHUB_DEPOTS_ORGANISATION`, `GITHUB_DEPOTS_JETON` | Avec `DEPOT_CODE=github` : l'organisation qui reçoit les dépôts, et un jeton qui peut y créer des dépôts et inviter des membres. L'API refuse de démarrer s'il en manque un | aucun |
+| `GITHUB_DEPOTS_PRIVES` | `true` : dépôts privés | `false` |
 | `JAVA_TOOL_OPTIONS` | Réglages de la JVM, lus par Java lui-même (voir ci-dessous) | aucun |
 
 En local, `./mvnw spring-boot:run` n'a besoin d'aucune de ces variables : la connexion vient de docker compose. Elles servent au déploiement.
