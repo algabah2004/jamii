@@ -1,0 +1,32 @@
+# Une seule origine pour le navigateur : les pages ici, /api relayé vers l'API (API_URL, obligatoire).
+{
+	admin off
+	auto_https off
+}
+
+:{$PORT:8080} {
+	encode zstd gzip
+
+	handle /api/* {
+		reverse_proxy {$API_URL} {
+			# L'hébergeur route sur le nom de l'API ; l'API retrouve l'adresse publique par X-Forwarded-Host.
+			header_up Host {upstream_hostport}
+			header_up X-Forwarded-Host {host}
+			header_up X-Forwarded-Proto https
+		}
+	}
+
+	handle {
+		root * /srv
+		# Routeur du front en mode historique : toute page inconnue renvoie index.html.
+		try_files {path} /index.html
+		file_server
+		header {
+			X-Content-Type-Options nosniff
+			Referrer-Policy strict-origin-when-cross-origin
+			X-Frame-Options DENY
+		}
+		@fichiers path /assets/*
+		header @fichiers Cache-Control "public, max-age=31536000, immutable"
+	}
+}
