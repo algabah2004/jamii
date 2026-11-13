@@ -56,6 +56,18 @@ export const routes: RouteRecordRaw[] = [
     meta: { connexionRequise: true },
   },
   {
+    path: '/notifications',
+    name: 'notifications',
+    component: () => import('./features/reseau/NotificationsPage.vue'),
+    meta: { connexionRequise: true },
+  },
+  {
+    path: '/contacts',
+    name: 'contacts',
+    component: () => import('./features/reseau/ContactsPage.vue'),
+    meta: { connexionRequise: true },
+  },
+  {
     path: '/messages/:personneId',
     name: 'conversation',
     component: () => import('./features/reseau/ConversationPage.vue'),

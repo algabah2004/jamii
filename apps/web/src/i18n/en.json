@@ -560,6 +560,41 @@
       "ecrire": "Your message to {nom}",
       "envoyer": "Send",
       "lien": "Messages | Messages, {n} unread | Messages, {n} unread"
+    },
+    "onglets": {
+      "titre": "Activity",
+      "notifications": "Notifications",
+      "messages": "Messages",
+      "contacts": "Contacts",
+      "lien": "Notifications | Notifications, {n} new | Notifications, {n} new"
+    },
+    "notifications": {
+      "vide": "Nothing new yet. Join a circle or write to a developer.",
+      "nouvelle": "new",
+      "message_recu": "{nom} wrote to you.",
+      "invitation_cercle": "{nom} invites you to join “{cercle}”.",
+      "demande_contact": "{nom} wants to add you as a contact.",
+      "contact_accepte": "{nom} accepted your contact request.",
+      "membre_rejoint": "{nom} joined “{cercle}”.",
+      "tirage_effectue": "The turn order of “{cercle}” has been drawn.",
+      "tour_livre": "A turn of “{cercle}” has been delivered.",
+      "cercle_recommande": "“{cercle}” needs your profile."
+    },
+    "contacts": {
+      "recues": "Requests received",
+      "mes": "My contacts",
+      "envoyees": "Requests sent",
+      "vide": "No contacts yet. Add someone from a conversation.",
+      "accepter": "Accept",
+      "refuser": "Decline",
+      "annuler": "Cancel the request",
+      "ajouter": "Add to contacts",
+      "ecrire": "Write",
+      "erreur": "That didn't work. Try again.",
+      "statut": {
+        "envoyee": "Request sent",
+        "accepte": "In your contacts"
+      }
     }
   }
 }

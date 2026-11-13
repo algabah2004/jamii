@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 import { JAvatar, JBouton, JSquelette } from '../../design-system'
+import OngletsReseau from './OngletsReseau.vue'
 import { lireConversations, quand, type Conversation } from './reseau'
 
 /* Mes conversations, la plus récente d'abord, avec les messages non lus mis en avant. */
@@ -27,11 +28,10 @@ const apercu = (c: Conversation) =>
 
 <template>
   <section class="messages">
-    <header class="page-tete">
-      <div class="page-tete__texte">
-        <h1>{{ t('reseau.messages.titre') }}</h1>
-        <p>{{ t('reseau.messages.intro') }}</p>
-      </div>
+    <header class="tete">
+      <h1>{{ t('reseau.messages.titre') }}</h1>
+      <OngletsReseau />
+      <p class="texte-discret">{{ t('reseau.messages.intro') }}</p>
     </header>
 
     <JSquelette v-if="etat === 'chargement'" :nombre="3" />
@@ -63,6 +63,8 @@ const apercu = (c: Conversation) =>
 
 <style scoped>
 .messages { display: grid; gap: var(--space-6); max-width: 44rem; }
+.tete { display: grid; gap: var(--space-4); }
+.tete h1, .tete p { margin: 0; }
 .liste { list-style: none; margin: 0; padding: var(--space-2); display: grid; }
 .ligne { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3); border-radius: var(--radius-md); color: var(--ink); text-decoration: none; }
 .ligne:hover { background: color-mix(in srgb, var(--ink) 5%, transparent); }
