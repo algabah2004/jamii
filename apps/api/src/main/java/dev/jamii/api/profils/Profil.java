@@ -53,6 +53,9 @@ class Profil {
 
 	private Instant generationTermineeLe;
 
+	/** La dernière carte proposée par l'IA, en JSON (CartesIa.Stockage). Privée tant que la personne n'a rien gardé. */
+	private String competencesProposees;
+
 	@Version
 	private int version;
 
@@ -81,8 +84,18 @@ class Profil {
 		this.misAJourLe = maintenant;
 	}
 
+	/** `niveau` et `preuves` (noms de dépôts séparés par des virgules) : seulement pour la source `ia`. */
 	@Embeddable
-	record CompetenceProfil(String competence, String source) {
+	record CompetenceProfil(String competence, String source, String niveau, String preuves) {
+
+		CompetenceProfil(String competence, String source) {
+			this(competence, source, null, null);
+		}
+
+		List<String> listePreuves() {
+			return preuves == null ? List.of() : List.of(preuves.split(","));
+		}
+
 	}
 
 	@Embeddable
@@ -124,6 +137,24 @@ class Profil {
 		generationStatut = "echec";
 		generationErreur = erreur;
 		generationTermineeLe = maintenant;
+	}
+
+	/** Une nouvelle carte remplace l'ancienne. Ce que la personne a déjà gardé reste, jusqu'à son prochain choix. */
+	void proposerCompetences(List<CartesIa.Proposee> carte) {
+		competencesProposees = CartesIa.Stockage.ecrire(carte);
+	}
+
+	List<CartesIa.Proposee> competencesProposees() {
+		return CartesIa.Stockage.lire(competencesProposees);
+	}
+
+	/** Garde ces compétences de la carte proposée (déjà vérifiées par ModificationProfil), avec niveau et preuves. */
+	void retenirCompetencesIa(Set<String> retenues) {
+		competences.removeIf(c -> "ia".equals(c.source()));
+		competencesProposees().stream()
+			.filter(p -> retenues.contains(p.competence()))
+			.forEach(p -> competences
+				.add(new CompetenceProfil(p.competence(), "ia", p.niveau(), String.join(",", p.preuves()))));
 	}
 
 	void remplacerCompetencesDeclarees(Set<String> declarees) {

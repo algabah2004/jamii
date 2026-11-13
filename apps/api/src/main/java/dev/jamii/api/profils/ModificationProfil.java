@@ -16,7 +16,7 @@ final class ModificationProfil {
 	static final Set<String> DISPONIBILITES = Set.of("disponible", "occupe", "indisponible");
 
 	private static final Set<String> CHAMPS = Set.of("bio", "pays", "ville", "disponibilite", "heuresParSemaine",
-			"competencesDeclarees", "afficherResumeIa", "version");
+			"competencesDeclarees", "competencesIaRetenues", "afficherResumeIa", "version");
 
 	private static final Set<String> CODES_PAYS = Set.of(Locale.getISOCountries());
 
@@ -84,6 +84,11 @@ final class ModificationProfil {
 				.ifPresent(c -> changements.add(() -> profil.remplacerCompetencesDeclarees(c)));
 		}
 
+		if (patch.containsKey("competencesIaRetenues")) {
+			retenues(patch.get("competencesIaRetenues"), profil, erreurs)
+				.ifPresent(c -> changements.add(() -> profil.retenirCompetencesIa(c)));
+		}
+
 		if (!erreurs.isEmpty()) {
 			throw ErreurProfil.validation(erreurs);
 		}
@@ -136,6 +141,31 @@ final class ModificationProfil {
 			}
 		}
 		return erreurs.size() == avant ? java.util.Optional.of(propres) : java.util.Optional.empty();
+	}
+
+	/** Seulement des compétences de la carte proposée : on ne fait pas dire à l'IA ce qu'elle n'a pas proposé. */
+	private static java.util.Optional<Set<String>> retenues(Object brut, Profil profil, List<ErreurProfil.Champ> erreurs) {
+		if (!(brut instanceof List<?> liste)) {
+			erreurs.add(champ("competencesIaRetenues", "format_invalide"));
+			return java.util.Optional.empty();
+		}
+		if (liste.size() > CartesIa.COMPETENCES_MAX) {
+			erreurs.add(champ("competencesIaRetenues", "trop_d_elements"));
+			return java.util.Optional.empty();
+		}
+		Set<String> proposees = new java.util.HashSet<>();
+		profil.competencesProposees().forEach(p -> proposees.add(p.competence()));
+		Set<String> gardees = new LinkedHashSet<>();
+		int avant = erreurs.size();
+		for (int i = 0; i < liste.size(); i++) {
+			if (liste.get(i) instanceof String s && proposees.contains(s)) {
+				gardees.add(s);
+			}
+			else {
+				erreurs.add(champ("competencesIaRetenues[" + i + "]", "non_proposee"));
+			}
+		}
+		return erreurs.size() == avant ? java.util.Optional.of(gardees) : java.util.Optional.empty();
 	}
 
 	private static ErreurProfil.Champ champ(String nom, String code) {
