@@ -505,5 +505,43 @@
       "mes": "You are not part of a circle yet.",
       "ouverts": "No circle is looking for members right now. Create yours."
     }
+  },
+  "reseau": {
+    "competences": "Skills",
+    "heures": "{n} h per week",
+    "pourToi": {
+      "titre": "Circles that need you",
+      "aide": "Picked from your skills and your city."
+    },
+    "raisonsCercle": {
+      "competence_manquante": "They need {competences}, which you know",
+      "meme_ville": "In your city",
+      "disponible": "You are available",
+      "presque_complet": "Only one place left"
+    },
+    "raisonsProfil": {
+      "competence_manquante": "Knows {competences}, which the circle lacks",
+      "meme_ville": "In the circle's city",
+      "disponible": "Available now",
+      "presque_complet": "The circle needs only one more person"
+    },
+    "profils": {
+      "titre": "Profiles the circle needs",
+      "aide": "Available developers who bring what the circle doesn't have yet: {competences}.",
+      "vide": "No available profile matches yet. Share the circle's link in a community.",
+      "inviter": "Invite to the circle",
+      "invite": "Invitation sent",
+      "message": "Your message to {nom}",
+      "messageParDefaut": "Hi {nom}, our “{cercle}” is looking for someone who knows {competences}. Would you like to join us?",
+      "envoyer": "Send the invitation",
+      "envoye": "Invitation sent. {nom} will see it in their messages."
+    },
+    "erreurs": {
+      "cercle_ferme": "The circle is full, or the order has already been drawn.",
+      "pas_membre_du_cercle": "Only members of the circle can invite.",
+      "soi_meme": "You can't write to yourself.",
+      "introuvable": "This person no longer exists.",
+      "autre": "The invitation wasn't sent. Try again."
+    }
   }
 }

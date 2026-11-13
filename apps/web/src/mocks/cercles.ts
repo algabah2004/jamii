@@ -65,7 +65,18 @@ function cercleAbidjan(): Cercle {
   }
 }
 
+// Le cercle qu'Awa vient de créer : il lui manque 2 membres, la page lui recommande des profils (mocks/reseau.ts).
+function cercleSaintLouis(): Cercle {
+  const membres = [membre(0, null), membre(2, null)]
+  return {
+    id: 'a0c1e2c1-0000-4000-8000-0000000051a1', nom: 'Cercle de Saint-Louis', ville: 'Saint-Louis', taille: 4, statut: 'ouvert',
+    nombreMembres: 2, createur: PERSONNES[0]!.personne, creeLe: ilYa(0),
+    membres, tours: [], tourEnCours: null, tirage: null, moi: { estCreateur: true, estMembre: true },
+  }
+}
+
 export const ID_DAKAR = 'a0c1e2c1-0000-4000-8000-00000000da4a'
+export const ID_SAINT_LOUIS = 'a0c1e2c1-0000-4000-8000-0000000051a1'
 export const ID_ABIDJAN = 'a0c1e2c1-0000-4000-8000-0000000ab1d1'
 
 let cercles: Cercle[] = []
@@ -73,8 +84,11 @@ let cercles: Cercle[] = []
 export function reinitialiserCercles() {
   projets.clear()
   suivantProjet = 1
-  cercles = [cercleDakar(), cercleAbidjan()]
+  cercles = [cercleSaintLouis(), cercleDakar(), cercleAbidjan()]
 }
+/** Les cercles de démo tels qu'ils sont maintenant (pour les recommandations de mocks/reseau.ts). */
+export const cerclesDemo = () => cercles
+export const resumeCercle = (c: Cercle) => resume(c)
 reinitialiserCercles()
 
 const erreur = (code: string, status = 409) =>

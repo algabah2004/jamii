@@ -505,5 +505,43 @@
       "mes": "Tu ne fais encore partie d'aucun cercle.",
       "ouverts": "Aucun cercle ne cherche de membres pour l'instant. Crée le tien."
     }
+  },
+  "reseau": {
+    "competences": "Compétences",
+    "heures": "{n} h par semaine",
+    "pourToi": {
+      "titre": "Cercles qui ont besoin de toi",
+      "aide": "Choisis d'après tes compétences et ta ville."
+    },
+    "raisonsCercle": {
+      "competence_manquante": "Il leur manque {competences}, que tu connais",
+      "meme_ville": "Dans ta ville",
+      "disponible": "Tu es disponible",
+      "presque_complet": "Plus qu'une place"
+    },
+    "raisonsProfil": {
+      "competence_manquante": "Connaît {competences}, qui manque au cercle",
+      "meme_ville": "Dans la ville du cercle",
+      "disponible": "Disponible en ce moment",
+      "presque_complet": "Le cercle n'attend plus qu'une personne"
+    },
+    "profils": {
+      "titre": "Profils qui manquent au cercle",
+      "aide": "Des développeurs disponibles qui apportent ce que le cercle n'a pas encore : {competences}.",
+      "vide": "Aucun profil disponible ne correspond pour l'instant. Partage le lien du cercle dans une communauté.",
+      "inviter": "Inviter au cercle",
+      "invite": "Invitation envoyée",
+      "message": "Ton message à {nom}",
+      "messageParDefaut": "Bonjour {nom}, notre « {cercle} » cherche quelqu'un qui connaît {competences}. Tu veux nous rejoindre ?",
+      "envoyer": "Envoyer l'invitation",
+      "envoye": "Invitation envoyée. {nom} la verra dans ses messages."
+    },
+    "erreurs": {
+      "cercle_ferme": "Le cercle est complet, ou l'ordre est déjà tiré.",
+      "pas_membre_du_cercle": "Seuls les membres du cercle peuvent inviter.",
+      "soi_meme": "Tu ne peux pas t'écrire à toi-même.",
+      "introuvable": "Cette personne n'existe plus.",
+      "autre": "L'invitation n'est pas partie. Réessaie."
+    }
   }
 }
