@@ -48,8 +48,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/systalink/tendances": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Les tendances du marché, à partir des besoins décrits sur Jamii */
+        get: operations["tendancesSystalink"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/systalink/clients-suivis": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Les personnes qui ont demandé à recevoir les offres Systalink, les plus récentes d'abord
+         * @description Rôle `systalink` ou `admin`. Pagination par curseur (docs/api-conventions.md).
+         */
+        get: operations["listerClientsSuivis"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/systalink/clients-suivis/{demandeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Noter où en est le suivi (contacté, devenu client…) */
+        patch: operations["suivreClient"];
+        trace?: never;
+    };
 }
-export type webhooks = Record<string, never>;
+export interface webhooks {
+    clientSuivi: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Envoyé à l'outil de Systalink quand une personne accepte de recevoir ses offres
+         * @description Adresse : `SYSTALINK_WEBHOOK_URL`. Sans elle, rien n'est envoyé. Signature :
+         *     `X-Jamii-Signature: sha256=<HMAC-SHA256 hexadécimal de "<X-Jamii-Horodatage>.<corps>" avec SYSTALINK_WEBHOOK_SECRET>`.
+         *     Le destinataire refuse un horodatage de plus de 5 minutes (rejeu). 3 essais au plus ; un échec ne bloque jamais
+         *     la personne. Le corps ne contient que ce que la personne a accepté de partager.
+         */
+        post: operations["webhookClientSuivi"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+}
 export interface components {
     schemas: {
         /**
@@ -148,6 +226,57 @@ export interface components {
              */
             lien: string;
         };
+        Tendances: {
+            periode: components["schemas"]["Periode"];
+            /** @description Besoins décrits sur la période. */
+            besoins: number;
+            secteurs: {
+                /** @description `autres` regroupe les secteurs de moins de 5 besoins. */
+                secteur: string;
+                besoins: number;
+            }[];
+            /** @description Les services Systalink adaptés, et combien de fois. */
+            services: {
+                service: string;
+                suggestions: number;
+            }[];
+            /** @description Les compétences demandées par les besoins, et combien de profils publiés les ont. Ce qui manque sur le continent. */
+            competencesManquantes: {
+                competence: components["schemas"]["Competence"];
+                demandes: number;
+                profils: number;
+            }[];
+            pays: {
+                /** @description Code ISO, ou `autres`. */
+                pays: string;
+                besoins: number;
+            }[];
+        };
+        /** @enum {string} */
+        StatutClient: "nouveau" | "contacte" | "client" | "sans_suite";
+        ClientSuivi: {
+            /** Format: uuid */
+            demandeId: string;
+            /** Format: date-time */
+            creeLe: string;
+            /** @description Le besoin reformulé (`orientation.resume`), pas le texte d'origine. */
+            resume: string;
+            secteur?: string | null;
+            ville?: string | null;
+            pays?: string | null;
+            /** @description Identifiants du catalogue. */
+            services: string[];
+            developpeursNecessaires: boolean;
+            contact: {
+                nom: string;
+                /**
+                 * Format: email
+                 * @description `null` si la personne s'est connectée par GitHub sans e-mail connu.
+                 */
+                email: string | null;
+            };
+            statut: components["schemas"]["StatutClient"];
+        };
         /** @description Code ISO 3166-1 alpha-2 (`SN`, `CI`, `KE`). */
         Pays: string;
         ErreurChamp: {
@@ -182,6 +311,8 @@ export interface components {
             traceId?: string;
             erreurs?: components["schemas"]["ErreurChamp"][];
         };
+        /** @description En minuscules, sans espace inutile (`flutter`, `postgresql`, `ux-design`). */
+        Competence: string;
     };
     responses: {
         /** @description Entrée invalide (`code` = `validation`, détail dans `erreurs`). */
@@ -287,6 +418,116 @@ export interface operations {
             403: components["responses"]["Interdit"];
             404: components["responses"]["Introuvable"];
             429: components["responses"]["TropDeRequetes"];
+        };
+    };
+    tendancesSystalink: {
+        parameters: {
+            query?: {
+                periode?: components["schemas"]["Periode"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Chiffres agrégés. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Tendances"];
+                };
+            };
+            400: components["responses"]["Invalide"];
+        };
+    };
+    listerClientsSuivis: {
+        parameters: {
+            query?: {
+                statut?: components["schemas"]["StatutClient"];
+                curseur?: string;
+                limite?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Une page. */
+            200: {
+                headers: {
+                    "Cache-Control"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        elements: components["schemas"]["ClientSuivi"][];
+                        curseurSuivant?: string | null;
+                    };
+                    "text/csv": string;
+                };
+            };
+            401: components["responses"]["NonConnecte"];
+            403: components["responses"]["Interdit"];
+        };
+    };
+    suivreClient: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                demandeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    statut: components["schemas"]["StatutClient"];
+                };
+            };
+        };
+        responses: {
+            /** @description Le client suivi, à jour. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClientSuivi"];
+                };
+            };
+            401: components["responses"]["NonConnecte"];
+            403: components["responses"]["Interdit"];
+            404: components["responses"]["Introuvable"];
+        };
+    };
+    webhookClientSuivi: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Jamii-Signature": string;
+                "X-Jamii-Horodatage": number;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClientSuivi"];
+            };
+        };
+        responses: {
+            /** @description Reçu. */
+            "2XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
 }

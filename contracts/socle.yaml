@@ -294,7 +294,8 @@ components:
 
     Role:
       type: string
-      enum: [membre, moderateur, admin]
+      enum: [membre, moderateur, admin, systalink]
+      description: '`systalink` : accès aux clients suivis (`systalink.yaml`), accordé par la configuration `SYSTALINK_ACCES`.'
 
     Moi:
       type: object
