@@ -48,6 +48,19 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('./features/cercles/CerclePage.vue'),
     meta: { connexionRequise: true },
   },
+  // Le réseau (contracts/reseau.yaml) : écrire à un développeur, recevoir une invitation à un cercle.
+  {
+    path: '/messages',
+    name: 'messages',
+    component: () => import('./features/reseau/MessagesPage.vue'),
+    meta: { connexionRequise: true },
+  },
+  {
+    path: '/messages/:personneId',
+    name: 'conversation',
+    component: () => import('./features/reseau/ConversationPage.vue'),
+    meta: { connexionRequise: true },
+  },
   // Une PME décrit son besoin, l'assistant propose un plan (étape 3 de la démo). Connexion requise
   // (GitHub ou e-mail : une PME n'a pas besoin de compte GitHub).
   {

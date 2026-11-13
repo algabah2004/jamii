@@ -4,6 +4,7 @@ import { cerclesDemo, resumeCercle } from './cercles'
 
 type ProfilRecommande = components['schemas']['ProfilRecommande']
 type Message = components['schemas']['Message']
+type Personne = components['schemas']['Personne']
 
 // Données de démo (contracts/reseau.yaml) : personnes fictives. Awa est la personne connectée.
 const AWA = '6f1c2a4e-8b7d-4c3e-9a10-2b5d7e9f0a11'
@@ -20,15 +21,39 @@ const PROFILS = [
 const COUVERT = ['flutter', 'firebase', 'react']
 const RECHERCHE = ['postgresql', 'ux-design', 'spring-boot', 'typescript']
 
+/** Tous ceux à qui on peut écrire en démo : les profils recommandés et Kofi, créateur du cercle d'Abidjan. */
+const KOFI = 'c1a00000-0000-4000-8000-000000000002'
+const ABIDJAN = 'a0c1e2c1-0000-4000-8000-0000000ab1d1'
+const personnes = (): Personne[] => [
+  { id: KOFI, nom: 'Kofi Yao', avatarUrl: null, ville: 'Abidjan' },
+  ...PROFILS.map((p) => ({ id: p.utilisateurId, nom: p.nom, avatarUrl: null, ville: p.ville })),
+]
+const personne = (id: string) => personnes().find((p) => p.id === id)
+
 const invitations = new Map<string, Set<string>>()
+/** Par personne, les messages échangés avec Awa, les plus récents d'abord. */
 const messages = new Map<string, Message[]>()
 let suivant = 1
+const nouvelId = () => `e3f00000-0000-4000-8000-${String(suivant++).padStart(12, '0')}`
+const ilYa = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOString()
 
 export function reinitialiserReseau() {
   invitations.clear()
   messages.clear()
   suivant = 1
+  // Kofi invite Awa dans son cercle d'Abidjan (non lu), Amina lui a répondu hier (lu).
+  const abidjan = cerclesDemo().find((c) => c.id === ABIDJAN)
+  messages.set(KOFI, [
+    { id: nouvelId(), deMoi: false, texte: 'Salut Awa ! Notre cercle cherche quelqu’un qui connaît Flutter. Tu nous rejoins ?', invitation: abidjan ? { cercle: resumeCercle(abidjan) } : null, envoyeLe: ilYa(12), luLe: null },
+  ])
+  messages.set(PROFILS[1].utilisateurId, [
+    { id: nouvelId(), deMoi: false, texte: 'Avec plaisir, je regarde ton idée ce soir.', invitation: null, envoyeLe: ilYa(60 * 20), luLe: ilYa(60 * 19) },
+    { id: nouvelId(), deMoi: true, texte: 'Bonjour Amina, tu aurais un moment pour relire les écrans de mon appli ?', invitation: null, envoyeLe: ilYa(60 * 22), luLe: ilYa(60 * 21) },
+  ])
 }
+reinitialiserReseau()
+
+const nonLus = (liste: Message[]) => liste.filter((m) => !m.deMoi && !m.luLe).length
 
 const erreur = (code: string, status = 409) =>
   HttpResponse.json({ type: `urn:jamii:erreur:${code}`, title: code, status, code }, { status, headers: { 'Content-Type': 'application/problem+json' } })
@@ -69,7 +94,7 @@ export const handlersReseau = [
   http.post('/api/conversations/:personneId/messages', async ({ params, request }) => {
     const personneId = String(params.personneId)
     if (personneId === AWA) return erreur('soi_meme')
-    if (!PROFILS.some((p) => p.utilisateurId === personneId)) return erreur('introuvable', 404)
+    if (!personne(personneId)) return erreur('introuvable', 404)
     const corps = (await request.json()) as { texte?: string; cercleId?: string }
     const texte = corps.texte?.trim() ?? ''
     if (!texte || texte.length > 2000) return erreur('validation', 400)
@@ -82,8 +107,32 @@ export const handlersReseau = [
       invitations.set(c.id, (invitations.get(c.id) ?? new Set()).add(personneId))
       invitation = { cercle: resumeCercle(c) }
     }
-    const message: Message = { id: `e3f00000-0000-4000-8000-${String(suivant++).padStart(12, '0')}`, deMoi: true, texte, invitation, envoyeLe: new Date().toISOString(), luLe: null }
+    const message: Message = { id: nouvelId(), deMoi: true, texte, invitation, envoyeLe: new Date().toISOString(), luLe: null }
     messages.set(personneId, [message, ...(messages.get(personneId) ?? [])])
     return HttpResponse.json(message, { status: 201 })
+  }),
+
+  http.get('/api/conversations', () => {
+    const elements = [...messages.entries()]
+      .filter(([, liste]) => liste.length)
+      .map(([id, liste]) => ({ personne: personne(id)!, dernierMessage: liste[0]!, nonLus: nonLus(liste) }))
+      .sort((a, b) => b.dernierMessage.envoyeLe.localeCompare(a.dernierMessage.envoyeLe))
+    return HttpResponse.json({ elements, curseurSuivant: null })
+  }),
+
+  http.get('/api/conversations/:personneId/messages', ({ params }) => {
+    const id = String(params.personneId)
+    const p = personne(id)
+    if (!p) return erreur('introuvable', 404)
+    const liste = messages.get(id) ?? []
+    const elements = liste.map((m) => ({ ...m }))
+    // Lire la conversation la marque comme lue (la réponse garde l'état d'avant, pour montrer « nouveau »).
+    liste.forEach((m) => { if (!m.deMoi && !m.luLe) m.luLe = new Date().toISOString() })
+    return HttpResponse.json({ personne: p, elements, curseurSuivant: null })
+  }),
+
+  http.get('/api/me/activite', () => {
+    const messagesNonLus = [...messages.values()].reduce((n, liste) => n + nonLus(liste), 0)
+    return HttpResponse.json({ notificationsNonLues: messagesNonLus, messagesNonLus, demandesContact: 0 })
   }),
 ]

@@ -541,7 +541,23 @@
       "pas_membre_du_cercle": "Seuls les membres du cercle peuvent inviter.",
       "soi_meme": "Tu ne peux pas t'écrire à toi-même.",
       "introuvable": "Cette personne n'existe plus.",
-      "autre": "L'invitation n'est pas partie. Réessaie."
+      "autre": "L'invitation n'est pas partie. Réessaie.",
+      "autreMessage": "Le message n'est pas parti. Réessaie."
+    },
+    "messages": {
+      "titre": "Messages",
+      "intro": "Écris à n'importe quel développeur, avec ou sans cercle.",
+      "vide": "Aucun message pour l'instant. Invite quelqu'un depuis un cercle ouvert, ou attends une invitation.",
+      "toi": "Toi :",
+      "invitationRecue": "T'invite à rejoindre « {cercle} »",
+      "nonLus": "{n} message non lu | {n} messages non lus",
+      "tous": "Tous les messages",
+      "premier": "Écris le premier message à {nom}.",
+      "invitation": "Invitation à rejoindre le cercle",
+      "cercleFerme": "Ce cercle n'accepte plus de membres.",
+      "ecrire": "Ton message à {nom}",
+      "envoyer": "Envoyer",
+      "lien": "Messages | Messages, {n} non lu | Messages, {n} non lus"
     }
   }
 }

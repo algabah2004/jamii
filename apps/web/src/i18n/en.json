@@ -541,7 +541,23 @@
       "pas_membre_du_cercle": "Only members of the circle can invite.",
       "soi_meme": "You can't write to yourself.",
       "introuvable": "This person no longer exists.",
-      "autre": "The invitation wasn't sent. Try again."
+      "autre": "The invitation wasn't sent. Try again.",
+      "autreMessage": "The message wasn't sent. Try again."
+    },
+    "messages": {
+      "titre": "Messages",
+      "intro": "Write to any developer, with or without a circle.",
+      "vide": "No messages yet. Invite someone from an open circle, or wait for an invitation.",
+      "toi": "You:",
+      "invitationRecue": "Invites you to join “{cercle}”",
+      "nonLus": "{n} unread message | {n} unread messages",
+      "tous": "All messages",
+      "premier": "Write the first message to {nom}.",
+      "invitation": "Invitation to join the circle",
+      "cercleFerme": "This circle no longer accepts members.",
+      "ecrire": "Your message to {nom}",
+      "envoyer": "Send",
+      "lien": "Messages | Messages, {n} unread | Messages, {n} unread"
     }
   }
 }
