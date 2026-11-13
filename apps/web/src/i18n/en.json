@@ -506,7 +506,22 @@
       "ouverts": "No circle is looking for members right now. Create yours."
     },
     "ouvrir": "Open the circle",
-    "trouverMembres": "Find members"
+    "trouverMembres": "Find members",
+    "partage": {
+      "titre": "Post in a community",
+      "aide": "Members of your communities will see the circle and can join it in one click.",
+      "publier": "Post in a community",
+      "communaute": "Community",
+      "champTitre": "Title",
+      "champTexte": "Text",
+      "titreParDefaut": "{cercle} is full | {cercle} is looking for 1 member | {cercle} is looking for {n} members",
+      "contenuParDefaut": "We build each member's project in turn, in {ville}. There's still room: join us here {lien}",
+      "publie": "Posted in {communaute}.",
+      "voir": "See the post",
+      "erreur": "The post wasn't published. Try again.",
+      "aucuneCommunaute": "Join a community first to post there.",
+      "carte": "Tech Tontine circle"
+    }
   },
   "reseau": {
     "competences": "Skills",
