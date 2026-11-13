@@ -19,7 +19,7 @@ watch(etat, (e) => (e === 'connecte' ? suivreActivite() : arreterActivite()), { 
 
 <template>
   <a href="#contenu" class="aller-au-contenu">{{ t('menu.allerAuContenu') }}</a>
-  <header class="entete" :class="{ 'entete--scene zone-sombre': $route.name === 'accueil' }">
+  <header class="entete" :class="{ 'entete--scene zone-sombre': $route.name === 'accueil', 'entete--connecte': etat === 'connecte' }">
     <div class="entete__interieur verre">
       <RouterLink to="/" class="marque">Jamii<span class="marque__point" aria-hidden="true" /></RouterLink>
       <nav :aria-label="t('menu.principal')">
@@ -66,7 +66,7 @@ watch(etat, (e) => (e === 'connecte' ? suivreActivite() : arreterActivite()), { 
     </RouterView>
   </main>
 
-  <footer class="pied motif motif--ondes motif--haut">
+  <footer class="pied motif motif--ondes motif--haut" :class="{ 'pied--reglages': etat === 'connecte' }">
     <div class="pied__interieur">
       <div class="pied__marque">
         <RouterLink to="/" class="marque">Jamii<span class="marque__point" aria-hidden="true" /></RouterLink>
@@ -139,9 +139,13 @@ main, .pied__interieur { padding-inline: var(--space-6); }
 /* Sur la scène, les liens passent au-dessus de lumières vives : texte plus franc. */
 .entete--scene { --ink-muted: color-mix(in srgb, var(--ink) 88%, transparent); }
 
-/* Entre tablette et grand écran, le menu (6 entrées) n'a pas la place avec les réglages :
-   ceux-ci passent dans le pied de page et « Espace Systalink » se raccourcit. */
+/* Connecté, le menu a 6 entrées et l'icône des messages : la langue et le thème passent dans le pied de page,
+   quelle que soit la largeur (la capsule de l'en-tête ne dépasse jamais 70rem). */
+.entete--connecte .reglages--entete { display: none; }
+.pied--reglages .reglages--pied { display: flex; }
+/* Entre tablette et grand écran, « Espace Systalink » se raccourcit et les réglages passent aussi en bas. */
 @media (max-width: 1180px) {
+  .entete nav a { padding: 0 var(--space-3); }
   .lien-long { display: none; }
   .lien-court { display: inline; }
   .entete .reglages--entete { display: none; }
