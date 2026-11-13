@@ -66,6 +66,13 @@ jamii:
       cle: ${BREVO_API_KEY:}
     # Local seulement : affiche le lien de connexion dans la console. Jamais en production (le lien est un mot de passe).
     afficher-lien: ${EMAIL_AFFICHER_LIEN:false}
+  # Ce que Systalink reçoit de Jamii (contracts/systalink.yaml v0.2).
+  clients-systalink:
+    # Logins GitHub ou e-mails, séparés par des virgules, qui ont accès aux clients suivis (en plus des admins).
+    acces: ${SYSTALINK_ACCES:}
+    # Webhook signé vers l'outil de suivi de Systalink. Vide : rien n'est envoyé.
+    webhook-url: ${SYSTALINK_WEBHOOK_URL:}
+    webhook-secret: ${SYSTALINK_WEBHOOK_SECRET:}
   # Service IA de l'équipe (contracts/ia.yaml), appelé par l'API seulement. Plan des demandes de PME (#88).
   ia:
     # simule (sans réseau : local, tests, démo) ou service (le service IA, en HTTP avec le jeton interne).
