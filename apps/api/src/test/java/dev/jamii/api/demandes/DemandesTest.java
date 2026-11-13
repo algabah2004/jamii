@@ -468,6 +468,20 @@ class DemandesTest {
 	}
 
 	@Test
+	void l_accord_peut_etre_donne_des_la_creation() {
+		UtilisateurConnecte pme = utilisateur("Awa");
+		String id = idCree(creer(pme, "{\"titre\":\"Mon atelier\",\"description\":\"Je veux vendre mes créations en ligne facilement.\",\"offresSystalink\":true,\"secteur\":\"commerce\",\"ville\":\"Thiès\",\"pays\":\"SN\"}"));
+
+		MvcTestResult reponse = lire(pme, id);
+
+		assertThat(reponse).bodyJson().extractingPath("$.offresSystalink").isEqualTo(true);
+		assertThat(reponse).bodyJson().extractingPath("$.ville").isEqualTo("Thiès");
+		assertThat(IA.entrees.getFirst().secteur()).isEqualTo("commerce");
+		assertThat(creer(pme, "{\"titre\":\"Mon atelier\",\"description\":\"Je veux vendre mes créations en ligne facilement.\",\"pays\":\"Sénégal\"}"))
+			.hasStatus(HttpStatus.BAD_REQUEST);
+	}
+
+	@Test
 	void ni_e_mail_ni_telephone_ne_partent_vers_l_ia() {
 		UtilisateurConnecte pme = utilisateur("Awa");
 		creer(pme, "{\"titre\":\"Mon atelier\",\"description\":\"Écrivez-moi à awa.couture@gmail.com ou au +221 77 123 45 67 pour le site.\"}");

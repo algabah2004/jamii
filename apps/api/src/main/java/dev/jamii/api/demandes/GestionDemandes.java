@@ -99,7 +99,7 @@ class GestionDemandes {
 			.param("ville", contexte.ville(), java.sql.Types.VARCHAR)
 			.param("pays", contexte.pays(), java.sql.Types.CHAR)
 			.param("offres", contexte.offresSystalink())
-			.param("accord", contexte.offresSystalink() ? Timestamp.from(maintenant) : null, java.sql.Types.TIMESTAMP_WITH_TIMEZONE)
+			.param("accord", contexte.offresSystalink() ? Timestamp.from(maintenant) : null, java.sql.Types.TIMESTAMP)
 			.param("t", Timestamp.from(maintenant)).update();
 		return id;
 	}
