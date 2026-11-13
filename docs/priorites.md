@@ -39,6 +39,16 @@ Chaque tour a son **dépôt Git sur le Gitea de Jamii**, et DataCloud le déploi
 4. Livraison : DataCloud déploie le dépôt Gitea, puis le projet passe dans la vitrine avec le label « Né dans une Tech Tontine Systalink ».
 5. L'espace Systalink affiche les cercles actifs.
 
+## Le réseau : un cercle vivant (ajout du vendredi 13, @rev22rse22)
+
+Un cercle ne se remplit pas tout seul. Il faut que les bonnes personnes se trouvent et se parlent. Contrat : `contracts/reseau.yaml`.
+- **Recommandations :** « Cercles qui ont besoin de toi » (tes compétences qui manquent au cercle, ta ville d'abord) et, dans un cercle ouvert, « Profils qui manquent au cercle ». Calcul simple par l'API, sans IA.
+- **Messages :** écrire à n'importe quel développeur, avec ou sans cercle. Un message peut porter une **invitation au cercle**, avec le bouton « Rejoindre le cercle ».
+- **Contacts :** demander, accepter, retirer. On échange même sans cercle.
+- **Notifications :** message reçu, demande de contact, quelqu'un a rejoint ton cercle, tirage, tour livré. Pastilles dans le menu, mises à jour toutes les 30 s quand l'onglet est visible (pas de WebSocket).
+- **Communautés :** depuis un cercle ouvert, « Publier dans une communauté » ; une publication qui contient le lien d'un cercle s'affiche avec la carte « Rejoindre le cercle ». Aucun changement de `communautes.yaml`.
+- **Démo :** à l'étape 1, Awa voit « Profils qui manquent au cercle », invite Kofi par message, et Kofi rejoint depuis sa notification.
+
 ## Pour plus tard (hors démo)
 
 - le Griot sur WhatsApp ;
@@ -79,7 +89,15 @@ Chaque tour a son **dépôt Git sur le Gitea de Jamii**, et DataCloud le déploi
 2. **Créer et rejoindre un cercle, déposer son idée, tirer l'ordre au sort** (avec une animation de tirage).
 3. **Le tour** : il réutilise l'écran du plan PME (priorités, jalons, tâches) ; puis « Livrer le tour » mène à la vitrine avec le label.
 4. L'accueil et le menu : « Cercles » en première entrée.
-5. **Vendredi : l'adaptateur Gitea dans l'API.** Au tirage au sort, il crée l'organisation du cercle et le dépôt de chaque tour, puis ajoute les membres (API REST de Gitea). Le tour affiche le lien du dépôt et ses derniers commits, et « Livrer » déploie ce dépôt sur DataCloud.
+5. **Le réseau (`contracts/reseau.yaml`), dans cet ordre, chaque étape fusionnable seule :**
+   1. le contrat (vendredi matin, relu par @sowibrr) ;
+   2. les recommandations : « Cercles qui ont besoin de toi » sur `/cercles`, « Profils qui manquent au cercle » et « Inviter » dans un cercle ouvert ;
+   3. les messages (`/messages`) avec l'invitation au cercle, et les pastilles du menu ;
+   4. le module `reseau` de l'API (Flyway, tests), pour que la démo tourne sur la vraie API ;
+   5. les contacts et la liste des notifications ;
+   6. « Publier dans une communauté » depuis un cercle, et la carte du cercle dans les publications.
+   Ce qui n'est pas fusionné au gel de samedi 12 h reste hors de la démo, sans données factices en production.
+6. **Après le réseau : l'adaptateur Gitea dans l'API.** Au tirage au sort, il crée l'organisation du cercle et le dépôt de chaque tour, puis ajoute les membres (API REST de Gitea). Le tour affiche le lien du dépôt et ses derniers commits, et « Livrer » déploie ce dépôt sur DataCloud.
 
 ### @algabah2004 : chef de projet
 1. **Valider ce plan** et mettre à jour :
