@@ -16,10 +16,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -29,7 +31,7 @@ import dev.jamii.api.auth.Compte;
 import dev.jamii.api.auth.UtilisateurConnecte;
 import dev.jamii.api.profils.ProfilsPublies;
 
-/** Les routes de contracts/reseau.yaml déjà utilisées par le front : recommandations, messages et pastilles. */
+/** Les routes de contracts/reseau.yaml : recommandations, messages, contacts, notifications et pastilles. */
 @RestController
 class ReseauController {
 
@@ -81,6 +83,18 @@ class ReseauController {
 	record Activite(int notificationsNonLues, int messagesNonLus, int demandesContact) {
 	}
 
+	record LienContact(String statut, Instant depuis) {
+	}
+
+	record Contact(Personne personne, String statut, Instant depuis, List<String> competences) {
+	}
+
+	record Notification(UUID id, String type, Personne personne, CercleResume cercle, String lien, Instant creeLe,
+			boolean lue) {
+	}
+
+	private static final Set<String> STATUTS_CONTACT = Set.of("accepte", "recue", "envoyee");
+
 	private final ProfilsPublies profils;
 
 	private final LectureCercles cercles;
@@ -89,11 +103,18 @@ class ReseauController {
 
 	private final Annuaire annuaire;
 
-	ReseauController(ProfilsPublies profils, LectureCercles cercles, Messagerie messagerie, Annuaire annuaire) {
+	private final Contacts contacts;
+
+	private final Notifications notifications;
+
+	ReseauController(ProfilsPublies profils, LectureCercles cercles, Messagerie messagerie, Annuaire annuaire,
+			Contacts contacts, Notifications notifications) {
 		this.profils = profils;
 		this.cercles = cercles;
 		this.messagerie = messagerie;
 		this.annuaire = annuaire;
+		this.contacts = contacts;
+		this.notifications = notifications;
 	}
 
 	// ---------------------------------------------------------------- recommandations
@@ -136,7 +157,7 @@ class ReseauController {
 			var compte = comptes.get(p.utilisateurId());
 			return new ProfilRecommande(new ProfilResume(p.utilisateurId(), compte.nom(), compte.avatarUrl(), p.pays(),
 					p.ville(), p.disponibilite(), p.heuresParSemaine(), p.competences(), 0), r.raisons(), r.competences(),
-					invites.contains(p.utilisateurId()), "aucun");
+					invites.contains(p.utilisateurId()), contacts.lien(moi.id(), p.utilisateurId()).statut());
 		}).toList();
 		return new ProfilsRecommandes(Recommandations.manquantes(cercle, competences, candidats), elements);
 	}
@@ -180,8 +201,74 @@ class ReseauController {
 
 	@GetMapping("/api/me/activite")
 	Activite activite(@AuthenticationPrincipal UtilisateurConnecte moi) {
-		// Les notifications et les demandes de contact arrivent avec l'étape 5 (docs/priorites.md) : 0 d'ici là.
-		return new Activite(0, messagerie.nonLus(moi.id()), 0);
+		return new Activite(notifications.nonLues(moi.id()), messagerie.nonLus(moi.id()), contacts.demandesRecues(moi.id()));
+	}
+
+	// ---------------------------------------------------------------- contacts
+
+	@GetMapping("/api/me/contacts")
+	Page<Contact> listerContacts(@AuthenticationPrincipal UtilisateurConnecte moi,
+			@RequestParam(defaultValue = "accepte") String statut, @RequestParam(defaultValue = "20") String limite) {
+		if (!STATUTS_CONTACT.contains(statut)) {
+			throw ErreurReseau.validation("statut", "valeur_invalide");
+		}
+		var lignes = contacts.lister(moi.id(), statut, limite(limite, 100));
+		List<UUID> ids = lignes.stream().map(Contacts.Ligne::autre).toList();
+		Map<UUID, Compte> comptes = annuaire.lire(ids);
+		Map<UUID, List<String>> competences = profils.competences(ids);
+		return new Page<>(lignes.stream()
+			.filter(l -> comptes.containsKey(l.autre()))
+			.map(l -> new Contact(personne(comptes.get(l.autre())), l.statut(), l.depuis(),
+					competences.getOrDefault(l.autre(), List.of()).stream().limit(5).toList()))
+			.toList(), null);
+	}
+
+	@GetMapping("/api/contacts/{personneId}")
+	LienContact lireLien(@AuthenticationPrincipal UtilisateurConnecte moi, @PathVariable String personneId) {
+		UUID autre = personne(personneId);
+		annuaire.lire(autre).orElseThrow(ErreurReseau::introuvable);
+		var lien = contacts.lien(moi.id(), autre);
+		return new LienContact(lien.statut(), lien.depuis());
+	}
+
+	@PutMapping("/api/contacts/{personneId}")
+	LienContact ajouterContact(@AuthenticationPrincipal UtilisateurConnecte moi, @PathVariable String personneId) {
+		var lien = contacts.ajouter(moi.id(), personne(personneId));
+		return new LienContact(lien.statut(), lien.depuis());
+	}
+
+	@DeleteMapping("/api/contacts/{personneId}")
+	ResponseEntity<Void> retirerContact(@AuthenticationPrincipal UtilisateurConnecte moi, @PathVariable String personneId) {
+		try {
+			contacts.retirer(moi.id(), UUID.fromString(personneId));
+		}
+		catch (IllegalArgumentException e) {
+			// Un identifiant invalide n'a aucun lien : idempotent, 204 aussi.
+		}
+		return ResponseEntity.noContent().build();
+	}
+
+	// ---------------------------------------------------------------- notifications
+
+	@GetMapping("/api/me/notifications")
+	Page<Notification> listerNotifications(@AuthenticationPrincipal UtilisateurConnecte moi,
+			@RequestParam(defaultValue = "20") String limite, @RequestParam(required = false) String curseur) {
+		var page = notifications.lister(moi.id(), limite(limite, 100), curseur);
+		Map<UUID, Compte> comptes = annuaire.lire(page.elements().stream().map(Notifications.Ligne::personneId).filter(Objects::nonNull).distinct().toList());
+		var lus = cercles.lire(page.elements().stream().map(Notifications.Ligne::cercleId).filter(Objects::nonNull).distinct().toList());
+		Map<UUID, Compte> createurs = annuaire.lire(lus.values().stream().map(LectureCercles.CercleLu::createurId).toList());
+		return new Page<>(page.elements().stream().map(n -> {
+			Compte qui = n.personneId() == null ? null : comptes.get(n.personneId());
+			var cercle = n.cercleId() == null ? null : lus.get(n.cercleId());
+			return new Notification(n.id(), n.type(), qui == null ? null : personne(qui),
+					cercle == null ? null : resume(cercle, createurs), n.lien(), n.creeLe(), n.luLe() != null);
+		}).toList(), page.curseurSuivant());
+	}
+
+	@PostMapping("/api/me/notifications/lues")
+	ResponseEntity<Void> toutLire(@AuthenticationPrincipal UtilisateurConnecte moi) {
+		notifications.toutMarquerLu(moi.id());
+		return ResponseEntity.noContent().build();
 	}
 
 	// ---------------------------------------------------------------- aides
