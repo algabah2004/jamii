@@ -4,6 +4,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -28,7 +29,11 @@ class DonneesProjets implements DonneesPersonnelles {
 			Instant decideeLe) {
 	}
 
-	record Section(List<Equipe> equipes, List<MaCandidature> candidatures) {
+	/** Les tâches qui lui sont assignées (une tâche n'a pas d'auteur enregistré). */
+	record MaTache(UUID id, UUID projetId, String titre, String statut, LocalDate echeance, Instant livreeLe, Instant creeLe) {
+	}
+
+	record Section(List<Equipe> equipes, List<MaCandidature> candidatures, List<MaTache> taches) {
 	}
 
 	private final JdbcClient base;
@@ -67,7 +72,20 @@ class DonneesProjets implements DonneesPersonnelles {
 					rs.getString("role"), rs.getString("message"), rs.getString("statut"), instant(rs, "cree_le"),
 					instant(rs, "decidee_le")))
 			.list();
-		return new Section(equipes, candidatures);
+		List<MaTache> taches = base.sql("""
+				SELECT id, projet_id, titre, statut, echeance, livree_le, cree_le FROM tache
+				WHERE assignee_id = :u
+				ORDER BY cree_le, id
+				""")
+			.param("u", utilisateurId)
+			.query((rs, n) -> {
+				java.sql.Date echeance = rs.getDate("echeance");
+				return new MaTache(rs.getObject("id", UUID.class), rs.getObject("projet_id", UUID.class), rs.getString("titre"),
+						rs.getString("statut"), echeance == null ? null : echeance.toLocalDate(), instant(rs, "livree_le"),
+						instant(rs, "cree_le"));
+			})
+			.list();
+		return new Section(equipes, candidatures, taches);
 	}
 
 	@Override

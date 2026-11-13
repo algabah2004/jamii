@@ -5,6 +5,7 @@ import { RouterLink, useRoute } from 'vue-router'
 import { JAvatar, JBouton, JChamp, JDeplier, JSquelette } from '../../design-system'
 import { useSession } from '../../session'
 import ProfilsRecommandes from '../reseau/ProfilsRecommandes.vue'
+import PartagerCercle from './PartagerCercle.vue'
 import { avantTirage, deposerIdee, LIMITES, lireAvancement, lireCercle, livrerTour, ordreDePassage, positionsAnneau, pourcentage, rejoindreCercle, tirerAuSort, titreDuTour, tourEnCours, type Avancement, type Cercle, type Resultat } from './cercles'
 
 /*
@@ -239,6 +240,7 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
 
       <!-- Un cercle ouvert se remplit : les membres voient les profils qui lui manquent et peuvent les inviter. -->
       <ProfilsRecommandes v-if="membre && !cercle.tirage && preparation?.manquants" :key="cercle.id" :cercle-id="cercle.id" :cercle-nom="cercle.nom" />
+      <PartagerCercle v-if="membre && !cercle.tirage && preparation?.manquants" :cercle-id="cercle.id" :cercle-nom="cercle.nom" :ville="cercle.ville" :manquants="preparation.manquants" />
 
       <section class="ordre" aria-labelledby="ordre-titre">
         <h2 id="ordre-titre">{{ cercle.tirage ? t('cercles.ordre') : t('cercles.membresTitre') }}</h2>
