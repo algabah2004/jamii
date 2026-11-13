@@ -5,6 +5,8 @@ ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=never
 COPY pyproject.toml uv.lock README.md ./
 RUN uv sync --frozen --no-dev --no-install-project
 COPY src src
+COPY catalogue-systalink.yaml ./
+ENV IA_CATALOGUE=/app/catalogue-systalink.yaml
 RUN uv sync --frozen --no-dev && useradd --system --uid 10001 jamii
 USER jamii
 EXPOSE 8000
