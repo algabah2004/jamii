@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Response
 
 from jamii_ia.base_donnees import migrer, ouvrir_pool
+from jamii_ia.catalogue import Catalogue
 from jamii_ia.config import Reglages, reglages
 from jamii_ia.erreurs import brancher_erreurs
 from jamii_ia.fournisseurs import creer_fournisseur
@@ -24,7 +25,8 @@ class ConfigurationError(ValueError):
 def creer_app(config: Reglages | None = None) -> FastAPI:
     config = config or reglages()
     # On échoue au démarrage, pas à la première tâche, si la configuration est mauvaise.
-    fournisseur = creer_fournisseur(config.fournisseur)
+    fournisseur = creer_fournisseur(config.fournisseur, config)
+    catalogue = Catalogue.charger(config.catalogue)
     if len(config.jeton_interne) < _LONGUEUR_MIN_JETON:
         raise ConfigurationError(
             f"IA_JETON_INTERNE doit faire au moins {_LONGUEUR_MIN_JETON} caractères"
@@ -39,7 +41,9 @@ def creer_app(config: Reglages | None = None) -> FastAPI:
         app.state.depot = DepotTaches(pool, config.limite_par_heure)
         boucle = None
         if config.travailleur_actif:
-            boucle = asyncio.create_task(Travailleur(app.state.depot, fournisseur).tourner())
+            boucle = asyncio.create_task(
+                Travailleur(app.state.depot, fournisseur, catalogue, config.budget_jour).tourner()
+            )
         yield
         if boucle is not None:
             boucle.cancel()

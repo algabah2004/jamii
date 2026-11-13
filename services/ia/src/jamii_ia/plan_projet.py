@@ -10,6 +10,7 @@ from pydantic import ValidationError
 
 from jamii_ia.fournisseurs import DemandeIA
 from jamii_ia.modeles import PlanProjet
+from jamii_ia.reponse import ReponseInvalideError
 
 CONSIGNE = """Tu es l'assistant de projet de Jamii, une plateforme pour les développeurs africains.
 À partir du besoin fourni en JSON, propose un plan réaliste pour une petite équipe.
@@ -29,8 +30,8 @@ Règles :
 - Écris dans la langue demandée (champ langue)."""
 
 
-class PlanInvalideError(Exception):
-    """La réponse du fournisseur n'est pas un plan conforme au contrat."""
+# Gardé sous ce nom pour les appelants existants : une seule erreur pour toutes les tâches.
+PlanInvalideError = ReponseInvalideError
 
 
 def demande(entree: dict[str, Any]) -> DemandeIA:

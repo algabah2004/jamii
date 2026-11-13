@@ -28,6 +28,8 @@ class DemandeIA:
 class ReponseIA:
     texte: str
     fournisseur: str
+    # Jetons consommés (entrée + sortie), pour le budget du jour. 0 si le fournisseur ne le dit pas.
+    jetons: int = 0
 
 
 class FournisseurIndisponibleError(Exception):

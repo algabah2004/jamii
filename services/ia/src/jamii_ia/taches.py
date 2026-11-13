@@ -143,6 +143,22 @@ class DepotTaches:
                 marque,
             )
 
+    async def ajouter_jetons(self, tache_id: UUID, jetons: int) -> None:
+        """Compté dès l'appel, même si la réponse est ensuite refusée : c'est payé."""
+        if jetons > 0:
+            await self._executer(
+                "UPDATE ia.taches SET jetons = jetons + $2 WHERE id = $1", tache_id, jetons
+            )
+
+    async def jetons_du_jour(self) -> int:
+        """Jetons consommés depuis minuit UTC, tous appels confondus."""
+        async with self._pool.acquire() as connexion:
+            return await connexion.fetchval(
+                "SELECT coalesce(sum(jetons), 0) FROM ia.taches "
+                "WHERE jetons > 0 AND cree_le >= date_trunc('day', now() AT TIME ZONE 'UTC') "
+                "AT TIME ZONE 'UTC'"
+            )
+
     async def _executer(self, requete: str, *valeurs: Any) -> None:
         async with self._pool.acquire() as connexion:
             await connexion.execute(requete, *valeurs)

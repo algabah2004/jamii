@@ -18,6 +18,14 @@ class Reglages(BaseSettings):
     # Faux pour un service qui ne fait que recevoir les tâches (ou pour les tests).
     travailleur_actif: bool = Field(default=True, validation_alias="IA_TRAVAILLEUR")
     limite_par_heure: int = Field(default=100, ge=1, validation_alias="IA_LIMITE_PAR_HEURE")
+    # Fournisseur au format OpenAI (DeepSeek, OpenAI…) : voir fournisseurs/compatible_openai.py.
+    url_fournisseur: str = Field(default="", validation_alias="IA_URL_FOURNISSEUR")
+    modele: str = Field(default="", validation_alias="IA_MODELE")
+    cle: str = Field(default="", validation_alias="IA_CLE", repr=False)
+    # Jetons par jour (UTC), tous appels confondus. Au-delà : repli sans IA. 0 = pas de plafond.
+    budget_jour: int = Field(default=200_000, ge=0, validation_alias="IA_BUDGET_JOUR")
+    # Catalogue des services Systalink (fichier de données, modifiable sans toucher au code).
+    catalogue: str = Field(default="", validation_alias="IA_CATALOGUE")
 
 
 @lru_cache

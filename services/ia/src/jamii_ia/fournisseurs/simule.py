@@ -86,9 +86,105 @@ def _plan(demande: DemandeIA) -> str:
     )
 
 
+def _carte(demande: DemandeIA) -> str:
+    """Une carte prudente : chaque langage principal, prouvé par ses dépôts."""
+    faits = json.loads(demande.donnees)
+    competences = []
+    for langage in faits.get("langages", [])[:5]:
+        preuves = [d["nom"] for d in faits.get("depots", []) if d.get("langage") == langage["nom"]]
+        if preuves:
+            competences.append(
+                {
+                    "competence": langage["nom"].lower().replace(" ", "-"),
+                    "niveau": "confirme" if len(preuves) >= 3 else "intermediaire",
+                    "preuves": preuves[:3],
+                    "raison": f"Utilisé dans {len(preuves)} dépôt(s) public(s).",
+                }
+            )
+    return json.dumps({"competences": competences, "roleSuggere": None}, ensure_ascii=False)
+
+
+# Mots du besoin → services du catalogue. Une approximation honnête pour la démo hors ligne.
+_INDICES = [
+    (
+        ("site", "vitrine", "visible", "en ligne"),
+        "orion",
+        "Un site vitrine simple, sans développeur.",
+    ),
+    (
+        ("document", "dossier", "fichier", "archive", "pdf"),
+        "datacloud-stockage",
+        "Stocker les documents en sécurité et les retrouver facilement.",
+    ),
+    (
+        ("équipe", "equipe", "messagerie", "e-mail", "email", "partage"),
+        "systaone",
+        "Partager les documents et communiquer au sein de l'équipe.",
+    ),
+]
+_APPLICATION = (
+    "application",
+    "gestion",
+    "commande",
+    "paiement",
+    "suivi",
+    "rendez-vous",
+    "automatis",
+)
+
+
+def _orientation(demande: DemandeIA) -> str:
+    donnees = json.loads(demande.donnees)
+    besoin = donnees["besoin"]
+    texte = besoin["description"].lower()
+    connus = {service["id"] for service in donnees["catalogue"]}
+    services = [
+        {"id": ident, "pourCeBesoin": raison}
+        for mots, ident, raison in _INDICES
+        if ident in connus and any(mot in texte for mot in mots)
+    ]
+    necessaires = any(mot in texte for mot in _APPLICATION)
+    if necessaires and "datacloud-application" in connus:
+        services.append(
+            {"id": "datacloud-application", "pourCeBesoin": "Héberger l'application à Dakar."}
+        )
+    plan = None
+    if necessaires:
+        plan = json.loads(
+            _plan(
+                DemandeIA(
+                    consigne="",
+                    donnees=json.dumps(
+                        {
+                            "source": "demande_pme",
+                            "titre": besoin.get("titre") or "Besoin décrit",
+                            "description": besoin["description"],
+                        }
+                    ),
+                    tache="plan_projet",
+                )
+            )
+        )
+    return json.dumps(
+        {
+            "resume": " ".join(besoin["description"].split())[:300],
+            "secteur": besoin.get("secteur") or "autre",
+            "services": services[:4],
+            "developpeursNecessaires": necessaires,
+            "competences": ["backend", "frontend", "postgresql"] if necessaires else [],
+            "plan": plan,
+        },
+        ensure_ascii=False,
+    )
+
+
 def _repondre(demande: DemandeIA) -> str:
     if demande.tache == "plan_projet":
         return _plan(demande)
+    if demande.tache == "analyse_profil":
+        return _carte(demande)
+    if demande.tache == "orientation_besoin":
+        return _orientation(demande)
     return f"[simulé] {len(demande.donnees)} caractères reçus"
 
 
