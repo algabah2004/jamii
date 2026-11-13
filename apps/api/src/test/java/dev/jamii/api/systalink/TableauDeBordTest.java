@@ -32,6 +32,21 @@ class TableauDeBordTest {
 	}
 
 	@Test
+	void les_membres_des_cercles_suivent_la_meme_regle_d_anonymat() {
+		var membres = TableauDeBord.Membres.anonymiser(12, Map.of("SN", 6L, "CI", 4L));
+
+		assertThat(membres.parPays()).extracting(TableauDeBord.Pays::pays).containsExactly("SN");
+		assertThat(membres.autres()).as("les 4 de Côte d'Ivoire et les 2 sans pays").isEqualTo(6);
+	}
+
+	@Test
+	void sans_module_cercles_tout_vaut_zero() {
+		assertThat(TableauDeBord.Cercles.AUCUN.actifs()).isZero();
+		assertThat(TableauDeBord.Cercles.AUCUN.membres().parPays()).isEmpty();
+		assertThat(TableauDeBord.Cercles.AUCUN.membres().autres()).isZero();
+	}
+
+	@Test
 	void la_periode_par_defaut_est_le_mois_et_une_periode_inconnue_est_refusee() {
 		assertThat(Periode.lire(null)).contains(Periode.MOIS);
 		assertThat(Periode.lire("semaine")).contains(Periode.SEMAINE);

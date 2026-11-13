@@ -39,6 +39,14 @@ export const tableauDemo: TableauDeBord = {
     autres: 8,
   },
   projets: { crees: 23, nouveaux: 17, enLigne: 9, surDatacloud: 7 },
+  // Les 3 cercles de la démo (dont celui de Dakar), plus un cercle déjà terminé.
+  cercles: {
+    actifs: 3,
+    termines: 1,
+    toursLivres: 7,
+    nouveauxToursLivres: 4,
+    membres: { total: 22, parPays: [{ pays: 'SN', nombre: 9 }, { pays: 'CI', nombre: 6 }], autres: 7 },
+  },
   moments: [
     { service: 'datacloud', proposes: 12, acceptes: 7 },
     { service: 'orion', proposes: 5, acceptes: 2 },

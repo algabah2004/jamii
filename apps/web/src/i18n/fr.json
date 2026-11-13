@@ -177,6 +177,15 @@
     "parPays": "Inscrits par pays",
     "autresPays": "Autres pays",
     "seuilPays": "Un pays apparaît à partir de 5 inscrits, pour que personne ne puisse être reconnu.",
+    "cercles": {
+      "titre": "Cercles actifs",
+      "intro": "Des cercles de 4 à 6 développeurs construisent, à tour de rôle, le projet de chacun. Chaque tour livré est un projet mené à terme en équipe.",
+      "actifs": "Cercles actifs",
+      "termines": "aucun cercle terminé | 1 cercle terminé | {n} cercles terminés",
+      "toursLivres": "Tours livrés",
+      "membres": "Membres des cercles",
+      "parPays": "D'où viennent leurs membres"
+    },
     "moments": "Services Systalink proposés",
     "momentsIntro": "Jamii propose un service Systalink au bon moment : DataCloud pour mettre un projet en ligne, Orion pour le site d'une PME… Voici combien de fois, et combien de personnes l'ont suivi.",
     "service": "Service",

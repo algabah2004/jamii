@@ -92,6 +92,34 @@ export interface components {
                 surDatacloud: number;
             };
             /**
+             * @description Les cercles de la Tech Tontine (contracts/cercles.yaml). Un cercle est actif tant qu'il n'est pas `termine`
+             *     (`ouvert` ou `en_cours`). La ville d'un cercle n'est pas montrée : c'est un texte libre, et cette page est
+             *     publique.
+             */
+            cercles: {
+                /** @description Cercles `ouvert` ou `en_cours`. */
+                actifs: number;
+                /** @description Cercles dont tous les tours sont livrés. */
+                termines: number;
+                /** @description Tours livrés depuis le début : autant de projets menés à terme en équipe. */
+                toursLivres: number;
+                /** @description Tours livrés pendant la période. */
+                nouveauxToursLivres: number;
+                /**
+                 * @description Les personnes qui font partie d'au moins un cercle, comptées une seule fois. Même règle que `inscrits` :
+                 *     un pays n'apparaît qu'avec **au moins 5 membres**, sinon il passe dans `autres`.
+                 */
+                membres: {
+                    total: number;
+                    parPays: {
+                        pays: components["schemas"]["Pays"];
+                        nombre: number;
+                    }[];
+                    /** @description Membres d'un pays de moins de 5 membres, ou sans pays déclaré. */
+                    autres: number;
+                };
+            };
+            /**
              * @description Un élément par service proposé au moins une fois pendant la période. Le taux d'acceptation se calcule côté
              *     front (`acceptes / proposes`). On ne le stocke pas, pour qu'il ne puisse jamais contredire les deux comptes.
              */

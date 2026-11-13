@@ -56,6 +56,7 @@ paths:
                     calculeLe: '2026-11-13T10:00:00Z'
                     inscrits: { total: 64, nouveaux: 41, parPays: [{ pays: SN, nombre: 22 }, { pays: CI, nombre: 11 }, { pays: KE, nombre: 9 }, { pays: NG, nombre: 8 }, { pays: CM, nombre: 6 }], autres: 8 }
                     projets: { crees: 23, nouveaux: 17, enLigne: 9, surDatacloud: 7 }
+                    cercles: { actifs: 3, termines: 1, toursLivres: 7, nouveauxToursLivres: 4, membres: { total: 22, parPays: [{ pays: SN, nombre: 9 }, { pays: CI, nombre: 6 }], autres: 7 } }
                     moments:
                       - { service: datacloud, proposes: 12, acceptes: 7 }
                       - { service: orion, proposes: 5, acceptes: 2 }
@@ -106,7 +107,7 @@ components:
 
     TableauDeBord:
       type: object
-      required: [periode, calculeLe, inscrits, projets, moments]
+      required: [periode, calculeLe, inscrits, projets, cercles, moments]
       properties:
         periode: { $ref: '#/components/schemas/Periode' }
         calculeLe: { type: string, format: date-time, description: Moment du calcul (le cache peut avoir jusqu'à 5 minutes). }
@@ -137,6 +138,35 @@ components:
             nouveaux: { type: integer, minimum: 0, description: Projets créés pendant la période. }
             enLigne: { type: integer, minimum: 0, description: 'Projets avec un déploiement `en_ligne` vérifié, quel que soit l''hébergeur.' }
             surDatacloud: { type: integer, minimum: 0, description: 'Parmi `enLigne`, ceux hébergés sur DataCloud.' }
+        cercles:
+          type: object
+          description: |
+            Les cercles de la Tech Tontine (contracts/cercles.yaml). Un cercle est actif tant qu'il n'est pas `termine`
+            (`ouvert` ou `en_cours`). La ville d'un cercle n'est pas montrée : c'est un texte libre, et cette page est
+            publique.
+          required: [actifs, termines, toursLivres, nouveauxToursLivres, membres]
+          properties:
+            actifs: { type: integer, minimum: 0, description: 'Cercles `ouvert` ou `en_cours`.' }
+            termines: { type: integer, minimum: 0, description: Cercles dont tous les tours sont livrés. }
+            toursLivres: { type: integer, minimum: 0, description: 'Tours livrés depuis le début : autant de projets menés à terme en équipe.' }
+            nouveauxToursLivres: { type: integer, minimum: 0, description: Tours livrés pendant la période. }
+            membres:
+              type: object
+              description: |
+                Les personnes qui font partie d'au moins un cercle, comptées une seule fois. Même règle que `inscrits` :
+                un pays n'apparaît qu'avec **au moins 5 membres**, sinon il passe dans `autres`.
+              required: [total, parPays, autres]
+              properties:
+                total: { type: integer, minimum: 0 }
+                parPays:
+                  type: array
+                  items:
+                    type: object
+                    required: [pays, nombre]
+                    properties:
+                      pays: { $ref: './profils.yaml#/components/schemas/Pays' }
+                      nombre: { type: integer, minimum: 5 }
+                autres: { type: integer, minimum: 0, description: 'Membres d''un pays de moins de 5 membres, ou sans pays déclaré.' }
         moments:
           type: array
           description: |

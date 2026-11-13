@@ -40,6 +40,30 @@ describe('Tableau de bord Systalink', () => {
     expect(pays).toContain('Autres pays')
   })
 
+  it('montre les cercles actifs, les tours livrés et le pays de leurs membres', async () => {
+    const { page } = await monter()
+    const bloc = page.get('[data-test="cercles"]').text()
+    expect(bloc).toContain('Cercles actifs')
+    expect(bloc).toContain('1 cercle terminé')
+    expect(bloc).toMatch(/Tours livrés\s*7\s*\+4 sur la période/)
+    const pays = page.findAll('[data-test="pays-cercles"] li').map((l) => l.text())
+    expect(pays).toEqual(['Sénégal9', 'Côte d’Ivoire6', 'Autres pays7'])
+  })
+
+  it("ne montre pas de répartition des membres tant qu'aucun cercle n'a de membre", async () => {
+    serveur.use(
+      http.get('/api/systalink/tableau-de-bord', () =>
+        HttpResponse.json({
+          ...tableauDemo,
+          cercles: { actifs: 0, termines: 0, toursLivres: 0, nouveauxToursLivres: 0, membres: { total: 0, parPays: [], autres: 0 } },
+        }),
+      ),
+    )
+    const { page } = await monter()
+    expect(page.get('[data-test="cercles"]').text()).toContain('aucun cercle terminé')
+    expect(page.find('[data-test="pays-cercles"]').exists()).toBe(false)
+  })
+
   it('demande la période choisie et la garde dans l’adresse', async () => {
     let demandee: string | null = null
     serveur.use(
