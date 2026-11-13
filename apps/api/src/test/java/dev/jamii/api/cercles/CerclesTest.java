@@ -382,6 +382,8 @@ class CerclesTest {
 			.isEqualTo(premier.id());
 		assertThat(base.sql("SELECT statut FROM projet WHERE id = :p").param("p", projet).query(String.class).single())
 			.isEqualTo("en_cours");
+		assertThat(mvc.get().uri("/api/projets/" + projet).with(oauth2Login().oauth2User(premier)))
+			.as("la vitrine reconnaît un projet né dans un cercle").bodyJson().extractingPath("$.origine").isEqualTo("cercle");
 		assertThat(base.sql("SELECT count(*) FROM membre_equipe WHERE projet_id = :p AND parti_le IS NULL").param("p", projet)
 			.query(Long.class).single()).as("toute l'équipe du cercle").isEqualTo(4);
 		assertThat(base.sql("SELECT titre FROM projet WHERE id = :p").param("p", projet).query(String.class).single())
