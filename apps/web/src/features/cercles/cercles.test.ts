@@ -99,8 +99,10 @@ describe('la page du cercle', () => {
 
   it('sépare mes cercles de ceux qui cherchent des membres', async () => {
     const { page } = await ouvrir('/cercles')
-    await vi.waitFor(() => expect(page.findAll('[data-test="cercles-mes"] li')).toHaveLength(1))
-    expect(page.findAll('[data-test="cercles-ouverts"] li')).toHaveLength(1)
+    await vi.waitFor(() => expect(page.findAll('[data-test="cercles-mes"] li')).toHaveLength(2))
+    // Le seul cercle ouvert m'est recommandé : il n'apparaît qu'une fois, dans « Cercles qui ont besoin de toi ».
+    expect(page.findAll('[data-test="cercles-pour-moi"] li')).toHaveLength(1)
+    expect(page.find('[data-test="vide-ouverts"]').exists()).toBe(true)
     expect(page.find('nav a[href="/cercles"]').exists()).toBe(true)
   })
 })
