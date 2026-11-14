@@ -232,7 +232,7 @@ class AvisTest {
 					INSERT INTO mission (id, client_id, titre, besoin, competences, visibilite, statut, cree_le, publiee_le)
 					VALUES (:id, :c, 'Site vitrine', 'Présenter la boutique et ses horaires sur une page simple.', ARRAY['vue'], 'publique', :s, :t, :p)
 					""").param("id", m[0]).param("c", awa.id()).param("s", m[1]).param("t", t)
-				.param("p", "brouillon".equals(m[1]) ? null : t, java.sql.Types.TIMESTAMP_WITH_TIMEZONE).update();
+				.param("p", "brouillon".equals(m[1]) ? null : t, java.sql.Types.TIMESTAMP).update();
 		}
 
 		assertThat(supprimerCompte(awa)).hasStatus(HttpStatus.ACCEPTED);
