@@ -1,0 +1,929 @@
+openapi: 3.1.0
+info:
+  title: Jamii · Missions freelance
+  version: 0.1.0
+  summary: Un client publie une mission, choisit un développeur sur devis, puis suit le travail jalon par jalon jusqu'aux avis.
+  description: |
+    Responsable : @sowibrr (module Freelance, #158). Proposition : `docs/propositions/0004-hackathons-et-missions.md`.
+    Suivi : #166, ce contrat : #175. Règles communes : `docs/api-conventions.md`.
+
+    **Le parcours**
+    1. Le client crée une mission (`brouillon`), seul ou **à partir de sa demande publiée** (`demandeId`, `demandes.yaml`),
+       puis la publie : `publiee`. Publier est gratuit.
+    2. Les développeurs envoient une **proposition** (approche, prix, délai). Une mission `invitation` n'est visible et
+       ouverte qu'aux développeurs invités.
+    3. Le client **retient** une proposition ; ce développeur envoie un **devis** (jalons, montants, retouches comprises).
+       Le devis accepté par les deux **vaut contrat** : la mission passe `attribuee`, les autres propositions `non_retenue`.
+    4. Le client donne les **informations de départ** : `en_cours`. **Le délai de chaque jalon commence à ce moment.**
+    5. Pour chaque jalon : le développeur **livre**, le client **accepte** ou **demande une retouche** (dans la limite du
+       devis). **Sans réponse 72 heures après la livraison, le jalon est accepté** (`accepteLe` + `acceptationAutomatique`).
+    6. Le dernier jalon accepté **termine** la mission. Chacun peut alors laisser **un avis**.
+    7. À tout moment après l'attribution : **annulation** (d'un commun accord, ou seul dans les cas prévus) ou
+       **désaccord**, tranché par un modérateur.
+
+    **Le paiement n'est pas encaissé par Jamii (v1).** Chacun **déclare** : le client « payé », puis le développeur
+    « reçu ». L'écran le dit clairement. Un séquestre par paiement mobile pourra remplacer la déclaration sans changer ce
+    contrat (même champ `paiement`).
+
+    **Qui voit quoi**
+    - Une mission `publique` publiée, fermée ou terminée : tout le monde, même sans être connecté (sans le devis, les
+      jalons ni les propositions).
+    - Une mission `invitation`, un brouillon, ou les détails du travail (devis, jalons, livraisons) : le client et le
+      développeur retenu. Les invités voient l'annonce. Pour tout autre utilisateur, **la mission n'existe pas** (`404`).
+    - Les propositions : le client les voit toutes ; un développeur ne voit **que la sienne**.
+
+    **Limites contre les abus** (`429` avec `Retry-After`) : 5 missions publiées par jour et par compte, 20 propositions
+    envoyées par jour et par compte. Les propositions sont gratuites.
+
+    **Montants** : toujours un entier en **unité mineure** de la devise (`centimes`) et une devise ISO 4217 (`XOF`,
+    `KES`, `NGN`, `GHS`, `EUR`…). Pour le franc CFA, qui n'a pas d'unité mineure, `centimes` vaut le montant en francs.
+
+    **Modification concurrente** : toute action qui change l'état d'une mission ou d'un jalon envoie la `version` lue ;
+    si elle a changé entre-temps, `409 modification_concurrente`.
+
+    **Codes `409`** : `etat_invalide` (action impossible dans l'état actuel), `modification_concurrente`,
+    `deja_candidat`, `propre_mission`, `demande_non_publiee`, `somme_jalons_invalide`, `retouches_epuisees`,
+    `annulation_non_permise`, `avis_deja_donne`.
+
+    **Textes** : titres, besoins, propositions, livraisons et avis sont du texte brut, affiché échappé.
+
+    **Données personnelles** : missions, propositions, devis, livraisons et avis font partie de l'export
+    (`GET /api/me/export`). À la suppression du compte, ses missions publiées sont fermées et ses avis anonymisés.
+
+    **CSRF** : toute requête `POST` ou `PATCH` envoie l'en-tête `X-XSRF-TOKEN` (`socle.yaml`, schéma `csrf`).
+servers:
+  - url: http://localhost:8080
+
+security:
+  - session: []
+
+tags:
+  - { name: missions, description: 'Publier une mission et la lire.' }
+  - { name: propositions, description: 'Candidater, retenir, fixer le devis.' }
+  - { name: suivi, description: 'Démarrer, livrer, accepter, payer, prolonger.' }
+  - { name: fin, description: 'Annuler, trancher un désaccord, laisser un avis.' }
+
+paths:
+  /api/missions:
+    get:
+      tags: [missions]
+      operationId: listerMissions
+      summary: Les missions publiques ouvertes aux propositions, ou les miennes
+      description: |
+        `vue=publiques` (par défaut, sans connexion) : les missions `publique` à l'état `publiee`, la plus récente d'abord.
+        `vue=miennes` (connexion requise) : celles dont je suis le client ou le développeur retenu, tous états confondus,
+        et celles où je suis invité.
+      security: [{}, { session: [] }]
+      parameters:
+        - $ref: './socle.yaml#/components/parameters/Curseur'
+        - $ref: './socle.yaml#/components/parameters/Limite'
+        - { name: vue, in: query, schema: { type: string, enum: [publiques, miennes], default: publiques } }
+        - { name: competence, in: query, schema: { $ref: './projets.yaml#/components/schemas/Competence' } }
+        - { name: pays, in: query, schema: { $ref: './profils.yaml#/components/schemas/Pays' } }
+      responses:
+        '200':
+          description: Une page de missions.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PageMissions' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+    post:
+      tags: [missions]
+      operationId: creerMission
+      summary: Créer une mission (brouillon, invisible des autres)
+      description: |
+        Avec `demandeId`, la mission reprend une demande **publiée** dont je suis l'auteur (`409 demande_non_publiee`
+        sinon, `404` si elle n'est pas à moi). Les champs envoyés remplacent ceux de la demande.
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NouvelleMission' }
+      responses:
+        '201':
+          description: Le brouillon.
+          headers: { Location: { schema: { type: string } } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Mission' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { description: '`demande_non_publiee`.', $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/missions/{missionId}:
+    parameters: [{ $ref: '#/components/parameters/MissionId' }]
+    get:
+      tags: [missions]
+      operationId: lireMission
+      summary: Une mission (le détail du travail seulement pour le client et le développeur retenu)
+      security: [{}, { session: [] }]
+      responses:
+        '200':
+          description: La mission.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Mission' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+    patch:
+      tags: [missions]
+      operationId: modifierMission
+      summary: Modifier l'annonce (client, à l'état brouillon ou publiee)
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/merge-patch+json:
+            schema: { $ref: '#/components/schemas/ModificationMission' }
+      responses:
+        '200':
+          description: La mission à jour.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Mission' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { description: '`etat_invalide`, `modification_concurrente`.', $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/missions/{missionId}/publier:
+    parameters: [{ $ref: '#/components/parameters/MissionId' }]
+    post:
+      tags: [missions]
+      operationId: publierMission
+      summary: Publier (client) — brouillon → publiee
+      security:
+        - session: []
+          csrf: []
+      requestBody: { $ref: '#/components/requestBodies/Version' }
+      responses:
+        '200': { $ref: '#/components/responses/MissionAJour' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/missions/{missionId}/fermer:
+    parameters: [{ $ref: '#/components/parameters/MissionId' }]
+    post:
+      tags: [missions]
+      operationId: fermerMission
+      summary: Fermer sans choisir personne (client) — publiee → fermee
+      description: Les propositions en cours passent `non_retenue` et leurs auteurs sont prévenus.
+      security:
+        - session: []
+          csrf: []
+      requestBody: { $ref: '#/components/requestBodies/Version' }
+      responses:
+        '200': { $ref: '#/components/responses/MissionAJour' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/missions/{missionId}/invitations:
+    parameters: [{ $ref: '#/components/parameters/MissionId' }]
+    post:
+      tags: [missions]
+      operationId: inviterDeveloppeur
+      summary: Inviter un développeur à proposer (client)
+      description: Possible en `brouillon` ou `publiee`. Inviter deux fois la même personne ne change rien (`200`).
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [utilisateurId]
+              properties:
+                utilisateurId: { type: string, format: uuid }
+      responses:
+        '200': { description: 'Invitation enregistrée (ou déjà présente). La personne est prévenue.' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { description: '`etat_invalide`, `propre_mission`.', $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/missions/{missionId}/propositions:
+    parameters: [{ $ref: '#/components/parameters/MissionId' }]
+    get:
+      tags: [propositions]
+      operationId: listerPropositions
+      summary: Les propositions (toutes pour le client, la sienne seulement pour un développeur)
+      parameters:
+        - $ref: './socle.yaml#/components/parameters/Curseur'
+        - $ref: './socle.yaml#/components/parameters/Limite'
+      responses:
+        '200':
+          description: Une page de propositions.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PagePropositions' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+    post:
+      tags: [propositions]
+      operationId: proposer
+      summary: Envoyer une proposition (développeur, mission publiee)
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NouvelleProposition' }
+      responses:
+        '201':
+          description: La proposition. Le client est prévenu.
+          headers: { Location: { schema: { type: string } } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Proposition' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { description: '`etat_invalide`, `deja_candidat`, `propre_mission`.', $ref: './socle.yaml#/components/responses/Conflit' }
+        '429': { $ref: './socle.yaml#/components/responses/TropDeRequetes' }
+
+  /api/missions/{missionId}/propositions/{propositionId}/retenir:
+    parameters: [{ $ref: '#/components/parameters/MissionId' }, { $ref: '#/components/parameters/PropositionId' }]
+    post:
+      tags: [propositions]
+      operationId: retenirProposition
+      summary: Retenir une proposition (client) — son auteur peut envoyer un devis
+      description: Une seule proposition retenue à la fois. En retenir une autre remet la précédente `envoyee`.
+      security:
+        - session: []
+          csrf: []
+      requestBody: { $ref: '#/components/requestBodies/Version' }
+      responses:
+        '200': { $ref: '#/components/responses/MissionAJour' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/missions/{missionId}/propositions/{propositionId}/retirer:
+    parameters: [{ $ref: '#/components/parameters/MissionId' }, { $ref: '#/components/parameters/PropositionId' }]
+    post:
+      tags: [propositions]
+      operationId: retirerProposition
+      summary: Retirer sa proposition (développeur, tant que la mission n'est pas attribuée)
+      security:
+        - session: []
+          csrf: []
+      responses:
+        '204': { description: 'Proposition retirée.' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { description: '`etat_invalide`.', $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/missions/{missionId}/devis:
+    parameters: [{ $ref: '#/components/parameters/MissionId' }]
+    post:
+      tags: [propositions]
+      operationId: envoyerDevis
+      summary: Envoyer le devis (développeur dont la proposition est retenue)
+      description: |
+        Un nouveau devis remplace le précédent tant qu'il n'est pas accepté. La somme des jalons doit être égale à
+        `total` (`409 somme_jalons_invalide`). Tous les montants sont dans la même devise.
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NouveauDevis' }
+      responses:
+        '201':
+          description: Le devis. Le client est prévenu.
+          headers: { Location: { schema: { type: string } } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Devis' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { description: '`etat_invalide`, `somme_jalons_invalide`.', $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/missions/{missionId}/devis/{devisId}/accepter:
+    parameters: [{ $ref: '#/components/parameters/MissionId' }, { $ref: '#/components/parameters/DevisId' }]
+    post:
+      tags: [propositions]
+      operationId: accepterDevis
+      summary: Accepter le devis (client) — publiee → attribuee
+      description: Le devis vaut contrat. Les autres propositions passent `non_retenue` et leurs auteurs sont prévenus.
+      security:
+        - session: []
+          csrf: []
+      requestBody: { $ref: '#/components/requestBodies/Version' }
+      responses:
+        '200': { $ref: '#/components/responses/MissionAJour' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/missions/{missionId}/demarrer:
+    parameters: [{ $ref: '#/components/parameters/MissionId' }]
+    post:
+      tags: [suivi]
+      operationId: demarrerMission
+      summary: Donner les informations de départ (client) — attribuee → en_cours
+      description: Les échéances des jalons sont calculées à partir de ce moment (`delaiJours` du devis).
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [version, informations]
+              properties:
+                version: { type: integer }
+                informations: { type: string, minLength: 1, maxLength: 4000, description: 'Accès, contenus, contacts utiles. Jamais de mot de passe : l''écran le rappelle.' }
+      responses:
+        '200': { $ref: '#/components/responses/MissionAJour' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/missions/{missionId}/jalons/{jalonId}/livrer:
+    parameters: [{ $ref: '#/components/parameters/MissionId' }, { $ref: '#/components/parameters/JalonId' }]
+    post:
+      tags: [suivi]
+      operationId: livrerJalon
+      summary: Livrer un jalon (développeur) — en_cours → livre
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NouvelleLivraison' }
+      responses:
+        '200': { $ref: '#/components/responses/MissionAJour' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/missions/{missionId}/jalons/{jalonId}/accepter:
+    parameters: [{ $ref: '#/components/parameters/MissionId' }, { $ref: '#/components/parameters/JalonId' }]
+    post:
+      tags: [suivi]
+      operationId: accepterJalon
+      summary: Accepter un jalon livré (client) — livre → accepte
+      description: Le dernier jalon accepté fait passer la mission `terminee`.
+      security:
+        - session: []
+          csrf: []
+      requestBody: { $ref: '#/components/requestBodies/Version' }
+      responses:
+        '200': { $ref: '#/components/responses/MissionAJour' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/missions/{missionId}/jalons/{jalonId}/demander-retouche:
+    parameters: [{ $ref: '#/components/parameters/MissionId' }, { $ref: '#/components/parameters/JalonId' }]
+    post:
+      tags: [suivi]
+      operationId: demanderRetouche
+      summary: Demander une retouche (client) — livre → en_cours
+      description: Dans la limite de `retouchesComprises` du devis, pour toute la mission (`409 retouches_epuisees`).
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [version, raison]
+              properties:
+                version: { type: integer }
+                raison: { type: string, minLength: 10, maxLength: 2000 }
+      responses:
+        '200': { $ref: '#/components/responses/MissionAJour' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/missions/{missionId}/jalons/{jalonId}/declarer-paiement:
+    parameters: [{ $ref: '#/components/parameters/MissionId' }, { $ref: '#/components/parameters/JalonId' }]
+    post:
+      tags: [suivi]
+      operationId: declarerPaiement
+      summary: Déclarer un paiement fait hors de Jamii (le client « paye », puis le développeur « recu »)
+      description: '`recu` avant `paye` : `409 etat_invalide`. Possible dès que le jalon est livré.'
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [version, sens]
+              properties:
+                version: { type: integer }
+                sens: { type: string, enum: [paye, recu] }
+      responses:
+        '200': { $ref: '#/components/responses/MissionAJour' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/missions/{missionId}/prolongations:
+    parameters: [{ $ref: '#/components/parameters/MissionId' }]
+    post:
+      tags: [suivi]
+      operationId: demanderProlongation
+      summary: Demander plus de temps pour le jalon en cours (développeur)
+      description: Une seule demande en attente à la fois (`409 etat_invalide`).
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [version, jalonId, jours, raison]
+              properties:
+                version: { type: integer }
+                jalonId: { type: string, format: uuid }
+                jours: { type: integer, minimum: 1, maximum: 60 }
+                raison: { type: string, minLength: 10, maxLength: 1000 }
+      responses:
+        '200': { $ref: '#/components/responses/MissionAJour' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/missions/{missionId}/prolongations/{prolongationId}/repondre:
+    parameters:
+      - $ref: '#/components/parameters/MissionId'
+      - { name: prolongationId, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      tags: [suivi]
+      operationId: repondreProlongation
+      summary: Accepter ou refuser une demande de prolongation (client)
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [version, accepte]
+              properties:
+                version: { type: integer }
+                accepte: { type: boolean }
+      responses:
+        '200': { $ref: '#/components/responses/MissionAJour' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/missions/{missionId}/annuler:
+    parameters: [{ $ref: '#/components/parameters/MissionId' }]
+    post:
+      tags: [fin]
+      operationId: annulerMission
+      summary: Demander ou confirmer l'annulation (client ou développeur retenu)
+      description: |
+        - Si l'autre partie a déjà demandé l'annulation : la mission passe `annulee` (commun accord).
+        - Sinon, **seul** et tout de suite, dans deux cas : le développeur, si les informations de départ n'ont pas été
+          données 7 jours après l'attribution ; le client, si un jalon a plus de 7 jours de retard sur son échéance.
+        - Sinon, la demande est enregistrée (`annulationDemandeePar`) et l'autre partie est prévenue.
+        Après `livre` sur un jalon contesté, il faut passer par un désaccord (`409 annulation_non_permise`).
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [version, raison]
+              properties:
+                version: { type: integer }
+                raison: { type: string, minLength: 10, maxLength: 1000 }
+      responses:
+        '200': { $ref: '#/components/responses/MissionAJour' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/missions/{missionId}/desaccord:
+    parameters: [{ $ref: '#/components/parameters/MissionId' }]
+    post:
+      tags: [fin]
+      operationId: ouvrirDesaccord
+      summary: Ouvrir un désaccord (client ou développeur retenu) — en_cours → desaccord
+      description: Les livraisons, retouches et acceptations automatiques sont gelées jusqu'à la décision.
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [version, raison]
+              properties:
+                version: { type: integer }
+                raison: { type: string, minLength: 20, maxLength: 4000 }
+      responses:
+        '200': { $ref: '#/components/responses/MissionAJour' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/missions/{missionId}/desaccord/trancher:
+    parameters: [{ $ref: '#/components/parameters/MissionId' }]
+    post:
+      tags: [fin]
+      operationId: trancherDesaccord
+      summary: Trancher un désaccord (modérateur) — desaccord → terminee ou annulee
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [version, issue, explication]
+              properties:
+                version: { type: integer }
+                issue: { type: string, enum: [terminee, annulee] }
+                explication: { type: string, minLength: 20, maxLength: 4000, description: 'Montrée aux deux parties.' }
+      responses:
+        '200': { $ref: '#/components/responses/MissionAJour' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/missions/{missionId}/avis:
+    parameters: [{ $ref: '#/components/parameters/MissionId' }]
+    post:
+      tags: [fin]
+      operationId: donnerAvis
+      summary: Laisser un avis sur l'autre partie (une fois, mission terminee)
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [note]
+              properties:
+                note: { type: integer, minimum: 1, maximum: 5 }
+                texte: { type: [string, 'null'], maxLength: 1000 }
+      responses:
+        '201':
+          description: L'avis.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Avis' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { description: '`etat_invalide`, `avis_deja_donne`.', $ref: './socle.yaml#/components/responses/Conflit' }
+
+components:
+  securitySchemes:
+    session: { $ref: './socle.yaml#/components/securitySchemes/session' }
+    csrf: { $ref: './socle.yaml#/components/securitySchemes/csrf' }
+
+  parameters:
+    MissionId: { name: missionId, in: path, required: true, schema: { type: string, format: uuid } }
+    PropositionId: { name: propositionId, in: path, required: true, schema: { type: string, format: uuid } }
+    DevisId: { name: devisId, in: path, required: true, schema: { type: string, format: uuid } }
+    JalonId: { name: jalonId, in: path, required: true, schema: { type: string, format: uuid } }
+
+  responses:
+    MissionAJour:
+      description: La mission à jour.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Mission' }
+
+  requestBodies:
+    Version:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [version]
+            properties:
+              version: { type: integer, description: 'La `version` de la mission lue juste avant.' }
+
+  schemas:
+    Montant:
+      type: object
+      additionalProperties: false
+      required: [centimes, devise]
+      properties:
+        centimes: { type: integer, format: int64, minimum: 0, description: 'Unité mineure (en francs pour XOF et XAF).' }
+        devise: { type: string, pattern: '^[A-Z]{3}$', description: 'ISO 4217.' }
+
+    NouvelleMission:
+      type: object
+      additionalProperties: false
+      required: [titre, besoin, competences, visibilite]
+      properties:
+        demandeId: { type: [string, 'null'], format: uuid, description: 'Ma demande publiée dont part la mission (`demandes.yaml`).' }
+        titre: { type: string, minLength: 3, maxLength: 120 }
+        besoin: { type: string, minLength: 20, maxLength: 8000, description: 'Le besoin ou le cahier des charges. Texte brut.' }
+        competences:
+          type: array
+          minItems: 1
+          maxItems: 10
+          uniqueItems: true
+          items: { $ref: './projets.yaml#/components/schemas/Competence' }
+        budget: { oneOf: [{ $ref: '#/components/schemas/Montant' }, { type: 'null' }], description: '`null` : « à discuter ».' }
+        dateSouhaitee: { type: [string, 'null'], format: date }
+        visibilite: { type: string, enum: [publique, invitation] }
+        ville: { type: [string, 'null'], maxLength: 80 }
+        pays: { oneOf: [{ $ref: './profils.yaml#/components/schemas/Pays' }, { type: 'null' }] }
+        aDistance: { type: boolean, default: true }
+
+    ModificationMission:
+      type: object
+      additionalProperties: false
+      required: [version]
+      description: JSON Merge Patch. Seuls les champs envoyés changent.
+      properties:
+        version: { type: integer }
+        titre: { type: string, minLength: 3, maxLength: 120 }
+        besoin: { type: string, minLength: 20, maxLength: 8000 }
+        competences: { type: array, minItems: 1, maxItems: 10, uniqueItems: true, items: { $ref: './projets.yaml#/components/schemas/Competence' } }
+        budget: { oneOf: [{ $ref: '#/components/schemas/Montant' }, { type: 'null' }] }
+        dateSouhaitee: { type: [string, 'null'], format: date }
+        visibilite: { type: string, enum: [publique, invitation] }
+        ville: { type: [string, 'null'], maxLength: 80 }
+        pays: { oneOf: [{ $ref: './profils.yaml#/components/schemas/Pays' }, { type: 'null' }] }
+        aDistance: { type: boolean }
+
+    StatutMission:
+      type: string
+      enum: [brouillon, publiee, fermee, attribuee, en_cours, terminee, annulee, desaccord]
+
+    MissionResume:
+      type: object
+      required: [id, titre, statut, competences, budget, client, nombrePropositions, publieeLe]
+      properties:
+        id: { type: string, format: uuid }
+        titre: { type: string }
+        statut: { $ref: '#/components/schemas/StatutMission' }
+        competences: { type: array, items: { $ref: './projets.yaml#/components/schemas/Competence' } }
+        budget: { oneOf: [{ $ref: '#/components/schemas/Montant' }, { type: 'null' }] }
+        ville: { type: [string, 'null'] }
+        pays: { type: [string, 'null'] }
+        aDistance: { type: boolean }
+        client: { $ref: './projets.yaml#/components/schemas/PersonneResume' }
+        nombrePropositions: { type: integer, minimum: 0 }
+        publieeLe: { type: [string, 'null'], format: date-time }
+
+    Mission:
+      allOf:
+        - $ref: '#/components/schemas/MissionResume'
+        - type: object
+          required: [besoin, visibilite, version, creeLe, moi]
+          properties:
+            demandeId: { type: [string, 'null'], format: uuid }
+            besoin: { type: string, description: 'Texte brut, affiché échappé.' }
+            dateSouhaitee: { type: [string, 'null'], format: date }
+            visibilite: { type: string, enum: [publique, invitation] }
+            version: { type: integer }
+            creeLe: { type: string, format: date-time }
+            moi:
+              type: object
+              description: Ce que la personne qui lit peut faire. Le front s'en sert pour afficher les boutons ; l'API revérifie tout.
+              required: [role, actions]
+              properties:
+                role: { type: string, enum: [client, developpeur_retenu, invite, candidat, visiteur, moderateur] }
+                actions:
+                  type: array
+                  items:
+                    type: string
+                    enum: [modifier, publier, fermer, inviter, proposer, retenir, envoyer_devis, accepter_devis, demarrer, livrer, accepter_jalon, demander_retouche, declarer_paye, declarer_recu, demander_prolongation, repondre_prolongation, annuler, ouvrir_desaccord, trancher, donner_avis]
+            travail:
+              description: Seulement pour le client, le développeur retenu et un modérateur. Absent sinon.
+              oneOf: [{ $ref: '#/components/schemas/Travail' }, { type: 'null' }]
+
+    Travail:
+      type: object
+      required: [developpeur, devis, informationsDepart, demarreLe, retouchesRestantes, annulationDemandeePar, desaccord]
+      properties:
+        developpeur: { $ref: './projets.yaml#/components/schemas/PersonneResume' }
+        devis: { $ref: '#/components/schemas/Devis' }
+        informationsDepart: { type: [string, 'null'] }
+        demarreLe: { type: [string, 'null'], format: date-time }
+        retouchesRestantes: { type: integer, minimum: 0 }
+        prolongationEnAttente: { oneOf: [{ $ref: '#/components/schemas/Prolongation' }, { type: 'null' }] }
+        annulationDemandeePar: { type: [string, 'null'], enum: [client, developpeur, null] }
+        desaccord: { oneOf: [{ $ref: '#/components/schemas/Desaccord' }, { type: 'null' }] }
+        avis: { type: array, maxItems: 2, items: { $ref: '#/components/schemas/Avis' } }
+
+    NouvelleProposition:
+      type: object
+      additionalProperties: false
+      required: [message, prix, delaiJours]
+      properties:
+        message: { type: string, minLength: 30, maxLength: 4000, description: 'Comment je m''y prendrais, ce que j''ai déjà fait de proche.' }
+        prix: { $ref: '#/components/schemas/Montant' }
+        delaiJours: { type: integer, minimum: 1, maximum: 365 }
+        reponses: { type: array, maxItems: 5, items: { type: string, maxLength: 1000 }, description: 'Réponses aux questions du client, dans l''ordre.' }
+
+    Proposition:
+      type: object
+      required: [id, developpeur, message, prix, delaiJours, statut, envoyeeLe]
+      properties:
+        id: { type: string, format: uuid }
+        developpeur: { $ref: './projets.yaml#/components/schemas/PersonneResume' }
+        message: { type: string }
+        prix: { $ref: '#/components/schemas/Montant' }
+        delaiJours: { type: integer }
+        reponses: { type: array, items: { type: string } }
+        statut: { type: string, enum: [envoyee, retenue, acceptee, non_retenue, retiree] }
+        envoyeeLe: { type: string, format: date-time }
+
+    PageMissions:
+      allOf:
+        - $ref: './socle.yaml#/components/schemas/Page'
+        - properties:
+            elements: { items: { $ref: '#/components/schemas/MissionResume' } }
+
+    PagePropositions:
+      allOf:
+        - $ref: './socle.yaml#/components/schemas/Page'
+        - properties:
+            elements: { items: { $ref: '#/components/schemas/Proposition' } }
+
+    NouveauDevis:
+      type: object
+      additionalProperties: false
+      required: [total, retouchesComprises, jalons]
+      properties:
+        total: { $ref: '#/components/schemas/Montant' }
+        retouchesComprises: { type: integer, minimum: 0, maximum: 10 }
+        conditions: { type: [string, 'null'], maxLength: 4000, description: 'Ce qui est compris, ce qui ne l''est pas.' }
+        jalons:
+          type: array
+          minItems: 1
+          maxItems: 10
+          items:
+            type: object
+            additionalProperties: false
+            required: [titre, montant, delaiJours]
+            properties:
+              titre: { type: string, minLength: 3, maxLength: 120 }
+              description: { type: [string, 'null'], maxLength: 2000 }
+              montant: { $ref: '#/components/schemas/Montant' }
+              delaiJours: { type: integer, minimum: 1, maximum: 365, description: 'Compté depuis le démarrage de la mission.' }
+
+    Devis:
+      type: object
+      required: [id, total, retouchesComprises, jalons, envoyeLe, accepteLe]
+      properties:
+        id: { type: string, format: uuid }
+        total: { $ref: '#/components/schemas/Montant' }
+        retouchesComprises: { type: integer }
+        conditions: { type: [string, 'null'] }
+        jalons: { type: array, items: { $ref: '#/components/schemas/Jalon' } }
+        envoyeLe: { type: string, format: date-time }
+        accepteLe: { type: [string, 'null'], format: date-time }
+
+    Jalon:
+      type: object
+      required: [id, ordre, titre, montant, delaiJours, echeance, statut, livraisons, accepteLe, acceptationAutomatique, paiement]
+      properties:
+        id: { type: string, format: uuid }
+        ordre: { type: integer, minimum: 1 }
+        titre: { type: string }
+        description: { type: [string, 'null'] }
+        montant: { $ref: '#/components/schemas/Montant' }
+        delaiJours: { type: integer }
+        echeance: { type: [string, 'null'], format: date-time, description: '`null` tant que la mission n''a pas démarré.' }
+        statut: { type: string, enum: [a_faire, en_cours, livre, accepte] }
+        livraisons: { type: array, items: { $ref: '#/components/schemas/Livraison' } }
+        acceptationAutomatiqueLe: { type: [string, 'null'], format: date-time, description: 'Si livré : quand il sera accepté sans réponse du client (72 h après la livraison).' }
+        accepteLe: { type: [string, 'null'], format: date-time }
+        acceptationAutomatique: { type: boolean }
+        paiement: { type: string, enum: [non_paye, declare_paye, declare_recu] }
+
+    NouvelleLivraison:
+      type: object
+      additionalProperties: false
+      required: [version, message]
+      properties:
+        version: { type: integer }
+        message: { type: string, minLength: 10, maxLength: 4000 }
+        liens: { type: array, maxItems: 5, items: { type: string, format: uri, maxLength: 500 }, description: 'Lien de test, dépôt, fichiers. `https` uniquement.' }
+
+    Livraison:
+      type: object
+      required: [message, liens, livreeLe]
+      properties:
+        message: { type: string }
+        liens: { type: array, items: { type: string, format: uri } }
+        livreeLe: { type: string, format: date-time }
+        retouche: { type: [string, 'null'], description: 'La raison de la retouche demandée après cette livraison, s''il y en a une.' }
+
+    Prolongation:
+      type: object
+      required: [id, jalonId, jours, raison, demandeeLe]
+      properties:
+        id: { type: string, format: uuid }
+        jalonId: { type: string, format: uuid }
+        jours: { type: integer }
+        raison: { type: string }
+        demandeeLe: { type: string, format: date-time }
+
+    Desaccord:
+      type: object
+      required: [ouvertPar, raison, ouvertLe, issue, explication, trancheLe]
+      properties:
+        ouvertPar: { type: string, enum: [client, developpeur] }
+        raison: { type: string }
+        ouvertLe: { type: string, format: date-time }
+        issue: { type: [string, 'null'], enum: [terminee, annulee, null] }
+        explication: { type: [string, 'null'] }
+        trancheLe: { type: [string, 'null'], format: date-time }
+
+    Avis:
+      type: object
+      required: [auteur, note, donneLe]
+      properties:
+        auteur: { type: string, enum: [client, developpeur] }
+        note: { type: integer, minimum: 1, maximum: 5 }
+        texte: { type: [string, 'null'] }
+        donneLe: { type: string, format: date-time }

@@ -126,3 +126,22 @@ export async function choisirOffres(id: string, accepte: boolean): Promise<Deman
   const reponse = await envoyer(`/api/demandes/${encodeURIComponent(id)}/offres-systalink`, { accepte }, 'PUT')
   return reponse.ok ? ((await reponse.json()) as Demande) : null
 }
+
+export type DemandeResumee = Schemas['DemandeResumee']
+
+/** GET /api/demandes : « Tes demandes », pour retrouver un besoin déjà décrit. */
+export async function listerDemandes(): Promise<DemandeResumee[]> {
+  const reponse = await globalThis.fetch(adresse('/api/demandes'), { credentials: 'same-origin' })
+  if (!reponse.ok) return []
+  return (await reponse.json()) as DemandeResumee[]
+}
+
+/**
+ * POST /api/demandes/{id}/precisions : « ce n'est pas tout à fait ça ». L'analyse repart avec le besoin complet.
+ * `limite` : déjà 5 précisions, il faut décrire un nouveau besoin.
+ */
+export async function preciserDemande(id: string, texte: string): Promise<Demande | 'limite' | null> {
+  const reponse = await envoyer(`/api/demandes/${encodeURIComponent(id)}/precisions`, { texte: texte.trim() })
+  if (reponse.status === 409) return 'limite'
+  return reponse.ok ? ((await reponse.json()) as Demande) : null
+}

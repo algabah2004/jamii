@@ -194,6 +194,65 @@ def test_l_orientation_ne_propose_que_le_catalogue_et_en_recopie_nom_prix_et_lie
     assert resultat["plan"] is None
 
 
+def test_sans_developpeurs_pas_d_hebergement_technique_et_deux_services_au_plus():
+    reponse = json.dumps(
+        {
+            "resume": "Tu veux que tes clientes voient ton stock.",
+            "secteur": "commerce",
+            "services": [
+                {"id": "datacloud-base-de-donnees", "pourCeBesoin": "Garder le stock."},
+                {"id": "orion", "pourCeBesoin": "Tes clientes voient tes articles."},
+                {"id": "nom-de-domaine", "pourCeBesoin": "Une adresse à ton nom."},
+                {"id": "systaone", "pourCeBesoin": "Des outils de bureau."},
+            ],
+            "developpeursNecessaires": False,
+        }
+    )
+    resultat = orientation.lire(reponse, BESOIN_CABINET, CATALOGUE)
+
+    # Une commerçante sans développeur ne se voit jamais proposer une base de données.
+    assert [s["id"] for s in resultat["services"]] == ["orion", "nom-de-domaine"]
+
+
+def test_avec_developpeurs_l_hebergement_de_leur_travail_peut_etre_propose():
+    reponse = json.dumps(
+        {
+            "resume": "Tu veux vendre en ligne.",
+            "secteur": "commerce",
+            "services": [
+                {"id": "datacloud-application", "pourCeBesoin": "Ton application reste en ligne."}
+            ],
+            "developpeursNecessaires": True,
+            "competences": ["vue"],
+        }
+    )
+    resultat = orientation.lire(reponse, BESOIN_CABINET, CATALOGUE)
+
+    assert [s["id"] for s in resultat["services"]] == ["datacloud-application"]
+
+
+def test_le_message_de_l_assistant_passe_avant_les_options():
+    reponse = json.dumps(
+        {
+            "message": "  Tu vends au marché et tes clientes t'appellent.  ",
+            "resume": "Tu veux montrer ton stock.",
+            "secteur": "commerce",
+            "services": [],
+            "developpeursNecessaires": False,
+        }
+    )
+    resultat = orientation.lire(reponse, BESOIN_CABINET, CATALOGUE)
+
+    assert resultat["message"].startswith("Tu vends au marché")
+    assert "Précisions de la personne" in orientation.CONSIGNE
+
+
+def test_la_consigne_demande_des_mots_simples_et_deux_services_au_plus():
+    assert "2 AU PLUS" in orientation.CONSIGNE
+    assert "aucun" in orientation.CONSIGNE and "jargon" in orientation.CONSIGNE
+    assert all("pourQui" in s for s in CATALOGUE.pour_l_ia())
+
+
 def test_le_plan_d_une_orientation_ne_suggere_aucun_membre_invente():
     reponse = json.dumps(
         {
