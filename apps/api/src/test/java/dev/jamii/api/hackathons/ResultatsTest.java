@@ -128,11 +128,13 @@ class ResultatsTest {
 			.with(csrf()).with(oauth2Login().oauth2User(qui)).exchange();
 	}
 
+	/** `raison`, si elle est donnée, accompagne les deux gagnants : inverser le classement écarte les deux prix. */
 	private MvcTestResult confirmer(Scene s, String premier, String second, String raison) throws Exception {
 		int version = corpsDe(mvc.get().uri("/api/hackathons/" + s.hackathon()).with(oauth2Login().oauth2User(s.awa())).exchange()).get("version").asInt();
+		String r = raison == null ? "" : ",\"raison\":\"" + raison + "\"";
 		String corps = """
-				{"version":%d,"gagnants":[{"prixId":"%s","equipeId":"%s"%s},{"prixId":"%s","equipeId":"%s"}]}
-				""".formatted(version, s.premierPrix(), premier, raison == null ? "" : ",\"raison\":\"" + raison + "\"", s.secondPrix(), second);
+				{"version":%d,"gagnants":[{"prixId":"%s","equipeId":"%s"%s},{"prixId":"%s","equipeId":"%s"%s}]}
+				""".formatted(version, s.premierPrix(), premier, r, s.secondPrix(), second, r);
 		return poster("/api/hackathons/" + s.hackathon() + "/resultats", corps, s.awa());
 	}
 
