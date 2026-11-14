@@ -110,6 +110,10 @@ export function modifierHackathon(id: string, changer: (h: Hackathon) => void) {
   const h = hackathons.get(id)
   if (h) changer(h)
 }
+/** Pour un test : changer les inscriptions d'un hackathon des maquettes (par exemple, les remettre en attente). */
+export function modifierInscriptions(id: string, changer: (i: Inscription) => void) {
+  for (const i of inscriptions.get(id) ?? []) changer(i)
+}
 reinitialiserHackathons()
 
 function resume({ id, titre, theme, lieu, ville, statut, debutLe, finRendusLe, organisateur, nombreInscrits }: Hackathon): HackathonResume {
@@ -189,6 +193,20 @@ export const handlersHackathons = [
     h.nombreInscrits += 1
     h.moi = { role: 'participant', equipeId: null, actions: ['creer_equipe'] }
     return HttpResponse.json(inscription, { status: 201 })
+  }),
+
+  http.get('/api/hackathons/:id/inscriptions', ({ params }) =>
+    HttpResponse.json({ elements: inscriptions.get(String(params.id)) ?? [], curseurSuivant: null }),
+  ),
+
+  http.patch('/api/hackathons/:id/inscriptions/:inscriptionId', async ({ params, request }) => {
+    const h = hackathons.get(String(params.id))
+    if (!h) return erreur(404, 'introuvable')
+    if (h.modeInscription !== 'candidature') return erreur(409, 'etat_invalide')
+    const inscription = (inscriptions.get(h.id) ?? []).find((i) => i.id === params.inscriptionId)
+    if (!inscription) return erreur(404, 'introuvable')
+    inscription.statut = ((await request.json()) as { statut: Inscription['statut'] }).statut
+    return HttpResponse.json(inscription)
   }),
 
   http.get('/api/hackathons/:id/equipes', ({ params }) => {

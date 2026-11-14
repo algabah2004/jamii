@@ -1158,6 +1158,28 @@
       "rang": "#{rang} | #{rang}",
       "voir": "See {titre}",
       "retours": "Jury feedback:"
+    },
+    "tri": {
+      "titre": "Applications",
+      "indisponible": "Applications are not available right now. Try again in a moment.",
+      "aucune": "No applications yet.",
+      "aTrier": "No application is waiting for your answer. | One application is waiting for your answer. | {n} applications are waiting for your answer.",
+      "decider": "Answer {nom}",
+      "statuts": {
+        "en_attente": "Waiting for your answer",
+        "acceptee": "Accepted",
+        "attente": "On the waiting list",
+        "refusee": "Declined"
+      },
+      "actions": {
+        "acceptee": "Accept",
+        "attente": "Waiting list",
+        "refusee": "Decline"
+      },
+      "erreurs": {
+        "etat_invalide": "Applications can no longer change for this hackathon.",
+        "autre": "Your answer was not saved. Try again in a moment."
+      }
     }
   },
   "missions": {
