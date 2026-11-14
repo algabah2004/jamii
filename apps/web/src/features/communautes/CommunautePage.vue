@@ -10,6 +10,7 @@ import { ilYa } from '../vitrine/vitrine'
 import { useSession } from '../../session'
 import { monogramme, motifDe } from './communautes'
 import EspaceCommunautes from './EspaceCommunautes.vue'
+import SalonsCommunaute from './SalonsCommunaute.vue'
 
 type Communaute = components['schemas']['Communaute']
 type PublicationResume = components['schemas']['PublicationResume']
@@ -79,6 +80,16 @@ async function publier() {
   await router.push(`/publications/${data.id}`)
 }
 
+// Les salons en direct (#155) : `?salon=entraide` dans l'adresse, pour partager le lien d'un salon.
+const salon = computed(() => (typeof route.query.salon === 'string' ? route.query.salon : null))
+const vue = computed({
+  get: () => (salon.value === null ? 'fil' : 'salons') as 'fil' | 'salons',
+  set: (v) => void router.replace({ query: v === 'salons' ? { salon: '' } : {} }),
+})
+function choisirSalon(s: string) {
+  void router.replace({ query: { salon: s } })
+}
+
 const filtre = computed({
   get: () => (seulementOuvertes.value ? 'ouvertes' : 'toutes') as 'toutes' | 'ouvertes',
   set: (v) => void router.replace({ query: v === 'ouvertes' ? { filtre: 'ouvertes' } : {} }),
@@ -129,8 +140,27 @@ watch(formulaireOuvert, (ouvert) => {
         <p class="banniere__description">{{ communaute.description }}</p>
       </header>
 
+      <JFiltres
+        v-model="vue"
+        variante="onglets"
+        class="vues"
+        :libelle="t('communautes.salons.vues')"
+        :options="[
+          { valeur: 'fil', texte: t('communautes.salons.fil') },
+          { valeur: 'salons', texte: t('communautes.salons.titre') },
+        ]"
+      />
+      <SalonsCommunaute
+        v-if="vue === 'salons'"
+        :slug="slug"
+        :membre="communaute.membre"
+        :salon="salon || undefined"
+        @choisir="choisirSalon"
+        @rejoindre="basculerAdhesion"
+      />
+
       <!-- Un seul fil continu : publier en haut, les onglets, puis les discussions séparées par une ligne. -->
-      <section class="flux" :aria-label="t('communautes.espace.fil')">
+      <section v-else class="flux" :aria-label="t('communautes.espace.fil')">
         <!-- Le formulaire se déplie à la place de l'invitation, en douceur : la page ne saute pas. -->
         <JDeplier>
           <div v-if="communaute.membre && formulaireOuvert" ref="zoneFormulaire">

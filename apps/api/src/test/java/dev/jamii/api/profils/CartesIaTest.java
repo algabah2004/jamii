@@ -90,6 +90,11 @@ class CartesIaTest {
 		AtomicInteger lectures = new AtomicInteger();
 		HttpServer serveur = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
 		serveur.createContext("/taches", echange -> {
+			// Comme uvicorn : une demande de montée vers HTTP/2 (h2c) est refusée (bug du 14/11).
+			if (echange.getRequestHeaders().containsKey("Upgrade")) {
+				repondre(echange, 400, "Unsupported upgrade request");
+				return;
+			}
 			if ("POST".equals(echange.getRequestMethod())) {
 				corps.add(new String(echange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
 				repondre(echange, 202, "{\"id\":\"0b0f5a4e-6c1d-4f0e-9a3b-2f6f0d1c7e11\",\"statut\":\"en_attente\"}");

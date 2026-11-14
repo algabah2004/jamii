@@ -11,7 +11,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Tes demandes, les plus récentes d'abord (50 au plus)
+         * @description Pour retrouver un besoin déjà décrit, même après avoir quitté la page. Seulement les siennes.
+         */
+        get: operations["listerMesDemandes"];
         put?: never;
         /**
          * Décrire un besoin (la PME devient l'auteure de la demande)
@@ -20,6 +24,30 @@ export interface paths {
          *     limite n'est pas enregistrée.
          */
         post: operations["creerDemande"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/demandes/{demandeId}/precisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                demandeId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Préciser son besoin après avoir lu la réponse
+         * @description « Ce n'est pas tout à fait ça » : la personne écrit ce qui ne lui convient pas. L'analyse repart avec le besoin
+         *     de départ **et** toutes les précisions (l'orientation repasse à `en_attente`). **5 précisions au plus** par
+         *     demande (`409 trop_de_precisions` ensuite : décrire un nouveau besoin). Pour un autre utilisateur, `404`.
+         */
+        post: operations["preciserDemande"];
         delete?: never;
         options?: never;
         head?: never;
@@ -116,6 +144,21 @@ export interface components {
              *     l'orientation n'est pas terminée, ou si `developpeursNecessaires` vaut `false`. Seuls les profils publiés.
              */
             recommandations?: components["schemas"]["Recommandation"][];
+            /** @description Ce que la personne a ajouté après avoir lu la réponse, dans l'ordre. Texte brut. */
+            precisions?: {
+                texte: string;
+                /** Format: date-time */
+                creeLe: string;
+            }[];
+        };
+        DemandeResumee: {
+            /** Format: uuid */
+            id: string;
+            titre: string;
+            /** @description Le besoin reformulé par l'assistant, une fois l'analyse terminée. */
+            resume?: string | null;
+            /** Format: date-time */
+            creeLe: string;
         };
         /** @description L'état de la tâche `plan_projet`, relu par l'API dans le service IA. */
         PlanDeLaDemande: {
@@ -162,6 +205,38 @@ export interface components {
             competencesCouvertes: components["schemas"]["Competence"][];
             /** @description Phrases courtes et vérifiables : « React, confirmé (3 dépôts) », « Disponible », « Dakar ». */
             raisons: string[];
+        };
+        ErreurChamp: {
+            /** @description Chemin du champ, par exemple `roles[0].titre`. */
+            champ: string;
+            /**
+             * @example obligatoire
+             * @example trop_court
+             * @example format_invalide
+             */
+            code: string;
+        };
+        /** @description Problem Details (RFC 9457). Le front se base sur `code`, jamais sur `title`. */
+        Erreur: {
+            /**
+             * Format: uri
+             * @example urn:jamii:erreur:validation
+             */
+            type: string;
+            /** @description Résumé lisible, pour le débogage. */
+            title: string;
+            status: number;
+            detail?: string;
+            /** @description Chemin de la requête. */
+            instance?: string;
+            /**
+             * @example validation
+             * @example introuvable
+             */
+            code: string;
+            /** @description Identifiant à retrouver dans les journaux. */
+            traceId?: string;
+            erreurs?: components["schemas"]["ErreurChamp"][];
         };
         /** @description Code ISO 3166-1 alpha-2 (`SN`, `CI`, `KE`). */
         Pays: string;
@@ -238,6 +313,8 @@ export interface components {
         Orientation: {
             /** @description Le besoin reformulé en mots simples. */
             resume: string;
+            /** @description Ce que l'assistant dit d'abord à la personne : il montre qu'il a compris sa situation et explique simplement ce qui peut l'arranger, avant les options. Absent dans le repli sans IA. */
+            message?: string | null;
             /**
              * @example juridique
              * @example commerce
@@ -253,42 +330,10 @@ export interface components {
             /** @description Présent si `developpeursNecessaires`, `null` sinon. */
             plan: components["schemas"]["PlanProjet"] | null;
         };
-        ErreurChamp: {
-            /** @description Chemin du champ, par exemple `roles[0].titre`. */
-            champ: string;
-            /**
-             * @example obligatoire
-             * @example trop_court
-             * @example format_invalide
-             */
-            code: string;
-        };
-        /** @description Problem Details (RFC 9457). Le front se base sur `code`, jamais sur `title`. */
-        Erreur: {
-            /**
-             * Format: uri
-             * @example urn:jamii:erreur:validation
-             */
-            type: string;
-            /** @description Résumé lisible, pour le débogage. */
-            title: string;
-            status: number;
-            detail?: string;
-            /** @description Chemin de la requête. */
-            instance?: string;
-            /**
-             * @example validation
-             * @example introuvable
-             */
-            code: string;
-            /** @description Identifiant à retrouver dans les journaux. */
-            traceId?: string;
-            erreurs?: components["schemas"]["ErreurChamp"][];
-        };
     };
     responses: {
-        /** @description Entrée invalide (`code` = `validation`, détail dans `erreurs`). */
-        Invalide: {
+        /** @description Pas connecté ou session expirée (`code` = `non_connecte`). */
+        NonConnecte: {
             headers: {
                 [name: string]: unknown;
             };
@@ -296,8 +341,8 @@ export interface components {
                 "application/problem+json": components["schemas"]["Erreur"];
             };
         };
-        /** @description Pas connecté ou session expirée (`code` = `non_connecte`). */
-        NonConnecte: {
+        /** @description Entrée invalide (`code` = `validation`, détail dans `erreurs`). */
+        Invalide: {
             headers: {
                 [name: string]: unknown;
             };
@@ -324,6 +369,15 @@ export interface components {
                 "application/problem+json": components["schemas"]["Erreur"];
             };
         };
+        /** @description Doublon, état incompatible ou `modification_concurrente`. */
+        Conflit: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Erreur"];
+            };
+        };
     };
     parameters: never;
     requestBodies: never;
@@ -335,6 +389,27 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    listerMesDemandes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Les demandes de la personne connectée. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DemandeResumee"][];
+                };
+            };
+            401: components["responses"]["NonConnecte"];
+        };
+    };
     creerDemande: {
         parameters: {
             query?: never;
@@ -361,6 +436,39 @@ export interface operations {
             400: components["responses"]["Invalide"];
             401: components["responses"]["NonConnecte"];
             429: components["responses"]["TropDeRequetes"];
+        };
+    };
+    preciserDemande: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                demandeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description Texte brut : une donnée, jamais une consigne pour l'IA. */
+                    texte: string;
+                };
+            };
+        };
+        responses: {
+            /** @description La demande, avec l'orientation relancée. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Demande"];
+                };
+            };
+            400: components["responses"]["Invalide"];
+            401: components["responses"]["NonConnecte"];
+            404: components["responses"]["Introuvable"];
+            409: components["responses"]["Conflit"];
         };
     };
     choisirOffresSystalink: {
