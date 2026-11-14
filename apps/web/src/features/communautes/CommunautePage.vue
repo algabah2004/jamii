@@ -5,46 +5,65 @@ import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { api } from '../../api/client'
 import type { components } from '../../api/generated/communautes'
-import { nomPays } from '../systalink/calculs'
 import { ilYa } from '../vitrine/vitrine'
 import { useSession } from '../../session'
-import { monogramme, motifDe } from './communautes'
 import EspaceCommunautes from './EspaceCommunautes.vue'
 import SalonsCommunaute from './SalonsCommunaute.vue'
 
 type Communaute = components['schemas']['Communaute']
 type PublicationResume = components['schemas']['PublicationResume']
 
+/*
+ * Une communauté, comme une messagerie d'équipe : on arrive dans un salon (`# général` par défaut,
+ * `?salon=entraide` pour un autre), et le forum des questions s'ouvre avec `?voir=questions`.
+ * L'adresse se partage telle quelle.
+ */
 const { t, locale } = useI18n()
 const { moi } = useSession()
 const route = useRoute()
 const router = useRouter()
 
 const slug = computed(() => String(route.params.slug))
+const vue = computed(() => (route.query.voir === 'questions' ? 'questions' : 'salon'))
+const salon = computed(() => (typeof route.query.salon === 'string' && route.query.salon ? route.query.salon : 'general'))
+const actif = computed(() => (vue.value === 'questions' ? 'questions' : salon.value))
 const seulementOuvertes = computed(() => route.query.filtre === 'ouvertes')
+
 const communaute = ref<Communaute | null>(null)
 const publications = ref<PublicationResume[]>([])
 const etat = ref<'chargement' | 'pret' | 'introuvable' | 'indisponible'>('chargement')
+const etatFil = ref<'chargement' | 'pret' | 'indisponible'>('chargement')
 
-async function charger() {
-  etat.value = 'chargement'
+/** `silencieux` : après « Rejoindre », on relit sans effacer l'écran (le salon reste ouvert). */
+async function chargerCommunaute(silencieux = false) {
+  if (!silencieux) etat.value = 'chargement'
   try {
-    const [c, p] = await Promise.all([
-      api.GET('/api/communautes/{slug}', { params: { path: { slug: slug.value } } }),
-      api.GET('/api/communautes/{slug}/publications', {
-        params: { path: { slug: slug.value }, query: { sansReponseAcceptee: seulementOuvertes.value || undefined } },
-      }),
-    ])
-    if (c.response.status === 404) return void (etat.value = 'introuvable')
-    if (!c.data || !p.data) throw new Error('communauté indisponible')
-    communaute.value = c.data
-    publications.value = p.data.elements ?? []
+    const { data, response } = await api.GET('/api/communautes/{slug}', { params: { path: { slug: slug.value } } })
+    if (response.status === 404) return void (etat.value = 'introuvable')
+    if (!data) throw new Error('communauté indisponible')
+    communaute.value = data
     etat.value = 'pret'
   } catch {
-    etat.value = 'indisponible'
+    if (!silencieux) etat.value = 'indisponible'
   }
 }
-watch([slug, seulementOuvertes], charger, { immediate: true })
+async function chargerFil() {
+  etatFil.value = 'chargement'
+  try {
+    const { data } = await api.GET('/api/communautes/{slug}/publications', {
+      params: { path: { slug: slug.value }, query: { sansReponseAcceptee: seulementOuvertes.value || undefined } },
+    })
+    if (!data) throw new Error('fil indisponible')
+    publications.value = data.elements ?? []
+    etatFil.value = 'pret'
+  } catch {
+    etatFil.value = 'indisponible'
+  }
+}
+watch(slug, () => void chargerCommunaute(), { immediate: true })
+watch([slug, seulementOuvertes, vue], () => {
+  if (vue.value === 'questions') void chargerFil()
+}, { immediate: true })
 
 const adhesionEnCours = ref(false)
 async function basculerAdhesion() {
@@ -56,9 +75,12 @@ async function basculerAdhesion() {
     : await api.POST('/api/communautes/{slug}/adhesion', options)
   adhesionEnCours.value = false
   if (!response.ok) return
-  formulaireOuvert.value = !communaute.value.membre
-  await charger()
+  formulaireOuvert.value = vue.value === 'questions' && !communaute.value.membre
+  await chargerCommunaute(true)
+  cleSalons.value++
 }
+/** Après « Rejoindre », le salon se recharge pour recevoir l'adresse de l'appel et la zone d'écriture. */
+const cleSalons = ref(0)
 
 // Formulaire « Poser une question » : mêmes limites que le contrat, vérifiées aussi par le serveur.
 const formulaire = ref({ type: 'question' as 'question' | 'discussion', titre: '', contenu: '' })
@@ -80,177 +102,157 @@ async function publier() {
   await router.push(`/publications/${data.id}`)
 }
 
-// Les salons en direct (#155) : `?salon=entraide` dans l'adresse, pour partager le lien d'un salon.
-const salon = computed(() => (typeof route.query.salon === 'string' ? route.query.salon : null))
-const vue = computed({
-  get: () => (salon.value === null ? 'fil' : 'salons') as 'fil' | 'salons',
-  set: (v) => void router.replace({ query: v === 'salons' ? { salon: '' } : {} }),
-})
-function choisirSalon(s: string) {
-  void router.replace({ query: { salon: s } })
-}
-
 const filtre = computed({
   get: () => (seulementOuvertes.value ? 'ouvertes' : 'toutes') as 'toutes' | 'ouvertes',
-  set: (v) => void router.replace({ query: v === 'ouvertes' ? { filtre: 'ouvertes' } : {} }),
+  set: (v) => void router.replace({ query: v === 'ouvertes' ? { voir: 'questions', filtre: 'ouvertes' } : { voir: 'questions' } }),
 })
 
-/** Comme dans la maquette : les échanges d'abord, le formulaire s'ouvre à la demande (et dès qu'on rejoint). */
+/** Les échanges d'abord : le formulaire s'ouvre à la demande (et dès qu'on rejoint). */
 const formulaireOuvert = ref(false)
 const zoneFormulaire = ref<HTMLElement | null>(null)
-/** À l'ouverture, le curseur va directement dans le titre. */
 watch(formulaireOuvert, (ouvert) => {
   if (ouvert) void nextTick(() => zoneFormulaire.value?.querySelector('input')?.focus({ preventScroll: true }))
 })
 </script>
 
 <template>
-  <EspaceCommunautes :actuelle="slug">
-    <JSquelette v-if="etat === 'chargement' && !communaute" :nombre="4" />
+  <EspaceCommunautes :actuelle="etat === 'introuvable' ? undefined : slug" :actif="actif" :communaute="communaute">
+    <JSquelette v-if="etat === 'chargement' && !communaute" :nombre="4" class="attente" />
     <div v-else-if="etat === 'introuvable'" class="etat-vide">
       <h1>{{ t('introuvable.titre') }}</h1>
       <RouterLink to="/communautes">{{ t('communautes.retour') }}</RouterLink>
     </div>
     <div v-else-if="etat === 'indisponible'" role="alert" class="etat-vide">
       <p>{{ t('etat.indisponible') }}</p>
-      <JBouton variante="secondaire" @click="charger">{{ t('etat.reessayer') }}</JBouton>
+      <JBouton variante="secondaire" @click="chargerCommunaute()">{{ t('etat.reessayer') }}</JBouton>
     </div>
 
     <template v-else-if="communaute">
-      <header class="banniere" :class="{ 'banniere--antenne': communaute.pays }">
-        <div class="banniere__couverture motif motif--plein" :class="`motif--${motifDe(slug)}`" aria-hidden="true" />
-        <div class="banniere__corps">
-          <span class="banniere__monogramme" aria-hidden="true">{{ monogramme(communaute.nom) }}</span>
-          <div class="banniere__texte">
-            <h1>{{ communaute.nom }}</h1>
-            <p class="banniere__meta">
-              {{ t('communautes.membres', { n: communaute.nombreMembres }, communaute.nombreMembres) }}
-              <template v-if="communaute.pays"> · {{ t('communautes.antenne', { pays: nomPays(communaute.pays, locale) }) }}</template>
-            </p>
-          </div>
+      <!-- Un salon en direct, sur toute la hauteur. -->
+      <SalonsCommunaute
+        v-if="vue === 'salon'"
+        :key="`${slug}-${cleSalons}`"
+        :slug="slug"
+        :salon="salon"
+        :membre="communaute.membre"
+        :adhesion-en-cours="adhesionEnCours"
+        @rejoindre="basculerAdhesion"
+      />
+
+      <!-- Le forum des questions : l'IA propose une réponse, un pair la valide. -->
+      <template v-else>
+        <header class="tete-vue">
+          <h1 class="tete-vue__nom">
+            <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M3 4.5A1.5 1.5 0 0 1 4.5 3h11A1.5 1.5 0 0 1 17 4.5v8a1.5 1.5 0 0 1-1.5 1.5H8l-4 3v-3h.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" /></svg>
+            {{ t('communautes.salons.questions') }}
+          </h1>
+          <p class="tete-vue__sujet">{{ t('communautes.salons.questionsSujet') }}</p>
           <JBouton
-            :variante="communaute.membre ? 'secondaire' : 'principal'"
+            :variante="communaute.membre ? 'discret' : 'principal'"
             data-test="adhesion"
             :occupe="adhesionEnCours"
             @click="basculerAdhesion"
           >
             {{ communaute.membre ? t('communautes.quitter') : t('communautes.rejoindre') }}
           </JBouton>
-        </div>
-        <p class="banniere__description">{{ communaute.description }}</p>
-      </header>
+        </header>
 
-      <JFiltres
-        v-model="vue"
-        variante="onglets"
-        class="vues"
-        :libelle="t('communautes.salons.vues')"
-        :options="[
-          { valeur: 'fil', texte: t('communautes.salons.fil') },
-          { valeur: 'salons', texte: t('communautes.salons.titre') },
-        ]"
-      />
-      <SalonsCommunaute
-        v-if="vue === 'salons'"
-        :slug="slug"
-        :membre="communaute.membre"
-        :salon="salon || undefined"
-        @choisir="choisirSalon"
-        @rejoindre="basculerAdhesion"
-      />
-
-      <!-- Un seul fil continu : publier en haut, les onglets, puis les discussions séparées par une ligne. -->
-      <section v-else class="flux" :aria-label="t('communautes.espace.fil')">
-        <!-- Le formulaire se déplie à la place de l'invitation, en douceur : la page ne saute pas. -->
-        <JDeplier>
-          <div v-if="communaute.membre && formulaireOuvert" ref="zoneFormulaire">
-            <form class="compositeur compositeur--ouvert" data-test="publier" @submit.prevent="publier">
-              <div class="compositeur__tete">
-                <JAvatar v-if="moi" :nom="moi.nom" :url="moi.avatarUrl" :taille="40" />
-                <JFiltres
-                  v-model="formulaire.type"
-                  :libelle="t('communautes.type')"
-                  :options="[
-                    { valeur: 'question', texte: t('communautes.types.question') },
-                    { valeur: 'discussion', texte: t('communautes.types.discussion') },
-                  ]"
+        <section class="flux" :aria-label="t('communautes.espace.fil')">
+          <JDeplier>
+            <div v-if="communaute.membre && formulaireOuvert" ref="zoneFormulaire">
+              <form class="compositeur compositeur--ouvert" data-test="publier" @submit.prevent="publier">
+                <div class="compositeur__tete">
+                  <JAvatar v-if="moi" :nom="moi.nom" :url="moi.avatarUrl" :taille="40" />
+                  <JFiltres
+                    v-model="formulaire.type"
+                    :libelle="t('communautes.type')"
+                    :options="[
+                      { valeur: 'question', texte: t('communautes.types.question') },
+                      { valeur: 'discussion', texte: t('communautes.types.discussion') },
+                    ]"
+                  />
+                </div>
+                <JChamp v-model="formulaire.titre" :libelle="t('communautes.champTitre')" :maxlength="150" requis />
+                <JChamp
+                  v-model="formulaire.contenu"
+                  :libelle="t('communautes.champContenu')"
+                  :aide="formulaire.type === 'question' ? t('communautes.aideIa') : undefined"
+                  multiligne
+                  :lignes="5"
+                  :maxlength="10000"
+                  requis
                 />
-              </div>
-              <JChamp v-model="formulaire.titre" :libelle="t('communautes.champTitre')" :maxlength="150" requis />
-              <JChamp
-                v-model="formulaire.contenu"
-                :libelle="t('communautes.champContenu')"
-                :aide="formulaire.type === 'question' ? t('communautes.aideIa') : undefined"
-                multiligne
-                :lignes="5"
-                :maxlength="10000"
-                requis
-              />
-              <p v-if="envoi === 'erreur'" role="alert" class="erreur">{{ t('communautes.erreurPublier') }}</p>
-              <div class="compositeur__commandes">
-                <JBouton variante="discret" @click="formulaireOuvert = false">{{ t('communautes.annuler') }}</JBouton>
-                <JBouton type="submit" :desactive="!valide" :occupe="envoi === 'envoi'">{{ t('communautes.publier') }}</JBouton>
-              </div>
-            </form>
-          </div>
-        </JDeplier>
-        <JDeplier>
-          <div v-if="communaute.membre && !formulaireOuvert">
-            <div class="compositeur">
-              <JAvatar v-if="moi" :nom="moi.nom" :url="moi.avatarUrl" :taille="40" />
-              <button type="button" class="compositeur__invite" data-test="ouvrir-formulaire" @click="formulaireOuvert = true">
-                {{ t('communautes.espace.invite') }}
-              </button>
+                <p v-if="envoi === 'erreur'" role="alert" class="erreur">{{ t('communautes.erreurPublier') }}</p>
+                <div class="compositeur__commandes">
+                  <JBouton variante="discret" @click="formulaireOuvert = false">{{ t('communautes.annuler') }}</JBouton>
+                  <JBouton type="submit" :desactive="!valide" :occupe="envoi === 'envoi'">{{ t('communautes.publier') }}</JBouton>
+                </div>
+              </form>
             </div>
-          </div>
-        </JDeplier>
-        <div v-if="!communaute.membre" class="compositeur compositeur--rejoindre">
-          <p>{{ t('communautes.rejoindrePourPublier') }}</p>
-          <JBouton :occupe="adhesionEnCours" @click="basculerAdhesion">{{ t('communautes.rejoindre') }}</JBouton>
-        </div>
-
-        <JFiltres
-          v-model="filtre"
-          variante="onglets"
-          class="flux__onglets"
-          :libelle="t('communautes.filtre')"
-          :options="[
-            { valeur: 'toutes', texte: t('communautes.toutes') },
-            { valeur: 'ouvertes', texte: t('communautes.ouvertes') },
-          ]"
-        />
-
-        <JSquelette v-if="etat === 'chargement'" :nombre="3" class="flux__squelette" />
-        <div v-else-if="publications.length === 0" class="flux__vide">
-          <JIllustration nom="communaute" />
-          <p data-test="vide">{{ t('communautes.vide') }}</p>
-        </div>
-        <TransitionGroup v-else tag="ul" name="fil" class="fils" data-test="publications" appear>
-          <li v-for="(p, i) in publications" :key="p.id" class="fil" :style="{ '--rang': i }">
-            <JAvatar :nom="p.auteur?.nom ?? '?'" :url="p.auteur?.avatarUrl" :taille="40" />
-            <div class="fil__corps">
-              <p class="fil__meta">
-                <strong>{{ p.auteur?.nom ?? t('communautes.compteSupprime') }}</strong>
-                <span>{{ ilYa(p.creeLe, locale) }} · {{ t(`communautes.types.${p.type}`) }}</span>
-              </p>
-              <h2 class="fil__titre"><RouterLink :to="`/publications/${p.id}`" class="fil__lien">{{ p.titre }}</RouterLink></h2>
-              <p class="fil__pied">
-                <span class="fil__reponses">
-                  <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M3 4.5A1.5 1.5 0 0 1 4.5 3h11A1.5 1.5 0 0 1 17 4.5v8a1.5 1.5 0 0 1-1.5 1.5H8l-4 3v-3h.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" /></svg>
-                  {{ t('communautes.reponses', { n: p.nombreReponses }, p.nombreReponses) }}
-                </span>
-                <JBadgePreuve v-if="p.accepteeLe">✓ {{ t('communautes.reponseAcceptee') }}</JBadgePreuve>
-                <span v-else-if="p.type === 'question' && p.nombreReponses === 0" class="fil__appel">{{ t('communautes.espace.premier') }}</span>
-              </p>
+          </JDeplier>
+          <JDeplier>
+            <div v-if="communaute.membre && !formulaireOuvert">
+              <div class="compositeur">
+                <JAvatar v-if="moi" :nom="moi.nom" :url="moi.avatarUrl" :taille="40" />
+                <button type="button" class="compositeur__invite" data-test="ouvrir-formulaire" @click="formulaireOuvert = true">
+                  {{ t('communautes.espace.invite') }}
+                </button>
+              </div>
             </div>
-          </li>
-        </TransitionGroup>
-      </section>
+          </JDeplier>
+          <div v-if="!communaute.membre" class="compositeur compositeur--rejoindre">
+            <p>{{ t('communautes.rejoindrePourPublier') }}</p>
+            <JBouton :occupe="adhesionEnCours" @click="basculerAdhesion">{{ t('communautes.rejoindre') }}</JBouton>
+          </div>
+
+          <JFiltres
+            v-model="filtre"
+            variante="onglets"
+            class="flux__onglets"
+            :libelle="t('communautes.filtre')"
+            :options="[
+              { valeur: 'toutes', texte: t('communautes.toutes') },
+              { valeur: 'ouvertes', texte: t('communautes.ouvertes') },
+            ]"
+          />
+
+          <JSquelette v-if="etatFil === 'chargement'" :nombre="3" class="flux__squelette" />
+          <div v-else-if="etatFil === 'indisponible'" role="alert" class="flux__vide">
+            <p>{{ t('etat.indisponible') }}</p>
+            <JBouton variante="secondaire" @click="chargerFil">{{ t('etat.reessayer') }}</JBouton>
+          </div>
+          <div v-else-if="publications.length === 0" class="flux__vide">
+            <JIllustration nom="communaute" />
+            <p data-test="vide">{{ t('communautes.vide') }}</p>
+          </div>
+          <TransitionGroup v-else tag="ul" name="fil" class="fils" data-test="publications" appear>
+            <li v-for="(p, i) in publications" :key="p.id" class="fil" :style="{ '--rang': i }">
+              <JAvatar :nom="p.auteur?.nom ?? '?'" :url="p.auteur?.avatarUrl" :taille="40" />
+              <div class="fil__corps">
+                <p class="fil__meta">
+                  <strong>{{ p.auteur?.nom ?? t('communautes.compteSupprime') }}</strong>
+                  <span>{{ ilYa(p.creeLe, locale) }} · {{ t(`communautes.types.${p.type}`) }}</span>
+                </p>
+                <h2 class="fil__titre"><RouterLink :to="`/publications/${p.id}`" class="fil__lien">{{ p.titre }}</RouterLink></h2>
+                <p class="fil__pied">
+                  <span class="fil__reponses">
+                    <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M3 4.5A1.5 1.5 0 0 1 4.5 3h11A1.5 1.5 0 0 1 17 4.5v8a1.5 1.5 0 0 1-1.5 1.5H8l-4 3v-3h.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" /></svg>
+                    {{ t('communautes.reponses', { n: p.nombreReponses }, p.nombreReponses) }}
+                  </span>
+                  <JBadgePreuve v-if="p.accepteeLe">✓ {{ t('communautes.reponseAcceptee') }}</JBadgePreuve>
+                  <span v-else-if="p.type === 'question' && p.nombreReponses === 0" class="fil__appel">{{ t('communautes.espace.premier') }}</span>
+                </p>
+              </div>
+            </li>
+          </TransitionGroup>
+        </section>
+      </template>
     </template>
 
     <template v-if="communaute" #contexte>
       <section class="contexte" aria-labelledby="apropos">
         <h2 id="apropos">{{ t('communautes.espace.apropos') }}</h2>
+        <p class="contexte__description">{{ communaute.description }}</p>
         <dl class="chiffres">
           <div>
             <dt>{{ t('communautes.chiffres.membres') }}</dt>
@@ -261,7 +263,15 @@ watch(formulaireOuvert, (ouvert) => {
             <dd>{{ communaute.questionsOuvertes }}</dd>
           </div>
         </dl>
-        <JIllustration nom="question" class="contexte__illustration" />
+        <JBouton
+          v-if="communaute.membre && vue === 'salon'"
+          variante="secondaire"
+          data-test="quitter"
+          :occupe="adhesionEnCours"
+          @click="basculerAdhesion"
+        >
+          {{ t('communautes.quitter') }}
+        </JBouton>
         <h3>{{ t('communautes.fonctionnement.titre') }}</h3>
         <ol class="etapes">
           <li>{{ t('communautes.fonctionnement.poser') }}</li>
@@ -274,59 +284,52 @@ watch(formulaireOuvert, (ouvert) => {
 </template>
 
 <style scoped>
-/* Bannière : une couverture douce (une trame de points sur le bleu clair de la charte), pas d'aplat criard. */
-.banniere { overflow: hidden; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--ombre-carte); }
-.banniere__couverture {
-  height: 96px; --motif-opacite: 0.32;
-  background: linear-gradient(120deg, color-mix(in srgb, var(--action) 30%, var(--action-soft)), var(--action-soft) 70%);
-}
-.banniere--antenne .banniere__couverture { --motif-couleur: var(--ink); --motif-opacite: 0.18; background: var(--surface-raised); }
-.banniere__corps { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-3) var(--space-4); padding: var(--space-3) var(--space-6) 0; }
-.banniere__monogramme {
-  position: relative; margin-top: -44px;
-  display: grid; place-items: center; width: 72px; height: 72px; flex-shrink: 0;
-  border-radius: var(--radius-lg); border: 4px solid var(--surface);
-  background: var(--action); color: var(--on-action);
-  font-family: var(--font-display); font-weight: 700; font-size: 1.625rem; letter-spacing: -0.5px;
-}
-.banniere--antenne .banniere__monogramme { background: var(--ink); color: var(--bg); }
-.banniere__texte { flex: 1 1 14rem; min-width: 0; padding-bottom: var(--space-1); }
-.banniere h1 { margin: 0; font-size: clamp(1.5rem, 3vw, 1.75rem); line-height: 1.15; letter-spacing: -0.5px; }
-.banniere__meta { margin: 0; color: var(--ink-muted); font-size: var(--type-body-sm-size); }
-.banniere__description { margin: var(--space-3) 0 0; padding: 0 var(--space-6) var(--space-6); color: var(--ink-muted); }
+.attente { padding: var(--space-6); }
+.etat-vide { margin: var(--space-6); }
 
-/* Le fil : un seul panneau, des lignes de séparation, comme un fil d'actualité. */
-.flux { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--ombre-carte); overflow: hidden; }
-.compositeur { display: flex; gap: var(--space-3); align-items: center; padding: var(--space-4) var(--space-6); }
+/* L'en-tête d'une vue : le même que celui d'un salon, pour que le forum en soit un aussi. */
+.tete-vue {
+  position: sticky; top: 0; z-index: 1;
+  display: flex; align-items: center; gap: var(--space-3); min-height: 56px; padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--line); background: var(--surface);
+}
+.tete-vue__nom { display: flex; align-items: center; gap: var(--space-2); margin: 0; flex-shrink: 0; font-size: 1.0625rem; font-family: var(--font-text); font-weight: 700; }
+.tete-vue__nom svg { color: var(--ink-muted); }
+.tete-vue__sujet {
+  margin: 0; flex: 1; min-width: 0; padding-inline-start: var(--space-3); border-inline-start: 1px solid var(--line);
+  color: var(--ink-muted); font-size: var(--type-body-sm-size); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.compositeur { display: flex; gap: var(--space-3); align-items: center; padding: var(--space-4); }
 .compositeur__invite {
   flex: 1; min-height: 44px; text-align: start; padding: 0 var(--space-4);
-  background: var(--surface-raised); border: 1px solid transparent; border-radius: var(--radius-pill);
-  color: var(--ink-muted); cursor: text;
-  transition: border-color var(--motion-fast) var(--ease-out), background var(--motion-fast) var(--ease-out);
+  background: var(--surface-raised); border: 1px solid transparent; border-radius: var(--radius-md);
+  color: var(--ink-muted); font: inherit; cursor: text;
+  transition: border-color var(--motion-fast) var(--ease-out);
 }
 .compositeur__invite:hover { border-color: var(--line-strong); }
-.compositeur--ouvert { display: grid; gap: var(--space-4); align-items: stretch; padding: var(--space-6); background: color-mix(in srgb, var(--action-soft) 45%, var(--surface)); }
+.compositeur--ouvert { display: grid; gap: var(--space-4); align-items: stretch; padding: var(--space-6) var(--space-4); background: color-mix(in srgb, var(--action-soft) 45%, var(--surface)); }
 .compositeur__tete { display: flex; gap: var(--space-3); align-items: center; flex-wrap: wrap; }
 .compositeur__commandes { display: flex; gap: var(--space-2); justify-content: flex-end; }
-.compositeur--rejoindre { justify-content: space-between; flex-wrap: wrap; background: var(--action-soft); }
+.compositeur--rejoindre { justify-content: space-between; flex-wrap: wrap; margin: var(--space-4); border-radius: var(--radius-md); background: var(--action-soft); }
 .compositeur--rejoindre p { margin: 0; font-weight: 600; }
 .erreur { color: var(--danger); font-weight: 600; margin: 0; }
 
-.flux__onglets { padding: 0 var(--space-6); border-top: 1px solid var(--line); }
+.flux__onglets { padding: 0 var(--space-4); border-top: 1px solid var(--line); }
 .flux__squelette { padding: var(--space-4); }
 .flux__squelette :deep(.j-squelette__bloc) { border: 0; padding: var(--space-4); }
 .flux__vide { display: grid; justify-items: center; gap: var(--space-3); padding: var(--space-8) var(--space-6) var(--space-12); text-align: center; color: var(--ink-muted); }
 .flux__vide p { margin: 0; }
 .flux__vide .j-illustration { width: 14rem; }
 
-.fils { list-style: none; margin: 0; padding: 0; }
+.fils { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
 .fil {
   position: relative; display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: var(--space-3);
-  padding: var(--space-4) var(--space-6);
+  padding: var(--space-4);
   transition: background var(--motion-fast) var(--ease-out);
 }
 .fil + .fil { border-top: 1px solid var(--line); }
-.fil:hover { background: color-mix(in srgb, var(--surface-raised) 60%, transparent); }
+.fil:hover { background: color-mix(in srgb, var(--ink) 3%, transparent); }
 .fil:has(:focus-visible) { outline: 2px solid var(--focus); outline-offset: -2px; }
 .fil__corps { display: grid; gap: var(--space-1); min-width: 0; }
 .fil__meta { margin: 0; display: flex; flex-wrap: wrap; gap: 0 var(--space-2); align-items: baseline; font-size: var(--type-body-sm-size); }
@@ -343,20 +346,20 @@ watch(formulaireOuvert, (ouvert) => {
 
 /* Les discussions arrivent une à une, très vite (rien si le mouvement est réduit). */
 .fil-enter-active { transition: opacity var(--motion-base) var(--ease-out), transform var(--motion-base) var(--ease-out); transition-delay: calc(var(--rang) * 30ms); }
-.fil-enter-from { opacity: 0; transform: translateY(8px); }
-.fil-leave-active { transition: opacity var(--motion-fast) var(--ease-out); position: absolute; width: 100%; }
-.fil-leave-to { opacity: 0; }
-.fil-move { transition: transform var(--motion-base) var(--ease-out); }
+.fil-enter-from { opacity: 0; transform: translateY(6px); }
+@media (prefers-reduced-motion: reduce) { .fil-enter-active { transition: none; } }
 
-
-.contexte { display: grid; gap: var(--space-3); padding: var(--space-6); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--ombre-carte); }
+.contexte { display: grid; gap: var(--space-3); }
 .contexte h2 { margin: 0; font-size: 1rem; }
-.contexte h3 { margin: 0; font-size: 1rem; }
-.contexte__illustration { margin: var(--space-3) calc(-1 * var(--space-2)) 0; padding-top: var(--space-4); border-top: 1px solid var(--line); }
-.chiffres { display: flex; gap: var(--space-6); margin: 0; }
-.chiffres div { display: flex; flex-direction: column-reverse; }
-.chiffres dt { color: var(--ink-muted); font-size: var(--type-body-sm-size); }
-.chiffres dd { margin: 0; font-family: var(--font-display); font-size: 1.625rem; font-weight: 700; line-height: 1.15; font-variant-numeric: tabular-nums; }
-.etapes { margin: 0; padding-inline-start: 1.25rem; display: grid; gap: var(--space-2); color: var(--ink-muted); font-size: var(--type-body-sm-size); }
-.etapes ::marker { color: var(--ink-muted); font-weight: 700; }
+.contexte h3 { margin: var(--space-2) 0 0; font-size: 0.9375rem; }
+.contexte__description { margin: 0; color: var(--ink-muted); font-size: var(--type-body-sm-size); }
+.chiffres { margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); }
+.chiffres div { padding: var(--space-3); border-radius: var(--radius-md); background: var(--surface-raised); }
+.chiffres dt { color: var(--ink-muted); font-size: 0.75rem; }
+.chiffres dd { margin: 0; font-family: var(--font-display); font-size: 1.375rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.etapes { margin: 0; padding-inline-start: var(--space-4); display: grid; gap: var(--space-2); color: var(--ink-muted); font-size: var(--type-body-sm-size); }
+
+@media (max-width: 760px) {
+  .tete-vue__sujet { display: none; }
+}
 </style>

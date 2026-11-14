@@ -409,18 +409,26 @@
       "fil": "Community feed"
     },
     "salons": {
-      "vues": "What you want to see",
-      "fil": "Questions and discussions",
       "titre": "Live channels",
       "liste": "The community's channels",
       "appel": "Join the call",
       "nouvelOnglet": "(new tab)",
-      "vide": "Nobody has written in #{salon} yet. Start the conversation.",
       "coupe": "Connection lost. New messages will arrive as soon as it is back.",
       "ecrireDans": "Write in #{salon}",
       "envoyer": "Send",
       "trop": "You are writing very fast: wait a minute before the next message.",
-      "rejoindre": "Join the community to write here and join the call."
+      "rejoindre": "Join the community to write here and join the call.",
+      "questions": "questions",
+      "questionsSujet": "Ask your question: the AI suggests an answer, a member checks it.",
+      "entraide": "Help",
+      "nouveaux": "New messages",
+      "enLigne": "Online",
+      "aujourdhui": "Today",
+      "hier": "Yesterday",
+      "bienvenue": "Welcome to #{salon}",
+      "debut": "This is the start of the #{salon} channel.",
+      "nouveauxMessages": "{n} new message | {n} new messages",
+      "aideClavier": "Enter to send, Shift + Enter for a new line"
     }
   },
   "question": {
