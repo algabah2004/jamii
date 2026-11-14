@@ -44,7 +44,7 @@ describe('Communautés', () => {
   it('le filtre « questions sans réponse acceptée » reste dans l’adresse', async () => {
     const { page, routeur } = await ouvrir('/communautes/flutter')
     expect(page.findAll('[data-test="publications"] > li')).toHaveLength(4)
-    await page.findAll('.filtres button')[1]!.trigger('click')
+    await page.findAll('.flux__onglets button')[1]!.trigger('click')
     await vi.waitFor(() => expect(page.findAll('[data-test="publications"] > li')).toHaveLength(2))
     expect(routeur.currentRoute.value.query.filtre).toBe('ouvertes')
   })

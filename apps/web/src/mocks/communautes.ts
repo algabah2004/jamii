@@ -87,9 +87,34 @@ function etatInitial(): Etat {
 
 let etat = etatInitial()
 
+// Les salons (#155) : les mêmes trois dans chaque communauté, et quelques messages pour la démo.
+type MessageSalon = components['schemas']['MessageSalon']
+const SALONS = [
+  { slug: 'general', nom: 'général', sujet: 'Se présenter et parler de tout.' },
+  { slug: 'entraide', nom: 'entraide', sujet: "Une question rapide, un blocage : quelqu'un t'aide." },
+  { slug: 'projets', nom: 'projets', sujet: "Montrer ce qu'on construit et trouver des coéquipiers." },
+]
+let numeroSalon = 0
+const message = (auteur: Personne, texte: string, minutes: number): MessageSalon => ({
+  id: crypto.randomUUID(), numero: ++numeroSalon, auteur, texte, envoyeLe: new Date(Date.now() - minutes * 60_000).toISOString(),
+})
+function messagesInitiaux(): Map<string, MessageSalon[]> {
+  numeroSalon = 0
+  return new Map([
+    ['flutter/entraide', [
+      message(WANJIRU, "Quelqu'un a déjà gardé des commandes hors ligne avec Flutter ? Mes clients à Nakuru perdent le réseau.", 42),
+      message(KOFFI, 'Hive marche bien pour ça. Je synchronise quand le réseau revient, avec un horodatage par commande.', 38),
+      message(CHIDI, "Pareil, et j'affiche « En attente d'envoi » sur chaque commande, les vendeurs sont rassurés.", 31),
+    ]],
+    ['flutter/general', [message(AYA, "Bonjour à tous, je suis Aya, d'Abidjan. Je cherche une équipe pour un projet de santé.", 120)]],
+  ])
+}
+let messagesSalons = messagesInitiaux()
+
 /** Pour les tests : repart des données de démo. */
 export function reinitialiserCommunautes() {
   etat = etatInitial()
+  messagesSalons = messagesInitiaux()
 }
 
 function questionsOuvertes(slug: string) {
@@ -175,6 +200,35 @@ export const handlersCommunautes = [
     }
     etat.publications.push(p)
     return HttpResponse.json(sansInterne(p), { status: 201, headers: { Location: `/api/publications/${p.id}` } })
+  }),
+
+  http.get('/api/communautes/:slug/salons', ({ params }) => {
+    const c = etat.communautes.find((x) => x.slug === params.slug)
+    if (!c) return erreur(404, 'introuvable')
+    const elements = SALONS.map((s, i) => ({
+      id: `5a1005${String(i).padStart(2, '0')}-0000-4000-8000-${c.id.slice(-12)}`, ...s,
+      appelUrl: c.membre ? `https://meet.jit.si/jamii-${c.slug}-${s.slug}-demo` : null,
+    }))
+    return HttpResponse.json({ elements })
+  }),
+
+  http.get('/api/communautes/:slug/salons/:salon/messages', ({ params, request }) => {
+    if (!etat.communautes.some((x) => x.slug === params.slug) || !SALONS.some((s) => s.slug === params.salon)) return erreur(404, 'introuvable')
+    const apres = Number(new URL(request.url).searchParams.get('apres') ?? -1)
+    const tous = messagesSalons.get(`${params.slug}/${params.salon}`) ?? []
+    return HttpResponse.json({ elements: apres >= 0 ? tous.filter((m) => m.numero > apres) : tous.slice(-50) })
+  }),
+
+  http.post('/api/communautes/:slug/salons/:salon/messages', async ({ params, request }) => {
+    const c = etat.communautes.find((x) => x.slug === params.slug)
+    if (!c || !SALONS.some((s) => s.slug === params.salon)) return erreur(404, 'introuvable')
+    if (!c.membre) return erreur(403, 'pas_membre')
+    const texte = ((await request.json()) as { texte?: string }).texte?.trim() ?? ''
+    if (!texte || texte.length > 2000) return erreur(400, 'validation')
+    const cle = `${params.slug}/${params.salon}`
+    const m = message(AWA, texte, 0)
+    messagesSalons.set(cle, [...(messagesSalons.get(cle) ?? []), m])
+    return HttpResponse.json(m, { status: 201 })
   }),
 
   http.get('/api/publications/:id', ({ params }) => {
