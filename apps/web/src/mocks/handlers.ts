@@ -5,6 +5,7 @@ import { handlersVitrine } from './vitrine'
 import { handlersCommunautes } from './communautes'
 import { handlersProfils } from './profils'
 import { handlersDemandes } from './demandes'
+import { handlersMissions } from './missions'
 import { handlersCercles } from './cercles'
 import { handlersReseau } from './reseau'
 
@@ -85,6 +86,7 @@ export const handlers = [
   ...handlersCommunautes,
   ...handlersProfils,
   ...handlersDemandes,
+  ...handlersMissions,
   ...handlersCercles,
   ...handlersReseau,
   http.get('/api/me', () =>
