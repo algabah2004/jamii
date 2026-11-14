@@ -100,6 +100,24 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('./features/demandes/DemandePage.vue'),
     meta: { connexionRequise: true },
   },
+  // Missions et hackathons (#166, #191) : la liste et le détail sont publics (le serveur décide de ce que chacun
+  // voit) ; publier une mission ou créer un hackathon demande une connexion. `nouvelle`/`nouveau` avant `:id`.
+  { path: '/missions', name: 'missions', component: () => import('./features/missions/MissionsPage.vue') },
+  {
+    path: '/missions/nouvelle',
+    name: 'nouvelle-mission',
+    component: () => import('./features/missions/NouvelleMissionPage.vue'),
+    meta: { connexionRequise: true },
+  },
+  { path: '/missions/:id', name: 'mission', component: () => import('./features/missions/MissionPage.vue') },
+  { path: '/hackathons', name: 'hackathons', component: () => import('./features/hackathons/HackathonsPage.vue') },
+  {
+    path: '/hackathons/nouveau',
+    name: 'nouveau-hackathon',
+    component: () => import('./features/hackathons/NouveauHackathonPage.vue'),
+    meta: { connexionRequise: true },
+  },
+  { path: '/hackathons/:id', name: 'hackathon', component: () => import('./features/hackathons/HackathonPage.vue') },
   {
     // Public : seulement ce que chaque projet montre déjà à tous (contracts/vitrine.yaml).
     path: '/vitrine',

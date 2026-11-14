@@ -26,6 +26,8 @@ watch(etat, (e) => (e === 'connecte' ? suivreActivite() : arreterActivite()), { 
         <RouterLink v-if="etat === 'connecte'" to="/cercles">{{ t('menu.cercles') }}</RouterLink>
         <RouterLink v-if="etat === 'connecte'" to="/communautes">{{ t('menu.communautes') }}</RouterLink>
         <RouterLink v-if="etat === 'connecte'" to="/demandes" :class="{ 'router-link-active': $route.path.startsWith('/demandes') }">{{ t('menu.demandes') }}</RouterLink>
+        <RouterLink to="/missions">{{ t('menu.missions') }}</RouterLink>
+        <RouterLink to="/hackathons">{{ t('menu.hackathons') }}</RouterLink>
         <RouterLink to="/vitrine">{{ t('menu.vitrine') }}</RouterLink>
         <RouterLink to="/systalink" :aria-label="t('menu.systalink')">
           <span class="lien-long" aria-hidden="true">{{ t('menu.systalink') }}</span><span class="lien-court" aria-hidden="true">{{ t('menu.systalinkCourt') }}</span>
@@ -78,6 +80,8 @@ watch(etat, (e) => (e === 'connecte' ? suivreActivite() : arreterActivite()), { 
         <p>{{ t('pied.mission') }}</p>
       </div>
       <nav :aria-label="t('pied.liens')">
+        <RouterLink to="/missions">{{ t('menu.missions') }}</RouterLink>
+        <RouterLink to="/hackathons">{{ t('menu.hackathons') }}</RouterLink>
         <RouterLink to="/vitrine">{{ t('menu.vitrine') }}</RouterLink>
         <RouterLink to="/systalink">{{ t('menu.systalink') }}</RouterLink>
         <RouterLink to="/design-system">{{ t('pied.charte') }}</RouterLink>
