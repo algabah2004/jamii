@@ -275,19 +275,22 @@ class CerclesTest {
 
 	@Test
 	void deux_personnes_qui_visent_la_derniere_place_une_seule_l_obtient() throws Exception {
-		UtilisateurConnecte awa = utilisateur("Awa");
-		String id = creerCercle(awa, 4);
-		for (int i = 0; i < 2; i++) {
-			rejoindre(id, utilisateur("Membre" + i));
+		// Une course ne se gagne pas à chaque fois : on la rejoue sur 10 cercles pour qu'un retour du bug se voie.
+		for (int essai = 0; essai < 10; essai++) {
+			UtilisateurConnecte awa = utilisateur("Awa");
+			String id = creerCercle(awa, 4);
+			for (int i = 0; i < 2; i++) {
+				rejoindre(id, utilisateur("Membre" + i));
+			}
+
+			long reussites = enParallele(List.of(
+					() -> tenter(() -> gestion.rejoindre(UUID.fromString(id), utilisateur("A").id(), Instant.now())),
+					() -> tenter(() -> gestion.rejoindre(UUID.fromString(id), utilisateur("B").id(), Instant.now()))));
+
+			assertThat(reussites).as("essai %d", essai).isEqualTo(1);
+			assertThat(base.sql("SELECT count(*) FROM cercle_membre WHERE cercle_id = :c").param("c", UUID.fromString(id))
+				.query(Long.class).single()).as("essai %d", essai).isEqualTo(4);
 		}
-
-		long reussites = enParallele(List.of(
-				() -> tenter(() -> gestion.rejoindre(UUID.fromString(id), utilisateur("A").id(), Instant.now())),
-				() -> tenter(() -> gestion.rejoindre(UUID.fromString(id), utilisateur("B").id(), Instant.now()))));
-
-		assertThat(reussites).isEqualTo(1);
-		assertThat(base.sql("SELECT count(*) FROM cercle_membre WHERE cercle_id = :c").param("c", UUID.fromString(id))
-			.query(Long.class).single()).isEqualTo(4);
 	}
 
 	@Test
