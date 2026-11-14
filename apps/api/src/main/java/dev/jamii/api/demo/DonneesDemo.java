@@ -101,6 +101,7 @@ class DonneesDemo implements ApplicationRunner {
 			abidjan(maintenant);
 			nairobi(maintenant);
 			new DemoHackathonMission(base, maintenant).charger();
+			new DemoCommunautes(base, maintenant).charger();
 			return true;
 		});
 		journal.info(Boolean.TRUE.equals(charge) ? "Données de démo chargées (profil demo)" : "Données de démo déjà présentes");
