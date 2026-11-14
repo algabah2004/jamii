@@ -409,18 +409,26 @@
       "fil": "Fil de la communauté"
     },
     "salons": {
-      "vues": "Ce que tu veux voir",
-      "fil": "Questions et discussions",
       "titre": "Salons en direct",
       "liste": "Les salons de la communauté",
       "appel": "Rejoindre l'appel",
       "nouvelOnglet": "(nouvel onglet)",
-      "vide": "Personne n'a encore écrit dans #{salon}. Lance la conversation.",
       "coupe": "Connexion perdue. Les nouveaux messages arriveront dès qu'elle revient.",
       "ecrireDans": "Écrire dans #{salon}",
       "envoyer": "Envoyer",
       "trop": "Tu écris très vite : attends une minute avant le prochain message.",
-      "rejoindre": "Rejoins la communauté pour écrire ici et rejoindre l'appel."
+      "rejoindre": "Rejoins la communauté pour écrire ici et rejoindre l'appel.",
+      "questions": "questions",
+      "questionsSujet": "Pose ta question : l'IA propose une réponse, un membre la vérifie.",
+      "entraide": "Entraide",
+      "nouveaux": "Nouveaux messages",
+      "enLigne": "En ligne",
+      "aujourdhui": "Aujourd'hui",
+      "hier": "Hier",
+      "bienvenue": "Bienvenue dans #{salon}",
+      "debut": "C'est le début du salon #{salon}.",
+      "nouveauxMessages": "{n} nouveau message | {n} nouveaux messages",
+      "aideClavier": "Entrée pour envoyer, Maj + Entrée pour aller à la ligne"
     }
   },
   "question": {

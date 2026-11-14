@@ -36,8 +36,8 @@ function etatInitial(): Etat {
     communautes: [
       communaute('flutter', 'Flutter et Dart', 'Applications mobiles qui marchent aussi avec peu de réseau.', 'flutter', null, 214, true),
       communaute('fintech', 'Fintech et paiement mobile', 'Mobile Money, paiements marchands, conformité.', 'fintech', null, 168, false),
-      communaute('ia', 'IA appliquée', 'Des modèles utiles, dans nos langues et sur nos données.', 'ia', null, 131, false),
-      communaute('antenne-dakar', 'Antenne Dakar', 'Les devs de Dakar : rencontres, entraide et projets locaux.', 'antenne', 'SN', 57, false),
+      communaute('ia', 'IA appliquée', 'Des modèles utiles, dans nos langues et sur nos données.', 'ia', null, 131, true),
+      communaute('antenne-dakar', 'Antenne Dakar', 'Les devs de Dakar : rencontres, entraide et projets locaux.', 'antenne', 'SN', 57, true),
     ],
     publications: [
       {
@@ -106,7 +106,31 @@ function messagesInitiaux(): Map<string, MessageSalon[]> {
       message(KOFFI, 'Hive marche bien pour ça. Je synchronise quand le réseau revient, avec un horodatage par commande.', 38),
       message(CHIDI, "Pareil, et j'affiche « En attente d'envoi » sur chaque commande, les vendeurs sont rassurés.", 31),
     ]],
-    ['flutter/general', [message(AYA, "Bonjour à tous, je suis Aya, d'Abidjan. Je cherche une équipe pour un projet de santé.", 120)]],
+    ['flutter/general', [
+      message(AYA, "Bonjour à tous, je suis Aya, d'Abidjan. Je cherche une équipe pour une appli de rendez-vous médicaux.", 26 * 60),
+      message(KOFFI, 'Bienvenue Aya ! Passe dans #projets, il y a souvent des cercles qui cherchent du monde.', 25 * 60 + 50),
+      message(AYA, 'Merci Koffi, je regarde ça ce soir.', 25 * 60 + 45),
+      message(FATOU, "Petit rappel : l'atelier Flutter de l'antenne de Dakar a lieu samedi à 10 h (lieu dans #général).", 95),
+      message(WANJIRU, "Je le suivrai à distance depuis Nairobi si quelqu'un lance l'appel du salon.", 80),
+      message(FATOU, "Oui, je l'ouvre ici même, bouton « Rejoindre l'appel » en haut.", 78),
+      message(CHIDI, 'Top. Quelqu’un a déjà essayé Flutter 4 en production ?', 12),
+    ]],
+    ['flutter/projets', [
+      message(KOFFI, "Je montre mon carnet de livraison hors ligne, pour les boutiques d'Abidjan. Retours bienvenus !", 30 * 60),
+      message(WANJIRU, "Très propre. La synchro à la reconnexion, tu la fais comment ?", 29 * 60 + 40),
+      message(KOFFI, 'Une file de changements en attente, rejouée dans l’ordre quand le réseau revient.', 29 * 60 + 30),
+      message(AWA, 'Une PME de Thiès cherche deux devs Flutter pour une appli de commandes. Qui est dispo ?', 50),
+      message(CHIDI, 'Moi, à partir de lundi. Je suis à Lagos mais je travaille à distance.', 44),
+    ]],
+    ['ia/general', [
+      message(WANJIRU, "Quelqu'un a testé un modèle de reconnaissance vocale en wolof ou en swahili ?", 3 * 60),
+      message(FATOU, 'Pour le wolof, il y a des jeux de données ouverts, mais il faut encore beaucoup nettoyer.', 2 * 60 + 40),
+      message(KOFFI, "Je prépare un petit benchmark, je le partage ici dès qu'il est prêt.", 35),
+    ]],
+    ['antenne-dakar/general', [
+      message(FATOU, 'Rencontre de l’antenne jeudi 19 h, lieu annoncé la veille. On parle déploiement sur Systalink.', 4 * 60),
+      message(AWA, 'Je viens, et j’amène deux personnes de mon cercle.', 3 * 60 + 30),
+    ]],
   ])
 }
 let messagesSalons = messagesInitiaux()

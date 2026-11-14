@@ -5,15 +5,19 @@ import { RouterLink } from 'vue-router'
 import { api } from '../../api/client'
 import type { components } from '../../api/generated/communautes'
 import { monogramme } from './communautes'
+import BarreCommunaute from './BarreCommunaute.vue'
 
 type Communaute = components['schemas']['Communaute']
 
 /**
- * Le cadre de l'espace communautés, comme un réseau social : à gauche les communautés dont on fait
- * partie (on passe de l'une à l'autre en un clic), au centre le fil, à droite le contexte.
- * Sur téléphone, les communautés deviennent une rangée de pastilles qui défile, et le contexte passe sous le fil.
+ * Le cadre de l'espace communautés, comme une messagerie d'équipe :
+ * - la barre d'icônes de mes communautés (on passe de l'une à l'autre en un clic) ;
+ * - la barre de la communauté ouverte : ses salons et son forum de questions ;
+ * - au centre, la conversation, sur toute la hauteur ;
+ * - à droite, le contexte, seulement sur grand écran.
+ * Sur téléphone, tout passe en une colonne : les icônes, puis les salons, en rangées qui défilent.
  */
-const props = defineProps<{ actuelle?: string }>()
+const props = defineProps<{ actuelle?: string; actif?: string; communaute?: Communaute | null }>()
 const { t } = useI18n()
 
 const communautes = ref<Communaute[]>([])
@@ -22,7 +26,7 @@ async function charger() {
     const { data } = await api.GET('/api/communautes', { params: { query: { limite: 50 } } })
     communautes.value = data?.elements ?? []
   } catch {
-    // La colonne de gauche est un raccourci : si elle ne charge pas, le fil reste utilisable.
+    // La barre d'icônes est un raccourci : si elle ne charge pas, la conversation reste utilisable.
     communautes.value = []
   }
 }
@@ -32,70 +36,91 @@ const miennes = computed(() => communautes.value.filter((c) => c.membre || c.slu
 </script>
 
 <template>
-  <div class="espace">
-    <nav class="espace__communautes" :aria-label="t('communautes.espace.mesCommunautes')">
-      <p class="espace__titre">{{ t('communautes.espace.mesCommunautes') }}</p>
+  <div class="espace" :class="{ 'espace--barre': actuelle, 'espace--contexte': $slots.contexte }">
+    <nav class="rail" :aria-label="t('communautes.espace.mesCommunautes')">
       <ul>
         <li v-for="c in miennes" :key="c.id">
-          <RouterLink :to="`/communautes/${c.slug}`" :aria-current="c.slug === actuelle ? 'page' : undefined" class="raccourci">
-            <span class="raccourci__monogramme" :class="{ 'raccourci__monogramme--antenne': c.pays }" aria-hidden="true">{{ monogramme(c.nom) }}</span>
-            <span class="raccourci__nom">{{ c.nom }}</span>
+          <RouterLink
+            :to="`/communautes/${c.slug}`"
+            class="rail__icone"
+            :class="{ 'rail__icone--antenne': c.pays }"
+            :aria-current="c.slug === actuelle ? 'page' : undefined"
+            :aria-label="c.nom"
+            :title="c.nom"
+            data-test="rail-communaute"
+          >
+            {{ monogramme(c.nom) }}
           </RouterLink>
         </li>
+        <li class="rail__separateur" aria-hidden="true" />
         <li>
-          <RouterLink to="/communautes" class="raccourci raccourci--toutes">
-            <span class="raccourci__monogramme" aria-hidden="true">＋</span>
-            <span class="raccourci__nom">{{ t('communautes.espace.decouvrir') }}</span>
+          <RouterLink to="/communautes" class="rail__icone rail__icone--ajouter" :aria-label="t('communautes.espace.decouvrir')" :title="t('communautes.espace.decouvrir')">
+            <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
           </RouterLink>
         </li>
       </ul>
     </nav>
 
-    <div class="espace__fil"><slot /></div>
+    <BarreCommunaute v-if="actuelle" :slug="actuelle" :actif="actif ?? 'questions'" :communaute="communaute" class="espace__barre" />
+
+    <div class="espace__principal"><slot /></div>
     <aside v-if="$slots.contexte" class="espace__contexte"><slot name="contexte" /></aside>
   </div>
 </template>
 
 <style scoped>
-.espace { display: grid; gap: var(--space-6); grid-template-columns: 13.5rem minmax(0, 1fr) 17rem; align-items: start; }
-.espace__fil { min-width: 0; display: grid; gap: var(--space-4); }
-.espace__communautes, .espace__contexte { position: sticky; top: calc(64px + var(--space-6)); display: grid; gap: var(--space-4); min-width: 0; }
-.espace__communautes li { min-width: 0; }
-
-.espace__titre { margin: 0 0 var(--space-2); padding-inline: var(--space-3); color: var(--ink-muted); font-size: var(--type-body-sm-size); font-weight: 600; }
-.espace__communautes ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
-.raccourci {
-  min-width: 0;
-  display: flex; align-items: center; gap: var(--space-3);
-  padding: var(--space-2) var(--space-3); border-radius: var(--radius-md);
-  color: var(--ink); text-decoration: none; font-weight: 600; font-size: var(--type-body-sm-size);
-  transition: background var(--motion-fast) var(--ease-out);
+/* Un seul panneau, découpé en colonnes par de fines lignes : une application, pas une pile de cartes. */
+.espace {
+  display: grid; grid-template-columns: 4.5rem minmax(0, 1fr);
+  height: max(34rem, calc(100dvh - 9rem));
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg);
+  box-shadow: var(--ombre-carte); overflow: hidden;
 }
-.raccourci:hover { background: var(--surface-raised); }
-.raccourci[aria-current='page'] { background: var(--action-soft); }
-.raccourci__monogramme {
-  flex-shrink: 0; display: grid; place-items: center; width: 32px; height: 32px;
-  border-radius: var(--radius-sm); background: var(--action-soft); color: var(--action-ink);
-  font-family: var(--font-display); font-weight: 700; font-size: 0.8125rem;
-}
-.raccourci[aria-current='page'] .raccourci__monogramme { background: var(--action); color: var(--on-action); }
-.raccourci__monogramme--antenne { background: var(--surface-raised); color: var(--ink); }
-.raccourci--toutes { color: var(--ink-muted); }
-.raccourci--toutes .raccourci__monogramme { background: transparent; border: 1px dashed var(--line-strong); color: var(--ink-muted); }
-.raccourci__nom { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.espace--barre { grid-template-columns: 4.5rem 15.5rem minmax(0, 1fr); }
+.espace--barre.espace--contexte { grid-template-columns: 4.5rem 15.5rem minmax(0, 1fr) 17rem; }
+.espace > * { min-width: 0; min-height: 0; }
 
-@media (max-width: 1080px) {
-  .espace { grid-template-columns: 12rem minmax(0, 1fr); }
-  .espace__contexte { grid-column: 2; position: static; }
+.rail { background: var(--surface-raised); border-inline-end: 1px solid var(--line); overflow-y: auto; scrollbar-width: none; }
+.rail ul { list-style: none; margin: 0; padding: var(--space-3) 0; display: grid; justify-items: center; gap: var(--space-2); }
+.rail__icone {
+  position: relative; display: grid; place-items: center; width: 44px; height: 44px;
+  border-radius: 50%; background: var(--surface); color: var(--ink);
+  font-family: var(--font-display); font-weight: 700; font-size: 0.875rem; text-decoration: none;
+  transition: border-radius var(--motion-fast) var(--ease-out), background var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out);
+}
+.rail__icone:hover, .rail__icone[aria-current='page'] { border-radius: 14px; background: var(--action); color: var(--on-action); }
+.rail__icone--antenne { background: var(--ink); color: var(--bg); }
+/* Le repère de la communauté ouverte : une petite barre sur le bord. */
+.rail__icone::before {
+  content: ''; position: absolute; inset-inline-start: -14px; width: 4px; height: 0; border-radius: 0 4px 4px 0;
+  background: var(--ink); transition: height var(--motion-fast) var(--ease-out);
+}
+.rail__icone:hover::before { height: 16px; }
+.rail__icone[aria-current='page']::before { height: 32px; }
+.rail__icone:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.rail__icone--ajouter { background: transparent; border: 1px dashed var(--line-strong); color: var(--ink-muted); }
+.rail__icone--ajouter:hover { border-style: solid; border-color: var(--action); background: var(--action-soft); color: var(--action-ink); }
+.rail__separateur { width: 24px; height: 2px; border-radius: 2px; background: var(--line); }
+
+.espace__barre { border-inline-end: 1px solid var(--line); }
+.espace__principal { display: flex; flex-direction: column; overflow-y: auto; }
+.espace__contexte { border-inline-start: 1px solid var(--line); overflow-y: auto; padding: var(--space-4); }
+
+@media (max-width: 1280px) {
+  .espace--barre.espace--contexte { grid-template-columns: 4.5rem 15.5rem minmax(0, 1fr); }
+  .espace__contexte { display: none; }
 }
 @media (max-width: 760px) {
-  .espace { grid-template-columns: 1fr; gap: var(--space-4); }
-  .espace__contexte { grid-column: auto; }
-  .espace__communautes { position: static; }
-  .espace__titre { display: none; }
-  /* Sur téléphone : une rangée de pastilles qui défile, comme des « stories ». */
-  .espace__communautes ul { display: flex; gap: var(--space-2); overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
-  .raccourci { flex-shrink: 0; border: 1px solid var(--line); border-radius: var(--radius-pill); padding: var(--space-1) var(--space-3) var(--space-1) var(--space-1); }
-  .raccourci__monogramme { width: 28px; height: 28px; border-radius: var(--radius-pill); }
+  /* Téléphone : une colonne. Les icônes et les salons deviennent des rangées qui défilent. */
+  .espace, .espace--barre, .espace--barre.espace--contexte {
+    grid-template-columns: 1fr; grid-template-rows: auto auto minmax(0, 1fr);
+    height: max(30rem, calc(100dvh - 7rem)); border-radius: var(--radius-md);
+  }
+  .rail { border-inline-end: 0; border-bottom: 1px solid var(--line); }
+  .rail ul { display: flex; padding: var(--space-2) var(--space-3); overflow-x: auto; scrollbar-width: none; }
+  .rail__icone { width: 38px; height: 38px; flex-shrink: 0; }
+  .rail__icone::before { display: none; }
+  .rail__separateur { width: 2px; height: 24px; flex-shrink: 0; }
+  .espace__barre { border-inline-end: 0; border-bottom: 1px solid var(--line); }
 }
 </style>
