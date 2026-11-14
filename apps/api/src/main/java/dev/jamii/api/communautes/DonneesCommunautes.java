@@ -15,8 +15,9 @@ import dev.jamii.api.auth.DonneesPersonnelles;
 
 /**
  * Les communautés d'un compte dans l'export (#114) : ses adhésions, ses publications, ses réponses, et les réponses
- * de l'IA qu'il a validées. Rien de plus à faire à la suppression (V9__communautes.sql) : les adhésions partent en
- * cascade, les publications et les réponses restent sans auteur pour que les fils des autres restent lisibles.
+ * de l'IA qu'il a validées, ses messages dans les salons. Rien de plus à faire à la suppression (V9__communautes.sql) : les adhésions partent en
+ * cascade, les publications et les réponses restent sans auteur pour que les fils des autres restent lisibles, les
+ * messages des salons partent avec le compte.
  */
 @Component
 class DonneesCommunautes implements DonneesPersonnelles {
@@ -36,8 +37,12 @@ class DonneesCommunautes implements DonneesPersonnelles {
 	record Validation(UUID reponseId, UUID publicationId) {
 	}
 
+	/** Ses messages dans les salons (#155). */
+	record MessageSalon(UUID id, String communaute, String salon, String texte, Instant envoyeLe) {
+	}
+
 	record Section(List<Adhesion> adhesions, List<Publication> publications, List<Reponse> reponses,
-			List<Validation> validations) {
+			List<Validation> validations, List<MessageSalon> messagesSalons) {
 	}
 
 	private final JdbcClient base;
@@ -93,7 +98,17 @@ class DonneesCommunautes implements DonneesPersonnelles {
 			.param("u", utilisateurId)
 			.query((rs, n) -> new Validation(rs.getObject("id", UUID.class), rs.getObject("publication_id", UUID.class)))
 			.list();
-		return new Section(adhesions, publications, reponses, validations);
+		List<MessageSalon> messages = base.sql("""
+				SELECT m.id, c.slug AS communaute, s.slug AS salon, m.texte, m.envoye_le
+				FROM message_salon m JOIN salon s ON s.id = m.salon_id JOIN communaute c ON c.id = s.communaute_id
+				WHERE m.auteur_id = :u
+				ORDER BY m.numero
+				""")
+			.param("u", utilisateurId)
+			.query((rs, n) -> new MessageSalon(rs.getObject("id", UUID.class), rs.getString("communaute"), rs.getString("salon"),
+					rs.getString("texte"), instant(rs, "envoye_le")))
+			.list();
+		return new Section(adhesions, publications, reponses, validations, messages);
 	}
 
 	private static Instant instant(ResultSet rs, String colonne) throws SQLException {
