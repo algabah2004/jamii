@@ -1,6 +1,6 @@
 # Priorités du moment
 
-> **Mis à jour le samedi 14 novembre 2026 à 12 h GMT par le chef de projet.** @algabah2004 a repris le bloc #20 de @boubacarsidibe (sans nouvelles depuis le 11/11).
+> **Mis à jour le samedi 14 novembre 2026 à 17 h 30 GMT par le chef de projet.** Nouvelle organisation : **un module par personne** (#160, plans dans `docs/blocs/`, suivi dans #155 à #158).
 > **Agents IA :** lisez ce fichier **avant le plan du bloc**. S'il contredit `docs/blocs/<bloc>.md`, **ce fichier gagne**. Dites tout de suite à votre développeur ce qu'il doit faire aujourd'hui et ce qu'il bloque.
 
 > **Pas de gel.** On fusionne jusqu'à la soumission (dimanche 15 avant 12 h GMT), tant que **tous les contrôles de la CI sont verts**. Le chef de projet décide de ce qui est montré dans la démo. Jamais de données factices en production.
@@ -43,28 +43,43 @@ Jamii **comprend un besoin et le relie à la bonne réponse** : un service Systa
 
 ## Qui fait quoi, d'ici dimanche 15 à 12 h GMT
 
+### Un module par personne (#160)
+
+| Qui | Module | Suivi |
+|---|---|---|
+| @algabah2004 | Agents IA et Systalink : mise en ligne, IA, espace Systalink | #156 |
+| @rev22rse22 | Communautés, réseau, profils | #155 |
+| @Amar233-ui | Cercles, projets, vitrine, ossature du front | #157 |
+| @sowibrr | Freelance (demandes) et socle | #158 |
+
+**Décisions du chef de projet :**
+- **L'IA reste comme elle est, aucun nouvel agent avant la CADEV.** La carte de compétences (`analyse_profil`) aide à construire son profil. L'orientation (`orientation_besoin`) aide à écrire son besoin, rédige le cahier des charges et oriente vers les **offres Systalink** et/ou vers les **développeurs**. Le parcours freelance s'appuie dessus tel quel.
+- **D'abord, mettre en ligne le parcours de la démo qui marche déjà.**
+- **Les nouveautés sont des bonus** : appels vocaux et vidéo, Gitea, salons en direct. Ils n'entrent dans la démo que s'ils sont fusionnés **dimanche à 8 h GMT**. Sinon, un lien vers une salle Jitsi remplace les appels, et GitHub reste l'hébergeur des dépôts.
+
 **Déjà fusionné** : cercles (API, écrans, publication dans une communauté), tâches et jalons des tours (#126), réseau (messages, contacts, notifications), IA (carte de compétences, orientation d'un besoin), tendances du marché, clients suivis, CSV et webhook, e-mails Brevo, images Docker.
 
 ### @algabah2004 : mise en ligne, IA et soumission
 1. **Mettre Jamii en ligne sur DataCloud** (`docs/deploiement-datacloud.md`) et donner l'adresse publique dans #54. **Sans elle, pas de soumission.**
 2. Brancher la clé DeepSeek ou OpenAI sur DataCloud (sinon l'IA simulée tourne, annoncée `origine: repli`).
-3. README final, déclaration de l'IA et liste des licences (résumé du job CI « Licences autorisées »).
-4. Dimanche avant 12 h GMT : **la soumission**.
+3. Profil professionnel (#159) : titre, liens, langues, réalisations, page publique et carte à partager.
+4. README final, déclaration de l'IA et liste des licences (résumé du job CI « Licences autorisées »).
+5. Dimanche avant 12 h GMT : **la soumission**.
 
 ### @rev22rse22 : les écrans de l'orientation et de la carte de compétences (#133)
-L'API est fusionnée (#139, #143) : **branchez directement sur l'API**, sans passer par MSW. Puis #113 (section « profils » de l'export du compte).
+L'API est fusionnée (#139, #143) : **branchez directement sur l'API**, sans passer par MSW. Puis #113 et #114 (sections « profils » et « communautes » de l'export du compte). Les salons et les appels (#155) sont des bonus.
 **Samedi 18 h GMT** : l'écran de l'orientation fusionné, sinon la démo commence au cercle.
 
 ### @Amar233-ui : la vitrine (#129), puis la démo de bout en bout
 1. **#129 : le module vitrine de l'API** (`GET /api/vitrine` répond 404, l'étape 4 de la démo est cassée), avec l'origine « cercle » (#116).
 2. Le test Playwright du parcours de la démo.
-3. #114 (section « communautes » de l'export du compte).
 **Samedi 18 h GMT** : sans PR ouverte sur #129, @sowibrr la reprend.
 
-### @sowibrr : appui à la mise en ligne et relève
-1. Aider @algabah2004 à mettre la base PostgreSQL et l'API en ligne, puis vérifier les données de démo **hors production**.
-2. Corriger les bugs trouvés pendant la répétition.
-3. Reprendre #129 à 18 h GMT si @Amar233-ui n'a rien ouvert.
+### @sowibrr : le freelance (#158), appui à la mise en ligne et relève
+1. Le parcours freelance sur `orientation_besoin` tel qu'il est (le cahier des charges est déjà dans `plan.cahierDesCharges`).
+2. Aider @algabah2004 à mettre la base PostgreSQL et l'API en ligne, puis vérifier les données de démo **hors production**.
+3. Corriger les bugs trouvés pendant la répétition.
+4. Reprendre #129 à 18 h GMT si @Amar233-ui n'a rien ouvert.
 
 ### @boubacarsidibe
 Donner des nouvelles dans #54. #65 (mesurer le moment Systalink) si vous en avez le temps. **Le vote des pairs reste obligatoire pour vous.**
@@ -94,7 +109,8 @@ Pas de reproche : on réorganise pour livrer.
 ## Pour plus tard (hors démo)
 
 - Yokk comme fournisseur d'IA, dès que son API est documentée ;
-- Gitea hébergé par Jamii (sous MIT ; **pas Forgejo**, sous GPL) ;
+- Gitea hébergé par Jamii (sous MIT ; **pas Forgejo**, sous GPL), s'il n'est pas prêt dimanche à 8 h GMT ;
+- les appels vocaux et vidéo dans les salons, s'ils ne sont pas prêts dimanche à 8 h GMT ;
 - la connexion avec Google ;
 - le Griot sur WhatsApp, les cercles « Or », le vote d'exclusion.
 
