@@ -8,6 +8,7 @@ export type NouveauHackathon = S['NouveauHackathon']
 export type Inscription = S['Inscription']
 export type Equipe = S['Equipe']
 export type Rendu = S['Rendu']
+export type Jure = S['Jure']
 export type NouveauRendu = S['NouveauRendu']
 
 // Données de démo (contracts/hackathons.yaml) : jamais de vraies données personnelles.
@@ -70,6 +71,15 @@ const hackathons = new Map<string, Hackathon>()
 const inscriptions = new Map<string, Inscription[]>()
 const equipes = new Map<string, Equipe[]>()
 const rendus = new Map<string, Rendu>()
+const jures = new Map<string, Jure[]>()
+/** Les scores pondérés donnés par Kofi, juré dans les maquettes, rendu par rendu. */
+const scores = new Map<string, number>()
+const PERSONNES = [AWA, KOFI, FATOU, MOUSSA]
+
+/** Pour un test : déposer le rendu d'une équipe, comme si elle l'avait rendu pendant le hackathon. */
+export function deposerRendu(rendu: Rendu) {
+  rendus.set(rendu.equipeId, rendu)
+}
 
 /** Deux participants seuls, qui cherchent une équipe : de quoi montrer « Je cherche une équipe ». */
 function seulDemo(personne: typeof FATOU, competences: string[]): Inscription {
@@ -81,6 +91,8 @@ export function reinitialiserHackathons() {
   inscriptions.clear()
   equipes.clear()
   rendus.clear()
+  jures.clear()
+  scores.clear()
   const h = hackathonDemo()
   hackathons.set(h.id, h)
   inscriptions.set(h.id, [seulDemo(FATOU, ['flutter', 'ux-design']), seulDemo(MOUSSA, ['spring'])])
@@ -241,5 +253,46 @@ export const handlersHackathons = [
     }
     rendus.set(rendu.equipeId, rendu)
     return HttpResponse.json(rendu, { status: avant ? 200 : 201 })
+  }),
+
+  http.get('/api/hackathons/:id/jures', ({ params }) => HttpResponse.json(jures.get(String(params.id)) ?? [])),
+
+  http.post('/api/hackathons/:id/jures', async ({ params, request }) => {
+    const h = hackathons.get(String(params.id))
+    if (!h) return erreur(404, 'introuvable')
+    const { utilisateurId, groupe } = (await request.json()) as { utilisateurId: string; groupe: string | null }
+    const personne = PERSONNES.find((p) => p.id === utilisateurId)
+    if (!personne) return HttpResponse.json({ code: 'validation', erreurs: [{ champ: 'utilisateurId', code: 'inconnu' }] }, { status: 400 })
+    const jure: Jure = { personne, groupe, rendusNotes: 0, rendusATraiter: rendus.size }
+    jures.set(h.id, [...(jures.get(h.id) ?? []).filter((j) => j.personne.id !== personne.id), jure])
+    return HttpResponse.json(jure, { status: 201 })
+  }),
+
+  http.get('/api/hackathons/:id/rendus', () => HttpResponse.json({ elements: [...rendus.values()], curseurSuivant: null })),
+
+  http.put('/api/hackathons/:id/rendus/:renduId/notes', async ({ params, request }) => {
+    const h = hackathons.get(String(params.id))
+    if (!h) return erreur(404, 'introuvable')
+    if (h.statut !== 'evaluation') return erreur(409, 'etat_invalide')
+    const corps = (await request.json()) as { notes: { critereId: string; valeur: number }[]; commentaire: string | null }
+    if (h.criteres.some((c) => !corps.notes.some((n) => n.critereId === c.id))) return erreur(400, 'validation')
+    const poids = h.criteres.reduce((somme, c) => somme + c.poids, 0)
+    const total = h.criteres.reduce((somme, c) => somme + c.poids * corps.notes.find((n) => n.critereId === c.id)!.valeur, 0)
+    const scorePondere = Math.round((total / poids) * 100) / 100
+    scores.set(String(params.renduId), scorePondere)
+    return HttpResponse.json({ renduId: String(params.renduId), notes: corps.notes, commentaire: corps.commentaire, scorePondere })
+  }),
+
+  http.get('/api/hackathons/:id/notation', ({ params }) => {
+    const classes = [...scores.entries()].sort((a, b) => b[1] - a[1])
+    const classement = classes.map(([renduId, scorePondere]) => ({
+      equipeId: [...rendus.values()].find((r) => r.id === renduId)?.equipeId ?? renduId,
+      renduId,
+      // Classement « compétition » : les ex aequo partagent le rang, le suivant saute (1, 1, 3).
+      rang: classes.findIndex(([, s]) => s === scorePondere) + 1,
+      scorePondere,
+      nombreDeJures: 1,
+    }))
+    return HttpResponse.json({ jures: jures.get(String(params.id)) ?? [], classement })
   }),
 ]
