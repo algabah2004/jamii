@@ -6,6 +6,7 @@ import { handlersCommunautes } from './communautes'
 import { handlersProfils } from './profils'
 import { handlersDemandes } from './demandes'
 import { handlersMissions } from './missions'
+import { handlersHackathons } from './hackathons'
 import { handlersCercles } from './cercles'
 import { handlersReseau } from './reseau'
 
@@ -87,6 +88,7 @@ export const handlers = [
   ...handlersProfils,
   ...handlersDemandes,
   ...handlersMissions,
+  ...handlersHackathons,
   ...handlersCercles,
   ...handlersReseau,
   http.get('/api/me', () =>

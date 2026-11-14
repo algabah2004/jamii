@@ -3,7 +3,20 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRouter } from 'vue-router'
 import { JBouton, JChamp, JIllustration } from '../../design-system'
-import { creerDemande, demandeValide, DUREES, LIMITES, listerDemandes, SECTEURS, type DemandeResumee, type NouvelleDemande } from './demandes'
+import {
+  composerDescription,
+  creerDemande,
+  demandeValide,
+  DUREES,
+  LIMITES,
+  listerDemandes,
+  QUESTIONS,
+  SECTEURS,
+  type DemandeResumee,
+  type NouvelleDemande,
+  type Question,
+  type Reponses,
+} from './demandes'
 
 /*
  * « Décris ton besoin » (étape 1 de la démo, /besoin). Écrit pour un commerçant ou un cabinet, pas pour un
@@ -21,7 +34,23 @@ const dateCourte = (iso: string) => new Date(iso).toLocaleDateString(undefined, 
 const demande = ref<NouvelleDemande>({ titre: '', description: '', secteur: '', ville: '', offresSystalink: false })
 const duree = ref<number | 'inconnue'>('inconnue')
 const envoi = ref<'repos' | 'envoi' | 'erreur'>('repos')
-const valide = computed(() => demandeValide(demande.value))
+const reponses = ref<Reponses>({})
+const NOMS: Record<Question, { question: string; libelle: string }> = {
+  qui: { question: 'questionQui', libelle: 'libelleQui' },
+  probleme: { question: 'questionProbleme', libelle: 'libelleProbleme' },
+  reussite: { question: 'questionReussite', libelle: 'libelleReussite' },
+}
+/** Le besoin tel qu'il partira : le texte, puis les réponses guidées avec leur question. */
+const composee = computed(() =>
+  composerDescription(
+    demande.value.description,
+    reponses.value,
+    Object.fromEntries(QUESTIONS.map((q) => [q, t(`demandes.nouvelle.${NOMS[q].libelle}`)])) as Record<Question, string>,
+  ),
+)
+const valide = computed(
+  () => demande.value.description.trim().length >= LIMITES.descriptionMin && demandeValide({ ...demande.value, description: composee.value }),
+)
 
 /** Des exemples à reprendre d'un clic : ils montrent le niveau de détail attendu. */
 const exemples = computed(() => (tm('demandes.exemples') as { titre: string; description: string }[]).map((e) => ({ titre: rt(e.titre), description: rt(e.description) })))
@@ -33,7 +62,11 @@ async function envoyer() {
   if (!valide.value) return
   envoi.value = 'envoi'
   try {
-    const creee = await creerDemande({ ...demande.value, dureeSemaines: duree.value === 'inconnue' ? undefined : duree.value })
+    const creee = await creerDemande({
+      ...demande.value,
+      description: composee.value,
+      dureeSemaines: duree.value === 'inconnue' ? undefined : duree.value,
+    })
     if (!creee) return void (envoi.value = 'erreur')
     await router.push(`/demandes/${creee.id}`)
   } catch {
@@ -68,9 +101,21 @@ async function envoyer() {
           :aide="t('demandes.nouvelle.aideDescription', { n: LIMITES.descriptionMin })"
           multiligne
           :lignes="7"
-          :maxlength="LIMITES.descriptionMax"
+          :maxlength="LIMITES.descriptionSaisieMax"
           requis
         />
+        <fieldset class="questions" data-test="questions">
+          <legend>{{ t('demandes.nouvelle.questionsTitre') }}</legend>
+          <p class="texte-discret">{{ t('demandes.nouvelle.questionsAide') }}</p>
+          <JChamp
+            v-for="q in QUESTIONS"
+            :key="q"
+            v-model="reponses[q]"
+            :libelle="t(`demandes.nouvelle.${NOMS[q].question}`)"
+            :maxlength="LIMITES.reponseMax"
+            :data-test="`question-${q}`"
+          />
+        </fieldset>
         <fieldset class="durees">
           <legend>{{ t('demandes.nouvelle.secteur') }}</legend>
           <label v-for="s in SECTEURS" :key="s" class="durees__choix">
@@ -157,6 +202,9 @@ async function envoyer() {
 .durees__choix input:checked + span { background: var(--action); border-color: var(--action); color: var(--on-action); }
 .durees__choix input:focus-visible + span { outline: 2px solid var(--focus); outline-offset: 2px; }
 .erreur { margin: 0; color: var(--danger); font-weight: 600; }
+.questions { border: 0; margin: 0; padding: 0; display: grid; gap: var(--space-4); }
+.questions legend { font-size: var(--type-label-size); font-weight: var(--type-label-weight); margin-bottom: var(--space-1); }
+.questions p { margin: 0; font-size: var(--type-body-sm-size); }
 .prudence {
   margin: 0; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md);
   border-inline-start: 3px solid var(--cantaloupe);
