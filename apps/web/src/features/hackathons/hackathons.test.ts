@@ -197,7 +197,7 @@ describe('un hackathon', () => {
     expect(page.get('[data-test="calendrier"]').text()).toContain('Fin des rendus')
     expect(page.get('[data-test="criteres"]').text()).toContain('Utilité pour un commerçant')
     expect(page.get('[data-test="prix"]').text()).toContain('offert par Systalink')
-    expect(page.get('[data-test="deploiement"]').exists()).toBe(true)
+    expect(page.find('[data-test="deploiement"]').exists()).toBe(true)
   })
 
   it('un visiteur connecté voit que s’inscrire arrive bientôt, et aucun bouton d’organisateur', async () => {
