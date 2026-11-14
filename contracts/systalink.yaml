@@ -224,7 +224,7 @@ components:
 
     ServiceSystalink:
       type: string
-      enum: [datacloud, orion, yokk, systatalk, systaforms, domaines]
+      enum: [datacloud, orion, yokk, systatalk, systaforms, domaines, systaone]
       description: Le service Systalink proposé. On ajoute une valeur quand un module se met à proposer un nouveau service.
 
     TableauDeBord:

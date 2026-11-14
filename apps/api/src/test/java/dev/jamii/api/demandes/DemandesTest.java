@@ -470,6 +470,37 @@ class DemandesTest {
 	}
 
 	@Test
+	void chaque_service_systalink_montre_compte_une_fois_et_son_clic_aussi() throws Exception {
+		UtilisateurConnecte cabinet = utilisateur("Cabinet");
+		String id = idCree(creer(cabinet, BESOIN));
+		JsonNode orientation = json.readTree("""
+				{"resume":"Ranger les dossiers","secteur":"juridique","developpeursNecessaires":false,"competences":[],"plan":null,
+				 "services":[
+				   {"id":"systaone","nom":"SystaONE","pourCeBesoin":"Partager","lien":"https://systalink.com"},
+				   {"id":"datacloud-stockage","nom":"Stockage","pourCeBesoin":"Garder","lien":"https://platform.systalink.com"},
+				   {"id":"datacloud-application","nom":"Application","pourCeBesoin":"Héberger","lien":"https://platform.systalink.com"},
+				   {"id":"inconnu","nom":"Autre","pourCeBesoin":"Rien","lien":"https://systalink.com"}]}""");
+		IA.etats.put(IA.parCle.get(UUID.fromString(id)), new PlansIa.Etat("terminee", "ia", orientation, null));
+
+		JsonNode premiere = corps(lire(cabinet, id));
+		corps(lire(cabinet, id));
+
+		String momentSystaone = premiere.at("/orientation/resultat/services/0/momentId").asString();
+		assertThat(premiere.at("/orientation/resultat/services/1/momentId").asString())
+			.as("les offres DataCloud comptent pour un seul service")
+			.isEqualTo(premiere.at("/orientation/resultat/services/2/momentId").asString());
+		assertThat(premiere.at("/orientation/resultat/services/3/momentId").isMissingNode()).isTrue();
+		assertThat(base.sql("SELECT service FROM moment_systalink WHERE contexte = 'demande' AND contexte_id = :i ORDER BY service")
+			.param("i", UUID.fromString(id)).query(String.class).list())
+			.as("relire la page ne compte pas deux fois").containsExactly("datacloud", "systaone");
+
+		assertThat(mvc.post().uri("/api/systalink/moments/{m}/accepter", momentSystaone).with(csrf())
+			.with(oauth2Login().oauth2User(cabinet))).hasStatus(204);
+		assertThat(base.sql("SELECT accepte_le IS NOT NULL FROM moment_systalink WHERE id = :m")
+			.param("m", UUID.fromString(momentSystaone)).query(Boolean.class).single()).isTrue();
+	}
+
+	@Test
 	void l_orientation_recommande_les_developpeurs_qui_couvrent_le_besoin_avec_leurs_raisons() throws Exception {
 		UtilisateurConnecte cabinet = utilisateur("Cabinet");
 		UtilisateurConnecte fatou = developpeur("Fatou", "Dakar", "SN", "react", "spring-boot");

@@ -450,3 +450,7 @@ components:
         pourCeBesoin: { type: string, maxLength: 300, description: À quoi ce service sert pour **ce** besoin. }
         prixIndicatif: { type: [string, 'null'], maxLength: 80 }
         lien: { type: string, format: uri }
+        momentId:
+          type: string
+          format: uuid
+          description: Ajouté par l'API Jamii, jamais par le service IA. À passer à `POST /api/systalink/moments/{momentId}/accepter` (contracts/systalink.yaml) quand la personne ouvre le service.
