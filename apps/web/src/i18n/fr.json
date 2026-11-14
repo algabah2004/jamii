@@ -1047,6 +1047,37 @@
         "interdit": "Seul le chef d'équipe peut inviter.",
         "autre": "L'invitation n'a pas abouti. Réessaie dans un instant."
       }
+    },
+    "rendu": {
+      "titre": "Le rendu de mon équipe",
+      "indisponible": "Le rendu n'est pas disponible pour le moment. Réessaie dans un instant.",
+      "aucun": "Ton équipe n'a rien rendu.",
+      "intro": "Tu peux modifier le rendu jusqu'au {date}. Chaque membre de l'équipe peut le faire.",
+      "champTitre": "Le nom du projet",
+      "description": "Ce que fait le projet",
+      "aideDescription": "Au moins {n} caractères : pour qui, quel problème, et comment l'essayer.",
+      "lienProduit": "Le lien du produit en ligne",
+      "aideLien": "Une adresse en https que le jury peut ouvrir.",
+      "aideLienObligatoire": "Une adresse en https que le jury peut ouvrir : ce hackathon demande un produit en ligne. Systalink DataCloud peut l'héberger.",
+      "lienHttps": "Le lien doit commencer par https://",
+      "depot": "Le dépôt du code (facultatif)",
+      "video": "Une vidéo de démonstration (facultatif)",
+      "envoyer": "Rendre le projet",
+      "modifier": "Enregistrer les changements",
+      "enregistre": "Le rendu est enregistré.",
+      "modifieLe": "Dernière modification le {date}.",
+      "lienNonVerifie": "Le lien du produit n'a pas encore été vérifié.",
+      "lienRepond": "Le lien du produit répond.",
+      "lienNeRepondPas": "Le lien du produit ne répond pas : à corriger avant l'heure limite.",
+      "erreurs": {
+        "delai_depasse": "L'heure limite des rendus est passée.",
+        "etat_invalide": "Ce hackathon n'accepte pas de rendu pour le moment.",
+        "modification_concurrente": "Un autre membre a modifié le rendu entre-temps. Recharge la page.",
+        "lien_invalide": "Un lien n'est pas valide : https uniquement, sans identifiant ni port.",
+        "adresse_interne": "Un lien pointe vers une adresse interne : donne l'adresse publique du produit.",
+        "validation": "Un champ n'est pas valide. Vérifie ce que tu as écrit.",
+        "autre": "Le rendu n'a pas pu être enregistré. Réessaie dans un instant."
+      }
     }
   },
   "missions": {

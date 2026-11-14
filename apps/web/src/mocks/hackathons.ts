@@ -7,6 +7,8 @@ export type HackathonResume = S['HackathonResume']
 export type NouveauHackathon = S['NouveauHackathon']
 export type Inscription = S['Inscription']
 export type Equipe = S['Equipe']
+export type Rendu = S['Rendu']
+export type NouveauRendu = S['NouveauRendu']
 
 // Données de démo (contracts/hackathons.yaml) : jamais de vraies données personnelles.
 const AWA = { id: '6f1c2a4e-8b7d-4c3e-9a10-2b5d7e9f0a11', nom: 'Awa Diop', avatarUrl: null }
@@ -67,6 +69,7 @@ function hackathonDemo(): Hackathon {
 const hackathons = new Map<string, Hackathon>()
 const inscriptions = new Map<string, Inscription[]>()
 const equipes = new Map<string, Equipe[]>()
+const rendus = new Map<string, Rendu>()
 
 /** Deux participants seuls, qui cherchent une équipe : de quoi montrer « Je cherche une équipe ». */
 function seulDemo(personne: typeof FATOU, competences: string[]): Inscription {
@@ -77,6 +80,7 @@ export function reinitialiserHackathons() {
   hackathons.clear()
   inscriptions.clear()
   equipes.clear()
+  rendus.clear()
   const h = hackathonDemo()
   hackathons.set(h.id, h)
   inscriptions.set(h.id, [seulDemo(FATOU, ['flutter', 'ux-design']), seulDemo(MOUSSA, ['spring'])])
@@ -205,5 +209,37 @@ export const handlersHackathons = [
     equipe.membres.push(inscription.personne)
     equipe.complete = equipe.membres.length >= equipe.tailleMax
     return HttpResponse.json(equipe)
+  }),
+
+  http.get('/api/hackathons/:id/equipes/:equipeId/rendu', ({ params }) => {
+    const rendu = rendus.get(String(params.equipeId))
+    return rendu ? HttpResponse.json(rendu) : erreur(404, 'introuvable')
+  }),
+
+  http.put('/api/hackathons/:id/equipes/:equipeId/rendu', async ({ params, request }) => {
+    const h = hackathons.get(String(params.id))
+    if (!h) return erreur(404, 'introuvable')
+    if (h.statut !== 'en_cours') return erreur(409, 'delai_depasse')
+    const corps = (await request.json()) as NouveauRendu
+    if (!corps.lienProduit?.startsWith('https://')) return erreur(400, 'validation')
+    const avant = rendus.get(String(params.equipeId))
+    if (avant && corps.version !== avant.version) return erreur(409, 'modification_concurrente')
+    const rendu: Rendu = {
+      id: avant?.id ?? crypto.randomUUID(),
+      equipeId: String(params.equipeId),
+      titre: corps.titre,
+      description: corps.description,
+      lienProduit: corps.lienProduit,
+      depot: corps.depot ?? null,
+      video: corps.video ?? null,
+      reponses: corps.reponses ?? [],
+      // Comme l'adaptateur simulé de l'API : un nom en .invalid ne répond pas.
+      lienRepond: !new URL(corps.lienProduit).hostname.endsWith('.invalid'),
+      lienVerifieLe: new Date().toISOString(),
+      version: (avant?.version ?? 0) + 1,
+      modifieLe: new Date().toISOString(),
+    }
+    rendus.set(rendu.equipeId, rendu)
+    return HttpResponse.json(rendu, { status: avant ? 200 : 201 })
   }),
 ]
