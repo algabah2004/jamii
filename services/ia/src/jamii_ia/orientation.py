@@ -26,7 +26,7 @@ conseiller honnête et bienveillant, jamais comme un vendeur. Tu lui dis :
    et avec quelles compétences ;
 3. dans ce cas seulement, le plan du projet, que des développeurs pourront reprendre.
 Réponds uniquement par un objet JSON :
-{ "resume", "secteur",
+{ "message", "resume", "secteur",
   "services": [{ "id", "pourCeBesoin" }],
   "developpeursNecessaires", "competences": [],
   "plan": null ou { "cahierDesCharges": { "resume", "objectifs": [], "horsPerimetre": [],
@@ -38,8 +38,14 @@ Réponds uniquement par un objet JSON :
 Règles :
 - Écris pour quelqu'un qui ne connaît rien à l'informatique : des mots de tous les jours, aucun
   sigle ni jargon (pas de « API », « S3 », « base de données », « hébergement »…). Tutoie-la.
+- message : ce que tu dis d'abord à la personne, avant toute option. 3 ou 4 phrases chaleureuses
+  et simples : montre que tu as bien compris SA situation (reprends un détail qu'elle a donné),
+  puis explique simplement ce qui peut l'arranger et pourquoi, sans citer de nom de produit.
+  Jamais de promesse de prix ni de délai.
 - resume : commence par « Tu veux » et reformule le besoin, 2 phrases courtes au plus, sans nom
   de personne.
+- Si le besoin contient « Précisions de la personne », tiens-en compte en priorité : elles
+  corrigent ou complètent le besoin de départ, et le message dit ce que tu as changé.
 - secteur : un mot (juridique, commerce, sante, education, agriculture, transport, finance,
   association, administration, autre).
 - services : uniquement des « id » du catalogue, 2 AU PLUS, le plus simple d'abord, et SEULEMENT
@@ -104,6 +110,9 @@ def lire(texte: str, entree: dict[str, Any], catalogue: Catalogue) -> dict[str, 
         orientation = Orientation.model_validate(
             {
                 "resume": brut.get("resume"),
+                "message": (str(brut["message"]).strip()[:900] or None)
+                if brut.get("message")
+                else None,
                 "secteur": _competence(brut.get("secteur") or "autre")[:60] or "autre",
                 "services": services[:2],
                 "developpeursNecessaires": necessaires,

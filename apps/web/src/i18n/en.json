@@ -618,6 +618,16 @@
         "texte": "Ask in a community: Jamii developers can advise you.",
         "action": "See the communities"
       }
+    },
+    "mesDemandes": {
+      "titre": "Your requests"
+    },
+    "discuter": {
+      "titre": "Something doesn’t suit you?",
+      "aide": "Say it in your own words: I’ll go over your need again with what you add.",
+      "exemple": "For example: I don’t want to sell online, only show my items.",
+      "envoyer": "Send",
+      "limite": "You have already added 5 details to this request. Describe a new need to start over."
     }
   },
   "cercles": {

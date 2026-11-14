@@ -231,6 +231,22 @@ def test_avec_developpeurs_l_hebergement_de_leur_travail_peut_etre_propose():
     assert [s["id"] for s in resultat["services"]] == ["datacloud-application"]
 
 
+def test_le_message_de_l_assistant_passe_avant_les_options():
+    reponse = json.dumps(
+        {
+            "message": "  Tu vends au marché et tes clientes t'appellent.  ",
+            "resume": "Tu veux montrer ton stock.",
+            "secteur": "commerce",
+            "services": [],
+            "developpeursNecessaires": False,
+        }
+    )
+    resultat = orientation.lire(reponse, BESOIN_CABINET, CATALOGUE)
+
+    assert resultat["message"].startswith("Tu vends au marché")
+    assert "Précisions de la personne" in orientation.CONSIGNE
+
+
 def test_la_consigne_demande_des_mots_simples_et_deux_services_au_plus():
     assert "2 AU PLUS" in orientation.CONSIGNE
     assert "aucun" in orientation.CONSIGNE and "jargon" in orientation.CONSIGNE

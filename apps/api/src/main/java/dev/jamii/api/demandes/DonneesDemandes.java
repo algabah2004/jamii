@@ -16,7 +16,8 @@ import dev.jamii.api.auth.DonneesPersonnelles;
 @Component
 class DonneesDemandes implements DonneesPersonnelles {
 
-	record MaDemande(UUID id, String titre, String description, Integer dureeSemaines, Instant creeLe) {
+	record MaDemande(UUID id, String titre, String description, Integer dureeSemaines, Instant creeLe,
+			List<String> precisions) {
 	}
 
 	private final JdbcClient base;
@@ -33,15 +34,17 @@ class DonneesDemandes implements DonneesPersonnelles {
 	@Override
 	public List<MaDemande> exporter(UUID utilisateurId) {
 		return base.sql("""
-				SELECT id, titre, description, duree_semaines, cree_le FROM demande
-				WHERE auteur_id = :u ORDER BY cree_le, id
+				SELECT id, titre, description, duree_semaines, cree_le,
+				  ARRAY(SELECT texte FROM demande_precision p WHERE p.demande_id = demande.id ORDER BY rang) AS precisions
+				FROM demande WHERE auteur_id = :u ORDER BY cree_le, id
 				""")
 			.param("u", utilisateurId)
 			.query((rs, n) -> {
 				int lue = rs.getInt("duree_semaines");
 				Integer duree = rs.wasNull() ? null : lue;
 				return new MaDemande(rs.getObject("id", UUID.class), rs.getString("titre"), rs.getString("description"),
-						duree, rs.getTimestamp("cree_le").toInstant());
+						duree, rs.getTimestamp("cree_le").toInstant(),
+						List.of((String[]) rs.getArray("precisions").getArray()));
 			})
 			.list();
 	}

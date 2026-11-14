@@ -152,6 +152,14 @@ describe('l’orientation d’un besoin', () => {
     await page.get('[data-test="voir-details"]').trigger('click')
     await vi.waitFor(() => expect(details.attributes('style') ?? '').not.toContain('display: none'))
 
+    // L'assistant parle d'abord, puis la personne peut préciser : l'analyse repart avec sa précision.
+    expect(page.get('[data-test="compris"]').text()).toContain('Ton cabinet perd du temps')
+    await page.get('#precision').setValue('Je veux seulement un espace client, pas de messagerie.')
+    await page.get('[data-test="preciser"]').trigger('submit')
+    await vi.waitFor(() => expect(page.find('[data-test="precision"]').exists()).toBe(true))
+    expect(page.get('[data-test="precision"]').text()).toBe('Je veux seulement un espace client, pas de messagerie.')
+    await vi.waitFor(() => expect(page.find('[data-test="compris"]').exists()).toBe(true), { timeout: 4000 })
+
     const caseOffres = page.get('[data-test="offres-resultat"] input')
     expect((caseOffres.element as HTMLInputElement).checked).toBe(false)
     await caseOffres.setValue(true)

@@ -618,6 +618,16 @@
         "texte": "Pose ta question dans une communauté : des développeurs de Jamii pourront te conseiller.",
         "action": "Voir les communautés"
       }
+    },
+    "mesDemandes": {
+      "titre": "Tes demandes"
+    },
+    "discuter": {
+      "titre": "Quelque chose ne te convient pas ?",
+      "aide": "Dis-le avec tes mots : je reprends ton besoin avec ta précision.",
+      "exemple": "Par exemple : je ne veux pas vendre en ligne, seulement montrer mes articles.",
+      "envoyer": "Envoyer",
+      "limite": "Tu as déjà précisé 5 fois ce besoin. Décris un nouveau besoin pour repartir de zéro."
     }
   },
   "cercles": {

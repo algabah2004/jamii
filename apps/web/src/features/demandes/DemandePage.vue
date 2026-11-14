@@ -13,6 +13,7 @@ import {
   INTERVALLE_PLAN_MS,
   jalonsAvecTaches,
   lireDemande,
+  preciserDemande,
   type Demande,
 } from './demandes'
 
@@ -85,6 +86,32 @@ watch(enPreparation, (oui) => {
 }, { immediate: true })
 onBeforeUnmount(() => clearInterval(horloge))
 const etapeEnCours = computed(() => Math.min(ETAPES.length - 1, Math.floor(secondes.value / 7)))
+
+/**
+ * La conversation : la personne peut dire ce qui ne lui convient pas. L'analyse repart avec son besoin et toutes ses
+ * précisions ; le fil montre ce qu'elle a écrit, puis la dernière réponse de l'assistant.
+ */
+const precision = ref('')
+const envoiPrecision = ref<'repos' | 'envoi' | 'erreur' | 'limite'>('repos')
+async function envoyerPrecision() {
+  if (!demande.value || precision.value.trim().length < 3) return
+  envoiPrecision.value = 'envoi'
+  try {
+    const r = await preciserDemande(demande.value.id, precision.value)
+    if (r === 'limite') return void (envoiPrecision.value = 'limite')
+    if (!r) return void (envoiPrecision.value = 'erreur')
+    demande.value = r
+    precision.value = ''
+    envoiPrecision.value = 'repos'
+    detailsOuverts.value = false
+    debut = 0
+    tropLong.value = false
+    surveiller()
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  } catch {
+    envoiPrecision.value = 'erreur'
+  }
+}
 
 /** Le plan technique est écrit pour les développeurs : replié par défaut, ouvert d'un clic. */
 const detailsOuverts = ref(false)
@@ -162,8 +189,11 @@ const messageErreur = computed(() =>
     <template v-else-if="demande">
       <header class="tete motif motif--croix">
         <h1>{{ demande.titre }}</h1>
-        <!-- Texte brut, affiché échappé : les mots de la PME, jamais interprétés. -->
-        <blockquote class="carte besoin">{{ demande.description }}</blockquote>
+        <!-- Texte brut, affiché échappé : les mots de la personne, jamais interprétés. -->
+        <div class="fil" data-test="fil">
+          <p class="bulle bulle--moi">{{ demande.description }}</p>
+          <p v-for="p in demande.precisions ?? []" :key="p.creeLe" class="bulle bulle--moi" data-test="precision">{{ p.texte }}</p>
+        </div>
       </header>
 
       <div v-if="enPreparation" class="carte attente" role="status" data-test="plan-attente">
@@ -189,9 +219,13 @@ const messageErreur = computed(() =>
         <p class="proposition" data-test="plan-propose">✨ {{ t('demandes.plan.propose') }}</p>
         <p v-if="repli" class="carte repli" role="status" data-test="plan-repli">{{ t(orientation ? 'demandes.orientation.repli' : 'demandes.plan.repli') }}</p>
 
-        <section v-if="orientation" class="carte bloc" aria-labelledby="compris" data-test="compris">
-          <h2 id="compris">{{ t('demandes.orientation.compris') }}</h2>
-          <p class="resume">{{ orientation.resume }}</p>
+        <!-- Ce que l'assistant dit d'abord : il a compris, il explique simplement ce qui peut aider. -->
+        <section v-if="orientation" class="assistant" aria-labelledby="compris" data-test="compris">
+          <span class="assistant__avatar" aria-hidden="true">J</span>
+          <div class="bulle bulle--jamii">
+            <h2 id="compris" class="visuellement-cache">{{ t('demandes.orientation.compris') }}</h2>
+            <p class="resume">{{ orientation.message || orientation.resume }}</p>
+          </div>
         </section>
 
         <!-- Les chemins possibles, côte à côte : la personne choisit, Jamii ne vend rien. Aucune donnée ne sort de Jamii. -->
@@ -239,6 +273,19 @@ const messageErreur = computed(() =>
           </div>
           <p v-if="orientation.services.length && orientation.developpeursNecessaires" class="chemins__conseil">💡 {{ t('demandes.chemins.lesDeux') }}</p>
         </section>
+
+        <form v-if="orientation" class="carte discuter" data-test="preciser" @submit.prevent="envoyerPrecision">
+          <label for="precision" class="discuter__titre">
+            <strong>{{ t('demandes.discuter.titre') }}</strong>
+            <span class="texte-discret">{{ t('demandes.discuter.aide') }}</span>
+          </label>
+          <div class="discuter__ligne">
+            <textarea id="precision" v-model="precision" maxlength="500" rows="2" :placeholder="t('demandes.discuter.exemple')" @keydown.enter.exact.prevent="envoyerPrecision" />
+            <JBouton type="submit" :occupe="envoiPrecision === 'envoi'" :disabled="precision.trim().length < 3" data-test="envoyer-precision">{{ t('demandes.discuter.envoyer') }}</JBouton>
+          </div>
+          <p v-if="envoiPrecision === 'limite'" role="alert" class="erreur">{{ t('demandes.discuter.limite') }}</p>
+          <p v-else-if="envoiPrecision === 'erreur'" role="alert" class="erreur">{{ t('etat.indisponible') }}</p>
+        </form>
 
         <section v-if="orientation?.developpeursNecessaires" class="bloc-nu" aria-labelledby="developpeurs" data-test="developpeurs">
           <div class="bloc-nu__tete">
@@ -376,6 +423,17 @@ const messageErreur = computed(() =>
 </template>
 
 <style scoped>
+.fil { display: grid; gap: var(--space-2); justify-items: end; }
+.bulle { margin: 0; max-width: min(42rem, 92%); padding: var(--space-3) var(--space-4); border-radius: var(--radius-lg); white-space: pre-wrap; line-height: 1.5; }
+.bulle--moi { background: var(--action-soft); color: var(--ink); border-end-end-radius: 4px; }
+.bulle--jamii { background: var(--surface); border: 1px solid var(--line); border-end-start-radius: 4px; max-width: 100%; }
+.bulle--jamii .resume { margin: 0; font-size: 1.0625rem; }
+.assistant { display: grid; grid-template-columns: auto 1fr; gap: var(--space-3); align-items: end; }
+.assistant__avatar { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--action); color: var(--on-action); font-family: var(--font-display); font-weight: 700; }
+.discuter { display: grid; gap: var(--space-3); }
+.discuter__titre { display: grid; gap: 2px; }
+.discuter__ligne { display: flex; gap: var(--space-3); align-items: flex-end; flex-wrap: wrap; }
+.discuter textarea { flex: 1 1 16rem; min-height: 3.25rem; padding: var(--space-3); border: 1px solid var(--line-strong); border-radius: var(--radius-md); background: var(--surface); color: var(--ink); font: inherit; resize: vertical; }
 .etapes { list-style: none; margin: var(--space-2) 0 0; padding: 0; display: grid; gap: var(--space-1); color: var(--ink-muted); }
 .etapes--faite { color: var(--ink); }
 .etapes--en-cours { color: var(--action-ink); font-weight: 600; }
