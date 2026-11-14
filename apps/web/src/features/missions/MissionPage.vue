@@ -4,10 +4,12 @@ import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute } from 'vue-router'
 import { JAvatar, JBouton, JSquelette } from '../../design-system'
 import { fermerMission, formaterMontant, lireMission, publierMission, type Mission, type Resultat } from './missions'
+import SuiviMission from './SuiviMission.vue'
 
 /*
  * Une mission : son annonce, et ce que la personne qui la lit peut en faire. Les boutons viennent de `moi.actions`,
- * calculé par l'API (qui revérifie chaque action). Les propositions arrivent avec #177.
+ * calculé par l'API (qui revérifie chaque action). Les propositions arrivent avec #177 ; le suivi du travail est dans
+ * `SuiviMission`, pour le client et le développeur retenu.
  * DESIGN PROVISOIRE : l'écran montre le parcours avec les composants actuels ; son design sera repris avec le design system.
  */
 const { t, locale } = useI18n()
@@ -120,6 +122,8 @@ async function agir(appel: (id: string, version: number) => Promise<Resultat<Mis
         <p v-if="message" role="alert" class="erreur" data-test="erreur">{{ message }}</p>
         <p class="texte-discret provisoire" data-test="provisoire">{{ t('missions.detail.provisoire') }}</p>
       </article>
+
+      <SuiviMission v-if="mission.travail" :mission="mission" :travail="mission.travail" @maj="mission = $event" />
     </template>
   </section>
 </template>
