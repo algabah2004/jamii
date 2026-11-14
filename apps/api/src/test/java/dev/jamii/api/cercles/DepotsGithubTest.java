@@ -177,4 +177,73 @@ class DepotsGithubTest {
 		contexte.withPropertyValues("jamii.depot-code.fournisseur=gitlab").run(c -> assertThat(c).hasFailed());
 	}
 
+	// ---------------------------------------------------------------- activité
+
+	private static final DepotCode.DepotDuTour DU_TOUR = new DepotCode.DepotDuTour("github",
+			"https://github.com/jamii-cercles/cercle-de-thies-tour-2-0a1b2c3d",
+			"https://github.com/jamii-cercles/cercle-de-thies-tour-2-0a1b2c3d.git");
+
+	private static final String COMMITS = """
+			[{"sha":"9fceb02d0ae598e95dc970b74767f19372d61af8","html_url":"https://github.com/jamii-cercles/x/commit/9fceb02",
+			  "commit":{"message":"Écran de caisse hors ligne\\n\\nDétails longs","author":{"date":"2026-11-14T20:41:00Z"}},
+			  "author":{"login":"kofi","avatar_url":"https://avatars.githubusercontent.com/u/1"}},
+			 {"sha":"aaaaaaa","html_url":"https://github.com/jamii-cercles/x/commit/aaaaaaa",
+			  "commit":{"message":"Commit d'un inconnu","author":{"date":"2026-11-14T19:00:00Z"}},"author":null},
+			 {"sha":"bbbbbbb","html_url":"javascript:alert(1)",
+			  "commit":{"message":"Lien piégé","author":{"date":"2026-11-14T18:00:00Z"}},"author":null}]
+			""";
+
+	private static final String DEMANDES = """
+			[{"number":3,"title":"Synchronisation au retour du réseau","state":"open","merged_at":null,
+			  "user":{"login":"awa-dev","avatar_url":"https://avatars.githubusercontent.com/u/2"},
+			  "updated_at":"2026-11-14T20:12:00Z","html_url":"https://github.com/jamii-cercles/x/pull/3"},
+			 {"number":2,"title":"Maquette","state":"closed","merged_at":"2026-11-14T10:00:00Z",
+			  "user":{"login":"kofi"},"updated_at":"2026-11-14T10:00:00Z","html_url":"https://github.com/jamii-cercles/x/pull/2"},
+			 {"number":1,"title":"Essai","state":"closed","merged_at":null,
+			  "user":{"login":"kofi"},"updated_at":"2026-11-13T10:00:00Z","html_url":"https://github.com/jamii-cercles/x/pull/1"}]
+			""";
+
+	@Test
+	void lit_les_commits_et_les_demandes_de_fusion_du_depot_du_tour() throws IOException {
+		String url = fauxGithub(a -> new Reponse(200, a.chemin().endsWith("/commits") ? COMMITS : DEMANDES));
+
+		var activite = adaptateur(url).activite(DU_TOUR).orElseThrow();
+
+		assertThat(appels).extracting(Appel::chemin).containsExactly(
+				"/repos/jamii-cercles/cercle-de-thies-tour-2-0a1b2c3d/commits",
+				"/repos/jamii-cercles/cercle-de-thies-tour-2-0a1b2c3d/pulls");
+		assertThat(activite.commits()).extracting(DepotCode.Commit::message)
+			.as("première ligne seulement, et le lien qui n'est pas en https est écarté")
+			.containsExactly("Écran de caisse hors ligne", "Commit d'un inconnu");
+		assertThat(activite.commits().get(0).auteur().login()).isEqualTo("kofi");
+		assertThat(activite.commits().get(1).auteur()).isNull();
+		assertThat(activite.demandesDeFusion()).extracting(DepotCode.DemandeDeFusion::etat)
+			.containsExactly("ouverte", "fusionnee", "fermee");
+	}
+
+	@Test
+	void un_depot_hors_de_l_organisation_n_est_jamais_appele() throws IOException {
+		String url = fauxGithub(a -> new Reponse(200, "[]"));
+		var ailleurs = new DepotCode.DepotDuTour("github", "https://github.com/quelquun/son-depot", "https://github.com/quelquun/son-depot.git");
+		var autreSite = new DepotCode.DepotDuTour("github", "https://exemple.com/jamii-cercles/x", "https://exemple.com/x.git");
+
+		assertThat(adaptateur(url).activite(ailleurs)).isEmpty();
+		assertThat(adaptateur(url).activite(autreSite)).isEmpty();
+		assertThat(appels).isEmpty();
+	}
+
+	@Test
+	void une_panne_de_github_rend_l_activite_indisponible_sans_exception() throws IOException {
+		String url = fauxGithub(a -> new Reponse(503, "{}"));
+
+		assertThat(adaptateur(url).activite(DU_TOUR)).isEmpty();
+	}
+
+	@Test
+	void la_premiere_ligne_est_coupee_a_200_caracteres_sans_caractere_de_controle() {
+		assertThat(DepotsGithub.premiereLigne("a\u0007b\nsuite")).isEqualTo("a b");
+		assertThat(DepotsGithub.premiereLigne("x".repeat(300))).hasSize(200).endsWith("…");
+		assertThat(DepotsGithub.premiereLigne(null)).isEmpty();
+	}
+
 }
