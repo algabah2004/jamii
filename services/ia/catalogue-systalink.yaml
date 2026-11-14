@@ -3,6 +3,8 @@
 # C'est un fichier de DONNÉES : Systalink peut le modifier sans toucher au code (autre chemin : IA_CATALOGUE).
 # L'IA ne peut proposer QUE les services listés ici, par leur `id` ; un identifiant inconnu est retiré du résultat.
 # `pourQuoi` est donné à l'IA pour qu'elle choisisse ; `nom`, `prixIndicatif` et `lien` sont recopiés tels quels.
+# `pourQui` : `tous` (utilisable sans développeur, par défaut) ou `developpeurs` (ne sert qu'à héberger ce que des
+# développeurs construisent : jamais proposé seul à quelqu'un qui n'a pas besoin de développeurs).
 #
 # Sources : docs/systalink-services.md (vu le 10/11/2026). Les prix marqués « à confirmer » sont à vérifier par Systalink.
 
@@ -17,6 +19,7 @@ services:
 
   - id: datacloud-application
     nom: DataCloud, hébergement d'application
+    pourQui: developpeurs
     pourQuoi: >-
       Mettre en ligne une application web sur mesure (Java, Python, Node, PHP, Docker…) construite par des
       développeurs, hébergée à Dakar.
@@ -25,6 +28,7 @@ services:
 
   - id: datacloud-base-de-donnees
     nom: DataCloud, base de données gérée
+    pourQui: developpeurs
     pourQuoi: >-
       Garder des données structurées en sécurité (clients, dossiers, stocks, commandes) pour une application, avec
       sauvegardes, hébergée à Dakar.
@@ -33,6 +37,7 @@ services:
 
   - id: datacloud-stockage
     nom: DataCloud, stockage de fichiers
+    pourQui: developpeurs
     pourQuoi: >-
       Stocker et partager de nombreux fichiers et documents (PDF, photos, archives) de façon sûre, compatible avec
       l'API S3.

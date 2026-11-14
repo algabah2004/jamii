@@ -531,7 +531,7 @@
     ],
     "plan": {
       "autre": "← Describe another need",
-      "prepare": "Jamii is analysing your need…",
+      "prepare": "Looking at your need…",
       "prepareAide": "It looks for what Systalink already offers and for developers who can help. This takes a few seconds.",
       "echec": "Your need could not be analysed.",
       "echecAide": "Your request is saved. Try again in a moment.",
@@ -550,7 +550,12 @@
       "lancer": "Start the project with this plan",
       "lance": "Project started. The roles to find are offered to developers.",
       "dejaPrise": "A team has already started a project on this request.",
-      "erreurLancement": "The project could not be started. Try again in a moment."
+      "erreurLancement": "The project could not be started. Try again in a moment.",
+      "etapes": {
+        "lire": "Reading what you wrote",
+        "chercher": "Looking for what already exists",
+        "preparer": "Preparing your options"
+      }
     },
     "priorites": {
       "indispensable": "Must have",
@@ -574,10 +579,10 @@
     },
     "orientation": {
       "repli": "Automatic analysis unavailable, here is a first suggestion.",
-      "compris": "What we understood",
+      "compris": "Here is what I understood",
       "systalink": "What you need already exists at Systalink",
       "systalinkAide": "For this part, no need to wait for developers.",
-      "voirService": "See it at Systalink",
+      "voirService": "See this offer",
       "developpeurs": "Developers who can build it",
       "developpeursAide": "Chosen for their proven skills, availability and city.",
       "formerCercle": "Form a circle with them",
@@ -585,6 +590,34 @@
       "ecrire": "Write to {nom}",
       "aucun": "No available developer matches yet. The plan below still stands: come back later or post it in a community.",
       "plan": "The plan for the developers"
+    },
+    "chemins": {
+      "titre": "Your options",
+      "aide": "Compare, then choose what suits you. Nothing is decided until you click.",
+      "pret": {
+        "badge": "Ready to use · no developer needed",
+        "badgeAvecDev": "To put your project online",
+        "titre": "A solution that already exists",
+        "titreAvecDev": "What already exists",
+        "partenaire": "Offered by Systalink, Jamii’s hosting partner. You remain free to choose elsewhere."
+      },
+      "surMesure": {
+        "badge": "Custom-built",
+        "titre": "Have it built by developers",
+        "texte": "Jamii developers build what doesn’t exist yet, starting from the project I prepared for you.",
+        "duree": "about {n} week | about {n} week | about {n} weeks",
+        "fonctions": "no must-have feature | {n} must-have feature | {n} must-have features",
+        "devs": "no developer suggested | {n} developer suggested | {n} developers suggested",
+        "voirDevs": "See the developers",
+        "voirProjet": "See the detailed project"
+      },
+      "masquerProjet": "Hide the detailed project",
+      "lesDeux": "You can start right away with what exists, then have the rest built.",
+      "aucun": {
+        "titre": "Nothing ready matches yet",
+        "texte": "Ask in a community: Jamii developers can advise you.",
+        "action": "See the communities"
+      }
     }
   },
   "cercles": {
