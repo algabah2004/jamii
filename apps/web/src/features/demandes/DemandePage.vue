@@ -81,7 +81,9 @@ const recommandes = computed(() => demande.value?.recommandations ?? [])
 function formerCercle() {
   const d = demande.value
   if (!d) return
-  void router.push({ path: '/cercles/nouveau', state: { nom: d.titre.slice(0, 60), ville: d.ville ?? '' } })
+  // Les développeurs recommandés suivent jusqu'au cercle, pour être invités en un clic une fois qu'il existe.
+  const duBesoin = recommandes.value.map((r) => ({ id: r.utilisateurId, nom: r.nom }))
+  void router.push({ path: '/cercles/nouveau', state: { nom: d.titre.slice(0, 60), ville: d.ville ?? '', duBesoin } })
 }
 
 /** « Recevoir les offres Systalink » : jamais cochée d'avance, modifiable à tout moment. */

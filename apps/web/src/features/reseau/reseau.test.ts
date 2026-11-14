@@ -62,6 +62,36 @@ describe('les profils qui manquent au cercle', () => {
     expect(page.find(`[data-test="inviter-${KWAME}"]`).exists()).toBe(false)
   })
 
+  it('venu d’un besoin, invite en un clic les développeurs recommandés pour ce besoin', async () => {
+    const envois: { id: string; corps: { texte: string; cercleId?: string } }[] = []
+    serveur.use(
+      http.post('/api/conversations/:id/messages', async ({ params, request }) => {
+        if (params.id === 'inconnu-0000') return HttpResponse.json({ code: 'introuvable' }, { status: 404 })
+        envois.push({ id: String(params.id), corps: (await request.json()) as { texte: string; cercleId?: string } })
+        return HttpResponse.json({ id: 'm1', auteurId: 'moi', texte: 'x', envoyeLe: '2026-11-14T00:00:00Z' }, { status: 201 })
+      }),
+    )
+    ;(i18n.global.locale as unknown as { value: string }).value = 'fr'
+    await chargerSession()
+    const routeur = creerRouteur(createMemoryHistory())
+    const duBesoin = [{ id: KWAME, nom: 'Kwame Mensah' }, { id: 'inconnu-0000', nom: 'Amina Diallo' }, { pas: 'valide' }]
+    await routeur.push({ path: `/cercles/${ID_SAINT_LOUIS}`, state: { duBesoin } })
+    const page = mount(App, { global: { plugins: [i18n, routeur] } })
+    await vi.waitFor(() => expect(page.find('[data-test="inviter-du-besoin"]').exists()).toBe(true))
+    expect(page.find('[data-test="du-besoin"]').text()).toContain('Recommandés pour ton besoin\u202f: Kwame et Amina.')
+    // Aucun message ne part sans le clic.
+    expect(envois).toHaveLength(0)
+
+    await page.find('[data-test="inviter-du-besoin"]').trigger('click')
+    await vi.waitFor(() => expect(page.find('[data-test="invites-du-besoin"]').exists()).toBe(true))
+    expect(envois).toEqual([{ id: KWAME, corps: expect.objectContaining({ cercleId: ID_SAINT_LOUIS, texte: expect.stringContaining('Bonjour Kwame') }) }])
+    expect(page.find('[data-test="invites-du-besoin"]').text()).toContain('Invitation envoyée à Kwame.')
+    expect(page.find('[data-test="du-besoin"] [role="alert"]').text()).toContain('pour Amina')
+    // Seule Amina reste à inviter ; Kwame est marqué invité dans la liste aussi.
+    expect(page.find('[data-test="inviter-du-besoin"]').text()).toBe("L'inviter au cercle")
+    expect(page.find(`[data-test="inviter-${KWAME}"]`).exists()).toBe(false)
+  })
+
   it("explique un refus de l'API (cercle complet entre-temps)", async () => {
     serveur.use(http.post('/api/conversations/:id/messages', () => HttpResponse.json({ code: 'cercle_ferme' }, { status: 409 })))
     const { page } = await ouvrir(`/cercles/${ID_SAINT_LOUIS}`)

@@ -35,6 +35,18 @@ export async function envoyerMessage(personneId: string, texte: string, cercleId
   return data ? { ok: true, message: data } : { ok: false, code: (error as { code?: string } | undefined)?.code ?? null }
 }
 
+/** Une personne recommandée pour un besoin, transmise jusqu'au cercle par l'état de la navigation. */
+export type RecommandeDuBesoin = { id: string; nom: string }
+
+/** Relit cette liste depuis `history.state` : rien n'y est garanti, on ne garde que des entrées bien formées. */
+export function lireDuBesoin(valeur: unknown): RecommandeDuBesoin[] {
+  if (!Array.isArray(valeur)) return []
+  return valeur
+    .filter((v): v is RecommandeDuBesoin => !!v && typeof v.id === 'string' && typeof v.nom === 'string' && v.id.length <= 64 && v.nom.length <= 120)
+    .slice(0, 5)
+    .map(({ id, nom }) => ({ id, nom }))
+}
+
 /** Le premier mot du nom : « Kwame » pour « Kwame Mensah ». */
 export const prenom = (nom: string) => nom.split(' ')[0] ?? nom
 

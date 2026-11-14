@@ -584,7 +584,8 @@
       "taille": "Combien serez-vous ?",
       "personnes": "{n} personnes",
       "tailleAide": "{n} tours de deux semaines : chacun reçoit son projet.",
-      "creer": "Créer le cercle"
+      "creer": "Créer le cercle",
+      "duBesoin": "Une fois le cercle créé, tu pourras inviter {noms} en un clic."
     },
     "membresTitre": "Les membres",
     "livrer": "Livrer le tour",
@@ -655,7 +656,12 @@
       "message": "Ton message à {nom}",
       "messageParDefaut": "Bonjour {nom}, notre « {cercle} » cherche quelqu'un qui connaît {competences}. Tu veux nous rejoindre ?",
       "envoyer": "Envoyer l'invitation",
-      "envoye": "Invitation envoyée. {nom} la verra dans ses messages."
+      "envoye": "Invitation envoyée. {nom} la verra dans ses messages.",
+      "duBesoin": "Recommandés pour ton besoin : {noms}.",
+      "inviterDuBesoin": "L'inviter au cercle | Les inviter tous les {n}",
+      "invitesDuBesoin": "Invitation envoyée à {noms}. Chacun la verra dans ses messages.",
+      "echecsDuBesoin": "L'invitation n'est pas partie pour {noms}. Réessaie.",
+      "messageSimple": "Bonjour {nom}, tu veux rejoindre notre « {cercle} » ?"
     },
     "erreurs": {
       "cercle_ferme": "Le cercle est complet, ou l'ordre est déjà tiré.",

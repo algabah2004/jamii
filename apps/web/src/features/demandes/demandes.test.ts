@@ -183,5 +183,7 @@ describe('du besoin au cercle', () => {
     const champs = page.findAll('[data-test="nouveau-cercle"] input:not([type="radio"])')
     expect((champs[0]!.element as HTMLInputElement).value).toBe('Nos dossiers')
     expect((champs[1]!.element as HTMLInputElement).value).toBe('Dakar')
+    // Les développeurs recommandés suivent : ils seront invités en un clic une fois le cercle créé.
+    expect(page.find('[data-test="du-besoin"]').text()).toContain('inviter Kwame, Ibrahima et Amina en un clic')
   })
 })
