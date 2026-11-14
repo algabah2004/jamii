@@ -147,3 +147,37 @@ export const publierHackathon = (id: string, version: number) =>
 
 export const annulerHackathon = (id: string, version: number, raison: string) =>
   resultat<Hackathon>(api.POST('/api/hackathons/{hackathonId}/annuler', { params: { path: { hackathonId: id } }, body: { version, raison } }))
+
+// ---------------------------------------------------------------- inscriptions et équipes (#171)
+
+export type Inscription = Schemas['Inscription']
+export type Equipe = Schemas['Equipe']
+
+export const LIMITES_EQUIPE = { nomMin: 2, nomMax: 60 } as const
+
+const chemin = (hackathonId: string) => ({ params: { path: { hackathonId } } })
+
+export const sInscrire = (id: string, chercheEquipe: boolean) =>
+  resultat<Inscription>(api.POST('/api/hackathons/{hackathonId}/inscriptions', { ...chemin(id), body: { chercheEquipe } }))
+
+export const creerEquipe = (id: string, nom: string) =>
+  resultat<Equipe>(api.POST('/api/hackathons/{hackathonId}/equipes', { ...chemin(id), body: { nom } }))
+
+export const inviterMembre = (id: string, equipeId: string, utilisateurId: string) =>
+  resultat<Equipe>(
+    api.POST('/api/hackathons/{hackathonId}/equipes/{equipeId}/membres', { params: { path: { hackathonId: id, equipeId } }, body: { utilisateurId } }),
+  )
+
+export async function listerEquipes(id: string): Promise<Equipe[]> {
+  const { data, error } = await api.GET('/api/hackathons/{hackathonId}/equipes', { params: { path: { hackathonId: id }, query: { limite: 100 } } })
+  if (error || !data) throw new Error('équipes indisponibles')
+  // Le contrat étend la page commune : ses éléments sont des `Equipe`, que le type généré ne précise pas.
+  return (data.elements ?? []) as Equipe[]
+}
+
+/** « Je cherche une équipe » : les participants acceptés, seuls et volontaires (réservé aux participants). */
+export async function listerSansEquipe(id: string): Promise<Inscription[]> {
+  const { data, error } = await api.GET('/api/hackathons/{hackathonId}/sans-equipe', { params: { path: { hackathonId: id }, query: { limite: 100 } } })
+  if (error || !data) throw new Error('participants indisponibles')
+  return (data.elements ?? []) as Inscription[]
+}

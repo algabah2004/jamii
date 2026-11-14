@@ -120,7 +120,21 @@ function actionsCliente(m: Mission): Mission['moi']['actions'] {
   if (m.statut === 'en_cours' && jalons.some((j) => j.statut === 'livre')) actions.push('accepter_jalon', 'demander_retouche')
   if (m.statut === 'en_cours') actions.push('annuler', 'ouvrir_desaccord')
   if (jalons.some((j) => ['livre', 'accepte'].includes(j.statut) && j.paiement === 'non_paye')) actions.push('declarer_paye')
+  if (m.statut === 'terminee' && !m.travail?.avis?.some((a) => a.auteur === 'client')) actions.push('donner_avis')
   return actions
+}
+
+/** Une action de fin de mission : version vérifiée, puis `changer` modifie la mission (ou renvoie un code d'erreur). */
+async function finir(params: Record<string, unknown>, request: Request, changer: (m: Mission, t: NonNullable<Mission['travail']>, corps: Record<string, unknown>) => string | void) {
+  const mission = missions.get(String(params.id))
+  if (!mission?.travail) return erreur(404, 'introuvable')
+  const corps = (await request.json()) as Record<string, unknown>
+  if (corps.version !== mission.version) return erreur(409, 'modification_concurrente')
+  const code = changer(mission, mission.travail, corps)
+  if (code) return erreur(code === 'validation' ? 400 : 409, code)
+  mission.version += 1
+  mission.moi = { ...mission.moi, actions: actionsCliente(mission) }
+  return HttpResponse.json(mission)
 }
 
 /** Une action du suivi sur un jalon : version vérifiée, puis `changer` modifie la mission (ou renvoie un code d'erreur). */
@@ -152,6 +166,12 @@ export function reinitialiserMissions() {
   propositions.set(enCours.id, [])
 }
 reinitialiserMissions()
+
+/** Pour un test : changer une mission des maquettes (autre rôle, autre statut), que toutes les routes verront. */
+export function modifierMission(id: string, changer: (m: Mission) => void) {
+  const mission = missions.get(id)
+  if (mission) changer(mission)
+}
 
 function resume({ id, titre, statut, competences, budget, ville, pays, aDistance, client, nombrePropositions, publieeLe }: Mission): MissionResume {
   return { id, titre, statut, competences, budget, ville, pays, aDistance, client, nombrePropositions, publieeLe }
@@ -304,4 +324,46 @@ export const handlersMissions = [
       else return 'etat_invalide'
     }),
   ),
+
+  http.post('/api/missions/:id/annuler', ({ params, request }) =>
+    finir(params, request, (m, t, corps) => {
+      if (!['attribuee', 'en_cours'].includes(m.statut)) return 'etat_invalide'
+      if (String(corps.raison ?? '').trim().length < 10) return 'validation'
+      if (t.annulationDemandeePar === 'developpeur') m.statut = 'annulee'
+      else if (t.devis.jalons.some((j) => j.statut === 'livre')) return 'annulation_non_permise'
+      else t.annulationDemandeePar = 'client'
+    }),
+  ),
+
+  http.post('/api/missions/:id/desaccord', ({ params, request }) =>
+    finir(params, request, (m, t, corps) => {
+      if (m.statut !== 'en_cours') return 'etat_invalide'
+      const raison = String(corps.raison ?? '')
+      if (raison.trim().length < 20) return 'validation'
+      m.statut = 'desaccord'
+      t.desaccord = { ouvertPar: 'client', raison, ouvertLe: new Date().toISOString(), issue: null, explication: null, trancheLe: null }
+    }),
+  ),
+
+  http.post('/api/missions/:id/desaccord/trancher', ({ params, request }) =>
+    finir(params, request, (m, t, corps) => {
+      if (m.statut !== 'desaccord' || !t.desaccord) return 'etat_invalide'
+      const issue = corps.issue === 'terminee' ? 'terminee' : 'annulee'
+      Object.assign(t.desaccord, { issue, explication: String(corps.explication ?? ''), trancheLe: new Date().toISOString() })
+      m.statut = issue
+    }),
+  ),
+
+  http.post('/api/missions/:id/avis', async ({ params, request }) => {
+    const mission = missions.get(String(params.id))
+    if (!mission?.travail) return erreur(404, 'introuvable')
+    if (mission.statut !== 'terminee') return erreur(409, 'etat_invalide')
+    if (mission.travail.avis?.some((a) => a.auteur === 'client')) return erreur(409, 'avis_deja_donne')
+    const corps = (await request.json()) as { note: number; texte?: string | null }
+    if (!Number.isInteger(corps.note) || corps.note < 1 || corps.note > 5) return erreur(400, 'validation')
+    const avis = { auteur: 'client' as const, note: corps.note, texte: corps.texte ?? null, donneLe: new Date().toISOString() }
+    mission.travail.avis = [...(mission.travail.avis ?? []), avis]
+    mission.moi = { ...mission.moi, actions: actionsCliente(mission) }
+    return HttpResponse.json(avis, { status: 201 })
+  }),
 ]

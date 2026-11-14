@@ -200,10 +200,10 @@ describe('un hackathon', () => {
     expect(page.find('[data-test="deploiement"]').exists()).toBe(true)
   })
 
-  it('un visiteur connecté voit que s’inscrire arrive bientôt, et aucun bouton d’organisateur', async () => {
+  it('un visiteur connecté peut s’inscrire, et ne voit aucun bouton d’organisateur', async () => {
     const { page } = await monter(`/hackathons/${ID}`)
     await attendre(page, '[data-test="titre"]')
-    expect(page.find('[data-test="inscription-bientot"]').exists()).toBe(true)
+    expect(page.find('[data-test="participer"]').exists()).toBe(true)
     expect(page.find('[data-test="publier"]').exists()).toBe(false)
     expect(page.find('[data-test="annuler"]').exists()).toBe(false)
   })

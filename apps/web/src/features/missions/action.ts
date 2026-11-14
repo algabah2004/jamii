@@ -3,7 +3,7 @@ import { useI18n } from 'vue-i18n'
 import type { Mission, Resultat } from './missions'
 
 /** Les codes d'erreur du suivi qui ont leur propre message ; les autres disent seulement que l'action n'a pas abouti. */
-const CONNUS = ['modification_concurrente', 'etat_invalide', 'retouches_epuisees', 'validation', 'interdit'] as const
+const CONNUS = ['modification_concurrente', 'etat_invalide', 'retouches_epuisees', 'annulation_non_permise', 'avis_deja_donne', 'validation', 'interdit'] as const
 
 /**
  * Une action du suivi : un envoi à la fois, la mission à jour transmise par `fini`, et le message d'erreur à afficher.

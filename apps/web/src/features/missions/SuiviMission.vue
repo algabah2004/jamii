@@ -3,6 +3,9 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { JAvatar, JBouton, JChamp } from '../../design-system'
 import { formaterDate, useAction } from './action'
+import AnnulerMission from './AnnulerMission.vue'
+import AvisMission from './AvisMission.vue'
+import DesaccordMission from './DesaccordMission.vue'
 import JalonSuivi from './JalonSuivi.vue'
 import { demarrerMission, formaterMontant, LIMITES_SUIVI, type Mission, type Travail } from './missions'
 
@@ -80,6 +83,10 @@ function demarrer() {
     <ol class="jalons" :aria-label="t('missions.suivi.jalons')">
       <JalonSuivi v-for="j in jalons" :key="j.id" :mission="mission" :jalon="j" @maj="emit('maj', $event)" />
     </ol>
+
+    <AvisMission :mission="mission" :travail="travail" @maj="emit('maj', $event)" />
+    <DesaccordMission :mission="mission" :travail="travail" @maj="emit('maj', $event)" />
+    <AnnulerMission :mission="mission" :travail="travail" @maj="emit('maj', $event)" />
   </section>
 </template>
 

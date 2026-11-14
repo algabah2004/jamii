@@ -11,6 +11,8 @@ export type Equipe = S['Equipe']
 // Données de démo (contracts/hackathons.yaml) : jamais de vraies données personnelles.
 const AWA = { id: '6f1c2a4e-8b7d-4c3e-9a10-2b5d7e9f0a11', nom: 'Awa Diop', avatarUrl: null }
 const KOFI = { id: '0b9f3c1d-2e4a-4f6b-8c7d-9e0a1b2c3d4e', nom: 'Kofi Mensah', avatarUrl: null }
+const FATOU = { id: '3c4d5e6f-7a8b-4c9d-8e0f-1a2b3c4d5e6f', nom: 'Fatou Ndiaye', avatarUrl: null }
+const MOUSSA = { id: '9e8d7c6b-5a4f-4e3d-9c2b-1a0f9e8d7c6b', nom: 'Moussa Traoré', avatarUrl: null }
 
 /** Des dates relatives à maintenant : la démo reste crédible quel que soit le jour où on la lance. */
 const dansHeures = (h: number) => new Date(Date.now() + h * 3_600_000).toISOString()
@@ -64,13 +66,27 @@ function hackathonDemo(): Hackathon {
 
 const hackathons = new Map<string, Hackathon>()
 const inscriptions = new Map<string, Inscription[]>()
+const equipes = new Map<string, Equipe[]>()
+
+/** Deux participants seuls, qui cherchent une équipe : de quoi montrer « Je cherche une équipe ». */
+function seulDemo(personne: typeof FATOU, competences: string[]): Inscription {
+  return { id: crypto.randomUUID(), personne, statut: 'acceptee', chercheEquipe: true, equipeId: null, competences, creeLe: dansHeures(-20) }
+}
 
 export function reinitialiserHackathons() {
   hackathons.clear()
   inscriptions.clear()
+  equipes.clear()
   const h = hackathonDemo()
   hackathons.set(h.id, h)
-  inscriptions.set(h.id, [])
+  inscriptions.set(h.id, [seulDemo(FATOU, ['flutter', 'ux-design']), seulDemo(MOUSSA, ['spring'])])
+  equipes.set(h.id, [])
+}
+
+/** Pour un test : changer un hackathon des maquettes (autre rôle, autre statut), que toutes les routes verront. */
+export function modifierHackathon(id: string, changer: (h: Hackathon) => void) {
+  const h = hackathons.get(id)
+  if (h) changer(h)
 }
 reinitialiserHackathons()
 
@@ -132,7 +148,7 @@ export const handlersHackathons = [
     return HttpResponse.json(h)
   }),
 
-  http.post('/api/hackathons/:id/inscriptions', async ({ params }) => {
+  http.post('/api/hackathons/:id/inscriptions', async ({ params, request }) => {
     const h = hackathons.get(String(params.id))
     if (!h) return erreur(404, 'introuvable')
     const liste = inscriptions.get(h.id) ?? []
@@ -141,7 +157,7 @@ export const handlersHackathons = [
       id: crypto.randomUUID(),
       personne: KOFI,
       statut: h.modeInscription === 'ouvert' ? 'acceptee' : 'en_attente',
-      chercheEquipe: true,
+      chercheEquipe: ((await request.json()) as { chercheEquipe?: boolean }).chercheEquipe ?? true,
       equipeId: null,
       competences: [],
       creeLe: new Date().toISOString(),
@@ -149,6 +165,45 @@ export const handlersHackathons = [
     liste.push(inscription)
     inscriptions.set(h.id, liste)
     h.nombreInscrits += 1
+    h.moi = { role: 'participant', equipeId: null, actions: ['creer_equipe'] }
     return HttpResponse.json(inscription, { status: 201 })
+  }),
+
+  http.get('/api/hackathons/:id/equipes', ({ params }) => {
+    const liste = equipes.get(String(params.id))
+    return liste ? HttpResponse.json({ elements: liste, curseurSuivant: null }) : erreur(404, 'introuvable')
+  }),
+
+  http.post('/api/hackathons/:id/equipes', async ({ params, request }) => {
+    const h = hackathons.get(String(params.id))
+    if (!h) return erreur(404, 'introuvable')
+    if (h.moi.equipeId) return erreur(409, 'deja_inscrit')
+    const { nom } = (await request.json()) as { nom?: string }
+    if (!nom || nom.trim().length < 2) return erreur(400, 'validation')
+    const equipe: Equipe = { id: crypto.randomUUID(), nom: nom.trim(), chef: KOFI, membres: [KOFI], tailleMax: h.tailleEquipe.max, complete: false, creeLe: new Date().toISOString() }
+    equipes.get(h.id)?.push(equipe)
+    if (h.moi.role === 'visiteur') h.nombreInscrits += 1
+    h.moi = { role: 'participant', equipeId: equipe.id, actions: ['inviter'] }
+    return HttpResponse.json(equipe, { status: 201 })
+  }),
+
+  http.get('/api/hackathons/:id/sans-equipe', ({ params }) => {
+    const liste = inscriptions.get(String(params.id))
+    if (!liste) return erreur(404, 'introuvable')
+    const seuls = liste.filter((i) => i.statut === 'acceptee' && i.chercheEquipe && !i.equipeId && i.personne.id !== KOFI.id)
+    return HttpResponse.json({ elements: seuls, curseurSuivant: null })
+  }),
+
+  http.post('/api/hackathons/:id/equipes/:equipeId/membres', async ({ params, request }) => {
+    const equipe = equipes.get(String(params.id))?.find((e) => e.id === String(params.equipeId))
+    if (!equipe) return erreur(404, 'introuvable')
+    const { utilisateurId } = (await request.json()) as { utilisateurId: string }
+    const inscription = inscriptions.get(String(params.id))?.find((i) => i.personne.id === utilisateurId)
+    if (!inscription || inscription.equipeId) return erreur(409, 'deja_inscrit')
+    if (equipe.complete) return erreur(409, 'equipe_complete')
+    inscription.equipeId = equipe.id
+    equipe.membres.push(inscription.personne)
+    equipe.complete = equipe.membres.length >= equipe.tailleMax
+    return HttpResponse.json(equipe)
   }),
 ]

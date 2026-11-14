@@ -146,3 +146,32 @@ export const demanderRetouche = (id: string, jalonId: string, version: number, r
 
 export const declarerPaiement = (id: string, jalonId: string, version: number, sens: 'paye' | 'recu') =>
   resultat<Mission>(api.POST('/api/missions/{missionId}/jalons/{jalonId}/declarer-paiement', { ...cheminJalon(id, jalonId), body: { version, sens } }))
+
+// ---------------------------------------------------------------- finir une mission (#179, #180)
+
+export type Desaccord = Schemas['Desaccord']
+export type Avis = Schemas['Avis']
+
+export const LIMITES_FIN = { annulationMin: 10, annulationMax: 1000, desaccordMin: 20, desaccordMax: 4000, avisMax: 1000 } as const
+
+/** `client` ou `developpeur` : la partie de la mission que je suis, `null` pour un modérateur ou un tiers. */
+export function maPartie(mission: Mission): 'client' | 'developpeur' | null {
+  return mission.moi.role === 'client' ? 'client' : mission.moi.role === 'developpeur_retenu' ? 'developpeur' : null
+}
+
+export const annulerMission = (id: string, version: number, raison: string) =>
+  resultat<Mission>(api.POST('/api/missions/{missionId}/annuler', { ...chemin(id), body: { version, raison } }))
+
+export const ouvrirDesaccord = (id: string, version: number, raison: string) =>
+  resultat<Mission>(api.POST('/api/missions/{missionId}/desaccord', { ...chemin(id), body: { version, raison } }))
+
+export const trancherDesaccord = (id: string, version: number, issue: 'terminee' | 'annulee', explication: string) =>
+  resultat<Mission>(api.POST('/api/missions/{missionId}/desaccord/trancher', { ...chemin(id), body: { version, issue, explication } }))
+
+/** L'avis donné ne renvoie pas la mission : on la relit pour mettre l'écran à jour. */
+export async function donnerAvis(id: string, note: number, texte: string): Promise<Resultat<Mission>> {
+  const r = await resultat<Avis>(api.POST('/api/missions/{missionId}/avis', { ...chemin(id), body: { note, texte: texte || null } }))
+  if (!r.ok) return r
+  const mission = await lireMission(id)
+  return mission ? { ok: true, valeur: mission } : { ok: false, code: null, champs: {} }
+}
