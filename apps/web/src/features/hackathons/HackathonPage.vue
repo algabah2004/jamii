@@ -13,10 +13,13 @@ import {
   type Hackathon,
   type Resultat,
 } from './hackathons'
+import EquipesHackathon from './EquipesHackathon.vue'
+import InscriptionHackathon from './InscriptionHackathon.vue'
 
 /*
  * Un hackathon : son défi, son calendrier, ses critères et ses prix, et ce que la personne qui le lit peut en faire.
- * Les boutons viennent de `moi.actions`, calculé par l'API (qui revérifie chaque action). L'inscription arrive avec #171.
+ * Les boutons viennent de `moi.actions`, calculé par l'API (qui revérifie chaque action). S'inscrire et former son
+ * équipe : `InscriptionHackathon` et `EquipesHackathon`.
  * DESIGN PROVISOIRE : l'écran montre le parcours avec les composants actuels ; son design sera repris avec le design system.
  */
 const { t, locale } = useI18n()
@@ -40,6 +43,16 @@ async function charger() {
   }
 }
 watch(id, () => void charger(), { immediate: true })
+
+/** Relire le hackathon sans repasser par l'écran de chargement (après une inscription). */
+async function rafraichir() {
+  try {
+    hackathon.value = (await lireHackathon(id.value)) ?? hackathon.value
+  } catch {
+    // Le hackathon affiché reste juste ; la prochaine action le relira.
+  }
+}
+const voitEquipes = computed(() => !['brouillon', 'annule'].includes(hackathon.value?.statut ?? 'brouillon'))
 
 const peut = (nom: string) => (hackathon.value?.moi.actions as string[] | undefined)?.includes(nom) ?? false
 const dates = computed(() => {
@@ -171,10 +184,12 @@ const annuler = () => (raisonValide.value ? agir(() => annulerHackathon(hackatho
             <p class="texte-discret">{{ t('hackathons.detail.annulerAide') }}</p>
           </div>
         </div>
-        <p v-if="peut('sinscrire')" class="note" data-test="inscription-bientot">{{ t('hackathons.detail.inscriptionBientot') }}</p>
         <p v-if="message" role="alert" class="erreur" data-test="erreur">{{ message }}</p>
         <p class="texte-discret provisoire" data-test="provisoire">{{ t('hackathons.detail.provisoire') }}</p>
       </article>
+
+      <InscriptionHackathon v-if="peut('sinscrire') || peut('creer_equipe')" :hackathon="hackathon" @inscrit="rafraichir" />
+      <EquipesHackathon v-if="voitEquipes" :hackathon="hackathon" />
     </template>
   </section>
 </template>
