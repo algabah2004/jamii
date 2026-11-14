@@ -146,6 +146,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/cercles/{cercleId}/tours/{numero}/activite": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cercleId: components["parameters"]["CercleId"];
+                /** @description Le numéro du tour, à partir de 1. */
+                numero: number;
+            };
+            cookie?: never;
+        };
+        /**
+         * Ce qui se passe dans le dépôt du tour (derniers commits et demandes de fusion)
+         * @description La collaboration se voit **dans Jamii** : l'API lit le dépôt du tour chez son fournisseur (GitHub aujourd'hui,
+         *     Gitea demain, `DEPOT_CODE`) et le résume. Lecture seule : on code, on pousse et on fusionne chez le fournisseur.
+         *
+         *     Toujours `200` quand le tour existe, avec un `etat` :
+         *     - `aucun_depot` : le tour n'a pas (encore) de dépôt ;
+         *     - `indisponible` : le fournisseur ne répond pas ou refuse. Les listes sont vides, le lien du dépôt reste utilisable ;
+         *     - `disponible` : les listes sont remplies.
+         *
+         *     Gardée **1 minute** en mémoire par dépôt : toute une salle qui regarde le même tour ne fait qu'un appel au
+         *     fournisseur par minute. Visible par tout utilisateur connecté si les dépôts sont publics ; réservée aux membres du
+         *     cercle (`403 pas_membre`) si les dépôts sont privés (`GITHUB_DEPOTS_PRIVES=true`).
+         */
+        get: operations["activiteDuTour"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -234,6 +268,47 @@ export interface components {
              * @description L'adresse à cloner.
              */
             cloneUrl: string;
+        };
+        ActiviteDepot: {
+            /** @enum {string} */
+            etat: "disponible" | "indisponible" | "aucun_depot";
+            depot: components["schemas"]["Depot"] | null;
+            /**
+             * Format: date-time
+             * @description Moment de la lecture chez le fournisseur (jusqu'à 1 minute).
+             */
+            luLe: string;
+            /** @description Les 10 derniers commits de la branche par défaut, du plus récent au plus ancien. */
+            commits: components["schemas"]["Commit"][];
+            /** @description Les 10 demandes de fusion (pull requests) mises à jour le plus récemment, ouvertes ou non. */
+            demandesDeFusion: components["schemas"]["DemandeDeFusion"][];
+        };
+        /** @description Le compte chez le fournisseur. `null` quand le commit n'est relié à aucun compte. */
+        AuteurDepot: {
+            login: string;
+            /** Format: uri */
+            avatarUrl: string | null;
+        };
+        Commit: {
+            sha: string;
+            /** @description La première ligne seulement, coupée à 200 caractères. */
+            message: string;
+            auteur: components["schemas"]["AuteurDepot"] | null;
+            /** Format: date-time */
+            date: string;
+            /** Format: uri */
+            url: string;
+        };
+        DemandeDeFusion: {
+            numero: number;
+            titre: string;
+            /** @enum {string} */
+            etat: "ouverte" | "fusionnee" | "fermee";
+            auteur: components["schemas"]["AuteurDepot"] | null;
+            /** Format: date-time */
+            misAJourLe: string;
+            /** Format: uri */
+            url: string;
         };
         /** @description Quand et par qui l'ordre a été tiré. Enregistré, jamais modifié. */
         Tirage: {
@@ -558,6 +633,33 @@ export interface operations {
             403: components["responses"]["Interdit"];
             404: components["responses"]["Introuvable"];
             409: components["responses"]["Conflit"];
+        };
+    };
+    activiteDuTour: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cercleId: components["parameters"]["CercleId"];
+                /** @description Le numéro du tour, à partir de 1. */
+                numero: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description L'activité du dépôt. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActiviteDepot"];
+                };
+            };
+            401: components["responses"]["NonConnecte"];
+            403: components["responses"]["Interdit"];
+            404: components["responses"]["Introuvable"];
         };
     };
 }
