@@ -41,7 +41,7 @@ class SecuriteConfig {
 				// /api/missions et /api/missions/* : les annonces publiques (contracts/missions.yaml). Le module décide, mission
 				// par mission, de ce que la personne a le droit de voir (404 sinon) ; le détail du travail reste fermé.
 				.requestMatchers(HttpMethod.GET, "/api/systalink/tableau-de-bord", "/api/systalink/tendances", "/api/vitrine",
-						"/api/profils/*", "/api/missions", "/api/missions/*")
+						"/api/profils/*", "/api/missions", "/api/missions/*", "/api/hackathons", "/api/hackathons/*")
 				.permitAll()
 				.anyRequest().authenticated())
 			.oauth2Login(oauth -> oauth
