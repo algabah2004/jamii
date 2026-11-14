@@ -20,13 +20,14 @@ import JuryHackathon from './JuryHackathon.vue'
 import NotationHackathon from './NotationHackathon.vue'
 import RenduEquipe from './RenduEquipe.vue'
 import ResultatsHackathon from './ResultatsHackathon.vue'
+import TriCandidatures from './TriCandidatures.vue'
 
 /*
  * Un hackathon : son défi, son calendrier, ses critères et ses prix, et ce que la personne qui le lit peut en faire.
  * Les boutons viennent de `moi.actions`, calculé par l'API (qui revérifie chaque action). S'inscrire et former son
  * équipe : `InscriptionHackathon` et `EquipesHackathon` ; rendre son projet : `RenduEquipe` ;
  * le jury : `JuryHackathon` (organisateur) et `NotationHackathon` (juré) ; les gagnants : `ConfirmerResultats`
- * (organisateur) puis `ResultatsHackathon` (tout le monde).
+ * (organisateur) puis `ResultatsHackathon` (tout le monde) ; les candidatures : `TriCandidatures` (organisateur).
  * DESIGN PROVISOIRE : l'écran montre le parcours avec les composants actuels ; son design sera repris avec le design system.
  */
 const { t, locale } = useI18n()
@@ -204,6 +205,7 @@ const annuler = () => (raisonValide.value ? agir(() => annulerHackathon(hackatho
 
       <ResultatsHackathon v-if="hackathon.statut === 'resultats'" :hackathon="hackathon" />
       <ConfirmerResultats v-if="peut('confirmer_resultats')" :hackathon="hackathon" @publie="rafraichir" />
+      <TriCandidatures v-if="peut('trier_inscriptions') && hackathon.modeInscription === 'candidature'" :hackathon="hackathon" />
       <InscriptionHackathon v-if="peut('sinscrire') || peut('creer_equipe')" :hackathon="hackathon" @inscrit="rafraichir" />
       <NotationHackathon v-if="peut('noter')" :hackathon="hackathon" />
       <JuryHackathon v-if="voitJury" :hackathon="hackathon" />

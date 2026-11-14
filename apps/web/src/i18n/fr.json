@@ -1158,6 +1158,28 @@
       "rang": "{rang}er | {rang}e",
       "voir": "Voir {titre}",
       "retours": "Les retours du jury :"
+    },
+    "tri": {
+      "titre": "Les candidatures",
+      "indisponible": "Les candidatures ne sont pas disponibles pour le moment. Réessaie dans un instant.",
+      "aucune": "Aucune candidature pour le moment.",
+      "aTrier": "Aucune candidature n'attend ta réponse. | Une candidature attend ta réponse. | {n} candidatures attendent ta réponse.",
+      "decider": "Répondre à {nom}",
+      "statuts": {
+        "en_attente": "Attend ta réponse",
+        "acceptee": "Acceptée",
+        "attente": "En liste d'attente",
+        "refusee": "Refusée"
+      },
+      "actions": {
+        "acceptee": "Accepter",
+        "attente": "Liste d'attente",
+        "refusee": "Refuser"
+      },
+      "erreurs": {
+        "etat_invalide": "Les candidatures ne peuvent plus changer pour ce hackathon.",
+        "autre": "La réponse n'a pas été enregistrée. Réessaie dans un instant."
+      }
     }
   },
   "missions": {

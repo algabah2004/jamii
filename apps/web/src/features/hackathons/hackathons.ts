@@ -272,3 +272,24 @@ export async function lireResultats(id: string): Promise<Resultats | null> {
 /** Confirmer les gagnants : le hackathon passe en `resultats` et les notes sont verrouillées. */
 export const confirmerResultats = (id: string, version: number, gagnants: Gagnant[]) =>
   resultat<Resultats>(api.POST('/api/hackathons/{hackathonId}/resultats', { ...chemin(id), body: { version, gagnants } }))
+
+// ---------------------------------------------------------------- tri des candidatures (H3)
+
+export type StatutInscription = Schemas['StatutInscription']
+export const DECISIONS = ['acceptee', 'attente', 'refusee'] as const
+
+/** Toutes les inscriptions (organisateur), les plus anciennes d'abord : premier arrivé, premier lu. */
+export async function listerInscriptions(id: string): Promise<Inscription[]> {
+  const { data, error } = await api.GET('/api/hackathons/{hackathonId}/inscriptions', { params: { path: { hackathonId: id }, query: { limite: 100 } } })
+  if (error || !data) throw new Error('inscriptions indisponibles')
+  return (data.elements ?? []) as Inscription[]
+}
+
+export const trierInscription = (id: string, inscriptionId: string, statut: (typeof DECISIONS)[number]) =>
+  resultat<Inscription>(
+    api.PATCH('/api/hackathons/{hackathonId}/inscriptions/{inscriptionId}', {
+      params: { path: { hackathonId: id, inscriptionId } },
+      body: { statut },
+      headers: { 'Content-Type': 'application/merge-patch+json' },
+    }),
+  )
