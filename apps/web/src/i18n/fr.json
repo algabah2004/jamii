@@ -528,7 +528,28 @@
       "ensuite3": "Tu décides : rien n'est publié ni transmis sans ton accord.",
       "prudence": "N'écris ni nom de client ni information confidentielle : décris seulement le besoin.",
       "secteur": "Ton secteur (facultatif)",
-      "ville": "Ta ville (facultatif)"
+      "ville": "Ta ville (facultatif)",
+      "questionsTitre": "Pour t'aider à bien le décrire (facultatif)",
+      "questionsAide": "Réponds en une phrase. Ça aide Jamii à mieux comprendre ton besoin.",
+      "questionQui": "Qui va s'en servir ?",
+      "questionProbleme": "Qu'est-ce qui ne va pas aujourd'hui ?",
+      "questionReussite": "À quoi verras-tu que c'est réussi ?",
+      "libelleQui": "Qui va s'en servir :",
+      "libelleProbleme": "Ce qui ne va pas aujourd'hui :",
+      "libelleReussite": "Ce sera réussi quand :"
+    },
+    "publication": {
+      "titre": "Publier ma demande",
+      "intro": "Les développeurs de la communauté pourront voir ta demande et en discuter. Ils verront seulement ce résumé, jamais ton texte d'origine.",
+      "champ": "Le résumé que la communauté verra",
+      "aide": "Tu peux le modifier. N'écris ni e-mail ni téléphone : ils seraient retirés. {max} caractères au maximum.",
+      "bouton": "Publier ma demande",
+      "faite": "Ta demande est publiée depuis le {date}. La communauté peut la voir.",
+      "resumePublie": "Ce que la communauté voit :",
+      "invalide": "Le résumé doit faire entre {min} et {max} caractères.",
+      "pasPrete": "Le cahier des charges n'est pas encore prêt. Réessaie dans un instant.",
+      "dejaPubliee": "Cette demande est déjà publiée.",
+      "erreur": "Ta demande n'a pas pu être publiée. Réessaie dans un instant."
     },
     "exemples": [
       {

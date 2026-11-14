@@ -283,11 +283,18 @@ class GestionCercles {
 	}
 
 	private Optional<Fiche> fiche(UUID id, boolean verrouiller) {
+		// Le verrou d'abord, dans sa propre requête, puis la lecture. Dans une seule requête, PostgreSQL relit bien la
+		// ligne du cercle après avoir attendu le verrou, mais garde le nombre de membres calculé avant l'attente :
+		// deux personnes qui visaient la dernière place entraient alors toutes les deux.
+		if (verrouiller
+				&& base.sql("SELECT id FROM cercle WHERE id = :id FOR UPDATE").param("id", id).query(UUID.class).optional().isEmpty()) {
+			return Optional.empty();
+		}
 		return base.sql("""
 				SELECT c.id, c.nom, c.ville, c.taille, c.createur_id, c.statut, c.tour_en_cours, c.tirage_le, c.cree_le,
 				       (SELECT count(*) FROM cercle_membre m WHERE m.cercle_id = c.id) AS nombre_membres
 				FROM cercle c WHERE c.id = :id
-				""" + (verrouiller ? " FOR UPDATE OF c" : ""))
+				""")
 			.param("id", id)
 			.query((rs, n) -> enFiche(rs))
 			.optional();

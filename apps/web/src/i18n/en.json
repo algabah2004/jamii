@@ -528,7 +528,28 @@
       "ensuite3": "You decide: nothing is published or shared without your consent.",
       "prudence": "Don't write client names or confidential information: just describe the need.",
       "secteur": "Your sector (optional)",
-      "ville": "Your city (optional)"
+      "ville": "Your city (optional)",
+      "questionsTitre": "To help you describe it (optional)",
+      "questionsAide": "Answer in one sentence. It helps Jamii understand your need.",
+      "questionQui": "Who will use it?",
+      "questionProbleme": "What isn't working today?",
+      "questionReussite": "How will you know it worked?",
+      "libelleQui": "Who will use it:",
+      "libelleProbleme": "What isn't working today:",
+      "libelleReussite": "It will be a success when:"
+    },
+    "publication": {
+      "titre": "Publish my request",
+      "intro": "Developers in the community will be able to see your request and discuss it. They will only see this summary, never your original text.",
+      "champ": "The summary the community will see",
+      "aide": "You can edit it. Don't write an e-mail or a phone number: they would be removed. {max} characters at most.",
+      "bouton": "Publish my request",
+      "faite": "Your request has been published since {date}. The community can see it.",
+      "resumePublie": "What the community sees:",
+      "invalide": "The summary must be between {min} and {max} characters.",
+      "pasPrete": "The specification is not ready yet. Try again in a moment.",
+      "dejaPubliee": "This request is already published.",
+      "erreur": "Your request could not be published. Try again in a moment."
     },
     "exemples": [
       {

@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /** Les erreurs du contrat missions.yaml, au format RFC 9457 avec `code`, pour les contrôleurs du module. */
-@RestControllerAdvice(assignableTypes = MissionsController.class)
+@RestControllerAdvice(assignableTypes = { MissionsController.class, PropositionsController.class })
 class ErreursMissionsAdvice {
 
 	@ExceptionHandler(ErreurMissions.class)

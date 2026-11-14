@@ -38,7 +38,7 @@ class Missions {
 	/** Une mission telle que la base la garde. */
 	record Mission(UUID id, UUID clientId, UUID demandeId, String titre, String besoin, List<String> competences,
 			Montant budget, LocalDate dateSouhaitee, String visibilite, String ville, String pays, boolean aDistance,
-			String statut, int version, Instant creeLe, Instant publieeLe) {
+			String statut, int version, Instant creeLe, Instant publieeLe, UUID developpeurId) {
 	}
 
 	/** Une mission nouvelle, déjà validée par le contrôleur. */
@@ -60,7 +60,7 @@ class Missions {
 
 	private static final String COLONNES = """
 			id, client_id, demande_id, titre, besoin, competences, budget_centimes, devise, date_souhaitee, visibilite,
-			ville, pays, a_distance, statut, version, cree_le, publiee_le""";
+			ville, pays, a_distance, statut, version, cree_le, publiee_le, developpeur_id""";
 
 	/** L'ordre de la liste : la publication la plus récente d'abord, et la création pour un brouillon. */
 	private static final String TRI = "COALESCE(publiee_le, cree_le)";
@@ -191,7 +191,7 @@ class Missions {
 		if (recentes.size() >= PUBLICATIONS_PAR_JOUR) {
 			// La place se libère quand la publication qui nous fait dépasser sort de la fenêtre de 24 heures.
 			Instant liberee = recentes.get(recentes.size() - PUBLICATIONS_PAR_JOUR).plus(JOUR);
-			throw ErreurMissions.limiteAtteinte(Duration.between(maintenant, liberee).toSeconds() + 1);
+			throw ErreurMissions.limiteAtteinte("Trop de missions publiées aujourd'hui", Duration.between(maintenant, liberee).toSeconds() + 1);
 		}
 		base.sql("UPDATE mission SET statut = 'publiee', publiee_le = :maintenant, version = version + 1 WHERE id = :id")
 			.param("maintenant", Timestamp.from(maintenant)).param("id", id).update();
@@ -209,6 +209,9 @@ class Missions {
 			throw ErreurMissions.conflit("etat_invalide", "Seule une mission publiée se ferme");
 		}
 		base.sql("UPDATE mission SET statut = 'fermee', version = version + 1 WHERE id = :id").param("id", id).update();
+		base.sql("UPDATE proposition SET statut = 'non_retenue' WHERE mission_id = :id AND statut IN ('envoyee', 'retenue')")
+			.param("id", id).update();
+		base.sql("DELETE FROM devis WHERE mission_id = :id AND accepte_le IS NULL").param("id", id).update();
 		return charger(id, false);
 	}
 
@@ -235,7 +238,7 @@ class Missions {
 	// ---------------------------------------------------------------- règles d'accès
 
 	/** La mission verrouillée, pour son client seulement : 404 si `moi` ne peut pas la voir, 403 s'il la voit sans être le client. */
-	private Mission clientDe(UUID id, UUID moi) {
+	Mission clientDe(UUID id, UUID moi) {
 		Mission m = charger(id, true);
 		Lecture l = role(m, moi).orElseThrow(ErreurMissions::introuvable);
 		if (!"client".equals(l.role())) {
@@ -244,9 +247,21 @@ class Missions {
 		return m;
 	}
 
-	private Optional<Lecture> role(Mission m, UUID moi) {
+	/**
+	 * Ce que `moi` est pour cette mission : `client`, `developpeur_retenu`, `candidat` (il a proposé, même s'il s'est retiré
+	 * ou a été écarté : il peut toujours voir où il en est), `invite` (hors brouillon) ou `visiteur` (une annonce publique
+	 * publiée, fermée ou terminée). Vide : la mission n'existe pas pour lui.
+	 */
+	Optional<Lecture> role(Mission m, UUID moi) {
 		if (m.clientId().equals(moi)) {
 			return Optional.of(new Lecture(m, "client"));
+		}
+		if (moi != null && moi.equals(m.developpeurId())) {
+			return Optional.of(new Lecture(m, "developpeur_retenu"));
+		}
+		if (moi != null && base.sql("SELECT EXISTS (SELECT 1 FROM proposition WHERE mission_id = :m AND developpeur_id = :u)")
+			.param("m", m.id()).param("u", moi).query(Boolean.class).single()) {
+			return Optional.of(new Lecture(m, "candidat"));
 		}
 		boolean invite = moi != null && !"brouillon".equals(m.statut()) && base
 			.sql("SELECT EXISTS (SELECT 1 FROM invitation_mission WHERE mission_id = :m AND utilisateur_id = :u)")
@@ -259,7 +274,21 @@ class Missions {
 		return annonceOuverte ? Optional.of(new Lecture(m, "visiteur")) : Optional.empty();
 	}
 
-	private Mission charger(UUID id, boolean verrouiller) {
+	/** Combien de propositions comptent pour chaque mission (une proposition retirée ne compte plus). */
+	@Transactional(readOnly = true)
+	java.util.Map<UUID, Integer> nombresDePropositions(java.util.Collection<UUID> missions) {
+		java.util.Map<UUID, Integer> nombres = new java.util.HashMap<>();
+		if (missions.isEmpty()) {
+			return nombres;
+		}
+		base.sql("SELECT mission_id, count(*) FROM proposition WHERE mission_id IN (:ids) AND statut <> 'retiree' GROUP BY mission_id")
+			.param("ids", missions)
+			.query((rs, i) -> nombres.put(rs.getObject(1, UUID.class), rs.getInt(2)))
+			.list();
+		return nombres;
+	}
+
+	Mission charger(UUID id, boolean verrouiller) {
 		return base.sql("SELECT " + COLONNES + " FROM mission WHERE id = :id" + (verrouiller ? " FOR UPDATE" : ""))
 			.param("id", id)
 			.query(Missions::mission)
@@ -278,7 +307,8 @@ class Missions {
 				rs.getObject("demande_id", UUID.class), rs.getString("titre"), rs.getString("besoin"), competences, budget,
 				date == null ? null : date.toLocalDate(), rs.getString("visibilite"), rs.getString("ville"),
 				rs.getString("pays"), rs.getBoolean("a_distance"), rs.getString("statut"), rs.getInt("version"),
-				rs.getTimestamp("cree_le").toInstant(), publiee == null ? null : publiee.toInstant());
+				rs.getTimestamp("cree_le").toInstant(), publiee == null ? null : publiee.toInstant(),
+				rs.getObject("developpeur_id", UUID.class));
 	}
 
 	/** Le curseur de la liste : l'instant de tri et l'identifiant de la dernière mission, en base 64 (opaque pour le front). */
