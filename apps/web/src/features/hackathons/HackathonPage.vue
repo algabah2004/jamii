@@ -13,17 +13,20 @@ import {
   type Hackathon,
   type Resultat,
 } from './hackathons'
+import ConfirmerResultats from './ConfirmerResultats.vue'
 import EquipesHackathon from './EquipesHackathon.vue'
 import InscriptionHackathon from './InscriptionHackathon.vue'
 import JuryHackathon from './JuryHackathon.vue'
 import NotationHackathon from './NotationHackathon.vue'
 import RenduEquipe from './RenduEquipe.vue'
+import ResultatsHackathon from './ResultatsHackathon.vue'
 
 /*
  * Un hackathon : son défi, son calendrier, ses critères et ses prix, et ce que la personne qui le lit peut en faire.
  * Les boutons viennent de `moi.actions`, calculé par l'API (qui revérifie chaque action). S'inscrire et former son
  * équipe : `InscriptionHackathon` et `EquipesHackathon` ; rendre son projet : `RenduEquipe` ;
- * le jury : `JuryHackathon` (organisateur) et `NotationHackathon` (juré).
+ * le jury : `JuryHackathon` (organisateur) et `NotationHackathon` (juré) ; les gagnants : `ConfirmerResultats`
+ * (organisateur) puis `ResultatsHackathon` (tout le monde).
  * DESIGN PROVISOIRE : l'écran montre le parcours avec les composants actuels ; son design sera repris avec le design system.
  */
 const { t, locale } = useI18n()
@@ -199,6 +202,8 @@ const annuler = () => (raisonValide.value ? agir(() => annulerHackathon(hackatho
         <p class="texte-discret provisoire" data-test="provisoire">{{ t('hackathons.detail.provisoire') }}</p>
       </article>
 
+      <ResultatsHackathon v-if="hackathon.statut === 'resultats'" :hackathon="hackathon" />
+      <ConfirmerResultats v-if="peut('confirmer_resultats')" :hackathon="hackathon" @publie="rafraichir" />
       <InscriptionHackathon v-if="peut('sinscrire') || peut('creer_equipe')" :hackathon="hackathon" @inscrit="rafraichir" />
       <NotationHackathon v-if="peut('noter')" :hackathon="hackathon" />
       <JuryHackathon v-if="voitJury" :hackathon="hackathon" />

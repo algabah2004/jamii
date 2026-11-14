@@ -253,3 +253,22 @@ export async function suivreNotation(id: string): Promise<Notation> {
 
 /** Le lien de l'export CSV des notes (organisateur) : le navigateur le télécharge avec la session en cours. */
 export const lienExportNotes = (id: string) => `/api/hackathons/${encodeURIComponent(id)}/notes.csv`
+
+// ---------------------------------------------------------------- résultats (H7)
+
+export type Resultats = Schemas['Resultats']
+export type Gagnant = Schemas['ConfirmationResultats']['gagnants'][number]
+
+export const LIMITES_RESULTATS = { raisonMax: 1000 } as const
+
+/** Les résultats publiés ; `null` tant qu'ils ne le sont pas (404). */
+export async function lireResultats(id: string): Promise<Resultats | null> {
+  const { data, error, response } = await api.GET('/api/hackathons/{hackathonId}/resultats', { ...chemin(id) })
+  if (response.status === 404) return null
+  if (error || !data) throw new Error('résultats indisponibles')
+  return data
+}
+
+/** Confirmer les gagnants : le hackathon passe en `resultats` et les notes sont verrouillées. */
+export const confirmerResultats = (id: string, version: number, gagnants: Gagnant[]) =>
+  resultat<Resultats>(api.POST('/api/hackathons/{hackathonId}/resultats', { ...chemin(id), body: { version, gagnants } }))

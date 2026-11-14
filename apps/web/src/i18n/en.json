@@ -1128,6 +1128,36 @@
         "validation": "Each criterion needs a score from 1 to 5.",
         "autre": "The scores could not be saved. Try again in a moment."
       }
+    },
+    "confirmation": {
+      "titre": "Confirm the winners",
+      "intro": "The jury proposes a winner for each prize, in ranking order. You can choose another team, but you have to say why: your reason stays with the results.",
+      "indisponible": "The ranking is not available right now. Try again in a moment.",
+      "sansPrix": "This hackathon has no prizes: there are no winners to confirm.",
+      "sansRendu": "No team has submitted a project.",
+      "gagnant": "Winning team",
+      "choisir": "Choose a team",
+      "propose": "proposed by the jury",
+      "raison": "Why this choice?",
+      "aideRaison": "This is not the team proposed by the jury: explain your choice in a few words.",
+      "verrou": "Once results are published, scores can no longer change.",
+      "publier": "Publish the results",
+      "erreurs": {
+        "etat_invalide": "Results cannot be published now: scoring has not started, or they are already published.",
+        "modification_concurrente": "The hackathon was changed in the meantime. Reload the page.",
+        "validation": "Each prize needs a team that submitted a project, and a reason if it is not the one proposed by the jury.",
+        "autre": "The results could not be published. Try again in a moment."
+      }
+    },
+    "resultats": {
+      "titre": "Results",
+      "indisponible": "Results are not available right now. Try again in a moment.",
+      "publieLe": "Published on {date}.",
+      "offertPar": "offered by {sponsor}",
+      "classement": "Ranking",
+      "rang": "#{rang} | #{rang}",
+      "voir": "See {titre}",
+      "retours": "Jury feedback:"
     }
   },
   "missions": {

@@ -1128,6 +1128,36 @@
         "validation": "Chaque critère doit avoir une note de 1 à 5.",
         "autre": "Les notes n'ont pas pu être enregistrées. Réessaie dans un instant."
       }
+    },
+    "confirmation": {
+      "titre": "Confirmer les gagnants",
+      "intro": "Le jury propose un gagnant pour chaque prix, dans l'ordre du classement. Tu peux en choisir un autre, mais il faut dire pourquoi : ta raison reste avec les résultats.",
+      "indisponible": "Le classement n'est pas disponible pour le moment. Réessaie dans un instant.",
+      "sansPrix": "Ce hackathon n'a pas de prix : il n'y a pas de gagnant à confirmer.",
+      "sansRendu": "Aucune équipe n'a rendu de projet.",
+      "gagnant": "L'équipe gagnante",
+      "choisir": "Choisir une équipe",
+      "propose": "proposé par le jury",
+      "raison": "Pourquoi ce choix ?",
+      "aideRaison": "Ce n'est pas l'équipe proposée par le jury : explique ton choix en quelques mots.",
+      "verrou": "Une fois les résultats publiés, les notes ne peuvent plus changer.",
+      "publier": "Publier les résultats",
+      "erreurs": {
+        "etat_invalide": "Les résultats ne peuvent pas être publiés maintenant : la notation n'a pas commencé, ou ils sont déjà publiés.",
+        "modification_concurrente": "Le hackathon a été modifié entre-temps. Recharge la page.",
+        "validation": "Chaque prix doit avoir une équipe qui a rendu un projet, et une raison si elle n'est pas celle proposée par le jury.",
+        "autre": "Les résultats n'ont pas pu être publiés. Réessaie dans un instant."
+      }
+    },
+    "resultats": {
+      "titre": "Les résultats",
+      "indisponible": "Les résultats ne sont pas disponibles pour le moment. Réessaie dans un instant.",
+      "publieLe": "Publiés le {date}.",
+      "offertPar": "offert par {sponsor}",
+      "classement": "Le classement",
+      "rang": "{rang}er | {rang}e",
+      "voir": "Voir {titre}",
+      "retours": "Les retours du jury :"
     }
   },
   "missions": {
