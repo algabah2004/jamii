@@ -83,7 +83,8 @@ describe('les profils qui manquent au cercle', () => {
     expect(envois).toHaveLength(0)
 
     await page.find('[data-test="inviter-du-besoin"]').trigger('click')
-    await vi.waitFor(() => expect(page.find('[data-test="invites-du-besoin"]').exists()).toBe(true))
+    // Les invitations partent l'une après l'autre : on attend la dernière (l'échec d'Amina), pas la première (#190).
+    await vi.waitFor(() => expect(page.find('[data-test="du-besoin"] [role="alert"]').text()).toContain('pour Amina'))
     expect(envois).toEqual([{ id: KWAME, corps: expect.objectContaining({ cercleId: ID_SAINT_LOUIS, texte: expect.stringContaining('Bonjour Kwame') }) }])
     expect(page.find('[data-test="invites-du-besoin"]').text()).toContain('Invitation envoyée à Kwame.')
     expect(page.find('[data-test="du-besoin"] [role="alert"]').text()).toContain('pour Amina')
