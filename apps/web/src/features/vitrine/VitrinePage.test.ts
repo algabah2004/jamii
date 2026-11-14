@@ -29,6 +29,15 @@ describe('Vitrine', () => {
     expect(cartes[0]!.text()).toContain('Réalisé pour une PME')
   })
 
+  it('met « Né dans une Tech Tontine Systalink » seulement sur les projets nés d’un cercle', async () => {
+    const { page } = await monter()
+    const nesDansUnCercle = vitrineDemo.filter((p) => p.origine === 'cercle').length
+    expect(nesDansUnCercle).toBeGreaterThan(0)
+    const etiquettes = page.findAll('[data-test="etiquette-tontine"]')
+    expect(etiquettes).toHaveLength(nesDansUnCercle)
+    expect(etiquettes[0]!.text()).toBe('Né dans une Tech Tontine Systalink')
+  })
+
   it('met « Hébergé sur Systalink » seulement sur les projets DataCloud', async () => {
     const { page } = await monter()
     const surDatacloud = vitrineDemo.filter((p) => p.hebergeur === 'datacloud').length
