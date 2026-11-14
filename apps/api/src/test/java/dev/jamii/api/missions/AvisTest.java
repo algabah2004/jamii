@@ -175,7 +175,8 @@ class AvisTest {
 		assertThat(corps(tot).get("code").asString()).isEqualTo("etat_invalide");
 
 		Scene t = terminee();
-		assertThat(avis(t, "{\"note\":5}", utilisateur("curieux"))).hasStatus(HttpStatus.NOT_FOUND);
+		// La mission est publique : un tiers la voit, mais n'en est pas une partie.
+		assertThat(avis(t, "{\"note\":5}", utilisateur("curieux"))).hasStatus(HttpStatus.FORBIDDEN);
 		assertThat(avis(t, "{\"note\":6}", t.awa())).hasStatus(HttpStatus.BAD_REQUEST);
 		assertThat(avis(t, "{\"note\":0}", t.awa())).hasStatus(HttpStatus.BAD_REQUEST);
 		assertThat(avis(t, "{\"note\":3,\"texte\":\"" + "a".repeat(1001) + "\"}", t.awa())).hasStatus(HttpStatus.BAD_REQUEST);
@@ -229,9 +230,9 @@ class AvisTest {
 		for (var m : new Object[][] { { brouillon, "brouillon" }, { publiee, "publiee" } }) {
 			base.sql("""
 					INSERT INTO mission (id, client_id, titre, besoin, competences, visibilite, statut, cree_le, publiee_le)
-					VALUES (:id, :c, 'Site vitrine', 'Présenter la boutique et ses horaires sur une page simple.', ARRAY['vue'], 'publique', :s, :t,
-					        CASE WHEN :s = 'brouillon' THEN NULL ELSE :t END)
-					""").param("id", m[0]).param("c", awa.id()).param("s", m[1]).param("t", t).update();
+					VALUES (:id, :c, 'Site vitrine', 'Présenter la boutique et ses horaires sur une page simple.', ARRAY['vue'], 'publique', :s, :t, :p)
+					""").param("id", m[0]).param("c", awa.id()).param("s", m[1]).param("t", t)
+				.param("p", "brouillon".equals(m[1]) ? null : t, java.sql.Types.TIMESTAMP_WITH_TIMEZONE).update();
 		}
 
 		assertThat(supprimerCompte(awa)).hasStatus(HttpStatus.ACCEPTED);
