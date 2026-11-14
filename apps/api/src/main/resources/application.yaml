@@ -95,6 +95,10 @@ jamii:
       organisation: ${GITHUB_DEPOTS_ORGANISATION:}
       jeton: ${GITHUB_DEPOTS_JETON:}
       prives: ${GITHUB_DEPOTS_PRIVES:false}
+  # Le paiement des jalons d'une mission (#178) : declares (v1, Jamii n'encaisse rien, chacun déclare). Un séquestre par
+  # paiement mobile se branchera ici.
+  paiements:
+    fournisseur: ${PAIEMENTS:declares}
   # Le lien du produit d'un rendu de hackathon (#172) : aucune (pas d'appel, le lien reste « pas encore vérifié »)
   # ou simulee (sans réseau : local et tests ; un nom en .invalid ne répond pas).
   verification-lien:
