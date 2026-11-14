@@ -997,7 +997,6 @@
       "raison": "The reason for the cancellation",
       "confirmerAnnulation": "Confirm the cancellation",
       "brouillon": "Draft: nobody else can see this hackathon for now.",
-      "inscriptionBientot": "Registering for this hackathon is coming very soon.",
       "introuvable": "This hackathon does not exist, or you are not allowed to see it.",
       "provisoire": "Temporary screen: its design will be reworked with the design system.",
       "erreurs": {
@@ -1006,6 +1005,47 @@
         "limite_atteinte": "You have already published 3 hackathons today. Try again tomorrow.",
         "validation": "Something is missing: check the code of conduct and the dates.",
         "autre": "The action did not go through. Try again in a moment."
+      }
+    },
+    "inscription": {
+      "titre": "Take part",
+      "intro": "Register on your own, or create your team and invite other participants afterwards.",
+      "introCandidature": "The organiser selects participants: your registration will wait for their answer.",
+      "seul": "Register on my own",
+      "chercheEquipe": "I am looking for a team: team leads will be able to invite me.",
+      "sinscrire": "Register",
+      "equipe": "Create my team",
+      "nomEquipe": "Team name",
+      "aideEquipe": "You will lead it, and can invite up to {max} people in total.",
+      "creerEquipe": "Create the team",
+      "erreurs": {
+        "deja_inscrit": "You are already registered for this hackathon, or already in a team.",
+        "delai_depasse": "Registration is closed.",
+        "equipes_verrouillees": "Teams can no longer change: the hackathon has started.",
+        "etat_invalide": "This hackathon is not accepting registrations right now.",
+        "validation": "The team name must be between 2 and 60 characters.",
+        "autre": "Registration did not go through. Try again in a moment."
+      }
+    },
+    "equipes": {
+      "titre": "Teams",
+      "aucune": "No teams yet.",
+      "indisponible": "Teams are not available right now. Try again in a moment.",
+      "mienne": "Your team",
+      "complete": "Full",
+      "places": "{n} of {max}",
+      "membres": "Members of {nom}",
+      "chef": "team lead",
+      "seuls": "Looking for a team",
+      "aucunSeul": "Nobody is looking for a team right now.",
+      "inviter": "Invite to my team",
+      "erreurs": {
+        "equipe_complete": "Your team is full.",
+        "deja_inscrit": "This person has already joined a team.",
+        "equipes_verrouillees": "Teams can no longer change: the hackathon has started.",
+        "delai_depasse": "Registration is closed.",
+        "interdit": "Only the team lead can invite.",
+        "autre": "The invitation did not go through. Try again in a moment."
       }
     }
   },

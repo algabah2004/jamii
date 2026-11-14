@@ -997,7 +997,6 @@
       "raison": "La raison de l'annulation",
       "confirmerAnnulation": "Confirmer l'annulation",
       "brouillon": "Brouillon : personne d'autre ne voit ce hackathon pour le moment.",
-      "inscriptionBientot": "S'inscrire à ce hackathon arrive très bientôt.",
       "introuvable": "Ce hackathon n'existe pas, ou tu n'as pas le droit de le voir.",
       "provisoire": "Écran provisoire : son design sera repris avec le design system.",
       "erreurs": {
@@ -1006,6 +1005,47 @@
         "limite_atteinte": "Tu as déjà publié 3 hackathons aujourd'hui. Réessaie demain.",
         "validation": "Il manque quelque chose : vérifie le code de conduite et les dates.",
         "autre": "L'action n'a pas abouti. Réessaie dans un instant."
+      }
+    },
+    "inscription": {
+      "titre": "Participer",
+      "intro": "Inscris-toi seul, ou crée ton équipe et invite d'autres participants ensuite.",
+      "introCandidature": "L'organisateur choisit les participants : ton inscription attendra sa réponse.",
+      "seul": "M'inscrire seul",
+      "chercheEquipe": "Je cherche une équipe : les chefs d'équipe pourront m'inviter.",
+      "sinscrire": "M'inscrire",
+      "equipe": "Créer mon équipe",
+      "nomEquipe": "Le nom de l'équipe",
+      "aideEquipe": "Tu en seras le chef, et tu pourras inviter jusqu'à {max} personnes en tout.",
+      "creerEquipe": "Créer l'équipe",
+      "erreurs": {
+        "deja_inscrit": "Tu es déjà inscrit à ce hackathon, ou déjà dans une équipe.",
+        "delai_depasse": "Les inscriptions sont fermées.",
+        "equipes_verrouillees": "Les équipes ne peuvent plus changer : le hackathon a commencé.",
+        "etat_invalide": "Ce hackathon n'accepte pas d'inscriptions pour le moment.",
+        "validation": "Le nom de l'équipe doit faire entre 2 et 60 caractères.",
+        "autre": "L'inscription n'a pas abouti. Réessaie dans un instant."
+      }
+    },
+    "equipes": {
+      "titre": "Les équipes",
+      "aucune": "Aucune équipe pour le moment.",
+      "indisponible": "Les équipes ne sont pas disponibles pour le moment. Réessaie dans un instant.",
+      "mienne": "Ton équipe",
+      "complete": "Complète",
+      "places": "{n} sur {max}",
+      "membres": "Les membres de {nom}",
+      "chef": "chef d'équipe",
+      "seuls": "Ils cherchent une équipe",
+      "aucunSeul": "Personne ne cherche d'équipe pour le moment.",
+      "inviter": "Inviter dans mon équipe",
+      "erreurs": {
+        "equipe_complete": "Ton équipe est complète.",
+        "deja_inscrit": "Cette personne a déjà rejoint une équipe.",
+        "equipes_verrouillees": "Les équipes ne peuvent plus changer : le hackathon a commencé.",
+        "delai_depasse": "Les inscriptions sont fermées.",
+        "interdit": "Seul le chef d'équipe peut inviter.",
+        "autre": "L'invitation n'a pas abouti. Réessaie dans un instant."
       }
     }
   },
