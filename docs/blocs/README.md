@@ -7,7 +7,7 @@
 | `rev22rse22` | 💬 **Communautés façon Discord** : salons, messages, appels vocaux et vidéo, profils, design system | [communautes.md](communautes.md) | [#155](https://github.com/algabah2004/jamii/issues/155) |
 | `algabah2004` | 🤖 **Agents IA et Systalink** : agents, mise en ligne DataCloud, espace Systalink. Il reste chef de projet | [agents-systalink.md](agents-systalink.md) | [#156](https://github.com/algabah2004/jamii/issues/156) |
 | `Amar233-ui` | 🔁 **Cercles et collaboration** : la Tech Tontine, Gitea, tâches et jalons, vitrine, ossature du front | [cercles.md](cercles.md) | [#157](https://github.com/algabah2004/jamii/issues/157) |
-| `sowibrr` | 🧾 **Freelance** : du besoin au cahier des charges publié, avec l'agent IA. Il garde le socle de l'API | [freelance.md](freelance.md) | [#158](https://github.com/algabah2004/jamii/issues/158) |
+| `sowibrr` | 🧾 **Freelance** : du besoin au cahier des charges publié, avec l'agent IA, puis les missions et les hackathons (proposition 0004). Il garde le socle de l'API | [freelance.md](freelance.md) | [#158](https://github.com/algabah2004/jamii/issues/158), [#166](https://github.com/algabah2004/jamii/issues/166) |
 
 ## L'histoire qui relie les 4 modules (la démo)
 

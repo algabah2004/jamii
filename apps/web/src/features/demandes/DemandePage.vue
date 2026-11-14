@@ -13,6 +13,7 @@ import {
   INTERVALLE_PLAN_MS,
   jalonsAvecTaches,
   lireDemande,
+  preciserDemande,
   type Demande,
 } from './demandes'
 
@@ -73,6 +74,58 @@ const pret = computed(() => analyse.value === 'pret')
 const enPreparation = computed(() => analyse.value === 'attente' && !tropLong.value)
 const repli = computed(() => (demande.value ? estRepli(demande.value) : false))
 const recommandes = computed(() => demande.value?.recommandations ?? [])
+
+/** Pendant l'analyse, on montre ce que fait l'assistant : l'attente se comprend. */
+const ETAPES = ['lire', 'chercher', 'preparer'] as const
+const secondes = ref(0)
+let horloge: ReturnType<typeof setInterval> | undefined
+watch(enPreparation, (oui) => {
+  clearInterval(horloge)
+  secondes.value = 0
+  if (oui) horloge = setInterval(() => (secondes.value += 1), 1000)
+}, { immediate: true })
+onBeforeUnmount(() => clearInterval(horloge))
+const etapeEnCours = computed(() => Math.min(ETAPES.length - 1, Math.floor(secondes.value / 7)))
+
+/**
+ * La conversation : la personne peut dire ce qui ne lui convient pas. L'analyse repart avec son besoin et toutes ses
+ * précisions ; le fil montre ce qu'elle a écrit, puis la dernière réponse de l'assistant.
+ */
+const precision = ref('')
+const envoiPrecision = ref<'repos' | 'envoi' | 'erreur' | 'limite'>('repos')
+async function envoyerPrecision() {
+  if (!demande.value || precision.value.trim().length < 3) return
+  envoiPrecision.value = 'envoi'
+  try {
+    const r = await preciserDemande(demande.value.id, precision.value)
+    if (r === 'limite') return void (envoiPrecision.value = 'limite')
+    if (!r) return void (envoiPrecision.value = 'erreur')
+    demande.value = r
+    precision.value = ''
+    envoiPrecision.value = 'repos'
+    detailsOuverts.value = false
+    debut = 0
+    tropLong.value = false
+    surveiller()
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  } catch {
+    envoiPrecision.value = 'erreur'
+  }
+}
+
+/** Le plan technique est écrit pour les développeurs : replié par défaut, ouvert d'un clic. */
+const detailsOuverts = ref(false)
+const dureeSemaines = computed(() => Math.max(0, ...(plan.value?.jalons ?? []).map((j) => j.semaine)))
+const indispensables = computed(
+  () => (plan.value?.cahierDesCharges.fonctionnalites ?? []).filter((f) => f.priorite === 'indispensable').length,
+)
+function voirDeveloppeurs() {
+  document.getElementById('developpeurs')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+function voirDetails() {
+  detailsOuverts.value = true
+  requestAnimationFrame(() => document.getElementById('details-projet')?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+}
 
 /**
  * « Former un cercle avec eux » : la création du cercle s'ouvre avec le titre et la ville du besoin. Ils passent par
@@ -136,15 +189,22 @@ const messageErreur = computed(() =>
     <template v-else-if="demande">
       <header class="tete motif motif--croix">
         <h1>{{ demande.titre }}</h1>
-        <!-- Texte brut, affiché échappé : les mots de la PME, jamais interprétés. -->
-        <blockquote class="carte besoin">{{ demande.description }}</blockquote>
+        <!-- Texte brut, affiché échappé : les mots de la personne, jamais interprétés. -->
+        <div class="fil" data-test="fil">
+          <p class="bulle bulle--moi">{{ demande.description }}</p>
+          <p v-for="p in demande.precisions ?? []" :key="p.creeLe" class="bulle bulle--moi" data-test="precision">{{ p.texte }}</p>
+        </div>
       </header>
 
       <div v-if="enPreparation" class="carte attente" role="status" data-test="plan-attente">
         <span class="points" aria-hidden="true"><i /><i /><i /></span>
         <div>
           <strong>{{ t('demandes.plan.prepare') }}</strong>
-          <p>{{ t('demandes.plan.prepareAide') }}</p>
+          <ol class="etapes" data-test="etapes">
+            <li v-for="(e, i) in ETAPES" :key="e" :class="{ 'etapes--faite': i < etapeEnCours, 'etapes--en-cours': i === etapeEnCours }">
+              <span aria-hidden="true">{{ i < etapeEnCours ? '✓' : i === etapeEnCours ? '•' : '·' }}</span> {{ t(`demandes.plan.etapes.${e}`) }}
+            </li>
+          </ol>
         </div>
       </div>
       <div v-else-if="!pret" role="alert" class="carte attente attente--echec" data-test="plan-echec">
@@ -159,28 +219,73 @@ const messageErreur = computed(() =>
         <p class="proposition" data-test="plan-propose">✨ {{ t('demandes.plan.propose') }}</p>
         <p v-if="repli" class="carte repli" role="status" data-test="plan-repli">{{ t(orientation ? 'demandes.orientation.repli' : 'demandes.plan.repli') }}</p>
 
-        <section v-if="orientation" class="carte bloc" aria-labelledby="compris" data-test="compris">
-          <h2 id="compris">{{ t('demandes.orientation.compris') }}</h2>
-          <p class="resume">{{ orientation.resume }}</p>
+        <!-- Ce que l'assistant dit d'abord : il a compris, il explique simplement ce qui peut aider. -->
+        <section v-if="orientation" class="assistant" aria-labelledby="compris" data-test="compris">
+          <span class="assistant__avatar" aria-hidden="true">J</span>
+          <div class="bulle bulle--jamii">
+            <h2 id="compris" class="visuellement-cache">{{ t('demandes.orientation.compris') }}</h2>
+            <p class="resume">{{ orientation.message || orientation.resume }}</p>
+          </div>
         </section>
 
-        <!-- Le moment Systalink : ses services, sous les yeux de la personne. Aucune donnée ne sort de Jamii pour ça. -->
-        <section v-if="orientation?.services.length" class="systalink zone-sombre" aria-labelledby="chez-systalink" data-test="services-systalink">
-          <div class="systalink__tete">
-            <h2 id="chez-systalink">{{ t('demandes.orientation.systalink') }}</h2>
-            <p>{{ t('demandes.orientation.systalinkAide') }}</p>
+        <!-- Les chemins possibles, côte à côte : la personne choisit, Jamii ne vend rien. Aucune donnée ne sort de Jamii. -->
+        <section v-if="orientation" class="chemins" aria-labelledby="options" data-test="chemins">
+          <div class="chemins__tete">
+            <h2 id="options">{{ t('demandes.chemins.titre') }}</h2>
+            <p class="texte-discret">{{ t('demandes.chemins.aide') }}</p>
           </div>
-          <ul class="systalink__services">
-            <li v-for="s in orientation.services" :key="s.id" class="service" data-test="service">
-              <h3>{{ s.nom }}</h3>
-              <p>{{ s.pourCeBesoin }}</p>
-              <p v-if="s.prixIndicatif" class="service__prix">{{ s.prixIndicatif }}</p>
-              <a :href="s.lien" target="_blank" rel="noopener noreferrer" class="service__lien">
-                {{ t('demandes.orientation.voirService') }}<span class="visuellement-cache"> : {{ s.nom }}</span>
-              </a>
-            </li>
-          </ul>
+          <div class="chemins__liste">
+            <article v-if="orientation.services.length" class="carte chemin" data-test="services-systalink">
+              <span class="chemin__badge">{{ orientation.developpeursNecessaires ? t('demandes.chemins.pret.badgeAvecDev') : t('demandes.chemins.pret.badge') }}</span>
+              <h3>{{ orientation.developpeursNecessaires ? t('demandes.chemins.pret.titreAvecDev') : t('demandes.chemins.pret.titre') }}</h3>
+              <ul class="chemin__services">
+                <li v-for="s in orientation.services" :key="s.id" data-test="service">
+                  <strong>{{ s.nom }}</strong>
+                  <p>{{ s.pourCeBesoin }}</p>
+                  <p v-if="s.prixIndicatif" class="chemin__prix">{{ s.prixIndicatif }}</p>
+                  <a :href="s.lien" target="_blank" rel="noopener noreferrer" class="chemin__action">
+                    {{ t('demandes.orientation.voirService') }}<span class="visuellement-cache"> : {{ s.nom }}</span> ↗</a>
+                </li>
+              </ul>
+              <p class="chemin__note">{{ t('demandes.chemins.pret.partenaire') }}</p>
+            </article>
+
+            <article v-if="orientation.developpeursNecessaires" class="carte chemin" data-test="chemin-developpeurs">
+              <span class="chemin__badge chemin__badge--dev">{{ t('demandes.chemins.surMesure.badge') }}</span>
+              <h3>{{ t('demandes.chemins.surMesure.titre') }}</h3>
+              <p>{{ t('demandes.chemins.surMesure.texte') }}</p>
+              <ul v-if="plan" class="chemin__chiffres">
+                <li v-if="dureeSemaines">{{ t('demandes.chemins.surMesure.duree', { n: dureeSemaines }, dureeSemaines) }}</li>
+                <li v-if="indispensables">{{ t('demandes.chemins.surMesure.fonctions', { n: indispensables }, indispensables) }}</li>
+                <li v-if="recommandes.length">{{ t('demandes.chemins.surMesure.devs', { n: recommandes.length }, recommandes.length) }}</li>
+              </ul>
+              <div class="chemin__boutons">
+                <button type="button" class="chemin__action" @click="voirDeveloppeurs">{{ t('demandes.chemins.surMesure.voirDevs') }}</button>
+                <button v-if="plan" type="button" class="bouton-lien" data-test="voir-details" @click="voirDetails">{{ t('demandes.chemins.surMesure.voirProjet') }}</button>
+              </div>
+            </article>
+
+            <article v-if="!orientation.services.length && !orientation.developpeursNecessaires" class="carte chemin">
+              <h3>{{ t('demandes.chemins.aucun.titre') }}</h3>
+              <p>{{ t('demandes.chemins.aucun.texte') }}</p>
+              <RouterLink to="/communautes" class="chemin__action">{{ t('demandes.chemins.aucun.action') }}</RouterLink>
+            </article>
+          </div>
+          <p v-if="orientation.services.length && orientation.developpeursNecessaires" class="chemins__conseil">💡 {{ t('demandes.chemins.lesDeux') }}</p>
         </section>
+
+        <form v-if="orientation" class="carte discuter" data-test="preciser" @submit.prevent="envoyerPrecision">
+          <label for="precision" class="discuter__titre">
+            <strong>{{ t('demandes.discuter.titre') }}</strong>
+            <span class="texte-discret">{{ t('demandes.discuter.aide') }}</span>
+          </label>
+          <div class="discuter__ligne">
+            <textarea id="precision" v-model="precision" maxlength="500" rows="2" :placeholder="t('demandes.discuter.exemple')" @keydown.enter.exact.prevent="envoyerPrecision" />
+            <JBouton type="submit" :occupe="envoiPrecision === 'envoi'" :disabled="precision.trim().length < 3" data-test="envoyer-precision">{{ t('demandes.discuter.envoyer') }}</JBouton>
+          </div>
+          <p v-if="envoiPrecision === 'limite'" role="alert" class="erreur">{{ t('demandes.discuter.limite') }}</p>
+          <p v-else-if="envoiPrecision === 'erreur'" role="alert" class="erreur">{{ t('etat.indisponible') }}</p>
+        </form>
 
         <section v-if="orientation?.developpeursNecessaires" class="bloc-nu" aria-labelledby="developpeurs" data-test="developpeurs">
           <div class="bloc-nu__tete">
@@ -209,7 +314,11 @@ const messageErreur = computed(() =>
         </section>
       </template>
 
-      <template v-if="plan">
+      <div v-if="plan && orientation" class="details-bascule">
+        <button type="button" class="bouton-lien" :aria-expanded="detailsOuverts" aria-controls="details-projet" @click="detailsOuverts = !detailsOuverts">
+          {{ detailsOuverts ? t('demandes.chemins.masquerProjet') : t('demandes.chemins.surMesure.voirProjet') }}</button>
+      </div>
+      <div v-if="plan" v-show="detailsOuverts || !orientation" id="details-projet" class="details">
         <h2 v-if="orientation" class="plan-titre">{{ t('demandes.orientation.plan') }}</h2>
 
         <section class="carte bloc" aria-labelledby="resume">
@@ -279,8 +388,7 @@ const messageErreur = computed(() =>
             <li v-for="h in plan.cahierDesCharges.horsPerimetre" :key="h">{{ h }}</li>
           </ul>
         </section>
-
-      </template>
+      </div>
 
       <section v-if="pret" class="carte offres" aria-labelledby="offres-titre" data-test="offres-resultat">
         <label class="offres__case">
@@ -315,6 +423,40 @@ const messageErreur = computed(() =>
 </template>
 
 <style scoped>
+.fil { display: grid; gap: var(--space-2); justify-items: end; }
+.bulle { margin: 0; max-width: min(42rem, 92%); padding: var(--space-3) var(--space-4); border-radius: var(--radius-lg); white-space: pre-wrap; line-height: 1.5; }
+.bulle--moi { background: var(--action-soft); color: var(--ink); border-end-end-radius: 4px; }
+.bulle--jamii { background: var(--surface); border: 1px solid var(--line); border-end-start-radius: 4px; max-width: 100%; }
+.bulle--jamii .resume { margin: 0; font-size: 1.0625rem; }
+.assistant { display: grid; grid-template-columns: auto 1fr; gap: var(--space-3); align-items: end; }
+.assistant__avatar { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--action); color: var(--on-action); font-family: var(--font-display); font-weight: 700; }
+.discuter { display: grid; gap: var(--space-3); }
+.discuter__titre { display: grid; gap: 2px; }
+.discuter__ligne { display: flex; gap: var(--space-3); align-items: flex-end; flex-wrap: wrap; }
+.discuter textarea { flex: 1 1 16rem; min-height: 3.25rem; padding: var(--space-3); border: 1px solid var(--line-strong); border-radius: var(--radius-md); background: var(--surface); color: var(--ink); font: inherit; resize: vertical; }
+.etapes { list-style: none; margin: var(--space-2) 0 0; padding: 0; display: grid; gap: var(--space-1); color: var(--ink-muted); }
+.etapes--faite { color: var(--ink); }
+.etapes--en-cours { color: var(--action-ink); font-weight: 600; }
+.chemins { display: grid; gap: var(--space-4); }
+.chemins__tete h2 { margin: 0; }
+.chemins__tete p { margin: var(--space-1) 0 0; }
+.chemins__liste { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); align-items: stretch; }
+.chemin { display: grid; gap: var(--space-3); align-content: start; }
+.chemin h3 { margin: 0; font-size: 1.25rem; }
+.chemin p { margin: 0; }
+.chemin__badge { justify-self: start; padding: 2px var(--space-3); border-radius: var(--radius-pill); background: var(--action-soft); color: var(--action-ink); font-size: var(--type-body-sm-size); font-weight: 700; }
+.chemin__badge--dev { background: var(--proof-soft); color: var(--proof-ink); }
+.chemin__services { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-4); }
+.chemin__services li { display: grid; gap: var(--space-1); padding-block-end: var(--space-3); border-block-end: 1px solid var(--line); }
+.chemin__services li:last-child { border: 0; padding: 0; }
+.chemin__prix { font-weight: 600; }
+.chemin__action { justify-self: start; display: inline-flex; align-items: center; min-height: 44px; padding: 0 var(--space-5); border-radius: var(--radius-pill); border: 0; background: var(--action); color: var(--on-action); font: inherit; font-weight: 700; text-decoration: none; cursor: pointer; }
+.chemin__note { font-size: var(--type-body-sm-size); color: var(--ink-muted); }
+.chemin__chiffres { margin: 0; padding-inline-start: 1.2em; display: grid; gap: var(--space-1); }
+.chemin__boutons { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
+.chemins__conseil { margin: 0; padding: var(--space-3) var(--space-4); border-radius: var(--radius-sm); background: var(--surface-raised); }
+.details-bascule { display: flex; justify-content: center; }
+.details { display: grid; gap: var(--space-6); }
 .demande { display: grid; gap: var(--space-6); max-width: 64rem; }
 .retour { margin: 0; font-size: var(--type-body-sm-size); }
 .tete { display: grid; gap: var(--space-4); }
