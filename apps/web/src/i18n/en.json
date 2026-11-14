@@ -175,7 +175,7 @@
   "langue": "Language",
   "systalink": {
     "titre": "Systalink space",
-    "intro": "What Jamii brings to the Systalink cloud. Figures are aggregated and anonymous: no individual appears.",
+    "intro": "What Jamii brings to the Systalink cloud. Figures are aggregated and anonymous; only people who asked for it appear in “Clients who want to be followed”.",
     "periode": "Period",
     "periodes": {
       "semaine": "Last 7 days",
@@ -216,6 +216,39 @@
       "systatalk": "SystaTalk",
       "systaforms": "SystaForms",
       "domaines": "Domain names"
+    },
+    "tendances": {
+      "titre": "Market trends",
+      "intro": "What people describe on Jamii: aggregated, anonymous figures.",
+      "vide": "No need described in this period.",
+      "besoins": "need described | needs described",
+      "secteurs": "By sector",
+      "services": "Matching Systalink services",
+      "pays": "By country",
+      "manquantes": "Missing skills",
+      "manquantesAide": "Requested by the needs, compared with published profiles that have them.",
+      "competence": "Skill",
+      "demandes": "Needs",
+      "profils": "Profiles",
+      "autres": "Others"
+    },
+    "clients": {
+      "titre": "Clients who want to be followed",
+      "intro": "Only people who ticked “Receive Systalink offers”. They can withdraw their consent at any time.",
+      "filtre": "Filter by status",
+      "tous": "All",
+      "csv": "Export as CSV",
+      "vide": "No one yet.",
+      "avecDeveloppeurs": "with developers",
+      "sansEmail": "No known email",
+      "statut": "Status",
+      "plus": "Show more",
+      "statuts": {
+        "nouveau": "New",
+        "contacte": "Contacted",
+        "client": "Client",
+        "sans_suite": "No follow-up"
+      }
     }
   },
   "vitrine": {

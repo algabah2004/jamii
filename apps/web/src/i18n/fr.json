@@ -175,7 +175,7 @@
   "langue": "Langue",
   "systalink": {
     "titre": "Espace Systalink",
-    "intro": "Ce que Jamii apporte au cloud Systalink. Les chiffres sont agrégés et anonymes : aucune personne n'y apparaît.",
+    "intro": "Ce que Jamii apporte au cloud Systalink. Les chiffres sont agrégés et anonymes ; seules les personnes qui l'ont demandé apparaissent dans « Clients qui veulent être suivis ».",
     "periode": "Période",
     "periodes": {
       "semaine": "7 derniers jours",
@@ -216,6 +216,39 @@
       "systatalk": "SystaTalk",
       "systaforms": "SystaForms",
       "domaines": "Noms de domaine"
+    },
+    "tendances": {
+      "titre": "Tendances du marché",
+      "intro": "Ce que les gens décrivent sur Jamii : des chiffres agrégés et anonymes.",
+      "vide": "Aucun besoin décrit sur cette période.",
+      "besoins": "besoin décrit | besoins décrits",
+      "secteurs": "Par secteur",
+      "services": "Services Systalink adaptés",
+      "pays": "Par pays",
+      "manquantes": "Les compétences qui manquent",
+      "manquantesAide": "Demandées par les besoins, comparées aux profils publiés qui les ont.",
+      "competence": "Compétence",
+      "demandes": "Besoins",
+      "profils": "Profils",
+      "autres": "Autres"
+    },
+    "clients": {
+      "titre": "Clients qui veulent être suivis",
+      "intro": "Seulement les personnes qui ont coché « Recevoir les offres Systalink ». Elles peuvent retirer leur accord à tout moment.",
+      "filtre": "Filtrer par statut",
+      "tous": "Tous",
+      "csv": "Exporter en CSV",
+      "vide": "Personne pour l’instant.",
+      "avecDeveloppeurs": "avec des développeurs",
+      "sansEmail": "Pas d’e-mail connu",
+      "statut": "Statut",
+      "plus": "Voir plus",
+      "statuts": {
+        "nouveau": "Nouveau",
+        "contacte": "Contacté",
+        "client": "Client",
+        "sans_suite": "Sans suite"
+      }
     }
   },
   "vitrine": {

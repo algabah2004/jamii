@@ -6,6 +6,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { api } from '../../api/client'
 import { PERIODES, lignesPays, lirePeriode, momentsTries, pourcentage, type Periode, type TableauDeBord } from './calculs'
 import ListePays from './ListePays.vue'
+import ClientsSuivis from './ClientsSuivis.vue'
+import TendancesMarche from './TendancesMarche.vue'
 
 const { t, locale, d } = useI18n()
 const route = useRoute()
@@ -126,6 +128,9 @@ const paysCercles = computed(() =>
           <ListePays :lignes="paysCercles" data-test="pays-cercles" />
         </div>
       </section>
+
+      <TendancesMarche :periode="periode" />
+      <ClientsSuivis />
 
       <div class="details">
         <section class="carte bloc" aria-labelledby="moments">

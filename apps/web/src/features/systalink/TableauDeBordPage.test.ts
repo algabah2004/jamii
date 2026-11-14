@@ -96,3 +96,36 @@ describe('Tableau de bord Systalink', () => {
     expect(page.get('[role="alert"]').text()).toContain('Réessayer')
   })
 })
+
+describe('Tendances et clients suivis', () => {
+  it('montre les tendances anonymes et signale les compétences qui manquent', async () => {
+    const { page } = await monter()
+    await vi.waitFor(() => expect(page.find('[data-test="tendances-services"]').exists()).toBe(true))
+    expect(page.get('[data-test="tendances"]').text()).toContain('47')
+    const manque = page.findAll('[data-test="competences-manquantes"] tbody tr.manque').map((l) => l.text())
+    expect(manque.some((l) => l.includes('paiement-mobile'))).toBe(true)
+    expect(manque.some((l) => l.includes('postgresql'))).toBe(false)
+  })
+
+  it('liste les clients qui ont donné leur accord, et enregistre leur statut', async () => {
+    let statut = ''
+    serveur.use(
+      http.patch('/api/systalink/clients-suivis/:demandeId', async ({ request, params }) => {
+        statut = ((await request.json()) as { statut: string }).statut
+        return HttpResponse.json({ demandeId: params.demandeId, creeLe: '2026-11-14T09:12:00Z', resume: 'Un cabinet', services: [], developpeursNecessaires: true, contact: { nom: 'Cabinet Ndiaye', email: null }, statut })
+      }),
+    )
+    const { page } = await monter()
+    await vi.waitFor(() => expect(page.findAll('[data-test="client"]')).toHaveLength(2))
+    expect(page.get('[data-test="clients-suivis"]').text()).toContain('Cabinet Ndiaye')
+    await page.get('[data-test="statut-client"]').setValue('contacte')
+    await vi.waitFor(() => expect(statut).toBe('contacte'))
+  })
+
+  it('n’affiche pas les clients suivis à qui n’a pas le rôle Systalink', async () => {
+    serveur.use(http.get('/api/systalink/clients-suivis', () => HttpResponse.json({ code: 'interdit' }, { status: 403 })))
+    const { page } = await monter()
+    await vi.waitFor(() => expect(page.find('[data-test="tendances"]').exists()).toBe(true))
+    await vi.waitFor(() => expect(page.find('[data-test="clients-suivis"]').exists()).toBe(false))
+  })
+})
