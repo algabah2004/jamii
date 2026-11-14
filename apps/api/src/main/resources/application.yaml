@@ -95,6 +95,10 @@ jamii:
       organisation: ${GITHUB_DEPOTS_ORGANISATION:}
       jeton: ${GITHUB_DEPOTS_JETON:}
       prives: ${GITHUB_DEPOTS_PRIVES:false}
+  # Le paiement des jalons d'une mission (#178) : declares (v1, Jamii n'encaisse rien, chacun déclare). Un séquestre par
+  # paiement mobile se branchera ici.
+  paiements:
+    fournisseur: ${PAIEMENTS:declares}
   # Module communautes (#18) : qui propose une réponse à une question.
   communautes:
     # simulee (sans réseau : local, tests, démo) ou aucune (la question reste ouverte aux humains).

@@ -26,7 +26,7 @@ class VuesMissions {
 	}
 
 	record Jalon(UUID id, int ordre, String titre, String description, Missions.Montant montant, int delaiJours,
-			Instant echeance, String statut, List<Object> livraisons, Instant acceptationAutomatiqueLe, Instant accepteLe,
+			Instant echeance, String statut, List<Livraisons.Livraison> livraisons, Instant acceptationAutomatiqueLe, Instant accepteLe,
 			boolean acceptationAutomatique, String paiement) {
 	}
 
@@ -60,10 +60,13 @@ class VuesMissions {
 
 	private final Devis devis;
 
-	VuesMissions(Annuaire annuaire, Missions missions, Devis devis) {
+	private final Livraisons livraisons;
+
+	VuesMissions(Annuaire annuaire, Missions missions, Devis devis, Livraisons livraisons) {
 		this.annuaire = annuaire;
 		this.missions = missions;
 		this.devis = devis;
+		this.livraisons = livraisons;
 	}
 
 	MissionVue vue(Missions.Lecture l, UUID qui) {
@@ -74,7 +77,7 @@ class VuesMissions {
 		Compte client = annuaire.lire(m.clientId()).orElse(null);
 		return new MissionVue(m.id(), m.demandeId(), m.titre(), m.besoin(), m.statut(), m.competences(), m.budget(),
 				m.dateSouhaitee(), m.visibilite(), m.ville(), m.pays(), m.aDistance(), personne(m.clientId(), client), nombre,
-				m.publieeLe(), m.version(), m.creeLe(), new Moi(l.role(), actions(l, qui, nombre, retenu, courant)),
+				m.publieeLe(), m.version(), m.creeLe(), new Moi(l.role(), actions(l, qui, nombre, retenu, courant, suivi(courant))),
 				courant.map(this::travail).orElse(null));
 	}
 
@@ -89,17 +92,33 @@ class VuesMissions {
 	}
 
 	DevisVue devis(Devis.DevisComplet d) {
-		List<Jalon> jalons = d.jalons().stream()
-			.map(j -> new Jalon(j.id(), j.ordre(), j.titre(), j.description(), j.montant(), j.delaiJours(), null, j.statut(),
-					List.of(), null, null, false, "non_paye"))
-			.toList();
+		return devis(d, null, Map.of());
+	}
+
+	/** Le devis avec le suivi de ses jalons : l'échéance compte depuis le démarrage, l'acceptation automatique depuis la livraison. */
+	private DevisVue devis(Devis.DevisComplet d, Instant demarreLe, Map<UUID, Livraisons.SuiviJalon> suivi) {
+		List<Jalon> jalons = d.jalons().stream().map(j -> {
+			Livraisons.SuiviJalon s = suivi.get(j.id());
+			Instant echeance = demarreLe == null ? null : demarreLe.plus(java.time.Duration.ofDays(j.delaiJours()));
+			Instant automatique = s != null && "livre".equals(j.statut()) && s.livreLe() != null
+					? s.livreLe().plus(Livraisons.ACCEPTATION_AUTOMATIQUE) : null;
+			return new Jalon(j.id(), j.ordre(), j.titre(), j.description(), j.montant(), j.delaiJours(), echeance, j.statut(),
+					s == null ? List.of() : s.livraisons(), automatique, s == null ? null : s.accepteLe(),
+					s != null && s.acceptationAutomatique(), s == null ? "non_paye" : s.paiement());
+		}).toList();
 		return new DevisVue(d.id(), d.total(), d.retouchesComprises(), d.conditions(), jalons, d.envoyeLe(), d.accepteLe());
 	}
 
 	private Travail travail(Devis.DevisComplet d) {
 		Compte developpeur = annuaire.lire(d.developpeurId()).orElse(null);
-		return new Travail(personne(d.developpeurId(), developpeur), devis(d), null, null, d.retouchesComprises(), null, null, null,
+		Livraisons.Depart depart = livraisons.depart(d.missionId());
+		return new Travail(personne(d.developpeurId(), developpeur), devis(d, depart.demarreLe(), livraisons.suivi(d.id())),
+				depart.informations(), depart.demarreLe(), Math.max(0, d.retouchesComprises() - depart.retouchesUtilisees()), null, null, null,
 				List.of());
+	}
+
+	private Map<UUID, Livraisons.SuiviJalon> suivi(Optional<Devis.DevisComplet> courant) {
+		return courant.filter(d -> d.accepteLe() != null).map(d -> livraisons.suivi(d.id())).orElse(Map.of());
 	}
 
 	/** Le client, le développeur retenu et le candidat dont la proposition est retenue voient le devis ; personne d'autre. */
@@ -110,8 +129,14 @@ class VuesMissions {
 
 	/** Ce que la personne peut faire ; le front en tire ses boutons, et chaque route revérifie. */
 	private static List<String> actions(Missions.Lecture l, UUID qui, int nombre, boolean retenu,
-			Optional<Devis.DevisComplet> courant) {
+			Optional<Devis.DevisComplet> courant, Map<UUID, Livraisons.SuiviJalon> suivi) {
 		String statut = l.mission().statut();
+		List<Devis.Jalon> jalons = courant.map(Devis.DevisComplet::jalons).orElse(List.of());
+		boolean unLivre = jalons.stream().anyMatch(j -> "livre".equals(j.statut()));
+		boolean unEnCours = jalons.stream().anyMatch(j -> "en_cours".equals(j.statut()));
+		boolean aPayer = jalons.stream().anyMatch(j -> ("livre".equals(j.statut()) || "accepte".equals(j.statut()))
+				&& suivi.containsKey(j.id()) && "non_paye".equals(suivi.get(j.id()).paiement()));
+		boolean aRecevoir = suivi.values().stream().anyMatch(s -> "declare_paye".equals(s.paiement()));
 		return switch (l.role()) {
 			case "client" -> switch (statut) {
 				case "brouillon" -> List.of("modifier", "publier", "inviter");
@@ -125,8 +150,29 @@ class VuesMissions {
 					}
 					yield List.copyOf(actions);
 				}
+				case "attribuee" -> List.of("demarrer");
+				case "en_cours", "terminee" -> {
+					var actions = new java.util.ArrayList<String>();
+					if (unLivre && "en_cours".equals(statut)) {
+						actions.addAll(List.of("accepter_jalon", "demander_retouche"));
+					}
+					if (aPayer) {
+						actions.add("declarer_paye");
+					}
+					yield List.copyOf(actions);
+				}
 				default -> List.of();
 			};
+			case "developpeur_retenu" -> {
+				var actions = new java.util.ArrayList<String>();
+				if (unEnCours && "en_cours".equals(statut)) {
+					actions.add("livrer");
+				}
+				if (aRecevoir) {
+					actions.add("declarer_recu");
+				}
+				yield List.copyOf(actions);
+			}
 			case "candidat" -> retenu && "publiee".equals(statut) ? List.of("envoyer_devis") : List.of();
 			case "invite", "visiteur" -> qui != null && "publiee".equals(statut) ? List.of("proposer") : List.of();
 			default -> List.of();
