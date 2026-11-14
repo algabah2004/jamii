@@ -98,6 +98,15 @@ class MesDonneesTest {
 				""").param("id", UUID.randomUUID()).param("a", auteur.id()).param("t", ensuite()).update();
 	}
 
+	private void profil(UtilisateurConnecte qui) {
+		base.sql("""
+				INSERT INTO profil (utilisateur_id, bio, ville, generation_statut, mis_a_jour_le)
+				VALUES (:u, 'Développeuse Flutter à Thiès', 'Thiès', 'terminee', :t)
+				""").param("u", qui.id()).param("t", ensuite()).update();
+		base.sql("INSERT INTO competence_profil (utilisateur_id, competence, source) VALUES (:u, 'flutter', 'declaree')")
+			.param("u", qui.id()).update();
+	}
+
 	private void session(UtilisateurConnecte qui) {
 		long maintenant = System.currentTimeMillis();
 		String id = UUID.randomUUID().toString();
@@ -135,6 +144,8 @@ class MesDonneesTest {
 		projet(kofi, "Le projet de Kofi", awa);
 		cercle(kofi, awa);
 		demande(awa);
+		profil(awa);
+		profil(kofi);
 
 		MvcTestResult reponse = exporter(awa);
 
@@ -149,8 +160,19 @@ class MesDonneesTest {
 		assertThat(export.get("cercles").get(0).get("ideeDescription").asString()).contains("Thiès");
 		assertThat(export.get("cercles").get(0).get("createur").asBoolean()).isFalse();
 		assertThat(export.get("demandes").get(0).get("dureeSemaines").asInt()).isEqualTo(4);
+		assertThat(export.get("profils").get("bio").asString()).isEqualTo("Développeuse Flutter à Thiès");
+		assertThat(export.get("profils").get("utilisateurId").asString()).isEqualTo(awa.id().toString());
+		assertThat(export.get("profils").get("competences").toString()).contains("flutter");
 		assertThat(reponse.getResponse().getContentAsString()).as("aucune donnée personnelle de Kofi")
 			.doesNotContain("Kofi.");
+	}
+
+	@Test
+	void sans_profil_genere_la_section_profils_est_vide() throws Exception {
+		UtilisateurConnecte awa = utilisateur("Awa");
+		JsonNode export = corps(exporter(awa));
+		assertThat(export.has("profils")).isTrue();
+		assertThat(export.get("profils").isNull()).isTrue();
 	}
 
 	@Test
