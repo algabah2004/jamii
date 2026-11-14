@@ -132,6 +132,16 @@ export const handlersMissions = [
     return HttpResponse.json(mission)
   }),
 
+  http.post('/api/missions/:id/fermer', async ({ params, request }) => {
+    const mission = missions.get(String(params.id))
+    if (!mission) return erreur(404, 'introuvable')
+    const { version } = (await request.json()) as { version: number }
+    if (version !== mission.version) return erreur(409, 'modification_concurrente')
+    if (mission.statut !== 'publiee') return erreur(409, 'etat_invalide')
+    Object.assign(mission, { statut: 'fermee', version: mission.version + 1, moi: { role: 'client', actions: [] } })
+    return HttpResponse.json(mission)
+  }),
+
   http.get('/api/missions/:id/propositions', ({ params }) => {
     const liste = propositions.get(String(params.id))
     return liste ? HttpResponse.json({ elements: liste, curseurSuivant: null }) : erreur(404, 'introuvable')
