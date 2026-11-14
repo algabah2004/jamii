@@ -155,7 +155,7 @@ class HackathonsTest {
 		String enCours = publie(awa, 10).get("id").asString();
 		String enEvaluation = publie(awa, 10).get("id").asString();
 		// On recule le calendrier : le même hackathon change de statut sans qu'aucune tâche ne tourne.
-		recaler(enCours, -3, -1);
+		recaler(enCours, -3, 1);
 		recaler(enEvaluation, -10, -5);
 
 		assertThat(corpsDe(lire("/api/hackathons/" + aVenir, null)).get("statut").asString()).isEqualTo("publie");
@@ -329,9 +329,10 @@ class HackathonsTest {
 		UtilisateurConnecte awa = utilisateur("awa");
 		String ouvert = publie(awa, 10).get("id").asString();
 		String brouillon = brouillon(awa, 10).get("id").asString();
-		JsonNode aAnnuler = publie(utilisateur("yann"), 10);
-		action("/api/hackathons/" + aAnnuler.get("id").asString() + "/annuler",
-				"{\"version\":" + aAnnuler.get("version") + ",\"raison\":\"Plus de salle disponible\"}", utilisateur("yann"));
+		UtilisateurConnecte yann = utilisateur("yann");
+		JsonNode aAnnuler = publie(yann, 10);
+		assertThat(action("/api/hackathons/" + aAnnuler.get("id").asString() + "/annuler",
+				"{\"version\":" + aAnnuler.get("version") + ",\"raison\":\"Plus de salle disponible\"}", yann)).hasStatus(HttpStatus.OK);
 
 		String elements = corpsDe(lire("/api/hackathons?limite=100", null)).get("elements").toString();
 		assertThat(elements).contains(ouvert).doesNotContain(brouillon);
@@ -343,7 +344,7 @@ class HackathonsTest {
 		UtilisateurConnecte awa = utilisateur("awa");
 		String aVenir = publie(awa, 10).get("id").asString();
 		String enCours = publie(awa, 10).get("id").asString();
-		recaler(enCours, -3, -1);
+		recaler(enCours, -3, 1);
 
 		String publies = corpsDe(lire("/api/hackathons?statut=publie&limite=100", null)).get("elements").toString();
 		assertThat(publies).contains(aVenir).doesNotContain(enCours);
