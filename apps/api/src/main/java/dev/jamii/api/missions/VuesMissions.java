@@ -62,11 +62,14 @@ class VuesMissions {
 
 	private final Livraisons livraisons;
 
-	VuesMissions(Annuaire annuaire, Missions missions, Devis devis, Livraisons livraisons) {
+	private final Fin fin;
+
+	VuesMissions(Annuaire annuaire, Missions missions, Devis devis, Livraisons livraisons, Fin fin) {
 		this.annuaire = annuaire;
 		this.missions = missions;
 		this.devis = devis;
 		this.livraisons = livraisons;
+		this.fin = fin;
 	}
 
 	MissionVue vue(Missions.Lecture l, UUID qui) {
@@ -113,8 +116,8 @@ class VuesMissions {
 		Compte developpeur = annuaire.lire(d.developpeurId()).orElse(null);
 		Livraisons.Depart depart = livraisons.depart(d.missionId());
 		return new Travail(personne(d.developpeurId(), developpeur), devis(d, depart.demarreLe(), livraisons.suivi(d.id())),
-				depart.informations(), depart.demarreLe(), Math.max(0, d.retouchesComprises() - depart.retouchesUtilisees()), null, null, null,
-				List.of());
+				depart.informations(), depart.demarreLe(), Math.max(0, d.retouchesComprises() - depart.retouchesUtilisees()), null,
+				fin.annulationDemandeePar(d.missionId()), fin.desaccord(d.missionId()).orElse(null), List.of());
 	}
 
 	private Map<UUID, Livraisons.SuiviJalon> suivi(Optional<Devis.DevisComplet> courant) {
@@ -123,8 +126,8 @@ class VuesMissions {
 
 	/** Le client, le développeur retenu et le candidat dont la proposition est retenue voient le devis ; personne d'autre. */
 	private static boolean voitLeTravail(Missions.Lecture l, boolean candidatRetenu) {
-		return !"brouillon".equals(l.mission().statut())
-				&& ("client".equals(l.role()) || "developpeur_retenu".equals(l.role()) || candidatRetenu);
+		return !"brouillon".equals(l.mission().statut()) && ("client".equals(l.role()) || "developpeur_retenu".equals(l.role())
+				|| "moderateur".equals(l.role()) || candidatRetenu);
 	}
 
 	/** Ce que la personne peut faire ; le front en tire ses boutons, et chaque route revérifie. */
@@ -150,11 +153,14 @@ class VuesMissions {
 					}
 					yield List.copyOf(actions);
 				}
-				case "attribuee" -> List.of("demarrer");
+				case "attribuee" -> List.of("demarrer", "annuler");
 				case "en_cours", "terminee" -> {
 					var actions = new java.util.ArrayList<String>();
 					if (unLivre && "en_cours".equals(statut)) {
 						actions.addAll(List.of("accepter_jalon", "demander_retouche"));
+					}
+					if ("en_cours".equals(statut)) {
+						actions.addAll(List.of("annuler", "ouvrir_desaccord"));
 					}
 					if (aPayer) {
 						actions.add("declarer_paye");
@@ -168,11 +174,18 @@ class VuesMissions {
 				if (unEnCours && "en_cours".equals(statut)) {
 					actions.add("livrer");
 				}
+				if ("attribuee".equals(statut) || "en_cours".equals(statut)) {
+					actions.add("annuler");
+				}
+				if ("en_cours".equals(statut)) {
+					actions.add("ouvrir_desaccord");
+				}
 				if (aRecevoir) {
 					actions.add("declarer_recu");
 				}
 				yield List.copyOf(actions);
 			}
+			case "moderateur" -> "desaccord".equals(statut) ? List.of("trancher") : List.of();
 			case "candidat" -> retenu && "publiee".equals(statut) ? List.of("envoyer_devis") : List.of();
 			case "invite", "visiteur" -> qui != null && "publiee".equals(statut) ? List.of("proposer") : List.of();
 			default -> List.of();

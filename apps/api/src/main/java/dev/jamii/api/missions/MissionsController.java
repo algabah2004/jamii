@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import dev.jamii.api.auth.Compte;
+import dev.jamii.api.auth.Role;
 import dev.jamii.api.auth.UtilisateurConnecte;
 
 /**
@@ -79,7 +80,8 @@ class MissionsController {
 	@GetMapping("/{id}")
 	VuesMissions.MissionVue lire(@AuthenticationPrincipal UtilisateurConnecte moi, @PathVariable UUID id) {
 		UUID qui = moi == null ? null : moi.id();
-		return vues.vue(missions.lire(id, qui), qui);
+		boolean moderateur = moi != null && moi.roles().contains(Role.MODERATEUR);
+		return vues.vue(missions.lire(id, qui, moderateur), qui);
 	}
 
 	@PostMapping("/{id}/publier")

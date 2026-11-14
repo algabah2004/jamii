@@ -117,6 +117,25 @@ class Missions {
 	}
 
 	/**
+	 * Comme {@link #lire(UUID, UUID)}, et un modérateur voit en plus, comme `moderateur`, une mission qui a un désaccord :
+	 * il doit lire le travail pour trancher.
+	 */
+	@Transactional(readOnly = true)
+	Lecture lire(UUID id, UUID moi, boolean moderateur) {
+		Mission m = charger(id, false);
+		Optional<Lecture> l = role(m, moi);
+		boolean partie = l.map(Lecture::role).filter(r -> "client".equals(r) || "developpeur_retenu".equals(r)).isPresent();
+		if (moderateur && !partie && aUnDesaccord(m.id())) {
+			return new Lecture(m, "moderateur");
+		}
+		return l.orElseThrow(ErreurMissions::introuvable);
+	}
+
+	private boolean aUnDesaccord(UUID missionId) {
+		return base.sql("SELECT EXISTS (SELECT 1 FROM desaccord WHERE mission_id = :m)").param("m", missionId).query(Boolean.class).single();
+	}
+
+	/**
 	 * Une page de missions. `miennes` : celles dont je suis le client et celles où je suis invité (hors brouillon) ;
 	 * sinon, les missions publiques encore ouvertes aux propositions.
 	 */
