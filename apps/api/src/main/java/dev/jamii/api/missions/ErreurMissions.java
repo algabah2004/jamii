@@ -46,9 +46,9 @@ class ErreurMissions extends RuntimeException {
 		return new ErreurMissions(HttpStatus.BAD_REQUEST, "validation", "Certains champs sont invalides", erreurs, 0);
 	}
 
-	static ErreurMissions limiteAtteinte(long attenteSecondes) {
-		return new ErreurMissions(HttpStatus.TOO_MANY_REQUESTS, "limite_atteinte", "Trop de missions publiées aujourd'hui", null,
-				Math.max(1, attenteSecondes));
+	/** 429 : la limite d'une journée glissante est atteinte ; `titre` dit laquelle. */
+	static ErreurMissions limiteAtteinte(String titre, long attenteSecondes) {
+		return new ErreurMissions(HttpStatus.TOO_MANY_REQUESTS, "limite_atteinte", titre, null, Math.max(1, attenteSecondes));
 	}
 
 }
