@@ -1047,6 +1047,37 @@
         "interdit": "Only the team lead can invite.",
         "autre": "The invitation did not go through. Try again in a moment."
       }
+    },
+    "rendu": {
+      "titre": "My team's submission",
+      "indisponible": "The submission is not available right now. Try again in a moment.",
+      "aucun": "Your team did not submit anything.",
+      "intro": "You can change the submission until {date}. Any team member can do it.",
+      "champTitre": "Project name",
+      "description": "What the project does",
+      "aideDescription": "At least {n} characters: who it is for, which problem, and how to try it.",
+      "lienProduit": "Link to the live product",
+      "aideLien": "An https address the jury can open.",
+      "aideLienObligatoire": "An https address the jury can open: this hackathon asks for a live product. Systalink DataCloud can host it.",
+      "lienHttps": "The link must start with https://",
+      "depot": "Code repository (optional)",
+      "video": "Demo video (optional)",
+      "envoyer": "Submit the project",
+      "modifier": "Save changes",
+      "enregistre": "The submission is saved.",
+      "modifieLe": "Last changed on {date}.",
+      "lienNonVerifie": "The product link has not been checked yet.",
+      "lienRepond": "The product link responds.",
+      "lienNeRepondPas": "The product link does not respond: fix it before the deadline.",
+      "erreurs": {
+        "delai_depasse": "The submission deadline has passed.",
+        "etat_invalide": "This hackathon is not accepting submissions right now.",
+        "modification_concurrente": "Another member changed the submission in the meantime. Reload the page.",
+        "lien_invalide": "A link is not valid: https only, without credentials or port.",
+        "adresse_interne": "A link points to an internal address: give the product's public address.",
+        "validation": "A field is not valid. Check what you wrote.",
+        "autre": "The submission could not be saved. Try again in a moment."
+      }
     }
   },
   "missions": {

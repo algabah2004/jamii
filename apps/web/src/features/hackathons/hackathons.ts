@@ -181,3 +181,31 @@ export async function listerSansEquipe(id: string): Promise<Inscription[]> {
   if (error || !data) throw new Error('participants indisponibles')
   return (data.elements ?? []) as Inscription[]
 }
+
+// ---------------------------------------------------------------- le rendu d'une équipe (#172)
+
+export type Rendu = Schemas['Rendu']
+export type NouveauRendu = Schemas['NouveauRendu']
+
+export const LIMITES_RENDU = { titreMin: 3, titreMax: 120, descriptionMin: 20, descriptionMax: 4000, lienMax: 500, reponseMax: 1000 } as const
+
+/** Une adresse `https` valide (le contrat refuse le reste ; l'API refuse aussi les adresses internes). */
+export function estHttps(texte: string): boolean {
+  if (texte.length > LIMITES_RENDU.lienMax) return false
+  try {
+    return new URL(texte).protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
+/** `null` si l'équipe n'a encore rien rendu (404). */
+export async function lireRendu(id: string, equipeId: string): Promise<Rendu | null> {
+  const { data, response } = await api.GET('/api/hackathons/{hackathonId}/equipes/{equipeId}/rendu', { params: { path: { hackathonId: id, equipeId } } })
+  if (response.status === 404) return null
+  if (!data) throw new Error('rendu indisponible')
+  return data
+}
+
+export const rendre = (id: string, equipeId: string, rendu: NouveauRendu) =>
+  resultat<Rendu>(api.PUT('/api/hackathons/{hackathonId}/equipes/{equipeId}/rendu', { params: { path: { hackathonId: id, equipeId } }, body: rendu }))
