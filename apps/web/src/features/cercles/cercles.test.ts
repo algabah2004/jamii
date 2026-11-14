@@ -74,9 +74,35 @@ describe('la page du cercle', () => {
     expect(page.find('[data-test="tour"]').text()).toContain('Tour 1 · le projet de Awa')
     expect(page.find('[data-test="tour"] h2').text()).toBe('Appli de covoiturage étudiant')
     expect(page.find('[data-test="avancement"]').text()).toContain('7 tâches sur 12')
-    expect(page.find('[data-test="depot"]').attributes('rel')).toContain('noopener')
     expect(page.find('[data-test="point"]').text()).toContain('Jour 3 du tour de Awa')
     expect(page.findAll('[data-test="ordre"] li')).toHaveLength(6)
+  })
+
+  it('montre le code du tour dans Jamii : commande pour cloner, derniers commits et demandes de fusion', async () => {
+    const { page } = await ouvrir(`/cercles/${ID_DAKAR}`)
+    await vi.waitFor(() => expect(page.find('[data-test="commits"]').exists()).toBe(true))
+    const code = page.get('[data-test="code-du-tour"]')
+    expect(code.get('[data-test="clone"]').text()).toMatch(/^git clone https:\/\//)
+    expect(code.findAll('[data-test="commits"] li').length).toBeGreaterThan(0)
+    expect(code.get('[data-test="demandes"]').text()).toContain('Fusionnée')
+    for (const lien of code.findAll('a[target="_blank"]')) {
+      expect(lien.attributes('rel')).toContain('noopener')
+    }
+  })
+
+  it("garde le lien du dépôt et le dit quand le fournisseur ne répond pas", async () => {
+    serveur.use(
+      http.get('/api/cercles/:id/tours/:numero/activite', () =>
+        HttpResponse.json({
+          etat: 'indisponible', luLe: '2026-11-14T21:00:00Z', commits: [], demandesDeFusion: [],
+          depot: { fournisseur: 'github', url: 'https://github.com/jamii-cercles/x', cloneUrl: 'https://github.com/jamii-cercles/x.git' },
+        }),
+      ),
+    )
+    const { page } = await ouvrir(`/cercles/${ID_DAKAR}`)
+    await vi.waitFor(() => expect(page.find('[data-test="indisponible"]').exists()).toBe(true))
+    expect(page.get('[data-test="code-du-tour"]').text()).toContain('Ouvrir sur GitHub')
+    expect(page.find('[data-test="commits"]').exists()).toBe(false)
   })
 
   it("cache les idées et les boutons du créateur à qui n'est pas membre", async () => {

@@ -3,7 +3,10 @@ package dev.jamii.api.cercles;
 import java.net.http.HttpClient;
 import java.text.Normalizer;
 import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -92,6 +95,79 @@ class DepotsGithub implements DepotCode {
 			}
 			return client.get().uri("/repos/{org}/{nom}", organisation, nom).retrieve().body(JsonNode.class);
 		}
+	}
+
+	@Override
+	public boolean prives() {
+		return prives;
+	}
+
+	/**
+	 * Les 10 derniers commits et les 10 demandes de fusion mises à jour le plus récemment. On ne lit que les dépôts de
+	 * notre organisation : une adresse qui en sort (base modifiée à la main, autre fournisseur) n'est jamais appelée.
+	 */
+	@Override
+	public Optional<Activite> activite(DepotDuTour depot) {
+		var m = DEPOT_DE_L_ORGANISATION.matcher(depot.url() == null ? "" : depot.url());
+		if (!"github".equals(depot.fournisseur()) || !m.matches() || !m.group(1).equalsIgnoreCase(organisation)) {
+			return Optional.empty();
+		}
+		String nom = m.group(2);
+		try {
+			JsonNode commits = client.get().uri("/repos/{org}/{nom}/commits?per_page=10", organisation, nom)
+				.retrieve().body(JsonNode.class);
+			JsonNode demandes = client.get()
+				.uri("/repos/{org}/{nom}/pulls?state=all&sort=updated&direction=desc&per_page=10", organisation, nom)
+				.retrieve().body(JsonNode.class);
+			List<Commit> lesCommits = new ArrayList<>();
+			for (JsonNode c : commits) {
+				String url = texte(c.path("html_url"));
+				String date = texte(c.path("commit").path("author").path("date"));
+				if (url == null || !url.startsWith("https://") || date == null) {
+					continue;
+				}
+				lesCommits.add(new Commit(texte(c.path("sha")), premiereLigne(texte(c.path("commit").path("message"))),
+						auteur(c.path("author")), Instant.parse(date), url));
+			}
+			List<DemandeDeFusion> lesDemandes = new ArrayList<>();
+			for (JsonNode d : demandes) {
+				String url = texte(d.path("html_url"));
+				if (url == null || !url.startsWith("https://")) {
+					continue;
+				}
+				String etat = texte(d.path("merged_at")) != null ? "fusionnee" : "open".equals(texte(d.path("state"))) ? "ouverte" : "fermee";
+				lesDemandes.add(new DemandeDeFusion(d.path("number").asInt(), premiereLigne(texte(d.path("title"))), etat,
+						auteur(d.path("user")), Instant.parse(texte(d.path("updated_at"))), url));
+			}
+			return Optional.of(new Activite(List.copyOf(lesCommits), List.copyOf(lesDemandes)));
+		}
+		catch (RuntimeException e) {
+			// GitHub lent, en panne, jeton expiré ou dépôt supprimé : la page le dit, sans faire tomber la réponse.
+			journal.warn("Activité du dépôt d'un tour illisible : {}", e.getClass().getSimpleName());
+			return Optional.empty();
+		}
+	}
+
+	/** `https://github.com/<organisation>/<dépôt>`, sans rien après. */
+	private static final Pattern DEPOT_DE_L_ORGANISATION = Pattern
+		.compile("^https://github\\.com/([A-Za-z0-9-]{1,39})/([A-Za-z0-9._-]{1,100})/?$");
+
+	private static Auteur auteur(JsonNode compte) {
+		String login = texte(compte.path("login"));
+		return login == null ? null : new Auteur(login, texte(compte.path("avatar_url")));
+	}
+
+	private static String texte(JsonNode n) {
+		return n == null || n.isMissingNode() || n.isNull() ? null : n.asString();
+	}
+
+	/** La première ligne, sans caractères de contrôle, coupée à 200 caractères. */
+	static String premiereLigne(String texte) {
+		if (texte == null) {
+			return "";
+		}
+		String ligne = texte.lines().findFirst().orElse("").replaceAll("\\p{Cntrl}", " ").strip();
+		return ligne.length() > 200 ? ligne.substring(0, 199) + "…" : ligne;
 	}
 
 	/** Une invitation qui échoue (login renommé, compte supprimé) n'empêche ni le dépôt ni les autres invitations. */

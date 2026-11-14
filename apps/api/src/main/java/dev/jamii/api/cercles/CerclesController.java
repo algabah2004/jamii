@@ -27,7 +27,7 @@ import dev.jamii.api.auth.Annuaire;
 import dev.jamii.api.auth.Compte;
 import dev.jamii.api.auth.UtilisateurConnecte;
 
-/** Les 7 routes de contracts/cercles.yaml. */
+/** Les 8 routes de contracts/cercles.yaml. */
 @RestController
 class CerclesController {
 
@@ -66,16 +66,31 @@ class CerclesController {
 	record Page(List<CercleResume> elements, String curseurSuivant) {
 	}
 
+	record AuteurDepot(String login, String avatarUrl) {
+	}
+
+	record Commit(String sha, String message, AuteurDepot auteur, Instant date, String url) {
+	}
+
+	record DemandeDeFusion(int numero, String titre, String etat, AuteurDepot auteur, Instant misAJourLe, String url) {
+	}
+
+	record ActiviteDepot(String etat, Depot depot, Instant luLe, List<Commit> commits, List<DemandeDeFusion> demandesDeFusion) {
+	}
+
 	private final GestionCercles gestion;
 
 	private final DepotsDesTours depots;
 
 	private final Annuaire annuaire;
 
-	CerclesController(GestionCercles gestion, DepotsDesTours depots, Annuaire annuaire) {
+	private final ActiviteDesTours activite;
+
+	CerclesController(GestionCercles gestion, DepotsDesTours depots, Annuaire annuaire, ActiviteDesTours activite) {
 		this.gestion = gestion;
 		this.depots = depots;
 		this.annuaire = annuaire;
+		this.activite = activite;
 	}
 
 	@GetMapping("/api/cercles")
@@ -156,6 +171,32 @@ class CerclesController {
 		int ouvert = gestion.livrer(cercleId, numero, moi.id(), Instant.now());
 		depots.creer(cercleId, ouvert);
 		return vue(cercleId, moi.id());
+	}
+
+	@GetMapping("/api/cercles/{cercleId}/tours/{numero}/activite")
+	ActiviteDepot activite(@PathVariable UUID cercleId, @PathVariable int numero,
+			@AuthenticationPrincipal UtilisateurConnecte moi) {
+		var vue = gestion.lire(cercleId).orElseThrow(ErreurCercle::introuvable);
+		var tour = vue.membres().stream().filter(m -> m.rang() != null && m.rang() == numero).findFirst()
+			.orElseThrow(ErreurCercle::introuvable);
+		boolean estMembre = vue.membres().stream().anyMatch(m -> m.utilisateurId().equals(moi.id()));
+		// Un dépôt privé ne se lit pas par la porte de Jamii quand on n'est pas du cercle.
+		if (activite.prives() && !estMembre) {
+			throw new ErreurCercle(HttpStatus.FORBIDDEN, "pas_membre", "Réservé aux membres du cercle");
+		}
+		var depot = tour.depotUrl() == null ? null
+				: new DepotCode.DepotDuTour(tour.depotFournisseur(), tour.depotUrl(), tour.depotCloneUrl());
+		var l = activite.lire(depot);
+		return new ActiviteDepot(l.etat().name().toLowerCase(java.util.Locale.ROOT),
+				depot == null ? null : new Depot(depot.fournisseur(), depot.url(), depot.cloneUrl()), l.luLe(),
+				l.commits().stream().map(c -> new Commit(c.sha(), c.message(), auteur(c.auteur()), c.date(), c.url())).toList(),
+				l.demandesDeFusion().stream()
+					.map(d -> new DemandeDeFusion(d.numero(), d.titre(), d.etat(), auteur(d.auteur()), d.misAJourLe(), d.url()))
+					.toList());
+	}
+
+	private static AuteurDepot auteur(DepotCode.Auteur a) {
+		return a == null ? null : new AuteurDepot(a.login(), a.avatarUrl());
 	}
 
 	// ---------------------------------------------------------------- vues
