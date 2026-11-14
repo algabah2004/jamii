@@ -419,6 +419,10 @@ components:
       required: [resume, secteur, services, developpeursNecessaires, competences, plan]
       properties:
         resume: { type: string, maxLength: 600, description: Le besoin reformulé en mots simples. }
+        message:
+          type: [string, 'null']
+          maxLength: 900
+          description: 'Ce que l''assistant dit d''abord à la personne : il montre qu''il a compris sa situation et explique simplement ce qui peut l''arranger, avant les options. Absent dans le repli sans IA.'
         secteur: { type: string, maxLength: 60, examples: [juridique, commerce, sante, education, agriculture] }
         services:
           type: array

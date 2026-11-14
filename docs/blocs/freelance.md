@@ -22,3 +22,20 @@ Une personne (une PME, une association…) arrive avec un besoin. **L'agent IA l
 
 ## Terminé quand
 Pendant la démo, une PME passe de son texte libre à un cahier des charges publié, visible dans une communauté.
+
+## La suite : hackathons et missions (proposition [0004](../propositions/0004-hackathons-et-missions.md), en discussion)
+
+Suivi : #166. Une tâche par ticket, dans cet ordre :
+
+| Ordre | Tickets | Ce que ça livre |
+|---|---|---|
+| 1 | #167 | La proposition acceptée (cette PR) |
+| 2 | #175, #176, #177 | Missions : le contrat, publier, candidater et fixer le devis |
+| 3 | #178, #179, #180 | Missions : livrer et accepter, annuler ou trancher, avis et données |
+| 4 | #168, #169, #170 | Hackathons : le contrat, créer et publier, les écrans |
+| 5 | #171, #172, #173, #174 | Hackathons : équipes, rendus, jury, résultats |
+| 6 | #181 | Données de démo, accessibilité, documentation |
+
+**Territoire en plus, si la proposition est acceptée :** le module `hackathons` (API, écrans `features/hackathons`, `contracts/hackathons.yaml`) et `contracts/missions.yaml`. Les routes du front (`router.ts`), `projets`, `reseau` et `profils` restent à leurs responsables : on passe par une **demande**.
+
+**Terminé quand :** une PME publie une mission, choisit un développeur sur devis et la mène jusqu'aux avis ; un organisateur crée un hackathon, des équipes rendent, le jury note et les résultats sont publiés, sur l'environnement de test.

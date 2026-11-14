@@ -26,7 +26,9 @@ class PlansIaHttp implements PlansIa {
 		if (url == null || url.isBlank() || jeton == null || jeton.isBlank()) {
 			throw new IllegalStateException("IA_FOURNISSEUR=service demande IA_URL et IA_JETON_INTERNE");
 		}
-		var transport = new JdkClientHttpRequestFactory(HttpClient.newBuilder().connectTimeout(delai).build());
+		var transport = new JdkClientHttpRequestFactory(
+				// HTTP/1.1 : en http://, Java tente sinon une montée vers HTTP/2 (h2c) que uvicorn refuse (400).
+				HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).connectTimeout(delai).build());
 		transport.setReadTimeout(delai);
 		this.client = RestClient.builder()
 			.baseUrl(url)

@@ -25,6 +25,9 @@ class ServiceCatalogue:
     pour_quoi: str
     prix_indicatif: str | None
     lien: str
+    # `tous` : utilisable sans développeur. `developpeurs` : sert à ce que des développeurs
+    # construisent.
+    pour_qui: str = "tous"
 
 
 class Catalogue:
@@ -43,6 +46,7 @@ class Catalogue:
                     pour_quoi=" ".join(str(s["pourQuoi"]).split()),
                     prix_indicatif=s.get("prixIndicatif"),
                     lien=str(s["lien"]),
+                    pour_qui=str(s.get("pourQui", "tous")),
                 )
                 for s in contenu.get("services", [])
             ]
@@ -53,12 +57,21 @@ class Catalogue:
         if not services:
             raise CatalogueInvalideError(f"catalogue Systalink vide ({fichier})")
         for service in services:
+            if service.pour_qui not in ("tous", "developpeurs"):
+                raise CatalogueInvalideError(f"pourQui inconnu pour « {service.id} »")
             if not service.lien.startswith("https://"):
                 raise CatalogueInvalideError(f"lien non https pour « {service.id} »")
         return cls(services)
 
     def pour_l_ia(self) -> list[dict[str, str]]:
-        return [{"id": s.id, "pourQuoi": s.pour_quoi} for s in self._services.values()]
+        return [
+            {"id": s.id, "pourQuoi": s.pour_quoi, "pourQui": s.pour_qui}
+            for s in self._services.values()
+        ]
+
+    def pour_developpeurs(self, id_service: str) -> bool:
+        service = self._services.get(id_service)
+        return service is not None and service.pour_qui == "developpeurs"
 
     def completer(self, id_service: str, pour_ce_besoin: str) -> dict[str, Any] | None:
         """Le service complet pour le contrat, ou `None` si l'identifiant n'existe pas."""

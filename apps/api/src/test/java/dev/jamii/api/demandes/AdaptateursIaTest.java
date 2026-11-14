@@ -98,7 +98,11 @@ class AdaptateursIaTest {
 			recues.add(new Requete(echange.getRequestMethod(), echange.getRequestURI().getPath(),
 					echange.getRequestHeaders().getFirst("Authorization"), echange.getRequestHeaders().getFirst("Idempotency-Key"),
 					corps));
-			if ("POST".equals(echange.getRequestMethod())) {
+			// Comme uvicorn : une demande de montée vers HTTP/2 (h2c) est refusée (bug du 14/11).
+			if (echange.getRequestHeaders().containsKey("Upgrade")) {
+				repondre(echange, 400, "Unsupported upgrade request");
+			}
+			else if ("POST".equals(echange.getRequestMethod())) {
 				repondre(echange, 202, "{\"id\":\"0b0f5a4e-6c1d-4f0e-9a3b-2f6f0d1c7e11\",\"type\":\"plan_projet\",\"statut\":\"en_attente\",\"creeLe\":\"2026-11-12T10:00:00Z\"}");
 			}
 			else {

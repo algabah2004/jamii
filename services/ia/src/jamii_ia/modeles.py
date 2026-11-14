@@ -162,6 +162,7 @@ class ServiceSystalink(BaseModel):
 
 class Orientation(BaseModel):
     resume: str = Field(min_length=1, max_length=600)
+    message: str | None = Field(default=None, max_length=900)
     secteur: str = Field(min_length=1, max_length=60)
     services: list[ServiceSystalink] = Field(max_length=4)
     developpeursNecessaires: bool
