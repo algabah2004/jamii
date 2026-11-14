@@ -1147,12 +1147,67 @@
         "epuisees": "Toutes les retouches prévues au devis ont été utilisées."
       },
       "erreurs": {
+        "annulation_non_permise": "Un jalon livré attend une réponse : signale plutôt un désaccord.",
+        "avis_deja_donne": "Tu as déjà donné ton avis sur cette mission.",
         "modification_concurrente": "La mission a changé entre-temps. Recharge la page.",
         "etat_invalide": "Cette action n'est plus possible pour ce jalon.",
         "retouches_epuisees": "Toutes les retouches prévues au devis ont été utilisées.",
         "validation": "Un champ n'est pas valide. Vérifie ce que tu as écrit.",
         "interdit": "Tu n'as pas le droit de faire cette action.",
         "autre": "L'action n'a pas abouti. Réessaie dans un instant."
+      }
+    },
+    "fin": {
+      "annulation": {
+        "ouvrir": "Annuler la mission",
+        "confirmer": "Confirmer l'annulation",
+        "aide": "Si l'autre partie est d'accord, la mission est annulée. Tu peux annuler seul si le client n'a pas donné les informations de départ 7 jours après l'accord sur le devis, ou si un jalon a plus de 7 jours de retard. Sinon, ta demande attend sa réponse.",
+        "aideAccord": "L'autre partie a déjà demandé l'annulation : en confirmant, la mission est annulée.",
+        "raison": "Pourquoi annuler ?",
+        "envoyer": "Envoyer",
+        "enAttente": "Tu as demandé l'annulation. Elle attend la réponse de l'autre partie.",
+        "demandeePar": {
+          "client": "Le client demande l'annulation de la mission.",
+          "developpeur": "Le développeur demande l'annulation de la mission."
+        }
+      },
+      "desaccord": {
+        "titre": "Désaccord",
+        "ouvrir": "Signaler un désaccord",
+        "aide": "Un modérateur de Jamii lit vos échanges et tranche. En attendant, les livraisons, les retouches et l'acceptation automatique sont suspendues.",
+        "raison": "Ce qui ne va pas",
+        "aideRaison": "Au moins 20 caractères : ce qui était prévu au devis, et ce qui a été fait.",
+        "envoyer": "Ouvrir le désaccord",
+        "ouvertPar": {
+          "client": "Ouvert par le client le {date}.",
+          "developpeur": "Ouvert par le développeur le {date}."
+        },
+        "enAttente": "Un modérateur va examiner la situation.",
+        "issues": {
+          "terminee": "Décision : la mission est considérée comme terminée.",
+          "annulee": "Décision : la mission est annulée."
+        }
+      },
+      "trancher": {
+        "issue": "Ta décision",
+        "terminee": "La mission est terminée",
+        "annulee": "La mission est annulée",
+        "explication": "Ton explication",
+        "aide": "Au moins 20 caractères. Les deux parties la liront.",
+        "envoyer": "Trancher"
+      },
+      "avis": {
+        "titre": "Les avis",
+        "par": {
+          "client": "Avis du client",
+          "developpeur": "Avis du développeur"
+        },
+        "note": "{n} sur 5",
+        "question": "Comment s'est passée la mission ?",
+        "echelle": "1 : très mal, 5 : très bien.",
+        "texte": "Un mot de plus (facultatif)",
+        "aide": "1 000 caractères au plus. L'avis ne pourra plus être modifié.",
+        "envoyer": "Donner mon avis"
       }
     }
   }

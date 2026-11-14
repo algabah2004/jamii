@@ -1147,12 +1147,67 @@
         "epuisees": "All the revisions included in the quote have been used."
       },
       "erreurs": {
+        "annulation_non_permise": "A delivered milestone is waiting for an answer: report a disagreement instead.",
+        "avis_deja_donne": "You have already reviewed this mission.",
         "modification_concurrente": "The mission changed in the meantime. Reload the page.",
         "etat_invalide": "This action is no longer possible for this milestone.",
         "retouches_epuisees": "All the revisions included in the quote have been used.",
         "validation": "A field is not valid. Check what you wrote.",
         "interdit": "You are not allowed to do this.",
         "autre": "The action did not go through. Try again in a moment."
+      }
+    },
+    "fin": {
+      "annulation": {
+        "ouvrir": "Cancel the mission",
+        "confirmer": "Confirm the cancellation",
+        "aide": "If the other party agrees, the mission is cancelled. You can cancel on your own if the client has not given the starting information 7 days after agreeing on the quote, or if a milestone is more than 7 days late. Otherwise, your request waits for their answer.",
+        "aideAccord": "The other party has already asked to cancel: confirming cancels the mission.",
+        "raison": "Why cancel?",
+        "envoyer": "Send",
+        "enAttente": "You asked to cancel. The request is waiting for the other party.",
+        "demandeePar": {
+          "client": "The client is asking to cancel the mission.",
+          "developpeur": "The developer is asking to cancel the mission."
+        }
+      },
+      "desaccord": {
+        "titre": "Disagreement",
+        "ouvrir": "Report a disagreement",
+        "aide": "A Jamii moderator reads what happened and decides. Until then, deliveries, revisions and automatic acceptance are on hold.",
+        "raison": "What is wrong",
+        "aideRaison": "At least 20 characters: what the quote said, and what was done.",
+        "envoyer": "Open the disagreement",
+        "ouvertPar": {
+          "client": "Opened by the client on {date}.",
+          "developpeur": "Opened by the developer on {date}."
+        },
+        "enAttente": "A moderator will look into it.",
+        "issues": {
+          "terminee": "Decision: the mission is considered finished.",
+          "annulee": "Decision: the mission is cancelled."
+        }
+      },
+      "trancher": {
+        "issue": "Your decision",
+        "terminee": "The mission is finished",
+        "annulee": "The mission is cancelled",
+        "explication": "Your explanation",
+        "aide": "At least 20 characters. Both parties will read it.",
+        "envoyer": "Decide"
+      },
+      "avis": {
+        "titre": "Reviews",
+        "par": {
+          "client": "The client's review",
+          "developpeur": "The developer's review"
+        },
+        "note": "{n} out of 5",
+        "question": "How did the mission go?",
+        "echelle": "1: very badly, 5: very well.",
+        "texte": "A few more words (optional)",
+        "aide": "1,000 characters at most. The review cannot be changed afterwards.",
+        "envoyer": "Give my review"
       }
     }
   }
