@@ -16,6 +16,7 @@ import {
   preciserDemande,
   type Demande,
 } from './demandes'
+import PublierDemande from './PublierDemande.vue'
 
 /*
  * L'orientation d'un besoin (étape 1 de la démo) : ce que Systalink offre déjà, les développeurs qui peuvent
@@ -406,6 +407,8 @@ const messageErreur = computed(() =>
         </label>
         <p v-if="offres === 'erreur'" role="alert" class="erreur">{{ t('demandes.offres.erreur') }}</p>
       </section>
+
+      <PublierDemande v-if="pret" :demande="demande" :resume-propose="orientation?.resume" @publiee="demande = $event" />
 
       <template v-if="plan">
         <!-- La décision humaine, toujours visible en bas de l'écran. -->
