@@ -134,6 +134,30 @@ class DonneesDemoTest {
 	}
 
 	@Test
+	void les_communautes_ont_des_membres_des_salons_vivants_et_des_questions_a_chaque_etape() {
+		var awa = oauth2Login().oauth2User(connecte(DonneesDemo.AWA));
+
+		var flutter = mvc.get().uri("/api/communautes/flutter").with(awa);
+		assertThat(flutter).bodyJson().extractingPath("$.membre").isEqualTo(true);
+		assertThat(flutter).bodyJson().extractingPath("$.nombreMembres").asNumber().satisfies(n -> assertThat(n.intValue()).isGreaterThanOrEqualTo(5));
+
+		var general = mvc.get().uri("/api/communautes/flutter/salons/general/messages").with(awa);
+		assertThat(general).bodyJson().extractingPath("$.elements.length()").isEqualTo(7);
+		assertThat(general).bodyJson().extractingPath("$.elements[0].auteur.nom").isEqualTo("Yann Kouassi");
+
+		assertThat(compter("""
+				SELECT count(*) FROM publication p JOIN reponse r ON r.id = p.reponse_acceptee_id
+				WHERE p.id = '%s' AND r.auteur_id = '%s'
+				""".formatted(DonneesDemo.id("publication:webhook"), DonneesDemo.KOFI.id()))).as("réponse humaine acceptée").isEqualTo(1);
+		assertThat(compter("""
+				SELECT count(*) FROM publication p JOIN reponse r ON r.id = p.reponse_acceptee_id
+				WHERE p.id = '%s' AND r.proposee_par_ia AND r.validee_par_id IS NOT NULL
+				""".formatted(DonneesDemo.id("publication:apk")))).as("réponse de l'IA validée par un pair").isEqualTo(1);
+		assertThat(compter("SELECT count(*) FROM publication WHERE id = '" + DonneesDemo.id("publication:ussd") + "' AND reponse_acceptee_id IS NULL"))
+			.as("une question encore ouverte").isEqualTo(1);
+	}
+
+	@Test
 	void le_hackathon_de_dakar_est_termine_et_ses_resultats_sont_publics() {
 		var reponse = mvc.get().uri("/api/hackathons/" + DemoHackathonMission.HACKATHON + "/resultats");
 
