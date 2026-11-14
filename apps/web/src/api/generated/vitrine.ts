@@ -37,10 +37,11 @@ export interface components {
             /** @description Le début de la description du projet, coupé proprement par l'API. Texte brut, jamais du HTML. */
             accroche: string;
             /**
-             * @description `demande` : le projet répond au besoin d'une PME.
+             * @description `demande` : le projet répond au besoin d'une PME. `cercle` : le projet est né d'un tour de la Tech Tontine ;
+             *     le front affiche « Né dans une Tech Tontine Systalink ».
              * @enum {string}
              */
-            origine: "idee" | "demande";
+            origine: "idee" | "demande" | "cercle";
             /**
              * Format: uri
              * @description Adresse publique du projet.
