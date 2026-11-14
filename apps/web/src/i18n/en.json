@@ -300,6 +300,7 @@
       "yokk": "Yokk",
       "systatalk": "SystaTalk",
       "systaforms": "SystaForms",
+      "systaone": "SystaONE",
       "domaines": "Domain names"
     },
     "tendances": {
@@ -1085,6 +1086,72 @@
         "modification_concurrente": "The mission changed in the meantime. Reload the page.",
         "etat_invalide": "This action is no longer possible for this mission.",
         "limite_atteinte": "You have already published 5 missions today. Try again tomorrow.",
+        "autre": "The action did not go through. Try again in a moment."
+      }
+    },
+    "suivi": {
+      "titre": "The work",
+      "developpeur": "Developer",
+      "total": "Quote total",
+      "avancement": "Progress",
+      "jalonsAcceptes": "{n} milestone accepted out of {total} | {n} milestones accepted out of {total}",
+      "demarreLe": "Started on",
+      "jalons": "Milestones",
+      "jalon": "Milestone {n}",
+      "montant": "Amount",
+      "echeance": "Due by",
+      "paiement": "Payment",
+      "statuts": {
+        "a_faire": "Not started yet",
+        "en_cours": "In progress",
+        "livre": "Delivered, to review",
+        "accepte": "Accepted"
+      },
+      "paiements": {
+        "non_paye": "Not paid yet",
+        "declare_paye": "Paid, according to the client",
+        "declare_recu": "Payment received"
+      },
+      "informationsDepart": "Starting information",
+      "attenteDepart": "The client still needs to give the starting information. Each milestone's deadline starts then.",
+      "retouchesRestantes": "Revisions left: {n} out of {total}.",
+      "acceptationAutomatique": "If the client does not answer, this milestone will be accepted automatically on {date}.",
+      "accepteLe": "Accepted on {date}.",
+      "accepteAutomatiquement": "Accepted automatically on {date}, without an answer from the client.",
+      "livraisons": "Deliveries",
+      "livreLe": "Delivered on {date}",
+      "retoucheDemandee": "Revision requested:",
+      "accepter": "Accept this milestone",
+      "payer": "I paid for this milestone",
+      "payerAide": "Payment happens outside Jamii (mobile money, bank transfer…). Declaring it here keeps a record for both of you.",
+      "recu": "I received the payment",
+      "demarrer": {
+        "intro": "The quote is accepted. Give the developer what they need to start.",
+        "informations": "Starting information",
+        "aide": "Access, content, useful contacts. Never put a password here: share it another way.",
+        "envoyer": "Start the mission"
+      },
+      "livrer": {
+        "message": "What you are delivering",
+        "aideMessage": "At least 10 characters: what is done, and how to check it.",
+        "liens": "Links (optional)",
+        "aideLiens": "One link per line, five at most, using https: test version, repository, files.",
+        "liensInvalides": "Each link must start with https://, and five links at most.",
+        "envoyer": "Deliver this milestone"
+      },
+      "retouche": {
+        "ouvrir": "Request a revision ({n} left) | Request a revision ({n} left)",
+        "raison": "What needs to be redone",
+        "aide": "At least 10 characters, as precise as possible.",
+        "envoyer": "Send the revision request",
+        "epuisees": "All the revisions included in the quote have been used."
+      },
+      "erreurs": {
+        "modification_concurrente": "The mission changed in the meantime. Reload the page.",
+        "etat_invalide": "This action is no longer possible for this milestone.",
+        "retouches_epuisees": "All the revisions included in the quote have been used.",
+        "validation": "A field is not valid. Check what you wrote.",
+        "interdit": "You are not allowed to do this.",
         "autre": "The action did not go through. Try again in a moment."
       }
     }

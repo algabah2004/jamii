@@ -300,6 +300,7 @@
       "yokk": "Yokk",
       "systatalk": "SystaTalk",
       "systaforms": "SystaForms",
+      "systaone": "SystaONE",
       "domaines": "Noms de domaine"
     },
     "tendances": {
@@ -1085,6 +1086,72 @@
         "modification_concurrente": "La mission a changé entre-temps. Recharge la page.",
         "etat_invalide": "Cette action n'est plus possible pour cette mission.",
         "limite_atteinte": "Tu as déjà publié 5 missions aujourd'hui. Réessaie demain.",
+        "autre": "L'action n'a pas abouti. Réessaie dans un instant."
+      }
+    },
+    "suivi": {
+      "titre": "Le travail",
+      "developpeur": "Développeur",
+      "total": "Total du devis",
+      "avancement": "Avancement",
+      "jalonsAcceptes": "{n} jalon accepté sur {total} | {n} jalons acceptés sur {total}",
+      "demarreLe": "Démarré le",
+      "jalons": "Les jalons",
+      "jalon": "Jalon {n}",
+      "montant": "Montant",
+      "echeance": "À livrer avant le",
+      "paiement": "Paiement",
+      "statuts": {
+        "a_faire": "Pas encore commencé",
+        "en_cours": "En cours",
+        "livre": "Livré, à vérifier",
+        "accepte": "Accepté"
+      },
+      "paiements": {
+        "non_paye": "Pas encore payé",
+        "declare_paye": "Payé selon le client",
+        "declare_recu": "Paiement reçu"
+      },
+      "informationsDepart": "Les informations de départ",
+      "attenteDepart": "Le client doit encore donner les informations de départ. Le délai de chaque jalon commencera à ce moment-là.",
+      "retouchesRestantes": "Retouches restantes : {n} sur {total}.",
+      "acceptationAutomatique": "Sans réponse du client, ce jalon sera accepté automatiquement le {date}.",
+      "accepteLe": "Accepté le {date}.",
+      "accepteAutomatiquement": "Accepté automatiquement le {date}, sans réponse du client.",
+      "livraisons": "Les livraisons",
+      "livreLe": "Livré le {date}",
+      "retoucheDemandee": "Retouche demandée :",
+      "accepter": "Accepter ce jalon",
+      "payer": "J'ai payé ce jalon",
+      "payerAide": "Le paiement se fait en dehors de Jamii (Mobile Money, virement…). Le déclarer ici garde une trace pour vous deux.",
+      "recu": "J'ai reçu le paiement",
+      "demarrer": {
+        "intro": "Le devis est accepté. Pour que le développeur commence, donne-lui ce dont il a besoin.",
+        "informations": "Les informations de départ",
+        "aide": "Accès, contenus, contacts utiles. Ne donne jamais de mot de passe ici : partage-le autrement.",
+        "envoyer": "Démarrer la mission"
+      },
+      "livrer": {
+        "message": "Ce que tu livres",
+        "aideMessage": "Au moins 10 caractères : ce qui est fait, et comment le vérifier.",
+        "liens": "Liens (facultatif)",
+        "aideLiens": "Un lien par ligne, cinq au plus, en https : version de test, dépôt, fichiers.",
+        "liensInvalides": "Chaque lien doit commencer par https://, et cinq liens au plus.",
+        "envoyer": "Livrer ce jalon"
+      },
+      "retouche": {
+        "ouvrir": "Demander une retouche ({n} restante) | Demander une retouche ({n} restantes)",
+        "raison": "Ce qu'il faut reprendre",
+        "aide": "Au moins 10 caractères, le plus précis possible.",
+        "envoyer": "Envoyer la demande de retouche",
+        "epuisees": "Toutes les retouches prévues au devis ont été utilisées."
+      },
+      "erreurs": {
+        "modification_concurrente": "La mission a changé entre-temps. Recharge la page.",
+        "etat_invalide": "Cette action n'est plus possible pour ce jalon.",
+        "retouches_epuisees": "Toutes les retouches prévues au devis ont été utilisées.",
+        "validation": "Un champ n'est pas valide. Vérifie ce que tu as écrit.",
+        "interdit": "Tu n'as pas le droit de faire cette action.",
         "autre": "L'action n'a pas abouti. Réessaie dans un instant."
       }
     }
