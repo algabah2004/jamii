@@ -148,15 +148,17 @@ class Livraisons {
 	// ---------------------------------------------------------------- acceptation automatique
 
 	/**
-	 * Accepte chaque jalon livré depuis plus de 72 heures, à l'instant exact où le délai a expiré. La condition `statut =
-	 * 'livre'` départage deux exécutions simultanées : un jalon n'est accepté qu'une fois. Renvoie combien l'ont été.
+	 * Accepte chaque jalon livré depuis plus de 72 heures, à l'instant exact où le délai a expiré, sauf pendant un
+	 * désaccord (la mission n'est plus `en_cours`). La condition `statut = 'livre'` départage deux exécutions
+	 * simultanées : un jalon n'est accepté qu'une fois. Renvoie combien l'ont été.
 	 */
 	@Transactional
 	int accepterAutomatiquement() {
 		Instant limite = horloge.instant().minus(ACCEPTATION_AUTOMATIQUE);
 		List<UUID> missionsTouchees = base.sql("""
 				UPDATE jalon_mission j SET statut = 'accepte', accepte_le = j.livre_le + INTERVAL '72 hours', acceptation_automatique = TRUE
-				FROM devis d WHERE d.id = j.devis_id AND j.statut = 'livre' AND j.livre_le <= :limite
+				FROM devis d JOIN mission m ON m.id = d.mission_id
+				WHERE d.id = j.devis_id AND j.statut = 'livre' AND j.livre_le <= :limite AND m.statut = 'en_cours'
 				RETURNING d.mission_id
 				""").param("limite", Timestamp.from(limite)).query(UUID.class).list();
 		for (UUID m : missionsTouchees.stream().distinct().toList()) {
