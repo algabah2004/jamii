@@ -130,6 +130,8 @@ class DemandesTest {
 		assertThat(liste).hasStatusOk();
 		assertThat(liste).bodyJson().extractingPath("$[*].id").asArray().containsExactly(id);
 		assertThat(liste).bodyJson().extractingPath("$[0].titre").isEqualTo("Boutique de couture en ligne");
+		assertThat(liste).bodyJson().extractingPath("$[0].precisions").isEqualTo(0);
+		assertThat(liste).bodyJson().extractingPath("$[0].publiee").isEqualTo(false);
 	}
 
 	@Test

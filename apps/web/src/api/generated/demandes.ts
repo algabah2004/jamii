@@ -194,6 +194,10 @@ export interface components {
             resume?: string | null;
             /** Format: date-time */
             creeLe: string;
+            /** @description Nombre de précisions ajoutées par l'auteur. */
+            precisions: number;
+            /** @description Vrai si l'auteur a publié le résumé de sa demande. */
+            publiee: boolean;
         };
         /** @description L'état de la tâche `plan_projet`, relu par l'API dans le service IA. */
         PlanDeLaDemande: {

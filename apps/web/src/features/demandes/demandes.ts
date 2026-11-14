@@ -174,6 +174,9 @@ export async function choisirOffres(id: string, accepte: boolean): Promise<Deman
 export type DemandeResumee = Schemas['DemandeResumee']
 
 /** GET /api/demandes : « Tes demandes », pour retrouver un besoin déjà décrit. */
+/** « 14 nov. » : la date d'une demande dans les listes. */
+export const dateCourte = (iso: string) => new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
+
 export async function listerDemandes(): Promise<DemandeResumee[]> {
   const reponse = await globalThis.fetch(adresse('/api/demandes'), { credentials: 'same-origin' })
   if (!reponse.ok) return []

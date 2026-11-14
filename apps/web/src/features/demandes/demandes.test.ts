@@ -182,6 +182,41 @@ describe('l’orientation d’un besoin', () => {
   })
 })
 
+describe('Tes demandes (#199)', () => {
+  const resumees = [
+    { id: 'a1', titre: 'Boutique de pagnes', creeLe: '2026-11-14T10:00:00Z', resume: 'Vendre en ligne sans perdre ses commandes.', precisions: 2, publiee: true },
+    { id: 'b2', titre: 'Cabinet sans clé USB', creeLe: '2026-11-13T10:00:00Z', resume: null, precisions: 0, publiee: false },
+  ]
+
+  it('le menu ouvre la liste de tous mes besoins, avec leurs précisions et ce qui est publié', async () => {
+    serveur.use(http.get('/api/demandes', () => HttpResponse.json(resumees)))
+    const { page } = await ouvrir('/demandes')
+    await vi.waitFor(() => expect(page.find('[data-test="liste-demandes"]').exists()).toBe(true))
+    const cartes = page.findAll('[data-test="demande-resumee"]')
+    expect(cartes).toHaveLength(2)
+    expect(cartes[0]!.attributes('href')).toBe('/demandes/a1')
+    expect(cartes[0]!.text()).toContain('Publiée')
+    expect(cartes[0]!.text()).toContain('2 précisions')
+    expect(cartes[1]!.text()).toContain('Réponse en préparation')
+    expect(page.get('[data-test="nouvelle"]').attributes('href')).toBe('/demandes/nouvelle')
+  })
+
+  it('sans demande, invite à décrire un premier besoin', async () => {
+    serveur.use(http.get('/api/demandes', () => HttpResponse.json([])))
+    const { page } = await ouvrir('/demandes')
+    await vi.waitFor(() => expect(page.find('[data-test="aucune-demande"]').exists()).toBe(true))
+  })
+
+  it('sur la page d’un besoin, les autres restent à côté pour passer de l’un à l’autre', async () => {
+    serveur.use(http.get('/api/demandes', () => HttpResponse.json(resumees)))
+    const { page } = await ouvrir('/demandes/nouvelle')
+    await page.get('[data-test="exemple"]').trigger('click')
+    await page.get('[data-test="demande"]').trigger('submit')
+    await vi.waitFor(() => expect(page.find('[data-test="historique"]').exists()).toBe(true))
+    expect(page.get('[data-test="historique"]').text()).toContain('Cabinet sans clé USB')
+  })
+})
+
 describe('du besoin au cercle', () => {
   it('« Former un cercle avec eux » ouvre la création avec le titre du besoin, sans le mettre dans l’adresse', async () => {
     serveur.use(

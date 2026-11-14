@@ -656,7 +656,17 @@
       }
     },
     "mesDemandes": {
-      "titre": "Tes demandes"
+      "titre": "Tes demandes",
+      "intro": "Tous les besoins que tu as décrits. Ouvre-en un pour relire la réponse, la préciser ou la publier.",
+      "nouvelle": "Décrire un nouveau besoin",
+      "vide": "Tu n'as encore décrit aucun besoin.",
+      "videAide": "Explique ce dont tu as besoin avec tes mots : Jamii te dit ce qui existe déjà et qui peut faire le reste.",
+      "enCours": "Réponse en préparation…",
+      "publiee": "Publiée",
+      "precisions": "{n} précision | {n} précisions",
+      "ouvrir": "Ouvrir",
+      "autres": "Tes autres demandes",
+      "toutes": "Voir toutes tes demandes"
     },
     "discuter": {
       "titre": "Quelque chose ne te convient pas ?",
