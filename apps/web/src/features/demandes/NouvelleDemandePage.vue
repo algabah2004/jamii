@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import { JBouton, JChamp, JIllustration } from '../../design-system'
 import {
   composerDescription,
@@ -9,8 +9,10 @@ import {
   demandeValide,
   DUREES,
   LIMITES,
+  listerDemandes,
   QUESTIONS,
   SECTEURS,
+  type DemandeResumee,
   type NouvelleDemande,
   type Question,
   type Reponses,
@@ -23,6 +25,11 @@ import {
  */
 const { t, tm, rt } = useI18n()
 const router = useRouter()
+
+/** « Tes demandes » : un besoin déjà décrit se retrouve toujours, même après avoir quitté la page. */
+const precedentes = ref<DemandeResumee[]>([])
+void listerDemandes().then((l) => (precedentes.value = l)).catch(() => (precedentes.value = []))
+const dateCourte = (iso: string) => new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
 
 const demande = ref<NouvelleDemande>({ titre: '', description: '', secteur: '', ville: '', offresSystalink: false })
 const duree = ref<number | 'inconnue'>('inconnue')
@@ -150,6 +157,16 @@ async function envoyer() {
             </li>
           </ul>
         </section>
+        <section v-if="precedentes.length" class="carte bloc" aria-labelledby="mes-demandes" data-test="mes-demandes">
+          <h2 id="mes-demandes">{{ t('demandes.mesDemandes.titre') }}</h2>
+          <ul class="precedentes">
+            <li v-for="d in precedentes.slice(0, 8)" :key="d.id">
+              <RouterLink :to="`/demandes/${d.id}`">{{ d.titre }}</RouterLink>
+              <span class="texte-discret">{{ dateCourte(d.creeLe) }}</span>
+              <p v-if="d.resume" class="texte-discret">{{ d.resume }}</p>
+            </li>
+          </ul>
+        </section>
         <section class="carte bloc" aria-labelledby="ensuite">
           <h2 id="ensuite">{{ t('demandes.nouvelle.ensuiteTitre') }}</h2>
           <ol class="etapes">
@@ -164,6 +181,10 @@ async function envoyer() {
 </template>
 
 <style scoped>
+.precedentes { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
+.precedentes li { display: grid; grid-template-columns: 1fr auto; gap: 2px var(--space-3); }
+.precedentes a { font-weight: 600; }
+.precedentes p { grid-column: 1 / -1; margin: 0; font-size: var(--type-body-sm-size); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .mise-en-page { display: grid; gap: var(--space-6); grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); align-items: start; }
 @media (max-width: 860px) { .mise-en-page { grid-template-columns: 1fr; } }
 .formulaire { display: grid; gap: var(--space-6); padding: var(--space-8); }

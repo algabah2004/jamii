@@ -57,6 +57,8 @@ export function planDemo(dureeSemaines = 8): PlanProjet {
  */
 export function orientationDemo(dureeSemaines = 8): Orientation {
   return {
+    message:
+      "Ton cabinet perd du temps à chercher ses dossiers et à les faire circuler sur clé USB. Une partie se règle tout de suite avec des outils qui existent déjà ; pour l'espace où tes clients suivent leur affaire, il faudra des développeurs.",
     resume:
       "Le cabinet veut retrouver ses dossiers en quelques secondes, les partager entre associés sans clé USB, et donner aux clients un espace pour suivre l'avancement de leur affaire.",
     secteur: 'juridique',
@@ -114,6 +116,27 @@ export const handlersDemandes = [
     }
     demandes.set(demande.id, { demande, pretA: Date.now() + DELAI_PLAN_MS })
     return HttpResponse.json(demande, { status: 201 })
+  }),
+
+  http.get('/api/demandes', () =>
+    HttpResponse.json(
+      [...demandes.values()]
+        .map(({ demande }) => ({ id: demande.id, titre: demande.titre, creeLe: demande.creeLe, resume: demande.orientation?.resultat?.resume ?? null }))
+        .reverse(),
+    ),
+  ),
+
+  http.post('/api/demandes/:id/precisions', async ({ params, request }) => {
+    const trouvee = demandes.get(String(params.id))
+    if (!trouvee) return HttpResponse.json({ code: 'introuvable' }, { status: 404 })
+    const { texte } = (await request.json()) as { texte: string }
+    const precisions = trouvee.demande.precisions ?? []
+    if (precisions.length >= 5) return HttpResponse.json({ code: 'trop_de_precisions' }, { status: 409 })
+    trouvee.demande.precisions = [...precisions, { texte: texte.trim(), creeLe: new Date().toISOString() }]
+    trouvee.demande.plan = { statut: 'en_attente' }
+    trouvee.demande.orientation = { statut: 'en_attente' }
+    trouvee.pretA = Date.now() + DELAI_PLAN_MS
+    return HttpResponse.json(trouvee.demande)
   }),
 
   http.get('/api/demandes/:id', ({ params }) => {

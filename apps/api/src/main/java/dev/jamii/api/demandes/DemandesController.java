@@ -39,6 +39,12 @@ class DemandesController {
 	record ChoixOffres(Boolean accepte) {
 	}
 
+	record NouvellePrecision(String texte) {
+	}
+
+	record Precision(String texte, Instant creeLe) {
+	}
+
 	@JsonInclude(JsonInclude.Include.NON_NULL)
 	record EtatDeLaTache(String statut, String origine, JsonNode resultat, String erreurCode) {
 	}
@@ -52,7 +58,7 @@ class DemandesController {
 
 	record Demande(UUID id, String titre, String description, Integer dureeSemaines, String secteur, String ville,
 			String pays, boolean offresSystalink, Instant creeLe, EtatDeLaTache plan, EtatDeLaTache orientation,
-			List<Recommandations.Recommandation> recommandations, Publication publication) {
+			List<Recommandations.Recommandation> recommandations, List<Precision> precisions, Publication publication) {
 	}
 
 	private final GestionDemandes gestion;
@@ -113,6 +119,33 @@ class DemandesController {
 		}
 		return ResponseEntity.created(URI.create("/api/demandes/" + id)).cacheControl(CacheControl.noStore())
 			.body(vue(gestion.lire(id, moi.id()).orElseThrow()));
+	}
+
+	/** « Tes demandes » : pour retrouver un besoin déjà décrit, même après avoir quitté la page. */
+	@GetMapping("/api/demandes")
+	ResponseEntity<List<GestionDemandes.Resume>> lister(@AuthenticationPrincipal UtilisateurConnecte moi) {
+		return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(gestion.mesDemandes(moi.id()));
+	}
+
+	/**
+	 * Préciser son besoin après avoir lu la réponse (« ce n'est pas tout à fait ça »). L'analyse repart avec le besoin
+	 * de départ et toutes les précisions. 5 au plus par demande ; elles comptent aussi dans la limite de l'heure.
+	 */
+	@PostMapping("/api/demandes/{demandeId}/precisions")
+	ResponseEntity<?> preciser(@PathVariable UUID demandeId, @RequestBody NouvellePrecision precision,
+			@AuthenticationPrincipal UtilisateurConnecte moi) {
+		String texte = propre(precision.texte());
+		if (texte.length() < 3 || texte.length() > 500) {
+			return probleme(HttpStatus.BAD_REQUEST, "validation", "Certains champs sont invalides",
+					List.of(Map.of("champ", "texte", "code", "longueur_invalide")));
+		}
+		return switch (gestion.preciser(demandeId, moi.id(), texte, Instant.now())) {
+			case INTROUVABLE -> probleme(HttpStatus.NOT_FOUND, "introuvable", "Ressource introuvable", null);
+			case LIMITE -> probleme(HttpStatus.CONFLICT, "trop_de_precisions",
+					"Cette demande a déjà " + GestionDemandes.PRECISIONS_MAX + " précisions : décris un nouveau besoin", null);
+			case AJOUTEE -> ResponseEntity.ok().cacheControl(CacheControl.noStore())
+				.body(vue(gestion.lire(demandeId, moi.id()).orElseThrow()));
+		};
 	}
 
 	@GetMapping("/api/demandes/{demandeId}")
@@ -186,6 +219,7 @@ class DemandesController {
 		}
 		return new Demande(fiche.id(), fiche.titre(), fiche.description(), fiche.dureeSemaines(), fiche.secteur(),
 				fiche.ville(), fiche.pays(), fiche.offresSystalink(), fiche.creeLe(), etatDuPlan, orientation, recommandes,
+				fiche.precisions().stream().map(p -> new Precision(p.texte(), p.creeLe())).toList(),
 				fiche.publieeLe() == null ? null : new Publication(fiche.publieeLe(), fiche.publieeResume()));
 	}
 

@@ -566,7 +566,7 @@
     ],
     "plan": {
       "autre": "← Décrire un autre besoin",
-      "prepare": "Jamii analyse ton besoin…",
+      "prepare": "Je regarde ton besoin…",
       "prepareAide": "Il cherche ce qui existe déjà chez Systalink et les développeurs qui peuvent t'aider. Cela prend quelques secondes.",
       "echec": "Ton besoin n'a pas pu être analysé.",
       "echecAide": "Ta demande est bien enregistrée. Réessaie dans un instant.",
@@ -585,7 +585,12 @@
       "lancer": "Lancer le projet avec ce plan",
       "lance": "Projet lancé. Les rôles à trouver sont proposés aux développeurs.",
       "dejaPrise": "Une équipe a déjà lancé un projet sur cette demande.",
-      "erreurLancement": "Le projet n'a pas pu être lancé. Réessaie dans un instant."
+      "erreurLancement": "Le projet n'a pas pu être lancé. Réessaie dans un instant.",
+      "etapes": {
+        "lire": "Je lis ce que tu as écrit",
+        "chercher": "Je cherche ce qui existe déjà",
+        "preparer": "Je prépare tes options"
+      }
     },
     "priorites": {
       "indispensable": "Indispensable",
@@ -609,10 +614,10 @@
     },
     "orientation": {
       "repli": "Analyse automatique indisponible, voici une première proposition.",
-      "compris": "Ce que nous avons compris",
+      "compris": "Voici ce que j’ai compris",
       "systalink": "Ce dont tu as besoin existe chez Systalink",
       "systalinkAide": "Pour cette partie, pas besoin d'attendre des développeurs.",
-      "voirService": "Voir chez Systalink",
+      "voirService": "Voir cette offre",
       "developpeurs": "Les développeurs qui peuvent le faire",
       "developpeursAide": "Choisis-les pour leurs compétences prouvées, leur disponibilité et leur ville.",
       "formerCercle": "Former un cercle avec eux",
@@ -620,6 +625,44 @@
       "ecrire": "Écrire à {nom}",
       "aucun": "Aucun développeur disponible ne correspond pour l'instant. Le plan ci-dessous reste valable : reviens plus tard ou publie-le dans une communauté.",
       "plan": "Le plan pour les développeurs"
+    },
+    "chemins": {
+      "titre": "Tes options",
+      "aide": "Compare, puis choisis ce qui te convient. Rien n’est décidé tant que tu ne cliques pas.",
+      "pret": {
+        "badge": "Prêt à l’emploi · sans développeur",
+        "badgeAvecDev": "Pour mettre ton projet en ligne",
+        "titre": "Une solution qui existe déjà",
+        "titreAvecDev": "Ce qui existe déjà",
+        "partenaire": "Proposé par Systalink, l’hébergeur partenaire de Jamii. Tu restes libre de choisir ailleurs."
+      },
+      "surMesure": {
+        "badge": "Sur mesure",
+        "titre": "Le faire construire par des développeurs",
+        "texte": "Des développeurs de Jamii construisent ce qui n’existe pas encore, à partir du projet que j’ai préparé pour toi.",
+        "duree": "environ {n} semaine | environ {n} semaine | environ {n} semaines",
+        "fonctions": "aucune fonction indispensable | {n} fonction indispensable | {n} fonctions indispensables",
+        "devs": "aucun développeur proposé | {n} développeur proposé | {n} développeurs proposés",
+        "voirDevs": "Voir les développeurs",
+        "voirProjet": "Voir le projet détaillé"
+      },
+      "masquerProjet": "Masquer le projet détaillé",
+      "lesDeux": "Tu peux commencer tout de suite avec ce qui existe déjà, puis faire construire le reste.",
+      "aucun": {
+        "titre": "Rien de prêt ne correspond encore",
+        "texte": "Pose ta question dans une communauté : des développeurs de Jamii pourront te conseiller.",
+        "action": "Voir les communautés"
+      }
+    },
+    "mesDemandes": {
+      "titre": "Tes demandes"
+    },
+    "discuter": {
+      "titre": "Quelque chose ne te convient pas ?",
+      "aide": "Dis-le avec tes mots : je reprends ton besoin avec ta précision.",
+      "exemple": "Par exemple : je ne veux pas vendre en ligne, seulement montrer mes articles.",
+      "envoyer": "Envoyer",
+      "limite": "Tu as déjà précisé 5 fois ce besoin. Décris un nouveau besoin pour repartir de zéro."
     }
   },
   "cercles": {

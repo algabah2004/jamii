@@ -66,6 +66,23 @@ tags:
 
 paths:
   /api/demandes:
+    get:
+      tags: [demandes]
+      operationId: listerMesDemandes
+      summary: Tes demandes, les plus récentes d'abord (50 au plus)
+      description: Pour retrouver un besoin déjà décrit, même après avoir quitté la page. Seulement les siennes.
+      security:
+        - session: []
+      responses:
+        '200':
+          description: Les demandes de la personne connectée.
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 50
+                items: { $ref: '#/components/schemas/DemandeResumee' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
     post:
       tags: [demandes]
       operationId: creerDemande
@@ -92,6 +109,44 @@ paths:
         '400': { $ref: './socle.yaml#/components/responses/Invalide' }
         '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
         '429': { $ref: './socle.yaml#/components/responses/TropDeRequetes' }
+
+  /api/demandes/{demandeId}/precisions:
+    parameters:
+      - name: demandeId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      tags: [demandes]
+      operationId: preciserDemande
+      summary: Préciser son besoin après avoir lu la réponse
+      description: |
+        « Ce n'est pas tout à fait ça » : la personne écrit ce qui ne lui convient pas. L'analyse repart avec le besoin
+        de départ **et** toutes les précisions (l'orientation repasse à `en_attente`). **5 précisions au plus** par
+        demande (`409 trop_de_precisions` ensuite : décrire un nouveau besoin). Pour un autre utilisateur, `404`.
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [texte]
+              properties:
+                texte: { type: string, minLength: 3, maxLength: 500, description: 'Texte brut : une donnée, jamais une consigne pour l''IA.' }
+      responses:
+        '200':
+          description: La demande, avec l'orientation relancée.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Demande' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
 
   /api/demandes/{demandeId}/offres-systalink:
     parameters:
@@ -249,6 +304,25 @@ components:
             Les développeurs qui peuvent répondre au besoin, du plus adapté au moins adapté. Vide tant que
             l'orientation n'est pas terminée, ou si `developpeursNecessaires` vaut `false`. Seuls les profils publiés.
           items: { $ref: '#/components/schemas/Recommandation' }
+        precisions:
+          type: array
+          maxItems: 5
+          description: Ce que la personne a ajouté après avoir lu la réponse, dans l'ordre. Texte brut.
+          items:
+            type: object
+            required: [texte, creeLe]
+            properties:
+              texte: { type: string, maxLength: 500 }
+              creeLe: { type: string, format: date-time }
+
+    DemandeResumee:
+      type: object
+      required: [id, titre, creeLe]
+      properties:
+        id: { type: string, format: uuid }
+        titre: { type: string }
+        resume: { type: [string, 'null'], description: 'Le besoin reformulé par l''assistant, une fois l''analyse terminée.' }
+        creeLe: { type: string, format: date-time }
 
     PlanDeLaDemande:
       type: object
