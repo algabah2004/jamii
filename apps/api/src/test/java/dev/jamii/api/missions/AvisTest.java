@@ -17,6 +17,8 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.test.context.event.ApplicationEvents;
+import org.springframework.test.context.event.RecordApplicationEvents;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
 
@@ -30,6 +32,7 @@ import tools.jackson.databind.json.JsonMapper;
 @SpringBootTest
 @AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)
+@RecordApplicationEvents
 class AvisTest {
 
 	@Autowired
@@ -40,6 +43,9 @@ class AvisTest {
 
 	@Autowired
 	JsonMapper json;
+
+	@Autowired
+	ApplicationEvents evenements;
 
 	/** Une mission attribuée à Kofi par Awa, sur un devis d'un jalon de 10 jours. */
 	private record Scene(String mission, String jalon, UtilisateurConnecte awa, UtilisateurConnecte kofi) {
@@ -127,6 +133,18 @@ class AvisTest {
 	}
 
 	// ---------------------------------------------------------------- avis
+
+	@Test
+	void la_mission_terminee_est_annoncee_une_fois_pour_le_profil_du_developpeur() throws Exception {
+		Scene s = terminee();
+		assertThat(evenements.stream(MissionTerminee.class).filter(e -> e.missionId().toString().equals(s.mission())))
+			.singleElement()
+			.satisfies(e -> {
+				assertThat(e.developpeurId()).isEqualTo(s.kofi().id());
+				assertThat(e.clientId()).isEqualTo(s.awa().id());
+				assertThat(e.titre()).isEqualTo("Boutique en ligne");
+			});
+	}
 
 	@Test
 	void chaque_partie_donne_son_avis_une_fois_la_mission_terminee() throws Exception {
