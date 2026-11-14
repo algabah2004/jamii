@@ -269,6 +269,8 @@ export const handlersMissions = [
     }
     propositions.get(mission.id)?.push(proposition)
     mission.nombrePropositions += 1
+    // La personne qui propose devient candidate (dans les maquettes, une seule personne est connectée).
+    mission.moi = { role: 'candidat', actions: [] }
     return HttpResponse.json(proposition, { status: 201 })
   }),
 
@@ -365,5 +367,29 @@ export const handlersMissions = [
     mission.travail.avis = [...(mission.travail.avis ?? []), avis]
     mission.moi = { ...mission.moi, actions: actionsCliente(mission) }
     return HttpResponse.json(avis, { status: 201 })
+  }),
+
+  http.post('/api/missions/:id/propositions/:propositionId/retenir', async ({ params, request }) => {
+    const mission = missions.get(String(params.id))
+    const liste = propositions.get(String(params.id)) ?? []
+    const choisie = liste.find((p) => p.id === String(params.propositionId))
+    if (!mission || !choisie) return erreur(404, 'introuvable')
+    const { version } = (await request.json()) as { version: number }
+    if (version !== mission.version) return erreur(409, 'modification_concurrente')
+    if (mission.statut !== 'publiee' || choisie.statut !== 'envoyee') return erreur(409, 'etat_invalide')
+    for (const p of liste) if (p.statut === 'retenue') p.statut = 'envoyee'
+    choisie.statut = 'retenue'
+    mission.version += 1
+    return HttpResponse.json(mission)
+  }),
+
+  http.post('/api/missions/:id/propositions/:propositionId/retirer', ({ params }) => {
+    const mission = missions.get(String(params.id))
+    const proposition = propositions.get(String(params.id))?.find((p) => p.id === String(params.propositionId))
+    if (!mission || !proposition) return erreur(404, 'introuvable')
+    if (mission.statut !== 'publiee' || !['envoyee', 'retenue'].includes(proposition.statut)) return erreur(409, 'etat_invalide')
+    proposition.statut = 'retiree'
+    mission.version += 1
+    return new HttpResponse(null, { status: 204 })
   }),
 ]

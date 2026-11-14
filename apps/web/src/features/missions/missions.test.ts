@@ -219,6 +219,6 @@ describe('une mission', () => {
     expect(page.find('img').exists()).toBe(false)
     expect(page.find('script').exists()).toBe(false)
     expect(page.get('[data-test="besoin"]').text()).toContain('<b>gras</b>')
-    expect(page.find('[data-test="proposer-bientot"]').exists()).toBe(true)
+    expect(page.find('[data-test="form-proposer"]').exists()).toBe(true)
   })
 })

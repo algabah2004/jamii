@@ -4,12 +4,14 @@ import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute } from 'vue-router'
 import { JAvatar, JBouton, JSquelette } from '../../design-system'
 import { fermerMission, formaterMontant, lireMission, publierMission, type Mission, type Resultat } from './missions'
+import PropositionsMission from './PropositionsMission.vue'
+import ProposerMission from './ProposerMission.vue'
 import SuiviMission from './SuiviMission.vue'
 
 /*
  * Une mission : son annonce, et ce que la personne qui la lit peut en faire. Les boutons viennent de `moi.actions`,
- * calculé par l'API (qui revérifie chaque action). Les propositions arrivent avec #177 ; le suivi du travail est dans
- * `SuiviMission`, pour le client et le développeur retenu.
+ * calculé par l'API (qui revérifie chaque action). Les propositions sont dans `ProposerMission` et `PropositionsMission`,
+ * le suivi du travail dans `SuiviMission`, pour le client et le développeur retenu.
  * DESIGN PROVISOIRE : l'écran montre le parcours avec les composants actuels ; son design sera repris avec le design system.
  */
 const { t, locale } = useI18n()
@@ -31,6 +33,16 @@ async function charger() {
   }
 }
 watch(id, () => void charger(), { immediate: true })
+
+/** Relire la mission sans repasser par l'écran de chargement (après une proposition envoyée ou retirée). */
+async function rafraichir() {
+  try {
+    mission.value = (await lireMission(id.value)) ?? mission.value
+  } catch {
+    // La mission affichée reste juste ; la prochaine action la relira.
+  }
+}
+const voitPropositions = computed(() => mission.value?.statut !== 'brouillon' && ['client', 'candidat'].includes(mission.value?.moi.role ?? ''))
 
 const peut = (nom: string) => (mission.value?.moi.actions as string[] | undefined)?.includes(nom) ?? false
 const budget = computed(() => (mission.value?.budget ? formaterMontant(mission.value.budget, locale.value) : t('missions.budgetADiscuter')))
@@ -118,11 +130,12 @@ async function agir(appel: (id: string, version: number) => Promise<Resultat<Mis
             <p class="texte-discret">{{ t('missions.detail.fermerAide') }}</p>
           </div>
         </div>
-        <p v-if="peut('proposer')" class="note" data-test="proposer-bientot">{{ t('missions.detail.propositionsBientot') }}</p>
         <p v-if="message" role="alert" class="erreur" data-test="erreur">{{ message }}</p>
         <p class="texte-discret provisoire" data-test="provisoire">{{ t('missions.detail.provisoire') }}</p>
       </article>
 
+      <ProposerMission v-if="peut('proposer')" :mission="mission" @envoyee="rafraichir" />
+      <PropositionsMission v-if="voitPropositions" :mission="mission" @maj="mission = $event" @recharger="rafraichir" />
       <SuiviMission v-if="mission.travail" :mission="mission" :travail="mission.travail" @maj="mission = $event" />
     </template>
   </section>

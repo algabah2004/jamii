@@ -1118,7 +1118,6 @@
       "fermer": "Close the mission",
       "fermerAide": "Nobody will be able to offer their services any more.",
       "invite": "You are invited to offer your services for this mission.",
-      "propositionsBientot": "Answering this mission is coming very soon.",
       "brouillon": "Draft: nobody else can see this mission for now.",
       "provisoire": "Temporary screen: its design will be reworked with the design system.",
       "introuvable": "This mission does not exist, or you are not allowed to see it.",
@@ -1248,6 +1247,46 @@
         "texte": "A few more words (optional)",
         "aide": "1,000 characters at most. The review cannot be changed afterwards.",
         "envoyer": "Give my review"
+      }
+    },
+    "proposition": {
+      "titre": "Proposals received",
+      "titreMienne": "My proposal",
+      "aucune": "No proposals yet.",
+      "indisponible": "Proposals are not available right now. Try again in a moment.",
+      "statuts": {
+        "envoyee": "Sent",
+        "retenue": "Shortlisted",
+        "acceptee": "Accepted",
+        "non_retenue": "Not selected",
+        "retiree": "Withdrawn"
+      },
+      "delai": "{n} day | {n} days",
+      "envoyeeLe": "sent on {date}",
+      "retenir": "Shortlist this proposal",
+      "aideRetenir": "Shortlisting a proposal invites its author to send you a detailed quote. You can shortlist another one later.",
+      "aideRetenueClient": "This developer is preparing their quote. You will be able to accept it here.",
+      "aideRetenueDeveloppeur": "The client shortlisted your proposal: send them your quote.",
+      "retirer": "Withdraw my proposal",
+      "proposer": {
+        "titre": "Offer my services",
+        "intro": "The client receives your proposal. If they shortlist it, you send them a detailed quote, step by step.",
+        "message": "How you would do it",
+        "aideMessage": "At least {n} characters: your approach, and similar work you have done.",
+        "prix": "Your price",
+        "prixInvalide": "This is not a valid amount.",
+        "delai": "Time needed, in days",
+        "delaiInvalide": "Between 1 and 365 days.",
+        "envoyer": "Send my proposal"
+      },
+      "erreurs": {
+        "deja_candidat": "You have already offered your services for this mission.",
+        "propre_mission": "You cannot answer your own mission.",
+        "etat_invalide": "This mission no longer accepts proposals.",
+        "limite_atteinte": "You have sent many proposals today. Try again tomorrow.",
+        "validation": "A field is not valid. Check what you wrote.",
+        "modification_concurrente": "The mission changed in the meantime. Reload the page.",
+        "autre": "The action did not go through. Try again in a moment."
       }
     }
   }
