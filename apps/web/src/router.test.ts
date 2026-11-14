@@ -6,12 +6,12 @@ import { creerRouteur } from './router'
 import { chargerSession } from './session'
 
 describe('routeur', () => {
-  it("renvoie vers l'accueil, avec le chemin de retour, si on n'est pas connecté", async () => {
+  it("renvoie vers la page de connexion, avec le chemin de retour, si on n'est pas connecté", async () => {
     serveur.use(http.get('/api/me', () => new HttpResponse(null, { status: 401 })))
     await chargerSession()
     const routeur = creerRouteur(createMemoryHistory())
     await routeur.push('/profil')
-    expect(routeur.currentRoute.value.name).toBe('accueil')
+    expect(routeur.currentRoute.value.name).toBe('connexion')
     expect(routeur.currentRoute.value.query.retour).toBe('/profil')
   })
 

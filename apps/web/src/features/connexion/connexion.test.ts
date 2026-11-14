@@ -1,0 +1,142 @@
+import { describe, expect, it, vi } from 'vitest'
+import { flushPromises, mount } from '@vue/test-utils'
+import { http, HttpResponse } from 'msw'
+import { createMemoryHistory } from 'vue-router'
+import { serveur } from '../../test-setup'
+import { i18n } from '../../i18n'
+import { creerRouteur } from '../../router'
+import { chargerSession } from '../../session'
+import { moiDemo } from '../../mocks/handlers'
+import App from '../../App.vue'
+import { cheminSur, erreurGithub, minutesAvant } from './connexion'
+
+const JETON = 'a'.repeat(40)
+
+/** Une personne non connectée, qui le devient dès que la confirmation répond 204. */
+function nonConnecte() {
+  let connecte = false
+  serveur.use(
+    http.get('/api/me', () => (connecte ? HttpResponse.json(moiDemo) : HttpResponse.json({ code: 'non_connecte' }, { status: 401 }))),
+    http.post('/api/auth/lien-email/confirmation', () => {
+      connecte = true
+      return new HttpResponse(null, { status: 204 })
+    }),
+  )
+}
+
+async function ouvrir(adresse: string) {
+  ;(i18n.global.locale as unknown as { value: string }).value = 'fr'
+  await chargerSession()
+  const routeur = creerRouteur(createMemoryHistory())
+  await routeur.push(adresse)
+  const page = mount(App, { global: { plugins: [i18n, routeur] } })
+  await flushPromises()
+  return { page, routeur }
+}
+
+describe('les règles de la connexion', () => {
+  it("n'accepte qu'un chemin relatif comme retour, contre les redirections ouvertes", () => {
+    expect(cheminSur('/besoin')).toBe('/besoin')
+    expect(cheminSur('/demandes/nouvelle?x=1')).toBe('/demandes/nouvelle?x=1')
+    expect(cheminSur('//evil.example')).toBe('/')
+    expect(cheminSur('https://evil.example')).toBe('/')
+    expect(cheminSur('/\\evil.example')).toBe('/')
+    expect(cheminSur(undefined)).toBe('/')
+    expect(cheminSur(['/a'])).toBe('/')
+  })
+
+  it("lit Retry-After en minutes, au moins une", () => {
+    expect(minutesAvant('600')).toBe(10)
+    expect(minutesAvant('61')).toBe(2)
+    expect(minutesAvant(null)).toBe(1)
+    expect(minutesAvant('demain')).toBe(1)
+  })
+
+  it('ramène un code GitHub inconnu à « GitHub ne répond pas »', () => {
+    expect(erreurGithub('refus_github')).toBe('refus_github')
+    expect(erreurGithub('<script>')).toBe('github_indisponible')
+    expect(erreurGithub(undefined)).toBeNull()
+  })
+})
+
+describe('se connecter', () => {
+  it("envoie une page protégée vers la connexion, et l'en-tête y mène aussi", async () => {
+    nonConnecte()
+    const { page, routeur } = await ouvrir('/besoin')
+    expect(routeur.currentRoute.value.name).toBe('connexion')
+    expect(routeur.currentRoute.value.query.retour).toBe('/demandes/nouvelle')
+    expect(page.find('[data-test="connexion-github"]').attributes('href')).toBe('/api/auth/github?retour=%2Fdemandes%2Fnouvelle')
+    // Sur la page de connexion, le bouton de l'en-tête disparaît : il mènerait au même endroit.
+    expect(page.find('[data-test="lien-connexion"]').exists()).toBe(false)
+  })
+
+  it("demande un lien par e-mail avec le chemin de retour et le jeton CSRF, puis dit d'aller voir sa boîte", async () => {
+    nonConnecte()
+    document.cookie = 'XSRF-TOKEN=jeton-de-test'
+    let recu: { corps: unknown; csrf: string | null } | null = null
+    serveur.use(
+      http.post('/api/auth/lien-email', async ({ request }) => {
+        recu = { corps: await request.json(), csrf: request.headers.get('X-XSRF-TOKEN') }
+        return new HttpResponse(null, { status: 202 })
+      }),
+    )
+    const { page } = await ouvrir('/connexion?retour=/demandes/nouvelle')
+    await page.find('input[type="email"]').setValue('  awa@cabinet.sn ')
+    await page.find('[data-test="formulaire-email"]').trigger('submit')
+    await vi.waitFor(() => expect(page.find('[data-test="lien-envoye"]').exists()).toBe(true))
+    expect(recu).toEqual({ corps: { email: 'awa@cabinet.sn', retour: '/demandes/nouvelle' }, csrf: 'jeton-de-test' })
+    expect(page.text()).toContain("Si l'adresse awa@cabinet.sn est valide")
+  })
+
+  it('dit combien de minutes attendre sur un 429', async () => {
+    nonConnecte()
+    serveur.use(http.post('/api/auth/lien-email', () => new HttpResponse(null, { status: 429, headers: { 'Retry-After': '300' } })))
+    const { page } = await ouvrir('/connexion')
+    await page.find('input[type="email"]').setValue('awa@cabinet.sn')
+    await page.find('[data-test="formulaire-email"]').trigger('submit')
+    await vi.waitFor(() => expect(page.text()).toContain('Réessaie dans 5 minutes'))
+  })
+
+  it("explique l'échec de la connexion GitHub renvoyé par l'API", async () => {
+    nonConnecte()
+    const { page } = await ouvrir('/connexion?erreur=refus_github')
+    expect(page.find('[data-test="erreur-github"]').text()).toContain("rien n'a été partagé")
+  })
+})
+
+describe('le lien reçu par e-mail', () => {
+  it("ne connecte qu'au clic, retire le jeton de l'adresse, puis ouvre la page demandée", async () => {
+    nonConnecte()
+    let appels = 0
+    serveur.use(
+      http.post('/api/auth/lien-email/confirmation', async ({ request }) => {
+        appels++
+        expect(await request.json()).toEqual({ jeton: JETON })
+        return new HttpResponse(null, { status: 204 })
+      }),
+    )
+    const { page, routeur } = await ouvrir(`/connexion/email?jeton=${JETON}&retour=/demandes/nouvelle`)
+    expect(appels).toBe(0)
+    expect(routeur.currentRoute.value.query.jeton).toBeUndefined()
+
+    serveur.use(http.get('/api/me', () => HttpResponse.json(moiDemo)))
+    await page.find('[data-test="confirmer-lien"]').trigger('click')
+    await vi.waitFor(() => expect(routeur.currentRoute.value.path).toBe('/demandes/nouvelle'))
+    expect(appels).toBe(1)
+  })
+
+  it('propose un nouveau lien quand celui-ci a déjà servi ou a expiré', async () => {
+    nonConnecte()
+    serveur.use(http.post('/api/auth/lien-email/confirmation', () => HttpResponse.json({ code: 'lien_invalide' }, { status: 400 })))
+    const { page } = await ouvrir(`/connexion/email?jeton=${JETON}`)
+    await page.find('[data-test="confirmer-lien"]').trigger('click')
+    await vi.waitFor(() => expect(page.find('[data-test="lien-invalide"]').exists()).toBe(true))
+    expect(page.find('a[href="/connexion"]').exists()).toBe(true)
+  })
+
+  it('sans jeton, dit tout de suite que le lien ne marche pas', async () => {
+    nonConnecte()
+    const { page } = await ouvrir('/connexion/email')
+    expect(page.find('[data-test="lien-invalide"]').exists()).toBe(true)
+  })
+})

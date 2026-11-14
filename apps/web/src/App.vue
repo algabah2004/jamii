@@ -2,7 +2,6 @@
 import { computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, RouterView } from 'vue-router'
-import { adresseConnexionGithub } from './api/client'
 import ReglagesAffichage from './components/ReglagesAffichage.vue'
 import { chargerSession, seDeconnecter, useSession } from './session'
 import { JAvatar, JBouton, JSquelette } from './design-system'
@@ -34,9 +33,14 @@ watch(etat, (e) => (e === 'connecte' ? suivreActivite() : arreterActivite()), { 
       </nav>
       <div class="actions">
         <ReglagesAffichage class="reglages--entete" />
-        <a v-if="etat === 'non_connecte'" :href="adresseConnexionGithub($route.fullPath)" class="j-bouton j-bouton--principal bouton-entete">
-          {{ t('connexion.github') }}
-        </a>
+        <RouterLink
+          v-if="etat === 'non_connecte' && !$route.path.startsWith('/connexion')"
+          :to="{ path: '/connexion', query: $route.path === '/' ? {} : { retour: $route.fullPath } }"
+          class="j-bouton j-bouton--principal bouton-entete"
+          data-test="lien-connexion"
+        >
+          {{ t('connexion.seConnecter') }}
+        </RouterLink>
         <template v-else-if="etat === 'connecte' && moi">
           <!-- Le profil se reconnaît à son visage : l'avatar mène au profil, le nom reste lisible par tous. -->
           <RouterLink to="/notifications" class="icone-entete" :class="{ 'router-link-active': ['/messages', '/contacts'].some((p) => $route.path.startsWith(p)) }" data-test="lien-activite" :aria-label="t('reseau.onglets.lien', { n: nonLus }, nonLus)">
