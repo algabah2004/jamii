@@ -31,6 +31,14 @@ info:
     - Une mission `invitation`, un brouillon, ou les détails du travail (devis, jalons, livraisons) : le client et le
       développeur retenu. Les invités voient l'annonce. Pour tout autre utilisateur, **la mission n'existe pas** (`404`).
     - Les propositions : le client les voit toutes ; un développeur ne voit **que la sienne**.
+    - **Dès qu'une mission est attribuée**, elle n'est plus visible du public (`404` pour qui n'est ni le client, ni
+      le développeur retenu, ni un candidat) : les candidats écartés la voient toujours, pour savoir où ils en sont.
+    - `travail` apparaît **dès qu'un devis existe**, pour le client et le développeur retenu seulement : `devis.accepteLe`
+      vaut `null` tant que le client n'a pas accepté. Il n'y a jamais plus d'un devis non accepté par mission : en envoyer
+      un nouveau, ou retenir une autre proposition, fait disparaître l'ancien.
+    - **Événements publics** (Java, `dev.jamii.api.missions`), publiés dans la transaction de l'action et reçus par les
+      autres modules après sa validation : `PropositionRecue` (le client est prévenu), `DevisEnvoye` (le client a un devis
+      à relire) et `MissionAttribuee` (le développeur retenu et chaque candidat écarté, dans `nonRetenus`, sont prévenus).
 
     **Limites contre les abus** (`429` avec `Retry-After`) : 5 missions publiées par jour et par compte, 20 propositions
     envoyées par jour et par compte. Les propositions sont gratuites.
