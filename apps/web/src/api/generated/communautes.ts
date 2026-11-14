@@ -93,6 +93,56 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/communautes/{slug}/salons": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Nom court de la communauté dans l'adresse (`flutter`, `fintech`, `antenne-dakar`). */
+                slug: components["parameters"]["Slug"];
+            };
+            cookie?: never;
+        };
+        /** Les salons de la communauté, dans leur ordre */
+        get: operations["listerSalons"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/communautes/{slug}/salons/{salon}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Nom court de la communauté dans l'adresse (`flutter`, `fintech`, `antenne-dakar`). */
+                slug: components["parameters"]["Slug"];
+                /** @description Nom court du salon (`general`, `entraide`, `projets`). */
+                salon: components["parameters"]["SalonSlug"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Les messages du salon, du plus ancien au plus récent
+         * @description Sans `apres` : les `limite` derniers messages. Avec `apres` : seulement les messages arrivés depuis (c'est
+         *     l'appel fait toutes les 3 secondes). La réponse n'est jamais mise en cache.
+         */
+        get: operations["lireMessagesSalon"];
+        put?: never;
+        /**
+         * Écrire dans le salon (membres seulement)
+         * @description Limité à 20 messages par minute et par personne, contre le spam (`429` avec `Retry-After`).
+         */
+        post: operations["ecrireDansSalon"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/publications/{publicationId}": {
         parameters: {
             query?: never;
@@ -312,6 +362,42 @@ export interface components {
             /** Format: date-time */
             creeLe: string;
         };
+        Salon: {
+            /** Format: uuid */
+            id: string;
+            /**
+             * @example general
+             * @example entraide
+             * @example projets
+             */
+            slug: string;
+            /** @description Affiché « # » devant : « #entraide ». */
+            nom: string;
+            sujet: string;
+            /**
+             * Format: uri
+             * @description La salle d'appel vocal et vidéo du salon. `null` si je ne suis pas membre de la communauté.
+             */
+            appelUrl: string | null;
+        };
+        MessageSalon: {
+            /** Format: uuid */
+            id: string;
+            /**
+             * Format: int64
+             * @description Croissant : sert de curseur à `apres`.
+             */
+            numero: number;
+            auteur: components["schemas"]["PersonneResume"];
+            /** @description Texte brut */
+            texte: string;
+            /** Format: date-time */
+            envoyeLe: string;
+        };
+        NouveauMessageSalon: {
+            /** @description Texte brut. */
+            texte: string;
+        };
         NouveauSignalement: {
             /** @enum {string} */
             cibleType: "publication" | "reponse";
@@ -434,6 +520,8 @@ export interface components {
     parameters: {
         /** @description Nom court de la communauté dans l'adresse (`flutter`, `fintech`, `antenne-dakar`). */
         Slug: string;
+        /** @description Nom court du salon (`general`, `entraide`, `projets`). */
+        SalonSlug: string;
         PublicationId: string;
         ReponseId: string;
         /** @description Valeur opaque reçue dans `curseurSuivant`. Absent pour la première page. */
@@ -606,6 +694,101 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Publication"];
+                };
+            };
+            400: components["responses"]["Invalide"];
+            401: components["responses"]["NonConnecte"];
+            403: components["responses"]["Interdit"];
+            404: components["responses"]["Introuvable"];
+            429: components["responses"]["TropDeRequetes"];
+        };
+    };
+    listerSalons: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Nom court de la communauté dans l'adresse (`flutter`, `fintech`, `antenne-dakar`). */
+                slug: components["parameters"]["Slug"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Les salons. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        elements: components["schemas"]["Salon"][];
+                    };
+                };
+            };
+            401: components["responses"]["NonConnecte"];
+            404: components["responses"]["Introuvable"];
+        };
+    };
+    lireMessagesSalon: {
+        parameters: {
+            query?: {
+                /** @description Le `numero` du dernier message déjà reçu. */
+                apres?: number;
+                limite?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Nom court de la communauté dans l'adresse (`flutter`, `fintech`, `antenne-dakar`). */
+                slug: components["parameters"]["Slug"];
+                /** @description Nom court du salon (`general`, `entraide`, `projets`). */
+                salon: components["parameters"]["SalonSlug"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Les messages. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        elements: components["schemas"]["MessageSalon"][];
+                    };
+                };
+            };
+            400: components["responses"]["Invalide"];
+            401: components["responses"]["NonConnecte"];
+            404: components["responses"]["Introuvable"];
+        };
+    };
+    ecrireDansSalon: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Nom court de la communauté dans l'adresse (`flutter`, `fintech`, `antenne-dakar`). */
+                slug: components["parameters"]["Slug"];
+                /** @description Nom court du salon (`general`, `entraide`, `projets`). */
+                salon: components["parameters"]["SalonSlug"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NouveauMessageSalon"];
+            };
+        };
+        responses: {
+            /** @description Envoyé. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageSalon"];
                 };
             };
             400: components["responses"]["Invalide"];

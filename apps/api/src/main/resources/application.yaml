@@ -54,6 +54,9 @@ server:
         same-site: lax
 
 jamii:
+  # Les appels vocaux et vidéo des salons (#155) : un serveur Jitsi. Chaque salon y a sa salle.
+  appels:
+    url: ${APPELS_URL:https://meet.jit.si}
   # Adresse du front : on y renvoie l'utilisateur après la connexion.
   web-url: ${WEB_URL:http://localhost:5173}
   email:

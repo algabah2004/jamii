@@ -107,6 +107,42 @@ class MesDonneesTest {
 			.param("u", qui.id()).update();
 	}
 
+	private UUID communaute(String slug) {
+		return base.sql("SELECT id FROM communaute WHERE slug = :s").param("s", slug).query(UUID.class).single();
+	}
+
+	private void adhesion(UUID communaute, UtilisateurConnecte qui) {
+		base.sql("INSERT INTO adhesion (communaute_id, utilisateur_id, rejoint_le) VALUES (:c, :u, :t)")
+			.param("c", communaute).param("u", qui.id()).param("t", ensuite()).update();
+	}
+
+	private UUID publication(UUID communaute, UtilisateurConnecte auteur, String titre) {
+		UUID id = UUID.randomUUID();
+		base.sql("""
+				INSERT INTO publication (id, communaute_id, auteur_id, type, titre, contenu, proposition_ia, cree_le)
+				VALUES (:id, :c, :a, 'question', :titre, 'Comment garder les données hors ligne ?', 'prete', :t)
+				""").param("id", id).param("c", communaute).param("a", auteur.id()).param("titre", titre)
+			.param("t", ensuite()).update();
+		return id;
+	}
+
+	/** `auteur` vide : une réponse de l'IA, validée par `validePar`. */
+	private UUID reponse(UUID publication, UtilisateurConnecte auteur, UtilisateurConnecte validePar, String contenu) {
+		UUID id = UUID.randomUUID();
+		base.sql("""
+				INSERT INTO reponse (id, publication_id, auteur_id, contenu, proposee_par_ia, validee_par_id, cree_le)
+				VALUES (:id, :p, :a, :contenu, :ia, :v, :t)
+				""").param("id", id).param("p", publication).param("a", auteur == null ? null : auteur.id())
+			.param("contenu", contenu).param("ia", auteur == null)
+			.param("v", validePar == null ? null : validePar.id()).param("t", ensuite()).update();
+		return id;
+	}
+
+	private void accepter(UUID publication, UUID reponse) {
+		base.sql("UPDATE publication SET reponse_acceptee_id = :r, acceptee_le = :t WHERE id = :p")
+			.param("r", reponse).param("t", ensuite()).param("p", publication).update();
+	}
+
 	private void session(UtilisateurConnecte qui) {
 		long maintenant = System.currentTimeMillis();
 		String id = UUID.randomUUID().toString();
@@ -165,6 +201,63 @@ class MesDonneesTest {
 		assertThat(export.get("profils").get("competences").toString()).contains("flutter");
 		assertThat(reponse.getResponse().getContentAsString()).as("aucune donnée personnelle de Kofi")
 			.doesNotContain("Kofi.");
+	}
+
+	@Test
+	void l_export_contient_ses_communautes_ses_publications_ses_reponses_et_ses_validations() throws Exception {
+		UtilisateurConnecte awa = utilisateur("Awa");
+		UtilisateurConnecte kofi = utilisateur("Kofi");
+		UUID flutter = communaute("flutter");
+		adhesion(flutter, awa);
+		adhesion(flutter, kofi);
+		UUID question = publication(flutter, awa, "Hors ligne avec Flutter");
+		UUID deKofi = reponse(question, kofi, null, "Utilise Hive, ça marche sans réseau.");
+		accepter(question, deKofi);
+		UUID autre = publication(flutter, kofi, "Paiement mobile en Flutter");
+		UUID dAwa = reponse(autre, awa, null, "Le SDK Wave a un exemple.");
+		accepter(autre, dAwa);
+		UUID ia = reponse(autre, null, awa, "Proposition de l'IA");
+
+		JsonNode c = corps(exporter(awa)).get("communautes");
+
+		assertThat(c.get("adhesions")).hasSize(1);
+		assertThat(c.get("adhesions").get(0).get("communaute").asString()).isEqualTo("flutter");
+		assertThat(c.get("adhesions").get(0).get("role").asString()).isEqualTo("membre");
+		assertThat(c.get("publications")).hasSize(1);
+		assertThat(c.get("publications").get(0).get("titre").asString()).isEqualTo("Hors ligne avec Flutter");
+		assertThat(c.get("publications").get(0).get("reponseAccepteeId").asString()).isEqualTo(deKofi.toString());
+		assertThat(c.get("reponses")).hasSize(1);
+		assertThat(c.get("reponses").get(0).get("contenu").asString()).isEqualTo("Le SDK Wave a un exemple.");
+		assertThat(c.get("reponses").get(0).get("acceptee").asBoolean()).isTrue();
+		assertThat(c.get("validations")).hasSize(1);
+		assertThat(c.get("validations").get(0).get("reponseId").asString()).isEqualTo(ia.toString());
+		assertThat(c.toString()).as("ni le texte de Kofi, ni celui de l'IA").doesNotContain("Hive").doesNotContain("Proposition");
+	}
+
+	@Test
+	void sans_communaute_la_section_communautes_a_des_listes_vides() throws Exception {
+		JsonNode c = corps(exporter(utilisateur("Awa"))).get("communautes");
+		assertThat(c.get("adhesions")).isEmpty();
+		assertThat(c.get("publications")).isEmpty();
+		assertThat(c.get("reponses")).isEmpty();
+		assertThat(c.get("validations")).isEmpty();
+	}
+
+	@Test
+	void a_la_suppression_ses_adhesions_partent_et_ses_publications_restent_sans_auteur() {
+		UtilisateurConnecte awa = utilisateur("Awa");
+		UtilisateurConnecte kofi = utilisateur("Kofi");
+		UUID flutter = communaute("flutter");
+		adhesion(flutter, awa);
+		UUID question = publication(flutter, awa, "Hors ligne avec Flutter");
+		reponse(question, kofi, null, "Utilise Hive.");
+
+		assertThat(supprimer(awa)).hasStatus(HttpStatus.ACCEPTED);
+
+		assertThat(compter("SELECT count(*) FROM adhesion WHERE utilisateur_id = :id", awa.id())).isZero();
+		assertThat(compter("SELECT count(*) FROM publication WHERE id = :id AND auteur_id IS NULL", question))
+			.as("le fil reste lisible pour les autres").isEqualTo(1);
+		assertThat(compter("SELECT count(*) FROM reponse WHERE publication_id = :id", question)).isEqualTo(1);
 	}
 
 	@Test

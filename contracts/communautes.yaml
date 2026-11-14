@@ -1,10 +1,10 @@
 openapi: 3.1.0
 info:
   title: Jamii · Communautés et entraide
-  version: 0.1.0
+  version: 0.2.0
   summary: Communautés thématiques, questions-réponses où l'IA propose et un pair valide, discussions, signalements.
   description: |
-    Responsable : @Amar233-ui (bloc #18). Règles communes : docs/api-conventions.md. Modèle : docs/modele-donnees.md
+    Responsable : @rev22rse22 (module communautés, #155 ; repris d'@Amar233-ui le 14/11). Règles communes : docs/api-conventions.md. Modèle : docs/modele-donnees.md
     (tables `communaute`, `adhesion`, `publication`, `reponse`, `signalement`). Idées reprises de la proposition 0003.
 
     **Droits** : il faut être connecté pour tout. Lire est ouvert à tout utilisateur connecté. Publier, répondre et
@@ -24,6 +24,13 @@ info:
 
     **Contenus** : texte brut. Le front l'affiche échappé (jamais `v-html`), donc aucun HTML ne s'exécute.
 
+    **Salons (v0.2, #155)** : chaque communauté a des salons de discussion écrite (`general`, `entraide`, `projets`).
+    Lire est ouvert à tout utilisateur connecté, écrire demande d'être membre. Le front relit les nouveaux messages
+    **toutes les 3 secondes** avec `apres` (le `numero` du dernier message reçu) : pas de WebSocket, rien de plus à
+    héberger derrière le proxy de DataCloud. Chaque salon a sa salle d'appel vocal et vidéo (`appelUrl`, Jitsi pour la
+    CADEV), donnée **aux membres seulement** : l'adresse contient un suffixe aléatoire. Les messages d'un compte
+    supprimé sont supprimés avec lui (une discussion en direct n'a pas besoin d'être relue comme une réponse).
+
     **CSRF** : toute requête POST ou DELETE envoie l'en-tête `X-XSRF-TOKEN` (socle.yaml, schéma `csrf`).
 
     **Codes d'erreur métier** (champ `code` de `Erreur`) : `pas_membre` (403), `pas_auteur_question` (403),
@@ -41,6 +48,7 @@ tags:
   - { name: communautes, description: 'Trouver, rejoindre et quitter une communauté.' }
   - { name: publications, description: 'Questions, discussions et « Montre ton projet ».' }
   - { name: reponses, description: 'Répondre, accepter une réponse, valider la réponse proposée par l''IA.' }
+  - { name: salons, description: 'Discuter en direct dans un salon, et rejoindre son appel.' }
   - { name: moderation, description: 'Signaler un contenu à un modérateur.' }
 
 paths:
@@ -151,6 +159,78 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Publication' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '429': { $ref: './socle.yaml#/components/responses/TropDeRequetes' }
+
+  /api/communautes/{slug}/salons:
+    parameters:
+      - $ref: '#/components/parameters/Slug'
+    get:
+      tags: [salons]
+      operationId: listerSalons
+      summary: Les salons de la communauté, dans leur ordre
+      responses:
+        '200':
+          description: Les salons.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [elements]
+                properties:
+                  elements: { type: array, items: { $ref: '#/components/schemas/Salon' } }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+
+  /api/communautes/{slug}/salons/{salon}/messages:
+    parameters:
+      - $ref: '#/components/parameters/Slug'
+      - $ref: '#/components/parameters/SalonSlug'
+    get:
+      tags: [salons]
+      operationId: lireMessagesSalon
+      summary: Les messages du salon, du plus ancien au plus récent
+      description: |
+        Sans `apres` : les `limite` derniers messages. Avec `apres` : seulement les messages arrivés depuis (c'est
+        l'appel fait toutes les 3 secondes). La réponse n'est jamais mise en cache.
+      parameters:
+        - { name: apres, in: query, description: 'Le `numero` du dernier message déjà reçu.', schema: { type: integer, format: int64, minimum: 0 } }
+        - { name: limite, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 50 } }
+      responses:
+        '200':
+          description: Les messages.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [elements]
+                properties:
+                  elements: { type: array, items: { $ref: '#/components/schemas/MessageSalon' } }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+    post:
+      tags: [salons]
+      operationId: ecrireDansSalon
+      summary: Écrire dans le salon (membres seulement)
+      description: 'Limité à 20 messages par minute et par personne, contre le spam (`429` avec `Retry-After`).'
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NouveauMessageSalon' }
+      responses:
+        '201':
+          description: Envoyé.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MessageSalon' }
         '400': { $ref: './socle.yaml#/components/responses/Invalide' }
         '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
         '403': { $ref: './socle.yaml#/components/responses/Interdit' }
@@ -290,6 +370,12 @@ components:
       required: true
       description: Nom court de la communauté dans l'adresse (`flutter`, `fintech`, `antenne-dakar`).
       schema: { type: string, pattern: '^[a-z0-9]+(-[a-z0-9]+)*$', maxLength: 60 }
+    SalonSlug:
+      name: salon
+      in: path
+      required: true
+      description: Nom court du salon (`general`, `entraide`, `projets`).
+      schema: { type: string, pattern: '^[a-z0-9]+(-[a-z0-9]+)*$', maxLength: 40 }
     PublicationId:
       name: publicationId
       in: path
@@ -416,6 +502,36 @@ components:
           description: Le pair qui a validé la réponse de l'IA.
         acceptee: { type: boolean }
         creeLe: { type: string, format: date-time }
+
+    Salon:
+      type: object
+      required: [id, slug, nom, sujet, appelUrl]
+      properties:
+        id: { type: string, format: uuid }
+        slug: { type: string, examples: [general, entraide, projets] }
+        nom: { type: string, maxLength: 60, description: 'Affiché « # » devant : « #entraide ».' }
+        sujet: { type: string, maxLength: 200 }
+        appelUrl:
+          type: [string, 'null']
+          format: uri
+          description: 'La salle d''appel vocal et vidéo du salon. `null` si je ne suis pas membre de la communauté.'
+
+    MessageSalon:
+      type: object
+      required: [id, numero, auteur, texte, envoyeLe]
+      properties:
+        id: { type: string, format: uuid }
+        numero: { type: integer, format: int64, description: 'Croissant : sert de curseur à `apres`.' }
+        auteur: { $ref: './projets.yaml#/components/schemas/PersonneResume' }
+        texte: { type: string, maxLength: 2000, description: Texte brut, affiché échappé. }
+        envoyeLe: { type: string, format: date-time }
+
+    NouveauMessageSalon:
+      type: object
+      required: [texte]
+      additionalProperties: false
+      properties:
+        texte: { type: string, minLength: 1, maxLength: 2000, description: Texte brut. }
 
     NouveauSignalement:
       type: object

@@ -25,12 +25,15 @@ class ProfilsController {
 		this.comptes = comptes;
 	}
 
-	/** Un profil non publié répond 404 aux autres : on ne révèle pas qu'il existe (api-conventions.md §5). */
+	/**
+	 * Un profil non publié répond 404 aux autres : on ne révèle pas qu'il existe (api-conventions.md §5). Un profil
+	 * publié se lit sans compte (#159) : c'est le lien partagé et le QR code de la carte. Jamais l'e-mail.
+	 */
 	@GetMapping("/api/profils/{utilisateurId}")
 	@Transactional(readOnly = true)
 	Vues.ProfilPublic lire(@AuthenticationPrincipal UtilisateurConnecte moi, @PathVariable UUID utilisateurId) {
 		Profil profil = profils.findById(utilisateurId)
-			.filter(p -> p.publie() || p.utilisateurId().equals(moi.id()))
+			.filter(p -> p.publie() || (moi != null && p.utilisateurId().equals(moi.id())))
 			.orElseThrow(ErreurProfil::introuvable);
 		Compte compte = comptes.lire(utilisateurId).orElseThrow(ErreurProfil::introuvable);
 		return Vues.ProfilPublic.depuis(profil, compte);
