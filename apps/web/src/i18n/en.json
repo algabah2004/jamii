@@ -1078,6 +1078,56 @@
         "validation": "A field is not valid. Check what you wrote.",
         "autre": "The submission could not be saved. Try again in a moment."
       }
+    },
+    "jury": {
+      "titre": "Jury",
+      "indisponible": "The jury is not available right now. Try again in a moment.",
+      "aucun": "No jurors yet.",
+      "groupe": "group {groupe}",
+      "avancement": "Scored: {n} of {total}",
+      "inviter": "Invite a juror",
+      "profil": "Link to their Jamii profile",
+      "aideProfil": "Open their profile on Jamii and copy the page address. Any account works, even one created by e-mail.",
+      "profilInvalide": "This is not a Jamii profile link.",
+      "champGroupe": "Group (optional)",
+      "aideGroupe": "To split projects between jurors. Without a group, they score every project.",
+      "envoyer": "Invite to the jury",
+      "classement": "Proposed ranking",
+      "aideClassement": "Each project's score is the average of its jurors' scores, weighted by the criteria.",
+      "aucuneNote": "No scores yet.",
+      "rang": "Rank",
+      "projet": "Project",
+      "score": "Score",
+      "jures": "Jurors",
+      "exporter": "Download all scores (CSV)",
+      "erreurs": {
+        "etat_invalide": "Jurors can no longer be added to this hackathon.",
+        "validation": "This profile does not exist, or it is yours: the organiser is not part of the jury.",
+        "autre": "The invitation did not go through. Try again in a moment."
+      }
+    },
+    "notation": {
+      "titre": "Score the projects",
+      "intro": "Give a score from 1 to 5 for each criterion. You can change your scores until results are published. Your own team's project does not appear.",
+      "indisponible": "Projects to score are not available right now. Try again in a moment.",
+      "aucun": "No projects to score yet.",
+      "produit": "Open the product",
+      "depot": "The code",
+      "video": "The video",
+      "lienNeRepondPas": "At the last check, the product link did not respond.",
+      "poids": "counts for {n}%",
+      "commentaire": "Feedback for the team (optional)",
+      "aideCommentaire": "The team will read it with the results.",
+      "envoyer": "Save my scores",
+      "renoter": "Change my scores",
+      "enregistre": "Scores saved. Weighted score: {score} out of 5.",
+      "erreurs": {
+        "etat_invalide": "Scoring is no longer possible: submissions are not closed yet, or results are published.",
+        "delai_depasse": "Scoring is no longer possible: results are published.",
+        "conflit_interets": "You cannot score your own team's project.",
+        "validation": "Each criterion needs a score from 1 to 5.",
+        "autre": "The scores could not be saved. Try again in a moment."
+      }
     }
   },
   "missions": {
