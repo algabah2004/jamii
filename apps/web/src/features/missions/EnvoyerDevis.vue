@@ -25,7 +25,11 @@ const conditions = ref('')
 const envoi = ref(false)
 const code = ref<string | null>(null)
 
-const entier = (texte: string) => (/^\d+$/.test(texte.trim()) ? Number(texte.trim()) : null)
+// Un champ `type="number"` rend en fait un nombre une fois rempli : on relit la saisie en texte.
+const entier = (saisie: string) => {
+  const texte = String(saisie).trim()
+  return /^\d+$/.test(texte) ? Number(texte) : null
+}
 const lus = computed(() =>
   jalons.value.map((j) => {
     const montant = versMontant(j.montant, devise.value)
