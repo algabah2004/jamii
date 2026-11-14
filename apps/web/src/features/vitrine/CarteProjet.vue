@@ -19,6 +19,7 @@ const { t, locale } = useI18n()
       <JBadgePreuve v-if="projet.hebergeur === 'datacloud'" data-test="badge-systalink">✓ {{ t('vitrine.hebergeSurSystalink') }}</JBadgePreuve>
       <JBadgePreuve v-else data-test="badge-en-ligne">✓ {{ t('profil.projets.enLigne') }}</JBadgePreuve>
       <span v-if="projet.origine === 'demande'" class="etiquette">{{ t('vitrine.pourUnePme') }}</span>
+      <span v-else-if="projet.origine === 'cercle'" class="etiquette" data-test="etiquette-tontine">{{ t('vitrine.neDansUneTontine') }}</span>
     </div>
 
     <component :is="`h${niveau}`" class="projet__titre">{{ projet.titre }}</component>
