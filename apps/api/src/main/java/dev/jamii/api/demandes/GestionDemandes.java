@@ -43,7 +43,7 @@ class GestionDemandes {
 
 	record Fiche(UUID id, UUID auteurId, String titre, String description, Integer dureeSemaines, String secteur,
 			String ville, String pays, boolean offresSystalink, UUID tacheIaId, JsonNode orientation, Instant creeLe,
-			List<Precision> precisions) {
+			Instant publieeLe, String publieeResume, List<Precision> precisions) {
 
 		/** Le début de l'analyse en cours : la création, ou la dernière précision. */
 		Instant analyseDepuis() {
@@ -145,7 +145,7 @@ class GestionDemandes {
 	Optional<Fiche> lire(UUID id, UUID auteur) {
 		return base.sql("""
 				SELECT id, auteur_id, titre, description, duree_semaines, secteur, ville, pays, offres_systalink,
-				  tache_ia_id, orientation, cree_le
+				  tache_ia_id, orientation, cree_le, publiee_le, publiee_resume
 				FROM demande WHERE id = :id AND auteur_id = :auteur
 				""")
 			.param("id", id).param("auteur", auteur)
@@ -153,15 +153,17 @@ class GestionDemandes {
 				int duree = rs.getInt("duree_semaines");
 				Integer dureeSemaines = rs.wasNull() ? null : duree;
 				String orientation = rs.getString("orientation");
+				Timestamp publiee = rs.getTimestamp("publiee_le");
 				return new Fiche(rs.getObject("id", UUID.class), rs.getObject("auteur_id", UUID.class), rs.getString("titre"),
 						rs.getString("description"), dureeSemaines, rs.getString("secteur"), rs.getString("ville"),
 						rs.getString("pays"), rs.getBoolean("offres_systalink"), rs.getObject("tache_ia_id", UUID.class),
 						orientation == null ? null : json.readTree(orientation), rs.getTimestamp("cree_le").toInstant(),
-						List.<Precision>of());
+						publiee == null ? null : publiee.toInstant(), rs.getString("publiee_resume"), List.<Precision>of());
 			})
 			.optional()
 			.map(f -> new Fiche(f.id(), f.auteurId(), f.titre(), f.description(), f.dureeSemaines(), f.secteur(), f.ville(),
-					f.pays(), f.offresSystalink(), f.tacheIaId(), f.orientation(), f.creeLe(), precisions(f.id())));
+					f.pays(), f.offresSystalink(), f.tacheIaId(), f.orientation(), f.creeLe(), f.publieeLe(), f.publieeResume(),
+						precisions(f.id())));
 	}
 
 	/**
