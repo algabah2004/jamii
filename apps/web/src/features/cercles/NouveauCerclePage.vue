@@ -9,8 +9,10 @@ import { creerCercle, LIMITES, TAILLES } from './cercles'
 const { t } = useI18n()
 const router = useRouter()
 
-const nom = ref('')
-const ville = ref('')
+// Venu de l'orientation d'un besoin : le titre et la ville arrivent par l'état de la navigation (jamais par l'adresse).
+const depart = (router.options.history.state ?? {}) as { nom?: unknown; ville?: unknown }
+const nom = ref(typeof depart.nom === 'string' ? depart.nom.slice(0, LIMITES.nomMax) : '')
+const ville = ref(typeof depart.ville === 'string' ? depart.ville.slice(0, LIMITES.villeMax) : '')
 const taille = ref<number>(6)
 const envoi = ref<'repos' | 'envoi' | 'erreur'>('repos')
 const valide = computed(() => nom.value.trim().length >= LIMITES.nomMin && ville.value.trim().length >= LIMITES.villeMin)

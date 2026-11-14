@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { RouterLink, useRoute } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { JAvatar, JBouton, JSquelette } from '../../design-system'
 import {
   ATTENTE_PLAN_MAX_MS,
@@ -24,6 +24,7 @@ import {
  */
 const { t } = useI18n()
 const route = useRoute()
+const router = useRouter()
 const id = computed(() => String(route.params.id))
 
 const demande = ref<Demande | null>(null)
@@ -72,6 +73,16 @@ const pret = computed(() => analyse.value === 'pret')
 const enPreparation = computed(() => analyse.value === 'attente' && !tropLong.value)
 const repli = computed(() => (demande.value ? estRepli(demande.value) : false))
 const recommandes = computed(() => demande.value?.recommandations ?? [])
+
+/**
+ * « Former un cercle avec eux » : la création du cercle s'ouvre avec le titre et la ville du besoin. Ils passent par
+ * l'état de la navigation, jamais par l'adresse : le besoin ne se retrouve ni dans l'historique ni dans les journaux.
+ */
+function formerCercle() {
+  const d = demande.value
+  if (!d) return
+  void router.push({ path: '/cercles/nouveau', state: { nom: d.titre.slice(0, 60), ville: d.ville ?? '' } })
+}
 
 /** « Recevoir les offres Systalink » : jamais cochée d'avance, modifiable à tout moment. */
 const offres = ref<'repos' | 'envoi' | 'erreur'>('repos')
@@ -175,7 +186,7 @@ const messageErreur = computed(() =>
               <h2 id="developpeurs">{{ t('demandes.orientation.developpeurs') }}</h2>
               <p class="texte-discret">{{ t('demandes.orientation.developpeursAide') }}</p>
             </div>
-            <RouterLink v-if="recommandes.length" to="/cercles/nouveau" class="bouton-lien" data-test="former-cercle">{{ t('demandes.orientation.formerCercle') }}</RouterLink>
+            <button v-if="recommandes.length" type="button" class="bouton-lien" data-test="former-cercle" @click="formerCercle">{{ t('demandes.orientation.formerCercle') }}</button>
           </div>
           <ul v-if="recommandes.length" class="recommandes">
             <li v-for="r in recommandes" :key="r.utilisateurId" class="carte recommande" data-test="recommande">
@@ -387,6 +398,7 @@ const messageErreur = computed(() =>
 .bloc-nu__tete { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: var(--space-3); }
 .bloc-nu__tete p { margin: var(--space-1) 0 0; }
 .bouton-lien {
+  border: 0; cursor: pointer; font: inherit;
   display: inline-flex; align-items: center; min-height: 44px; padding: 0 var(--space-6); border-radius: var(--radius-pill);
   background: var(--action); color: var(--on-action); font-weight: 700; text-decoration: none;
 }
