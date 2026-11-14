@@ -1319,6 +1319,37 @@
         "modification_concurrente": "La mission a changé entre-temps. Recharge la page.",
         "autre": "L'action n'a pas abouti. Réessaie dans un instant."
       }
+    },
+    "devis": {
+      "titre": "Envoyer mon devis",
+      "remplacer": "Envoyer un nouveau devis",
+      "intro": "Découpe le travail en jalons, c'est-à-dire en étapes. Le client paie chaque jalon une fois livré et accepté. Le délai de chaque jalon compte à partir du démarrage de la mission.",
+      "jalonTitre": "Ce qui sera livré",
+      "jalonMontant": "Montant",
+      "jalonDelai": "Délai, en jours",
+      "aideDelai": "Depuis le démarrage de la mission.",
+      "ajouter": "Ajouter un jalon",
+      "enlever": "Enlever ce jalon",
+      "total": "Total du devis : {montant}",
+      "retouches": "Retouches comprises",
+      "aideRetouches": "Combien de fois le client peut demander de reprendre une livraison, pour toute la mission (10 au plus).",
+      "conditions": "Conditions (facultatif)",
+      "aideConditions": "Ce qui est compris, et ce qui ne l'est pas.",
+      "envoyer": "Envoyer le devis",
+      "propose": "Le devis proposé",
+      "par": "Envoyé par {nom} le {date}",
+      "delaiJalon": "{n} jour après le démarrage | {n} jours après le démarrage",
+      "retouchesComprises": "Retouches comprises",
+      "aideAccepter": "En acceptant, la mission est attribuée à ce développeur et le devis vaut accord entre vous. Les autres propositions sont écartées.",
+      "accepter": "Accepter le devis",
+      "attenteClient": "Le client n'a pas encore répondu à ce devis.",
+      "erreurs": {
+        "somme_jalons_invalide": "La somme des jalons ne correspond pas au total. Vérifie les montants.",
+        "etat_invalide": "Ce devis ne peut plus être envoyé ou accepté pour cette mission.",
+        "validation": "Un champ n'est pas valide. Vérifie ce que tu as écrit.",
+        "interdit": "Tu n'as pas le droit de faire cette action.",
+        "autre": "L'action n'a pas abouti. Réessaie dans un instant."
+      }
     }
   }
 }
