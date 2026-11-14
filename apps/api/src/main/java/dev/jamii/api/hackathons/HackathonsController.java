@@ -158,9 +158,16 @@ class HackathonsController {
 			if ("candidature".equals(h.modeInscription()) && ("publie".equals(statut) || "en_cours".equals(statut))) {
 				actions.add("trier_inscriptions");
 			}
+			if (!"brouillon".equals(statut) && !"annule".equals(statut) && !"resultats".equals(statut)) {
+				actions.add("inviter_jure");
+			}
 			return actions;
 		}
-		if ("en_cours".equals(statut) && "participant".equals(l.role()) && l.equipeId() != null) {
+		if ("jure".equals(l.role()) && "evaluation".equals(statut)) {
+			return List.of("noter");
+		}
+		// Un juré inscrit dans une équipe rend aussi son projet.
+		if ("en_cours".equals(statut) && l.equipeId() != null) {
 			return List.of("rendre");
 		}
 		boolean inscriptionsOuvertes = "publie".equals(statut) && h.calendrier().inscriptionsOuvertesLe().isBefore(maintenant)
@@ -168,7 +175,7 @@ class HackathonsController {
 		if (qui == null || !inscriptionsOuvertes) {
 			return List.of();
 		}
-		if ("participant".equals(l.role())) {
+		if ("participant".equals(l.role()) || l.equipeId() != null) {
 			return l.equipeId() == null ? List.of("creer_equipe") : List.of("inviter");
 		}
 		return List.of("sinscrire");

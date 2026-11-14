@@ -67,7 +67,7 @@ class Hackathons {
 
 	}
 
-	/** Un hackathon, et ce que la personne qui le lit est pour lui : `organisateur`, `participant` (avec son équipe) ou `visiteur`. */
+	/** Un hackathon, et ce que la personne qui le lit est pour lui : `organisateur`, `jure`, `participant` (avec son équipe) ou `visiteur`. */
 	record Lecture(Hackathon hackathon, String role, UUID equipeId) {
 
 		Lecture(Hackathon hackathon, String role) {
@@ -302,8 +302,8 @@ class Hackathons {
 	}
 
 	/**
-	 * Ce que `moi` est pour ce hackathon : `organisateur`, `participant` (inscrit, hors inscription refusée, avec son
-	 * équipe s'il en a une) ou `visiteur` (tout hackathon publié). Vide : il n'existe pas pour lui.
+	 * Ce que `moi` est pour ce hackathon : `organisateur`, `jure`, `participant` (inscrit, hors inscription refusée,
+	 * avec son équipe s'il en a une) ou `visiteur` (tout hackathon publié). Vide : il n'existe pas pour lui.
 	 */
 	Optional<Lecture> role(Hackathon h, UUID moi) {
 		if (h.organisateurId().equals(moi)) {
@@ -315,8 +315,15 @@ class Hackathons {
 		if (moi != null) {
 			var inscrit = base.sql("SELECT equipe_id FROM inscription WHERE hackathon_id = :h AND utilisateur_id = :u AND statut <> 'refusee'")
 				.param("h", h.id()).param("u", moi).query((rs, i) -> Optional.ofNullable(rs.getObject("equipe_id", UUID.class))).optional();
+			UUID equipe = inscrit.flatMap(e -> e).orElse(null);
+			// Un juré peut aussi être inscrit : il reste juré, et ne note pas le projet de son équipe.
+			boolean jure = base.sql("SELECT 1 FROM jure WHERE hackathon_id = :h AND utilisateur_id = :u").param("h", h.id()).param("u", moi)
+				.query(Integer.class).optional().isPresent();
+			if (jure) {
+				return Optional.of(new Lecture(h, "jure", equipe));
+			}
 			if (inscrit.isPresent()) {
-				return Optional.of(new Lecture(h, "participant", inscrit.get().orElse(null)));
+				return Optional.of(new Lecture(h, "participant", equipe));
 			}
 		}
 		return Optional.of(new Lecture(h, "visiteur"));

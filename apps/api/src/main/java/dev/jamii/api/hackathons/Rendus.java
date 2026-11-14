@@ -125,7 +125,7 @@ class Rendus {
 	}
 
 	/**
-	 * Le rendu d'une équipe : pour ses membres et l'organisateur, et pour tout le monde une fois les résultats publiés.
+	 * Le rendu d'une équipe : pour ses membres, l'organisateur et les jurés, et pour tout le monde une fois les résultats publiés.
 	 * Pour les autres, il n'existe pas (404).
 	 */
 	@Transactional(readOnly = true)
@@ -133,12 +133,23 @@ class Rendus {
 		Hackathons.Hackathon h = hackathons.charger(hackathonId, false);
 		Hackathons.Lecture l = hackathons.role(h, moi).orElseThrow(ErreurHackathons::introuvable);
 		equipeDe(hackathonId, equipeId);
-		boolean visible = "organisateur".equals(l.role()) || "resultats".equals(h.statut(hackathons.maintenant()))
+		boolean visible = "organisateur".equals(l.role()) || "jure".equals(l.role()) || "resultats".equals(h.statut(hackathons.maintenant()))
 				|| moi != null && membre(equipeId, moi);
 		if (!visible) {
 			throw ErreurHackathons.introuvable();
 		}
 		return lireParEquipe(equipeId).orElseThrow(ErreurHackathons::introuvable);
+	}
+
+	/** Des rendus par leur identifiant, dans l'ordre demandé (pour les listes du jury, déjà filtrées par droit). */
+	@Transactional(readOnly = true)
+	List<Rendu> lire(List<UUID> ids) {
+		if (ids.isEmpty()) {
+			return List.of();
+		}
+		var parId = base.sql("SELECT " + COLONNES + " FROM rendu WHERE id IN (:ids)").param("ids", ids).query(Rendus::rendu).list()
+			.stream().collect(java.util.stream.Collectors.toMap(Rendu::id, r -> r));
+		return ids.stream().map(parId::get).toList();
 	}
 
 	private void equipeDe(UUID hackathonId, UUID equipeId) {
