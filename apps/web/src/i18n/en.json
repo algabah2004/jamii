@@ -111,9 +111,10 @@
     "heures": "{n} h per week",
     "visibilite": {
       "prive": "🔒 Your profile is private: only you can see it.",
-      "publie": "✅ Your profile is published: signed-in members can see it and invite you to a team.",
+      "publie": "✅ Your profile is public: members and anyone with your link can see it.",
       "publier": "Publish my profile",
-      "retirer": "Make my profile private"
+      "retirer": "Make my profile private",
+      "voirPublic": "See my public profile"
     },
     "modifier": {
       "bouton": "Edit",
@@ -130,7 +131,27 @@
       "annuler": "Cancel",
       "enregistre": "Your profile is saved.",
       "conflit": "Your profile changed in another tab. Here is the latest version: please make your change again.",
-      "invalide": "This value is not accepted."
+      "invalide": "This value is not accepted.",
+      "titrePro": "Professional title",
+      "titreProAide": "Example: Mobile developer · Flutter, or Product designer",
+      "linkedin": "LinkedIn profile",
+      "linkedinAide": "Starts with https://www.linkedin.com/in/",
+      "site": "Website or portfolio",
+      "siteAide": "Starts with https://",
+      "langues": "Languages you speak",
+      "phares": "Skills to feature ({n} at most)",
+      "realisations": "Work outside Jamii",
+      "realisationsAide": "6 at most. Shown as “Self-reported”: only projects launched on Jamii are verified.",
+      "realisation": {
+        "titre": "Project name",
+        "role": "Your role",
+        "description": "In two sentences",
+        "technologies": "Technologies (comma-separated)",
+        "lien": "Link",
+        "annee": "Year",
+        "retirer": "Remove this project",
+        "ajouter": "Add a project"
+      }
     },
     "langages": {
       "titre": "Languages",
@@ -185,6 +206,45 @@
         "intermediaire": "Intermediate",
         "confirme": "Experienced"
       }
+    },
+    "liens": {
+      "site": "Website"
+    },
+    "langues": {
+      "parle": "Speaks:"
+    },
+    "phares": {
+      "titre": "Featured skills"
+    },
+    "realisations": {
+      "titre": "Work",
+      "declare": "Self-reported",
+      "declareAide": "Added by the person. Only projects on Jamii are verified."
+    },
+    "partage": {
+      "bouton": "Share my card",
+      "titre": "Your profile card",
+      "fermer": "Close",
+      "nonPublie": "Your profile is private: the QR code won’t lead anywhere until you make it public.",
+      "alt": "Profile card of {nom}",
+      "preparation": "Preparing your card…",
+      "telecharger": "Save the image",
+      "envoyer": "Send",
+      "copier": "Copy profile link",
+      "copie": "Link copied",
+      "competences": "Skills",
+      "projetsVerifies": "no verified project | {n} verified project on Jamii | {n} verified projects on Jamii",
+      "realisations": "no work | {n} project | {n} projects",
+      "scanner": "See my profile",
+      "message": "My profile on Jamii: {lien}"
+    },
+    "public": {
+      "introuvable": "This profile is not public",
+      "introuvableAide": "The link may be wrong, or the person made their profile private.",
+      "decouvrir": "Discover Jamii",
+      "invitationTitre": "Show what you can do, too.",
+      "invitationTexte": "On Jamii, projects you launch with a team become proof.",
+      "rejoindre": "Create my profile"
     }
   },
   "etat": {

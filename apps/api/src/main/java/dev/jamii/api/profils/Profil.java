@@ -56,6 +56,18 @@ class Profil {
 	/** La dernière carte proposée par l'IA, en JSON (CartesIa.Stockage). Privée tant que la personne n'a rien gardé. */
 	private String competencesProposees;
 
+	private String titre;
+
+	private String linkedin;
+
+	private String siteWeb;
+
+	/** Codes ISO 639-1 séparés par des virgules (voir V20). */
+	private String langues;
+
+	/** Compétences mises en avant, séparées par des virgules. */
+	private String competencesPhares;
+
 	@Version
 	private int version;
 
@@ -75,6 +87,11 @@ class Profil {
 	@CollectionTable(name = "profil_depot_github", joinColumns = @JoinColumn(name = "utilisateur_id"))
 	@OrderColumn(name = "rang")
 	private List<DepotGithub> depots = new ArrayList<>();
+
+	@ElementCollection
+	@CollectionTable(name = "profil_realisation", joinColumns = @JoinColumn(name = "utilisateur_id"))
+	@OrderColumn(name = "rang")
+	private List<Realisation> realisations = new ArrayList<>();
 
 	protected Profil() {
 	}
@@ -105,6 +122,16 @@ class Profil {
 	@Embeddable
 	record DepotGithub(String nom, String url, String description, String langage, int etoiles,
 			@Column(name = "mis_a_jour_le") Instant misAJourLe) {
+	}
+
+	/** Une réalisation déclarée hors de Jamii. `technologies` : compétences séparées par des virgules. */
+	@Embeddable
+	record Realisation(String titre, String role, String description, String technologies, String url, Integer annee) {
+
+		List<String> listeTechnologies() {
+			return technologies == null ? List.of() : List.of(technologies.split(","));
+		}
+
 	}
 
 	boolean generationEnCours(Instant maintenant) {
@@ -192,6 +219,55 @@ class Profil {
 
 	void heuresParSemaine(Integer heures) {
 		this.heuresParSemaine = heures;
+	}
+
+	void titre(String titre) {
+		this.titre = titre;
+	}
+
+	void linkedin(String linkedin) {
+		this.linkedin = linkedin;
+	}
+
+	void siteWeb(String siteWeb) {
+		this.siteWeb = siteWeb;
+	}
+
+	void langues(List<String> langues) {
+		this.langues = langues.isEmpty() ? null : String.join(",", langues);
+	}
+
+	void competencesPhares(List<String> phares) {
+		this.competencesPhares = phares.isEmpty() ? null : String.join(",", phares);
+	}
+
+	void remplacerRealisations(List<Realisation> nouvelles) {
+		realisations.clear();
+		realisations.addAll(nouvelles);
+	}
+
+	String titre() {
+		return titre;
+	}
+
+	String linkedin() {
+		return linkedin;
+	}
+
+	String siteWeb() {
+		return siteWeb;
+	}
+
+	List<String> langues() {
+		return langues == null ? List.of() : List.of(langues.split(","));
+	}
+
+	List<String> competencesPhares() {
+		return competencesPhares == null ? List.of() : List.of(competencesPhares.split(","));
+	}
+
+	List<Realisation> realisations() {
+		return List.copyOf(realisations);
 	}
 
 	void afficherResumeIa(boolean afficher) {

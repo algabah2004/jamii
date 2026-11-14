@@ -36,16 +36,29 @@ final class Vues {
 	record DepotGithub(String nom, String url, String description, String langage, int etoiles, Instant misAJourLe) {
 	}
 
+	/** Une réalisation déclarée hors de Jamii : le front l'étiquette « Déclaré », jamais « Vérifié ». */
+	record Realisation(String titre, String role, String description, List<String> technologies, String url,
+			Integer annee) {
+	}
+
 	/** Schéma Profil : ce que les autres voient d'un profil publié. Jamais l'e-mail. */
-	record ProfilPublic(UUID utilisateurId, String nom, String avatarUrl, String loginGithub, String bio, String resumeIa,
-			String pays, String ville, String disponibilite, Integer heuresParSemaine, List<Langage> langages,
-			List<CompetenceProfil> competences, List<Object> projets, List<DepotGithub> depotsGithub,
-			List<Object> fiabilite, Instant misAJourLe) {
+	record ProfilPublic(UUID utilisateurId, String nom, String avatarUrl, String loginGithub, String titre, String bio,
+			String resumeIa, String pays, String ville, String disponibilite, Integer heuresParSemaine,
+			String linkedin, String siteWeb, List<String> langues, List<String> competencesPhares,
+			List<Realisation> realisations, List<Langage> langages, List<CompetenceProfil> competences,
+			List<Object> projets, List<DepotGithub> depotsGithub, List<Object> fiabilite, Instant misAJourLe) {
 
 		static ProfilPublic depuis(dev.jamii.api.profils.Profil p, Compte compte) {
-			return new ProfilPublic(p.utilisateurId(), compte.nom(), compte.avatarUrl(), compte.loginGithub(), p.bio(),
+			return new ProfilPublic(p.utilisateurId(), compte.nom(), compte.avatarUrl(), compte.loginGithub(), p.titre(),
+					p.bio(),
 					p.afficherResumeIa() ? p.resumeIa() : null, p.pays(), p.ville(), p.disponibilite(),
-					p.heuresParSemaine(), p.langages().stream().map(l -> new Langage(l.nom(), l.part())).toList(),
+					p.heuresParSemaine(), p.linkedin(), p.siteWeb(), p.langues(), p.competencesPhares(),
+					p.realisations()
+						.stream()
+						.map(r -> new Realisation(r.titre(), r.role(), r.description(), r.listeTechnologies(), r.url(),
+								r.annee()))
+						.toList(),
+					p.langages().stream().map(l -> new Langage(l.nom(), l.part())).toList(),
 					competences(p), List.of(),
 					p.depots().stream()
 						.map(d -> new DepotGithub(d.nom(), d.url(), d.description(), d.langage(), d.etoiles(),

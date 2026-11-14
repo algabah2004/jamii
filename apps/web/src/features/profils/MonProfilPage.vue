@@ -1,13 +1,23 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { api } from '../../api/client'
 import { RouterLink } from 'vue-router'
-import { JAvatar, JBadgePreuve, JBouton, JChamp, JIllustration, JSquelette } from '../../design-system'
+import { api } from '../../api/client'
+import { JBouton, JChamp, JIllustration, JSquelette } from '../../design-system'
 import { useSession } from '../../session'
 import { nomPays } from '../systalink/calculs'
 import CarteCompetences from './CarteCompetences.vue'
-import { DISPONIBILITES, lireCompetences, PAYS_AFRIQUE, pourcentage, type Disponibilite, type MonProfil } from './profils'
+import FicheProfil from './FicheProfil.vue'
+import PartagerCarte from './PartagerCarte.vue'
+import {
+  DISPONIBILITES,
+  LANGUES_PROPOSEES,
+  lireCompetences,
+  nomLangue,
+  PAYS_AFRIQUE,
+  type Disponibilite,
+  type MonProfil,
+} from './profils'
 
 const { t, locale } = useI18n()
 const { moi } = useSession()
@@ -47,8 +57,6 @@ void charger()
 const enCours = computed(() => profil.value?.generation.statut === 'en_cours')
 const echec = computed(() => (profil.value?.generation.statut === 'echec' ? profil.value.generation.erreur : null))
 const sansGithub = computed(() => !moi.value?.loginGithub)
-const prenom = computed(() => profil.value?.nom.split(/\s+/)[0] ?? '')
-const TYPES_PREUVE = ['projet_en_ligne', 'tache_livree_a_temps', 'reponse_acceptee', 'avis_coequipier'] as const
 
 async function generer() {
   occupe.value = true
@@ -78,12 +86,39 @@ async function changerVisibilite() {
 
 // ---------- Modifier ce que je déclare ----------
 const edition = ref(false)
-const brouillon = ref({ bio: '', pays: '', ville: '', disponibilite: 'disponible' as Disponibilite, heures: '', competences: '' })
+interface BrouillonRealisation { titre: string; role: string; description: string; technologies: string; url: string; annee: string }
+const brouillon = ref({
+  titre: '', bio: '', pays: '', ville: '', disponibilite: 'disponible' as Disponibilite, heures: '', competences: '',
+  linkedin: '', siteWeb: '', langues: [] as string[], phares: [] as string[], realisations: [] as BrouillonRealisation[],
+})
+const REALISATIONS_MAX = 6
+const PHARES_MAX = 3
 const erreurs = ref<Record<string, string>>({})
 
 const competencesDeclarees = computed(() =>
   (profil.value?.competences ?? []).filter((c) => c.source === 'declaree').map((c) => c.competence),
 )
+const languesTriees = computed(() =>
+  [...LANGUES_PROPOSEES].sort((a, b) => nomLangue(a, locale.value).localeCompare(nomLangue(b, locale.value), locale.value)),
+)
+/** Les compétences que l'on peut mettre en avant : celles du profil, plus celles en cours de saisie. */
+const choixPhares = computed(() => [
+  ...new Set([
+    ...(profil.value?.competences ?? []).filter((c) => c.source !== 'declaree').map((c) => c.competence),
+    ...lireCompetences(brouillon.value.competences).map((c) => c.toLowerCase()),
+    ...brouillon.value.phares,
+  ]),
+])
+function basculer(liste: string[], valeur: string, max = Infinity) {
+  const i = liste.indexOf(valeur)
+  if (i >= 0) liste.splice(i, 1)
+  else if (liste.length < max) liste.push(valeur)
+}
+function ajouterRealisation() {
+  if (brouillon.value.realisations.length < REALISATIONS_MAX) {
+    brouillon.value.realisations.push({ titre: '', role: '', description: '', technologies: '', url: '', annee: '' })
+  }
+}
 const paysTries = computed(() =>
   [...PAYS_AFRIQUE].sort((a, b) => nomPays(a, locale.value).localeCompare(nomPays(b, locale.value), locale.value)),
 )
@@ -91,6 +126,19 @@ const paysTries = computed(() =>
 function ouvrirEdition() {
   const p = profil.value!
   brouillon.value = {
+    titre: p.titre ?? '',
+    linkedin: p.linkedin ?? '',
+    siteWeb: p.siteWeb ?? '',
+    langues: [...p.langues],
+    phares: [...p.competencesPhares],
+    realisations: p.realisations.map((r) => ({
+      titre: r.titre,
+      role: r.role ?? '',
+      description: r.description ?? '',
+      technologies: (r.technologies ?? []).join(', '),
+      url: r.url ?? '',
+      annee: r.annee ? String(r.annee) : '',
+    })),
     bio: p.bio ?? '',
     pays: p.pays ?? '',
     ville: p.ville ?? '',
@@ -117,6 +165,21 @@ async function enregistrer() {
         disponibilite: b.disponibilite,
         heuresParSemaine: b.heures ? Number(b.heures) : null,
         competencesDeclarees: lireCompetences(b.competences),
+        titre: b.titre.trim() || null,
+        linkedin: b.linkedin.trim() || null,
+        siteWeb: b.siteWeb.trim() || null,
+        langues: b.langues,
+        competencesPhares: b.phares,
+        realisations: b.realisations
+          .filter((r) => r.titre.trim() || r.description.trim() || r.url.trim())
+          .map((r) => ({
+            titre: r.titre.trim(),
+            role: r.role.trim() || null,
+            description: r.description.trim() || null,
+            technologies: lireCompetences(r.technologies),
+            url: r.url.trim() || null,
+            annee: r.annee ? Number(r.annee) : null,
+          })),
         version: profil.value!.version,
       },
     })
@@ -130,7 +193,10 @@ async function enregistrer() {
       edition.value = false
     } else if (response.status === 400) {
       const champs = (error as { erreurs?: { champ: string; code: string }[] } | undefined)?.erreurs ?? []
-      erreurs.value = Object.fromEntries(champs.map((e) => [e.champ.replace(/\[\d+\]$/, ''), t('profil.modifier.invalide')]))
+      // « competencesDeclarees[1] » s'affiche sous le champ entier ; « realisations[0].url » sous le champ de la ligne.
+      erreurs.value = Object.fromEntries(
+        champs.flatMap((e) => [[e.champ, t('profil.modifier.invalide')], [e.champ.replace(/\[\d+\]$/, ''), t('profil.modifier.invalide')]]),
+      )
     } else {
       message.value = t('etat.indisponible')
     }
@@ -173,159 +239,108 @@ async function enregistrer() {
     </div>
 
     <template v-else-if="profil">
-      <header class="carte identite">
-        <JAvatar :nom="profil.nom" :url="profil.avatarUrl" :taille="72" />
-        <div class="identite__texte">
-          <h1>{{ profil.nom }}</h1>
-          <p class="texte-discret">
-            <span v-if="profil.loginGithub">@{{ profil.loginGithub }}</span>
-            <span v-if="profil.ville || profil.pays">
-              · {{ [profil.ville, profil.pays && nomPays(profil.pays, locale)].filter(Boolean).join(', ') }}</span>
-          </p>
-          <p class="identite__dispo">
-            <span class="disponibilite" :class="`disponibilite--${profil.disponibilite}`">
-              {{ t(`profil.disponibilite.${profil.disponibilite}`) }}</span>
-            <span v-if="profil.heuresParSemaine" class="texte-discret">
-              · {{ t('profil.heures', { n: profil.heuresParSemaine }) }}</span>
-          </p>
-          <ul v-if="profil.competences.length" class="etiquettes etiquettes--entete">
-            <li v-for="c in profil.competences.slice(0, 6)" :key="c.competence" class="etiquette">{{ c.competence }}</li>
-          </ul>
-        </div>
-      </header>
+      <FicheProfil :profil="profil" moi>
+        <template #actions>
+          <div class="barre-actions">
+            <p class="visibilite" :class="{ 'visibilite--publie': profil.publie }" data-test="visibilite">
+              {{ profil.publie ? t('profil.visibilite.publie') : t('profil.visibilite.prive') }}
+            </p>
+            <JBouton :variante="profil.publie ? 'secondaire' : 'principal'" :occupe="occupe" data-test="publier" @click="changerVisibilite">
+              {{ profil.publie ? t('profil.visibilite.retirer') : t('profil.visibilite.publier') }}
+            </JBouton>
+            <JBouton v-if="!edition" variante="secondaire" data-test="modifier" @click="ouvrirEdition">{{ t('profil.modifier.bouton') }}</JBouton>
+            <PartagerCarte :profil="profil" :publie="profil.publie" />
+            <RouterLink v-if="profil.publie" :to="`/p/${profil.utilisateurId}`" class="lien-public" data-test="voir-public">
+              {{ t('profil.visibilite.voirPublic') }}</RouterLink>
+            <JBouton variante="discret" :occupe="occupe || enCours" data-test="regenerer" @click="generer">
+              {{ enCours ? t('profil.generation.enCours') : t('profil.generation.regenerer') }}
+            </JBouton>
+          </div>
+          <p v-if="message" role="status" data-test="message">{{ message }}</p>
+          <p v-if="echec" role="alert">{{ t(`profil.generation.erreurs.${echec}`) }}</p>
 
-      <div class="barre-actions">
-        <p class="visibilite" :class="{ 'visibilite--publie': profil.publie }" data-test="visibilite">
-          {{ profil.publie ? t('profil.visibilite.publie') : t('profil.visibilite.prive') }}
-        </p>
-        <JBouton :variante="profil.publie ? 'secondaire' : 'principal'" :occupe="occupe" data-test="publier" @click="changerVisibilite">
-          {{ profil.publie ? t('profil.visibilite.retirer') : t('profil.visibilite.publier') }}
-        </JBouton>
-        <JBouton v-if="!edition" variante="secondaire" data-test="modifier" @click="ouvrirEdition">{{ t('profil.modifier.bouton') }}</JBouton>
-        <JBouton variante="discret" :occupe="occupe || enCours" data-test="regenerer" @click="generer">
-          {{ enCours ? t('profil.generation.enCours') : t('profil.generation.regenerer') }}
-        </JBouton>
-      </div>
-      <p v-if="message" role="status" data-test="message">{{ message }}</p>
-      <p v-if="echec" role="alert">{{ t(`profil.generation.erreurs.${echec}`) }}</p>
-
-      <form v-if="edition" class="carte formulaire-profil" data-test="formulaire" @submit.prevent="enregistrer">
-        <h2>{{ t('profil.modifier.titre') }}</h2>
-        <JChamp v-model="brouillon.bio" :libelle="t('profil.modifier.bio')" multiligne :maxlength="500" :erreur="erreurs.bio" />
-        <div class="deux-colonnes">
-          <label class="j-champ">
-            <span>{{ t('profil.modifier.pays') }}</span>
-            <select v-model="brouillon.pays" class="selection">
-              <option value="">{{ t('profil.modifier.paysAucun') }}</option>
-              <option v-for="code in paysTries" :key="code" :value="code">{{ nomPays(code, locale) }}</option>
-            </select>
-          </label>
-          <JChamp v-model="brouillon.ville" :libelle="t('profil.modifier.ville')" :maxlength="80" :erreur="erreurs.ville" />
-        </div>
-        <div class="deux-colonnes">
-          <label class="j-champ">
-            <span>{{ t('profil.modifier.disponibilite') }}</span>
-            <select v-model="brouillon.disponibilite" class="selection">
-              <option v-for="d in DISPONIBILITES" :key="d" :value="d">{{ t(`profil.disponibilite.${d}`) }}</option>
-            </select>
-          </label>
-          <JChamp v-model="brouillon.heures" type="number" :libelle="t('profil.modifier.heures')" :erreur="erreurs.heuresParSemaine" />
-        </div>
-        <JChamp
-          v-model="brouillon.competences"
-          :libelle="t('profil.modifier.competences')"
-          :aide="t('profil.modifier.competencesAide')"
-          :erreur="erreurs.competencesDeclarees"
-        />
-        <div class="barre-actions">
-          <JBouton type="submit" :occupe="occupe" data-test="enregistrer">{{ t('profil.modifier.enregistrer') }}</JBouton>
-          <JBouton variante="discret" @click="edition = false">{{ t('profil.modifier.annuler') }}</JBouton>
-        </div>
-      </form>
-
-      <p v-if="profil.bio" class="bio">{{ profil.bio }}</p>
-
-      <div class="colonnes">
-        <div class="colonne">
-          <CarteCompetences :profil="profil" @mis-a-jour="(p) => (profil = p)" />
-          <!-- Les projets d'abord : c'est la preuve la plus forte (contrat : Profil.projets). -->
-          <section class="carte">
-            <h2>{{ t('profil.projets.titre') }}</h2>
-            <ul v-if="profil.projets.length" class="projets" data-test="projets">
-              <li v-for="p in profil.projets" :key="p.projetId">
-                <div>
-                  <strong>{{ p.titre }}</strong>
-                  <p class="texte-discret">{{ p.role }}<template v-if="p.paysEquipe?.length"> · {{ t('profil.projets.equipe', { pays: p.paysEquipe.map((c) => nomPays(c, locale)).join(' · ') }) }}</template></p>
-                </div>
-                <JBadgePreuve v-if="p.enLigne">✓ {{ p.hebergeur === 'datacloud' ? t('profil.projets.surSystalink') : t('profil.projets.enLigne') }}</JBadgePreuve>
-              </li>
-            </ul>
-            <div v-else class="vide" data-test="projets-vide">
-              <JIllustration nom="en-ligne" class="vide__illustration" />
-              <p>{{ t('profil.projets.vide') }}</p>
-              <RouterLink to="/vitrine">{{ t('profil.projets.inspiration') }}</RouterLink>
+          <form v-if="edition" class="carte formulaire-profil" data-test="formulaire" @submit.prevent="enregistrer">
+            <h2>{{ t('profil.modifier.titre') }}</h2>
+            <JChamp v-model="brouillon.titre" :libelle="t('profil.modifier.titrePro')" :aide="t('profil.modifier.titreProAide')" :maxlength="80" :erreur="erreurs.titre" data-test="champ-titre" />
+            <JChamp v-model="brouillon.bio" :libelle="t('profil.modifier.bio')" multiligne :maxlength="500" :erreur="erreurs.bio" />
+            <div class="deux-colonnes">
+              <label class="j-champ">
+                <span>{{ t('profil.modifier.pays') }}</span>
+                <select v-model="brouillon.pays" class="selection">
+                  <option value="">{{ t('profil.modifier.paysAucun') }}</option>
+                  <option v-for="code in paysTries" :key="code" :value="code">{{ nomPays(code, locale) }}</option>
+                </select>
+              </label>
+              <JChamp v-model="brouillon.ville" :libelle="t('profil.modifier.ville')" :maxlength="80" :erreur="erreurs.ville" />
             </div>
-          </section>
+            <div class="deux-colonnes">
+              <label class="j-champ">
+                <span>{{ t('profil.modifier.disponibilite') }}</span>
+                <select v-model="brouillon.disponibilite" class="selection">
+                  <option v-for="d in DISPONIBILITES" :key="d" :value="d">{{ t(`profil.disponibilite.${d}`) }}</option>
+                </select>
+              </label>
+              <JChamp v-model="brouillon.heures" type="number" :libelle="t('profil.modifier.heures')" :erreur="erreurs.heuresParSemaine" />
+            </div>
+            <div class="deux-colonnes">
+              <JChamp v-model="brouillon.linkedin" type="url" :libelle="t('profil.modifier.linkedin')" :aide="t('profil.modifier.linkedinAide')" :maxlength="300" :erreur="erreurs.linkedin" />
+              <JChamp v-model="brouillon.siteWeb" type="url" :libelle="t('profil.modifier.site')" :aide="t('profil.modifier.siteAide')" :maxlength="300" :erreur="erreurs.siteWeb" />
+            </div>
 
-          <section v-if="profil.langages.length" class="carte" :aria-label="t('profil.langages.titre')">
-            <h2>{{ t('profil.langages.titre') }}</h2>
-            <ul class="langages" data-test="langages">
-              <li v-for="l in profil.langages" :key="l.nom">
-                <span>{{ l.nom }}</span>
-                <span class="jauge" aria-hidden="true"><span :style="{ width: `${Math.max(l.part * 100, 2)}%` }" /></span>
-                <span class="texte-discret">{{ pourcentage(l.part, locale) }}</span>
-              </li>
-            </ul>
-            <p class="texte-discret">{{ t('profil.langages.estimation') }}</p>
-          </section>
+            <fieldset class="choix">
+              <legend>{{ t('profil.modifier.langues') }}</legend>
+              <div class="pastilles">
+                <button v-for="l in languesTriees" :key="l" type="button" class="pastille" :aria-pressed="brouillon.langues.includes(l)" @click="basculer(brouillon.langues, l, 8)">
+                  {{ nomLangue(l, locale) }}</button>
+              </div>
+              <p v-if="erreurs.langues" class="erreur">{{ erreurs.langues }}</p>
+            </fieldset>
 
-          <section v-if="profil.depotsGithub.length" class="carte">
-            <h2>{{ t('profil.depots.titre') }}</h2>
-            <ul class="depots" data-test="depots">
-              <li v-for="d in profil.depotsGithub" :key="d.url">
-                <a :href="d.url" rel="noopener noreferrer" target="_blank">{{ d.nom }}</a>
-                <span class="texte-discret">
-                  <template v-if="d.langage">{{ d.langage }} · </template>{{ t('profil.depots.etoiles', { n: d.etoiles }, d.etoiles) }}</span>
-                <p v-if="d.description">{{ d.description }}</p>
-              </li>
-            </ul>
-            <p class="texte-discret">{{ t('profil.depots.pasUnePreuve') }}</p>
-          </section>
-        </div>
+            <JChamp
+              v-model="brouillon.competences"
+              :libelle="t('profil.modifier.competences')"
+              :aide="t('profil.modifier.competencesAide')"
+              :erreur="erreurs.competencesDeclarees"
+            />
+            <fieldset v-if="choixPhares.length" class="choix">
+              <legend>{{ t('profil.modifier.phares', { n: PHARES_MAX }) }}</legend>
+              <div class="pastilles">
+                <button v-for="c in choixPhares" :key="c" type="button" class="pastille" :aria-pressed="brouillon.phares.includes(c)" :disabled="!brouillon.phares.includes(c) && brouillon.phares.length >= PHARES_MAX" @click="basculer(brouillon.phares, c, PHARES_MAX)">
+                  {{ c }}</button>
+              </div>
+              <p v-if="erreurs.competencesPhares" class="erreur">{{ erreurs.competencesPhares }}</p>
+            </fieldset>
 
-        <aside class="colonne">
-          <!-- L'indice de fiabilité : un point par type de preuve, jamais de note globale. -->
-          <section class="carte fiabilite">
-            <h2>{{ t('profil.fiabilite.titre', { prenom: prenom }) }}</h2>
-            <ul v-if="profil.fiabilite.length" class="points" data-test="fiabilite">
-              <li v-for="f in profil.fiabilite" :key="f.type">
-                <span class="points__nombre">{{ f.sur != null ? t('profil.fiabilite.sur', { n: f.nombre, sur: f.sur }) : f.nombre }}</span>
-                <span>{{ t(`profil.fiabilite.types.${f.type}`, f.nombre) }}</span>
-                <small v-if="f.contestees" class="texte-discret">{{ t('profil.fiabilite.contestees', { n: f.contestees }, f.contestees) }}</small>
-              </li>
-            </ul>
-            <template v-else>
-              <p class="texte-discret" data-test="fiabilite-vide">{{ t('profil.fiabilite.vide') }}</p>
-              <ul class="comment">
-                <li v-for="type in TYPES_PREUVE" :key="type">{{ t(`profil.fiabilite.comment.${type}`) }}</li>
-              </ul>
-            </template>
-            <p class="texte-discret">{{ t('profil.fiabilite.sansNote') }}</p>
-          </section>
+            <fieldset class="choix" data-test="champ-realisations">
+              <legend>{{ t('profil.modifier.realisations') }}</legend>
+              <p class="texte-discret">{{ t('profil.modifier.realisationsAide') }}</p>
+              <div v-for="(r, i) in brouillon.realisations" :key="i" class="realisation-saisie">
+                <div class="deux-colonnes">
+                  <JChamp v-model="r.titre" :libelle="t('profil.modifier.realisation.titre')" requis :maxlength="80" :erreur="erreurs[`realisations[${i}].titre`]" />
+                  <JChamp v-model="r.role" :libelle="t('profil.modifier.realisation.role')" :maxlength="60" :erreur="erreurs[`realisations[${i}].role`]" />
+                </div>
+                <JChamp v-model="r.description" :libelle="t('profil.modifier.realisation.description')" multiligne :lignes="2" :maxlength="300" :erreur="erreurs[`realisations[${i}].description`]" />
+                <div class="trois-colonnes">
+                  <JChamp v-model="r.technologies" :libelle="t('profil.modifier.realisation.technologies')" :erreur="erreurs[`realisations[${i}].technologies`]" />
+                  <JChamp v-model="r.url" type="url" :libelle="t('profil.modifier.realisation.lien')" :maxlength="300" :erreur="erreurs[`realisations[${i}].url`]" />
+                  <JChamp v-model="r.annee" type="number" :libelle="t('profil.modifier.realisation.annee')" :erreur="erreurs[`realisations[${i}].annee`]" />
+                </div>
+                <JBouton variante="discret" @click="brouillon.realisations.splice(i, 1)">{{ t('profil.modifier.realisation.retirer') }}</JBouton>
+              </div>
+              <JBouton v-if="brouillon.realisations.length < REALISATIONS_MAX" variante="secondaire" data-test="ajouter-realisation" @click="ajouterRealisation">
+                {{ t('profil.modifier.realisation.ajouter') }}</JBouton>
+            </fieldset>
 
-          <section v-if="profil.competences.length" class="carte">
-            <h2>{{ t('profil.competences.titre') }}</h2>
-            <ul class="etiquettes" data-test="competences">
-              <li v-for="c in profil.competences" :key="c.competence + c.source" class="etiquette" :class="{ 'etiquette--declaree': c.source === 'declaree' }">
-                {{ c.competence }}
-                <span v-if="c.source === 'declaree'" class="visuellement-cache">{{ t('profil.competences.declaree') }}</span>
-                <span v-if="c.source === 'ia' && c.niveau" class="etiquette__niveau">· {{ t(`profil.carte.niveaux.${c.niveau}`) }}</span>
-              </li>
-            </ul>
-            <p class="texte-discret">{{ t('profil.competences.source') }}</p>
-          </section>
-        </aside>
-      </div>
+            <div class="barre-actions">
+              <JBouton type="submit" :occupe="occupe" data-test="enregistrer">{{ t('profil.modifier.enregistrer') }}</JBouton>
+              <JBouton variante="discret" @click="edition = false">{{ t('profil.modifier.annuler') }}</JBouton>
+            </div>
+          </form>
+        </template>
+        <template #debut>
+          <CarteCompetences :profil="profil" @mis-a-jour="(p) => (profil = p)" />
+        </template>
+      </FicheProfil>
     </template>
   </section>
 </template>
@@ -342,47 +357,26 @@ async function enregistrer() {
 .accueil-profil__lu .jamais { color: var(--ink-muted); font-weight: 400; }
 .accueil-profil__visuel { padding: var(--space-8); background: var(--action-soft); border-radius: var(--radius-lg); }
 .en-cours { font-weight: 600; color: var(--action-ink); }
-.erreur { color: var(--danger); font-weight: 600; }
-.identite { flex-direction: row; display: flex; gap: var(--space-6); align-items: center; flex-wrap: wrap; }
-.identite__texte { display: grid; gap: var(--space-1); min-width: 0; flex: 1; }
-.identite__texte h1, .identite__texte p { margin: 0; }
-.etiquettes--entete { margin: var(--space-2) 0 0; }
+.erreur { color: var(--danger); font-weight: 600; margin: 0; }
 .visibilite { padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); background: var(--surface-raised); }
 .visibilite--publie { background: var(--action-soft); }
-.colonnes { display: grid; gap: var(--space-6); grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); align-items: start; }
-@media (max-width: 860px) { .colonnes { grid-template-columns: 1fr; } }
-.colonne { display: grid; gap: var(--space-6); min-width: 0; }
-.carte h2 { font-size: var(--type-h3-size); line-height: var(--type-h3-line); }
-.projets { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
-.projets li { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; justify-content: space-between; padding: var(--space-3) var(--space-4); background: var(--surface-raised); border-radius: var(--radius-sm); }
-.projets p { margin: 0; }
-.vide { display: grid; gap: var(--space-3); justify-items: center; text-align: center; padding: var(--space-4); border: 1px dashed var(--line-strong); border-radius: var(--radius-md); }
-.vide p { margin: 0; color: var(--ink-muted); max-width: 30rem; }
-.vide__illustration { width: 9rem; }
-.points { list-style: none; margin: 0 0 var(--space-3); padding: 0; display: grid; gap: var(--space-2); }
-.points li { display: grid; grid-template-columns: auto 1fr; gap: 2px var(--space-3); align-items: baseline; padding: var(--space-3); background: var(--proof-soft); border-radius: var(--radius-sm); }
-.points__nombre { font-family: var(--font-display); font-weight: 700; font-size: 1.25rem; color: var(--proof-ink); }
-.points small { grid-column: 2; }
-.comment { margin: 0 0 var(--space-3); padding-inline-start: 1.2em; display: grid; gap: var(--space-1); }
-.etiquette--declaree { background: transparent; border: 1px solid var(--line-strong); }
-.disponibilite { font-weight: 600; }
-.disponibilite::before { content: ''; display: inline-block; width: 0.6em; height: 0.6em; margin-inline-end: var(--space-1); border-radius: 50%; background: var(--line-strong); }
-.disponibilite--disponible::before { background: var(--action); }
 .barre-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
 .barre-actions .visibilite { margin: 0; }
+.lien-public { font-weight: 600; padding: 0 var(--space-2); }
 .formulaire-profil { display: grid; gap: var(--space-4); }
+.formulaire-profil h2 { font-size: var(--type-h3-size); line-height: var(--type-h3-line); }
 .deux-colonnes { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); }
+.trois-colonnes { display: grid; gap: var(--space-4); grid-template-columns: 2fr 2fr 1fr; }
+@media (max-width: 640px) { .trois-colonnes { grid-template-columns: 1fr; } }
 .j-champ > span { font-size: var(--type-label-size); line-height: var(--type-label-line); font-weight: var(--type-label-weight); }
 .selection { width: 100%; min-height: 44px; padding: var(--space-2) var(--space-3); background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); }
-.bio { max-width: 40rem; white-space: pre-line; }
-.langages { list-style: none; margin: 0 0 var(--space-3); padding: 0; display: grid; gap: var(--space-2); }
-.langages li { display: grid; grid-template-columns: 7rem 1fr 3.5rem; gap: var(--space-3); align-items: center; }
-.jauge { height: 8px; background: var(--surface-raised); border-radius: var(--radius-pill); overflow: hidden; }
-.jauge > span { display: block; height: 100%; background: var(--action); border-radius: var(--radius-pill); }
-.etiquettes { list-style: none; margin: 0 0 var(--space-3); padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-2); }
-.depots { list-style: none; margin: 0 0 var(--space-3); padding: 0; display: grid; gap: var(--space-4); }
-.depots li { display: grid; gap: var(--space-1); }
-.depots p { margin: 0; }
-.depots a { font-weight: 600; }
-.etiquette__niveau { color: var(--ink-muted); font-weight: 500; }
+.choix { border: 0; padding: 0; margin: 0; display: grid; gap: var(--space-2); }
+.choix legend { font-size: var(--type-label-size); line-height: var(--type-label-line); font-weight: var(--type-label-weight); margin-block-end: var(--space-2); padding: 0; }
+.choix > p { margin: 0; }
+.pastilles { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.pastille { min-height: 36px; padding: 0 var(--space-3); border-radius: var(--radius-pill); border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); font: inherit; cursor: pointer; }
+.pastille[aria-pressed='true'] { background: var(--action-soft); border-color: var(--action); color: var(--action-ink); font-weight: 700; }
+.pastille:disabled { opacity: 0.45; cursor: not-allowed; }
+.realisation-saisie { display: grid; gap: var(--space-3); padding: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-md); justify-items: stretch; }
+.realisation-saisie > :last-child { justify-self: start; }
 </style>

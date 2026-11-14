@@ -7,13 +7,13 @@ import { i18n } from '../../i18n'
 import { creerRouteur } from '../../router'
 import { chargerSession } from '../../session'
 import App from '../../App.vue'
-import { lireCompetences, pourcentage } from './profils'
+import { competencesPhares, hoteLisible, lienProfil, lireCompetences, pourcentage, urlDrapeau } from './profils'
 
-async function ouvrir() {
+async function ouvrir(chemin = '/profil') {
   ;(i18n.global.locale as unknown as { value: string }).value = 'fr'
   await chargerSession()
   const routeur = creerRouteur(createMemoryHistory())
-  await routeur.push('/profil')
+  await routeur.push(chemin)
   const page = mount(App, { global: { plugins: [i18n, routeur] } })
   await vi.waitFor(() => expect(page.text()).not.toContain('Chargement'))
   return page
@@ -98,6 +98,7 @@ describe('Mon profil', () => {
       http.get('/api/me/profil', () =>
         HttpResponse.json({
           utilisateurId: 'x', nom: 'Aïcha Kouassi', disponibilite: 'disponible', langages: [{ nom: 'Dart', part: 1 }],
+          langues: [], competencesPhares: [], realisations: [],
           competences: [], depotsGithub: [], misAJourLe: '2026-11-11T10:00:00Z', publie: true, afficherResumeIa: true, version: 2,
           generation: { statut: 'terminee' },
           projets: [{ projetId: 'p1', titre: 'Marché Facile', role: 'porteur', paysEquipe: ['CI', 'KE'], enLigne: true, hebergeur: 'datacloud' }],
@@ -123,6 +124,7 @@ describe('Mon profil', () => {
       http.get('/api/me/profil', () =>
         HttpResponse.json({
           utilisateurId: 'x', nom: 'Awa Diop', disponibilite: 'disponible', langages: [{ nom: 'Dart', part: 1 }],
+          langues: [], competencesPhares: [], realisations: [],
           competences: [], projets: [], depotsGithub: [], fiabilite: [], misAJourLe: '2026-11-11T10:00:00Z',
           publie: false, afficherResumeIa: true, version: 3,
           generation: { statut: 'echec', erreur: 'github_indisponible' },
@@ -132,6 +134,46 @@ describe('Mon profil', () => {
     const page = await ouvrir()
     expect(page.text()).toContain('GitHub ne répond pas')
     expect(page.get('[data-test="langages"]').text()).toContain('Dart')
+  })
+})
+
+describe('profil professionnel (#159)', () => {
+  const pro = {
+    utilisateurId: 'b2c3', nom: 'Kofi Mensah', titre: 'Développeur backend · Java', pays: 'GH', ville: 'Accra',
+    disponibilite: 'disponible', linkedin: 'https://www.linkedin.com/in/kofi', siteWeb: 'https://kofi.dev',
+    langues: ['en', 'ak'], competencesPhares: ['spring-boot'], loginGithub: 'kofi',
+    realisations: [{ titre: 'Caisse en ligne', role: 'Développeur', annee: 2025, technologies: ['java'], url: 'https://caisse.exemple.gh' }],
+    langages: [], competences: [{ competence: 'java', source: 'github' }], projets: [], depotsGithub: [], fiabilite: [],
+    misAJourLe: '2026-11-11T10:00:00Z',
+  }
+
+  it('montre le titre, le drapeau, les liens, les langues et les réalisations « Déclaré »', async () => {
+    serveur.use(http.get('/api/profils/:id', () => HttpResponse.json(pro)))
+    const page = await ouvrir('/p/b2c3')
+    await vi.waitFor(() => expect(page.find('[data-test="identite"]').exists()).toBe(true))
+    expect(page.get('[data-test="titre"]').text()).toBe('Développeur backend · Java')
+    expect(page.get('[data-test="drapeau"]').attributes('src')).toContain('gh.svg')
+    expect(page.get('[data-test="liens"]').text()).toContain('LinkedIn')
+    expect(page.get('[data-test="liens"]').text()).toContain('kofi.dev')
+    expect(page.get('[data-test="langues"]').text()).toContain('Anglais')
+    const realisations = page.get('[data-test="realisations"]').text()
+    expect(realisations).toContain('Caisse en ligne')
+    expect(realisations).toContain('Déclaré')
+    expect(page.get('[data-test="phares"]').text()).toContain('spring-boot')
+  })
+
+  it('un profil privé ou inconnu le dit, sans rien révéler', async () => {
+    serveur.use(http.get('/api/profils/:id', () => probleme(404, 'introuvable')))
+    const page = await ouvrir('/p/inconnu')
+    await vi.waitFor(() => expect(page.find('[data-test="introuvable"]').exists()).toBe(true))
+  })
+
+  it('le lien public et le drapeau se construisent sans erreur', () => {
+    expect(lienProfil('abc', 'https://jamii.exemple')).toBe('https://jamii.exemple/p/abc')
+    expect(urlDrapeau('SN')).toContain('sn.svg')
+    expect(urlDrapeau('xx')).toBeNull()
+    expect(hoteLisible('https://www.kofi.dev/')).toBe('kofi.dev')
+    expect(competencesPhares({ competencesPhares: [], competences: [{ competence: 'dart', source: 'github' }] })).toEqual(['dart'])
   })
 })
 
