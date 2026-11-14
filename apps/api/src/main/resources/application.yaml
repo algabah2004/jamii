@@ -50,7 +50,9 @@ server:
       cookie:
         name: JAMII_SESSION
         http-only: true
-        secure: true
+        # Toujours true en production (HTTPS). false seulement en local sur http://localhost avec Safari, qui refuse
+        # un cookie Secure sans HTTPS (Chrome et Firefox l'acceptent sur localhost) : SESSION_COOKIE_SECURE=false.
+        secure: ${SESSION_COOKIE_SECURE:true}
         same-site: lax
 
 jamii:
