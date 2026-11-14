@@ -134,6 +134,29 @@ class DonneesDemoTest {
 	}
 
 	@Test
+	void le_hackathon_de_dakar_est_termine_et_ses_resultats_sont_publics() {
+		var reponse = mvc.get().uri("/api/hackathons/" + DemoHackathonMission.HACKATHON + "/resultats");
+
+		assertThat(reponse).hasStatusOk();
+		assertThat(reponse).bodyJson().extractingPath("$.gagnants[0].prix.nom").isEqualTo("Prix du jury");
+		assertThat(reponse).bodyJson().extractingPath("$.gagnants[0].equipe.nom").isEqualTo("Les Baobabs");
+		assertThat(reponse).bodyJson().extractingPath("$.classement[0].rendu.titre").isEqualTo("Stock au marché");
+		assertThat(reponse).bodyJson().extractingPath("$.classement[1].retourDuJury.length()").isEqualTo(1);
+	}
+
+	@Test
+	void la_mission_des_tisserandes_attend_qu_awa_accepte_le_deuxieme_jalon() {
+		var reponse = mvc.get().uri("/api/missions/" + DemoHackathonMission.MISSION).with(oauth2Login().oauth2User(connecte(DonneesDemo.AWA)));
+
+		assertThat(reponse).hasStatusOk();
+		assertThat(reponse).bodyJson().extractingPath("$.statut").isEqualTo("en_cours");
+		assertThat(reponse).bodyJson().extractingPath("$.travail.developpeur.nom").isEqualTo("Kofi Mensah");
+		assertThat(reponse).bodyJson().extractingPath("$.travail.devis.jalons[0].statut").isEqualTo("accepte");
+		assertThat(reponse).bodyJson().extractingPath("$.travail.devis.jalons[1].statut").isEqualTo("livre");
+		assertThat(reponse).bodyJson().extractingPath("$.travail.devis.jalons[2].statut").isEqualTo("en_cours");
+	}
+
+	@Test
 	void aucun_compte_de_demo_n_a_de_login_github_ni_d_adresse_joignable() {
 		assertThat(compter("SELECT count(*) FROM utilisateur WHERE email LIKE '%@demo.jamii.test'")).isEqualTo(6);
 		assertThat(compter("SELECT count(*) FROM utilisateur WHERE email LIKE '%@demo.jamii.test' AND login_github IS NOT NULL")).isZero();
