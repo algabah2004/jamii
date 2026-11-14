@@ -262,7 +262,7 @@ export const handlersHackathons = [
     if (!h) return erreur(404, 'introuvable')
     const { utilisateurId, groupe } = (await request.json()) as { utilisateurId: string; groupe: string | null }
     const personne = PERSONNES.find((p) => p.id === utilisateurId)
-    if (!personne) return HttpResponse.json({ code: 'validation', erreurs: [{ champ: 'utilisateurId', code: 'inconnu' }] }, { status: 400 })
+    if (!personne) return HttpResponse.json({ code: 'validation', erreurs: [{ champ: 'utilisateurId', code: 'introuvable' }] }, { status: 400 })
     const jure: Jure = { personne, groupe, rendusNotes: 0, rendusATraiter: rendus.size }
     jures.set(h.id, [...(jures.get(h.id) ?? []).filter((j) => j.personne.id !== personne.id), jure])
     return HttpResponse.json(jure, { status: 201 })
