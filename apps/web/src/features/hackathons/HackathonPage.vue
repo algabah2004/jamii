@@ -15,12 +15,15 @@ import {
 } from './hackathons'
 import EquipesHackathon from './EquipesHackathon.vue'
 import InscriptionHackathon from './InscriptionHackathon.vue'
+import JuryHackathon from './JuryHackathon.vue'
+import NotationHackathon from './NotationHackathon.vue'
 import RenduEquipe from './RenduEquipe.vue'
 
 /*
  * Un hackathon : son défi, son calendrier, ses critères et ses prix, et ce que la personne qui le lit peut en faire.
  * Les boutons viennent de `moi.actions`, calculé par l'API (qui revérifie chaque action). S'inscrire et former son
- * équipe : `InscriptionHackathon` et `EquipesHackathon` ; rendre son projet : `RenduEquipe`.
+ * équipe : `InscriptionHackathon` et `EquipesHackathon` ; rendre son projet : `RenduEquipe` ;
+ * le jury : `JuryHackathon` (organisateur) et `NotationHackathon` (juré).
  * DESIGN PROVISOIRE : l'écran montre le parcours avec les composants actuels ; son design sera repris avec le design system.
  */
 const { t, locale } = useI18n()
@@ -58,6 +61,8 @@ const monEquipe = computed(() => {
   const h = hackathon.value
   return h?.moi.equipeId && ['en_cours', 'evaluation', 'resultats'].includes(h.statut) ? h.moi.equipeId : null
 })
+/** L'organisateur gère son jury dès la publication, jusqu'aux résultats. */
+const voitJury = computed(() => hackathon.value?.moi.role === 'organisateur' && ['publie', 'en_cours', 'evaluation', 'resultats'].includes(hackathon.value.statut))
 const voitEquipes = computed(() => !['brouillon', 'annule'].includes(hackathon.value?.statut ?? 'brouillon'))
 
 const peut = (nom: string) => (hackathon.value?.moi.actions as string[] | undefined)?.includes(nom) ?? false
@@ -195,6 +200,8 @@ const annuler = () => (raisonValide.value ? agir(() => annulerHackathon(hackatho
       </article>
 
       <InscriptionHackathon v-if="peut('sinscrire') || peut('creer_equipe')" :hackathon="hackathon" @inscrit="rafraichir" />
+      <NotationHackathon v-if="peut('noter')" :hackathon="hackathon" />
+      <JuryHackathon v-if="voitJury" :hackathon="hackathon" />
       <RenduEquipe v-if="monEquipe" :hackathon="hackathon" :equipe-id="monEquipe" />
       <EquipesHackathon v-if="voitEquipes" :hackathon="hackathon" />
     </template>

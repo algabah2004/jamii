@@ -209,3 +209,47 @@ export async function lireRendu(id: string, equipeId: string): Promise<Rendu | n
 
 export const rendre = (id: string, equipeId: string, rendu: NouveauRendu) =>
   resultat<Rendu>(api.PUT('/api/hackathons/{hackathonId}/equipes/{equipeId}/rendu', { params: { path: { hackathonId: id, equipeId } }, body: rendu }))
+
+// ---------------------------------------------------------------- le jury et les notes (#173)
+
+export type Jure = Schemas['Jure']
+export type Notation = Schemas['Notation']
+export type NotesDuJure = Schemas['NotesDuJure']
+
+export const LIMITES_JURY = { groupeMax: 40, commentaireMax: 2000 } as const
+
+/** L'identifiant d'un compte, tiré du lien de son profil Jamii (`…/p/<uuid>`, la page publique de son profil) ou donné tel quel ; `null` sinon. */
+export function lireIdentifiant(texte: string): string | null {
+  const trouve = texte.trim().match(/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/?$/i)
+  return trouve ? trouve[1]!.toLowerCase() : null
+}
+
+export async function listerJures(id: string): Promise<Jure[]> {
+  const { data, error } = await api.GET('/api/hackathons/{hackathonId}/jures', { ...chemin(id) })
+  if (error || !data) throw new Error('jury indisponible')
+  return data
+}
+
+export const inviterJure = (id: string, utilisateurId: string, groupe: string | null) =>
+  resultat<Jure>(api.POST('/api/hackathons/{hackathonId}/jures', { ...chemin(id), body: { utilisateurId, groupe } }))
+
+/** Les rendus à noter (juré) ou tous les rendus (organisateur). */
+export async function listerRendus(id: string): Promise<Rendu[]> {
+  const { data, error } = await api.GET('/api/hackathons/{hackathonId}/rendus', { params: { path: { hackathonId: id }, query: { limite: 100 } } })
+  if (error || !data) throw new Error('rendus indisponibles')
+  return (data.elements ?? []) as Rendu[]
+}
+
+export const noter = (id: string, renduId: string, notes: { critereId: string; valeur: number }[], commentaire: string | null) =>
+  resultat<NotesDuJure>(
+    api.PUT('/api/hackathons/{hackathonId}/rendus/{renduId}/notes', { params: { path: { hackathonId: id, renduId } }, body: { notes, commentaire } }),
+  )
+
+export async function suivreNotation(id: string): Promise<Notation> {
+  const { data, error } = await api.GET('/api/hackathons/{hackathonId}/notation', { ...chemin(id) })
+  if (error || !data) throw new Error('notation indisponible')
+  return data
+}
+
+/** Le lien de l'export CSV des notes (organisateur) : le navigateur le télécharge avec la session en cours. */
+export const lienExportNotes = (id: string) => `/api/hackathons/${encodeURIComponent(id)}/notes.csv`

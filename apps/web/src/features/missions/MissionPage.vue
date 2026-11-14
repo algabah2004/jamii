@@ -4,6 +4,8 @@ import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute } from 'vue-router'
 import { JAvatar, JBouton, JSquelette } from '../../design-system'
 import { fermerMission, formaterMontant, lireMission, publierMission, type Mission, type Resultat } from './missions'
+import DevisPropose from './DevisPropose.vue'
+import EnvoyerDevis from './EnvoyerDevis.vue'
 import PropositionsMission from './PropositionsMission.vue'
 import ProposerMission from './ProposerMission.vue'
 import SuiviMission from './SuiviMission.vue'
@@ -11,7 +13,7 @@ import SuiviMission from './SuiviMission.vue'
 /*
  * Une mission : son annonce, et ce que la personne qui la lit peut en faire. Les boutons viennent de `moi.actions`,
  * calculé par l'API (qui revérifie chaque action). Les propositions sont dans `ProposerMission` et `PropositionsMission`,
- * le suivi du travail dans `SuiviMission`, pour le client et le développeur retenu.
+ * le devis dans `EnvoyerDevis` et `DevisPropose`, le suivi du travail dans `SuiviMission`.
  * DESIGN PROVISOIRE : l'écran montre le parcours avec les composants actuels ; son design sera repris avec le design system.
  */
 const { t, locale } = useI18n()
@@ -42,7 +44,13 @@ async function rafraichir() {
     // La mission affichée reste juste ; la prochaine action la relira.
   }
 }
-const voitPropositions = computed(() => mission.value?.statut !== 'brouillon' && ['client', 'candidat'].includes(mission.value?.moi.role ?? ''))
+const devisAccepte = computed(() => Boolean(mission.value?.travail?.devis.accepteLe))
+/** Le client choisit parmi les propositions tant que la mission n'est pas attribuée ; un candidat voit toujours la sienne. */
+const voitPropositions = computed(() => {
+  const m = mission.value
+  if (!m) return false
+  return m.moi.role === 'candidat' || (m.moi.role === 'client' && ['publiee', 'fermee'].includes(m.statut))
+})
 
 const peut = (nom: string) => (mission.value?.moi.actions as string[] | undefined)?.includes(nom) ?? false
 const budget = computed(() => (mission.value?.budget ? formaterMontant(mission.value.budget, locale.value) : t('missions.budgetADiscuter')))
@@ -136,7 +144,9 @@ async function agir(appel: (id: string, version: number) => Promise<Resultat<Mis
 
       <ProposerMission v-if="peut('proposer')" :mission="mission" @envoyee="rafraichir" />
       <PropositionsMission v-if="voitPropositions" :mission="mission" @maj="mission = $event" @recharger="rafraichir" />
-      <SuiviMission v-if="mission.travail" :mission="mission" :travail="mission.travail" @maj="mission = $event" />
+      <DevisPropose v-if="mission.travail && !devisAccepte" :mission="mission" :travail="mission.travail" @maj="mission = $event" />
+      <EnvoyerDevis v-if="peut('envoyer_devis')" :mission="mission" :remplace="Boolean(mission.travail)" @envoye="rafraichir" />
+      <SuiviMission v-if="mission.travail && devisAccepte" :mission="mission" :travail="mission.travail" @maj="mission = $event" />
     </template>
   </section>
 </template>
