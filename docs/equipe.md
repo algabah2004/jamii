@@ -4,13 +4,22 @@ On travaille **par gros blocs de bout en bout** : chacun possède une fonctionna
 
 ## Qui fait quoi
 
-| Bloc | Responsable | Ticket | Territoire dans le code |
+> **Depuis le samedi 14 novembre 2026 : un module par personne** (décision de l'équipe). Les packages de l'API sont dans `apps/api/src/main/java/dev/jamii/api/`, les écrans dans `apps/web/src/features/`.
+
+| Module | Responsable | Ticket | Territoire dans le code |
 |---|---|---|---|
-| 🧱 **Socle API + Projets d'équipe** | `@sowibrr` | [#17](https://github.com/algabah2004/jamii/issues/17) | `apps/api` (socle, package `projets`), `contracts/socle.yaml`, `contracts/projets.yaml` |
-| 💬 **Communautés et entraide + ossature du front + espace Systalink** | `@Amar233-ui` | [#18](https://github.com/algabah2004/jamii/issues/18) | `apps/web` (ossature, `features/communautes`, `features/vitrine`, `features/systalink`), package `communautes`, `contracts/communautes.yaml` |
-| 🎨 **Design system + Profil prouvé** | `@rev22rse22` | [#19](https://github.com/algabah2004/jamii/issues/19) | `apps/web/src/design-system`, `features/profils`, package `profils`, `contracts/profils.yaml` |
-| 🤖 **Assistant de projet IA + mise en ligne Systalink** | `@boubacarsidibe` | [#20](https://github.com/algabah2004/jamii/issues/20) | `services/ia`, package `deploiement`, `contracts/ia.yaml`, `contracts/deploiement.yaml`, configuration DataCloud |
-| 🧭 **Chef de projet, produit et démo** | `@algabah2004` | #1, #10 | Revue de toutes les PR, intégration entre les blocs, entretiens utilisateurs, démo |
+| 💬 **Communautés façon Discord** (salons, appels, profils) | `@rev22rse22` | [#155](https://github.com/algabah2004/jamii/issues/155) | API `communautes`, `reseau`, `profils` · écrans `communautes`, `reseau`, `profils`, `design-system` · contrats `communautes`, `reseau`, `profils` |
+| 🤖 **Agents IA et Systalink** | `@algabah2004` | [#156](https://github.com/algabah2004/jamii/issues/156) | `services/ia` · API `systalink`, `deploiement`, `demo` · écran `systalink` · contrats `ia`, `deploiement`, `systalink` · DataCloud et CI |
+| 🔁 **Cercles et collaboration (Gitea)** | `@Amar233-ui` | [#157](https://github.com/algabah2004/jamii/issues/157) | API `cercles`, `projets`, `vitrine` · écrans `cercles`, `vitrine` · contrats `cercles`, `projets`, `vitrine` · ossature du front (`router.ts`, `App.vue`, traductions) |
+| 🧾 **Freelance** (besoin → cahier des charges → publication) | `@sowibrr` | [#158](https://github.com/algabah2004/jamii/issues/158) | API `demandes`, `auth` (socle) · écrans `demandes` et connexion · contrats `demandes`, `socle` |
+| 🧭 **Chef de projet, produit et démo** | `@algabah2004` | #1, #10 | Revue de toutes les PR, intégration entre les modules, démo |
+
+### Travailler sans se bloquer
+
+- **Entre deux modules, seulement un contrat ou un événement public.** Un module expose une interface publique (comme `systalink.ChiffresDesModules`) ou publie un événement (comme `communautes.ReponseAcceptee`, ou `demandes.DemandePubliee`). L'autre module l'utilise sans jamais lire ses tables ni ses classes internes. `ModulesTest` (Spring Modulith) fait échouer la CI sinon.
+- **Les agents IA ne s'appellent que par `contracts/ia.yaml`.** Le module freelance ne code pas d'IA : il demande une tâche à @algabah2004.
+- **Les migrations SQL sont horodatées** (`V20261114_1530__salons.sql`, l'heure GMT à laquelle tu l'écris) : deux modules ne prennent jamais le même numéro. Si une migration plus récente que la tienne est fusionnée avant toi, renomme la tienne avec l'heure actuelle avant de fusionner (Flyway refuse une migration plus ancienne que la dernière appliquée).
+- **`CODEOWNERS`** demande la relecture du propriétaire du module touché.
 
 Le **plan de chaque bloc** est dans [`docs/blocs/`](blocs/README.md). C'est un **point de départ** que son responsable réécrit à sa façon. Seuls le **but** et le critère **« terminé quand »** sont fixés par le chef de projet. Les tickets GitHub servent au suivi au jour le jour.
 

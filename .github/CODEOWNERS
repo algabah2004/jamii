@@ -1,2 +1,45 @@
 # Le chef de projet est ajouté comme relecteur de chaque PR. Son approbation n'est pas obligatoire pour fusionner.
+# Un module par personne depuis le 14 novembre (docs/equipe.md) : le propriétaire du module touché est aussi demandé.
+# La dernière ligne qui correspond l'emporte : chaque ligne répète donc @algabah2004.
 * @algabah2004
+
+# 💬 Communautés façon Discord : @rev22rse22
+/apps/api/src/main/java/dev/jamii/api/communautes/ @rev22rse22 @algabah2004
+/apps/api/src/main/java/dev/jamii/api/reseau/ @rev22rse22 @algabah2004
+/apps/api/src/main/java/dev/jamii/api/profils/ @rev22rse22 @algabah2004
+/apps/web/src/features/communautes/ @rev22rse22 @algabah2004
+/apps/web/src/features/reseau/ @rev22rse22 @algabah2004
+/apps/web/src/features/profils/ @rev22rse22 @algabah2004
+/apps/web/src/design-system/ @rev22rse22 @algabah2004
+/contracts/communautes.yaml @rev22rse22 @algabah2004
+/contracts/reseau.yaml @rev22rse22 @algabah2004
+/contracts/profils.yaml @rev22rse22 @algabah2004
+
+# 🤖 Agents IA et Systalink : @algabah2004
+/services/ia/ @algabah2004
+/apps/api/src/main/java/dev/jamii/api/systalink/ @algabah2004
+/apps/api/src/main/java/dev/jamii/api/deploiement/ @algabah2004
+/apps/api/src/main/java/dev/jamii/api/demo/ @algabah2004
+/apps/web/src/features/systalink/ @algabah2004
+/contracts/ia.yaml @algabah2004
+/contracts/deploiement.yaml @algabah2004
+/contracts/systalink.yaml @algabah2004
+
+# 🔁 Cercles et collaboration : @Amar233-ui
+/apps/api/src/main/java/dev/jamii/api/cercles/ @Amar233-ui @algabah2004
+/apps/api/src/main/java/dev/jamii/api/projets/ @Amar233-ui @algabah2004
+/apps/api/src/main/java/dev/jamii/api/vitrine/ @Amar233-ui @algabah2004
+/apps/web/src/features/cercles/ @Amar233-ui @algabah2004
+/apps/web/src/features/vitrine/ @Amar233-ui @algabah2004
+/apps/web/src/router.ts @Amar233-ui @algabah2004
+/apps/web/src/App.vue @Amar233-ui @algabah2004
+/contracts/cercles.yaml @Amar233-ui @algabah2004
+/contracts/projets.yaml @Amar233-ui @algabah2004
+/contracts/vitrine.yaml @Amar233-ui @algabah2004
+
+# 🧾 Freelance : @sowibrr
+/apps/api/src/main/java/dev/jamii/api/demandes/ @sowibrr @algabah2004
+/apps/api/src/main/java/dev/jamii/api/auth/ @sowibrr @algabah2004
+/apps/web/src/features/demandes/ @sowibrr @algabah2004
+/contracts/demandes.yaml @sowibrr @algabah2004
+/contracts/socle.yaml @sowibrr @algabah2004
