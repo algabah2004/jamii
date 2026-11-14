@@ -206,3 +206,16 @@ export async function retirerProposition(id: string, propositionId: string): Pro
   })
   return response.ok ? { ok: true, valeur: true } : { ok: false, ...echec(error) }
 }
+
+// ---------------------------------------------------------------- le devis (#177)
+
+export type Devis = Schemas['Devis']
+export type NouveauDevis = Schemas['NouveauDevis']
+
+export const LIMITES_DEVIS = { jalonsMax: 10, titreMin: 3, titreMax: 120, delaiMin: 1, delaiMax: 365, retouchesMax: 10, conditionsMax: 4000 } as const
+
+export const envoyerDevis = (id: string, devis: NouveauDevis) =>
+  resultat<Devis>(api.POST('/api/missions/{missionId}/devis', { ...chemin(id), body: devis }))
+
+export const accepterDevis = (id: string, devisId: string, version: number) =>
+  resultat<Mission>(api.POST('/api/missions/{missionId}/devis/{devisId}/accepter', { params: { path: { missionId: id, devisId } }, body: { version } }))
