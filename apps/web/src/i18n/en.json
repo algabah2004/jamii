@@ -8,7 +8,9 @@
     "communautes": "Communities",
     "allerAuContenu": "Skip to content",
     "demandes": "Requests",
-    "systalinkCourt": "Systalink"
+    "systalinkCourt": "Systalink",
+    "missions": "Missions",
+    "hackathons": "Hackathons"
   },
   "connexion": {
     "github": "Sign in with GitHub",
