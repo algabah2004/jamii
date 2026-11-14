@@ -81,8 +81,10 @@ class HackathonsController {
 		Hackathons.Page page = hackathons.lister(statut, limite, curseur);
 		Map<UUID, Compte> organisateurs = annuaire.lire(page.elements().stream().map(Hackathons.Hackathon::organisateurId).distinct().toList());
 		Instant maintenant = hackathons.maintenant();
+		Map<UUID, Integer> nombres = hackathons.nombresInscrits(page.elements().stream().map(Hackathons.Hackathon::id).toList());
 		return new PageHackathons(page.elements().stream()
-			.map(h -> resume(h, organisateurs.get(h.organisateurId()), maintenant)).toList(), page.curseurSuivant());
+			.map(h -> resume(h, organisateurs.get(h.organisateurId()), maintenant, nombres.getOrDefault(h.id(), 0))).toList(),
+			page.curseurSuivant());
 	}
 
 	@PostMapping
@@ -128,15 +130,16 @@ class HackathonsController {
 		String statut = h.statut(maintenant);
 		Compte organisateur = annuaire.lire(h.organisateurId()).orElse(null);
 		return new HackathonVue(h.id(), h.titre(), h.theme(), h.lieu(), h.ville(), statut, h.calendrier().debutLe(),
-				h.calendrier().finRendusLe(), personne(h.organisateurId(), organisateur), 0, h.description(), h.calendrier(),
+				h.calendrier().finRendusLe(), personne(h.organisateurId(), organisateur),
+				hackathons.nombresInscrits(List.of(h.id())).getOrDefault(h.id(), 0), h.description(), h.calendrier(),
 				new TailleEquipe(h.tailleMin(), h.tailleMax()), h.modeInscription(), h.deploiementObligatoire(), h.codeDeConduite(),
 				h.questions(), h.criteres(), h.prix(), h.version(), h.creeLe(),
-				new Moi(l.role(), null, actions(l, statut, qui, h, maintenant)));
+				new Moi(l.role(), l.equipeId(), actions(l, statut, qui, h, maintenant)));
 	}
 
-	private static HackathonResume resume(Hackathons.Hackathon h, Compte organisateur, Instant maintenant) {
+	private static HackathonResume resume(Hackathons.Hackathon h, Compte organisateur, Instant maintenant, int inscrits) {
 		return new HackathonResume(h.id(), h.titre(), h.theme(), h.lieu(), h.ville(), h.statut(maintenant),
-				h.calendrier().debutLe(), h.calendrier().finRendusLe(), personne(h.organisateurId(), organisateur), 0);
+				h.calendrier().debutLe(), h.calendrier().finRendusLe(), personne(h.organisateurId(), organisateur), inscrits);
 	}
 
 	private static PersonneResume personne(UUID id, Compte compte) {
@@ -146,16 +149,26 @@ class HackathonsController {
 	/** Ce que la personne peut faire ; le front en tire ses boutons, et chaque route revérifie. */
 	private static List<String> actions(Hackathons.Lecture l, String statut, UUID qui, Hackathons.Hackathon h, Instant maintenant) {
 		if ("organisateur".equals(l.role())) {
-			return switch (statut) {
+			List<String> actions = new ArrayList<>(switch (statut) {
 				case "brouillon" -> List.of("modifier", "publier");
 				case "publie" -> List.of("modifier", "annuler");
 				case "en_cours" -> List.of("annuler");
 				default -> List.of();
-			};
+			});
+			if ("candidature".equals(h.modeInscription()) && ("publie".equals(statut) || "en_cours".equals(statut))) {
+				actions.add("trier_inscriptions");
+			}
+			return actions;
 		}
 		boolean inscriptionsOuvertes = "publie".equals(statut) && h.calendrier().inscriptionsOuvertesLe().isBefore(maintenant)
 				&& h.calendrier().inscriptionsFermeesLe().isAfter(maintenant);
-		return qui != null && inscriptionsOuvertes ? List.of("sinscrire") : List.of();
+		if (qui == null || !inscriptionsOuvertes) {
+			return List.of();
+		}
+		if ("participant".equals(l.role())) {
+			return l.equipeId() == null ? List.of("creer_equipe") : List.of("inviter");
+		}
+		return List.of("sinscrire");
 	}
 
 	// ---------------------------------------------------------------- lecture du corps
