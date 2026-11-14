@@ -6,6 +6,7 @@ import { JAvatar, JBouton, JChamp, JDeplier, JSquelette } from '../../design-sys
 import { useSession } from '../../session'
 import ProfilsRecommandes from '../reseau/ProfilsRecommandes.vue'
 import PartagerCercle from './PartagerCercle.vue'
+import CodeDuTour from './CodeDuTour.vue'
 import { avantTirage, deposerIdee, LIMITES, lireAvancement, lireCercle, livrerTour, ordreDePassage, positionsAnneau, pourcentage, rejoindreCercle, tirerAuSort, titreDuTour, tourEnCours, type Avancement, type Cercle, type Resultat } from './cercles'
 
 /*
@@ -165,14 +166,7 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
               </div>
               <p>{{ t('cercles.taches', { faites: suivi.faites, total: suivi.total }) }} · {{ t('cercles.joursRestants', { n: suivi.joursRestants }, suivi.joursRestants) }}</p>
             </div>
-            <a v-if="tour.depot" :href="tour.depot.url" class="depot" target="_blank" rel="noopener noreferrer" data-test="depot">
-              <span class="depot__icone" aria-hidden="true">⎇</span>
-              <span>
-                <strong>{{ t('cercles.depot') }}</strong>
-                <span class="depot__url">{{ tour.depot.url.replace(/^https?:\/\//, '') }}</span>
-              </span>
-              <span class="visuellement-cache">({{ t('vitrine.nouvelOnglet') }})</span>
-            </a>
+            <CodeDuTour :key="`${cercle.id}-${tour.numero}`" :cercle-id="cercle.id" :numero="tour.numero" />
             <template v-if="peutLivrer">
               <JDeplier>
                 <JBouton v-if="!confirmerLivraison" variante="secondaire" data-test="livrer" @click="confirmerLivraison = true">{{ t('cercles.livrer') }}</JBouton>
@@ -315,15 +309,6 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
 .avancement p { margin: 0; color: var(--ink-muted); font-size: var(--type-body-sm-size); }
 .avancement__barre { height: 10px; border-radius: var(--radius-pill); background: var(--surface-sunken, color-mix(in srgb, var(--ink) 8%, transparent)); overflow: hidden; }
 .avancement__barre i { display: block; height: 100%; border-radius: inherit; background: var(--action); animation: remplit var(--motion-celebrate) var(--ease-out) both; transform-origin: left; }
-.depot {
-  display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--line); border-radius: var(--radius-md); color: var(--ink); text-decoration: none;
-  transition: border-color var(--motion-fast) var(--ease-out);
-}
-.depot:hover { border-color: var(--action); }
-.depot__icone { display: grid; place-items: center; width: 36px; height: 36px; border-radius: var(--radius-md); background: var(--action-soft); color: var(--action-ink); font-size: 1.1rem; }
-.depot > span:nth-child(2) { display: grid; min-width: 0; }
-.depot__url { color: var(--ink-muted); font-size: var(--type-body-sm-size); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .point { display: grid; gap: var(--space-2); padding: var(--space-5, 1.25rem) var(--space-6); border-radius: var(--radius-lg); background: var(--bg); color: var(--ink); }
 .point__qui { margin: 0; font-size: var(--type-body-sm-size); color: var(--action-ink); font-weight: 700; }

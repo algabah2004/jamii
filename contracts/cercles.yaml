@@ -223,6 +223,52 @@ paths:
         '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
         '409': { $ref: './socle.yaml#/components/responses/Conflit' }
 
+  /api/cercles/{cercleId}/tours/{numero}/activite:
+    parameters:
+      - $ref: '#/components/parameters/CercleId'
+      - name: numero
+        in: path
+        required: true
+        description: Le numéro du tour, à partir de 1.
+        schema: { type: integer, minimum: 1, maximum: 6 }
+    get:
+      tags: [tours]
+      operationId: activiteDuTour
+      summary: Ce qui se passe dans le dépôt du tour (derniers commits et demandes de fusion)
+      description: |
+        La collaboration se voit **dans Jamii** : l'API lit le dépôt du tour chez son fournisseur (GitHub aujourd'hui,
+        Gitea demain, `DEPOT_CODE`) et le résume. Lecture seule : on code, on pousse et on fusionne chez le fournisseur.
+
+        Toujours `200` quand le tour existe, avec un `etat` :
+        - `aucun_depot` : le tour n'a pas (encore) de dépôt ;
+        - `indisponible` : le fournisseur ne répond pas ou refuse. Les listes sont vides, le lien du dépôt reste utilisable ;
+        - `disponible` : les listes sont remplies.
+
+        Gardée **1 minute** en mémoire par dépôt : toute une salle qui regarde le même tour ne fait qu'un appel au
+        fournisseur par minute. Visible par tout utilisateur connecté si les dépôts sont publics ; réservée aux membres du
+        cercle (`403 pas_membre`) si les dépôts sont privés (`GITHUB_DEPOTS_PRIVES=true`).
+      security:
+        - session: []
+      responses:
+        '200':
+          description: L'activité du dépôt.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ActiviteDepot' }
+              examples:
+                demo:
+                  value:
+                    etat: disponible
+                    depot: { fournisseur: github, url: 'https://github.com/jamii-cercles/cercle-de-dakar-tour-2-3f2a9c1e', cloneUrl: 'https://github.com/jamii-cercles/cercle-de-dakar-tour-2-3f2a9c1e.git' }
+                    luLe: '2026-11-14T21:00:00Z'
+                    commits:
+                      - { sha: 9fceb02d0ae598e95dc970b74767f19372d61af8, message: 'Écran de caisse hors ligne', auteur: { login: kofi-m, avatarUrl: 'https://avatars.githubusercontent.com/u/1' }, date: '2026-11-14T20:41:00Z', url: 'https://github.com/jamii-cercles/cercle-de-dakar-tour-2-3f2a9c1e/commit/9fceb02' }
+                    demandesDeFusion:
+                      - { numero: 3, titre: 'Synchronisation au retour du réseau', etat: ouverte, auteur: { login: awa-d, avatarUrl: 'https://avatars.githubusercontent.com/u/2' }, misAJourLe: '2026-11-14T20:12:00Z', url: 'https://github.com/jamii-cercles/cercle-de-dakar-tour-2-3f2a9c1e/pull/3' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+
 components:
   securitySchemes:
     session: { $ref: './socle.yaml#/components/securitySchemes/session' }
@@ -343,6 +389,62 @@ components:
         fournisseur: { type: string, enum: [gitea, github] }
         url: { type: string, format: uri, pattern: '^https://', description: La page du dépôt. }
         cloneUrl: { type: string, format: uri, pattern: '^https://', description: L'adresse à cloner. }
+
+    ActiviteDepot:
+      type: object
+      required: [etat, depot, luLe, commits, demandesDeFusion]
+      properties:
+        etat: { type: string, enum: [disponible, indisponible, aucun_depot] }
+        depot:
+          oneOf:
+            - $ref: '#/components/schemas/Depot'
+            - type: 'null'
+        luLe: { type: string, format: date-time, description: Moment de la lecture chez le fournisseur (jusqu'à 1 minute). }
+        commits:
+          type: array
+          maxItems: 10
+          description: Les 10 derniers commits de la branche par défaut, du plus récent au plus ancien.
+          items: { $ref: '#/components/schemas/Commit' }
+        demandesDeFusion:
+          type: array
+          maxItems: 10
+          description: Les 10 demandes de fusion (pull requests) mises à jour le plus récemment, ouvertes ou non.
+          items: { $ref: '#/components/schemas/DemandeDeFusion' }
+
+    AuteurDepot:
+      type: object
+      description: Le compte chez le fournisseur. `null` quand le commit n'est relié à aucun compte.
+      required: [login, avatarUrl]
+      properties:
+        login: { type: string }
+        avatarUrl: { type: [string, 'null'], format: uri }
+
+    Commit:
+      type: object
+      required: [sha, message, auteur, date, url]
+      properties:
+        sha: { type: string, minLength: 7, maxLength: 64 }
+        message: { type: string, maxLength: 200, description: 'La première ligne seulement, coupée à 200 caractères.' }
+        auteur:
+          oneOf:
+            - $ref: '#/components/schemas/AuteurDepot'
+            - type: 'null'
+        date: { type: string, format: date-time }
+        url: { type: string, format: uri, pattern: '^https://' }
+
+    DemandeDeFusion:
+      type: object
+      required: [numero, titre, etat, auteur, misAJourLe, url]
+      properties:
+        numero: { type: integer, minimum: 1 }
+        titre: { type: string, maxLength: 200 }
+        etat: { type: string, enum: [ouverte, fusionnee, fermee] }
+        auteur:
+          oneOf:
+            - $ref: '#/components/schemas/AuteurDepot'
+            - type: 'null'
+        misAJourLe: { type: string, format: date-time }
+        url: { type: string, format: uri, pattern: '^https://' }
 
     Tirage:
       type: object

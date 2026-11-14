@@ -10,6 +10,7 @@ type Personne = MembreCercle['personne']
 // Les réponses suivent contracts/cercles.yaml ; le tirage du mock mélange au hasard, le vrai est fait par le serveur.
 const JOUR = 86_400_000
 const ilYa = (jours: number) => new Date(Date.now() - jours * JOUR).toISOString()
+const ilYaHeures = (heures: number) => new Date(Date.now() - heures * 3_600_000).toISOString()
 
 const AWA = '6f1c2a4e-8b7d-4c3e-9a10-2b5d7e9f0a11'
 const p = (id: string, nom: string): Personne => ({ id, nom, avatarUrl: null })
@@ -123,6 +124,33 @@ export const handlersCercles = [
     }
     cercles.unshift(cercle)
     return HttpResponse.json(cercle, { status: 201 })
+  }),
+  // Le code du tour (contracts/cercles.yaml, activiteDuTour) : ce que l'API lirait dans le dépôt GitHub du tour.
+  http.get('/api/cercles/:id/tours/:numero/activite', ({ params }) => {
+    const c = trouver(params.id)
+    const tour = c?.tours.find((x) => x.numero === Number(params.numero))
+    if (!c || !tour) return erreur('introuvable', 404)
+    if (!tour.depot) {
+      return HttpResponse.json({ etat: 'aucun_depot', depot: null, luLe: ilYa(0), commits: [], demandesDeFusion: [] })
+    }
+    const base = tour.depot.url
+    const login = (i: number) => slug(PERSONNES[i]!.personne.nom)
+    const commit = (sha: string, message: string, i: number, heures: number) => ({
+      sha, message, auteur: { login: login(i), avatarUrl: null }, date: ilYaHeures(heures), url: `${base}/commit/${sha}`,
+    })
+    return HttpResponse.json({
+      etat: 'disponible', depot: tour.depot, luLe: ilYa(0),
+      commits: [
+        commit('9fceb02d0ae598e95dc970b74767f19372d61af8', "Réservation d'un trajet depuis la carte", 1, 1),
+        commit('7c41a3e0b2d94f6a8e15c0d7b9f2a6e4c3d1b0a9', 'Notifications SMS au conducteur', 2, 5),
+        commit('3e8d6f1a9b7c4e2d0f5a8b6c1e9d7f3a2b4c6e8d', 'Écran de connexion par numéro de téléphone', 0, 26),
+        commit('b2a4c6e8d0f1a3b5c7d9e1f3a5b7c9d1e3f5a7b9', 'Premier commit : README et structure du projet', 0, 50),
+      ],
+      demandesDeFusion: [
+        { numero: 3, titre: 'Paiement mobile du trajet', etat: 'ouverte', auteur: { login: login(3), avatarUrl: null }, misAJourLe: ilYaHeures(2), url: `${base}/pull/3` },
+        { numero: 2, titre: 'Carte des trajets proches', etat: 'fusionnee', auteur: { login: login(1), avatarUrl: null }, misAJourLe: ilYaHeures(20), url: `${base}/pull/2` },
+      ],
+    })
   }),
   http.get('/api/cercles/:id', ({ params }) => {
     const c = trouver(params.id)

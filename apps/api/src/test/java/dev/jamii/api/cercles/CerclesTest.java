@@ -52,16 +52,37 @@ class CerclesTest {
 
 	static final List<DepotCode.DemandeDepot> DEMANDES_DEPOT = java.util.Collections.synchronizedList(new ArrayList<>());
 
+	/** L'activité que rendra le fournisseur (null : il ne répond pas), et si ses dépôts sont privés. */
+	static final AtomicReference<DepotCode.Activite> ACTIVITE = new AtomicReference<>();
+
+	static final java.util.concurrent.atomic.AtomicBoolean PRIVES = new java.util.concurrent.atomic.AtomicBoolean();
+
+	static final java.util.concurrent.atomic.AtomicInteger APPELS_ACTIVITE = new java.util.concurrent.atomic.AtomicInteger();
+
 	@TestConfiguration(proxyBeanMethods = false)
 	static class DepotSimule {
 
 		@Bean
 		@Primary
 		DepotCode depotCode() {
-			return demande -> {
-				DEMANDES_DEPOT.add(demande);
-				var comportement = DEPOT.get();
-				return comportement == null ? Optional.empty() : comportement.apply(demande);
+			return new DepotCode() {
+				@Override
+				public Optional<DepotDuTour> creerDepot(DemandeDepot demande) {
+					DEMANDES_DEPOT.add(demande);
+					var comportement = DEPOT.get();
+					return comportement == null ? Optional.empty() : comportement.apply(demande);
+				}
+
+				@Override
+				public Optional<Activite> activite(DepotDuTour depot) {
+					APPELS_ACTIVITE.incrementAndGet();
+					return Optional.ofNullable(ACTIVITE.get());
+				}
+
+				@Override
+				public boolean prives() {
+					return PRIVES.get();
+				}
 			};
 		}
 
@@ -80,6 +101,9 @@ class CerclesTest {
 	void remettreLesSimulations() {
 		DEPOT.set(null);
 		DEMANDES_DEPOT.clear();
+		ACTIVITE.set(null);
+		PRIVES.set(false);
+		APPELS_ACTIVITE.set(0);
 	}
 
 	// ---------------------------------------------------------------- aides
@@ -667,6 +691,74 @@ class CerclesTest {
 		finally {
 			pool.shutdownNow();
 		}
+	}
+
+
+	// ---------------------------------------------------------------- activité du dépôt d'un tour
+
+	/** Un dépôt par cercle : le cache d'une minute ne mélange jamais deux tests. */
+	private void avecDepot() {
+		DEPOT.set(demande -> Optional.of(new DepotCode.DepotDuTour("github",
+				"https://github.com/jamii-cercles/" + demande.cercleId() + "-tour-" + demande.numero(),
+				"https://github.com/jamii-cercles/" + demande.cercleId() + "-tour-" + demande.numero() + ".git")));
+	}
+
+	@Test
+	void l_activite_du_depot_du_tour_se_lit_dans_jamii_et_reste_une_minute_en_memoire() {
+		avecDepot();
+		ACTIVITE.set(new DepotCode.Activite(
+				List.of(new DepotCode.Commit("9fceb02", "Écran de caisse", new DepotCode.Auteur("kofi", null),
+						Instant.parse("2026-11-14T20:41:00Z"), "https://github.com/jamii-cercles/x/commit/9fceb02")),
+				List.of(new DepotCode.DemandeDeFusion(3, "Synchronisation", "ouverte", null,
+						Instant.parse("2026-11-14T20:12:00Z"), "https://github.com/jamii-cercles/x/pull/3"))));
+		Pret pret = cercleTire();
+		UtilisateurConnecte curieux = utilisateur("Curieux");
+
+		var json = assertThat(lire("/api/cercles/" + pret.id() + "/tours/1/activite", curieux)).hasStatusOk().bodyJson();
+		json.extractingPath("$.etat").isEqualTo("disponible");
+		json.extractingPath("$.depot.fournisseur").isEqualTo("github");
+		json.extractingPath("$.commits[0].message").isEqualTo("Écran de caisse");
+		json.extractingPath("$.commits[0].auteur.login").isEqualTo("kofi");
+		json.extractingPath("$.demandesDeFusion[0].etat").isEqualTo("ouverte");
+		json.extractingPath("$.demandesDeFusion[0].auteur").isNull();
+
+		assertThat(lire("/api/cercles/" + pret.id() + "/tours/1/activite", pret.createur())).hasStatusOk();
+		assertThat(APPELS_ACTIVITE.get()).as("le deuxième affichage vient de la mémoire").isEqualTo(1);
+	}
+
+	@Test
+	void un_tour_sans_depot_ou_un_fournisseur_muet_ne_casse_pas_la_page() {
+		Pret sansDepot = cercleTire();
+		assertThat(lire("/api/cercles/" + sansDepot.id() + "/tours/1/activite", sansDepot.createur())).hasStatusOk()
+			.bodyJson().extractingPath("$.etat").isEqualTo("aucun_depot");
+
+		avecDepot();
+		Pret muet = cercleTire();
+		var json = assertThat(lire("/api/cercles/" + muet.id() + "/tours/1/activite", muet.createur())).hasStatusOk().bodyJson();
+		json.extractingPath("$.etat").isEqualTo("indisponible");
+		json.extractingPath("$.depot.url").asString().startsWith("https://github.com/jamii-cercles/");
+		json.extractingPath("$.commits").asArray().isEmpty();
+	}
+
+	@Test
+	void avec_des_depots_prives_seuls_les_membres_voient_l_activite() {
+		avecDepot();
+		PRIVES.set(true);
+		Pret pret = cercleTire();
+
+		var refus = lire("/api/cercles/" + pret.id() + "/tours/1/activite", utilisateur("Curieux"));
+		assertThat(refus).hasStatus(HttpStatus.FORBIDDEN);
+		assertThat(refus).bodyJson().extractingPath("$.code").isEqualTo("pas_membre");
+		assertThat(lire("/api/cercles/" + pret.id() + "/tours/1/activite", pret.createur())).hasStatusOk();
+	}
+
+	@Test
+	void un_tour_qui_n_existe_pas_repond_404() {
+		Pret ouvert = cercleComplet();
+		assertThat(lire("/api/cercles/" + ouvert.id() + "/tours/1/activite", ouvert.createur()))
+			.as("avant le tirage, aucun tour n'existe").hasStatus(HttpStatus.NOT_FOUND);
+		Pret tire = cercleTire();
+		assertThat(lire("/api/cercles/" + tire.id() + "/tours/9/activite", tire.createur())).hasStatus(HttpStatus.NOT_FOUND);
 	}
 
 }
