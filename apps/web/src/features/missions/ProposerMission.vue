@@ -16,12 +16,16 @@ const id = useId()
 const message = ref('')
 const prix = ref('')
 const devise = ref<string>(props.mission.budget?.devise ?? 'XOF')
-const delai = ref('')
+// Un champ `type="number"` rend un nombre une fois rempli : on relit la saisie en texte.
+const delai = ref<string | number>('')
 const envoi = ref(false)
 const code = ref<string | null>(null)
 
 const montant = computed(() => versMontant(prix.value, devise.value))
-const jours = computed(() => (/^\d+$/.test(delai.value.trim()) ? Number(delai.value.trim()) : null))
+const jours = computed(() => {
+  const texte = String(delai.value).trim()
+  return /^\d+$/.test(texte) ? Number(texte) : null
+})
 const delaiValide = computed(() => jours.value !== null && jours.value >= LIMITES_PROPOSITION.delaiMin && jours.value <= LIMITES_PROPOSITION.delaiMax)
 const pret = computed(() => message.value.trim().length >= LIMITES_PROPOSITION.messageMin && montant.value !== null && delaiValide.value)
 const erreur = computed(() => {
