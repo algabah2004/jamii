@@ -30,7 +30,7 @@
 | **Mer 11** | API et service IA **déployés sur DataCloud** (URL publique de `/health`). Fusion #34, #37, #39. **Squelette du front en ligne** (Vue, connexion GitHub, page profil vide) | Socle : @sowibrr · IA : @boubacarsidibe · Front : @Amar233-ui |
 | **Jeu 12** | Étapes 2 et 3 dans l'interface : profil généré depuis GitHub ; formulaire de besoin PME → plan affiché | Profil : @rev22rse22 · Projets + IA : @sowibrr, @boubacarsidibe |
 | **Ven 13** | **Cercles de bout en bout** : création, tirage, tour, livraison vers la vitrine, espace Systalink. **Données de démo** : 3 cercles, dont celui de Dakar (Awa, Kofi, Fatou, Moussa, Nia, Yann), et une soixantaine de profils et de projets | Tous (détail dans [priorites.md](priorites.md)) |
-| **Sam 14** | **Gel des fonctionnalités à 12 h.** Corrections, répétition de la démo, **vidéo de secours**, README final, déclaration de l'IA et liste des licences (résumé du job CI « Licences autorisées ») | Tous |
+| **Sam 14** | Dernières fonctionnalités (pas de gel, CI verte obligatoire), corrections, répétition de la démo, **vidéo de secours**, README final, déclaration de l'IA et liste des licences (résumé du job CI « Licences autorisées ») | Tous |
 | **Dim 15** | Soumission **avant 12 h GMT** (marge de 5 h). Puis **vote des pairs : chaque membre vote**, sinon le projet est exclu | Chef de projet soumet, **chacun vote** |
 
 ## Les règles de ces 5 jours
