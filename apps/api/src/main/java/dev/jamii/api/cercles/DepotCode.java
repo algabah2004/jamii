@@ -1,5 +1,6 @@
 package dev.jamii.api.cercles;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -22,6 +23,34 @@ public interface DepotCode {
 
 	/** `fournisseur` vaut `gitea` ou `github`. Les deux adresses sont en `https`. */
 	record DepotDuTour(String fournisseur, String url, String cloneUrl) {
+	}
+
+	/**
+	 * Ce qui se passe dans le dépôt d'un tour, pour le montrer dans Jamii. Vide quand le fournisseur ne répond pas, refuse,
+	 * ou ne sait pas le dire : le tour garde alors son lien, et la page le dit.
+	 */
+	default Optional<Activite> activite(DepotDuTour depot) {
+		return Optional.empty();
+	}
+
+	/** Vrai si les dépôts sont privés : seuls les membres du cercle voient alors leur activité. */
+	default boolean prives() {
+		return false;
+	}
+
+	record Activite(List<Commit> commits, List<DemandeDeFusion> demandesDeFusion) {
+	}
+
+	/** Le compte chez le fournisseur (`avatarUrl` peut manquer). */
+	record Auteur(String login, String avatarUrl) {
+	}
+
+	/** `message` : la première ligne, coupée à 200 caractères. `auteur` est null si aucun compte n'est relié. */
+	record Commit(String sha, String message, Auteur auteur, Instant date, String url) {
+	}
+
+	/** `etat` vaut `ouverte`, `fusionnee` ou `fermee`. */
+	record DemandeDeFusion(int numero, String titre, String etat, Auteur auteur, Instant misAJourLe, String url) {
 	}
 
 }

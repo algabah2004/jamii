@@ -160,6 +160,9 @@ class HackathonsController {
 			}
 			return actions;
 		}
+		if ("en_cours".equals(statut) && "participant".equals(l.role()) && l.equipeId() != null) {
+			return List.of("rendre");
+		}
 		boolean inscriptionsOuvertes = "publie".equals(statut) && h.calendrier().inscriptionsOuvertesLe().isBefore(maintenant)
 				&& h.calendrier().inscriptionsFermeesLe().isAfter(maintenant);
 		if (qui == null || !inscriptionsOuvertes) {
