@@ -5,6 +5,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,19 +17,22 @@ import org.springframework.web.bind.annotation.RestController;
 import dev.jamii.api.auth.Role;
 import dev.jamii.api.auth.UtilisateurConnecte;
 
-/** Annuler une mission, ouvrir et trancher un désaccord (contracts/missions.yaml, tag « fin »). Connexion requise. */
+/** Annuler une mission, ouvrir et trancher un désaccord, laisser un avis (contracts/missions.yaml, tag « fin »). Connexion requise. */
 @RestController
 @RequestMapping("/api/missions/{missionId}")
 class FinController {
 
 	private final Fin fin;
 
+	private final Avis avis;
+
 	private final Missions missions;
 
 	private final VuesMissions vues;
 
-	FinController(Fin fin, Missions missions, VuesMissions vues) {
+	FinController(Fin fin, Avis avis, Missions missions, VuesMissions vues) {
 		this.fin = fin;
+		this.avis = avis;
 		this.missions = missions;
 		this.vues = vues;
 	}
@@ -68,6 +73,16 @@ class FinController {
 		e.verifier();
 		fin.trancher(missionId, moi.id(), version, issue, explication);
 		return vue(missionId, moi);
+	}
+
+	@PostMapping("/avis")
+	ResponseEntity<Avis.UnAvis> donnerAvis(@AuthenticationPrincipal UtilisateurConnecte moi, @PathVariable UUID missionId,
+			@RequestBody Map<String, Object> corps) {
+		var e = new MissionsController.Erreurs(corps, Set.of("note", "texte"));
+		int note = e.entier("note", 1, 5, true);
+		String texte = e.texte("texte", 0, 1000, false);
+		e.verifier();
+		return ResponseEntity.status(HttpStatus.CREATED).body(avis.donner(missionId, moi.id(), note, texte == null || texte.isEmpty() ? null : texte));
 	}
 
 	private VuesMissions.MissionVue vue(UUID missionId, UtilisateurConnecte moi) {
