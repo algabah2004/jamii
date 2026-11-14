@@ -3,16 +3,17 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { JBouton, JChamp, JIllustration } from '../../design-system'
-import { creerDemande, demandeValide, DUREES, LIMITES, type NouvelleDemande } from './demandes'
+import { creerDemande, demandeValide, DUREES, LIMITES, SECTEURS, type NouvelleDemande } from './demandes'
 
 /*
- * « Une PME décrit son besoin » (étape 3 de la démo). Écrit pour un commerçant, pas pour un développeur :
- * des mots simples, des exemples à reprendre, et aucune question technique.
+ * « Décris ton besoin » (étape 1 de la démo, /besoin). Écrit pour un commerçant ou un cabinet, pas pour un
+ * développeur : des mots simples, des exemples à reprendre, et aucune question technique. Le secteur et la ville
+ * sont facultatifs. La case Systalink n'est jamais cochée d'avance.
  */
 const { t, tm, rt } = useI18n()
 const router = useRouter()
 
-const demande = ref<NouvelleDemande>({ titre: '', description: '' })
+const demande = ref<NouvelleDemande>({ titre: '', description: '', secteur: '', ville: '', offresSystalink: false })
 const duree = ref<number | 'inconnue'>('inconnue')
 const envoi = ref<'repos' | 'envoi' | 'erreur'>('repos')
 const valide = computed(() => demandeValide(demande.value))
@@ -48,6 +49,7 @@ async function envoyer() {
 
     <div class="mise-en-page">
       <form class="carte formulaire" data-test="demande" @submit.prevent="envoyer">
+        <p class="prudence" data-test="prudence">{{ t('demandes.nouvelle.prudence') }}</p>
         <JChamp
           v-model="demande.titre"
           :libelle="t('demandes.nouvelle.champTitre')"
@@ -65,12 +67,27 @@ async function envoyer() {
           requis
         />
         <fieldset class="durees">
+          <legend>{{ t('demandes.nouvelle.secteur') }}</legend>
+          <label v-for="s in SECTEURS" :key="s" class="durees__choix">
+            <input v-model="demande.secteur" type="radio" name="secteur" :value="s" data-test="secteur" />
+            <span>{{ t(`demandes.secteurs.${s}`) }}</span>
+          </label>
+        </fieldset>
+        <JChamp v-model="demande.ville" :libelle="t('demandes.nouvelle.ville')" :maxlength="80" />
+        <fieldset class="durees">
           <legend>{{ t('demandes.nouvelle.duree') }}</legend>
           <label v-for="d in [...DUREES, 'inconnue' as const]" :key="d" class="durees__choix">
             <input v-model="duree" type="radio" name="duree" :value="d" />
             <span>{{ d === 'inconnue' ? t('demandes.nouvelle.jeNeSaisPas') : t('demandes.nouvelle.semaines', { n: d }, d) }}</span>
           </label>
         </fieldset>
+        <label class="offres" data-test="offres">
+          <input v-model="demande.offresSystalink" type="checkbox" />
+          <span>
+            <strong>{{ t('demandes.offres.libelle') }}</strong>
+            <span class="texte-discret">{{ t('demandes.offres.aide') }}</span>
+          </span>
+        </label>
         <p v-if="envoi === 'erreur'" role="alert" class="erreur">{{ t('demandes.nouvelle.erreur') }}</p>
         <div class="commandes">
           <JBouton type="submit" :desactive="!valide" :occupe="envoi === 'envoi'" data-test="envoyer">{{ t('demandes.nouvelle.envoyer') }}</JBouton>
@@ -121,6 +138,15 @@ async function envoyer() {
 .durees__choix input:checked + span { background: var(--action); border-color: var(--action); color: var(--on-action); }
 .durees__choix input:focus-visible + span { outline: 2px solid var(--focus); outline-offset: 2px; }
 .erreur { margin: 0; color: var(--danger); font-weight: 600; }
+.prudence {
+  margin: 0; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md);
+  border-inline-start: 3px solid var(--cantaloupe);
+  background: color-mix(in srgb, var(--surface) 60%, transparent); font-size: var(--type-body-sm-size); font-weight: 600;
+}
+.offres { display: flex; gap: var(--space-3); align-items: flex-start; cursor: pointer; }
+.offres input { width: 20px; height: 20px; margin: 2px 0 0; flex: none; accent-color: var(--action); }
+.offres > span { display: grid; gap: 2px; }
+.offres .texte-discret { font-size: var(--type-body-sm-size); }
 .commandes { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-4); }
 
 .cote { display: grid; gap: var(--space-4); }

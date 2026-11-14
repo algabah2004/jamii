@@ -1,46 +1,49 @@
 import { lireJetonCsrf } from '../../api/client'
 
+import type { components } from '../../api/generated/demandes'
+
 /*
- * Étape 3 de la démo : une PME décrit son besoin, l'assistant propose un plan.
- * Le contrat public `/api/demandes` n'existe pas encore (module `demandes`, #17) : ces types suivent la
- * proposition faite à @sowibrr, et `PlanProjet` reprend exactement contracts/ia.yaml.
- * Quand le contrat arrive, on remplace ce fichier par les types générés (npm run api:types).
+ * Une personne ou une PME décrit son besoin, Jamii l'oriente (contracts/demandes.yaml v0.2, étape 1 de la démo) :
+ * les services Systalink qui suffisent, sinon les développeurs qui peuvent le faire, et le plan.
  */
+type Schemas = components['schemas']
 
-export type Priorite = 'indispensable' | 'utile' | 'plus_tard'
-export type ServiceSystalink = 'datacloud' | 'orion' | 'yokk' | 'domaine'
+export type PlanProjet = Schemas['PlanProjet']
+export type Priorite = PlanProjet['cahierDesCharges']['fonctionnalites'][number]['priorite']
+export type EtatPlan = Schemas['PlanDeLaDemande']
+export type EtatOrientation = Schemas['OrientationDeLaDemande']
+export type Orientation = Schemas['Orientation']
+export type ServiceSystalink = Schemas['ServiceSystalink']
+export type Recommandation = Schemas['Recommandation']
+export type Demande = Schemas['Demande']
 
-export type PlanProjet = {
-  cahierDesCharges: {
-    resume: string
-    objectifs: string[]
-    fonctionnalites: { titre: string; description: string; priorite: Priorite }[]
-    horsPerimetre: string[]
-  }
-  jalons: { titre: string; semaine: number; livrable: string }[]
-  taches: { titre: string; description?: string; jalon: number; competences: string[] }[]
-  rolesManquants: { role: string; competences: string[]; raison: string }[]
-  servicesSuggeres: { service: ServiceSystalink; raison: string }[]
-}
-
-export type EtatPlan = {
-  statut: 'en_attente' | 'en_cours' | 'terminee' | 'echouee'
-  /** `repli` : l'IA était indisponible, le plan est un modèle à compléter (le dire à l'utilisateur). */
-  origine?: 'ia' | 'cache' | 'repli'
-  resultat?: PlanProjet
-  erreurCode?: 'entree_refusee' | 'resultat_invalide' | 'delai_depasse'
-}
-
-export type Demande = {
-  id: string
+export type NouvelleDemande = {
   titre: string
   description: string
-  dureeSemaines: number | null
-  creeLe: string
-  plan: EtatPlan
+  dureeSemaines?: number
+  secteur?: string
+  ville?: string
+  offresSystalink?: boolean
 }
 
-export type NouvelleDemande = { titre: string; description: string; dureeSemaines?: number }
+/** Des secteurs à choisir d'un clic (le contrat accepte aussi un texte libre). */
+export const SECTEURS = ['commerce', 'juridique', 'sante', 'education', 'agriculture', 'association', 'autre'] as const
+
+/**
+ * L'état de l'analyse : celui de l'orientation, ou celui du plan pour une API plus ancienne.
+ * `pret` : l'orientation est là (avec ou sans plan, selon qu'il faut des développeurs).
+ */
+export function etatAnalyse(d: Demande): 'attente' | 'pret' | 'echec' {
+  const etat = d.orientation ?? d.plan
+  if (etat.statut === 'en_attente' || etat.statut === 'en_cours') return 'attente'
+  if (etat.statut === 'echouee') return 'echec'
+  return d.orientation ? (d.orientation.resultat ? 'pret' : 'echec') : d.plan.resultat ? 'pret' : 'echec'
+}
+
+/** L'analyse a été faite sans IA : le dire simplement. */
+export function estRepli(d: Demande): boolean {
+  return (d.orientation ?? d.plan).origine === 'repli'
+}
 
 /** Les limites de EntreePlanProjet (contracts/ia.yaml), vérifiées aussi par le serveur. */
 export const LIMITES = { titreMin: 3, titreMax: 120, descriptionMin: 20, descriptionMax: 4000 } as const
@@ -75,19 +78,24 @@ export function jalonsAvecTaches(plan: PlanProjet) {
 
 const adresse = (chemin: string) => new URL(chemin, window.location.origin)
 
-async function envoyer(chemin: string, corps: unknown): Promise<Response> {
+async function envoyer(chemin: string, corps: unknown, methode: 'POST' | 'PUT' = 'POST'): Promise<Response> {
   const entetes: Record<string, string> = { 'Content-Type': 'application/json' }
   const jeton = lireJetonCsrf()
   if (jeton) entetes['X-XSRF-TOKEN'] = jeton
-  return globalThis.fetch(adresse(chemin), { method: 'POST', credentials: 'same-origin', headers: entetes, body: JSON.stringify(corps) })
+  return globalThis.fetch(adresse(chemin), { method: methode, credentials: 'same-origin', headers: entetes, body: JSON.stringify(corps) })
 }
 
 /** POST /api/demandes : 201 avec la demande, son plan en préparation. */
 export async function creerDemande(d: NouvelleDemande): Promise<Demande | null> {
+  const secteur = d.secteur?.trim()
+  const ville = d.ville?.trim()
   const reponse = await envoyer('/api/demandes', {
     titre: d.titre.trim(),
     description: d.description.trim(),
     ...(d.dureeSemaines ? { dureeSemaines: d.dureeSemaines } : {}),
+    ...(secteur ? { secteur } : {}),
+    ...(ville ? { ville } : {}),
+    offresSystalink: d.offresSystalink === true,
   })
   return reponse.ok ? ((await reponse.json()) as Demande) : null
 }
@@ -111,4 +119,10 @@ export async function creerProjet(demande: Demande): Promise<{ id: string } | { 
   if (reponse.ok) return { id: ((await reponse.json()) as { id: string }).id }
   const corps = (await reponse.json().catch(() => ({}))) as { code?: string }
   return { erreur: corps.code ?? 'autre' }
+}
+
+/** PUT /api/demandes/{id}/offres-systalink : donner ou retirer son accord. Renvoie la demande à jour, `null` si refusé. */
+export async function choisirOffres(id: string, accepte: boolean): Promise<Demande | null> {
+  const reponse = await envoyer(`/api/demandes/${encodeURIComponent(id)}/offres-systalink`, { accepte }, 'PUT')
+  return reponse.ok ? ((await reponse.json()) as Demande) : null
 }

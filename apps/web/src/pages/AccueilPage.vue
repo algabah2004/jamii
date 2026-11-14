@@ -58,6 +58,7 @@ void (async () => {
           <RouterLink :to="etat === 'connecte' ? '/communautes' : '/vitrine'" class="scene__lien">
             {{ etat === 'connecte' ? t('accueil.voirCommunautes') : t('accueil.voirVitrine') }}
           </RouterLink>
+          <RouterLink to="/besoin" class="scene__lien" data-test="lien-besoin">{{ t('accueil.decrireBesoin') }}</RouterLink>
         </div>
         <p v-if="etat !== 'connecte'" class="scene__rassurance">{{ t('accueil.rassurance') }}</p>
       </div>

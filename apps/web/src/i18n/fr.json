@@ -52,7 +52,8 @@
       "apercuCommunautes": "Communautés",
       "apercuEnLigne": "En ligne et vérifié",
       "apercuProfil": "Profil prouvé"
-    }
+    },
+    "decrireBesoin": "J’ai un besoin pour mon entreprise"
   },
   "profil": {
     "titre": "Profil",
@@ -363,7 +364,7 @@
   "demandes": {
     "nouvelle": {
       "titre": "Décris ton besoin",
-      "intro": "Explique avec tes mots ce dont ton entreprise a besoin. L'assistant en fait un plan clair, puis une équipe de développeurs peut le réaliser.",
+      "intro": "Explique avec tes mots ce dont ton entreprise a besoin. Jamii te dit ce qui existe déjà chez Systalink, et quels développeurs peuvent faire le reste.",
       "champTitre": "En une phrase, de quoi as-tu besoin ?",
       "aideTitre": "Par exemple : une boutique en ligne pour mon atelier.",
       "champDescription": "Raconte : qui l’utilisera, ce que ça doit faire, ce qui compte pour toi",
@@ -371,14 +372,17 @@
       "duree": "En combien de temps aimerais-tu l’avoir ?",
       "semaines": "{n} semaine | {n} semaines",
       "jeNeSaisPas": "Je ne sais pas",
-      "envoyer": "Obtenir un plan",
+      "envoyer": "Analyser mon besoin",
       "rassurance": "Gratuit. Rien n’est publié sans ton accord.",
       "erreur": "Ta demande n'a pas pu être envoyée. Réessaie dans un instant.",
       "exemplesTitre": "Pour t’inspirer",
       "ensuiteTitre": "Et ensuite ?",
-      "ensuite1": "L’assistant propose un plan : ce qu’il faut faire, en combien de temps, et avec qui.",
-      "ensuite2": "Tu le relis. Rien n’est décidé sans toi.",
-      "ensuite3": "Une équipe de développeurs de Jamii prend le projet et le met en ligne."
+      "ensuite1": "Jamii comprend ton besoin et te montre les services Systalink qui suffisent.",
+      "ensuite2": "S'il faut des développeurs, il te propose les bons profils, avec la raison de chaque choix, et un plan.",
+      "ensuite3": "Tu décides : rien n'est publié ni transmis sans ton accord.",
+      "prudence": "N'écris ni nom de client ni information confidentielle : décris seulement le besoin.",
+      "secteur": "Ton secteur (facultatif)",
+      "ville": "Ta ville (facultatif)"
     },
     "exemples": [
       {
@@ -396,11 +400,11 @@
     ],
     "plan": {
       "autre": "← Décrire un autre besoin",
-      "prepare": "L’assistant prépare ton plan…",
-      "prepareAide": "Il lit ta demande et la découpe en étapes. Cela prend quelques secondes.",
-      "echec": "Le plan n'a pas pu être préparé.",
+      "prepare": "Jamii analyse ton besoin…",
+      "prepareAide": "Il cherche ce qui existe déjà chez Systalink et les développeurs qui peuvent t'aider. Cela prend quelques secondes.",
+      "echec": "Ton besoin n'a pas pu être analysé.",
       "echecAide": "Ta demande est bien enregistrée. Réessaie dans un instant.",
-      "propose": "Plan proposé par l’assistant · à relire, rien n’est décidé",
+      "propose": "Proposé par Jamii · à relire, rien n'est décidé",
       "repli": "L'assistant n'était pas disponible : voici un modèle de plan à compléter avec l'équipe.",
       "resume": "Ce que l’équipe va construire",
       "fonctionnalites": "Les fonctionnalités",
@@ -421,6 +425,35 @@
       "indispensable": "Indispensable",
       "utile": "Utile",
       "plus_tard": "Plus tard"
+    },
+    "secteurs": {
+      "commerce": "Commerce",
+      "juridique": "Juridique",
+      "sante": "Santé",
+      "education": "Éducation",
+      "agriculture": "Agriculture",
+      "association": "Association",
+      "autre": "Autre"
+    },
+    "offres": {
+      "libelle": "Recevoir les offres Systalink adaptées à mon projet",
+      "aide": "Systalink pourra te contacter avec une offre pour ce besoin. Sans cette case, ton besoin et ton contact ne quittent pas Jamii.",
+      "retrait": "Tu peux décocher à tout moment ; ce qui a déjà été transmis ne peut pas être repris.",
+      "erreur": "Ton choix n'a pas pu être enregistré. Réessaie dans un instant."
+    },
+    "orientation": {
+      "repli": "Analyse automatique indisponible, voici une première proposition.",
+      "compris": "Ce que nous avons compris",
+      "systalink": "Ce dont tu as besoin existe chez Systalink",
+      "systalinkAide": "Pour cette partie, pas besoin d'attendre des développeurs.",
+      "voirService": "Voir chez Systalink",
+      "developpeurs": "Les développeurs qui peuvent le faire",
+      "developpeursAide": "Choisis-les pour leurs compétences prouvées, leur disponibilité et leur ville.",
+      "formerCercle": "Former un cercle avec eux",
+      "pourquoi": "Pourquoi ce choix",
+      "ecrire": "Écrire à {nom}",
+      "aucun": "Aucun développeur disponible ne correspond pour l'instant. Le plan ci-dessous reste valable : reviens plus tard ou publie-le dans une communauté.",
+      "plan": "Le plan pour les développeurs"
     }
   },
   "cercles": {

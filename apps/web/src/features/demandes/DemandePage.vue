@@ -2,10 +2,13 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute } from 'vue-router'
-import { JBouton, JSquelette } from '../../design-system'
+import { JAvatar, JBouton, JSquelette } from '../../design-system'
 import {
   ATTENTE_PLAN_MAX_MS,
+  choisirOffres,
   creerProjet,
+  estRepli,
+  etatAnalyse,
   fonctionnalitesParPriorite,
   INTERVALLE_PLAN_MS,
   jalonsAvecTaches,
@@ -14,9 +17,10 @@ import {
 } from './demandes'
 
 /*
- * Le plan proposé par l'assistant pour une demande de PME. « L'IA propose, l'humain décide » :
- * tout est présenté comme une proposition, et seul un clic humain en fait un projet.
- * Les textes du plan sont générés : affichés comme du texte brut, jamais interprétés.
+ * L'orientation d'un besoin (étape 1 de la démo) : ce que Systalink offre déjà, les développeurs qui peuvent
+ * faire le reste (un score calculé par l'API, avec ses raisons) et le plan. « L'IA propose, l'humain décide » :
+ * tout est une proposition, et seul un clic humain en fait un projet ou un cercle.
+ * Les textes générés sont affichés comme du texte brut, jamais interprétés.
  */
 const { t } = useI18n()
 const route = useRoute()
@@ -44,7 +48,8 @@ async function charger(silencieux = false) {
 /** Tant que le plan se prépare, on relit la demande, sans jamais dépasser une minute. */
 function surveiller() {
   clearTimeout(minuterie)
-  const statut = demande.value?.plan.statut
+  const d = demande.value
+  const statut = d ? (d.orientation ?? d.plan).statut : undefined
   if (statut !== 'en_attente' && statut !== 'en_cours') return
   if (!debut) debut = Date.now()
   if (Date.now() - debut >= ATTENTE_PLAN_MAX_MS) return void (tropLong.value = true)
@@ -57,8 +62,31 @@ watch(id, () => {
   void charger()
 }, { immediate: true })
 
-const plan = computed(() => (demande.value?.plan.statut === 'terminee' ? (demande.value.plan.resultat ?? null) : null))
-const enPreparation = computed(() => ['en_attente', 'en_cours'].includes(demande.value?.plan.statut ?? '') && !tropLong.value)
+const analyse = computed(() => (demande.value ? etatAnalyse(demande.value) : 'attente'))
+const orientation = computed(() => (analyse.value === 'pret' ? (demande.value?.orientation?.resultat ?? null) : null))
+const plan = computed(() => {
+  if (analyse.value !== 'pret' || !demande.value) return null
+  return orientation.value ? (orientation.value.plan ?? null) : (demande.value.plan.resultat ?? null)
+})
+const pret = computed(() => analyse.value === 'pret')
+const enPreparation = computed(() => analyse.value === 'attente' && !tropLong.value)
+const repli = computed(() => (demande.value ? estRepli(demande.value) : false))
+const recommandes = computed(() => demande.value?.recommandations ?? [])
+
+/** « Recevoir les offres Systalink » : jamais cochée d'avance, modifiable à tout moment. */
+const offres = ref<'repos' | 'envoi' | 'erreur'>('repos')
+async function changerOffres(accepte: boolean) {
+  if (!demande.value) return
+  offres.value = 'envoi'
+  try {
+    const a_jour = await choisirOffres(demande.value.id, accepte)
+    if (!a_jour) return void (offres.value = 'erreur')
+    demande.value = { ...demande.value, offresSystalink: a_jour.offresSystalink }
+    offres.value = 'repos'
+  } catch {
+    offres.value = 'erreur'
+  }
+}
 const fonctionnalites = computed(() => (plan.value ? fonctionnalitesParPriorite(plan.value) : []))
 const jalons = computed(() => (plan.value ? jalonsAvecTaches(plan.value) : []))
 
@@ -106,7 +134,7 @@ const messageErreur = computed(() =>
           <p>{{ t('demandes.plan.prepareAide') }}</p>
         </div>
       </div>
-      <div v-else-if="!plan" role="alert" class="carte attente attente--echec" data-test="plan-echec">
+      <div v-else-if="!pret" role="alert" class="carte attente attente--echec" data-test="plan-echec">
         <div>
           <strong>{{ t('demandes.plan.echec') }}</strong>
           <p>{{ t('demandes.plan.echecAide') }}</p>
@@ -114,9 +142,62 @@ const messageErreur = computed(() =>
         <JBouton variante="secondaire" @click="charger()">{{ t('etat.reessayer') }}</JBouton>
       </div>
 
-      <template v-if="plan">
+      <template v-if="pret">
         <p class="proposition" data-test="plan-propose">✨ {{ t('demandes.plan.propose') }}</p>
-        <p v-if="demande.plan.origine === 'repli'" class="carte repli" role="status" data-test="plan-repli">{{ t('demandes.plan.repli') }}</p>
+        <p v-if="repli" class="carte repli" role="status" data-test="plan-repli">{{ t(orientation ? 'demandes.orientation.repli' : 'demandes.plan.repli') }}</p>
+
+        <section v-if="orientation" class="carte bloc" aria-labelledby="compris" data-test="compris">
+          <h2 id="compris">{{ t('demandes.orientation.compris') }}</h2>
+          <p class="resume">{{ orientation.resume }}</p>
+        </section>
+
+        <!-- Le moment Systalink : ses services, sous les yeux de la personne. Aucune donnée ne sort de Jamii pour ça. -->
+        <section v-if="orientation?.services.length" class="systalink zone-sombre" aria-labelledby="chez-systalink" data-test="services-systalink">
+          <div class="systalink__tete">
+            <h2 id="chez-systalink">{{ t('demandes.orientation.systalink') }}</h2>
+            <p>{{ t('demandes.orientation.systalinkAide') }}</p>
+          </div>
+          <ul class="systalink__services">
+            <li v-for="s in orientation.services" :key="s.id" class="service" data-test="service">
+              <h3>{{ s.nom }}</h3>
+              <p>{{ s.pourCeBesoin }}</p>
+              <p v-if="s.prixIndicatif" class="service__prix">{{ s.prixIndicatif }}</p>
+              <a :href="s.lien" target="_blank" rel="noopener noreferrer" class="service__lien">
+                {{ t('demandes.orientation.voirService') }}<span class="visuellement-cache"> : {{ s.nom }}</span>
+              </a>
+            </li>
+          </ul>
+        </section>
+
+        <section v-if="orientation?.developpeursNecessaires" class="bloc-nu" aria-labelledby="developpeurs" data-test="developpeurs">
+          <div class="bloc-nu__tete">
+            <div>
+              <h2 id="developpeurs">{{ t('demandes.orientation.developpeurs') }}</h2>
+              <p class="texte-discret">{{ t('demandes.orientation.developpeursAide') }}</p>
+            </div>
+            <RouterLink v-if="recommandes.length" to="/cercles/nouveau" class="bouton-lien" data-test="former-cercle">{{ t('demandes.orientation.formerCercle') }}</RouterLink>
+          </div>
+          <ul v-if="recommandes.length" class="recommandes">
+            <li v-for="r in recommandes" :key="r.utilisateurId" class="carte recommande" data-test="recommande">
+              <div class="recommande__tete">
+                <JAvatar :nom="r.nom" :url="r.avatarUrl" :taille="44" />
+                <div>
+                  <strong>{{ r.nom }}</strong>
+                  <span v-if="r.ville" class="texte-discret">{{ r.ville }}</span>
+                </div>
+              </div>
+              <ul class="raisons" :aria-label="t('demandes.orientation.pourquoi')">
+                <li v-for="raison in r.raisons" :key="raison">✓ {{ raison }}</li>
+              </ul>
+              <RouterLink :to="`/messages/${r.utilisateurId}`" class="recommande__ecrire">{{ t('demandes.orientation.ecrire', { nom: r.nom.split(' ')[0] }) }}</RouterLink>
+            </li>
+          </ul>
+          <p v-else class="carte vide" data-test="aucun-recommande">{{ t('demandes.orientation.aucun') }}</p>
+        </section>
+      </template>
+
+      <template v-if="plan">
+        <h2 v-if="orientation" class="plan-titre">{{ t('demandes.orientation.plan') }}</h2>
 
         <section class="carte bloc" aria-labelledby="resume">
           <h2 id="resume">{{ t('demandes.plan.resume') }}</h2>
@@ -167,7 +248,7 @@ const messageErreur = computed(() =>
               </li>
             </ul>
           </section>
-          <section v-if="plan.servicesSuggeres.length" class="carte bloc" aria-labelledby="services">
+          <section v-if="!orientation && plan.servicesSuggeres.length" class="carte bloc" aria-labelledby="services">
             <h2 id="services">{{ t('demandes.plan.services') }}</h2>
             <p class="texte-discret">{{ t('demandes.plan.servicesAide') }}</p>
             <ul class="services">
@@ -186,6 +267,26 @@ const messageErreur = computed(() =>
           </ul>
         </section>
 
+      </template>
+
+      <section v-if="pret" class="carte offres" aria-labelledby="offres-titre" data-test="offres-resultat">
+        <label class="offres__case">
+          <input
+            type="checkbox"
+            :checked="demande.offresSystalink === true"
+            :disabled="offres === 'envoi'"
+            @change="changerOffres(($event.target as HTMLInputElement).checked)"
+          />
+          <span>
+            <strong id="offres-titre">{{ t('demandes.offres.libelle') }}</strong>
+            <span class="texte-discret">{{ t('demandes.offres.aide') }}</span>
+            <span class="texte-discret">{{ t('demandes.offres.retrait') }}</span>
+          </span>
+        </label>
+        <p v-if="offres === 'erreur'" role="alert" class="erreur">{{ t('demandes.offres.erreur') }}</p>
+      </section>
+
+      <template v-if="plan">
         <!-- La décision humaine, toujours visible en bas de l'écran. -->
         <div class="verre decision">
           <p v-if="lancement.etat === 'fait'" role="status" class="decision__fait" data-test="projet-cree">✓ {{ t('demandes.plan.lance') }}</p>
@@ -264,4 +365,42 @@ const messageErreur = computed(() =>
 .decision__texte { margin: 0; font-weight: 600; }
 .decision__fait { margin: 0; font-weight: 700; color: var(--ink); }
 .erreur { margin: 0; color: var(--danger); font-weight: 600; }
+
+/* Systalink : le seul bloc sombre de la page, pour qu'on le voie. Le reste reste calme. */
+.systalink { display: grid; gap: var(--space-6); padding: var(--space-8); border-radius: var(--radius-lg); background: var(--surface); color: var(--ink); }
+.systalink__tete h2 { margin: 0; font-size: var(--type-h2-size); line-height: var(--type-h2-line); }
+.systalink__tete p { margin: var(--space-2) 0 0; color: var(--ink-muted); }
+.systalink__services { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); }
+.service {
+  display: grid; gap: var(--space-2); align-content: start; padding: var(--space-6); border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--ink) 6%, transparent); border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+}
+.service h3 { margin: 0; font-size: 1.0625rem; }
+.service p { margin: 0; }
+.service__prix { color: var(--ink-muted); font-size: var(--type-body-sm-size); }
+.service__lien {
+  justify-self: start; margin-top: var(--space-2); display: inline-flex; align-items: center; min-height: 40px; padding: 0 var(--space-4);
+  border-radius: var(--radius-pill); background: var(--action); color: var(--on-action); font-weight: 700; text-decoration: none;
+}
+.service__lien:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+.bloc-nu__tete { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: var(--space-3); }
+.bloc-nu__tete p { margin: var(--space-1) 0 0; }
+.bouton-lien {
+  display: inline-flex; align-items: center; min-height: 44px; padding: 0 var(--space-6); border-radius: var(--radius-pill);
+  background: var(--action); color: var(--on-action); font-weight: 700; text-decoration: none;
+}
+.recommandes { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); }
+.recommande { display: grid; gap: var(--space-3); align-content: start; padding: var(--space-6); }
+.recommande__tete { display: flex; align-items: center; gap: var(--space-3); }
+.recommande__tete div { display: grid; }
+.raisons { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-1); font-size: var(--type-body-sm-size); }
+.recommande__ecrire { justify-self: start; font-weight: 600; }
+.vide { margin: 0; padding: var(--space-6); color: var(--ink-muted); }
+.plan-titre { margin: var(--space-4) 0 0; font-size: var(--type-h2-size); line-height: var(--type-h2-line); }
+
+.offres { padding: var(--space-6); }
+.offres__case { display: flex; gap: var(--space-3); align-items: flex-start; cursor: pointer; }
+.offres__case input { width: 20px; height: 20px; margin: 2px 0 0; flex: none; accent-color: var(--action); }
+.offres__case > span { display: grid; gap: var(--space-1); }
 </style>

@@ -52,7 +52,8 @@
       "apercuCommunautes": "Communities",
       "apercuEnLigne": "Online and verified",
       "apercuProfil": "Proven profile"
-    }
+    },
+    "decrireBesoin": "I have a need for my business"
   },
   "profil": {
     "titre": "Profile",
@@ -363,7 +364,7 @@
   "demandes": {
     "nouvelle": {
       "titre": "Describe your need",
-      "intro": "Explain in your own words what your business needs. The assistant turns it into a clear plan, then a team of developers can build it.",
+      "intro": "Describe in your own words what your business needs. Jamii shows you what Systalink already offers, and which developers can build the rest.",
       "champTitre": "In one sentence, what do you need?",
       "aideTitre": "For example: an online shop for my workshop.",
       "champDescription": "Tell us: who will use it, what it must do, what matters to you",
@@ -371,14 +372,17 @@
       "duree": "How soon would you like it?",
       "semaines": "{n} week | {n} weeks",
       "jeNeSaisPas": "I don't know",
-      "envoyer": "Get a plan",
+      "envoyer": "Analyse my need",
       "rassurance": "Free. Nothing is published without your agreement.",
       "erreur": "Your request could not be sent. Try again in a moment.",
       "exemplesTitre": "For inspiration",
       "ensuiteTitre": "What happens next?",
-      "ensuite1": "The assistant suggests a plan: what to do, how long it takes, and with whom.",
-      "ensuite2": "You read it. Nothing is decided without you.",
-      "ensuite3": "A team of Jamii developers takes the project and puts it online."
+      "ensuite1": "Jamii understands your need and shows you the Systalink services that are enough.",
+      "ensuite2": "If developers are needed, it suggests the right profiles, with the reason for each choice, and a plan.",
+      "ensuite3": "You decide: nothing is published or shared without your consent.",
+      "prudence": "Don't write client names or confidential information: just describe the need.",
+      "secteur": "Your sector (optional)",
+      "ville": "Your city (optional)"
     },
     "exemples": [
       {
@@ -396,11 +400,11 @@
     ],
     "plan": {
       "autre": "← Describe another need",
-      "prepare": "The assistant is preparing your plan…",
-      "prepareAide": "It reads your request and splits it into steps. This takes a few seconds.",
-      "echec": "The plan could not be prepared.",
+      "prepare": "Jamii is analysing your need…",
+      "prepareAide": "It looks for what Systalink already offers and for developers who can help. This takes a few seconds.",
+      "echec": "Your need could not be analysed.",
       "echecAide": "Your request is saved. Try again in a moment.",
-      "propose": "Plan suggested by the assistant · to read, nothing is decided",
+      "propose": "Suggested by Jamii · review it, nothing is decided",
       "repli": "The assistant was not available: here is a plan template to complete with the team.",
       "resume": "What the team will build",
       "fonctionnalites": "Features",
@@ -421,6 +425,35 @@
       "indispensable": "Must have",
       "utile": "Useful",
       "plus_tard": "Later"
+    },
+    "secteurs": {
+      "commerce": "Retail",
+      "juridique": "Legal",
+      "sante": "Health",
+      "education": "Education",
+      "agriculture": "Agriculture",
+      "association": "Non-profit",
+      "autre": "Other"
+    },
+    "offres": {
+      "libelle": "Receive Systalink offers tailored to my project",
+      "aide": "Systalink may contact you with an offer for this need. Without this box, your need and your contact details stay in Jamii.",
+      "retrait": "You can untick it at any time; what has already been sent cannot be taken back.",
+      "erreur": "Your choice could not be saved. Try again in a moment."
+    },
+    "orientation": {
+      "repli": "Automatic analysis unavailable, here is a first suggestion.",
+      "compris": "What we understood",
+      "systalink": "What you need already exists at Systalink",
+      "systalinkAide": "For this part, no need to wait for developers.",
+      "voirService": "See it at Systalink",
+      "developpeurs": "Developers who can build it",
+      "developpeursAide": "Chosen for their proven skills, availability and city.",
+      "formerCercle": "Form a circle with them",
+      "pourquoi": "Why this choice",
+      "ecrire": "Write to {nom}",
+      "aucun": "No available developer matches yet. The plan below still stands: come back later or post it in a community.",
+      "plan": "The plan for the developers"
     }
   },
   "cercles": {

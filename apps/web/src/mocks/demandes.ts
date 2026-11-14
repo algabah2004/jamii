@@ -1,5 +1,5 @@
 import { http, HttpResponse } from 'msw'
-import type { Demande, NouvelleDemande, PlanProjet } from '../features/demandes/demandes'
+import type { Demande, NouvelleDemande, Orientation, PlanProjet, Recommandation } from '../features/demandes/demandes'
 
 /** Durée simulée de la préparation du plan, pour voir l'attente (immédiate dans les tests). */
 export const DELAI_PLAN_MS = import.meta.env.MODE === 'test' ? 0 : 2500
@@ -51,6 +51,44 @@ export function planDemo(dureeSemaines = 8): PlanProjet {
   }
 }
 
+/**
+ * L'orientation de démo (docs/priorites.md, étape 1) : un cabinet d'avocats qui perd ses dossiers. Des services du
+ * catalogue (services/ia/catalogue-systalink.yaml, recopiés tels quels) pour une partie, des développeurs pour le reste.
+ */
+export function orientationDemo(dureeSemaines = 8): Orientation {
+  return {
+    resume:
+      "Le cabinet veut retrouver ses dossiers en quelques secondes, les partager entre associés sans clé USB, et donner aux clients un espace pour suivre l'avancement de leur affaire.",
+    secteur: 'juridique',
+    services: [
+      {
+        id: 'systaone',
+        nom: 'SystaONE (SystaDrive, SystaMail, SystaTalk, SystaForms)',
+        pourCeBesoin: 'Ranger et partager les dossiers entre associés dès demain, avec une messagerie professionnelle au nom du cabinet.',
+        prixIndicatif: 'Essai de 14 jours, puis 2 000 à 12 000 FCFA par utilisateur et par mois',
+        lien: 'https://systalink.com',
+      },
+      {
+        id: 'datacloud-stockage',
+        nom: 'DataCloud, stockage de fichiers',
+        pourCeBesoin: 'Garder les PDF et les pièces scannées à Dakar, en sécurité, pour l’espace client.',
+        prixIndicatif: null,
+        lien: 'https://platform.systalink.com',
+      },
+    ],
+    developpeursNecessaires: true,
+    competences: ['react', 'typescript', 'postgresql', 'ux-design'],
+    plan: planDemo(dureeSemaines),
+  }
+}
+
+/** Les développeurs recommandés en démo : un score calculé par l'API, et ses raisons. */
+export const RECOMMANDES: Recommandation[] = [
+  { utilisateurId: 'd2e00000-0000-4000-8000-000000000001', nom: 'Kwame Mensah', avatarUrl: null, ville: 'Accra', pays: 'GH', score: 86, competencesCouvertes: ['react', 'typescript', 'postgresql'], raisons: ['React, confirmé (3 dépôts)', 'PostgreSQL (2 dépôts)', 'Disponible'] },
+  { utilisateurId: 'd2e00000-0000-4000-8000-000000000003', nom: 'Ibrahima Fall', avatarUrl: null, ville: 'Saint-Louis', pays: 'SN', score: 71, competencesCouvertes: ['postgresql'], raisons: ['PostgreSQL, confirmé (4 dépôts)', 'Disponible', 'Sénégal'] },
+  { utilisateurId: 'd2e00000-0000-4000-8000-000000000002', nom: 'Amina Bello', avatarUrl: null, ville: 'Lagos', pays: 'NG', score: 64, competencesCouvertes: ['ux-design'], raisons: ['Design d’interface (2 projets en ligne)', 'Disponible'] },
+]
+
 const demandes = new Map<string, { demande: Demande; pretA: number }>()
 const AWA = '6f1c2a4e-8b7d-4c3e-9a10-2b5d7e9f0a11'
 
@@ -65,8 +103,14 @@ export const handlersDemandes = [
       titre: corps.titre,
       description: corps.description,
       dureeSemaines: corps.dureeSemaines ?? null,
+      secteur: corps.secteur ?? null,
+      ville: corps.ville ?? null,
+      pays: null,
+      offresSystalink: corps.offresSystalink === true,
       creeLe: new Date().toISOString(),
       plan: { statut: 'en_attente' },
+      orientation: { statut: 'en_attente' },
+      recommandations: [],
     }
     demandes.set(demande.id, { demande, pretA: Date.now() + DELAI_PLAN_MS })
     return HttpResponse.json(demande, { status: 201 })
@@ -77,11 +121,23 @@ export const handlersDemandes = [
     if (!trouvee) return HttpResponse.json({ code: 'introuvable' }, { status: 404 })
     const { demande, pretA } = trouvee
     if (Date.now() >= pretA && demande.plan.statut !== 'terminee') {
-      demande.plan = { statut: 'terminee', origine: 'ia', resultat: planDemo(demande.dureeSemaines ?? 8) }
+      const orientation = orientationDemo(demande.dureeSemaines ?? 8)
+      demande.orientation = { statut: 'terminee', origine: 'ia', resultat: orientation }
+      demande.plan = { statut: 'terminee', origine: 'ia', resultat: orientation.plan ?? undefined }
+      demande.recommandations = RECOMMANDES
     } else if (demande.plan.statut === 'en_attente') {
       demande.plan = { statut: 'en_cours' }
+      demande.orientation = { statut: 'en_cours' }
     }
     return HttpResponse.json(demande)
+  }),
+
+  http.put('/api/demandes/:id/offres-systalink', async ({ params, request }) => {
+    const trouvee = demandes.get(String(params.id))
+    if (!trouvee) return HttpResponse.json({ code: 'introuvable' }, { status: 404 })
+    const { accepte } = (await request.json()) as { accepte: boolean }
+    trouvee.demande.offresSystalink = accepte === true
+    return HttpResponse.json(trouvee.demande)
   }),
 
   http.post('/api/projets', async ({ request }) => {
