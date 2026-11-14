@@ -39,6 +39,23 @@ describe('Mon profil', () => {
     expect(page.find('[data-test="projets-vide"]').exists()).toBe(true)
   })
 
+  it('la carte de compétences : rien de gardé d’avance, je retire ce qui est faux, puis je garde le reste avec ses preuves', async () => {
+    const page = await profilPret()
+    const carte = page.get('[data-test="carte-competences"]')
+    expect(carte.text()).toContain('Proposé par l\'IA à partir de tes dépôts publics')
+    expect(carte.text()).toContain('marche-facile')
+    expect(page.get('[data-test="competences"]').text()).not.toContain('Confirmé')
+
+    const cases = carte.findAll('[data-test="garder"]')
+    expect(cases).toHaveLength(4)
+    await cases[3]!.setValue(false)
+    await carte.get('[data-test="garder-carte"]').trigger('click')
+    await vi.waitFor(() => expect(page.get('[data-test="competences"]').text()).toContain('Confirmé'))
+    const publiques = page.get('[data-test="competences"]').text()
+    expect(publiques).toContain('paiement-mobile')
+    expect(publiques).not.toContain('sms')
+  })
+
   it('publier puis rendre privé', async () => {
     const page = await profilPret()
     await page.get('[data-test="publier"]').trigger('click')
