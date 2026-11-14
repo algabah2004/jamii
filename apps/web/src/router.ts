@@ -4,6 +4,9 @@ import AccueilPage from './pages/AccueilPage.vue'
 
 export const routes: RouteRecordRaw[] = [
   { path: '/', name: 'accueil', component: AccueilPage },
+  // Se connecter avec GitHub ou par un lien e-mail (contracts/socle.yaml). L'API renvoie aussi ici en cas d'échec.
+  { path: '/connexion', name: 'connexion', component: () => import('./features/connexion/ConnexionPage.vue') },
+  { path: '/connexion/email', name: 'connexion-email', component: () => import('./features/connexion/ConfirmationEmailPage.vue') },
   {
     path: '/profil',
     name: 'profil',
@@ -115,7 +118,7 @@ export function creerRouteur(historique = createWebHistory()) {
   routeur.beforeEach((vers) => {
     const { etat } = useSession()
     if (vers.meta.connexionRequise && etat.value === 'non_connecte') {
-      return { name: 'accueil', query: { retour: vers.fullPath } }
+      return { name: 'connexion', query: { retour: vers.fullPath } }
     }
   })
   return routeur

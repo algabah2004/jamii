@@ -13,6 +13,7 @@ Pas de thème (sport ou autre), pas de métaphore, pas de jargon interne. Un bou
 | Demande (besoin d'une PME) / Mission (travail accepté) | Ticket, contrat |
 | Besoin, Orientation (ce que Jamii propose pour un besoin) | Diagnostic, lead, prospect |
 | Carte de compétences | Score, note, classement |
+| Se connecter, Lien de connexion (par e-mail) | Login, magic link, jeton, OTP |
 | Publier, Déployer, Mettre en ligne | Marquer un but, lancer |
 | Réponse acceptée | Passe décisive |
 | Impact par pays | Classement des sélections, saison |
