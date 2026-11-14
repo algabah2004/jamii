@@ -320,6 +320,23 @@ class DemandesTest {
 	}
 
 	@Test
+	void reessayer_apres_une_panne_de_plus_de_deux_minutes_relance_l_analyse() {
+		UtilisateurConnecte pme = utilisateur("Awa");
+		IA.enPanne = true;
+		String id = idCree(creer(pme, BESOIN));
+		base.sql("UPDATE demande SET cree_le = :t WHERE id = :i")
+			.param("t", Timestamp.from(Instant.now().minus(3, ChronoUnit.MINUTES))).param("i", UUID.fromString(id)).update();
+		assertThat(lire(pme, id)).bodyJson().extractingPath("$.plan.statut").isEqualTo("echouee");
+
+		IA.enPanne = false;
+		MvcTestResult relue = lire(pme, id);
+
+		assertThat(relue).bodyJson().extractingPath("$.plan.statut").isNotEqualTo("echouee");
+		assertThat(base.sql("SELECT tache_ia_id FROM demande WHERE id = :i").param("i", UUID.fromString(id)).query(UUID.class)
+			.single()).isEqualTo(IA.parCle.get(UUID.fromString(id)));
+	}
+
+	@Test
 	void une_demande_ancienne_dont_l_ia_repond_montre_le_vrai_etat() {
 		UtilisateurConnecte pme = utilisateur("Awa");
 		String id = idCree(creer(pme, BESOIN));

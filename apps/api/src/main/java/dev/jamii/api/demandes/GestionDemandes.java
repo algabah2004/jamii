@@ -127,16 +127,14 @@ class GestionDemandes {
 
 	/**
 	 * L'état de l'orientation. Sans transaction : on n'attend jamais le service IA en tenant une connexion à la base.
-	 * Service injoignable : `en_attente` pendant deux minutes (on réessaie à chaque lecture), puis `echouee`.
+	 * Service injoignable : `en_attente` pendant deux minutes (on réessaie à chaque lecture), puis `echouee`. Même après,
+	 * chaque lecture (« Réessayer ») retente le dépôt : une demande créée pendant une panne repart dès que l'IA revient.
 	 */
 	Etat orientation(Fiche demande, Instant maintenant) {
 		boolean tropVieux = Duration.between(demande.creeLe(), maintenant).compareTo(DELAI_PLAN) > 0;
 		try {
 			UUID tache = demande.tacheIaId();
 			if (tache == null) {
-				if (tropVieux) {
-					return new Etat("echouee", null, null, "delai_depasse");
-				}
 				// La même clé d'idempotence : si un dépôt précédent est arrivé sans qu'on le sache, c'est la même tâche.
 				tache = ia.deposer(demande.id(), new PlansIa.Entree(demande.titre(), sansCoordonnees(demande.description()),
 						demande.dureeSemaines(), demande.secteur(), demande.pays()));
