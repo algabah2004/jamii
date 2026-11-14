@@ -147,6 +147,19 @@
         "avis_coequipier": "a teammate who would work with you again."
       },
       "sansNote": "No overall score: each point can be checked, and disputed if it is wrong."
+    },
+    "carte": {
+      "titre": "Your skills map",
+      "mention": "Suggested by AI from your public repositories",
+      "aide": "Keep what is right, untick the rest. Nothing shows on your profile until you save it.",
+      "preuves": "Evidence:",
+      "garder": "Keep this skill | Keep these {n} skills",
+      "garde": "Map saved to your profile.",
+      "niveaux": {
+        "debutant": "Beginner",
+        "intermediaire": "Intermediate",
+        "confirme": "Experienced"
+      }
     }
   },
   "etat": {

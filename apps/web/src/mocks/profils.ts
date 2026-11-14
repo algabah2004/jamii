@@ -45,6 +45,13 @@ function profilGenere(): MonProfil {
     publie: false,
     afficherResumeIa: true,
     resumeIaPropose: null,
+    // La carte proposée par l'IA (analyse_profil) : des preuves prises dans les dépôts ci-dessus, jamais inventées.
+    competencesProposees: [
+      { competence: 'flutter', niveau: 'confirme', preuves: ['marche-facile', 'agri-alertes'], raison: 'Deux applications mobiles complètes, utilisées hors ligne.' },
+      { competence: 'paiement-mobile', niveau: 'intermediaire', preuves: ['api-paiements'], raison: 'Une API de paiement qui reprend quand le réseau coupe.' },
+      { competence: 'typescript', niveau: 'intermediaire', preuves: ['api-paiements'], raison: 'Le serveur de paiement est écrit en TypeScript.' },
+      { competence: 'sms', niveau: 'debutant', preuves: ['agri-alertes'], raison: 'Envoi d’alertes par SMS.' },
+    ],
     generation: { statut: 'terminee', erreur: null, lanceeLe: maintenant(), termineeLe: maintenant() },
     version: 0,
   }
@@ -104,10 +111,17 @@ export const handlersProfils = [
     if (!p) return probleme(404, 'profil_non_genere', 'Aucun profil pour l’instant')
     const m = (await request.json()) as Modification
     if (m.version !== p.version) return probleme(409, 'modification_concurrente', 'Le profil a changé entre-temps')
-    const { competencesDeclarees, version: _version, ...champs } = m
-    const competences = competencesDeclarees
-      ? [...p.competences.filter((c) => c.source === 'github'), ...competencesDeclarees.map((competence) => ({ competence, source: 'declaree' as const }))]
+    const { competencesDeclarees, competencesIaRetenues, version: _version, ...champs } = m
+    let competences = competencesDeclarees
+      ? [...p.competences.filter((c) => c.source !== 'declaree'), ...competencesDeclarees.map((competence) => ({ competence, source: 'declaree' as const }))]
       : p.competences
+    if (competencesIaRetenues) {
+      const proposees = p.competencesProposees ?? []
+      competences = [
+        ...competences.filter((c) => c.source !== 'ia'),
+        ...proposees.filter((c) => competencesIaRetenues.includes(c.competence)).map((c) => ({ competence: c.competence, source: 'ia' as const, niveau: c.niveau, preuves: c.preuves })),
+      ]
+    }
     profil = { ...p, ...champs, competences, version: p.version + 1, misAJourLe: maintenant() }
     return HttpResponse.json(profil)
   }),

@@ -6,6 +6,7 @@ import { RouterLink } from 'vue-router'
 import { JAvatar, JBadgePreuve, JBouton, JChamp, JIllustration, JSquelette } from '../../design-system'
 import { useSession } from '../../session'
 import { nomPays } from '../systalink/calculs'
+import CarteCompetences from './CarteCompetences.vue'
 import { DISPONIBILITES, lireCompetences, PAYS_AFRIQUE, pourcentage, type Disponibilite, type MonProfil } from './profils'
 
 const { t, locale } = useI18n()
@@ -246,6 +247,7 @@ async function enregistrer() {
 
       <div class="colonnes">
         <div class="colonne">
+          <CarteCompetences :profil="profil" @mis-a-jour="(p) => (profil = p)" />
           <!-- Les projets d'abord : c'est la preuve la plus forte (contrat : Profil.projets). -->
           <section class="carte">
             <h2>{{ t('profil.projets.titre') }}</h2>
@@ -317,6 +319,7 @@ async function enregistrer() {
               <li v-for="c in profil.competences" :key="c.competence + c.source" class="etiquette" :class="{ 'etiquette--declaree': c.source === 'declaree' }">
                 {{ c.competence }}
                 <span v-if="c.source === 'declaree'" class="visuellement-cache">{{ t('profil.competences.declaree') }}</span>
+                <span v-if="c.source === 'ia' && c.niveau" class="etiquette__niveau">· {{ t(`profil.carte.niveaux.${c.niveau}`) }}</span>
               </li>
             </ul>
             <p class="texte-discret">{{ t('profil.competences.source') }}</p>
@@ -381,4 +384,5 @@ async function enregistrer() {
 .depots li { display: grid; gap: var(--space-1); }
 .depots p { margin: 0; }
 .depots a { font-weight: 600; }
+.etiquette__niveau { color: var(--ink-muted); font-weight: 500; }
 </style>

@@ -147,6 +147,19 @@
         "avis_coequipier": "un coéquipier qui referait équipe avec toi."
       },
       "sansNote": "Pas de note globale : chaque point se vérifie, et se conteste s'il est faux."
+    },
+    "carte": {
+      "titre": "Ta carte de compétences",
+      "mention": "Proposé par l'IA à partir de tes dépôts publics",
+      "aide": "Garde ce qui est juste, décoche le reste. Rien n'est visible sur ton profil avant que tu l'enregistres.",
+      "preuves": "Preuves :",
+      "garder": "Garder cette compétence | Garder ces {n} compétences",
+      "garde": "Carte enregistrée sur ton profil.",
+      "niveaux": {
+        "debutant": "Débutant",
+        "intermediaire": "Intermédiaire",
+        "confirme": "Confirmé"
+      }
     }
   },
   "etat": {
