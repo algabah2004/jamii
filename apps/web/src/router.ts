@@ -13,6 +13,8 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('./features/profils/MonProfilPage.vue'),
     meta: { connexionRequise: true },
   },
+  // Le profil publié de quelqu'un : la page du lien partagé et du QR code, lisible sans compte (#159).
+  { path: '/p/:id', name: 'profil-public', component: () => import('./features/profils/ProfilPublicPage.vue') },
   // Communautés : connexion requise (contracts/communautes.yaml).
   {
     path: '/communautes',

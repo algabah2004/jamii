@@ -25,6 +25,12 @@ function profilGenere(): MonProfil {
     ville: null,
     disponibilite: 'disponible',
     heuresParSemaine: null,
+    titre: null,
+    linkedin: null,
+    siteWeb: null,
+    langues: [],
+    competencesPhares: [],
+    realisations: [],
     langages: [
       { nom: 'Dart', part: 0.745 },
       { nom: 'TypeScript', part: 0.223 },
@@ -86,6 +92,8 @@ function declare(p: MonProfil): Partial<MonProfil> {
   return {
     bio: p.bio, pays: p.pays, ville: p.ville, disponibilite: p.disponibilite, heuresParSemaine: p.heuresParSemaine,
     publie: p.publie, afficherResumeIa: p.afficherResumeIa,
+    titre: p.titre, linkedin: p.linkedin, siteWeb: p.siteWeb, langues: p.langues,
+    competencesPhares: p.competencesPhares, realisations: p.realisations,
     competences: [...profilGenere().competences, ...p.competences.filter((c) => c.source === 'declaree')],
   }
 }
@@ -124,6 +132,13 @@ export const handlersProfils = [
     }
     profil = { ...p, ...champs, competences, version: p.version + 1, misAJourLe: maintenant() }
     return HttpResponse.json(profil)
+  }),
+  // Le profil publié se lit sans compte (#159) : la démo n'a qu'un profil, celui d'Awa.
+  http.get('/api/profils/:id', ({ params }) => {
+    const p = lire()
+    if (!p || params.id !== p.utilisateurId || !p.publie) return probleme(404, 'introuvable', 'Profil introuvable')
+    const { publie: _p, afficherResumeIa: _a, resumeIaPropose: _r, competencesProposees: _c, generation: _g, version: _v, ...publicProfil } = p
+    return HttpResponse.json(publicProfil)
   }),
   http.post('/api/me/profil/publier', () => {
     const p = lire()

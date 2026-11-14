@@ -37,7 +37,9 @@ class SecuriteConfig {
 				// Lectures publiques, sans connexion (le jury, un visiteur) : uniquement ces routes et seulement
 				// en GET. Elles ne montrent que des chiffres agrégés et ce que les projets montrent déjà à tous
 				// (contracts/systalink.yaml et contracts/vitrine.yaml, `security: []`). Toute autre route reste fermée.
-				.requestMatchers(HttpMethod.GET, "/api/systalink/tableau-de-bord", "/api/systalink/tendances", "/api/vitrine")
+				// /api/profils/* : un profil publié, pour le lien partagé (#159). La recherche (/api/profils) reste réservée.
+				.requestMatchers(HttpMethod.GET, "/api/systalink/tableau-de-bord", "/api/systalink/tendances", "/api/vitrine",
+						"/api/profils/*")
 				.permitAll()
 				.anyRequest().authenticated())
 			.oauth2Login(oauth -> oauth

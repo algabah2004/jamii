@@ -163,6 +163,68 @@ class ProfilsTest {
 		assertThat(mvc.get().uri("/api/me/profil").with(aicha)).bodyJson().extractingPath("$.pays").isNull();
 	}
 
+	// ---------- Profil professionnel (#159) ----------
+
+	@Test
+	void declare_titre_liens_langues_et_realisations() {
+		var ines = profilGenere("ines");
+		MvcTestResult reponse = patch(ines, """
+				{"titre":"  Développeuse backend · Java  ","linkedin":"https://www.linkedin.com/in/ines",
+				 "siteWeb":"https://ines.dev","langues":["fr","wo","en"],"competencesPhares":["Spring Boot","PostgreSQL"],
+				 "realisations":[{"titre":"Caisse pour boutique","role":"Développeuse","description":"Paiement Wave",
+				   "technologies":["Java","React.js"],"url":"https://caisse.exemple.sn","annee":2025},
+				   {"titre":"Bot WhatsApp"}],
+				 "version":%d}""".formatted(version(ines)));
+
+		assertThat(reponse).hasStatusOk();
+		assertThat(reponse).bodyJson().extractingPath("$.titre").isEqualTo("Développeuse backend · Java");
+		assertThat(reponse).bodyJson().extractingPath("$.langues").asArray().containsExactly("fr", "wo", "en");
+		assertThat(reponse).bodyJson().extractingPath("$.competencesPhares").asArray()
+			.containsExactly("spring-boot", "postgresql");
+		assertThat(reponse).bodyJson().extractingPath("$.realisations[0].technologies").asArray()
+			.containsExactly("java", "react");
+		assertThat(reponse).bodyJson().extractingPath("$.realisations[1].titre").isEqualTo("Bot WhatsApp");
+
+		// La régénération depuis GitHub ne touche jamais à ce que la personne a déclaré.
+		mvc.post().uri("/api/me/profil/generation").with(ines).with(csrf()).exchange();
+		String apres = attendreFinGeneration(ines);
+		assertThat(JsonPath.<String>read(apres, "$.linkedin")).isEqualTo("https://www.linkedin.com/in/ines");
+		assertThat(JsonPath.<java.util.List<Object>>read(apres, "$.realisations")).hasSize(2);
+
+		MvcTestResult vide = patch(ines, "{\"realisations\":[],\"langues\":[],\"version\":%d}".formatted(version(ines)));
+		assertThat(vide).bodyJson().extractingPath("$.realisations").asArray().isEmpty();
+		assertThat(vide).bodyJson().extractingPath("$.langues").asArray().isEmpty();
+	}
+
+	@Test
+	void refuse_les_liens_dangereux_et_les_listes_trop_longues() {
+		var omar = profilGenere("omar");
+		MvcTestResult reponse = patch(omar, """
+				{"linkedin":"https://linkedin.com.pirate.io/in/omar","siteWeb":"javascript:alert(1)",
+				 "langues":["fr","xx"],"competencesPhares":["a","b","c","d"],
+				 "realisations":[{"role":"seul"},{"titre":"Site","url":"data:text/html,x","annee":1800,"pirate":1}],
+				 "version":%d}""".formatted(version(omar)));
+
+		assertThat(reponse).hasStatus(HttpStatus.BAD_REQUEST);
+		assertThat(reponse).bodyJson().extractingPath("$.erreurs[*].champ").asArray().containsExactlyInAnyOrder(
+				"linkedin", "siteWeb", "langues[1]", "competencesPhares", "realisations[0].titre",
+				"realisations[1].url", "realisations[1].annee", "realisations[1].pirate");
+		assertThat(mvc.get().uri("/api/me/profil").with(omar)).bodyJson().extractingPath("$.realisations").asArray()
+			.isEmpty();
+	}
+
+	@Test
+	void un_profil_publie_se_lit_sans_compte_mais_pas_la_recherche() {
+		UUID idLeila = creerCompte("Leila", "leila");
+		var leila = connecte(idLeila);
+		profilGenere(leila);
+
+		assertThat(mvc.get().uri("/api/profils/{id}", idLeila)).hasStatus(HttpStatus.NOT_FOUND);
+		mvc.post().uri("/api/me/profil/publier").with(leila).with(csrf()).exchange();
+		assertThat(mvc.get().uri("/api/profils/{id}", idLeila)).hasStatusOk().bodyText().doesNotContain("email");
+		assertThat(mvc.get().uri("/api/profils")).hasStatus(HttpStatus.UNAUTHORIZED);
+	}
+
 	// ---------- Carte de compétences proposée par l'IA ----------
 
 	@Test

@@ -111,9 +111,10 @@
     "heures": "{n} h par semaine",
     "visibilite": {
       "prive": "🔒 Ton profil est privé : toi seul le vois.",
-      "publie": "✅ Ton profil est publié : les membres connectés le voient et peuvent te proposer une équipe.",
+      "publie": "✅ Ton profil est publié : il est visible par les membres et par toute personne qui a ton lien.",
       "publier": "Publier mon profil",
-      "retirer": "Rendre mon profil privé"
+      "retirer": "Rendre mon profil privé",
+      "voirPublic": "Voir mon profil public"
     },
     "modifier": {
       "bouton": "Modifier",
@@ -130,7 +131,27 @@
       "annuler": "Annuler",
       "enregistre": "Ton profil est enregistré.",
       "conflit": "Ton profil a changé dans un autre onglet. Voici la dernière version : refais ta modification.",
-      "invalide": "Cette valeur n'est pas acceptée."
+      "invalide": "Cette valeur n'est pas acceptée.",
+      "titrePro": "Titre professionnel",
+      "titreProAide": "Exemple : Développeuse mobile · Flutter, ou Product designer",
+      "linkedin": "Profil LinkedIn",
+      "linkedinAide": "Commence par https://www.linkedin.com/in/",
+      "site": "Site ou portfolio",
+      "siteAide": "Commence par https://",
+      "langues": "Langues que tu parles",
+      "phares": "Compétences à mettre en avant ({n} au plus)",
+      "realisations": "Réalisations hors de Jamii",
+      "realisationsAide": "6 au plus. Elles s’affichent « Déclaré » : seuls les projets mis en ligne sur Jamii sont vérifiés.",
+      "realisation": {
+        "titre": "Nom du projet",
+        "role": "Ton rôle",
+        "description": "En deux phrases",
+        "technologies": "Technologies (séparées par des virgules)",
+        "lien": "Lien",
+        "annee": "Année",
+        "retirer": "Retirer cette réalisation",
+        "ajouter": "Ajouter une réalisation"
+      }
     },
     "langages": {
       "titre": "Langages",
@@ -185,6 +206,45 @@
         "intermediaire": "Intermédiaire",
         "confirme": "Confirmé"
       }
+    },
+    "liens": {
+      "site": "Site"
+    },
+    "langues": {
+      "parle": "Parle :"
+    },
+    "phares": {
+      "titre": "Compétences mises en avant"
+    },
+    "realisations": {
+      "titre": "Réalisations",
+      "declare": "Déclaré",
+      "declareAide": "Ajouté par la personne. Seuls les projets sur Jamii sont vérifiés."
+    },
+    "partage": {
+      "bouton": "Partager ma carte",
+      "titre": "Ta carte de profil",
+      "fermer": "Fermer",
+      "nonPublie": "Ton profil est privé : le QR code ne mènera à rien tant que tu ne l’as pas publié.",
+      "alt": "Carte de profil de {nom}",
+      "preparation": "Préparation de ta carte…",
+      "telecharger": "Enregistrer l’image",
+      "envoyer": "Envoyer",
+      "copier": "Copier le lien du profil",
+      "copie": "Lien copié",
+      "competences": "Compétences",
+      "projetsVerifies": "aucun projet vérifié | {n} projet vérifié sur Jamii | {n} projets vérifiés sur Jamii",
+      "realisations": "aucune réalisation | {n} réalisation | {n} réalisations",
+      "scanner": "Voir mon profil",
+      "message": "Mon profil sur Jamii : {lien}"
+    },
+    "public": {
+      "introuvable": "Ce profil n’est pas public",
+      "introuvableAide": "Le lien est peut-être incorrect, ou la personne a rendu son profil privé.",
+      "decouvrir": "Découvrir Jamii",
+      "invitationTitre": "Toi aussi, montre ce que tu sais faire.",
+      "invitationTexte": "Sur Jamii, tes projets mis en ligne avec une équipe deviennent des preuves.",
+      "rejoindre": "Créer mon profil"
     }
   },
   "etat": {

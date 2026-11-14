@@ -187,6 +187,8 @@ paths:
       tags: [profils]
       operationId: lireProfil
       summary: Un profil publié
+      description: 'Lisible sans compte (#159) : c''est le lien partagé et le QR code de la carte. Un profil non publié répond 404, sauf à son propriétaire.'
+      security: []
       responses:
         '200':
           description: Le profil.
@@ -273,6 +275,21 @@ components:
     Disponibilite:
       type: string
       enum: [disponible, occupe, indisponible]
+    Langue:
+      type: string
+      description: Code ISO 639-1 (`fr`, `en`, `wo`, `sw`, `ha`).
+      pattern: '^[a-z]{2}$'
+    Realisation:
+      type: object
+      additionalProperties: false
+      required: [titre]
+      properties:
+        titre: { type: string, minLength: 2, maxLength: 80 }
+        role: { type: [string, 'null'], maxLength: 60 }
+        description: { type: [string, 'null'], maxLength: 300 }
+        technologies: { type: array, maxItems: 8, items: { $ref: './projets.yaml#/components/schemas/Competence' } }
+        url: { type: [string, 'null'], format: uri, maxLength: 300, description: 'http ou https seulement.' }
+        annee: { type: [integer, 'null'], minimum: 1990 }
     TypePreuve:
       type: string
       enum: [tache_livree_a_temps, avis_coequipier, reponse_acceptee, projet_en_ligne]
@@ -295,12 +312,13 @@ components:
     Profil:
       type: object
       description: Ce que les autres voient d'un profil publié. Jamais l'e-mail.
-      required: [utilisateurId, nom, disponibilite, langages, competences, projets, depotsGithub, fiabilite, misAJourLe]
+      required: [utilisateurId, nom, disponibilite, langues, competencesPhares, realisations, langages, competences, projets, depotsGithub, fiabilite, misAJourLe]
       properties:
         utilisateurId: { type: string, format: uuid }
         nom: { type: string }
         avatarUrl: { type: [string, 'null'], format: uri }
         loginGithub: { type: [string, 'null'] }
+        titre: { type: [string, 'null'], maxLength: 80, description: 'Titre professionnel écrit par la personne (« Développeuse backend · Java »).' }
         bio: { type: [string, 'null'], maxLength: 500 }
         resumeIa:
           type: [string, 'null']
@@ -310,6 +328,23 @@ components:
         ville: { type: [string, 'null'], maxLength: 80 }
         disponibilite: { $ref: '#/components/schemas/Disponibilite' }
         heuresParSemaine: { type: [integer, 'null'], minimum: 1, maximum: 60 }
+        linkedin: { type: [string, 'null'], format: uri, maxLength: 300, description: 'https, sur linkedin.com.' }
+        siteWeb: { type: [string, 'null'], format: uri, maxLength: 300, description: 'http ou https seulement.' }
+        langues:
+          type: array
+          maxItems: 8
+          description: Langues parlées, codes ISO 639-1 (`fr`, `wo`, `sw`, `en`). Le front affiche leur nom.
+          items: { $ref: '#/components/schemas/Langue' }
+        competencesPhares:
+          type: array
+          maxItems: 3
+          description: Les compétences que la personne met en avant, dans son ordre.
+          items: { $ref: './projets.yaml#/components/schemas/Competence' }
+        realisations:
+          type: array
+          maxItems: 6
+          description: Réalisations déclarées hors de Jamii. Affichées « Déclaré » ; seuls les `projets` Jamii sont vérifiés.
+          items: { $ref: '#/components/schemas/Realisation' }
         langages:
           type: array
           description: Langages des dépôts publics GitHub (hors forks), par part décroissante.
@@ -361,6 +396,16 @@ components:
         ville: { type: [string, 'null'], maxLength: 80 }
         disponibilite: { $ref: '#/components/schemas/Disponibilite' }
         heuresParSemaine: { type: [integer, 'null'], minimum: 1, maximum: 60 }
+        titre: { type: [string, 'null'], maxLength: 80 }
+        linkedin: { type: [string, 'null'], format: uri, maxLength: 300 }
+        siteWeb: { type: [string, 'null'], format: uri, maxLength: 300 }
+        langues: { type: array, maxItems: 8, uniqueItems: true, items: { $ref: '#/components/schemas/Langue' } }
+        competencesPhares: { type: array, maxItems: 3, uniqueItems: true, items: { $ref: './projets.yaml#/components/schemas/Competence' } }
+        realisations:
+          type: array
+          maxItems: 6
+          description: Remplace la liste entière.
+          items: { $ref: '#/components/schemas/Realisation' }
         competencesDeclarees:
           type: array
           maxItems: 20

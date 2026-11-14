@@ -120,7 +120,10 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** Un profil publié */
+        /**
+         * Un profil publié
+         * @description Lisible sans compte (#159) : c'est le lien partagé et le QR code de la carte. Un profil non publié répond 404, sauf à son propriétaire.
+         */
         get: operations["lireProfil"];
         put?: never;
         post?: never;
@@ -183,6 +186,20 @@ export interface components {
         Pays: string;
         /** @enum {string} */
         Disponibilite: "disponible" | "occupe" | "indisponible";
+        /** @description Code ISO 639-1 (`fr`, `en`, `wo`, `sw`, `ha`). */
+        Langue: string;
+        Realisation: {
+            titre: string;
+            role?: string | null;
+            description?: string | null;
+            technologies?: components["schemas"]["Competence"][];
+            /**
+             * Format: uri
+             * @description http ou https seulement.
+             */
+            url?: string | null;
+            annee?: number | null;
+        };
         /** @enum {string} */
         TypePreuve: "tache_livree_a_temps" | "avis_coequipier" | "reponse_acceptee" | "projet_en_ligne";
         /** @description Une ligne de la recherche de coéquipiers. */
@@ -209,6 +226,8 @@ export interface components {
             /** Format: uri */
             avatarUrl?: string | null;
             loginGithub?: string | null;
+            /** @description Titre professionnel écrit par la personne (« Développeuse backend · Java »). */
+            titre?: string | null;
             bio?: string | null;
             /** @description Résumé proposé par l'IA à partir des données publiques. Le front l'étiquette « Proposé par l'IA ». `null` si l'utilisateur l'a masqué ou si l'IA n'a pas répondu. */
             resumeIa?: string | null;
@@ -216,6 +235,22 @@ export interface components {
             ville?: string | null;
             disponibilite: components["schemas"]["Disponibilite"];
             heuresParSemaine?: number | null;
+            /**
+             * Format: uri
+             * @description https, sur linkedin.com.
+             */
+            linkedin?: string | null;
+            /**
+             * Format: uri
+             * @description http ou https seulement.
+             */
+            siteWeb?: string | null;
+            /** @description Langues parlées, codes ISO 639-1 (`fr`, `wo`, `sw`, `en`). Le front affiche leur nom. */
+            langues: components["schemas"]["Langue"][];
+            /** @description Les compétences que la personne met en avant, dans son ordre. */
+            competencesPhares: components["schemas"]["Competence"][];
+            /** @description Réalisations déclarées hors de Jamii. Affichées « Déclaré » ; seuls les `projets` Jamii sont vérifiés. */
+            realisations: components["schemas"]["Realisation"][];
             /** @description Langages des dépôts publics GitHub (hors forks), par part décroissante. */
             langages: components["schemas"]["Langage"][];
             competences: components["schemas"]["CompetenceProfil"][];
@@ -249,6 +284,15 @@ export interface components {
             ville?: string | null;
             disponibilite?: components["schemas"]["Disponibilite"];
             heuresParSemaine?: number | null;
+            titre?: string | null;
+            /** Format: uri */
+            linkedin?: string | null;
+            /** Format: uri */
+            siteWeb?: string | null;
+            langues?: components["schemas"]["Langue"][];
+            competencesPhares?: components["schemas"]["Competence"][];
+            /** @description Remplace la liste entière. */
+            realisations?: components["schemas"]["Realisation"][];
             competencesDeclarees?: components["schemas"]["Competence"][];
             afficherResumeIa?: boolean;
             /** @description Les compétences de `competencesProposees` que la personne garde. Remplace la liste entière. */
