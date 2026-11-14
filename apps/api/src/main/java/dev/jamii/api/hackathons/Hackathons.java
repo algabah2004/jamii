@@ -67,8 +67,13 @@ class Hackathons {
 
 	}
 
-	/** Un hackathon, et ce que la personne qui le lit est pour lui : `organisateur` ou `visiteur`. */
-	record Lecture(Hackathon hackathon, String role) {
+	/** Un hackathon, et ce que la personne qui le lit est pour lui : `organisateur`, `participant` (avec son équipe) ou `visiteur`. */
+	record Lecture(Hackathon hackathon, String role, UUID equipeId) {
+
+		Lecture(Hackathon hackathon, String role) {
+			this(hackathon, role, null);
+		}
+
 	}
 
 	/** Un hackathon nouveau, déjà validé par le contrôleur. */
@@ -286,12 +291,49 @@ class Hackathons {
 		return h;
 	}
 
-	/** Ce que `moi` est pour ce hackathon : `organisateur`, ou `visiteur` (tout hackathon publié). Vide : il n'existe pas pour lui. */
+	/** Comme {@link #organisateurDe}, sans verrou : pour les lectures réservées à l'organisateur. */
+	Hackathon exigerOrganisateur(UUID id, UUID moi) {
+		Hackathon h = charger(id, false);
+		Lecture l = role(h, moi).orElseThrow(ErreurHackathons::introuvable);
+		if (!"organisateur".equals(l.role())) {
+			throw ErreurHackathons.interdit();
+		}
+		return h;
+	}
+
+	/**
+	 * Ce que `moi` est pour ce hackathon : `organisateur`, `participant` (inscrit, hors inscription refusée, avec son
+	 * équipe s'il en a une) ou `visiteur` (tout hackathon publié). Vide : il n'existe pas pour lui.
+	 */
 	Optional<Lecture> role(Hackathon h, UUID moi) {
 		if (h.organisateurId().equals(moi)) {
 			return Optional.of(new Lecture(h, "organisateur"));
 		}
-		return "brouillon".equals(h.statutBase()) ? Optional.empty() : Optional.of(new Lecture(h, "visiteur"));
+		if ("brouillon".equals(h.statutBase())) {
+			return Optional.empty();
+		}
+		if (moi != null) {
+			var inscrit = base.sql("SELECT equipe_id FROM inscription WHERE hackathon_id = :h AND utilisateur_id = :u AND statut <> 'refusee'")
+				.param("h", h.id()).param("u", moi).query((rs, i) -> Optional.ofNullable(rs.getObject("equipe_id", UUID.class))).optional();
+			if (inscrit.isPresent()) {
+				return Optional.of(new Lecture(h, "participant", inscrit.get().orElse(null)));
+			}
+		}
+		return Optional.of(new Lecture(h, "visiteur"));
+	}
+
+	/** Combien de personnes sont inscrites à chaque hackathon (une inscription refusée ne compte pas). */
+	@Transactional(readOnly = true)
+	java.util.Map<UUID, Integer> nombresInscrits(java.util.Collection<UUID> hackathons) {
+		java.util.Map<UUID, Integer> nombres = new java.util.HashMap<>();
+		if (hackathons.isEmpty()) {
+			return nombres;
+		}
+		base.sql("SELECT hackathon_id, count(*) FROM inscription WHERE hackathon_id IN (:ids) AND statut <> 'refusee' GROUP BY hackathon_id")
+			.param("ids", hackathons)
+			.query((rs, i) -> nombres.put(rs.getObject(1, UUID.class), rs.getInt(2)))
+			.list();
+		return nombres;
 	}
 
 	private static void verifierVersion(Hackathon h, int version) {
