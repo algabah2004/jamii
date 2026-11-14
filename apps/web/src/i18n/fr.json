@@ -860,5 +860,86 @@
         "accepte": "Dans tes contacts"
       }
     }
+  },
+  "missions": {
+    "titre": "Missions",
+    "intro": "Des clients cherchent un développeur pour une mission. Découvre celles qui sont ouvertes, ou publie la tienne.",
+    "onglets": {
+      "ouvertes": "Ouvertes",
+      "miennes": "Les miennes"
+    },
+    "publier": "Publier une mission",
+    "aucune": "Aucune mission ouverte pour le moment.",
+    "aucuneMiennes": "Tu n'as encore aucune mission.",
+    "budgetADiscuter": "Budget à discuter",
+    "par": "Par {nom}",
+    "propositions": "{n} proposition | {n} propositions",
+    "aDistance": "À distance",
+    "indisponible": "Les missions ne sont pas disponibles pour le moment. Réessaie dans un instant.",
+    "plus": "Voir plus de missions",
+    "statuts": {
+      "brouillon": "Brouillon",
+      "publiee": "Ouverte aux propositions",
+      "fermee": "Fermée",
+      "attribuee": "Attribuée",
+      "en_cours": "En cours",
+      "terminee": "Terminée",
+      "annulee": "Annulée",
+      "desaccord": "En désaccord"
+    },
+    "nouvelle": {
+      "titre": "Publier une mission",
+      "intro": "Décris ce que tu cherches. Tu enregistres d'abord un brouillon, que personne ne voit : tu le publies ensuite quand il est prêt.",
+      "champTitre": "En une phrase, que cherches-tu ?",
+      "aideTitre": "Par exemple : un site pour mon association.",
+      "champBesoin": "Décris la mission",
+      "aideBesoin": "Au moins {n} caractères : ce que le développeur doit faire, pour qui, et ce qui compte pour toi.",
+      "champCompetences": "Les compétences utiles",
+      "aideCompetences": "Sépare-les par des virgules, par exemple : vue, spring, ux design.",
+      "budget": "Ton budget (facultatif)",
+      "aideBudget": "Laisse vide si tu préfères en discuter.",
+      "devise": "Devise",
+      "date": "Pour quelle date ? (facultatif)",
+      "visibilite": "Qui peut la voir ?",
+      "publique": "Tout le monde",
+      "invitation": "Seulement les développeurs que j'invite",
+      "ville": "Ta ville (facultatif)",
+      "creer": "Enregistrer le brouillon",
+      "provisoire": "Écran provisoire : son design sera repris avec le design system.",
+      "invalide": {
+        "titre": "Le titre doit faire entre 3 et 120 caractères.",
+        "besoin": "La description doit faire au moins 20 caractères.",
+        "competences": "Indique de une à dix compétences, chacune en un mot ou deux.",
+        "budget": "Le budget n'est pas un montant valide.",
+        "dateSouhaitee": "La date n'est pas valide.",
+        "visibilite": "Choisis qui peut voir la mission.",
+        "autre": "Ce champ n'est pas valide."
+      },
+      "erreur": "La mission n'a pas pu être enregistrée. Réessaie dans un instant."
+    },
+    "detail": {
+      "retour": "Toutes les missions",
+      "besoin": "La mission",
+      "competences": "Compétences",
+      "budget": "Budget",
+      "date": "Date souhaitée",
+      "lieu": "Lieu",
+      "client": "Client",
+      "publier": "Publier la mission",
+      "publierAide": "Elle sera visible de tous les développeurs. Tu peux la fermer à tout moment.",
+      "fermer": "Fermer la mission",
+      "fermerAide": "Plus personne ne pourra proposer ses services.",
+      "invite": "Tu es invité à proposer tes services pour cette mission.",
+      "propositionsBientot": "Pouvoir répondre à cette mission arrive très bientôt.",
+      "brouillon": "Brouillon : personne d'autre ne voit cette mission pour le moment.",
+      "provisoire": "Écran provisoire : son design sera repris avec le design system.",
+      "introuvable": "Cette mission n'existe pas, ou tu n'as pas le droit de la voir.",
+      "erreurs": {
+        "modification_concurrente": "La mission a changé entre-temps. Recharge la page.",
+        "etat_invalide": "Cette action n'est plus possible pour cette mission.",
+        "limite_atteinte": "Tu as déjà publié 5 missions aujourd'hui. Réessaie demain.",
+        "autre": "L'action n'a pas abouti. Réessaie dans un instant."
+      }
+    }
   }
 }
