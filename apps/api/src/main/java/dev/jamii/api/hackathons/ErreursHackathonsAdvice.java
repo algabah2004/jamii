@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /** Les erreurs du contrat hackathons.yaml, au format RFC 9457 avec `code`, pour les contrôleurs du module. */
-@RestControllerAdvice(assignableTypes = { HackathonsController.class, InscriptionsController.class, RendusController.class, JuryController.class })
+@RestControllerAdvice(assignableTypes = { HackathonsController.class, InscriptionsController.class, RendusController.class, JuryController.class, ResultatsController.class })
 class ErreursHackathonsAdvice {
 
 	@ExceptionHandler(ErreurHackathons.class)

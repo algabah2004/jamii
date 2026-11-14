@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,10 +36,13 @@ class Fin {
 
 	private final Clock horloge;
 
-	Fin(JdbcClient base, Missions missions, ObjectProvider<Clock> horloge) {
+	private final ApplicationEventPublisher evenements;
+
+	Fin(JdbcClient base, Missions missions, ObjectProvider<Clock> horloge, ApplicationEventPublisher evenements) {
 		this.base = base;
 		this.missions = missions;
 		this.horloge = horloge.getIfAvailable(Clock::systemUTC);
+		this.evenements = evenements;
 	}
 
 	// ---------------------------------------------------------------- annuler
@@ -115,6 +119,9 @@ class Fin {
 			.param("i", issue).param("e", explication).param("p", moderateur).param("t", Timestamp.from(horloge.instant()))
 			.param("m", missionId).update();
 		base.sql("UPDATE mission SET statut = :s, version = version + 1 WHERE id = :m").param("s", issue).param("m", missionId).update();
+		if ("terminee".equals(issue)) {
+			evenements.publishEvent(new MissionTerminee(missionId, m.clientId(), m.developpeurId(), m.titre(), horloge.instant()));
+		}
 	}
 
 	// ---------------------------------------------------------------- lectures pour la vue

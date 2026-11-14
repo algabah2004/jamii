@@ -262,6 +262,12 @@ class Inscriptions {
 		return base.sql("SELECT " + COLONNES + " FROM inscription WHERE id = :id").param("id", id).query(Inscriptions::inscription).single();
 	}
 
+	/** Des équipes par leur identifiant, dans l'ordre demandé (pour les résultats, déjà filtrés par droit). */
+	@Transactional(readOnly = true)
+	List<Equipe> lireEquipes(List<UUID> ids) {
+		return ids.stream().map(this::lireEquipe).toList();
+	}
+
 	private Equipe lireEquipe(UUID id) {
 		var ligne = base.sql("""
 				SELECT e.id, e.hackathon_id, e.nom, e.chef_id, e.cree_le, h.taille_max
