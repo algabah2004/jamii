@@ -121,7 +121,14 @@ export const handlersDemandes = [
   http.get('/api/demandes', () =>
     HttpResponse.json(
       [...demandes.values()]
-        .map(({ demande }) => ({ id: demande.id, titre: demande.titre, creeLe: demande.creeLe, resume: demande.orientation?.resultat?.resume ?? null }))
+        .map(({ demande }) => ({
+          id: demande.id,
+          titre: demande.titre,
+          creeLe: demande.creeLe,
+          resume: demande.orientation?.resultat?.resume ?? null,
+          precisions: demande.precisions?.length ?? 0,
+          publiee: Boolean(demande.publication),
+        }))
         .reverse(),
     ),
   ),

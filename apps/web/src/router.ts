@@ -81,6 +81,13 @@ export const routes: RouteRecordRaw[] = [
   // Une personne ou une PME décrit son besoin, Jamii l'oriente (étape 1 de la démo). Connexion requise
   // (GitHub ou e-mail : une PME n'a pas besoin de compte GitHub). `/besoin` est l'adresse à donner.
   { path: '/besoin', redirect: '/demandes/nouvelle' },
+  // « Tes demandes » (#199) : tous ses besoins, comme sur un profil. C'est ce qu'ouvre le menu.
+  {
+    path: '/demandes',
+    name: 'mes-demandes',
+    component: () => import('./features/demandes/MesDemandesPage.vue'),
+    meta: { connexionRequise: true },
+  },
   {
     path: '/demandes/nouvelle',
     name: 'nouvelle-demande',

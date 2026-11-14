@@ -76,7 +76,7 @@ class GestionDemandes {
 	}
 
 	/** Une ligne de « Tes demandes ». */
-	record Resume(UUID id, String titre, String resume, Instant creeLe) {
+	record Resume(UUID id, String titre, String resume, Instant creeLe, int precisions, boolean publiee) {
 	}
 
 	/** Ce que l'auteur ajoute à son besoin, tout facultatif. */
@@ -217,12 +217,14 @@ class GestionDemandes {
 	@Transactional(readOnly = true)
 	List<Resume> mesDemandes(UUID auteur) {
 		return base.sql("""
-				SELECT id, titre, orientation ->> 'resume' AS resume, cree_le FROM demande
-				WHERE auteur_id = :a ORDER BY cree_le DESC, id LIMIT 50
+				SELECT d.id, d.titre, d.orientation ->> 'resume' AS resume, d.cree_le, d.publiee_le IS NOT NULL AS publiee,
+				  (SELECT count(*) FROM demande_precision p WHERE p.demande_id = d.id) AS precisions
+				FROM demande d
+				WHERE d.auteur_id = :a ORDER BY d.cree_le DESC, d.id LIMIT 50
 				""")
 			.param("a", auteur)
 			.query((rs, n) -> new Resume(rs.getObject("id", UUID.class), rs.getString("titre"), rs.getString("resume"),
-					rs.getTimestamp("cree_le").toInstant()))
+					rs.getTimestamp("cree_le").toInstant(), rs.getInt("precisions"), rs.getBoolean("publiee")))
 			.list();
 	}
 

@@ -7,14 +7,17 @@ import {
   ATTENTE_PLAN_MAX_MS,
   choisirOffres,
   creerProjet,
+  dateCourte,
   estRepli,
   etatAnalyse,
   fonctionnalitesParPriorite,
   INTERVALLE_PLAN_MS,
   jalonsAvecTaches,
   lireDemande,
+  listerDemandes,
   preciserDemande,
   type Demande,
+  type DemandeResumee,
 } from './demandes'
 import PublierDemande from './PublierDemande.vue'
 
@@ -65,6 +68,13 @@ watch(id, () => {
   void charger()
 }, { immediate: true })
 
+/** L'historique à côté, comme une liste de conversations : on passe d'un besoin à l'autre sans rien perdre. */
+const historique = ref<DemandeResumee[]>([])
+function chargerHistorique() {
+  void listerDemandes().then((l) => (historique.value = l)).catch(() => undefined)
+}
+chargerHistorique()
+
 const analyse = computed(() => (demande.value ? etatAnalyse(demande.value) : 'attente'))
 const orientation = computed(() => (analyse.value === 'pret' ? (demande.value?.orientation?.resultat ?? null) : null))
 const plan = computed(() => {
@@ -108,6 +118,7 @@ async function envoyerPrecision() {
     debut = 0
     tropLong.value = false
     surveiller()
+    chargerHistorique()
     window.scrollTo({ top: 0, behavior: 'smooth' })
   } catch {
     envoiPrecision.value = 'erreur'
@@ -174,13 +185,27 @@ const messageErreur = computed(() =>
 </script>
 
 <template>
+  <div class="page-demande">
+  <aside v-if="historique.length" class="historique" :aria-label="t('demandes.mesDemandes.titre')" data-test="historique">
+    <RouterLink to="/demandes/nouvelle" class="j-bouton j-bouton--principal historique__nouvelle">+ {{ t('demandes.mesDemandes.nouvelle') }}</RouterLink>
+    <h2 class="historique__titre">{{ t('demandes.mesDemandes.titre') }}</h2>
+    <ul>
+      <li v-for="d in historique.slice(0, 12)" :key="d.id">
+        <RouterLink :to="`/demandes/${d.id}`" :aria-current="d.id === id ? 'page' : undefined" class="historique__lien">
+          <span class="historique__nom">{{ d.titre }}</span>
+          <span class="texte-discret">{{ dateCourte(d.creeLe) }}<template v-if="d.publiee"> · {{ t('demandes.mesDemandes.publiee') }}</template></span>
+        </RouterLink>
+      </li>
+    </ul>
+    <RouterLink v-if="historique.length > 12" to="/demandes" class="historique__toutes">{{ t('demandes.mesDemandes.toutes') }}</RouterLink>
+  </aside>
   <section class="demande fond-verre">
-    <p class="retour"><RouterLink to="/demandes/nouvelle">{{ t('demandes.plan.autre') }}</RouterLink></p>
+    <p class="retour"><RouterLink to="/demandes">← {{ t('demandes.mesDemandes.titre') }}</RouterLink></p>
 
     <JSquelette v-if="etat === 'chargement' && !demande" :nombre="3" />
     <div v-else-if="etat === 'introuvable'" class="etat-vide">
       <h1>{{ t('introuvable.titre') }}</h1>
-      <RouterLink to="/demandes/nouvelle">{{ t('demandes.plan.autre') }}</RouterLink>
+      <RouterLink to="/demandes">{{ t('demandes.mesDemandes.toutes') }}</RouterLink>
     </div>
     <div v-else-if="etat === 'indisponible'" role="alert" class="etat-vide">
       <p>{{ t('etat.indisponible') }}</p>
@@ -423,9 +448,25 @@ const messageErreur = computed(() =>
       </template>
     </template>
   </section>
+  </div>
 </template>
 
 <style scoped>
+.page-demande { display: grid; gap: var(--space-6); grid-template-columns: minmax(0, 1fr); align-items: start; }
+.historique { display: none; }
+@media (min-width: 1100px) {
+  .page-demande { grid-template-columns: 15rem minmax(0, 64rem); }
+  .historique { position: sticky; top: var(--space-6); display: grid; gap: var(--space-3); max-height: calc(100vh - 2 * var(--space-6)); overflow-y: auto; }
+}
+.historique__nouvelle { justify-content: center; }
+.historique__titre { margin: var(--space-2) 0 0; font-size: var(--type-body-sm-size); color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.historique ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.historique__lien { display: grid; gap: 2px; padding: var(--space-2) var(--space-3); border-radius: var(--radius-md); color: var(--ink); text-decoration: none; }
+.historique__lien:hover { background: color-mix(in srgb, var(--surface) 70%, transparent); }
+.historique__lien[aria-current='page'] { background: var(--action-soft); font-weight: 600; }
+.historique__nom { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.historique__lien .texte-discret { font-size: var(--type-label-size); }
+.historique__toutes { font-size: var(--type-body-sm-size); font-weight: 600; }
 .fil { display: grid; gap: var(--space-2); justify-items: end; }
 .bulle { margin: 0; max-width: min(42rem, 92%); padding: var(--space-3) var(--space-4); border-radius: var(--radius-lg); white-space: pre-wrap; line-height: 1.5; }
 .bulle--moi { background: var(--action-soft); color: var(--ink); border-end-end-radius: 4px; }

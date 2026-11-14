@@ -317,12 +317,14 @@ components:
 
     DemandeResumee:
       type: object
-      required: [id, titre, creeLe]
+      required: [id, titre, creeLe, precisions, publiee]
       properties:
         id: { type: string, format: uuid }
         titre: { type: string }
         resume: { type: [string, 'null'], description: 'Le besoin reformulé par l''assistant, une fois l''analyse terminée.' }
         creeLe: { type: string, format: date-time }
+        precisions: { type: integer, minimum: 0, maximum: 5, description: Nombre de précisions ajoutées par l'auteur. }
+        publiee: { type: boolean, description: Vrai si l'auteur a publié le résumé de sa demande. }
 
     PlanDeLaDemande:
       type: object

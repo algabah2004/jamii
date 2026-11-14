@@ -656,7 +656,17 @@
       }
     },
     "mesDemandes": {
-      "titre": "Your requests"
+      "titre": "Your requests",
+      "intro": "Every need you described. Open one to read the answer again, refine it or publish it.",
+      "nouvelle": "Describe a new need",
+      "vide": "You haven't described any need yet.",
+      "videAide": "Explain what you need in your own words: Jamii tells you what already exists and who can do the rest.",
+      "enCours": "Answer being prepared…",
+      "publiee": "Published",
+      "precisions": "{n} detail | {n} details",
+      "ouvrir": "Open",
+      "autres": "Your other requests",
+      "toutes": "See all your requests"
     },
     "discuter": {
       "titre": "Something doesn’t suit you?",
