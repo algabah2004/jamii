@@ -838,5 +838,86 @@
         "accepte": "In your contacts"
       }
     }
+  },
+  "missions": {
+    "titre": "Missions",
+    "intro": "Clients are looking for a developer for a mission. Browse the open ones, or publish yours.",
+    "onglets": {
+      "ouvertes": "Open",
+      "miennes": "Mine"
+    },
+    "publier": "Publish a mission",
+    "aucune": "No open mission right now.",
+    "aucuneMiennes": "You don't have any mission yet.",
+    "budgetADiscuter": "Budget to discuss",
+    "par": "By {nom}",
+    "propositions": "{n} proposal | {n} proposals",
+    "aDistance": "Remote",
+    "indisponible": "Missions are not available right now. Try again in a moment.",
+    "plus": "Show more missions",
+    "statuts": {
+      "brouillon": "Draft",
+      "publiee": "Open for proposals",
+      "fermee": "Closed",
+      "attribuee": "Awarded",
+      "en_cours": "In progress",
+      "terminee": "Done",
+      "annulee": "Cancelled",
+      "desaccord": "In dispute"
+    },
+    "nouvelle": {
+      "titre": "Publish a mission",
+      "intro": "Describe what you are looking for. You first save a draft that nobody sees: you publish it when it is ready.",
+      "champTitre": "In one sentence, what are you looking for?",
+      "aideTitre": "For example: a website for my association.",
+      "champBesoin": "Describe the mission",
+      "aideBesoin": "At least {n} characters: what the developer must do, for whom, and what matters to you.",
+      "champCompetences": "Useful skills",
+      "aideCompetences": "Separate them with commas, for example: vue, spring, ux design.",
+      "budget": "Your budget (optional)",
+      "aideBudget": "Leave empty if you prefer to discuss it.",
+      "devise": "Currency",
+      "date": "By when? (optional)",
+      "visibilite": "Who can see it?",
+      "publique": "Everyone",
+      "invitation": "Only the developers I invite",
+      "ville": "Your city (optional)",
+      "creer": "Save the draft",
+      "provisoire": "Temporary screen: its design will be reworked with the design system.",
+      "invalide": {
+        "titre": "The title must be between 3 and 120 characters.",
+        "besoin": "The description must be at least 20 characters.",
+        "competences": "Give one to ten skills, each in a word or two.",
+        "budget": "The budget is not a valid amount.",
+        "dateSouhaitee": "The date is not valid.",
+        "visibilite": "Choose who can see the mission.",
+        "autre": "This field is not valid."
+      },
+      "erreur": "The mission could not be saved. Try again in a moment."
+    },
+    "detail": {
+      "retour": "All missions",
+      "besoin": "The mission",
+      "competences": "Skills",
+      "budget": "Budget",
+      "date": "Desired date",
+      "lieu": "Place",
+      "client": "Client",
+      "publier": "Publish the mission",
+      "publierAide": "It will be visible to all developers. You can close it at any time.",
+      "fermer": "Close the mission",
+      "fermerAide": "Nobody will be able to offer their services any more.",
+      "invite": "You are invited to offer your services for this mission.",
+      "propositionsBientot": "Answering this mission is coming very soon.",
+      "brouillon": "Draft: nobody else can see this mission for now.",
+      "provisoire": "Temporary screen: its design will be reworked with the design system.",
+      "introuvable": "This mission does not exist, or you are not allowed to see it.",
+      "erreurs": {
+        "modification_concurrente": "The mission changed in the meantime. Reload the page.",
+        "etat_invalide": "This action is no longer possible for this mission.",
+        "limite_atteinte": "You have already published 5 missions today. Try again tomorrow.",
+        "autre": "The action did not go through. Try again in a moment."
+      }
+    }
   }
 }
