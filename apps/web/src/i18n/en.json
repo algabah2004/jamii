@@ -584,7 +584,8 @@
       "taille": "How many of you?",
       "personnes": "{n} people",
       "tailleAide": "{n} two-week turns: everyone gets their project built.",
-      "creer": "Create the circle"
+      "creer": "Create the circle",
+      "duBesoin": "Once the circle is created, you can invite {noms} in one click."
     },
     "membresTitre": "Members",
     "livrer": "Deliver the turn",
@@ -655,7 +656,12 @@
       "message": "Your message to {nom}",
       "messageParDefaut": "Hi {nom}, our “{cercle}” is looking for someone who knows {competences}. Would you like to join us?",
       "envoyer": "Send the invitation",
-      "envoye": "Invitation sent. {nom} will see it in their messages."
+      "envoye": "Invitation sent. {nom} will see it in their messages.",
+      "duBesoin": "Recommended for your need: {noms}.",
+      "inviterDuBesoin": "Invite them to the circle | Invite all {n}",
+      "invitesDuBesoin": "Invitation sent to {noms}. Each of them will see it in their messages.",
+      "echecsDuBesoin": "The invitation did not go out for {noms}. Try again.",
+      "messageSimple": "Hello {nom}, do you want to join our “{cercle}”?"
     },
     "erreurs": {
       "cercle_ferme": "The circle is full, or the order has already been drawn.",

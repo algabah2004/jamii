@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import { JAvatar, JBouton, JChamp, JDeplier } from '../../design-system'
-import { envoyerMessage, LONGUEUR_MESSAGE, lireProfilsRecommandes, prenom, type ProfilRecommande } from './reseau'
+import { envoyerMessage, LONGUEUR_MESSAGE, lireDuBesoin, lireProfilsRecommandes, prenom, type ProfilRecommande, type RecommandeDuBesoin } from './reseau'
 
 /* Dans un cercle ouvert : les profils qui apportent ce qui manque au cercle, et l'invitation par message. */
 const props = defineProps<{ cercleId: string; cercleNom: string }>()
@@ -41,6 +42,36 @@ function ouvrir(p: ProfilRecommande) {
   texte.value = t('reseau.profils.messageParDefaut', { nom: prenom(p.profil.nom), cercle: props.cercleNom, competences: liste(competences) })
 }
 
+// Venu d'un besoin (« Former un cercle avec eux ») : les développeurs recommandés pour ce besoin, invités en un clic.
+// Chacun reçoit le message habituel, dans ses messages : rien n'est envoyé sans ce clic.
+const routeur = useRouter()
+const duBesoin = ref(lireDuBesoin((routeur.options.history.state as { duBesoin?: unknown } | null)?.duBesoin))
+const enAttente = computed(() => duBesoin.value.filter((p) => !invites.value.includes(p.id)))
+const invites = ref<string[]>([])
+const echecs = ref<string[]>([])
+const envoiGroupe = ref(false)
+const noms = (personnes: readonly RecommandeDuBesoin[]) => liste(personnes.map((p) => prenom(p.nom)))
+
+async function inviterDuBesoin() {
+  envoiGroupe.value = true
+  echecs.value = []
+  const competences = liste(manquantes.value.slice(0, 2))
+  for (const p of enAttente.value) {
+    const texteInvitation = competences
+      ? t('reseau.profils.messageParDefaut', { nom: prenom(p.nom), cercle: props.cercleNom, competences })
+      : t('reseau.profils.messageSimple', { nom: prenom(p.nom), cercle: props.cercleNom })
+    try {
+      const r = await envoyerMessage(p.id, texteInvitation, props.cercleId)
+      if (r.ok) invites.value.push(p.id)
+      else echecs.value.push(p.id)
+    } catch {
+      echecs.value.push(p.id)
+    }
+  }
+  for (const p of profils.value) if (invites.value.includes(p.profil.utilisateurId)) p.invite = true
+  envoiGroupe.value = false
+}
+
 const valide = computed(() => texte.value.trim().length > 0 && texte.value.length <= LONGUEUR_MESSAGE)
 async function inviter(p: ProfilRecommande) {
   envoi.value = true
@@ -65,6 +96,16 @@ async function inviter(p: ProfilRecommande) {
     <h2 id="recos-titre">{{ t('reseau.profils.titre') }}</h2>
     <p v-if="manquantes.length" class="texte-discret">{{ t('reseau.profils.aide', { competences: liste(manquantes) }) }}</p>
     <p v-if="!profils.length" class="texte-discret" data-test="profils-vide">{{ t('reseau.profils.vide') }}</p>
+    <div v-if="duBesoin.length" class="du-besoin" data-test="du-besoin">
+      <p>{{ t('reseau.profils.duBesoin', { noms: noms(duBesoin) }) }}</p>
+      <JBouton v-if="enAttente.length" :occupe="envoiGroupe" data-test="inviter-du-besoin" @click="inviterDuBesoin">
+        {{ t('reseau.profils.inviterDuBesoin', { n: enAttente.length }, enAttente.length) }}
+      </JBouton>
+      <p v-if="invites.length" role="status" class="succes" data-test="invites-du-besoin">
+        {{ t('reseau.profils.invitesDuBesoin', { noms: noms(duBesoin.filter((p) => invites.includes(p.id))) }) }}
+      </p>
+      <p v-if="echecs.length" role="alert" class="erreur">{{ t('reseau.profils.echecsDuBesoin', { noms: noms(duBesoin.filter((p) => echecs.includes(p.id))) }) }}</p>
+    </div>
     <p v-if="envoye" role="status" class="succes" data-test="invitation-envoyee">{{ envoye }}</p>
 
     <ul v-if="profils.length" class="recos__liste">
@@ -119,6 +160,8 @@ async function inviter(p: ProfilRecommande) {
 .reco__invite { background: var(--action-soft); color: var(--action-ink); }
 .reco__form { display: grid; gap: var(--space-3); padding-top: var(--space-2); }
 .reco__commandes { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+.du-besoin { display: grid; gap: var(--space-2); justify-items: start; padding: var(--space-4); border-radius: var(--radius-lg); background: var(--action-soft); }
+.du-besoin p { margin: 0; }
 .succes { margin: 0; color: var(--action-ink); font-weight: 600; }
 .erreur { margin: 0; color: var(--danger, #b42318); }
 </style>

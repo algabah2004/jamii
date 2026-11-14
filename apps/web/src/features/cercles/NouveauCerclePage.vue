@@ -4,13 +4,16 @@ import { useI18n } from 'vue-i18n'
 import { RouterLink, useRouter } from 'vue-router'
 import { JBouton, JChamp } from '../../design-system'
 import { creerCercle, LIMITES, TAILLES } from './cercles'
+import { lireDuBesoin, prenom } from '../reseau/reseau'
 
 /* Créer un cercle : un nom, une ville, combien on sera. Le créateur en est le premier membre. */
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const router = useRouter()
 
 // Venu de l'orientation d'un besoin : le titre et la ville arrivent par l'état de la navigation (jamais par l'adresse).
-const depart = (router.options.history.state ?? {}) as { nom?: unknown; ville?: unknown }
+const depart = (router.options.history.state ?? {}) as { nom?: unknown; ville?: unknown; duBesoin?: unknown }
+const duBesoin = lireDuBesoin(depart.duBesoin)
+const nomsDuBesoin = computed(() => new Intl.ListFormat(locale.value, { type: 'conjunction' }).format(duBesoin.map((p) => prenom(p.nom))))
 const nom = ref(typeof depart.nom === 'string' ? depart.nom.slice(0, LIMITES.nomMax) : '')
 const ville = ref(typeof depart.ville === 'string' ? depart.ville.slice(0, LIMITES.villeMax) : '')
 const taille = ref<number>(6)
@@ -23,7 +26,7 @@ async function creer() {
   try {
     const r = await creerCercle({ nom: nom.value, ville: ville.value, taille: taille.value })
     if (!r.ok) return void (envoi.value = 'erreur')
-    await router.push(`/cercles/${r.cercle.id}`)
+    await router.push({ path: `/cercles/${r.cercle.id}`, state: duBesoin.length ? { duBesoin } : {} })
   } catch {
     envoi.value = 'erreur'
   }
@@ -51,6 +54,7 @@ async function creer() {
         </label>
         <p class="texte-discret">{{ t('cercles.nouveau.tailleAide', { n: taille }) }}</p>
       </fieldset>
+      <p v-if="duBesoin.length" class="texte-discret" data-test="du-besoin">{{ t('cercles.nouveau.duBesoin', { noms: nomsDuBesoin }) }}</p>
       <p v-if="envoi === 'erreur'" role="alert" class="erreur">{{ t('cercles.erreurs.autre') }}</p>
       <div>
         <JBouton type="submit" :desactive="!valide" :occupe="envoi === 'envoi'" data-test="creer">{{ t('cercles.nouveau.creer') }}</JBouton>
@@ -76,5 +80,6 @@ async function creer() {
 }
 .tailles__choix input:checked + span { background: var(--action); border-color: var(--action); color: var(--on-action); }
 .tailles__choix input:focus-visible + span { outline: 2px solid var(--focus); outline-offset: 2px; }
+.formulaire > p { margin: 0; }
 .erreur { margin: 0; color: var(--danger); font-weight: 600; }
 </style>
