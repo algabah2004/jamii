@@ -1149,7 +1149,6 @@
       "fermer": "Fermer la mission",
       "fermerAide": "Plus personne ne pourra proposer ses services.",
       "invite": "Tu es invité à proposer tes services pour cette mission.",
-      "propositionsBientot": "Pouvoir répondre à cette mission arrive très bientôt.",
       "brouillon": "Brouillon : personne d'autre ne voit cette mission pour le moment.",
       "provisoire": "Écran provisoire : son design sera repris avec le design system.",
       "introuvable": "Cette mission n'existe pas, ou tu n'as pas le droit de la voir.",
@@ -1279,6 +1278,46 @@
         "texte": "Un mot de plus (facultatif)",
         "aide": "1 000 caractères au plus. L'avis ne pourra plus être modifié.",
         "envoyer": "Donner mon avis"
+      }
+    },
+    "proposition": {
+      "titre": "Les propositions reçues",
+      "titreMienne": "Ma proposition",
+      "aucune": "Aucune proposition pour le moment.",
+      "indisponible": "Les propositions ne sont pas disponibles pour le moment. Réessaie dans un instant.",
+      "statuts": {
+        "envoyee": "Envoyée",
+        "retenue": "Retenue",
+        "acceptee": "Acceptée",
+        "non_retenue": "Non retenue",
+        "retiree": "Retirée"
+      },
+      "delai": "{n} jour | {n} jours",
+      "envoyeeLe": "envoyée le {date}",
+      "retenir": "Retenir cette proposition",
+      "aideRetenir": "Retenir une proposition invite son auteur à t'envoyer un devis détaillé. Tu peux en retenir une autre ensuite.",
+      "aideRetenueClient": "Ce développeur prépare son devis. Tu pourras l'accepter ici.",
+      "aideRetenueDeveloppeur": "Le client a retenu ta proposition : envoie-lui ton devis.",
+      "retirer": "Retirer ma proposition",
+      "proposer": {
+        "titre": "Proposer mes services",
+        "intro": "Le client reçoit ta proposition. S'il la retient, tu lui envoies un devis détaillé, par étapes.",
+        "message": "Comment tu t'y prendrais",
+        "aideMessage": "Au moins {n} caractères : ta méthode, et ce que tu as déjà fait de proche.",
+        "prix": "Ton prix",
+        "prixInvalide": "Ce n'est pas un montant valide.",
+        "delai": "Délai, en jours",
+        "delaiInvalide": "Entre 1 et 365 jours.",
+        "envoyer": "Envoyer ma proposition"
+      },
+      "erreurs": {
+        "deja_candidat": "Tu as déjà proposé tes services pour cette mission.",
+        "propre_mission": "Tu ne peux pas répondre à ta propre mission.",
+        "etat_invalide": "Cette mission n'accepte plus de propositions.",
+        "limite_atteinte": "Tu as envoyé beaucoup de propositions aujourd'hui. Réessaie demain.",
+        "validation": "Un champ n'est pas valide. Vérifie ce que tu as écrit.",
+        "modification_concurrente": "La mission a changé entre-temps. Recharge la page.",
+        "autre": "L'action n'a pas abouti. Réessaie dans un instant."
       }
     }
   }

@@ -175,3 +175,34 @@ export async function donnerAvis(id: string, note: number, texte: string): Promi
   const mission = await lireMission(id)
   return mission ? { ok: true, valeur: mission } : { ok: false, code: null, champs: {} }
 }
+
+// ---------------------------------------------------------------- les propositions (#177)
+
+export type Proposition = Schemas['Proposition']
+export type NouvelleProposition = Schemas['NouvelleProposition']
+
+export const LIMITES_PROPOSITION = { messageMin: 30, messageMax: 4000, delaiMin: 1, delaiMax: 365 } as const
+
+/** Toutes les propositions pour le client, la sienne seulement pour un développeur (le serveur filtre). */
+export async function listerPropositions(id: string): Promise<Proposition[]> {
+  const { data, error } = await api.GET('/api/missions/{missionId}/propositions', { params: { path: { missionId: id }, query: { limite: 50 } } })
+  if (error || !data) throw new Error('propositions indisponibles')
+  // Le contrat étend la page commune : ses éléments sont des `Proposition`, que le type généré ne précise pas.
+  return (data.elements ?? []) as Proposition[]
+}
+
+export const proposer = (id: string, proposition: NouvelleProposition) =>
+  resultat<Proposition>(api.POST('/api/missions/{missionId}/propositions', { ...chemin(id), body: proposition }))
+
+export const retenirProposition = (id: string, propositionId: string, version: number) =>
+  resultat<Mission>(
+    api.POST('/api/missions/{missionId}/propositions/{propositionId}/retenir', { params: { path: { missionId: id, propositionId } }, body: { version } }),
+  )
+
+/** 204 sans corps : `true` si la proposition est retirée. */
+export async function retirerProposition(id: string, propositionId: string): Promise<Resultat<true>> {
+  const { response, error } = await api.POST('/api/missions/{missionId}/propositions/{propositionId}/retirer', {
+    params: { path: { missionId: id, propositionId } },
+  })
+  return response.ok ? { ok: true, valeur: true } : { ok: false, ...echec(error) }
+}
