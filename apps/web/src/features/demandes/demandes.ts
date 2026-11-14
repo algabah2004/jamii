@@ -166,6 +166,15 @@ export async function creerProjet(demande: Demande): Promise<{ id: string } | { 
 }
 
 /** PUT /api/demandes/{id}/offres-systalink : donner ou retirer son accord. Renvoie la demande à jour, `null` si refusé. */
+/**
+ * « Voir le service » : compte le clic dans le tableau de bord Systalink (#65), une fois par service et par demande.
+ * Sans attendre ni rien bloquer : le lien s'ouvre de toute façon, et un échec ne gêne pas la personne.
+ */
+export function signalerClicService(momentId: string | undefined) {
+  if (!momentId) return
+  void envoyer(`/api/systalink/moments/${encodeURIComponent(momentId)}/accepter`, {}).catch(() => undefined)
+}
+
 export async function choisirOffres(id: string, accepte: boolean): Promise<Demande | null> {
   const reponse = await envoyer(`/api/demandes/${encodeURIComponent(id)}/offres-systalink`, { accepte }, 'PUT')
   return reponse.ok ? ((await reponse.json()) as Demande) : null

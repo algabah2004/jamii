@@ -69,6 +69,7 @@ export function orientationDemo(dureeSemaines = 8): Orientation {
         pourCeBesoin: 'Ranger et partager les dossiers entre associés dès demain, avec une messagerie professionnelle au nom du cabinet.',
         prixIndicatif: 'Essai de 14 jours, puis 2 000 à 12 000 FCFA par utilisateur et par mois',
         lien: 'https://systalink.com',
+        momentId: 'b0a10000-0000-4000-8000-000000000001',
       },
       {
         id: 'datacloud-stockage',
@@ -76,6 +77,7 @@ export function orientationDemo(dureeSemaines = 8): Orientation {
         pourCeBesoin: 'Garder les PDF et les pièces scannées à Dakar, en sécurité, pour l’espace client.',
         prixIndicatif: null,
         lien: 'https://platform.systalink.com',
+        momentId: 'b0a10000-0000-4000-8000-000000000002',
       },
     ],
     developpeursNecessaires: true,
