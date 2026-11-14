@@ -10,6 +10,7 @@ export type Equipe = S['Equipe']
 export type Rendu = S['Rendu']
 export type Jure = S['Jure']
 export type NouveauRendu = S['NouveauRendu']
+export type Resultats = S['Resultats']
 
 // Données de démo (contracts/hackathons.yaml) : jamais de vraies données personnelles.
 const AWA = { id: '6f1c2a4e-8b7d-4c3e-9a10-2b5d7e9f0a11', nom: 'Awa Diop', avatarUrl: null }
@@ -74,6 +75,9 @@ const rendus = new Map<string, Rendu>()
 const jures = new Map<string, Jure[]>()
 /** Les scores pondérés donnés par Kofi, juré dans les maquettes, rendu par rendu. */
 const scores = new Map<string, number>()
+/** Les commentaires des jurés, rendu par rendu, et les résultats publiés, hackathon par hackathon. */
+const retours = new Map<string, string>()
+const resultats = new Map<string, Resultats>()
 const PERSONNES = [AWA, KOFI, FATOU, MOUSSA]
 
 /** Pour un test : déposer le rendu d'une équipe, comme si elle l'avait rendu pendant le hackathon. */
@@ -93,6 +97,8 @@ export function reinitialiserHackathons() {
   rendus.clear()
   jures.clear()
   scores.clear()
+  retours.clear()
+  resultats.clear()
   const h = hackathonDemo()
   hackathons.set(h.id, h)
   inscriptions.set(h.id, [seulDemo(FATOU, ['flutter', 'ux-design']), seulDemo(MOUSSA, ['spring'])])
@@ -280,19 +286,60 @@ export const handlersHackathons = [
     const total = h.criteres.reduce((somme, c) => somme + c.poids * corps.notes.find((n) => n.critereId === c.id)!.valeur, 0)
     const scorePondere = Math.round((total / poids) * 100) / 100
     scores.set(String(params.renduId), scorePondere)
+    if (corps.commentaire) retours.set(String(params.renduId), corps.commentaire)
+    else retours.delete(String(params.renduId))
     return HttpResponse.json({ renduId: String(params.renduId), notes: corps.notes, commentaire: corps.commentaire, scorePondere })
   }),
 
-  http.get('/api/hackathons/:id/notation', ({ params }) => {
-    const classes = [...scores.entries()].sort((a, b) => b[1] - a[1])
-    const classement = classes.map(([renduId, scorePondere]) => ({
-      equipeId: [...rendus.values()].find((r) => r.id === renduId)?.equipeId ?? renduId,
-      renduId,
-      // Classement « compétition » : les ex aequo partagent le rang, le suivant saute (1, 1, 3).
-      rang: classes.findIndex(([, s]) => s === scorePondere) + 1,
-      scorePondere,
-      nombreDeJures: 1,
-    }))
-    return HttpResponse.json({ jures: jures.get(String(params.id)) ?? [], classement })
+  http.get('/api/hackathons/:id/notation', ({ params }) => HttpResponse.json({ jures: jures.get(String(params.id)) ?? [], classement: classer() })),
+
+  http.get('/api/hackathons/:id/resultats', ({ params }) => {
+    const publies = resultats.get(String(params.id))
+    return publies ? HttpResponse.json(publies) : erreur(404, 'introuvable')
+  }),
+
+  http.post('/api/hackathons/:id/resultats', async ({ params, request }) => {
+    const h = hackathons.get(String(params.id))
+    if (!h) return erreur(404, 'introuvable')
+    if (h.statut !== 'evaluation') return erreur(409, 'etat_invalide')
+    const corps = (await request.json()) as { version: number; gagnants: { prixId: string; equipeId: string; raison: string | null }[] }
+    if (corps.version !== h.version) return erreur(409, 'modification_concurrente')
+    const proposes = classer().map((l) => l.equipeId)
+    const ecart = h.prix.some((p, i) => {
+      const g = corps.gagnants.find((x) => x.prixId === p.id)
+      return !g || !rendus.has(g.equipeId) || (g.equipeId !== proposes[i] && !g.raison?.trim())
+    })
+    if (ecart) return erreur(400, 'validation')
+    const publies: Resultats = {
+      publieLe: new Date().toISOString(),
+      gagnants: h.prix.map((p) => ({ prix: p, equipe: equipeDe(corps.gagnants.find((g) => g.prixId === p.id)!.equipeId) })),
+      classement: classer().map((l) => {
+        const rendu = [...rendus.values()].find((r) => r.id === l.renduId)!
+        return { rang: l.rang, equipe: equipeDe(rendu.equipeId), rendu, retourDuJury: retours.has(rendu.id) ? [retours.get(rendu.id)!] : [] }
+      }),
+    }
+    resultats.set(h.id, publies)
+    Object.assign(h, { statut: 'resultats', version: h.version + 1, moi: { ...h.moi, actions: [] } })
+    return HttpResponse.json(publies)
   }),
 ]
+
+/** Le classement proposé : les rendus notés, du meilleur score au moins bon. */
+function classer() {
+  const classes = [...scores.entries()].sort((a, b) => b[1] - a[1])
+  return classes.map(([renduId, scorePondere]) => ({
+    equipeId: [...rendus.values()].find((r) => r.id === renduId)?.equipeId ?? renduId,
+    renduId,
+    // Classement « compétition » : les ex aequo partagent le rang, le suivant saute (1, 1, 3).
+    rang: classes.findIndex(([, s]) => s === scorePondere) + 1,
+    scorePondere,
+    nombreDeJures: 1,
+  }))
+}
+
+/** L'équipe d'un rendu ; dans les maquettes, une équipe déposée par un test n'est pas toujours dans la liste des équipes. */
+function equipeDe(equipeId: string): Equipe {
+  const connue = [...equipes.values()].flat().find((e) => e.id === equipeId)
+  const titre = [...rendus.values()].find((r) => r.equipeId === equipeId)?.titre ?? 'Équipe'
+  return connue ?? { id: equipeId, nom: `Équipe ${titre}`, chef: KOFI, membres: [KOFI], tailleMax: 5, complete: false, creeLe: dansHeures(-72) }
+}
