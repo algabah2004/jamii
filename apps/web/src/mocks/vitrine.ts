@@ -27,7 +27,7 @@ export const vitrineDemo: ProjetEnVitrine[] = [
     projetId: '9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d',
     titre: 'Suivi des tontines d’un groupement de femmes',
     accroche: 'Les cotisations et les tours de chacune, consultables depuis un téléphone simple.',
-    origine: 'idee',
+    origine: 'cercle',
     url: 'https://tontine.example.com',
     hebergeur: 'datacloud',
     misEnLigneLe: ilYaHeures(70),

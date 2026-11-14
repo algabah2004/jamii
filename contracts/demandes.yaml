@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Jamii · Demandes de PME
-  version: 0.2.0
+  version: 0.3.0
   summary: Une personne ou une PME décrit son besoin, Jamii l'oriente vers Systalink ou vers les bons développeurs.
   description: |
     Responsable : @sowibrr (bloc #17). Règles communes : docs/api-conventions.md. Demande #88. Modèle : docs/modele-donnees.md.
@@ -38,6 +38,18 @@ info:
 
     **Texte de la PME** : `titre` et `description` sont du texte brut, affiché échappé. Ils sont envoyés au service IA comme
     des **données**, jamais comme des consignes.
+
+    **Publication (v0.3, #158).** Quand le plan est prêt, l'auteur le relit puis le publie :
+    `POST /api/demandes/{id}/publication` avec **le résumé qu'il choisit de montrer** (600 caractères au plus, prérempli
+    par le front avec celui de l'orientation, modifiable). Seul ce résumé devient public : jamais le texte d'origine,
+    jamais l'orientation complète, jamais une adresse e-mail ou un téléphone (l'API les retire du résumé).
+    Une demande se publie **une seule fois** (`409 deja_publiee`), et seulement si son plan est prêt
+    (`409 plan_non_pret`, y compris quand le service IA ne répond pas).
+
+    **Événement public `DemandePubliee`** (Java : `dev.jamii.api.demandes.DemandePubliee`). Publié dans la même
+    transaction que la publication, reçu par les autres modules après sa validation. Il porte `demandeId`, `auteurId`
+    (pour retrouver le nom par l'annuaire des comptes), `titre`, `resume`, `secteur`, `ville`, `pays`,
+    `dureeSemaines`, `competences` et `publieeLe`. Le module des communautés l'affiche dans un salon.
 
     **Données personnelles** : le texte d'une demande est une donnée personnelle de son auteur. Il fait partie de l'export
     (`GET /api/me/export`) et il est supprimé avec le compte (`DELETE /api/me`).
@@ -171,6 +183,38 @@ paths:
         '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
         '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
 
+  /api/demandes/{demandeId}/publication:
+    parameters:
+      - name: demandeId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      tags: [demandes]
+      operationId: publierDemande
+      summary: Publier sa demande, avec le résumé que la communauté verra
+      description: |
+        L'auteur seulement (`404` pour tout autre). Le plan doit être prêt. La demande est alors visible de la
+        communauté par son résumé, et l'événement public `DemandePubliee` part (une seule fois).
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ResumePublic' }
+      responses:
+        '200':
+          description: La demande à jour, avec sa `publication`.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Demande' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { description: '`plan_non_pret` ou `deja_publiee`.', $ref: './socle.yaml#/components/responses/Conflit' }
+
   /api/demandes/{demandeId}:
     parameters:
       - name: demandeId
@@ -212,6 +256,25 @@ components:
         pays: { oneOf: [{ $ref: './profils.yaml#/components/schemas/Pays' }, { type: 'null' }] }
         offresSystalink: { type: boolean, default: false, description: '« Recevoir les offres Systalink adaptées à mon projet ». Jamais pré-cochée.' }
 
+    ResumePublic:
+      type: object
+      additionalProperties: false
+      required: [resume]
+      properties:
+        resume:
+          type: string
+          minLength: 20
+          maxLength: 600
+          description: 'Le résumé relu par l''auteur, texte brut. Les adresses e-mail et les numéros de téléphone en sont retirés.'
+
+    Publication:
+      type: object
+      description: Ce que la communauté voit de la demande.
+      required: [publieeLe, resume]
+      properties:
+        publieeLe: { type: string, format: date-time }
+        resume: { type: string, maxLength: 600 }
+
     Demande:
       type: object
       required: [id, titre, description, dureeSemaines, creeLe, plan]
@@ -229,6 +292,9 @@ components:
         ville: { type: [string, 'null'] }
         pays: { type: [string, 'null'] }
         offresSystalink: { type: boolean }
+        publication:
+          oneOf: [{ $ref: '#/components/schemas/Publication' }, { type: 'null' }]
+          description: '`null` tant que la demande n''est pas publiée.'
         plan: { $ref: '#/components/schemas/PlanDeLaDemande' }
         orientation: { $ref: '#/components/schemas/OrientationDeLaDemande' }
         recommandations:

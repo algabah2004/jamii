@@ -1,0 +1,932 @@
+openapi: 3.1.0
+info:
+  title: Jamii · Hackathons
+  version: 0.1.0
+  summary: Un organisateur crée et publie un hackathon, des équipes s'inscrivent et rendent un projet, un jury note, les résultats sont publiés.
+  description: |
+    Responsable : @sowibrr (module Freelance, #158). Proposition : `docs/propositions/0004-hackathons-et-missions.md`.
+    Suivi : #166, ce contrat : #168. Règles communes : `docs/api-conventions.md`.
+
+    **Les rôles** : l'**organisateur** crée, publie, accepte les inscriptions, invite le jury et confirme les résultats ;
+    un **participant** s'inscrit seul ou en équipe et rend un projet ; un **juré** note les projets qu'on lui confie.
+
+    **Le parcours**
+    1. L'organisateur crée un **brouillon** (invisible des autres), puis le publie.
+    2. Les inscriptions s'ouvrent. Un participant s'inscrit **seul** ou crée une **équipe** et y invite des membres. En
+       mode `candidature`, l'organisateur accepte, refuse ou met en liste d'attente. Un tableau « Je cherche une équipe »
+       aide les participants seuls à se trouver. **À la fin des inscriptions, les équipes sont verrouillées.**
+    3. Pendant le hackathon, chaque équipe **rend** son projet (lien, dépôt, vidéo, réponses aux questions). Le rendu
+       reste modifiable jusqu'à l'heure limite, puis il est verrouillé. L'API vérifie que le lien répond.
+    4. Après les rendus, les **jurés notent** chaque critère de 1 à 5. Un juré ne note jamais le projet de sa propre équipe.
+    5. L'organisateur **confirme les gagnants** : les résultats sont publiés et les notes verrouillées.
+
+    **États** (`statut`) : `brouillon`, `publie`, `en_cours`, `evaluation`, `resultats`, `annule`. Les passages
+    `publie → en_cours` (à `debutLe`) et `en_cours → evaluation` (à `finRendusLe`) se font **à l'heure du calendrier** :
+    `statut` est calculé à la lecture, il n'y a pas de tâche planifiée. Seuls `brouillon`, `publie`, `resultats` et
+    `annule` sont enregistrés.
+
+    **Qui voit quoi** : un hackathon publié se lit sans connexion. Un brouillon n'existe que pour son organisateur
+    (`404` pour tout autre). Les notes détaillées et l'avancement de la notation : l'organisateur seulement.
+    Une équipe voit son rendu ; les rendus des autres deviennent publics avec les résultats.
+
+    **Heures limites** : toute action faite après son heure limite répond `409 delai_depasse` (inscription,
+    équipe, rendu, note), même si l'écran était ouvert avant. Les dates sont en UTC (`date-time`).
+
+    **Limites contre les abus** (`429` avec `Retry-After`) : 3 hackathons publiés par jour et par compte récent.
+
+    **Codes `409`** : `etat_invalide`, `delai_depasse`, `deja_inscrit`, `equipe_complete`, `equipes_verrouillees`,
+    `modification_concurrente`, `conflit_interets` (un juré face à sa propre équipe).
+
+    **Textes** : titres, descriptions, rendus et commentaires sont du texte brut, affiché échappé. Le lien d'un rendu
+    est vérifié côté serveur et jamais vers une adresse interne.
+
+    **Données personnelles** : inscriptions, rendus et notes font partie de l'export (`GET /api/me/export`).
+
+    **CSRF** : toute requête `POST`, `PUT` ou `PATCH` envoie l'en-tête `X-XSRF-TOKEN` (`socle.yaml`, schéma `csrf`).
+servers:
+  - url: http://localhost:8080
+
+security:
+  - session: []
+
+tags:
+  - { name: hackathons, description: 'Créer, publier, lire.' }
+  - { name: inscriptions, description: 'S''inscrire, former les équipes.' }
+  - { name: rendus, description: 'Rendre le projet d''une équipe.' }
+  - { name: jury, description: 'Noter, suivre la notation, publier les résultats.' }
+
+paths:
+  /api/hackathons:
+    get:
+      tags: [hackathons]
+      operationId: listerHackathons
+      summary: Les hackathons publiés, le plus proche d'abord
+      description: '`statut` filtre sur le statut calculé (`publie`, `en_cours`, `evaluation`, `resultats`). Les brouillons et les hackathons annulés n''y sont jamais.'
+      security: [{}, { session: [] }]
+      parameters:
+        - $ref: './socle.yaml#/components/parameters/Curseur'
+        - $ref: './socle.yaml#/components/parameters/Limite'
+        - { name: statut, in: query, schema: { $ref: '#/components/schemas/StatutHackathon' } }
+      responses:
+        '200':
+          description: Une page de hackathons.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PageHackathons' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+    post:
+      tags: [hackathons]
+      operationId: creerHackathon
+      summary: Créer un hackathon (brouillon, invisible des autres)
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NouveauHackathon' }
+      responses:
+        '201':
+          description: Le brouillon.
+          headers: { Location: { schema: { type: string } } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Hackathon' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+
+  /api/hackathons/{hackathonId}:
+    parameters: [{ $ref: '#/components/parameters/HackathonId' }]
+    get:
+      tags: [hackathons]
+      operationId: lireHackathon
+      summary: Un hackathon (un brouillon seulement pour son organisateur)
+      security: [{}, { session: [] }]
+      responses:
+        '200':
+          description: Le hackathon.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Hackathon' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+    patch:
+      tags: [hackathons]
+      operationId: modifierHackathon
+      summary: Modifier le hackathon (organisateur, en brouillon ou publié)
+      description: |
+        JSON Merge Patch. Une fois publié, ni le calendrier déjà commencé, ni les critères ne changent s'il y a déjà
+        des inscrits (`409 etat_invalide`).
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/merge-patch+json:
+            schema: { $ref: '#/components/schemas/ModificationHackathon' }
+      responses:
+        '200':
+          description: Le hackathon à jour.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Hackathon' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { description: '`etat_invalide`, `modification_concurrente`.', $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/hackathons/{hackathonId}/publier:
+    parameters: [{ $ref: '#/components/parameters/HackathonId' }]
+    post:
+      tags: [hackathons]
+      operationId: publierHackathon
+      summary: Publier (organisateur) — brouillon → publie
+      description: Il faut au moins un critère, et un calendrier cohérent. Un hackathon avec des prix en argent demande un organisateur vérifié.
+      security:
+        - session: []
+          csrf: []
+      requestBody: { $ref: '#/components/requestBodies/Version' }
+      responses:
+        '200': { $ref: '#/components/responses/HackathonAJour' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/hackathons/{hackathonId}/annuler:
+    parameters: [{ $ref: '#/components/parameters/HackathonId' }]
+    post:
+      tags: [hackathons]
+      operationId: annulerHackathon
+      summary: Annuler (organisateur) — publié ou en cours → annulé
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [version, raison]
+              properties:
+                version: { type: integer }
+                raison: { type: string, minLength: 10, maxLength: 1000, description: 'Montrée aux inscrits.' }
+      responses:
+        '200': { $ref: '#/components/responses/HackathonAJour' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/hackathons/{hackathonId}/inscriptions:
+    parameters: [{ $ref: '#/components/parameters/HackathonId' }]
+    post:
+      tags: [inscriptions]
+      operationId: sInscrire
+      summary: S'inscrire seul (ou me déclarer sans équipe)
+      description: |
+        En mode `ouvert`, l'inscription est `acceptee` tout de suite ; en mode `candidature`, elle est `en_attente`.
+        Une personne ne s'inscrit qu'une fois par hackathon (`409 deja_inscrit`, même avec deux requêtes simultanées).
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                chercheEquipe: { type: boolean, default: true, description: 'Apparaître dans « Je cherche une équipe ».' }
+                competences: { type: array, maxItems: 10, items: { $ref: './projets.yaml#/components/schemas/Competence' } }
+      responses:
+        '201':
+          description: L'inscription.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Inscription' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { description: '`deja_inscrit`, `delai_depasse`, `equipes_verrouillees`, `etat_invalide`.', $ref: './socle.yaml#/components/responses/Conflit' }
+    get:
+      tags: [inscriptions]
+      operationId: listerInscriptions
+      summary: Toutes les inscriptions (organisateur)
+      parameters:
+        - $ref: './socle.yaml#/components/parameters/Curseur'
+        - $ref: './socle.yaml#/components/parameters/Limite'
+        - { name: statut, in: query, schema: { $ref: '#/components/schemas/StatutInscription' } }
+      responses:
+        '200':
+          description: Une page d'inscriptions.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PageInscriptions' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+
+  /api/hackathons/{hackathonId}/inscriptions/{inscriptionId}:
+    parameters:
+      - $ref: '#/components/parameters/HackathonId'
+      - { name: inscriptionId, in: path, required: true, schema: { type: string, format: uuid } }
+    patch:
+      tags: [inscriptions]
+      operationId: trierInscription
+      summary: Accepter, refuser ou mettre en liste d'attente (organisateur, mode candidature)
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/merge-patch+json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [statut]
+              properties:
+                statut: { type: string, enum: [acceptee, refusee, attente] }
+      responses:
+        '200':
+          description: L'inscription à jour. La personne est prévenue.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Inscription' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { description: '`etat_invalide`.', $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/hackathons/{hackathonId}/sans-equipe:
+    parameters: [{ $ref: '#/components/parameters/HackathonId' }]
+    get:
+      tags: [inscriptions]
+      operationId: listerSansEquipe
+      summary: '« Je cherche une équipe » : les participants acceptés, seuls et volontaires (participants seulement)'
+      parameters:
+        - $ref: './socle.yaml#/components/parameters/Curseur'
+        - $ref: './socle.yaml#/components/parameters/Limite'
+      responses:
+        '200':
+          description: Une page d'inscriptions.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PageInscriptions' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+
+  /api/hackathons/{hackathonId}/equipes:
+    parameters: [{ $ref: '#/components/parameters/HackathonId' }]
+    get:
+      tags: [inscriptions]
+      operationId: listerEquipes
+      summary: Les équipes du hackathon
+      security: [{}, { session: [] }]
+      parameters:
+        - $ref: './socle.yaml#/components/parameters/Curseur'
+        - $ref: './socle.yaml#/components/parameters/Limite'
+      responses:
+        '200':
+          description: Une page d'équipes.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PageEquipes' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+    post:
+      tags: [inscriptions]
+      operationId: creerEquipe
+      summary: Créer une équipe dont je suis le chef
+      description: Si je ne suis pas encore inscrit, l'inscription est créée en même temps.
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [nom]
+              properties:
+                nom: { type: string, minLength: 2, maxLength: 60 }
+      responses:
+        '201':
+          description: L'équipe.
+          headers: { Location: { schema: { type: string } } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Equipe' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { description: '`deja_inscrit` (déjà dans une équipe), `delai_depasse`, `equipes_verrouillees`, `etat_invalide`.', $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/hackathons/{hackathonId}/equipes/{equipeId}/membres:
+    parameters: [{ $ref: '#/components/parameters/HackathonId' }, { $ref: '#/components/parameters/EquipeId' }]
+    post:
+      tags: [inscriptions]
+      operationId: inviterMembre
+      summary: Inviter un participant dans mon équipe (chef)
+      description: La personne doit être inscrite et sans équipe. Elle est prévenue.
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [utilisateurId]
+              properties:
+                utilisateurId: { type: string, format: uuid }
+      responses:
+        '200':
+          description: L'équipe à jour.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Equipe' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { description: '`equipe_complete`, `deja_inscrit`, `equipes_verrouillees`, `delai_depasse`.', $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/hackathons/{hackathonId}/equipes/{equipeId}/rendu:
+    parameters: [{ $ref: '#/components/parameters/HackathonId' }, { $ref: '#/components/parameters/EquipeId' }]
+    get:
+      tags: [rendus]
+      operationId: lireRendu
+      summary: Le rendu d'une équipe (ses membres, l'organisateur et les jurés ; tout le monde après les résultats)
+      responses:
+        '200':
+          description: Le rendu.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Rendu' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+    put:
+      tags: [rendus]
+      operationId: rendre
+      summary: Créer ou modifier le rendu de mon équipe (membre), jusqu'à l'heure limite
+      description: |
+        Le rendu est enregistré **avant** la vérification du lien : une panne réseau n'empêche jamais de rendre. Les liens
+        vers une adresse interne (`localhost`, réseau privé, `file:`) sont refusés. Après `finRendusLe` : `409 delai_depasse`.
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NouveauRendu' }
+      responses:
+        '200':
+          description: Le rendu enregistré (modifié).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Rendu' }
+        '201':
+          description: Le rendu enregistré (premier rendu de l'équipe).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Rendu' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { description: '`delai_depasse`, `etat_invalide`, `modification_concurrente`.', $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/hackathons/{hackathonId}/jures:
+    parameters: [{ $ref: '#/components/parameters/HackathonId' }]
+    get:
+      tags: [jury]
+      operationId: listerJures
+      summary: Le jury (organisateur)
+      responses:
+        '200':
+          description: Les jurés.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Jure' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+    post:
+      tags: [jury]
+      operationId: inviterJure
+      summary: Ajouter un juré (organisateur)
+      description: Un compte Jamii est nécessaire (la connexion par e-mail suffit). La personne est prévenue.
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [utilisateurId]
+              properties:
+                utilisateurId: { type: string, format: uuid }
+                groupe: { type: [string, 'null'], maxLength: 40, description: 'Pour répartir les projets entre jurés. `null` : il voit tout.' }
+      responses:
+        '201':
+          description: Le juré.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Jure' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { description: '`etat_invalide`.', $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/hackathons/{hackathonId}/rendus:
+    parameters: [{ $ref: '#/components/parameters/HackathonId' }]
+    get:
+      tags: [jury]
+      operationId: listerRendus
+      summary: 'Les rendus à noter (juré : les siens, sans celui de sa propre équipe) ou tous les rendus (organisateur, résultats)'
+      parameters:
+        - $ref: './socle.yaml#/components/parameters/Curseur'
+        - $ref: './socle.yaml#/components/parameters/Limite'
+      responses:
+        '200':
+          description: Une page de rendus.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PageRendus' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+
+  /api/hackathons/{hackathonId}/rendus/{renduId}/notes:
+    parameters:
+      - $ref: '#/components/parameters/HackathonId'
+      - { name: renduId, in: path, required: true, schema: { type: string, format: uuid } }
+    put:
+      tags: [jury]
+      operationId: noter
+      summary: 'Noter un rendu (juré) : une valeur de 1 à 5 par critère, et un commentaire'
+      description: |
+        Remplace les notes précédentes de ce juré pour ce rendu, tant que les résultats ne sont pas publiés.
+        Seulement après `finRendusLe` (`409 etat_invalide`). Un juré face au projet de sa propre équipe :
+        `403 conflit_interets`. Toutes les notes sont validées ensemble : un critère manquant refuse tout.
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NouvellesNotes' }
+      responses:
+        '200':
+          description: Les notes enregistrées.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NotesDuJure' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { description: '`interdit` ou `conflit_interets`.', $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { description: '`etat_invalide`, `delai_depasse`.', $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/hackathons/{hackathonId}/notation:
+    parameters: [{ $ref: '#/components/parameters/HackathonId' }]
+    get:
+      tags: [jury]
+      operationId: suivreNotation
+      summary: L'avancement de la notation et le classement proposé (organisateur)
+      responses:
+        '200':
+          description: Qui a noté quoi, et le classement par score pondéré.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Notation' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+
+  /api/hackathons/{hackathonId}/notes.csv:
+    parameters: [{ $ref: '#/components/parameters/HackathonId' }]
+    get:
+      tags: [jury]
+      operationId: exporterNotes
+      summary: Exporter les notes en CSV (organisateur)
+      description: |
+        En-tête `equipe,rendu,jure,critere,valeur,commentaire`, une ligne par note. Les virgules et guillemets sont
+        échappés, et une cellule qui commence par `=`, `+`, `-` ou `@` est préfixée d'une apostrophe (injection de
+        formule dans un tableur).
+      responses:
+        '200':
+          description: Le fichier CSV.
+          content:
+            text/csv:
+              schema: { type: string }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+
+  /api/hackathons/{hackathonId}/resultats:
+    parameters: [{ $ref: '#/components/parameters/HackathonId' }]
+    get:
+      tags: [jury]
+      operationId: lireResultats
+      summary: Les résultats publiés (tout le monde, une fois confirmés)
+      security: [{}, { session: [] }]
+      responses:
+        '200':
+          description: Le classement, les gagnants de chaque prix et le retour du jury.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Resultats' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+    post:
+      tags: [jury]
+      operationId: confirmerResultats
+      summary: Confirmer les gagnants et publier les résultats (organisateur) — evaluation → resultats
+      description: |
+        Chaque prix a une équipe gagnante. Si elle diffère du classement proposé, une `raison` est obligatoire
+        (`400`). Une fois publiés, les notes sont verrouillées (`409 etat_invalide`).
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ConfirmationResultats' }
+      responses:
+        '200':
+          description: Les résultats publiés.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Resultats' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { description: '`etat_invalide`, `modification_concurrente`.', $ref: './socle.yaml#/components/responses/Conflit' }
+
+components:
+  securitySchemes:
+    session: { $ref: './socle.yaml#/components/securitySchemes/session' }
+    csrf: { $ref: './socle.yaml#/components/securitySchemes/csrf' }
+
+  parameters:
+    HackathonId: { name: hackathonId, in: path, required: true, schema: { type: string, format: uuid } }
+    EquipeId: { name: equipeId, in: path, required: true, schema: { type: string, format: uuid } }
+
+  responses:
+    HackathonAJour:
+      description: Le hackathon à jour.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Hackathon' }
+
+  requestBodies:
+    Version:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [version]
+            properties:
+              version: { type: integer, description: 'La `version` du hackathon lue juste avant.' }
+
+  schemas:
+    Montant: { $ref: './missions.yaml#/components/schemas/Montant' }
+
+    StatutHackathon:
+      type: string
+      enum: [brouillon, publie, en_cours, evaluation, resultats, annule]
+
+    StatutInscription:
+      type: string
+      enum: [en_attente, acceptee, refusee, attente]
+
+    Calendrier:
+      type: object
+      additionalProperties: false
+      required: [inscriptionsOuvertesLe, inscriptionsFermeesLe, debutLe, finRendusLe, resultatsLe]
+      description: 'Dans l''ordre strict : ouverture < fermeture des inscriptions ≤ début < fin des rendus < résultats.'
+      properties:
+        inscriptionsOuvertesLe: { type: string, format: date-time }
+        inscriptionsFermeesLe: { type: string, format: date-time }
+        debutLe: { type: string, format: date-time }
+        finRendusLe: { type: string, format: date-time }
+        resultatsLe: { type: string, format: date-time }
+
+    Critere:
+      type: object
+      additionalProperties: false
+      required: [nom, poids]
+      properties:
+        id: { type: string, format: uuid, readOnly: true }
+        nom: { type: string, minLength: 2, maxLength: 60 }
+        poids: { type: integer, minimum: 1, maximum: 100, description: 'Le poids du critère dans le score pondéré.' }
+
+    Prix:
+      type: object
+      additionalProperties: false
+      required: [nom]
+      properties:
+        id: { type: string, format: uuid, readOnly: true }
+        nom: { type: string, minLength: 2, maxLength: 80 }
+        montant: { oneOf: [{ $ref: '#/components/schemas/Montant' }, { type: 'null' }], description: '`null` : un prix sans argent (visibilité, hébergement).' }
+        sponsor: { type: [string, 'null'], maxLength: 80, description: 'Le sponsor qui l''offre, par exemple « Systalink ».' }
+
+    NouveauHackathon:
+      type: object
+      additionalProperties: false
+      required: [titre, theme, description, lieu, calendrier, tailleEquipe, modeInscription, criteres]
+      properties:
+        titre: { type: string, minLength: 3, maxLength: 120 }
+        theme: { type: string, minLength: 2, maxLength: 120 }
+        description: { type: string, minLength: 20, maxLength: 8000 }
+        lieu: { type: string, enum: [en_ligne, sur_place, hybride] }
+        ville: { type: [string, 'null'], maxLength: 80 }
+        calendrier: { $ref: '#/components/schemas/Calendrier' }
+        tailleEquipe:
+          type: object
+          additionalProperties: false
+          required: [min, max]
+          properties:
+            min: { type: integer, minimum: 1, maximum: 10 }
+            max: { type: integer, minimum: 1, maximum: 10 }
+        modeInscription: { type: string, enum: [ouvert, candidature] }
+        deploiementObligatoire: { type: boolean, default: false }
+        codeDeConduite: { type: string, minLength: 20, maxLength: 4000, description: 'Obligatoire pour publier.' }
+        questions: { type: array, maxItems: 5, items: { type: string, minLength: 3, maxLength: 200 }, description: 'Questions posées à chaque rendu.' }
+        criteres: { type: array, minItems: 1, maxItems: 8, items: { $ref: '#/components/schemas/Critere' } }
+        prix: { type: array, maxItems: 10, items: { $ref: '#/components/schemas/Prix' } }
+
+    ModificationHackathon:
+      type: object
+      additionalProperties: false
+      required: [version]
+      description: JSON Merge Patch. Seuls les champs envoyés changent.
+      properties:
+        version: { type: integer }
+        titre: { type: string, minLength: 3, maxLength: 120 }
+        theme: { type: string, minLength: 2, maxLength: 120 }
+        description: { type: string, minLength: 20, maxLength: 8000 }
+        lieu: { type: string, enum: [en_ligne, sur_place, hybride] }
+        ville: { type: [string, 'null'], maxLength: 80 }
+        calendrier: { $ref: '#/components/schemas/Calendrier' }
+        deploiementObligatoire: { type: boolean }
+        codeDeConduite: { type: string, minLength: 20, maxLength: 4000 }
+        questions: { type: array, maxItems: 5, items: { type: string, minLength: 3, maxLength: 200 } }
+        criteres: { type: array, minItems: 1, maxItems: 8, items: { $ref: '#/components/schemas/Critere' } }
+        prix: { type: array, maxItems: 10, items: { $ref: '#/components/schemas/Prix' } }
+
+    HackathonResume:
+      type: object
+      required: [id, titre, theme, lieu, statut, debutLe, finRendusLe, organisateur, nombreInscrits]
+      properties:
+        id: { type: string, format: uuid }
+        titre: { type: string }
+        theme: { type: string }
+        lieu: { type: string, enum: [en_ligne, sur_place, hybride] }
+        ville: { type: [string, 'null'] }
+        statut: { $ref: '#/components/schemas/StatutHackathon' }
+        debutLe: { type: string, format: date-time }
+        finRendusLe: { type: string, format: date-time }
+        organisateur: { $ref: './projets.yaml#/components/schemas/PersonneResume' }
+        nombreInscrits: { type: integer, minimum: 0 }
+
+    Hackathon:
+      allOf:
+        - $ref: '#/components/schemas/HackathonResume'
+        - type: object
+          required: [description, calendrier, tailleEquipe, modeInscription, deploiementObligatoire, criteres, prix, questions, version, creeLe, moi]
+          properties:
+            description: { type: string, description: 'Texte brut, affiché échappé.' }
+            calendrier: { $ref: '#/components/schemas/Calendrier' }
+            tailleEquipe:
+              type: object
+              required: [min, max]
+              properties:
+                min: { type: integer }
+                max: { type: integer }
+            modeInscription: { type: string, enum: [ouvert, candidature] }
+            deploiementObligatoire: { type: boolean }
+            codeDeConduite: { type: [string, 'null'] }
+            questions: { type: array, items: { type: string } }
+            criteres: { type: array, items: { $ref: '#/components/schemas/Critere' } }
+            prix: { type: array, items: { $ref: '#/components/schemas/Prix' } }
+            version: { type: integer }
+            creeLe: { type: string, format: date-time }
+            moi:
+              type: object
+              description: Ce que la personne qui lit peut faire. Le front en tire ses boutons ; l'API revérifie tout.
+              required: [role, actions]
+              properties:
+                role: { type: string, enum: [organisateur, jure, participant, visiteur] }
+                equipeId: { type: [string, 'null'], format: uuid }
+                actions:
+                  type: array
+                  items:
+                    type: string
+                    enum: [modifier, publier, annuler, sinscrire, creer_equipe, inviter, rendre, noter, trier_inscriptions, inviter_jure, confirmer_resultats]
+
+    PageHackathons:
+      allOf:
+        - $ref: './socle.yaml#/components/schemas/Page'
+        - properties:
+            elements: { items: { $ref: '#/components/schemas/HackathonResume' } }
+
+    Inscription:
+      type: object
+      required: [id, personne, statut, chercheEquipe, equipeId, competences, creeLe]
+      properties:
+        id: { type: string, format: uuid }
+        personne: { $ref: './projets.yaml#/components/schemas/PersonneResume' }
+        statut: { $ref: '#/components/schemas/StatutInscription' }
+        chercheEquipe: { type: boolean }
+        equipeId: { type: [string, 'null'], format: uuid }
+        competences: { type: array, items: { $ref: './projets.yaml#/components/schemas/Competence' } }
+        creeLe: { type: string, format: date-time }
+
+    PageInscriptions:
+      allOf:
+        - $ref: './socle.yaml#/components/schemas/Page'
+        - properties:
+            elements: { items: { $ref: '#/components/schemas/Inscription' } }
+
+    Equipe:
+      type: object
+      required: [id, nom, chef, membres, tailleMax, complete, creeLe]
+      properties:
+        id: { type: string, format: uuid }
+        nom: { type: string }
+        chef: { $ref: './projets.yaml#/components/schemas/PersonneResume' }
+        membres: { type: array, items: { $ref: './projets.yaml#/components/schemas/PersonneResume' }, description: 'Le chef d''abord.' }
+        tailleMax: { type: integer }
+        complete: { type: boolean }
+        creeLe: { type: string, format: date-time }
+
+    PageEquipes:
+      allOf:
+        - $ref: './socle.yaml#/components/schemas/Page'
+        - properties:
+            elements: { items: { $ref: '#/components/schemas/Equipe' } }
+
+    NouveauRendu:
+      type: object
+      additionalProperties: false
+      required: [titre, description, lienProduit]
+      properties:
+        version: { type: integer, description: 'La `version` du rendu lue juste avant, pour le modifier.' }
+        titre: { type: string, minLength: 3, maxLength: 120 }
+        description: { type: string, minLength: 20, maxLength: 4000 }
+        lienProduit: { type: string, format: uri, maxLength: 500, pattern: '^https://', description: 'Le produit en ligne. `https` uniquement.' }
+        depot: { type: [string, 'null'], format: uri, maxLength: 500, pattern: '^https://' }
+        video: { type: [string, 'null'], format: uri, maxLength: 500, pattern: '^https://' }
+        reponses: { type: array, maxItems: 5, items: { type: string, maxLength: 1000 }, description: 'Réponses aux questions du hackathon, dans l''ordre.' }
+
+    Rendu:
+      type: object
+      required: [id, equipeId, titre, description, lienProduit, reponses, lienRepond, lienVerifieLe, version, modifieLe]
+      properties:
+        id: { type: string, format: uuid }
+        equipeId: { type: string, format: uuid }
+        titre: { type: string }
+        description: { type: string }
+        lienProduit: { type: string, format: uri }
+        depot: { type: [string, 'null'], format: uri }
+        video: { type: [string, 'null'], format: uri }
+        reponses: { type: array, items: { type: string } }
+        lienRepond: { type: [boolean, 'null'], description: '`null` : pas encore vérifié. `false` : l''adresse ne répond pas, à corriger avant l''heure limite.' }
+        lienVerifieLe: { type: [string, 'null'], format: date-time }
+        version: { type: integer }
+        modifieLe: { type: string, format: date-time }
+
+    PageRendus:
+      allOf:
+        - $ref: './socle.yaml#/components/schemas/Page'
+        - properties:
+            elements: { items: { $ref: '#/components/schemas/Rendu' } }
+
+    Jure:
+      type: object
+      required: [personne, groupe, rendusNotes, rendusATraiter]
+      properties:
+        personne: { $ref: './projets.yaml#/components/schemas/PersonneResume' }
+        groupe: { type: [string, 'null'] }
+        rendusNotes: { type: integer, minimum: 0 }
+        rendusATraiter: { type: integer, minimum: 0 }
+
+    NouvellesNotes:
+      type: object
+      additionalProperties: false
+      required: [notes]
+      properties:
+        notes:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            additionalProperties: false
+            required: [critereId, valeur]
+            properties:
+              critereId: { type: string, format: uuid }
+              valeur: { type: integer, minimum: 1, maximum: 5 }
+        commentaire: { type: [string, 'null'], maxLength: 2000 }
+
+    NotesDuJure:
+      type: object
+      required: [renduId, notes, commentaire, scorePondere]
+      properties:
+        renduId: { type: string, format: uuid }
+        notes:
+          type: array
+          items:
+            type: object
+            required: [critereId, valeur]
+            properties:
+              critereId: { type: string, format: uuid }
+              valeur: { type: integer }
+        commentaire: { type: [string, 'null'] }
+        scorePondere: { type: number, description: 'Σ(valeur × poids) / Σ poids, à deux décimales.' }
+
+    Notation:
+      type: object
+      required: [jures, classement]
+      properties:
+        jures: { type: array, items: { $ref: '#/components/schemas/Jure' } }
+        classement:
+          type: array
+          description: Du meilleur score au moins bon. Le score d'un rendu est la moyenne des scores pondérés de ses jurés.
+          items:
+            type: object
+            required: [equipeId, renduId, rang, scorePondere, nombreDeJures]
+            properties:
+              equipeId: { type: string, format: uuid }
+              renduId: { type: string, format: uuid }
+              rang: { type: integer, minimum: 1 }
+              scorePondere: { type: number }
+              nombreDeJures: { type: integer, minimum: 0 }
+
+    ConfirmationResultats:
+      type: object
+      additionalProperties: false
+      required: [version, gagnants]
+      properties:
+        version: { type: integer }
+        gagnants:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            additionalProperties: false
+            required: [prixId, equipeId]
+            properties:
+              prixId: { type: string, format: uuid }
+              equipeId: { type: string, format: uuid }
+              raison: { type: [string, 'null'], maxLength: 1000, description: 'Obligatoire si le gagnant diffère du classement proposé.' }
+
+    Resultats:
+      type: object
+      required: [publieLe, gagnants, classement]
+      properties:
+        publieLe: { type: string, format: date-time }
+        gagnants:
+          type: array
+          items:
+            type: object
+            required: [prix, equipe]
+            properties:
+              prix: { $ref: '#/components/schemas/Prix' }
+              equipe: { $ref: '#/components/schemas/Equipe' }
+        classement:
+          type: array
+          items:
+            type: object
+            required: [rang, equipe, rendu, retourDuJury]
+            properties:
+              rang: { type: integer }
+              equipe: { $ref: '#/components/schemas/Equipe' }
+              rendu: { $ref: '#/components/schemas/Rendu' }
+              retourDuJury: { type: array, items: { type: string }, description: 'Les commentaires des jurés, sans leur nom.' }
