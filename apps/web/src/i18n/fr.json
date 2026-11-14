@@ -776,6 +776,24 @@
       "erreur": "La publication n'est pas partie. Réessaie.",
       "aucuneCommunaute": "Rejoins d'abord une communauté pour y publier.",
       "carte": "Cercle de la Tech Tontine"
+    },
+    "code": {
+      "titre": "Le code du tour",
+      "ouvrir": "Ouvrir sur {fournisseur}",
+      "copier": "Copier",
+      "copie": "Copié",
+      "commits": "Derniers commits",
+      "demandes": "Demandes de fusion",
+      "inconnu": "compte inconnu",
+      "aucunDepot": "Ce tour n'a pas encore de dépôt de code.",
+      "indisponible": "Le dépôt ne répond pas pour le moment. Son lien reste utilisable.",
+      "aucunCommit": "Personne n'a encore poussé de code. Clonez le dépôt pour commencer.",
+      "aucuneDemande": "Aucune demande de fusion pour l'instant.",
+      "etat": {
+        "ouverte": "Ouverte",
+        "fusionnee": "Fusionnée",
+        "fermee": "Fermée"
+      }
     }
   },
   "reseau": {

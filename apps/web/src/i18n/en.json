@@ -776,6 +776,24 @@
       "erreur": "The post wasn't published. Try again.",
       "aucuneCommunaute": "Join a community first to post there.",
       "carte": "Tech Tontine circle"
+    },
+    "code": {
+      "titre": "The turn's code",
+      "ouvrir": "Open on {fournisseur}",
+      "copier": "Copy",
+      "copie": "Copied",
+      "commits": "Latest commits",
+      "demandes": "Pull requests",
+      "inconnu": "unknown account",
+      "aucunDepot": "This turn has no code repository yet.",
+      "indisponible": "The repository is not responding right now. Its link still works.",
+      "aucunCommit": "Nobody has pushed code yet. Clone the repository to get started.",
+      "aucuneDemande": "No pull requests yet.",
+      "etat": {
+        "ouverte": "Open",
+        "fusionnee": "Merged",
+        "fermee": "Closed"
+      }
     }
   },
   "reseau": {
