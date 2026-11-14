@@ -7,8 +7,8 @@ import { i18n } from '../../i18n'
 import { creerRouteur } from '../../router'
 import { chargerSession } from '../../session'
 import App from '../../App.vue'
-import { planDemo } from '../../mocks/demandes'
-import { demandeValide, fonctionnalitesParPriorite, jalonsAvecTaches } from './demandes'
+import { orientationDemo, planDemo } from '../../mocks/demandes'
+import { demandeValide, etatAnalyse, fonctionnalitesParPriorite, jalonsAvecTaches, type Demande } from './demandes'
 
 async function ouvrir(adresse: string) {
   ;(i18n.global.locale as unknown as { value: string }).value = 'fr'
@@ -96,5 +96,73 @@ describe('Une PME décrit son besoin', () => {
     await vi.waitFor(() => expect(page.find('[data-test="lancer"]').exists()).toBe(true), { timeout: 4000 })
     await page.get('[data-test="lancer"]').trigger('click')
     await vi.waitFor(() => expect(page.text()).toContain('Une équipe a déjà lancé un projet sur cette demande'))
+  })
+})
+
+const ID = '0b9e8d7c-6a5f-4e3d-8c2b-1a0f9e8d7c6b'
+const base = { id: ID, titre: 'Nos dossiers', description: 'Le cabinet perd ses dossiers entre associés.', dureeSemaines: null, creeLe: '2026-11-14T10:00:00Z' }
+
+describe('l’orientation d’un besoin', () => {
+  it('est prête même sans plan, quand Systalink suffit', () => {
+    const sansDev = { ...orientationDemo(), developpeursNecessaires: false, competences: [], plan: null }
+    const d = { ...base, plan: { statut: 'terminee' }, orientation: { statut: 'terminee', origine: 'ia', resultat: sansDev } } as Demande
+    expect(etatAnalyse(d)).toBe('pret')
+    expect(etatAnalyse({ ...d, orientation: { statut: 'en_cours' } })).toBe('attente')
+    expect(etatAnalyse({ ...d, orientation: { statut: 'echouee', erreurCode: 'delai_depasse' } })).toBe('echec')
+  })
+
+  it('envoie le secteur et la ville, et jamais la case Systalink cochée d’avance', async () => {
+    let corps: Record<string, unknown> = {}
+    serveur.use(
+      http.post('/api/demandes', async ({ request }) => {
+        corps = (await request.json()) as Record<string, unknown>
+        return HttpResponse.json({ ...base, plan: { statut: 'en_attente' } }, { status: 201 })
+      }),
+    )
+    const { page, routeur } = await ouvrir('/besoin')
+    expect(routeur.currentRoute.value.name).toBe('nouvelle-demande')
+    expect(page.find('[data-test="prudence"]').exists()).toBe(true)
+    expect((page.get('[data-test="offres"] input').element as HTMLInputElement).checked).toBe(false)
+    await page.get('[data-test="exemple"]').trigger('click')
+    await page.get('[data-test="secteur"][value="juridique"]').setValue(true)
+    await page.get('[data-test="demande"]').trigger('submit')
+    await vi.waitFor(() => expect(corps.titre).toBeTruthy())
+    expect(corps).toMatchObject({ secteur: 'juridique', offresSystalink: false })
+    expect(corps).not.toHaveProperty('ville')
+  })
+
+  it('montre les services Systalink, les développeurs et leurs raisons, puis enregistre l’accord', async () => {
+    const { page } = await ouvrir('/demandes/nouvelle')
+    await page.get('[data-test="exemple"]').trigger('click')
+    await page.get('[data-test="demande"]').trigger('submit')
+    await vi.waitFor(() => expect(page.find('[data-test="services-systalink"]').exists()).toBe(true), { timeout: 4000 })
+    const services = page.findAll('[data-test="service"]')
+    expect(services).toHaveLength(2)
+    expect(services[0]!.get('a').attributes()).toMatchObject({ href: 'https://systalink.com', rel: 'noopener noreferrer' })
+    const recommandes = page.findAll('[data-test="recommande"]')
+    expect(recommandes).toHaveLength(3)
+    expect(recommandes[0]!.text()).toContain('React, confirmé (3 dépôts)')
+    expect(recommandes[0]!.get('a').attributes('href')).toBe('/messages/d2e00000-0000-4000-8000-000000000001')
+    expect(page.find('[data-test="former-cercle"]').exists()).toBe(true)
+
+    const caseOffres = page.get('[data-test="offres-resultat"] input')
+    expect((caseOffres.element as HTMLInputElement).checked).toBe(false)
+    await caseOffres.setValue(true)
+    await vi.waitFor(() => expect((caseOffres.element as HTMLInputElement).checked).toBe(true))
+  })
+
+  it('n’affiche ni développeurs ni plan quand Systalink suffit, et dit quand l’IA était absente', async () => {
+    const sansDev = { ...orientationDemo(), developpeursNecessaires: false, competences: [], plan: null }
+    serveur.use(
+      http.get('/api/demandes/:id', () =>
+        HttpResponse.json({ ...base, plan: { statut: 'terminee', origine: 'repli' }, orientation: { statut: 'terminee', origine: 'repli', resultat: sansDev }, recommandations: [] }),
+      ),
+    )
+    const { page } = await ouvrir(`/demandes/${ID}`)
+    await vi.waitFor(() => expect(page.find('[data-test="services-systalink"]').exists()).toBe(true))
+    expect(page.text()).toContain('Analyse automatique indisponible')
+    expect(page.find('[data-test="developpeurs"]').exists()).toBe(false)
+    expect(page.find('[data-test="lancer"]').exists()).toBe(false)
+    expect(page.find('[data-test="plan-echec"]').exists()).toBe(false)
   })
 })

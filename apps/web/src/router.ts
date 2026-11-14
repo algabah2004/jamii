@@ -73,8 +73,9 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('./features/reseau/ConversationPage.vue'),
     meta: { connexionRequise: true },
   },
-  // Une PME décrit son besoin, l'assistant propose un plan (étape 3 de la démo). Connexion requise
-  // (GitHub ou e-mail : une PME n'a pas besoin de compte GitHub).
+  // Une personne ou une PME décrit son besoin, Jamii l'oriente (étape 1 de la démo). Connexion requise
+  // (GitHub ou e-mail : une PME n'a pas besoin de compte GitHub). `/besoin` est l'adresse à donner.
+  { path: '/besoin', redirect: '/demandes/nouvelle' },
   {
     path: '/demandes/nouvelle',
     name: 'nouvelle-demande',
