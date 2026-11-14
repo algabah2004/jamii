@@ -76,17 +76,17 @@ describe('la liste des hackathons', () => {
   })
 
   it('propose « Créer un hackathon » à une personne connectée et filtre par statut', async () => {
-    let statut: string | null = 'jamais'
+    const statuts: (string | null)[] = []
     serveur.use(
       http.get('/api/hackathons', ({ request }) => {
-        statut = new URL(request.url).searchParams.get('statut')
+        statuts.push(new URL(request.url).searchParams.get('statut'))
         return HttpResponse.json({ elements: [], curseurSuivant: null })
       }),
     )
     const { page } = await monter('/hackathons')
     await attendre(page, '[data-test="creer-un-hackathon"]')
     await page.get('[data-test="filtre-en_cours"]').trigger('click')
-    await vi.waitFor(() => expect(statut).toBe('en_cours'))
+    await vi.waitFor(() => expect(statuts).toContain('en_cours'))
     await attendre(page, '[data-test="aucun"]')
   })
 

@@ -21,18 +21,22 @@ const etat = ref<'chargement' | 'pret' | 'indisponible'>('chargement')
 const plus = ref(false)
 const connecte = computed(() => session.value === 'connecte')
 
+// Chaque chargement a son numéro : la réponse d'un ancien filtre, arrivée en retard, n'écrase pas la liste.
+let dernier = 0
 async function charger(curseur?: string) {
+  const numero = ++dernier
   if (curseur) plus.value = true
   else etat.value = 'chargement'
   try {
     const page = await listerHackathons(filtre.value, curseur)
+    if (numero !== dernier) return
     hackathons.value = curseur ? [...hackathons.value, ...page.elements] : page.elements
     suivant.value = page.curseurSuivant
     etat.value = 'pret'
   } catch {
-    if (!curseur) etat.value = 'indisponible'
+    if (!curseur && numero === dernier) etat.value = 'indisponible'
   } finally {
-    plus.value = false
+    if (numero === dernier) plus.value = false
   }
 }
 watch(filtre, () => void charger(), { immediate: true })
