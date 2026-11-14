@@ -105,3 +105,44 @@ export const publierMission = (id: string, version: number) =>
 
 export const fermerMission = (id: string, version: number) =>
   resultat<Mission>(api.POST('/api/missions/{missionId}/fermer', { params: { path: { missionId: id } }, body: { version } }))
+
+// ---------------------------------------------------------------- le suivi du travail (#178)
+
+export type Travail = Schemas['Travail']
+export type Jalon = Schemas['Jalon']
+export type Livraison = Schemas['Livraison']
+
+export const LIMITES_SUIVI = { informationsMax: 4000, messageMin: 10, messageMax: 4000, liensMax: 5, lienMax: 500, raisonMin: 10, raisonMax: 2000 } as const
+
+/** Les liens d'une livraison, un par ligne : `null` s'il y en a trop, ou si l'un n'est pas une adresse `https`. */
+export function lireLiens(texte: string): string[] | null {
+  const liens = texte.split('\n').map((l) => l.trim()).filter(Boolean)
+  if (liens.length > LIMITES_SUIVI.liensMax) return null
+  for (const lien of liens) {
+    if (lien.length > LIMITES_SUIVI.lienMax) return null
+    try {
+      if (new URL(lien).protocol !== 'https:') return null
+    } catch {
+      return null
+    }
+  }
+  return liens
+}
+
+const chemin = (missionId: string) => ({ params: { path: { missionId } } })
+const cheminJalon = (missionId: string, jalonId: string) => ({ params: { path: { missionId, jalonId } } })
+
+export const demarrerMission = (id: string, version: number, informations: string) =>
+  resultat<Mission>(api.POST('/api/missions/{missionId}/demarrer', { ...chemin(id), body: { version, informations } }))
+
+export const livrerJalon = (id: string, jalonId: string, version: number, message: string, liens: string[]) =>
+  resultat<Mission>(api.POST('/api/missions/{missionId}/jalons/{jalonId}/livrer', { ...cheminJalon(id, jalonId), body: { version, message, liens } }))
+
+export const accepterJalon = (id: string, jalonId: string, version: number) =>
+  resultat<Mission>(api.POST('/api/missions/{missionId}/jalons/{jalonId}/accepter', { ...cheminJalon(id, jalonId), body: { version } }))
+
+export const demanderRetouche = (id: string, jalonId: string, version: number, raison: string) =>
+  resultat<Mission>(api.POST('/api/missions/{missionId}/jalons/{jalonId}/demander-retouche', { ...cheminJalon(id, jalonId), body: { version, raison } }))
+
+export const declarerPaiement = (id: string, jalonId: string, version: number, sens: 'paye' | 'recu') =>
+  resultat<Mission>(api.POST('/api/missions/{missionId}/jalons/{jalonId}/declarer-paiement', { ...cheminJalon(id, jalonId), body: { version, sens } }))
