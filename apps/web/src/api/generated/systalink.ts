@@ -140,7 +140,7 @@ export interface components {
          * @description Le service Systalink proposé. On ajoute une valeur quand un module se met à proposer un nouveau service.
          * @enum {string}
          */
-        ServiceSystalink: "datacloud" | "orion" | "yokk" | "systatalk" | "systaforms" | "domaines";
+        ServiceSystalink: "datacloud" | "orion" | "yokk" | "systatalk" | "systaforms" | "domaines" | "systaone";
         TableauDeBord: {
             periode: components["schemas"]["Periode"];
             /**

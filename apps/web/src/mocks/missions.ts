@@ -7,6 +7,7 @@ export type MissionResume = S['MissionResume']
 export type NouvelleMission = S['NouvelleMission']
 export type NouvelleProposition = S['NouvelleProposition']
 export type Proposition = S['Proposition']
+export type Jalon = S['Jalon']
 
 // Données de démo (contracts/missions.yaml) : jamais de vraies données personnelles.
 const AWA = { id: '6f1c2a4e-8b7d-4c3e-9a10-2b5d7e9f0a11', nom: 'Awa Diop', avatarUrl: null }
@@ -57,6 +58,86 @@ function propositionDemo(): Proposition {
   }
 }
 
+/** Une mission en cours, vue par sa cliente : un jalon livré qui attend sa réponse, un autre encore en cours. */
+export const MISSION_EN_COURS = 'd8f4b2a6-1c3e-4a5b-9d7f-6e2c0a8b4f13'
+
+function jalonDemo(ordre: number, titre: string, centimes: number, statut: Jalon['statut']): Jalon {
+  return {
+    id: `f0e1d2c3-b4a5-4968-8776-5544332211${String(ordre).padStart(2, '0')}`,
+    ordre,
+    titre,
+    description: null,
+    montant: { centimes, devise: 'XOF' },
+    delaiJours: 10 * ordre,
+    echeance: `2026-11-${String(10 + 10 * ordre).padStart(2, '0')}T09:00:00Z`,
+    statut,
+    livraisons: [],
+    acceptationAutomatiqueLe: null,
+    accepteLe: null,
+    acceptationAutomatique: false,
+    paiement: 'non_paye',
+  }
+}
+
+function missionEnCoursDemo(): Mission {
+  const livre = jalonDemo(1, 'Le catalogue avec photos et prix', 200000, 'livre')
+  livre.livraisons = [{ message: 'Le catalogue est en ligne, avec 24 modèles.', liens: ['https://atelier.example/catalogue'], livreeLe: '2026-11-13T16:00:00Z', retouche: null }]
+  livre.acceptationAutomatiqueLe = '2026-11-16T16:00:00Z'
+  return {
+    ...missionDemo(),
+    id: MISSION_EN_COURS,
+    titre: 'Prise de rendez-vous pour un salon de coiffure',
+    statut: 'en_cours',
+    nombrePropositions: 3,
+    version: 7,
+    moi: { role: 'client', actions: ['accepter_jalon', 'demander_retouche', 'annuler', 'ouvrir_desaccord', 'declarer_paye'] },
+    travail: {
+      developpeur: KOFI,
+      devis: {
+        id: 'b7c6d5e4-f3a2-4b1c-8d9e-0f1a2b3c4d5e',
+        total: { centimes: 400000, devise: 'XOF' },
+        retouchesComprises: 2,
+        conditions: null,
+        jalons: [livre, jalonDemo(2, 'Les rappels par SMS', 200000, 'en_cours')],
+        envoyeLe: '2026-11-08T10:00:00Z',
+        accepteLe: '2026-11-09T10:00:00Z',
+      },
+      informationsDepart: 'Les photos des coiffures sont dans le dossier partagé. Contact : la gérante, au salon.',
+      demarreLe: '2026-11-10T09:00:00Z',
+      retouchesRestantes: 2,
+      annulationDemandeePar: null,
+      desaccord: null,
+      avis: [],
+    },
+  }
+}
+
+/** Ce que la cliente peut faire, recalculé comme l'API après chaque action du suivi. */
+function actionsCliente(m: Mission): Mission['moi']['actions'] {
+  const jalons = m.travail?.devis.jalons ?? []
+  const actions: Mission['moi']['actions'] = []
+  if (m.statut === 'attribuee') return ['demarrer', 'annuler']
+  if (m.statut === 'en_cours' && jalons.some((j) => j.statut === 'livre')) actions.push('accepter_jalon', 'demander_retouche')
+  if (m.statut === 'en_cours') actions.push('annuler', 'ouvrir_desaccord')
+  if (jalons.some((j) => ['livre', 'accepte'].includes(j.statut) && j.paiement === 'non_paye')) actions.push('declarer_paye')
+  return actions
+}
+
+/** Une action du suivi sur un jalon : version vérifiée, puis `changer` modifie la mission (ou renvoie un code d'erreur). */
+async function suivre(params: Record<string, unknown>, request: Request, changer: (m: Mission, j: Jalon, corps: Record<string, unknown>) => string | void) {
+  const mission = missions.get(String(params.id))
+  const jalon = mission?.travail?.devis.jalons.find((j) => j.id === String(params.jalonId))
+  if (!mission || !jalon) return erreur(404, 'introuvable')
+  const corps = (await request.json()) as Record<string, unknown>
+  if (corps.version !== mission.version) return erreur(409, 'modification_concurrente')
+  const code = changer(mission, jalon, corps)
+  if (code) return erreur(code === 'validation' ? 400 : 409, code)
+  mission.version += 1
+  if (mission.travail?.devis.jalons.every((j) => j.statut === 'accepte')) mission.statut = 'terminee'
+  mission.moi = { ...mission.moi, actions: actionsCliente(mission) }
+  return HttpResponse.json(mission)
+}
+
 const missions = new Map<string, Mission>()
 const propositions = new Map<string, Proposition[]>()
 
@@ -66,6 +147,9 @@ export function reinitialiserMissions() {
   const m = missionDemo()
   missions.set(m.id, m)
   propositions.set(m.id, [propositionDemo()])
+  const enCours = missionEnCoursDemo()
+  missions.set(enCours.id, enCours)
+  propositions.set(enCours.id, [])
 }
 reinitialiserMissions()
 
@@ -167,4 +251,57 @@ export const handlersMissions = [
     mission.nombrePropositions += 1
     return HttpResponse.json(proposition, { status: 201 })
   }),
+
+  http.post('/api/missions/:id/demarrer', async ({ params, request }) => {
+    const mission = missions.get(String(params.id))
+    if (!mission?.travail) return erreur(404, 'introuvable')
+    const corps = (await request.json()) as { version: number; informations?: string }
+    if (corps.version !== mission.version) return erreur(409, 'modification_concurrente')
+    if (mission.statut !== 'attribuee') return erreur(409, 'etat_invalide')
+    if (!corps.informations?.trim()) return erreur(400, 'validation')
+    mission.statut = 'en_cours'
+    mission.version += 1
+    mission.travail = { ...mission.travail, informationsDepart: corps.informations, demarreLe: new Date().toISOString() }
+    for (const j of mission.travail.devis.jalons) j.statut = 'en_cours'
+    mission.moi = { ...mission.moi, actions: actionsCliente(mission) }
+    return HttpResponse.json(mission)
+  }),
+
+  http.post('/api/missions/:id/jalons/:jalonId/livrer', ({ params, request }) =>
+    suivre(params, request, (_m, j, corps) => {
+      if (j.statut !== 'en_cours') return 'etat_invalide'
+      const message = String(corps.message ?? '')
+      if (message.trim().length < 10) return 'validation'
+      j.statut = 'livre'
+      j.livraisons.push({ message, liens: (corps.liens as string[]) ?? [], livreeLe: new Date().toISOString(), retouche: null })
+    }),
+  ),
+
+  http.post('/api/missions/:id/jalons/:jalonId/accepter', ({ params, request }) =>
+    suivre(params, request, (_m, j) => {
+      if (j.statut !== 'livre') return 'etat_invalide'
+      Object.assign(j, { statut: 'accepte', accepteLe: new Date().toISOString(), acceptationAutomatiqueLe: null })
+    }),
+  ),
+
+  http.post('/api/missions/:id/jalons/:jalonId/demander-retouche', ({ params, request }) =>
+    suivre(params, request, (m, j, corps) => {
+      if (j.statut !== 'livre') return 'etat_invalide'
+      if (!m.travail || m.travail.retouchesRestantes < 1) return 'retouches_epuisees'
+      const raison = String(corps.raison ?? '')
+      if (raison.trim().length < 10) return 'validation'
+      m.travail.retouchesRestantes -= 1
+      const derniere = j.livraisons.at(-1)
+      if (derniere) derniere.retouche = raison
+      Object.assign(j, { statut: 'en_cours', acceptationAutomatiqueLe: null })
+    }),
+  ),
+
+  http.post('/api/missions/:id/jalons/:jalonId/declarer-paiement', ({ params, request }) =>
+    suivre(params, request, (_m, j, corps) => {
+      if (corps.sens === 'paye' && j.paiement === 'non_paye' && j.statut !== 'en_cours') j.paiement = 'declare_paye'
+      else if (corps.sens === 'recu' && j.paiement === 'declare_paye') j.paiement = 'declare_recu'
+      else return 'etat_invalide'
+    }),
+  ),
 ]

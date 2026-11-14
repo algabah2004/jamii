@@ -50,7 +50,7 @@ class RendusController {
 		return ResponseEntity.status(e.cree() ? HttpStatus.CREATED : HttpStatus.OK).body(vue);
 	}
 
-	private static RenduVue vue(Rendus.Rendu r) {
+	static RenduVue vue(Rendus.Rendu r) {
 		return new RenduVue(r.id(), r.equipeId(), r.titre(), r.description(), r.lienProduit(), r.depot(), r.video(), r.reponses(),
 				r.lienRepond(), r.lienVerifieLe(), r.version(), r.modifieLe());
 	}

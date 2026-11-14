@@ -45,6 +45,32 @@ public class MomentsSystalink {
 	}
 
 	/**
+	 * Comme {@link #proposer}, mais une seule fois par service et par contexte : une demande relue ou précisée ne
+	 * compte qu'une proposition par service. Renvoie l'identifiant du moment, à passer au front pour le clic.
+	 */
+	@Transactional
+	public UUID proposerUneFois(ServiceSystalink service, ContexteMoment contexte, UUID contexteId) {
+		base.sql("""
+				INSERT INTO moment_systalink (id, service, contexte, contexte_id, propose_le)
+				VALUES (:id, :service, :contexte, :contexteId, :maintenant)
+				ON CONFLICT (service, contexte, contexte_id) WHERE contexte = 'demande' DO NOTHING""")
+			.param("id", UUID.randomUUID())
+			.param("service", service.code())
+			.param("contexte", contexte.code())
+			.param("contexteId", contexteId)
+			.param("maintenant", maintenant())
+			.update();
+		return base.sql("""
+				SELECT id FROM moment_systalink WHERE service = :service AND contexte = :contexte AND contexte_id = :contexteId
+				ORDER BY propose_le, id LIMIT 1""")
+			.param("service", service.code())
+			.param("contexte", contexte.code())
+			.param("contexteId", contexteId)
+			.query(UUID.class)
+			.single();
+	}
+
+	/**
 	 * Enregistre le premier clic. Renvoie faux si le moment n'existe pas.
 	 * Idempotent : `accepte_le` n'est posé qu'une fois, un second appel ne change rien.
 	 */

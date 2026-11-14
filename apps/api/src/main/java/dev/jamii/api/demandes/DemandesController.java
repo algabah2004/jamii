@@ -24,7 +24,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import dev.jamii.api.auth.UtilisateurConnecte;
+import dev.jamii.api.systalink.ContexteMoment;
+import dev.jamii.api.systalink.MomentsSystalink;
+import dev.jamii.api.systalink.ServiceSystalink;
 import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ObjectNode;
 
 /** Les routes de contracts/demandes.yaml v0.2 : décrire un besoin, lire son orientation, choisir les offres Systalink. */
 @RestController
@@ -69,12 +73,15 @@ class DemandesController {
 
 	private final PublicationsDemandes publications;
 
+	private final MomentsSystalink moments;
+
 	DemandesController(GestionDemandes gestion, Recommandations recommandations, WebhookSystalink webhook,
-			PublicationsDemandes publications) {
+			PublicationsDemandes publications, MomentsSystalink moments) {
 		this.gestion = gestion;
 		this.recommandations = recommandations;
 		this.webhook = webhook;
 		this.publications = publications;
+		this.moments = moments;
 	}
 
 	@PostMapping("/api/demandes")
@@ -207,7 +214,8 @@ class DemandesController {
 		if (fiche.offresSystalink() || "terminee".equals(etat.statut())) {
 			webhook.signalerSiPret(fiche.id());
 		}
-		var orientation = new EtatDeLaTache(etat.statut(), etat.origine(), etat.resultat(), etat.erreurCode());
+		var orientation = new EtatDeLaTache(etat.statut(), etat.origine(), avecMoments(fiche.id(), etat.resultat()),
+				etat.erreurCode());
 		// `plan` reste pour les écrans existants : c'est le plan de l'orientation.
 		JsonNode plan = etat.resultat() == null || etat.resultat().path("plan").isNull() ? null : etat.resultat().get("plan");
 		var etatDuPlan = new EtatDeLaTache(etat.statut(), etat.origine(), plan, etat.erreurCode());
@@ -221,6 +229,24 @@ class DemandesController {
 				fiche.ville(), fiche.pays(), fiche.offresSystalink(), fiche.creeLe(), etatDuPlan, orientation, recommandes,
 				fiche.precisions().stream().map(p -> new Precision(p.texte(), p.creeLe())).toList(),
 				fiche.publieeLe() == null ? null : new Publication(fiche.publieeLe(), fiche.publieeResume()));
+	}
+
+	/**
+	 * Chaque service Systalink montré à la personne compte une fois, par service et par demande, dans le tableau de bord
+	 * Systalink (#65). Le front reçoit `momentId` pour signaler le clic sur « Voir le service ». Aucun identifiant de
+	 * personne n'est enregistré dans le moment.
+	 */
+	private JsonNode avecMoments(UUID demandeId, JsonNode resultat) {
+		if (resultat == null || !resultat.path("services").isArray() || resultat.path("services").isEmpty()) {
+			return resultat;
+		}
+		ObjectNode copie = (ObjectNode) resultat.deepCopy();
+		for (JsonNode service : copie.path("services")) {
+			ServiceSystalink.depuisCatalogue(service.path("id").asString(null))
+				.ifPresent(mesure -> ((ObjectNode) service).put("momentId",
+						moments.proposerUneFois(mesure, ContexteMoment.DEMANDE, demandeId).toString()));
+		}
+		return copie;
 	}
 
 	private static String propre(String texte) {

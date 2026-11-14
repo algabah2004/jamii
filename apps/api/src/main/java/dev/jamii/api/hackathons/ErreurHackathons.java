@@ -34,6 +34,11 @@ class ErreurHackathons extends RuntimeException {
 		return new ErreurHackathons(HttpStatus.FORBIDDEN, "interdit", "Accès refusé", null, 0);
 	}
 
+	/** 403 : un juré face au projet de sa propre équipe. */
+	static ErreurHackathons conflitInterets() {
+		return new ErreurHackathons(HttpStatus.FORBIDDEN, "conflit_interets", "Tu ne notes pas le projet de ta propre équipe", null, 0);
+	}
+
 	static ErreurHackathons conflit(String code, String titre) {
 		return new ErreurHackathons(HttpStatus.CONFLICT, code, titre, null, 0);
 	}

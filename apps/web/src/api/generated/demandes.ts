@@ -341,6 +341,11 @@ export interface components {
             prixIndicatif?: string | null;
             /** Format: uri */
             lien: string;
+            /**
+             * Format: uuid
+             * @description Ajouté par l'API Jamii, jamais par le service IA. À passer à `POST /api/systalink/moments/{momentId}/accepter` (contracts/systalink.yaml) quand la personne ouvre le service.
+             */
+            momentId?: string;
         };
         /** @description En minuscules, sans espace inutile (`flutter`, `postgresql`, `ux-design`). */
         Competence: string;
