@@ -39,3 +39,29 @@ Suivi : #166. Une tâche par ticket, dans cet ordre :
 **Territoire en plus, si la proposition est acceptée :** le module `hackathons` (API, écrans `features/hackathons`, `contracts/hackathons.yaml`) et `contracts/missions.yaml`. Les routes du front (`router.ts`), `projets`, `reseau` et `profils` restent à leurs responsables : on passe par une **demande**.
 
 **Terminé quand :** une PME publie une mission, choisit un développeur sur devis et la mène jusqu'aux avis ; un organisateur crée un hackathon, des équipes rendent, le jury note et les résultats sont publiés, sur l'environnement de test.
+
+### Où en est le module (15 novembre)
+
+Les API et les écrans des étapes 2 à 5 sont fusionnés. Les écrans s'ouvrent depuis la page d'une mission (`features/missions/MissionPage.vue`) ou d'un hackathon (`features/hackathons/HackathonPage.vue`). Ce que chacun voit dépend de `moi.actions`, calculé par l'API, qui revérifie chaque action.
+
+| Qui | Mission | Hackathon |
+|---|---|---|
+| Client / organisateur | publier, retenir une proposition, accepter le devis, accepter ou demander une retouche, déclarer un paiement, annuler, ouvrir un désaccord, donner un avis | publier, trier les candidatures, inviter le jury (par le lien du profil), suivre la notation, exporter les notes en CSV, confirmer les gagnants |
+| Développeur / participant | proposer ses services, envoyer le devis, démarrer, livrer un jalon, donner un avis | s'inscrire seul ou en équipe, inviter, rendre le projet |
+| Juré | — | noter chaque projet de 1 à 5 par critère, avec un commentaire |
+| Tout le monde | lire une mission publique | lire un hackathon publié, ses équipes et ses résultats |
+
+**Pour la démo**, le profil `demo` (`SPRING_PROFILES_ACTIVE=demo`) charge aussi :
+- « Dakar Cloud Hack », terminé, avec ses résultats (`DemoHackathonMission.HACKATHON`) ;
+- la mission des tisserandes de Thiès, en cours. Son 2e jalon attend qu'Awa l'accepte.
+
+**Configuration** (`.env.example`) :
+- `PAIEMENTS=declares` : Jamii n'encaisse rien, chacun déclare le paiement d'un jalon.
+- `VERIFICATION_LIEN=aucune|simulee` : vérifie si le lien du produit d'un rendu répond.
+
+Chaque fournisseur passe par une interface interne, avec un adaptateur simulé ; on le change par la configuration.
+
+**Encore ouvert :**
+- les routes et le lien de menu (#191, demande à @Amar233-ui) ;
+- un projet Jamii créé depuis un hackathon (#211) ;
+- la preuve « mission terminée » sur le profil (#212).

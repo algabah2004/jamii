@@ -23,6 +23,11 @@ Pas de thème (sport ou autre), pas de métaphore, pas de jargon interne. Un bou
 | Tour | Round, manche, saison |
 | Tech Tontine | — |
 | Griot (l'assistant IA du cercle) | Coach, bot, IA |
+| Proposition (un développeur propose ses services), Devis, Jalon, Livraison, Retouche | Offre, bid, milestone, sprint, livrable |
+| Avis (après une mission) | Review, étoiles, évaluation |
+| Hackathon, Inscription, Candidature, Liste d'attente | Registration, application, waitlist |
+| Rendu (le projet rendu par une équipe), Lien du produit | Submission, pitch, livrable |
+| Juré, Note de 1 à 5 par critère, Classement proposé, Gagnant d'un prix | Score, points, podium |
 
 ## Tech Tontine : les seuls mots imagés autorisés
 
@@ -37,6 +42,8 @@ La tontine est connue partout sur le continent : on cotise chacun son tour, et c
 | **Griot** | Le nom de l'assistant IA du cercle. Il est toujours présenté avec sa fonction : « le Griot, l'assistant qui planifie et résume le tour ». |
 
 Les boutons restent explicites : « **Créer un cercle** », « **Rejoindre le cercle** », « **Déposer mon idée** », « **Tirer l'ordre au sort** », « **Livrer le tour** ». Aucun autre mot imagé (pot, cotisation, caisse…).
+
+**Note et classement :** ces mots ne servent **qu'au jury d'un hackathon**, pour juger un projet rendu. Une personne n'a jamais de note ni de rang : son profil montre une carte de compétences.
 
 ## Exemples
 
