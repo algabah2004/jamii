@@ -16,6 +16,7 @@ export type Orientation = Schemas['Orientation']
 export type ServiceSystalink = Schemas['ServiceSystalink']
 export type Recommandation = Schemas['Recommandation']
 export type Demande = Schemas['Demande']
+export type Publication = NonNullable<Demande['publication']>
 
 export type NouvelleDemande = {
   titre: string
@@ -46,7 +47,39 @@ export function estRepli(d: Demande): boolean {
 }
 
 /** Les limites de EntreePlanProjet (contracts/ia.yaml), vérifiées aussi par le serveur. */
-export const LIMITES = { titreMin: 3, titreMax: 120, descriptionMin: 20, descriptionMax: 4000 } as const
+export const LIMITES = {
+  titreMin: 3,
+  titreMax: 120,
+  descriptionMin: 20,
+  descriptionMax: 4000,
+  /** Ce qu'on laisse saisir : la place des réponses guidées est gardée pour que le tout reste sous `descriptionMax`. */
+  descriptionSaisieMax: 3000,
+  reponseMax: 250,
+  resumeMin: 20,
+  resumeMax: 600,
+} as const
+
+/** Les trois questions guidées, facultatives : elles aident la personne à dire l'essentiel avant l'analyse. */
+export const QUESTIONS = ['qui', 'probleme', 'reussite'] as const
+export type Question = (typeof QUESTIONS)[number]
+export type Reponses = Partial<Record<Question, string>>
+
+/**
+ * Le besoin tel qu'il part à l'API : le texte de la personne, puis chaque réponse guidée sur sa ligne, avec sa question.
+ * Une réponse vide n'ajoute rien. Les questions sont dites dans la langue de la personne (`libelles`).
+ */
+export function composerDescription(description: string, reponses: Reponses, libelles: Record<Question, string>): string {
+  const lignes = QUESTIONS.map((q) => [libelles[q], reponses[q]?.trim() ?? ''] as const)
+    .filter(([, reponse]) => reponse.length > 0)
+    .map(([libelle, reponse]) => `${libelle} ${reponse.slice(0, LIMITES.reponseMax)}`)
+  return [description.trim(), ...lignes].join('\n\n')
+}
+
+/** Le résumé public d'une demande : ni trop court ni trop long (l'API retire en plus e-mails et téléphones). */
+export function resumeValide(resume: string): boolean {
+  const n = resume.trim().length
+  return n >= LIMITES.resumeMin && n <= LIMITES.resumeMax
+}
 export const DUREES = [2, 4, 8, 12] as const
 
 /** Relire la demande toutes les 2 s tant que le plan se prépare, au plus 1 minute. */
@@ -106,6 +139,17 @@ export async function lireDemande(id: string): Promise<Demande | null> {
   if (reponse.status === 404) return null
   if (!reponse.ok) throw new Error('demande indisponible')
   return (await reponse.json()) as Demande
+}
+
+/**
+ * POST /api/demandes/{id}/publication : publier sa demande avec le résumé que la communauté verra.
+ * Renvoie la demande à jour, ou le code d'erreur (`plan_non_pret`, `deja_publiee`, `validation`, `autre`).
+ */
+export async function publierDemande(id: string, resume: string): Promise<{ demande: Demande } | { erreur: string }> {
+  const reponse = await envoyer(`/api/demandes/${encodeURIComponent(id)}/publication`, { resume: resume.trim() })
+  if (reponse.ok) return { demande: (await reponse.json()) as Demande }
+  const corps = (await reponse.json().catch(() => ({}))) as { code?: string }
+  return { erreur: corps.code ?? 'autre' }
 }
 
 /** POST /api/projets (contracts/projets.yaml) : créer le projet depuis la demande. Renvoie son id. */

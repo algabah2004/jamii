@@ -43,9 +43,16 @@ class DemandesController {
 	record EtatDeLaTache(String statut, String origine, JsonNode resultat, String erreurCode) {
 	}
 
+	/** Ce que la communauté voit de la demande une fois publiée. */
+	record Publication(Instant publieeLe, String resume) {
+	}
+
+	record ResumePublic(String resume) {
+	}
+
 	record Demande(UUID id, String titre, String description, Integer dureeSemaines, String secteur, String ville,
 			String pays, boolean offresSystalink, Instant creeLe, EtatDeLaTache plan, EtatDeLaTache orientation,
-			List<Recommandations.Recommandation> recommandations) {
+			List<Recommandations.Recommandation> recommandations, Publication publication) {
 	}
 
 	private final GestionDemandes gestion;
@@ -54,10 +61,14 @@ class DemandesController {
 
 	private final WebhookSystalink webhook;
 
-	DemandesController(GestionDemandes gestion, Recommandations recommandations, WebhookSystalink webhook) {
+	private final PublicationsDemandes publications;
+
+	DemandesController(GestionDemandes gestion, Recommandations recommandations, WebhookSystalink webhook,
+			PublicationsDemandes publications) {
 		this.gestion = gestion;
 		this.recommandations = recommandations;
 		this.webhook = webhook;
+		this.publications = publications;
 	}
 
 	@PostMapping("/api/demandes")
@@ -126,6 +137,38 @@ class DemandesController {
 			.body(vue(gestion.lire(demandeId, moi.id()).orElseThrow()));
 	}
 
+	/**
+	 * Publier sa demande : l'auteur a relu son cahier des charges et choisit le résumé que la communauté verra.
+	 * Possible seulement quand le plan est prêt (409 `plan_non_pret`) et une seule fois (409 `deja_publiee`).
+	 */
+	@PostMapping("/api/demandes/{demandeId}/publication")
+	ResponseEntity<?> publier(@PathVariable UUID demandeId, @RequestBody ResumePublic corps,
+			@AuthenticationPrincipal UtilisateurConnecte moi) {
+		var fiche = gestion.lire(demandeId, moi.id());
+		if (fiche.isEmpty()) {
+			return probleme(HttpStatus.NOT_FOUND, "introuvable", "Ressource introuvable", null);
+		}
+		// Le résumé est public : ni e-mail ni téléphone, même si la personne les a écrits.
+		String resume = GestionDemandes.sansCoordonnees(propre(corps.resume())).strip();
+		if (resume.length() < 20 || resume.length() > 600) {
+			return probleme(HttpStatus.BAD_REQUEST, "validation", "Certains champs sont invalides",
+					List.of(Map.of("champ", "resume", "code", "longueur_invalide")));
+		}
+		Instant maintenant = Instant.now();
+		var etat = gestion.orientation(fiche.get(), maintenant);
+		if (!"terminee".equals(etat.statut()) || etat.resultat() == null) {
+			return probleme(HttpStatus.CONFLICT, "plan_non_pret", "Le cahier des charges n'est pas encore prêt", null);
+		}
+		try {
+			publications.publier(fiche.get(), resume, etat.resultat(), maintenant);
+		}
+		catch (PublicationsDemandes.DejaPubliee deja) {
+			return probleme(HttpStatus.CONFLICT, "deja_publiee", "Cette demande est déjà publiée", null);
+		}
+		return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+			.body(vue(gestion.lire(demandeId, moi.id()).orElseThrow()));
+	}
+
 	private Demande vue(GestionDemandes.Fiche fiche) {
 		var etat = gestion.orientation(fiche, Instant.now());
 		if (fiche.offresSystalink() || "terminee".equals(etat.statut())) {
@@ -142,7 +185,8 @@ class DemandesController {
 			recommandes = recommandations.pour(competences, fiche.ville(), fiche.pays(), fiche.auteurId());
 		}
 		return new Demande(fiche.id(), fiche.titre(), fiche.description(), fiche.dureeSemaines(), fiche.secteur(),
-				fiche.ville(), fiche.pays(), fiche.offresSystalink(), fiche.creeLe(), etatDuPlan, orientation, recommandes);
+				fiche.ville(), fiche.pays(), fiche.offresSystalink(), fiche.creeLe(), etatDuPlan, orientation, recommandes,
+				fiche.publieeLe() == null ? null : new Publication(fiche.publieeLe(), fiche.publieeResume()));
 	}
 
 	private static String propre(String texte) {

@@ -16,7 +16,12 @@ import dev.jamii.api.auth.DonneesPersonnelles;
 @Component
 class DonneesDemandes implements DonneesPersonnelles {
 
-	record MaDemande(UUID id, String titre, String description, Integer dureeSemaines, Instant creeLe) {
+	record MaDemande(UUID id, String titre, String description, Integer dureeSemaines, Instant creeLe,
+			Publication publication) {
+	}
+
+	/** Le résumé que la communauté voit, si la demande est publiée. */
+	record Publication(Instant publieeLe, String resume) {
 	}
 
 	private final JdbcClient base;
@@ -33,7 +38,7 @@ class DonneesDemandes implements DonneesPersonnelles {
 	@Override
 	public List<MaDemande> exporter(UUID utilisateurId) {
 		return base.sql("""
-				SELECT id, titre, description, duree_semaines, cree_le FROM demande
+				SELECT id, titre, description, duree_semaines, cree_le, publiee_le, publiee_resume FROM demande
 				WHERE auteur_id = :u ORDER BY cree_le, id
 				""")
 			.param("u", utilisateurId)
@@ -41,7 +46,9 @@ class DonneesDemandes implements DonneesPersonnelles {
 				int lue = rs.getInt("duree_semaines");
 				Integer duree = rs.wasNull() ? null : lue;
 				return new MaDemande(rs.getObject("id", UUID.class), rs.getString("titre"), rs.getString("description"),
-						duree, rs.getTimestamp("cree_le").toInstant());
+						duree, rs.getTimestamp("cree_le").toInstant(),
+						rs.getTimestamp("publiee_le") == null ? null
+								: new Publication(rs.getTimestamp("publiee_le").toInstant(), rs.getString("publiee_resume")));
 			})
 			.list();
 	}

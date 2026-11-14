@@ -132,6 +132,20 @@ export const handlersDemandes = [
     return HttpResponse.json(demande)
   }),
 
+  http.post('/api/demandes/:id/publication', async ({ params, request }) => {
+    const trouvee = demandes.get(String(params.id))
+    if (!trouvee) return HttpResponse.json({ code: 'introuvable' }, { status: 404 })
+    const { resume } = (await request.json()) as { resume?: string }
+    const propre = (resume ?? '').trim()
+    if (propre.length < 20 || propre.length > 600) {
+      return HttpResponse.json({ code: 'validation', erreurs: [{ champ: 'resume', code: 'longueur_invalide' }] }, { status: 400 })
+    }
+    if (trouvee.demande.plan.statut !== 'terminee') return HttpResponse.json({ code: 'plan_non_pret' }, { status: 409 })
+    if (trouvee.demande.publication) return HttpResponse.json({ code: 'deja_publiee' }, { status: 409 })
+    trouvee.demande.publication = { publieeLe: new Date().toISOString(), resume: propre }
+    return HttpResponse.json(trouvee.demande)
+  }),
+
   http.put('/api/demandes/:id/offres-systalink', async ({ params, request }) => {
     const trouvee = demandes.get(String(params.id))
     if (!trouvee) return HttpResponse.json({ code: 'introuvable' }, { status: 404 })

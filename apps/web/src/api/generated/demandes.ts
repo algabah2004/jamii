@@ -49,6 +49,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/demandes/{demandeId}/publication": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                demandeId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Publier sa demande, avec le résumé que la communauté verra
+         * @description L'auteur seulement (`404` pour tout autre). Le plan doit être prêt. La demande est alors visible de la
+         *     communauté par son résumé, et l'événement public `DemandePubliee` part (une seule fois).
+         */
+        post: operations["publierDemande"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/demandes/{demandeId}": {
         parameters: {
             query?: never;
@@ -91,6 +114,16 @@ export interface components {
              */
             offresSystalink: boolean;
         };
+        ResumePublic: {
+            /** @description Le résumé relu par l'auteur, texte brut. Les adresses e-mail et les numéros de téléphone en sont retirés. */
+            resume: string;
+        };
+        /** @description Ce que la communauté voit de la demande. */
+        Publication: {
+            /** Format: date-time */
+            publieeLe: string;
+            resume: string;
+        };
         Demande: {
             /** Format: uuid */
             id: string;
@@ -109,6 +142,8 @@ export interface components {
             ville?: string | null;
             pays?: string | null;
             offresSystalink?: boolean;
+            /** @description `null` tant que la demande n'est pas publiée. */
+            publication?: components["schemas"]["Publication"] | null;
             plan: components["schemas"]["PlanDeLaDemande"];
             orientation?: components["schemas"]["OrientationDeLaDemande"];
             /**
@@ -324,6 +359,15 @@ export interface components {
                 "application/problem+json": components["schemas"]["Erreur"];
             };
         };
+        /** @description Doublon, état incompatible ou `modification_concurrente`. */
+        Conflit: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Erreur"];
+            };
+        };
     };
     parameters: never;
     requestBodies: never;
@@ -391,6 +435,37 @@ export interface operations {
             };
             401: components["responses"]["NonConnecte"];
             404: components["responses"]["Introuvable"];
+        };
+    };
+    publierDemande: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                demandeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResumePublic"];
+            };
+        };
+        responses: {
+            /** @description La demande à jour, avec sa `publication`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Demande"];
+                };
+            };
+            400: components["responses"]["Invalide"];
+            401: components["responses"]["NonConnecte"];
+            404: components["responses"]["Introuvable"];
+            /** @description `plan_non_pret` ou `deja_publiee`. */
+            409: components["responses"]["Conflit"];
         };
     };
     lireDemande: {

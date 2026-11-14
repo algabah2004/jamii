@@ -40,7 +40,8 @@ class GestionDemandes {
 	private static final Logger journal = LoggerFactory.getLogger(GestionDemandes.class);
 
 	record Fiche(UUID id, UUID auteurId, String titre, String description, Integer dureeSemaines, String secteur,
-			String ville, String pays, boolean offresSystalink, UUID tacheIaId, JsonNode orientation, Instant creeLe) {
+			String ville, String pays, boolean offresSystalink, UUID tacheIaId, JsonNode orientation, Instant creeLe,
+			Instant publieeLe, String publieeResume) {
 	}
 
 	/** Ce que l'auteur ajoute à son besoin, tout facultatif. */
@@ -109,7 +110,7 @@ class GestionDemandes {
 	Optional<Fiche> lire(UUID id, UUID auteur) {
 		return base.sql("""
 				SELECT id, auteur_id, titre, description, duree_semaines, secteur, ville, pays, offres_systalink,
-				  tache_ia_id, orientation, cree_le
+				  tache_ia_id, orientation, cree_le, publiee_le, publiee_resume
 				FROM demande WHERE id = :id AND auteur_id = :auteur
 				""")
 			.param("id", id).param("auteur", auteur)
@@ -117,10 +118,12 @@ class GestionDemandes {
 				int duree = rs.getInt("duree_semaines");
 				Integer dureeSemaines = rs.wasNull() ? null : duree;
 				String orientation = rs.getString("orientation");
+				Timestamp publiee = rs.getTimestamp("publiee_le");
 				return new Fiche(rs.getObject("id", UUID.class), rs.getObject("auteur_id", UUID.class), rs.getString("titre"),
 						rs.getString("description"), dureeSemaines, rs.getString("secteur"), rs.getString("ville"),
 						rs.getString("pays"), rs.getBoolean("offres_systalink"), rs.getObject("tache_ia_id", UUID.class),
-						orientation == null ? null : json.readTree(orientation), rs.getTimestamp("cree_le").toInstant());
+						orientation == null ? null : json.readTree(orientation), rs.getTimestamp("cree_le").toInstant(),
+						publiee == null ? null : publiee.toInstant(), rs.getString("publiee_resume"));
 			})
 			.optional();
 	}
