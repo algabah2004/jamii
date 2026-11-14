@@ -22,7 +22,7 @@ import dev.jamii.api.projets.Projets;
 
 /**
  * Les données de la démo (docs/priorites.md) : 6 membres et 3 cercles, dont celui de Dakar avec un tour livré et un
- * tour en cours, chacun avec ses jalons et ses tâches. Chargées <b>seulement</b> avec le profil `demo` (`SPRING_PROFILES_ACTIVE=demo`), jamais par une
+ * tour en cours, chacun avec ses jalons et ses tâches ; un hackathon terminé et une mission en cours ({@link DemoHackathonMission}). Chargées <b>seulement</b> avec le profil `demo` (`SPRING_PROFILES_ACTIVE=demo`), jamais par une
  * migration : une base de production n'en voit jamais la couleur.
  * <p>
  * Rejouable : les identifiants sont fixes, et si Awa existe déjà, rien n'est rechargé. Les comptes n'ont ni login
@@ -100,6 +100,7 @@ class DonneesDemo implements ApplicationRunner {
 			dakar(maintenant);
 			abidjan(maintenant);
 			nairobi(maintenant);
+			new DemoHackathonMission(base, maintenant).charger();
 			return true;
 		});
 		journal.info(Boolean.TRUE.equals(charge) ? "Données de démo chargées (profil demo)" : "Données de démo déjà présentes");
