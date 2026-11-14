@@ -153,6 +153,7 @@ class HackathonsController {
 				case "brouillon" -> List.of("modifier", "publier");
 				case "publie" -> List.of("modifier", "annuler");
 				case "en_cours" -> List.of("annuler");
+				case "evaluation" -> List.of("confirmer_resultats");
 				default -> List.of();
 			});
 			if ("candidature".equals(h.modeInscription()) && ("publie".equals(statut) || "en_cours".equals(statut))) {
