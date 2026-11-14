@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,11 +48,14 @@ class Livraisons {
 
 	private final Clock horloge;
 
-	Livraisons(JdbcClient base, Missions missions, Paiements paiements, ObjectProvider<Clock> horloge) {
+	private final ApplicationEventPublisher evenements;
+
+	Livraisons(JdbcClient base, Missions missions, Paiements paiements, ObjectProvider<Clock> horloge, ApplicationEventPublisher evenements) {
 		this.base = base;
 		this.missions = missions;
 		this.paiements = paiements;
 		this.horloge = horloge.getIfAvailable(Clock::systemUTC);
+		this.evenements = evenements;
 	}
 
 	// ---------------------------------------------------------------- démarrer
@@ -234,11 +238,17 @@ class Livraisons {
 		return m;
 	}
 
+	/** Le dernier jalon accepté termine la mission ; l'événement ne part qu'une fois, pour la requête qui l'a terminée. */
 	private void terminerSiFini(UUID missionId) {
 		base.sql("""
 				UPDATE mission SET statut = 'terminee', version = version + 1 WHERE id = :m AND statut = 'en_cours'
-				AND NOT EXISTS (SELECT 1 FROM jalon_mission WHERE devis_id = (""" + DEVIS_ACCEPTE + ") AND statut <> 'accepte')")
-			.param("m", missionId).update();
+				AND NOT EXISTS (SELECT 1 FROM jalon_mission WHERE devis_id = (""" + DEVIS_ACCEPTE
+				+ ") AND statut <> 'accepte') RETURNING client_id, developpeur_id, titre")
+			.param("m", missionId)
+			.query((rs, i) -> new MissionTerminee(missionId, rs.getObject("client_id", UUID.class), rs.getObject("developpeur_id", UUID.class),
+					rs.getString("titre"), horloge.instant()))
+			.optional()
+			.ifPresent(evenements::publishEvent);
 	}
 
 	private void incrementerVersion(UUID missionId) {

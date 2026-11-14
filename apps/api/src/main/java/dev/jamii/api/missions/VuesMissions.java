@@ -37,7 +37,7 @@ class VuesMissions {
 	/** Le travail : visible du client et du développeur retenu seulement, dès qu'un devis existe. */
 	record Travail(PersonneResume developpeur, DevisVue devis, String informationsDepart, Instant demarreLe,
 			int retouchesRestantes, Object prolongationEnAttente, String annulationDemandeePar, Object desaccord,
-			List<Object> avis) {
+			List<Avis.UnAvis> avis) {
 	}
 
 	record MissionVue(UUID id, UUID demandeId, String titre, String besoin, String statut, List<String> competences,
@@ -64,12 +64,15 @@ class VuesMissions {
 
 	private final Fin fin;
 
-	VuesMissions(Annuaire annuaire, Missions missions, Devis devis, Livraisons livraisons, Fin fin) {
+	private final Avis avis;
+
+	VuesMissions(Annuaire annuaire, Missions missions, Devis devis, Livraisons livraisons, Fin fin, Avis avis) {
 		this.annuaire = annuaire;
 		this.missions = missions;
 		this.devis = devis;
 		this.livraisons = livraisons;
 		this.fin = fin;
+		this.avis = avis;
 	}
 
 	MissionVue vue(Missions.Lecture l, UUID qui) {
@@ -80,7 +83,7 @@ class VuesMissions {
 		Compte client = annuaire.lire(m.clientId()).orElse(null);
 		return new MissionVue(m.id(), m.demandeId(), m.titre(), m.besoin(), m.statut(), m.competences(), m.budget(),
 				m.dateSouhaitee(), m.visibilite(), m.ville(), m.pays(), m.aDistance(), personne(m.clientId(), client), nombre,
-				m.publieeLe(), m.version(), m.creeLe(), new Moi(l.role(), actions(l, qui, nombre, retenu, courant, suivi(courant))),
+				m.publieeLe(), m.version(), m.creeLe(), new Moi(l.role(), avecAvis(l, qui, actions(l, qui, nombre, retenu, courant, suivi(courant)))),
 				courant.map(this::travail).orElse(null));
 	}
 
@@ -117,7 +120,18 @@ class VuesMissions {
 		Livraisons.Depart depart = livraisons.depart(d.missionId());
 		return new Travail(personne(d.developpeurId(), developpeur), devis(d, depart.demarreLe(), livraisons.suivi(d.id())),
 				depart.informations(), depart.demarreLe(), Math.max(0, d.retouchesComprises() - depart.retouchesUtilisees()), null,
-				fin.annulationDemandeePar(d.missionId()), fin.desaccord(d.missionId()).orElse(null), List.of());
+				fin.annulationDemandeePar(d.missionId()), fin.desaccord(d.missionId()).orElse(null), avis.lister(d.missionId()));
+	}
+
+	/** Une partie d'une mission terminée peut donner son avis, une fois. */
+	private List<String> avecAvis(Missions.Lecture l, UUID qui, List<String> actions) {
+		boolean partie = "client".equals(l.role()) || "developpeur_retenu".equals(l.role());
+		if (!partie || !"terminee".equals(l.mission().statut()) || avis.aDonne(l.mission().id(), qui)) {
+			return actions;
+		}
+		var toutes = new java.util.ArrayList<>(actions);
+		toutes.add("donner_avis");
+		return List.copyOf(toutes);
 	}
 
 	private Map<UUID, Livraisons.SuiviJalon> suivi(Optional<Devis.DevisComplet> courant) {
