@@ -65,7 +65,7 @@ class Jury {
 
 	/**
 	 * Ajouter un juré, ou changer son groupe (organisateur). Pas après les résultats ni pour un hackathon annulé (409
-	 * `etat_invalide`) ; l'organisateur n'est pas juré de son propre hackathon (400).
+	 * `etat_invalide`) ; l'organisateur n'est pas juré de son propre hackathon, et le compte existe (400).
 	 */
 	@Transactional
 	Jure inviter(UUID hackathonId, UUID moi, UUID utilisateur, String groupe) {
@@ -76,6 +76,10 @@ class Jury {
 		}
 		if (utilisateur.equals(moi)) {
 			throw ErreurHackathons.validation("utilisateurId", "organisateur");
+		}
+		// Un identifiant collé à la main peut ne correspondre à aucun compte : 400, plutôt qu'une clé étrangère violée.
+		if (!base.sql("SELECT EXISTS (SELECT 1 FROM utilisateur WHERE id = :u)").param("u", utilisateur).query(Boolean.class).single()) {
+			throw ErreurHackathons.validation("utilisateurId", "inconnu");
 		}
 		int nouveau = base.sql("""
 				INSERT INTO jure (hackathon_id, utilisateur_id, groupe, cree_le) VALUES (:h, :u, :g, :t)

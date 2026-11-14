@@ -183,6 +183,14 @@ class JuryTest {
 	}
 
 	@Test
+	void on_n_invite_pas_un_compte_qui_n_existe_pas() throws Exception {
+		Scene s = scene();
+		MvcTestResult r = poster("/api/hackathons/" + s.hackathon() + "/jures", "{\"utilisateurId\":\"" + UUID.randomUUID() + "\"}", s.awa());
+		assertThat(r).hasStatus(HttpStatus.BAD_REQUEST);
+		assertThat(corpsDe(r).toString()).contains("inconnu");
+	}
+
+	@Test
 	void on_ne_note_pas_avant_la_fin_des_rendus_ni_sans_etre_jure() throws Exception {
 		Scene s = scene();
 		MvcTestResult tot = noter(s, s.renduMoussa(), s.jo(), 4, 4, 4, null);
