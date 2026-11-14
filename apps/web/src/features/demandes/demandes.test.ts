@@ -7,7 +7,7 @@ import { i18n } from '../../i18n'
 import { creerRouteur } from '../../router'
 import { chargerSession } from '../../session'
 import App from '../../App.vue'
-import { orientationDemo, planDemo } from '../../mocks/demandes'
+import { orientationDemo, planDemo, RECOMMANDES } from '../../mocks/demandes'
 import { demandeValide, etatAnalyse, fonctionnalitesParPriorite, jalonsAvecTaches, type Demande } from './demandes'
 
 async function ouvrir(adresse: string) {
@@ -164,5 +164,24 @@ describe('l’orientation d’un besoin', () => {
     expect(page.find('[data-test="developpeurs"]').exists()).toBe(false)
     expect(page.find('[data-test="lancer"]').exists()).toBe(false)
     expect(page.find('[data-test="plan-echec"]').exists()).toBe(false)
+  })
+})
+
+describe('du besoin au cercle', () => {
+  it('« Former un cercle avec eux » ouvre la création avec le titre du besoin, sans le mettre dans l’adresse', async () => {
+    serveur.use(
+      http.get('/api/demandes/:id', () =>
+        HttpResponse.json({ ...base, ville: 'Dakar', plan: { statut: 'terminee', origine: 'ia', resultat: planDemo() }, orientation: { statut: 'terminee', origine: 'ia', resultat: orientationDemo() }, recommandations: RECOMMANDES }),
+      ),
+    )
+    const { page, routeur } = await ouvrir(`/demandes/${ID}`)
+    await vi.waitFor(() => expect(page.find('[data-test="former-cercle"]').exists()).toBe(true))
+    await page.get('[data-test="former-cercle"]').trigger('click')
+    await vi.waitFor(() => expect(routeur.currentRoute.value.name).toBe('nouveau-cercle'))
+    expect(routeur.currentRoute.value.fullPath).toBe('/cercles/nouveau')
+    await vi.waitFor(() => expect(page.find('[data-test="nouveau-cercle"]').exists()).toBe(true))
+    const champs = page.findAll('[data-test="nouveau-cercle"] input:not([type="radio"])')
+    expect((champs[0]!.element as HTMLInputElement).value).toBe('Nos dossiers')
+    expect((champs[1]!.element as HTMLInputElement).value).toBe('Dakar')
   })
 })
