@@ -139,6 +139,14 @@ describe('l’orientation d’un besoin', () => {
     const services = page.findAll('[data-test="service"]')
     expect(services).toHaveLength(2)
     expect(services[0]!.get('a').attributes()).toMatchObject({ href: 'https://systalink.com', rel: 'noopener noreferrer' })
+    // Le clic sur « Voir le service » est compté pour le tableau de bord Systalink (#65).
+    const clics: string[] = []
+    serveur.use(http.post('/api/systalink/moments/:momentId/accepter', ({ params }) => {
+      clics.push(String(params.momentId))
+      return new HttpResponse(null, { status: 204 })
+    }))
+    await services[0]!.get('[data-test="voir-service"]').trigger('click')
+    await vi.waitFor(() => expect(clics).toEqual(['b0a10000-0000-4000-8000-000000000001']))
     const recommandes = page.findAll('[data-test="recommande"]')
     expect(recommandes).toHaveLength(3)
     expect(recommandes[0]!.text()).toContain('React, confirmé (3 dépôts)')

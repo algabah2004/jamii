@@ -16,6 +16,7 @@ import {
   lireDemande,
   listerDemandes,
   preciserDemande,
+  signalerClicService,
   type Demande,
   type DemandeResumee,
 } from './demandes'
@@ -269,7 +270,7 @@ const messageErreur = computed(() =>
                   <strong>{{ s.nom }}</strong>
                   <p>{{ s.pourCeBesoin }}</p>
                   <p v-if="s.prixIndicatif" class="chemin__prix">{{ s.prixIndicatif }}</p>
-                  <a :href="s.lien" target="_blank" rel="noopener noreferrer" class="chemin__action">
+                  <a :href="s.lien" target="_blank" rel="noopener noreferrer" class="chemin__action" data-test="voir-service" @click="signalerClicService(s.momentId)">
                     {{ t('demandes.orientation.voirService') }}<span class="visuellement-cache"> : {{ s.nom }}</span> ↗</a>
                 </li>
               </ul>
