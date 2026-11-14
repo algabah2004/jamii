@@ -108,7 +108,8 @@ async function inviter() {
     <section v-if="voitClassement && notation" aria-labelledby="classement-titre" data-test="classement">
       <h3 id="classement-titre">{{ t('hackathons.jury.classement') }}</h3>
       <p v-if="!notation.classement.length" class="texte-discret">{{ t('hackathons.jury.aucuneNote') }}</p>
-      <div v-else class="defilement">
+      <!-- Une zone qui défile doit pouvoir prendre le focus, pour défiler au clavier (AXE : scrollable-region-focusable). -->
+      <div v-else class="defilement" tabindex="0" role="region" aria-labelledby="classement-titre">
       <table>
         <caption class="texte-discret">{{ t('hackathons.jury.aideClassement') }}</caption>
         <thead>
