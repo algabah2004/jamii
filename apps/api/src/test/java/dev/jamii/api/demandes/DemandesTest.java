@@ -116,6 +116,57 @@ class DemandesTest {
 
 	// ---------------------------------------------------------------- aides
 
+	// ---------- Tes demandes et précisions ----------
+
+	@Test
+	void je_retrouve_mes_demandes_et_seulement_les_miennes() {
+		UtilisateurConnecte awa = utilisateur("Awa");
+		UtilisateurConnecte autre = utilisateur("Autre");
+		String id = idCree(creer(awa, BESOIN));
+		idCree(creer(autre, BESOIN));
+
+		MvcTestResult liste = mvc.get().uri("/api/demandes").with(oauth2Login().oauth2User(awa)).exchange();
+
+		assertThat(liste).hasStatusOk();
+		assertThat(liste).bodyJson().extractingPath("$[*].id").asArray().containsExactly(id);
+		assertThat(liste).bodyJson().extractingPath("$[0].titre").isEqualTo("Boutique de couture en ligne");
+	}
+
+	@Test
+	void une_precision_relance_l_analyse_avec_le_besoin_complet() {
+		UtilisateurConnecte awa = utilisateur("Awa");
+		String id = idCree(creer(awa, BESOIN));
+		UUID premiere = IA.parCle.get(UUID.fromString(id));
+
+		MvcTestResult reponse = preciser(awa, id, "{\"texte\":\"  Je veux surtout montrer mon stock, pas vendre.  \"}");
+
+		assertThat(reponse).hasStatusOk();
+		assertThat(reponse).bodyJson().extractingPath("$.precisions[0].texte")
+			.isEqualTo("Je veux surtout montrer mon stock, pas vendre.");
+		assertThat(IA.entrees.getLast().description()).contains("Précisions de la personne",
+				"Je veux surtout montrer mon stock, pas vendre.", "Je vends mes créations");
+		assertThat(IA.parCle).hasSize(2);
+		assertThat(base.sql("SELECT tache_ia_id FROM demande WHERE id = :i").param("i", UUID.fromString(id))
+			.query(UUID.class).single()).as("nouvelle tâche").isNotEqualTo(premiere);
+	}
+
+	@Test
+	void cinq_precisions_au_plus_et_jamais_sur_la_demande_d_un_autre() {
+		UtilisateurConnecte awa = utilisateur("Awa");
+		String id = idCree(creer(awa, BESOIN));
+		for (int i = 0; i < GestionDemandes.PRECISIONS_MAX; i++) {
+			assertThat(preciser(awa, id, "{\"texte\":\"précision " + i + "\"}")).hasStatusOk();
+		}
+		assertThat(preciser(awa, id, "{\"texte\":\"une de trop\"}")).hasStatus(HttpStatus.CONFLICT);
+		assertThat(preciser(utilisateur("Curieux"), id, "{\"texte\":\"intrusion\"}")).hasStatus(HttpStatus.NOT_FOUND);
+		assertThat(preciser(awa, id, "{\"texte\":\"x\"}")).hasStatus(HttpStatus.BAD_REQUEST);
+	}
+
+	private MvcTestResult preciser(UtilisateurConnecte qui, String id, String corps) {
+		return mvc.post().uri("/api/demandes/{id}/precisions", id).contentType(MediaType.APPLICATION_JSON).content(corps)
+			.with(csrf()).with(oauth2Login().oauth2User(qui)).exchange();
+	}
+
 	private UtilisateurConnecte utilisateur(String nom) {
 		UUID id = UUID.randomUUID();
 		Timestamp t = Timestamp.from(Instant.now());

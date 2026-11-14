@@ -32,6 +32,8 @@ class GestionDemandes {
 	/** Au-delà, un service IA qui ne répond toujours pas fait passer l'orientation à « échouée ». */
 	static final Duration DELAI_PLAN = Duration.ofMinutes(2);
 
+	static final int PRECISIONS_MAX = 5;
+
 	/** Une adresse e-mail ou un numéro de téléphone n'est jamais envoyé à l'IA. */
 	private static final Pattern EMAIL = Pattern.compile("[\\w.+-]+@[\\w-]+(\\.[\\w-]+)+");
 
@@ -40,7 +42,41 @@ class GestionDemandes {
 	private static final Logger journal = LoggerFactory.getLogger(GestionDemandes.class);
 
 	record Fiche(UUID id, UUID auteurId, String titre, String description, Integer dureeSemaines, String secteur,
-			String ville, String pays, boolean offresSystalink, UUID tacheIaId, JsonNode orientation, Instant creeLe) {
+			String ville, String pays, boolean offresSystalink, UUID tacheIaId, JsonNode orientation, Instant creeLe,
+			List<Precision> precisions) {
+
+		/** Le début de l'analyse en cours : la création, ou la dernière précision. */
+		Instant analyseDepuis() {
+			return precisions.isEmpty() ? creeLe : precisions.getLast().creeLe();
+		}
+
+		/**
+		 * Une clé d'idempotence par version du besoin : la même tant que rien n'est ajouté (un dépôt arrivé sans qu'on
+		 * le sache donne la même tâche), une nouvelle à chaque précision.
+		 */
+		UUID cleIa() {
+			return precisions.isEmpty() ? id
+					: UUID.nameUUIDFromBytes((id + ":" + precisions.size()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+		}
+
+		/** Le besoin tel que l'IA le lit : le texte de départ, puis les précisions, sans dépasser 4 000 caractères. */
+		String besoinComplet() {
+			if (precisions.isEmpty()) {
+				return description;
+			}
+			StringBuilder ajout = new StringBuilder("\n\nPrécisions de la personne :");
+			precisions.forEach(p -> ajout.append("\n- ").append(p.texte()));
+			int place = Math.max(20, 4000 - ajout.length());
+			return (description.length() > place ? description.substring(0, place) : description) + ajout;
+		}
+
+	}
+
+	record Precision(String texte, Instant creeLe) {
+	}
+
+	/** Une ligne de « Tes demandes ». */
+	record Resume(UUID id, String titre, String resume, Instant creeLe) {
 	}
 
 	/** Ce que l'auteur ajoute à son besoin, tout facultatif. */
@@ -120,9 +156,12 @@ class GestionDemandes {
 				return new Fiche(rs.getObject("id", UUID.class), rs.getObject("auteur_id", UUID.class), rs.getString("titre"),
 						rs.getString("description"), dureeSemaines, rs.getString("secteur"), rs.getString("ville"),
 						rs.getString("pays"), rs.getBoolean("offres_systalink"), rs.getObject("tache_ia_id", UUID.class),
-						orientation == null ? null : json.readTree(orientation), rs.getTimestamp("cree_le").toInstant());
+						orientation == null ? null : json.readTree(orientation), rs.getTimestamp("cree_le").toInstant(),
+						List.<Precision>of());
 			})
-			.optional();
+			.optional()
+			.map(f -> new Fiche(f.id(), f.auteurId(), f.titre(), f.description(), f.dureeSemaines(), f.secteur(), f.ville(),
+					f.pays(), f.offresSystalink(), f.tacheIaId(), f.orientation(), f.creeLe(), precisions(f.id())));
 	}
 
 	/**
@@ -131,12 +170,12 @@ class GestionDemandes {
 	 * chaque lecture (« Réessayer ») retente le dépôt : une demande créée pendant une panne repart dès que l'IA revient.
 	 */
 	Etat orientation(Fiche demande, Instant maintenant) {
-		boolean tropVieux = Duration.between(demande.creeLe(), maintenant).compareTo(DELAI_PLAN) > 0;
+		boolean tropVieux = Duration.between(demande.analyseDepuis(), maintenant).compareTo(DELAI_PLAN) > 0;
 		try {
 			UUID tache = demande.tacheIaId();
 			if (tache == null) {
 				// La même clé d'idempotence : si un dépôt précédent est arrivé sans qu'on le sache, c'est la même tâche.
-				tache = ia.deposer(demande.id(), new PlansIa.Entree(demande.titre(), sansCoordonnees(demande.description()),
+				tache = ia.deposer(demande.cleIa(), new PlansIa.Entree(demande.titre(), sansCoordonnees(demande.besoinComplet()),
 						demande.dureeSemaines(), demande.secteur(), demande.pays()));
 				retenirTache(demande.id(), tache);
 			}
@@ -163,6 +202,55 @@ class GestionDemandes {
 				""")
 			.param("accepte", accepte).param("t", Timestamp.from(maintenant)).param("id", id).param("auteur", auteur)
 			.update() == 1;
+	}
+
+	private List<Precision> precisions(UUID demandeId) {
+		return base.sql("SELECT texte, cree_le FROM demande_precision WHERE demande_id = :d ORDER BY rang")
+			.param("d", demandeId)
+			.query((rs, n) -> new Precision(rs.getString("texte"), rs.getTimestamp("cree_le").toInstant()))
+			.list();
+	}
+
+	/** Les demandes de cet auteur, les plus récentes d'abord. */
+	@Transactional(readOnly = true)
+	List<Resume> mesDemandes(UUID auteur) {
+		return base.sql("""
+				SELECT id, titre, orientation ->> 'resume' AS resume, cree_le FROM demande
+				WHERE auteur_id = :a ORDER BY cree_le DESC, id LIMIT 50
+				""")
+			.param("a", auteur)
+			.query((rs, n) -> new Resume(rs.getObject("id", UUID.class), rs.getString("titre"), rs.getString("resume"),
+					rs.getTimestamp("cree_le").toInstant()))
+			.list();
+	}
+
+	enum Ajout {
+
+		AJOUTEE, INTROUVABLE, LIMITE
+
+	}
+
+	/**
+	 * Ajoute une précision et relance l'analyse : la tâche et le résumé précédents sont oubliés, la prochaine lecture
+	 * dépose une nouvelle tâche avec le besoin complet. 5 précisions au plus par demande.
+	 */
+	@Transactional
+	Ajout preciser(UUID demandeId, UUID auteur, String texte, Instant maintenant) {
+		Integer rang = base.sql("""
+				SELECT coalesce(max(p.rang), 0) + 1 FROM demande d LEFT JOIN demande_precision p ON p.demande_id = d.id
+				WHERE d.id = :d AND d.auteur_id = :a GROUP BY d.id
+				""")
+			.param("d", demandeId).param("a", auteur).query(Integer.class).optional().orElse(null);
+		if (rang == null) {
+			return Ajout.INTROUVABLE;
+		}
+		if (rang > PRECISIONS_MAX) {
+			return Ajout.LIMITE;
+		}
+		base.sql("INSERT INTO demande_precision (demande_id, rang, texte, cree_le) VALUES (:d, :r, :t, :c)")
+			.param("d", demandeId).param("r", rang).param("t", texte).param("c", Timestamp.from(maintenant)).update();
+		base.sql("UPDATE demande SET tache_ia_id = NULL, orientation = NULL WHERE id = :d").param("d", demandeId).update();
+		return Ajout.AJOUTEE;
 	}
 
 	@Transactional
