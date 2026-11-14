@@ -1369,6 +1369,37 @@
         "modification_concurrente": "The mission changed in the meantime. Reload the page.",
         "autre": "The action did not go through. Try again in a moment."
       }
+    },
+    "devis": {
+      "titre": "Send my quote",
+      "remplacer": "Send a new quote",
+      "intro": "Split the work into milestones, that is, steps. The client pays for each milestone once it is delivered and accepted. Each milestone's deadline counts from the start of the mission.",
+      "jalonTitre": "What will be delivered",
+      "jalonMontant": "Amount",
+      "jalonDelai": "Time needed, in days",
+      "aideDelai": "From the start of the mission.",
+      "ajouter": "Add a milestone",
+      "enlever": "Remove this milestone",
+      "total": "Quote total: {montant}",
+      "retouches": "Revisions included",
+      "aideRetouches": "How many times the client can ask to redo a delivery, for the whole mission (10 at most).",
+      "conditions": "Conditions (optional)",
+      "aideConditions": "What is included, and what is not.",
+      "envoyer": "Send the quote",
+      "propose": "The proposed quote",
+      "par": "Sent by {nom} on {date}",
+      "delaiJalon": "{n} day after the start | {n} days after the start",
+      "retouchesComprises": "Revisions included",
+      "aideAccepter": "By accepting, the mission is assigned to this developer and the quote is your agreement. Other proposals are set aside.",
+      "accepter": "Accept the quote",
+      "attenteClient": "The client has not answered this quote yet.",
+      "erreurs": {
+        "somme_jalons_invalide": "The milestones do not add up to the total. Check the amounts.",
+        "etat_invalide": "This quote can no longer be sent or accepted for this mission.",
+        "validation": "A field is not valid. Check what you wrote.",
+        "interdit": "You are not allowed to do this.",
+        "autre": "The action did not go through. Try again in a moment."
+      }
     }
   }
 }

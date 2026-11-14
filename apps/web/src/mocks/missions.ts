@@ -8,6 +8,7 @@ export type NouvelleMission = S['NouvelleMission']
 export type NouvelleProposition = S['NouvelleProposition']
 export type Proposition = S['Proposition']
 export type Jalon = S['Jalon']
+export type NouveauDevis = S['NouveauDevis']
 
 // Données de démo (contracts/missions.yaml) : jamais de vraies données personnelles.
 const AWA = { id: '6f1c2a4e-8b7d-4c3e-9a10-2b5d7e9f0a11', nom: 'Awa Diop', avatarUrl: null }
@@ -391,5 +392,60 @@ export const handlersMissions = [
     proposition.statut = 'retiree'
     mission.version += 1
     return new HttpResponse(null, { status: 204 })
+  }),
+
+  http.post('/api/missions/:id/devis', async ({ params, request }) => {
+    const mission = missions.get(String(params.id))
+    if (!mission) return erreur(404, 'introuvable')
+    const retenue = propositions.get(mission.id)?.find((p) => p.statut === 'retenue')
+    if (mission.statut !== 'publiee' || !retenue) return erreur(409, 'etat_invalide')
+    const corps = (await request.json()) as NouveauDevis
+    if (!corps.jalons?.length) return erreur(400, 'validation')
+    if (corps.jalons.reduce((somme, j) => somme + j.montant.centimes, 0) !== corps.total.centimes) return erreur(409, 'somme_jalons_invalide')
+    const devis = {
+      id: crypto.randomUUID(),
+      total: corps.total,
+      retouchesComprises: corps.retouchesComprises,
+      conditions: corps.conditions ?? null,
+      jalons: corps.jalons.map((j, i): Jalon => ({
+        ...jalonDemo(i + 1, j.titre, j.montant.centimes, 'a_faire'),
+        id: crypto.randomUUID(),
+        montant: j.montant,
+        delaiJours: j.delaiJours,
+        echeance: null,
+      })),
+      envoyeLe: new Date().toISOString(),
+      accepteLe: null,
+    }
+    mission.travail = {
+      developpeur: retenue.developpeur,
+      devis,
+      informationsDepart: null,
+      demarreLe: null,
+      retouchesRestantes: corps.retouchesComprises,
+      annulationDemandeePar: null,
+      desaccord: null,
+      avis: [],
+    }
+    mission.version += 1
+    if (mission.moi.role === 'client') mission.moi = { ...mission.moi, actions: [...new Set([...mission.moi.actions, 'accepter_devis' as const])] }
+    return HttpResponse.json(devis, { status: 201 })
+  }),
+
+  http.post('/api/missions/:id/devis/:devisId/accepter', async ({ params, request }) => {
+    const mission = missions.get(String(params.id))
+    if (!mission?.travail || mission.travail.devis.id !== String(params.devisId)) return erreur(404, 'introuvable')
+    const { version } = (await request.json()) as { version: number }
+    if (version !== mission.version) return erreur(409, 'modification_concurrente')
+    if (mission.statut !== 'publiee' || mission.travail.devis.accepteLe) return erreur(409, 'etat_invalide')
+    mission.travail.devis.accepteLe = new Date().toISOString()
+    for (const p of propositions.get(mission.id) ?? []) {
+      if (p.statut === 'retenue') p.statut = 'acceptee'
+      else if (p.statut === 'envoyee') p.statut = 'non_retenue'
+    }
+    mission.statut = 'attribuee'
+    mission.version += 1
+    mission.moi = { ...mission.moi, actions: actionsCliente(mission) }
+    return HttpResponse.json(mission)
   }),
 ]
