@@ -1,9 +1,9 @@
 # Priorités du moment
 
-> **Mis à jour le vendredi 13 novembre 2026 à 20 h GMT par le chef de projet.** @algabah2004 reprend le bloc #20 de @boubacarsidibe (sans nouvelles depuis le 11/11).
+> **Mis à jour le samedi 14 novembre 2026 à 12 h GMT par le chef de projet.** @algabah2004 a repris le bloc #20 de @boubacarsidibe (sans nouvelles depuis le 11/11).
 > **Agents IA :** lisez ce fichier **avant le plan du bloc**. S'il contredit `docs/blocs/<bloc>.md`, **ce fichier gagne**. Dites tout de suite à votre développeur ce qu'il doit faire aujourd'hui et ce qu'il bloque.
 
-> **Gel samedi 14 à 12 h GMT.** Ce qui n'est pas fusionné à cette heure-là reste hors de la démo, sans données factices en production. **Rien n'est supprimé.**
+> **Pas de gel.** On fusionne jusqu'à la soumission (dimanche 15 avant 12 h GMT), tant que **tous les contrôles de la CI sont verts**. Le chef de projet décide de ce qui est montré dans la démo. Jamais de données factices en production.
 
 ## L'idée en une phrase
 
@@ -41,39 +41,53 @@ Jamii **comprend un besoin et le relie à la bonne réponse** : un service Systa
 4. **Livraison** : DataCloud met le projet en ligne, puis il passe dans la vitrine avec le label « Né dans une Tech Tontine Systalink ».
 5. **L'espace Systalink** : cercles actifs, tendances du marché et clients qui ont demandé à être suivis.
 
-## Qui fait quoi, d'ici samedi 14 à 12 h
+## Qui fait quoi, d'ici dimanche 15 à 12 h GMT
 
-### @algabah2004 : bloc #20 (repris), mise en ligne et IA
-1. **La mise en ligne sur DataCloud** (`docs/deploiement-datacloud.md`), ce soir. Sans elle, pas de soumission.
-2. Avec Claude Code, dans cet ordre, chaque étape fusionnable seule :
-   1. le contrat : `analyse_profil` et `orientation_besoin` dans `contracts/ia.yaml`, et le catalogue Systalink ;
-   2. le service IA : l'adaptateur au format OpenAI, le budget, les deux tâches ;
-   3. l'API : le module `orientation` (besoin, résultat, case d'accord, clients suivis) et le score de recommandation.
-3. Brancher la clé DeepSeek ou OpenAI sur DataCloud.
+**Déjà fusionné** : cercles (API, écrans, publication dans une communauté), tâches et jalons des tours (#126), réseau (messages, contacts, notifications), IA (carte de compétences, orientation d'un besoin), tendances du marché, clients suivis, CSV et webhook, e-mails Brevo, images Docker.
 
-### @rev22rse22 : les écrans de l'orientation et de la carte de compétences
-Voir la demande qui lui est adressée. Sur données factices (MSW) d'abord, branchés quand l'API arrive.
+### @algabah2004 : mise en ligne, IA et soumission
+1. **Mettre Jamii en ligne sur DataCloud** (`docs/deploiement-datacloud.md`) et donner l'adresse publique dans #54. **Sans elle, pas de soumission.**
+2. Brancher la clé DeepSeek ou OpenAI sur DataCloud (sinon l'IA simulée tourne, annoncée `origine: repli`).
+3. README final, déclaration de l'IA et liste des licences (résumé du job CI « Licences autorisées »).
+4. Dimanche avant 12 h GMT : **la soumission**.
 
-### @sowibrr : les tâches des tours
-#126 (les tâches et les jalons dans l'API), puis le relais de l'orientation si @algabah2004 le demande.
+### @rev22rse22 : les écrans de l'orientation et de la carte de compétences (#133)
+L'API est fusionnée (#139, #143) : **branchez directement sur l'API**, sans passer par MSW. Puis #113 (section « profils » de l'export du compte).
+**Samedi 18 h GMT** : l'écran de l'orientation fusionné, sinon la démo commence au cercle.
 
-### @Amar233-ui : la vitrine et la démo de bout en bout
-#129 (le module vitrine de l'API), puis le test Playwright du parcours de la démo.
+### @Amar233-ui : la vitrine (#129), puis la démo de bout en bout
+1. **#129 : le module vitrine de l'API** (`GET /api/vitrine` répond 404, l'étape 4 de la démo est cassée), avec l'origine « cercle » (#116).
+2. Le test Playwright du parcours de la démo.
+3. #114 (section « communautes » de l'export du compte).
+**Samedi 18 h GMT** : sans PR ouverte sur #129, @sowibrr la reprend.
+
+### @sowibrr : appui à la mise en ligne et relève
+1. Aider @algabah2004 à mettre la base PostgreSQL et l'API en ligne, puis vérifier les données de démo **hors production**.
+2. Corriger les bugs trouvés pendant la répétition.
+3. Reprendre #129 à 18 h GMT si @Amar233-ui n'a rien ouvert.
+
+### @boubacarsidibe
+Donner des nouvelles dans #54. #65 (mesurer le moment Systalink) si vous en avez le temps. **Le vote des pairs reste obligatoire pour vous.**
+
+### Tout le monde
+- Compléter la liste de vos outils d'IA dans `docs/cadev.md` (« Ce qu'on déclare »).
+- Samedi 20 h GMT : **répétition de la démo** sur la version en ligne, puis la vidéo de secours.
+- **Dimanche 15 et lundi 16 : chacun vote** (vote des pairs), sinon le projet est exclu.
 
 ## Qui bloque qui
 
 ```
-algabah2004 ── DataCloud (ce soir) ──────────▶ la soumission elle-même
-algabah2004 ── contrat ia.yaml + orientation ─▶ les écrans de rev22rse22
-sowibrr ────── #126 tâches et jalons ─────────▶ étape 3 de la démo
-Amar233-ui ─── #129 vitrine ───────────────────▶ étape 4 de la démo
+algabah2004 ── DataCloud ─────────────▶ la soumission elle-même
+Amar233-ui ─── #129 vitrine ──────────▶ étape 4 de la démo
+rev22rse22 ─── #133 écran orientation ▶ étape 1 de la démo
 ```
 
 ## Si ce n'est pas fait à temps
 
 Pas de reproche : on réorganise pour livrer.
 - **Pas de clé IA** : l'IA simulée tourne, annoncée comme telle (`origine: repli`).
-- **Pas d'orientation fusionnée samedi 10 h** : la démo commence directement au cercle (étape 2).
+- **Pas d'écran d'orientation samedi 18 h** : la démo commence directement au cercle (étape 2).
+- **Pas de vitrine** : la démo s'arrête à la livraison du tour (étape 3), puis l'espace Systalink.
 - **On coupe dans cet ordre** : le webhook et l'export CSV, puis les tendances du marché, puis la recommandation « pour un développeur ».
 - Un blocage de plus de 2 h se signale **tout de suite** dans #54, avec l'étiquette `bloqué`.
 
@@ -89,5 +103,5 @@ Pas de reproche : on réorganise pour livrer.
 | Jour | Objectif |
 |---|---|
 | **Ven 13** | Cercles de bout en bout (création, tirage, tour, livraison vers la vitrine). **Données de démo** |
-| **Sam 14** | **Gel à 12 h.** Corrections, répétition, vidéo de secours, README final |
+| **Sam 14** | Mise en ligne, vitrine (#129), écrans de l'orientation (#133), répétition à 20 h, vidéo de secours, README final |
 | **Dim 15** | Soumission avant 12 h GMT, puis **chacun vote** (sinon le projet est exclu) |
