@@ -15,14 +15,14 @@ const router = useRouter()
 
 const periode = computed(() => lirePeriode(route.query.periode))
 const tableau = ref<TableauDeBord | null>(null)
-const etat = ref<'chargement' | 'pret' | 'indisponible'>('chargement')
+const etat = ref<'chargement' | 'pret' | 'indisponible' | 'reserve'>('chargement')
 
 async function charger() {
   etat.value = 'chargement'
   try {
-    const { data } = await api.GET('/api/systalink/tableau-de-bord', { params: { query: { periode: periode.value } } })
+    const { data, response } = await api.GET('/api/systalink/tableau-de-bord', { params: { query: { periode: periode.value } } })
     tableau.value = data ?? null
-    etat.value = data ? 'pret' : 'indisponible'
+    etat.value = data ? 'pret' : response.status === 403 ? 'reserve' : 'indisponible'
   } catch {
     etat.value = 'indisponible'
   }
@@ -68,6 +68,10 @@ const paysCercles = computed(() =>
     </header>
 
     <JSquelette v-if="etat === 'chargement' && !tableau" forme="cartes" :nombre="4" />
+    <div v-else-if="etat === 'reserve'" class="etat-vide" data-test="reserve">
+      <h2>{{ t('systalink.reserve.titre') }}</h2>
+      <p>{{ t('systalink.reserve.texte') }}</p>
+    </div>
     <div v-else-if="etat === 'indisponible'" role="alert" class="etat-vide">
       <p>{{ t('etat.indisponible') }}</p>
       <JBouton variante="secondaire" @click="charger">{{ t('etat.reessayer') }}</JBouton>

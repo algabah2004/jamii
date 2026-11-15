@@ -4,6 +4,26 @@
  */
 
 export interface paths {
+    "/api/systalink/acces": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * La personne connectée fait-elle partie de l'équipe Systalink ?
+         * @description Pour le menu. Ne révèle rien d'autre ; la vraie vérification est faite par chaque route.
+         */
+        get: operations["accesSystalink"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/systalink/tableau-de-bord": {
         parameters: {
             query?: never;
@@ -277,8 +297,6 @@ export interface components {
             };
             statut: components["schemas"]["StatutClient"];
         };
-        /** @description Code ISO 3166-1 alpha-2 (`SN`, `CI`, `KE`). */
-        Pays: string;
         ErreurChamp: {
             /** @description Chemin du champ, par exemple `roles[0].titre`. */
             champ: string;
@@ -311,12 +329,14 @@ export interface components {
             traceId?: string;
             erreurs?: components["schemas"]["ErreurChamp"][];
         };
+        /** @description Code ISO 3166-1 alpha-2 (`SN`, `CI`, `KE`). */
+        Pays: string;
         /** @description En minuscules, sans espace inutile (`flutter`, `postgresql`, `ux-design`). */
         Competence: string;
     };
     responses: {
-        /** @description Entrée invalide (`code` = `validation`, détail dans `erreurs`). */
-        Invalide: {
+        /** @description Pas connecté ou session expirée (`code` = `non_connecte`). */
+        NonConnecte: {
             headers: {
                 [name: string]: unknown;
             };
@@ -324,8 +344,8 @@ export interface components {
                 "application/problem+json": components["schemas"]["Erreur"];
             };
         };
-        /** @description Pas connecté ou session expirée (`code` = `non_connecte`). */
-        NonConnecte: {
+        /** @description Entrée invalide (`code` = `validation`, détail dans `erreurs`). */
+        Invalide: {
             headers: {
                 [name: string]: unknown;
             };
@@ -372,6 +392,29 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    accesSystalink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description La réponse. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        acces: boolean;
+                    };
+                };
+            };
+            401: components["responses"]["NonConnecte"];
+        };
+    };
     tableauDeBordSystalink: {
         parameters: {
             query?: {
@@ -394,6 +437,8 @@ export interface operations {
                 };
             };
             400: components["responses"]["Invalide"];
+            401: components["responses"]["NonConnecte"];
+            403: components["responses"]["Interdit"];
         };
     };
     accepterMomentSystalink: {
@@ -441,6 +486,8 @@ export interface operations {
                 };
             };
             400: components["responses"]["Invalide"];
+            401: components["responses"]["NonConnecte"];
+            403: components["responses"]["Interdit"];
         };
     };
     listerClientsSuivis: {

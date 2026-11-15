@@ -339,6 +339,10 @@
         "client": "Client",
         "sans_suite": "No follow-up"
       }
+    },
+    "reserve": {
+      "titre": "For the Systalink team only",
+      "texte": "This space shows Systalink what Jamii brings them. If you are on the Systalink team, ask the Jamii team to add your account."
     }
   },
   "vitrine": {

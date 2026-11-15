@@ -339,6 +339,10 @@
         "client": "Client",
         "sans_suite": "Sans suite"
       }
+    },
+    "reserve": {
+      "titre": "Réservé à l’équipe Systalink",
+      "texte": "Cet espace montre à Systalink ce que Jamii lui apporte. Si tu fais partie de l’équipe Systalink, demande à l’équipe Jamii d’ajouter ton compte."
     }
   },
   "vitrine": {

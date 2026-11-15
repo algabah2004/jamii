@@ -9,7 +9,7 @@ import { JAvatar, JBouton, JSquelette } from './design-system'
 import { arreterActivite, suivreActivite, useActivite } from './features/reseau/activite'
 
 const { t } = useI18n()
-const { etat, moi } = useSession()
+const { etat, moi, accesSystalink } = useSession()
 
 // Les pastilles : relues toutes les 30 s tant qu'on est connecté et que l'onglet est visible (features/reseau/activite.ts).
 const activite = useActivite()
@@ -30,7 +30,7 @@ watch(etat, (e) => (e === 'connecte' ? suivreActivite() : arreterActivite()), { 
         <RouterLink to="/missions">{{ t('menu.missions') }}</RouterLink>
         <RouterLink to="/hackathons">{{ t('menu.hackathons') }}</RouterLink>
         <RouterLink to="/vitrine">{{ t('menu.vitrine') }}</RouterLink>
-        <RouterLink to="/systalink" :aria-label="t('menu.systalink')">
+        <RouterLink v-if="accesSystalink" to="/systalink" :aria-label="t('menu.systalink')">
           <span class="lien-long" aria-hidden="true">{{ t('menu.systalink') }}</span><span class="lien-court" aria-hidden="true">{{ t('menu.systalinkCourt') }}</span>
         </RouterLink>
       </nav>
@@ -86,7 +86,7 @@ watch(etat, (e) => (e === 'connecte' ? suivreActivite() : arreterActivite()), { 
         <RouterLink to="/missions">{{ t('menu.missions') }}</RouterLink>
         <RouterLink to="/hackathons">{{ t('menu.hackathons') }}</RouterLink>
         <RouterLink to="/vitrine">{{ t('menu.vitrine') }}</RouterLink>
-        <RouterLink to="/systalink">{{ t('menu.systalink') }}</RouterLink>
+        <RouterLink v-if="accesSystalink" to="/systalink">{{ t('menu.systalink') }}</RouterLink>
         <RouterLink to="/design-system">{{ t('pied.charte') }}</RouterLink>
       </nav>
       <ReglagesAffichage class="reglages--pied" />
