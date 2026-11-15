@@ -469,7 +469,61 @@
     "chercher": "Chercher dans le fil",
     "quoiDeNeuf": "Quoi de neuf, {prenom} ? Une question, une idée…",
     "rienTrouve": "Rien ne correspond à ta recherche.",
-    "ouvrir": "Ouvrir"
+    "ouvrir": "Ouvrir",
+    "liste": {
+      "intro": "Des développeurs qui s'entraident, par sujet ou par ville. Rejoins-en une, ou crée la tienne.",
+      "creer": "Créer une communauté",
+      "creerLaTienne": "Créer la tienne",
+      "chercher": "Chercher une communauté",
+      "themes": "Filtrer par thème",
+      "toutes": "Toutes",
+      "aucune": "Aucune communauté ne correspond. Et si tu la créais ?"
+    },
+    "themes": {
+      "web": "Web",
+      "flutter": "Mobile",
+      "fintech": "Fintech",
+      "ia": "IA",
+      "data": "Données",
+      "cloud": "Cloud",
+      "design": "Design",
+      "jeux": "Jeux",
+      "securite": "Sécurité",
+      "antenne": "Antenne locale",
+      "autre": "Autre"
+    },
+    "nouvelle": {
+      "titre": "Créer une communauté",
+      "intro": "Rassemble des gens autour d'un sujet, d'une ville ou d'un projet.",
+      "nom": "Nom de la communauté",
+      "nomAide": "Par exemple, Devs du Sahel ou Mobile Money Builders.",
+      "description": "À quoi sert-elle ?",
+      "theme": "Thème",
+      "pays": "Pays de l'antenne",
+      "moderateur": "Tu en seras le modérateur.",
+      "salons": "Elle démarre avec trois salons : #général, #entraide et #projets.",
+      "trop": "Tu as déjà créé trois communautés aujourd'hui. Réessaie demain.",
+      "creer": "Créer la communauté",
+      "apercu": "Aperçu",
+      "nomExemple": "Ta communauté",
+      "descriptionExemple": "Sa description apparaîtra ici."
+    },
+    "nouveauSalon": {
+      "titre": "Créer un salon",
+      "intro": "Un nouvel espace de discussion en direct dans {communaute}, avec son appel.",
+      "nom": "Nom du salon",
+      "nomAide": "Court et clair. Il devient l'adresse du salon.",
+      "idees": "Idées :",
+      "sujet": "Sujet du salon",
+      "sujetAide": "Une phrase pour dire de quoi on parle ici.",
+      "existe": "Un salon porte déjà ce nom. Choisis-en un autre.",
+      "reserve": "Seuls les modérateurs de la communauté peuvent créer un salon.",
+      "voirModeration": "Voir qui modère",
+      "trop": "Cette communauté a déjà 20 salons.",
+      "creer": "Créer le salon",
+      "exemple": "nouveau-salon",
+      "sujetExemple": "Le sujet du salon apparaîtra ici."
+    }
   },
   "question": {
     "retourCommunaute": "← Retour à la communauté",

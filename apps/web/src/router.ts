@@ -20,7 +20,20 @@ export const routes: RouteRecordRaw[] = [
     path: '/communautes',
     name: 'communautes',
     component: () => import('./features/communautes/CommunautesPage.vue'),
-    meta: { connexionRequise: true },
+    meta: { connexionRequise: true, pleineLargeur: true },
+  },
+  // Créer une communauté, et un salon dans une communauté (#155) : des écrans dédiés.
+  {
+    path: '/communautes/nouvelle',
+    name: 'nouvelle-communaute',
+    component: () => import('./features/communautes/NouvelleCommunautePage.vue'),
+    meta: { connexionRequise: true, pleineLargeur: true },
+  },
+  {
+    path: '/communautes/:slug/salons/nouveau',
+    name: 'nouveau-salon',
+    component: () => import('./features/communautes/NouveauSalonPage.vue'),
+    meta: { connexionRequise: true, pleineLargeur: true },
   },
   {
     path: '/communautes/:slug',

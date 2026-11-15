@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Jamii · Communautés et entraide
-  version: 0.3.0
+  version: 0.4.0
   summary: Communautés thématiques, questions-réponses où l'IA propose et un pair valide, discussions, signalements.
   description: |
     Responsable : @rev22rse22 (module communautés, #155 ; repris d'@Amar233-ui le 14/11). Règles communes : docs/api-conventions.md. Modèle : docs/modele-donnees.md
@@ -33,7 +33,7 @@ info:
 
     **CSRF** : toute requête POST ou DELETE envoie l'en-tête `X-XSRF-TOKEN` (socle.yaml, schéma `csrf`).
 
-    **Codes d'erreur métier** (champ `code` de `Erreur`) : `pas_membre` (403), `pas_auteur_question` (403),
+    **Codes d'erreur métier** (champ `code` de `Erreur`) : `pas_membre` (403), `pas_moderateur` (403), `salon_existe` (409), `pas_auteur_question` (403),
     `propre_question` (409, valider la réponse de l'IA à sa propre question), `deja_acceptee` (409),
     `pas_une_question` (409), `pas_proposee_par_ia` (409, valider une réponse humaine), `proposee_par_ia` (409,
     accepter la réponse de l'IA au lieu de la faire valider), `propre_reponse` (409, accepter sa propre réponse :
@@ -68,6 +68,33 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/PageCommunautes' }
         '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+    post:
+      tags: [communautes]
+      operationId: creerCommunaute
+      summary: Créer une communauté (v0.4)
+      description: |
+        Tout membre connecté peut créer une communauté. Il en devient le **modérateur**, et elle démarre avec trois salons
+        (`general`, `entraide`, `projets`). Le nom court (`slug`) est tiré du nom, rendu unique par le serveur.
+        Limité à **3 communautés par jour et par personne** (`429` avec `Retry-After`), contre le spam.
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NouvelleCommunaute' }
+      responses:
+        '201':
+          description: Créée.
+          headers:
+            Location: { schema: { type: string, examples: ['/api/communautes/devs-du-sahel'] } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Communaute' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '429': { $ref: './socle.yaml#/components/responses/TropDeRequetes' }
 
   /api/communautes/{slug}:
     parameters:
@@ -211,6 +238,32 @@ paths:
                   elements: { type: array, items: { $ref: '#/components/schemas/Salon' } }
         '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
         '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+    post:
+      tags: [salons]
+      operationId: creerSalon
+      summary: Créer un salon (modérateurs seulement, v0.4)
+      description: |
+        Le nom court du salon est tiré de son nom. Au plus 20 salons par communauté. Un autre membre reçoit `403`
+        (`pas_moderateur`) ; un salon du même nom existe déjà : `409` (`salon_existe`).
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NouveauSalon' }
+      responses:
+        '201':
+          description: Créé.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Salon' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
 
   /api/communautes/{slug}/salons/{salon}/messages:
     parameters:
@@ -417,7 +470,7 @@ components:
   schemas:
     Communaute:
       type: object
-      required: [id, slug, nom, description, theme, pays, nombreMembres, questionsOuvertes, membre]
+      required: [id, slug, nom, description, theme, pays, nombreMembres, questionsOuvertes, membre, moderateur]
       properties:
         id: { type: string, format: uuid }
         slug: { type: string }
@@ -430,6 +483,7 @@ components:
         nombreMembres: { type: integer, minimum: 0 }
         questionsOuvertes: { type: integer, minimum: 0, description: Questions sans réponse acceptée. }
         membre: { type: boolean, description: 'Suis-je membre ? (pour afficher « Rejoindre » ou « Quitter »)' }
+        moderateur: { type: boolean, description: 'Suis-je modérateur ? (pour afficher « Créer un salon »). Vérifié par le serveur.' }
 
     PageCommunautes:
       allOf:
@@ -529,6 +583,28 @@ components:
           description: Le pair qui a validé la réponse de l'IA.
         acceptee: { type: boolean }
         creeLe: { type: string, format: date-time }
+
+    NouvelleCommunaute:
+      type: object
+      required: [nom, description, theme]
+      additionalProperties: false
+      properties:
+        nom: { type: string, minLength: 3, maxLength: 80 }
+        description: { type: string, minLength: 10, maxLength: 500, description: Texte brut. }
+        theme:
+          type: string
+          enum: [flutter, fintech, ia, web, cloud, design, data, jeux, securite, antenne, autre]
+        pays:
+          oneOf: [{ $ref: './profils.yaml#/components/schemas/Pays' }, { type: 'null' }]
+          description: Pour une antenne locale.
+
+    NouveauSalon:
+      type: object
+      required: [nom, sujet]
+      additionalProperties: false
+      properties:
+        nom: { type: string, minLength: 2, maxLength: 40, description: 'Sans le « # ». Par exemple « offres-emploi ».' }
+        sujet: { type: string, minLength: 5, maxLength: 200 }
 
     MembreCommunaute:
       type: object

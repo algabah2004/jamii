@@ -14,7 +14,13 @@ export interface paths {
         /** Les communautés, les plus actives cette semaine d'abord */
         get: operations["listerCommunautes"];
         put?: never;
-        post?: never;
+        /**
+         * Créer une communauté (v0.4)
+         * @description Tout membre connecté peut créer une communauté. Il en devient le **modérateur**, et elle démarre avec trois salons
+         *     (`general`, `entraide`, `projets`). Le nom court (`slug`) est tiré du nom, rendu unique par le serveur.
+         *     Limité à **3 communautés par jour et par personne** (`429` avec `Retry-After`), contre le spam.
+         */
+        post: operations["creerCommunaute"];
         delete?: never;
         options?: never;
         head?: never;
@@ -130,7 +136,12 @@ export interface paths {
         /** Les salons de la communauté, dans leur ordre */
         get: operations["listerSalons"];
         put?: never;
-        post?: never;
+        /**
+         * Créer un salon (modérateurs seulement, v0.4)
+         * @description Le nom court du salon est tiré de son nom. Au plus 20 salons par communauté. Un autre membre reçoit `403`
+         *     (`pas_moderateur`) ; un salon du même nom existe déjà : `409` (`salon_existe`).
+         */
+        post: operations["creerSalon"];
         delete?: never;
         options?: never;
         head?: never;
@@ -305,6 +316,8 @@ export interface components {
             questionsOuvertes: number;
             /** @description Suis-je membre ? (pour afficher « Rejoindre » ou « Quitter ») */
             membre: boolean;
+            /** @description Suis-je modérateur ? (pour afficher « Créer un salon »). Vérifié par le serveur. */
+            moderateur: boolean;
         };
         PageCommunautes: components["schemas"]["Page"] & {
             elements?: components["schemas"]["Communaute"][];
@@ -385,6 +398,20 @@ export interface components {
             acceptee: boolean;
             /** Format: date-time */
             creeLe: string;
+        };
+        NouvelleCommunaute: {
+            nom: string;
+            /** @description Texte brut. */
+            description: string;
+            /** @enum {string} */
+            theme: "flutter" | "fintech" | "ia" | "web" | "cloud" | "design" | "data" | "jeux" | "securite" | "antenne" | "autre";
+            /** @description Pour une antenne locale. */
+            pays?: components["schemas"]["Pays"] | null;
+        };
+        NouveauSalon: {
+            /** @description Sans le « # ». Par exemple « offres-emploi ». */
+            nom: string;
+            sujet: string;
         };
         MembreCommunaute: {
             personne: components["schemas"]["PersonneResume"];
@@ -503,24 +530,6 @@ export interface components {
                 "application/problem+json": components["schemas"]["Erreur"];
             };
         };
-        /** @description Ressource inexistante ou que l'utilisateur n'a pas le droit de voir (`code` = `introuvable`). */
-        Introuvable: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/problem+json": components["schemas"]["Erreur"];
-            };
-        };
-        /** @description Connecté mais sans le droit nécessaire, ou jeton CSRF absent (`code` = `interdit`). */
-        Interdit: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/problem+json": components["schemas"]["Erreur"];
-            };
-        };
         /** @description Entrée invalide (`code` = `validation`, détail dans `erreurs`). */
         Invalide: {
             headers: {
@@ -534,6 +543,24 @@ export interface components {
         TropDeRequetes: {
             headers: {
                 "Retry-After": components["headers"]["RetryAfter"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Erreur"];
+            };
+        };
+        /** @description Ressource inexistante ou que l'utilisateur n'a pas le droit de voir (`code` = `introuvable`). */
+        Introuvable: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Erreur"];
+            };
+        };
+        /** @description Connecté mais sans le droit nécessaire, ou jeton CSRF absent (`code` = `interdit`). */
+        Interdit: {
+            headers: {
                 [name: string]: unknown;
             };
             content: {
@@ -595,6 +622,34 @@ export interface operations {
                 };
             };
             401: components["responses"]["NonConnecte"];
+        };
+    };
+    creerCommunaute: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NouvelleCommunaute"];
+            };
+        };
+        responses: {
+            /** @description Créée. */
+            201: {
+                headers: {
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Communaute"];
+                };
+            };
+            400: components["responses"]["Invalide"];
+            401: components["responses"]["NonConnecte"];
+            429: components["responses"]["TropDeRequetes"];
         };
     };
     lireCommunaute: {
@@ -792,6 +847,38 @@ export interface operations {
             };
             401: components["responses"]["NonConnecte"];
             404: components["responses"]["Introuvable"];
+        };
+    };
+    creerSalon: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Nom court de la communauté dans l'adresse (`flutter`, `fintech`, `antenne-dakar`). */
+                slug: components["parameters"]["Slug"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NouveauSalon"];
+            };
+        };
+        responses: {
+            /** @description Créé. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Salon"];
+                };
+            };
+            400: components["responses"]["Invalide"];
+            401: components["responses"]["NonConnecte"];
+            403: components["responses"]["Interdit"];
+            404: components["responses"]["Introuvable"];
+            409: components["responses"]["Conflit"];
         };
     };
     lireMessagesSalon: {

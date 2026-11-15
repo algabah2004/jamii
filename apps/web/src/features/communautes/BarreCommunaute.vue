@@ -119,7 +119,10 @@ const faites = computed(() => etapes.value.filter((e) => e.fait).length)
           </RouterLink>
         </li>
         <li>
-          <RouterLink to="/communautes" class="lien lien--decouvrir">＋ {{ t('communautes.espace.decouvrir') }}</RouterLink>
+          <RouterLink to="/communautes" class="lien lien--decouvrir">{{ t('communautes.espace.decouvrir') }}</RouterLink>
+        </li>
+        <li>
+          <RouterLink to="/communautes/nouvelle" class="lien lien--decouvrir">＋ {{ t('communautes.liste.creer') }}</RouterLink>
         </li>
       </ul>
     </details>
@@ -147,7 +150,20 @@ const faites = computed(() => etapes.value.filter((e) => e.fait).length)
         </li>
       </ul>
 
-      <p class="barre__section">{{ t('communautes.salons.titre') }}</p>
+      <p class="barre__section barre__section--action">
+        <span>{{ t('communautes.salons.titre') }}</span>
+        <RouterLink
+          v-if="fiche?.moderateur"
+          :to="`/communautes/${slug}/salons/nouveau`"
+          class="ajouter"
+          :aria-current="actif === 'nouveau-salon' ? 'page' : undefined"
+          :title="t('communautes.nouveauSalon.titre')"
+          data-test="ajouter-salon"
+        >
+          <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
+          <span class="visuellement-cache">{{ t('communautes.nouveauSalon.titre') }}</span>
+        </RouterLink>
+      </p>
       <ul class="groupe">
         <li v-for="s in salons" :key="s.id">
           <RouterLink
@@ -221,6 +237,10 @@ const faites = computed(() => etapes.value.filter((e) => e.fait).length)
 
 .barre__corps { overflow-y: auto; padding: var(--space-3) var(--space-3) var(--space-4); scrollbar-width: thin; }
 .barre__section { margin: var(--space-4) var(--space-2) var(--space-1); color: var(--ink-muted); font-size: 0.8125rem; font-weight: 700; }
+.barre__section--action { display: flex; align-items: center; justify-content: space-between; }
+.ajouter { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; color: var(--ink-muted); }
+.ajouter:hover, .ajouter[aria-current='page'] { background: var(--ink); color: var(--bg); }
+.ajouter:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
 .groupe { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
 .lien {
   display: flex; align-items: center; gap: var(--space-2); min-height: 38px; padding: 0 var(--space-3);

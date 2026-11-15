@@ -469,7 +469,61 @@
     "chercher": "Search the feed",
     "quoiDeNeuf": "What's new, {prenom}? A question, an idea…",
     "rienTrouve": "Nothing matches your search.",
-    "ouvrir": "Open"
+    "ouvrir": "Open",
+    "liste": {
+      "intro": "Developers helping each other, by topic or by city. Join one, or create your own.",
+      "creer": "Create a community",
+      "creerLaTienne": "Create yours",
+      "chercher": "Search communities",
+      "themes": "Filter by topic",
+      "toutes": "All",
+      "aucune": "No community matches. Why not create it?"
+    },
+    "themes": {
+      "web": "Web",
+      "flutter": "Mobile",
+      "fintech": "Fintech",
+      "ia": "AI",
+      "data": "Data",
+      "cloud": "Cloud",
+      "design": "Design",
+      "jeux": "Games",
+      "securite": "Security",
+      "antenne": "Local chapter",
+      "autre": "Other"
+    },
+    "nouvelle": {
+      "titre": "Create a community",
+      "intro": "Bring people together around a topic, a city or a project.",
+      "nom": "Community name",
+      "nomAide": "For example, Sahel Devs or Mobile Money Builders.",
+      "description": "What is it for?",
+      "theme": "Topic",
+      "pays": "Chapter country",
+      "moderateur": "You will be its moderator.",
+      "salons": "It starts with three channels: #général, #entraide and #projets.",
+      "trop": "You have already created three communities today. Try again tomorrow.",
+      "creer": "Create the community",
+      "apercu": "Preview",
+      "nomExemple": "Your community",
+      "descriptionExemple": "Its description will appear here."
+    },
+    "nouveauSalon": {
+      "titre": "Create a channel",
+      "intro": "A new live discussion space in {communaute}, with its call.",
+      "nom": "Channel name",
+      "nomAide": "Short and clear. It becomes the channel address.",
+      "idees": "Ideas:",
+      "sujet": "Channel topic",
+      "sujetAide": "One sentence about what people talk about here.",
+      "existe": "A channel already has this name. Pick another one.",
+      "reserve": "Only the community moderators can create a channel.",
+      "voirModeration": "See who moderates",
+      "trop": "This community already has 20 channels.",
+      "creer": "Create the channel",
+      "exemple": "new-channel",
+      "sujetExemple": "The channel topic will appear here."
+    }
   },
   "question": {
     "retourCommunaute": "← Back to the community",
