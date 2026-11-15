@@ -246,7 +246,8 @@
       "decouvrir": "Découvrir Jamii",
       "invitationTitre": "Toi aussi, montre ce que tu sais faire.",
       "invitationTexte": "Sur Jamii, tes projets mis en ligne avec une équipe deviennent des preuves.",
-      "rejoindre": "Créer mon profil"
+      "rejoindre": "Créer mon profil",
+      "nonPublie": "{nom} n’a pas encore publié son profil. Vous pouvez déjà lui écrire."
     }
   },
   "etat": {
@@ -1142,6 +1143,17 @@
       "lu": "Lu",
       "envoye": "Envoyé",
       "aideClavier": "Entrée pour envoyer, Maj + Entrée pour aller à la ligne."
+    },
+    "profil": {
+      "ecrire": "Écrire à {nom}",
+      "enContact": "En contact",
+      "contact": {
+        "aucun": "Ajouter aux contacts",
+        "envoyee": "Demande envoyée · annuler",
+        "recue": "Accepter sa demande",
+        "accepte": "En contact"
+      },
+      "voir": "Voir le profil de {nom}"
     }
   },
   "hackathons": {

@@ -213,6 +213,16 @@ class DonneesDemoTest {
 	}
 
 	@Test
+	void chaque_personne_de_demo_a_un_profil_publie_avec_ses_competences() {
+		assertThat(compter("SELECT count(*) FROM utilisateur u JOIN profil p ON p.utilisateur_id = u.id"
+				+ " WHERE u.email LIKE '%@demo.jamii.test' AND p.publie")).isEqualTo(18);
+		var profil = mvc.get().uri("/api/profils/" + DonneesDemo.KOFI.id());
+		assertThat(profil).hasStatusOk();
+		assertThat(profil).bodyJson().extractingPath("$.nom").isEqualTo("Kofi Mensah");
+		assertThat(profil).bodyJson().extractingPath("$.ville").isEqualTo("Accra");
+	}
+
+	@Test
 	void aucun_compte_de_demo_n_a_de_login_github_ni_d_adresse_joignable() {
 		assertThat(compter("SELECT count(*) FROM utilisateur WHERE email LIKE '%@demo.jamii.test'")).as("les 6 de la démo et les 12 des communautés").isEqualTo(18);
 		assertThat(compter("SELECT count(*) FROM utilisateur WHERE email LIKE '%@demo.jamii.test' AND login_github IS NOT NULL")).isZero();

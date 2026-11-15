@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LienPersonne from '../../components/LienPersonne.vue'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
@@ -111,9 +112,9 @@ async function inviter(p: ProfilRecommande) {
     <ul v-if="profils.length" class="recos__liste">
       <li v-for="p in profils" :key="p.profil.utilisateurId" class="reco">
         <div class="reco__tete">
-          <JAvatar :nom="p.profil.nom" :url="p.profil.avatarUrl" :taille="40" />
+          <LienPersonne :id="p.profil.utilisateurId" doublon><JAvatar :nom="p.profil.nom" :url="p.profil.avatarUrl" :taille="40" /></LienPersonne>
           <div>
-            <strong>{{ p.profil.nom }}</strong>
+            <strong><LienPersonne :id="p.profil.utilisateurId">{{ p.profil.nom }}</LienPersonne></strong>
             <span class="texte-discret">
               {{ [p.profil.ville, p.profil.heuresParSemaine ? t('reseau.heures', { n: p.profil.heuresParSemaine }) : null].filter(Boolean).join(' · ') }}
             </span>
