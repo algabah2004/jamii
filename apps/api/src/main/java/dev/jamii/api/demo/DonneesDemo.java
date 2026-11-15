@@ -101,9 +101,10 @@ class DonneesDemo implements ApplicationRunner {
 			abidjan(maintenant);
 			nairobi(maintenant);
 			new DemoHackathonMission(base, maintenant).charger();
-			new DemoCommunautes(base, maintenant).charger();
 			return true;
 		});
+		// Les communautés se complètent à chaque démarrage (ON CONFLICT DO NOTHING) : une base déjà chargée reçoit ce qui manque.
+		transaction.executeWithoutResult(statut -> new DemoCommunautes(base, maintenant).charger());
 		journal.info(Boolean.TRUE.equals(charge) ? "Données de démo chargées (profil demo)" : "Données de démo déjà présentes");
 		return Boolean.TRUE.equals(charge);
 	}

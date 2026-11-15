@@ -125,12 +125,16 @@ class DonneesDemoTest {
 		long utilisateurs = compter("SELECT count(*) FROM utilisateur");
 		long projets = compter("SELECT count(*) FROM projet");
 		long taches = compter("SELECT count(*) FROM tache");
+		long messages = compter("SELECT count(*) FROM message_salon");
+		long publications = compter("SELECT count(*) FROM publication");
 
 		assertThat(demo.charger(Instant.now())).isFalse();
 
 		assertThat(compter("SELECT count(*) FROM utilisateur")).isEqualTo(utilisateurs);
 		assertThat(compter("SELECT count(*) FROM projet")).isEqualTo(projets);
 		assertThat(compter("SELECT count(*) FROM tache")).isEqualTo(taches);
+		assertThat(compter("SELECT count(*) FROM message_salon")).as("les communautés se complètent sans doublon").isEqualTo(messages);
+		assertThat(compter("SELECT count(*) FROM publication")).isEqualTo(publications);
 	}
 
 	@Test
@@ -142,7 +146,7 @@ class DonneesDemoTest {
 		assertThat(flutter).bodyJson().extractingPath("$.nombreMembres").asNumber().satisfies(n -> assertThat(n.intValue()).isGreaterThanOrEqualTo(5));
 
 		var general = mvc.get().uri("/api/communautes/flutter/salons/general/messages").with(awa);
-		assertThat(general).bodyJson().extractingPath("$.elements.length()").isEqualTo(7);
+		assertThat(general).bodyJson().extractingPath("$.elements.length()").isEqualTo(12);
 		assertThat(general).bodyJson().extractingPath("$.elements[0].auteur.nom").isEqualTo("Yann Kouassi");
 
 		assertThat(compter("""
@@ -155,6 +159,18 @@ class DonneesDemoTest {
 				""".formatted(DonneesDemo.id("publication:apk")))).as("réponse de l'IA validée par un pair").isEqualTo(1);
 		assertThat(compter("SELECT count(*) FROM publication WHERE id = '" + DonneesDemo.id("publication:ussd") + "' AND reponse_acceptee_id IS NULL"))
 			.as("une question encore ouverte").isEqualTo(1);
+	}
+
+	@Test
+	void toutes_les_communautes_de_depart_ont_des_membres_et_leurs_trois_salons_des_messages() {
+		assertThat(compter("SELECT count(*) FROM communaute c WHERE NOT EXISTS (SELECT 1 FROM adhesion a WHERE a.communaute_id = c.id)"))
+			.as("aucune communauté de départ sans membre").isZero();
+		assertThat(compter("""
+				SELECT count(*) FROM salon s JOIN communaute c ON c.id = s.communaute_id
+				WHERE NOT EXISTS (SELECT 1 FROM message_salon m WHERE m.salon_id = s.id)
+				""")).as("aucun salon vide").isZero();
+		assertThat(compter("SELECT count(*) FROM publication WHERE type = 'montre_ton_projet' AND projet_id IS NOT NULL"))
+			.as("des projets montrés, avec un vrai projet").isGreaterThanOrEqualTo(3);
 	}
 
 	@Test
@@ -182,7 +198,7 @@ class DonneesDemoTest {
 
 	@Test
 	void aucun_compte_de_demo_n_a_de_login_github_ni_d_adresse_joignable() {
-		assertThat(compter("SELECT count(*) FROM utilisateur WHERE email LIKE '%@demo.jamii.test'")).isEqualTo(6);
+		assertThat(compter("SELECT count(*) FROM utilisateur WHERE email LIKE '%@demo.jamii.test'")).as("les 6 de la démo et les 12 des communautés").isEqualTo(18);
 		assertThat(compter("SELECT count(*) FROM utilisateur WHERE email LIKE '%@demo.jamii.test' AND login_github IS NOT NULL")).isZero();
 	}
 
