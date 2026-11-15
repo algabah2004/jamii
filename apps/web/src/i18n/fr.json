@@ -1102,6 +1102,19 @@
         "trop": "Trop de messages d’un coup. Attends un instant.",
         "tropAppels": "Trop d’appels lancés en une heure. Réessaie plus tard."
       }
+    },
+    "tableau": {
+      "aria": "Tableau de bord du tour",
+      "pasDeTour": "Le tableau de bord s’ouvrira avec le premier tour, après le tirage.",
+      "avancement": "Avancement du tour",
+      "miennes": "Mes tâches",
+      "aucuneMienne": "Tu n’as pas encore pris de tâche. Choisis-en une parmi les tâches libres.",
+      "libres": "Tâches libres",
+      "etAutres": "et {n} autres dans l’onglet « Le cercle »",
+      "equipe": "L’équipe",
+      "livrees": "{n}/{total} tâches livrées",
+      "pointFait": "point fait",
+      "ecrire": "Écrire"
     }
   },
   "reseau": {

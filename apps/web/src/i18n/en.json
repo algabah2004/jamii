@@ -1102,6 +1102,19 @@
         "trop": "Too many messages at once. Wait a moment.",
         "tropAppels": "Too many calls started in an hour. Try again later."
       }
+    },
+    "tableau": {
+      "aria": "Turn dashboard",
+      "pasDeTour": "The dashboard opens with the first turn, after the draw.",
+      "avancement": "Turn progress",
+      "miennes": "My tasks",
+      "aucuneMienne": "You haven't taken a task yet. Pick one from the open tasks.",
+      "libres": "Open tasks",
+      "etAutres": "and {n} more in the “The circle” tab",
+      "equipe": "The team",
+      "livrees": "{n}/{total} tasks delivered",
+      "pointFait": "checked in",
+      "ecrire": "Message"
     }
   },
   "reseau": {
