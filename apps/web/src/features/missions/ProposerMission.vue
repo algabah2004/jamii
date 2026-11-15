@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { JBouton, JChamp } from '../../design-system'
 import { DEVISES, LIMITES_PROPOSITION, proposer, versMontant, type Mission } from './missions'
 import RemplirQuestionnaire from '../questionnaires/RemplirQuestionnaire.vue'
-import { erreursParQuestion, manquantes, versReponses, type Valeurs } from '../questionnaires/questionnaire'
+import { erreursParQuestion, focaliserQuestion, manquantes, versReponses, type Valeurs } from '../questionnaires/questionnaire'
 
 /*
  * Un développeur propose ses services (contracts/missions.yaml, `proposer`) : comment il s'y prendrait, son prix et
@@ -45,7 +45,11 @@ async function envoyer() {
   if (!pret.value || !montant.value || jours.value === null || envoi.value) return
   const vides = manquantes(props.mission.questionnaire, valeurs.value)
   erreursQuestions.value = Object.fromEntries(vides.map((q) => [q, 'obligatoire']))
-  if (vides.length) return void (code.value = 'validation')
+  if (vides.length) {
+    code.value = 'validation'
+    focaliserQuestion(vides[0]!)
+    return
+  }
   envoi.value = true
   code.value = null
   try {

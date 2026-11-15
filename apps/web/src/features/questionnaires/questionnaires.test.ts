@@ -146,7 +146,14 @@ describe('répondre au questionnaire d’un hackathon', () => {
     expect(page.findAll('[data-test="erreur-question"]')).toHaveLength(2)
     expect(page.get('[data-test="question-q1"] input').attributes('aria-invalid')).toBe('true')
 
+    // Le focus va à la première question sans réponse.
+    expect(document.activeElement).toBe(page.get('[data-test="question-q1"] input').element)
+
+    // Une question remplie perd son erreur tout de suite, sans attendre le prochain envoi.
     await page.get('[data-test="question-q1"] input').setValue('https://github.com/kofi')
+    expect(page.find('[data-test="question-q1"] [data-test="erreur-question"]').exists()).toBe(false)
+    expect(page.get('[data-test="question-q1"] input').attributes('aria-invalid')).toBeUndefined()
+    expect(page.findAll('[data-test="erreur-question"]')).toHaveLength(1)
     await page.findAll('[data-test="question-q2"] input[type="radio"]')[1]!.setValue(true)
     await page.findAll('[data-test="question-q3"] input[type="checkbox"]')[0]!.setValue(true)
     await page.get('[data-test="sinscrire"]').trigger('click')
@@ -187,7 +194,7 @@ describe('répondre au questionnaire d’une mission', () => {
     const routeur = createRouter({ history: createMemoryHistory(), routes })
     await routeur.push(`/missions/${ID}`)
     await routeur.isReady()
-    const page = mount(RouterView, { global: { plugins: [i18n, routeur] } })
+    const page = mount(RouterView, { global: { plugins: [i18n, routeur] }, attachTo: document.body })
     await vi.waitFor(() => expect(page.find('[data-test="questions-mission"]').exists()).toBe(true), { timeout: 4000 })
     const champs = page.findAll('[data-test="form-proposer"] input')
     await page.get('[data-test="form-proposer"] textarea').setValue('Je fais ce genre de boutique depuis deux ans, avec Wave.')
@@ -197,10 +204,13 @@ describe('répondre au questionnaire d’une mission', () => {
     await page.get('[data-test="form-proposer"]').trigger('submit')
     expect(envoye).toBeNull()
     expect(page.get('[data-test="erreur-proposer"]').text()).toBe('Il manque une réponse obligatoire.')
+    // Comme à l'inscription d'un hackathon : le focus va à la question sans réponse.
+    expect(document.activeElement).toBe(page.findAll('[data-test="question-q1"] input[type="radio"]')[0]!.element)
 
     await page.findAll('[data-test="question-q1"] input[type="radio"]')[0]!.setValue(true)
     await page.get('[data-test="form-proposer"]').trigger('submit')
     await vi.waitFor(() => expect(envoye).not.toBeNull(), { timeout: 4000 })
     expect(envoye!.reponses).toEqual([{ questionId: 'q1', valeur: 'oui' }])
+    page.unmount()
   })
 })

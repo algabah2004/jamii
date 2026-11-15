@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { JBouton, JChamp } from '../../design-system'
 import { creerEquipe, LIMITES_EQUIPE, sInscrire, type Hackathon, type Resultat } from './hackathons'
 import RemplirQuestionnaire from '../questionnaires/RemplirQuestionnaire.vue'
-import { erreursParQuestion, manquantes, versReponses, type Valeurs } from '../questionnaires/questionnaire'
+import { erreursParQuestion, focaliserQuestion, manquantes, versReponses, type Valeurs } from '../questionnaires/questionnaire'
 
 /*
  * Participer à un hackathon (contracts/hackathons.yaml, `sInscrire` et `creerEquipe`) : s'inscrire seul, en se
@@ -44,7 +44,7 @@ async function agir(appel: () => Promise<Resultat<unknown>>) {
   erreursQuestions.value = Object.fromEntries(vides.map((id) => [id, 'obligatoire']))
   if (vides.length) {
     code.value = 'validation'
-    document.querySelector<HTMLElement>(`[data-test="question-${vides[0]}"] input, [data-test="question-${vides[0]}"] textarea`)?.focus()
+    focaliserQuestion(vides[0]!)
     return
   }
   envoi.value = true

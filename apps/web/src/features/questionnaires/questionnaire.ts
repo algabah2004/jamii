@@ -84,6 +84,11 @@ export function manquantes(questions: readonly Question[], valeurs: Valeurs): st
   return questions.filter((q) => q.obligatoire && !repondues.has(q.id)).map((q) => q.id)
 }
 
+/** Met le focus sur le premier champ d'une question, pour qu'on sache tout de suite quoi remplir (WCAG 3.3.1). */
+export function focaliserQuestion(id: string): void {
+  document.querySelector<HTMLElement>(`[data-test="question-${id}"] :is(input, textarea)`)?.focus()
+}
+
 /** Les erreurs de l'API (`reponses.<id>` → code), ramenées à l'identifiant de la question. */
 export function erreursParQuestion(champs: Record<string, string>): Record<string, string> {
   const parQuestion: Record<string, string> = {}

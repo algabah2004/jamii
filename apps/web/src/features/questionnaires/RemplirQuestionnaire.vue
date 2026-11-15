@@ -8,7 +8,7 @@ import { LIMITES, type Question, type Valeurs } from './questionnaire'
  * son champ natif (texte, boutons radio, cases à cocher), relié à son libellé, son aide et son erreur pour les
  * lecteurs d'écran. `erreurs` : par identifiant de question (`obligatoire`, `valeur_inconnue`, `trop_long`…).
  */
-defineProps<{ questions: Question[]; erreurs?: Record<string, string> }>()
+const props = defineProps<{ questions: Question[]; erreurs?: Record<string, string> }>()
 const valeurs = defineModel<Valeurs>({ required: true })
 const { t } = useI18n()
 const id = useId()
@@ -24,13 +24,18 @@ function basculer(q: Question, choix: string, coche: boolean) {
   // L'ordre des choix du créateur, pas l'ordre des clics.
   poser(q, (q.choix ?? []).filter((c) => (c === choix ? coche : actuels.includes(c))))
 }
+// « Obligatoire » disparaît dès que la question a une réponse : on ne laisse pas une erreur sous un champ rempli.
+const erreurDe = (q: Question) => {
+  const code = props.erreurs?.[q.id]
+  return code === 'obligatoire' && (texte(q).trim() || coches(q).length) ? undefined : code
+}
 const decrit = (q: Question, erreur: string | undefined) =>
   [q.aide && `${id}-${q.id}-aide`, erreur && `${id}-${q.id}-erreur`].filter(Boolean).join(' ') || undefined
 </script>
 
 <template>
   <div class="remplir" data-test="remplir-questionnaire">
-    <div v-for="(q, i) in questions" :key="q.id" class="question" :class="{ 'question--erreur': erreurs?.[q.id] }" :data-test="`question-${q.id}`">
+    <div v-for="(q, i) in questions" :key="q.id" class="question" :class="{ 'question--erreur': erreurDe(q) }" :data-test="`question-${q.id}`">
       <!-- Texte : un libellé ; choix : un groupe avec sa légende. -->
       <template v-if="q.type === 'texte_court' || q.type === 'texte_long'">
         <label :for="`${id}-${q.id}`" class="intitule">
@@ -45,8 +50,8 @@ const decrit = (q: Question, erreur: string | undefined) =>
           rows="4"
           :maxlength="LIMITES.texteLongMax"
           :required="q.obligatoire"
-          :aria-describedby="decrit(q, erreurs?.[q.id])"
-          :aria-invalid="erreurs?.[q.id] ? true : undefined"
+          :aria-describedby="decrit(q, erreurDe(q))"
+          :aria-invalid="erreurDe(q) ? true : undefined"
           @input="poser(q, ($event.target as HTMLTextAreaElement).value)"
         />
         <input
@@ -55,8 +60,8 @@ const decrit = (q: Question, erreur: string | undefined) =>
           :value="texte(q)"
           :maxlength="LIMITES.texteCourtMax"
           :required="q.obligatoire"
-          :aria-describedby="decrit(q, erreurs?.[q.id])"
-          :aria-invalid="erreurs?.[q.id] ? true : undefined"
+          :aria-describedby="decrit(q, erreurDe(q))"
+          :aria-invalid="erreurDe(q) ? true : undefined"
           @input="poser(q, ($event.target as HTMLInputElement).value)"
         />
       </template>
@@ -66,9 +71,9 @@ const decrit = (q: Question, erreur: string | undefined) =>
         v-else
         class="groupe"
         :role="q.type === 'choix_multiples' ? undefined : 'radiogroup'"
-        :aria-describedby="decrit(q, erreurs?.[q.id])"
+        :aria-describedby="decrit(q, erreurDe(q))"
         :aria-required="q.type !== 'choix_multiples' && q.obligatoire ? true : undefined"
-        :aria-invalid="q.type !== 'choix_multiples' && erreurs?.[q.id] ? true : undefined"
+        :aria-invalid="q.type !== 'choix_multiples' && erreurDe(q) ? true : undefined"
       >
         <legend class="intitule">
           <span class="numero" aria-hidden="true">{{ i + 1 }}</span>{{ q.intitule }}
@@ -97,8 +102,8 @@ const decrit = (q: Question, erreur: string | undefined) =>
         </div>
       </fieldset>
 
-      <p v-if="erreurs?.[q.id]" :id="`${id}-${q.id}-erreur`" class="erreur" data-test="erreur-question">
-        {{ t(`questionnaire.remplir.erreurs.${['obligatoire', 'trop_long', 'valeur_inconnue'].includes(erreurs[q.id]!) ? erreurs[q.id] : 'autre'}`) }}
+      <p v-if="erreurDe(q)" :id="`${id}-${q.id}-erreur`" class="erreur" data-test="erreur-question">
+        {{ t(`questionnaire.remplir.erreurs.${['obligatoire', 'trop_long', 'valeur_inconnue'].includes(erreurDe(q)!) ? erreurDe(q) : 'autre'}`) }}
       </p>
     </div>
   </div>
