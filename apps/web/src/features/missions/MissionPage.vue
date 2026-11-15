@@ -60,6 +60,8 @@ const voitPropositions = computed(() => {
 
 const etapeActuelle = computed(() => ETAPES.indexOf(mission.value?.statut as (typeof ETAPES)[number]))
 const invitationConnexion = computed(() => session.etat.value === 'non_connecte' && mission.value?.statut === 'publiee')
+/** Un candidat retenu peut envoyer son devis, ou en a déjà un sous les yeux du client. */
+const candidatRetenu = computed(() => mission.value?.moi.role === 'candidat' && (peut('envoyer_devis') || Boolean(mission.value.travail)))
 const peut = (nom: string) => (mission.value?.moi.actions as string[] | undefined)?.includes(nom) ?? false
 const budget = computed(() => (mission.value?.budget ? formaterMontant(mission.value.budget, locale.value) : t('missions.budgetADiscuter')))
 const dateSouhaitee = computed(() =>
@@ -142,7 +144,7 @@ async function agir(appel: (id: string, version: number) => Promise<Resultat<Mis
           <div v-if="peut('proposer')" id="proposer"><ProposerMission :mission="mission" @envoyee="rafraichir" /></div>
           <PropositionsMission v-if="voitPropositions" :mission="mission" @maj="mission = $event" @recharger="rafraichir" />
           <DevisPropose v-if="mission.travail && !devisAccepte" :mission="mission" :travail="mission.travail" @maj="mission = $event" />
-          <EnvoyerDevis v-if="peut('envoyer_devis')" :mission="mission" :remplace="Boolean(mission.travail)" @envoye="rafraichir" />
+          <EnvoyerDevis v-if="peut('envoyer_devis')" id="envoyer-devis" :mission="mission" :remplace="Boolean(mission.travail)" @envoye="rafraichir" />
           <SuiviMission v-if="mission.travail && devisAccepte" :mission="mission" :travail="mission.travail" @maj="mission = $event" />
         </div>
 
@@ -153,6 +155,10 @@ async function agir(appel: (id: string, version: number) => Promise<Resultat<Mis
           </div>
 
           <a v-if="peut('proposer')" href="#proposer" class="j-bouton j-bouton--principal" data-test="aller-proposer">{{ t('missions.detail.proposer') }}</a>
+          <p v-else-if="mission.moi.role === 'candidat'" class="statut-candidat" :data-retenu="candidatRetenu" data-test="statut-candidat">
+            {{ candidatRetenu ? t('missions.detail.candidatRetenu') : t('missions.detail.candidatEnAttente') }}
+            <a :href="candidatRetenu && peut('envoyer_devis') ? '#envoyer-devis' : '#propositions-titre'">{{ t('missions.detail.voirMaProposition') }}</a>
+          </p>
           <RouterLink
             v-else-if="invitationConnexion"
             :to="{ name: 'connexion', query: { retour: route.fullPath } }"
@@ -240,5 +246,7 @@ async function agir(appel: (id: string, version: number) => Promise<Resultat<Mis
 .actions p { margin: var(--space-2) 0 0; }
 .note { margin: 0; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); border-inline-start: 3px solid var(--cantaloupe); background: color-mix(in srgb, var(--surface) 60%, transparent); font-weight: 600; }
 .erreur { margin: 0; color: var(--danger); font-weight: 600; }
-#proposer { scroll-margin-block-start: 6rem; }
+#proposer, #propositions-titre, #envoyer-devis { scroll-margin-block-start: 6rem; }
+.statut-candidat { margin: 0; display: grid; gap: var(--space-2); padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); border-inline-start: 3px solid var(--line-strong); font-weight: 600; }
+.statut-candidat[data-retenu='true'] { border-color: var(--cantaloupe); background: color-mix(in srgb, var(--cantaloupe) 10%, transparent); }
 </style>

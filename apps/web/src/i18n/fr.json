@@ -1467,7 +1467,10 @@
         "etat_invalide": "Cette action n'est plus possible pour cette mission.",
         "limite_atteinte": "Tu as déjà publié 5 missions aujourd'hui. Réessaie demain.",
         "autre": "L'action n'a pas abouti. Réessaie dans un instant."
-      }
+      },
+      "candidatEnAttente": "Tu as proposé tes services : le client n'a pas encore choisi.",
+      "candidatRetenu": "Ta proposition est retenue : envoie ton devis au client.",
+      "voirMaProposition": "Voir ma proposition"
     },
     "suivi": {
       "titre": "Le travail",
@@ -1628,7 +1631,14 @@
         "validation": "Un champ n'est pas valide. Vérifie ce que tu as écrit.",
         "modification_concurrente": "La mission a changé entre-temps. Recharge la page.",
         "autre": "L'action n'a pas abouti. Réessaie dans un instant."
-      }
+      },
+      "trier": "Trier les propositions",
+      "tris": {
+        "recentes": "Les plus récentes",
+        "prix": "Prix le plus bas",
+        "delai": "Délai le plus court"
+      },
+      "auDessus": "Au-dessus du budget"
     },
     "devis": {
       "titre": "Envoyer mon devis",

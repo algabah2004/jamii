@@ -1467,7 +1467,10 @@
         "etat_invalide": "This action is no longer possible for this mission.",
         "limite_atteinte": "You have already published 5 missions today. Try again tomorrow.",
         "autre": "The action did not go through. Try again in a moment."
-      }
+      },
+      "candidatEnAttente": "You offered your services: the client hasn't chosen yet.",
+      "candidatRetenu": "Your proposal was selected: send your quote to the client.",
+      "voirMaProposition": "See my proposal"
     },
     "suivi": {
       "titre": "The work",
@@ -1628,7 +1631,14 @@
         "validation": "A field is not valid. Check what you wrote.",
         "modification_concurrente": "The mission changed in the meantime. Reload the page.",
         "autre": "The action did not go through. Try again in a moment."
-      }
+      },
+      "trier": "Sort proposals",
+      "tris": {
+        "recentes": "Most recent",
+        "prix": "Lowest price",
+        "delai": "Shortest time"
+      },
+      "auDessus": "Above budget"
     },
     "devis": {
       "titre": "Send my quote",
