@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { lignesPays, lirePeriode, momentsTries, nomPays, pourcentage } from './calculs'
+import { libelleSecteur, libelleService, lignesPays, lirePeriode, momentsTries, nomPays, pourcentage } from './calculs'
+import { i18n } from '../../i18n'
 import { tableauDemo } from '../../mocks/handlers'
 
 describe('pourcentage', () => {
@@ -49,5 +50,20 @@ describe('lignesPays', () => {
 
   it("n'ajoute pas de ligne « Autres pays » vide", () => {
     expect(lignesPays([{ pays: 'SN', nombre: 5 }], 0, 'fr', 'Autres pays')).toHaveLength(1)
+  })
+})
+
+describe('libellés lisibles', () => {
+  const traduire = { t: (c: string) => i18n.global.t(c), te: (c: string) => i18n.global.te(c, 'fr') }
+  it('nomme les services par leur nom, et garde lisible un identifiant inconnu', () => {
+    ;(i18n.global.locale as unknown as { value: string }).value = 'fr'
+    expect(libelleService('datacloud-stockage', traduire)).toBe('DataCloud · stockage')
+    expect(libelleService('orion', traduire)).toBe('Orion')
+    expect(libelleService('nouveau-service', traduire)).toBe('Nouveau service')
+  })
+  it('écrit les secteurs avec leurs accents', () => {
+    expect(libelleSecteur('sante', traduire, 'Autres')).toBe('Santé')
+    expect(libelleSecteur('autres', traduire, 'Autres')).toBe('Autres')
+    expect(libelleSecteur('peche', traduire, 'Autres')).toBe('Peche')
   })
 })

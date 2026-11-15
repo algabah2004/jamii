@@ -1,4 +1,6 @@
 import { lireJetonCsrf } from '../../api/client'
+import { unref } from 'vue'
+import { i18n } from '../../i18n'
 
 import type { components } from '../../api/generated/demandes'
 
@@ -188,7 +190,9 @@ export type DemandeResumee = Schemas['DemandeResumee']
 
 /** GET /api/demandes : « Tes demandes », pour retrouver un besoin déjà décrit. */
 /** « 14 nov. » : la date d'une demande dans les listes. */
-export const dateCourte = (iso: string) => new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
+// Dans la langue de Jamii, pas celle du navigateur : sinon « Nov 15 » sur une page en français.
+export const dateCourte = (iso: string, langue: string = unref(i18n.global.locale)) =>
+  new Date(iso).toLocaleDateString(langue, { day: 'numeric', month: 'short' })
 
 export async function listerDemandes(): Promise<DemandeResumee[]> {
   const reponse = await globalThis.fetch(adresse('/api/demandes'), { credentials: 'same-origin' })

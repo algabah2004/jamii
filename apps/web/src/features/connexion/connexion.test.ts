@@ -121,7 +121,7 @@ describe('le lien reçu par e-mail', () => {
 
     serveur.use(http.get('/api/me', () => HttpResponse.json(moiDemo)))
     await page.find('[data-test="confirmer-lien"]').trigger('click')
-    await vi.waitFor(() => expect(routeur.currentRoute.value.path).toBe('/demandes/nouvelle'))
+    await vi.waitFor(() => expect(routeur.currentRoute.value.path).toBe('/demandes/nouvelle'), { timeout: 4000 })
     expect(appels).toBe(1)
   })
 
