@@ -1485,31 +1485,7 @@
       }
     },
     "tableau": {
-      "aria": "Tableau de bord du tour",
-      "toutes": "Toutes les tâches",
-      "aucune": "Aucune tâche pour ce tour. Ajoute la première pour organiser le travail de l’équipe.",
-      "nouvelle": "Nouvelle tâche",
-      "exemple": "Ex. Créer la page d’accueil",
-      "responsable": "Responsable",
-      "nonAttribuee": "Non attribuée",
-      "etat": "État",
-      "ajouter": "Ajouter la tâche",
-      "statut": {
-        "a_faire": "À faire",
-        "en_cours": "En cours",
-        "livree": "Livrée"
-      },
-      "pasDeTour": "Le tableau de bord s’ouvrira avec le premier tour, après le tirage.",
-      "avancement": "Avancement du tour",
-      "miennes": "Mes tâches",
-      "aucuneMienne": "Tu n’as pas encore pris de tâche. Choisis-en une parmi les tâches libres.",
-      "aucuneMienneSansTaches": "Les tâches que tu prendras apparaîtront ici.",
-      "libres": "Tâches libres",
-      "etAutres": "et {n} autres dans l’onglet « Le cercle »",
-      "equipe": "L’équipe",
-      "livrees": "{n}/{total} tâches livrées",
-      "pointFait": "point fait",
-      "ecrire": "Écrire"
+      "pasDeTour": "Le tableau de bord s’ouvrira avec le premier tour, après le tirage."
     },
     "repartition": {
       "intro": "Ayo peut proposer qui prend quoi, d'après les compétences de chacun et ce qu'il porte déjà.",
@@ -1579,7 +1555,6 @@
       "aucuneDecision": "Aucune décision consignée pour l’instant.",
       "jourSur": "Jour {jour} sur 14",
       "calendrierAvant": "Le calendrier s’ouvre avec le premier tour.",
-      "ordreAide": "L’anneau, l’ordre de passage, le code et la livraison du tour.",
       "collineAria": "{aFaire} à faire, {enCours} en cours, {livrees} livrées",
       "monter": "On cherche comment faire",
       "descendre": "On sait faire, on livre",
@@ -1587,7 +1562,6 @@
       "collineAide": "En montée, ce qui reste à faire ; au sommet, ce qui est en cours ; en descente, ce qui est livré.",
       "tachesAide": "Découpez le projet en petites tâches. Chacun prend les siennes et les coche quand elles sont livrées.",
       "pointsAide": "Chaque jour, la même question au cercle. Les réponses sont rangées par jour : on relit la journée de l’équipe d’un coup.",
-      "maReponse": "Ma réponse d’aujourd’hui",
       "pasEncore": "Pas encore répondu aujourd’hui : {noms}",
       "aucunPoint": "Personne n’a encore répondu. Lance-toi !",
       "reponses": "1 réponse | {n} réponses",
@@ -1606,7 +1580,12 @@
       "planning": "Le planning des tours",
       "livreLe": "Livré le {date}",
       "du": "Du {debut} au {fin}",
-      "vers": "Vers le {date} (estimé)"
+      "vers": "Vers le {date} (estimé)",
+      "ordreResume": "{n} tours livrés sur {total}. L’ordre de passage, le code et la livraison du tour.",
+      "prochain": {
+        "demo": "Démo du milieu : {date}",
+        "livraison": "Livraison : {date}"
+      }
     }
   },
   "reseau": {

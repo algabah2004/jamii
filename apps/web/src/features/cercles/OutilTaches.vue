@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import EnTeteOutil from './EnTeteOutil.vue'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import CollineDuTour from './CollineDuTour.vue'
@@ -23,13 +24,7 @@ function maj(liste: Tache[]) {
 
 <template>
   <section class="outil-taches" aria-labelledby="taches-outil-titre" data-test="outil-taches-page">
-    <header class="tete carte">
-      <span class="icone" aria-hidden="true">✅</span>
-      <div>
-        <h2 id="taches-outil-titre">{{ t('cercles.qg.outils.taches') }}</h2>
-        <p class="texte-discret">{{ t('cercles.qg.tachesAide') }}</p>
-      </div>
-    </header>
+    <EnTeteOutil id="taches-outil-titre" icone="taches" :titre="t('cercles.qg.outils.taches')" :aide="t('cercles.qg.tachesAide')" />
 
     <p v-if="!tour?.projetId" class="texte-discret">{{ t('cercles.tableau.pasDeTour') }}</p>
     <div v-else class="grille">
@@ -48,9 +43,6 @@ function maj(liste: Tache[]) {
 
 <style scoped>
 .outil-taches { display: grid; gap: var(--space-4); }
-.tete { display: flex; gap: var(--space-4); align-items: flex-start; }
-.tete h2, .tete p { margin: 0; }
-.icone { display: grid; place-items: center; flex: none; width: 48px; height: 48px; border-radius: 14px; background: var(--surface-raised); font-size: 24px; }
 .grille { display: grid; gap: var(--space-4); grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); align-items: start; }
 .grille h3 { margin: 0 0 var(--space-3); font-size: var(--type-body-size); }
 .legende { margin: var(--space-3) 0 0; font-size: var(--type-body-sm-size); }

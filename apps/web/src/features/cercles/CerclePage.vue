@@ -16,6 +16,7 @@ import OutilPoints from './OutilPoints.vue'
 import OutilDecisions from './OutilDecisions.vue'
 import OutilCalendrier from './OutilCalendrier.vue'
 import { outilDepuis, OUTILS } from './qg'
+import IconeCercle from './IconeCercle.vue'
 import { avancement, avantTirage, deposerIdee, LIMITES, lireAvancement, lireCercle, livrerTour, ordreDePassage, positionsAnneau, pourcentage, rejoindreCercle, tirerAuSort, titreDuTour, tourEnCours, type Avancement, type Cercle, type Resultat, type Tache } from './cercles'
 
 /*
@@ -72,7 +73,6 @@ const membre = computed(() => !!cercle.value?.moi.estMembre)
 // Le QG du cercle, à la façon d'un projet Basecamp : des outils (salon, tâches, point du soir, décisions, calendrier,
 // le cercle), chacun à son adresse (`?outil=`) pour qu'un lien mène droit à l'un d'eux. Les autres voient le cercle.
 const outil = computed(() => outilDepuis(route.query, membre.value, !!cercle.value?.tirage))
-const ICONES_OUTILS: Record<string, string> = { qg: '🏠', salon: '💬', taches: '✅', points: '🌙', decisions: '📌', calendrier: '📅', cercle: '⭕' }
 const createur = computed(() => !!cercle.value?.moi.estCreateur)
 const preparation = computed(() => (cercle.value ? avantTirage(cercle.value) : null))
 const monIdee = computed(() => cercle.value?.membres.find((m) => m.personne.id === moi.value?.id)?.idee ?? null)
@@ -142,9 +142,6 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
           <h1>{{ cercle.nom }}</h1>
           <p>{{ cercle.ville ? t('cercles.sousTitre', { n: cercle.membres.length, ville: cercle.ville }) : t('cercles.sousTitreSansVille', { n: cercle.membres.length }) }}</p>
         </div>
-        <div v-if="membre" class="equipe-tete" :aria-label="t('cercles.membresTitre')">
-          <LienPersonne v-for="m in cercle.membres" :key="m.personne.id" :id="m.personne.id" :nom="m.personne.nom"><JAvatar :nom="m.personne.nom" :url="m.personne.avatarUrl" :taille="34" /></LienPersonne>
-        </div>
       </header>
 
       <nav v-if="membre" class="outils-nav" :aria-label="t('cercles.onglets.aria')">
@@ -156,7 +153,7 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
           :class="{ actif: outil === o }"
           :aria-current="outil === o ? 'page' : undefined"
           :data-test="o === 'cercle' ? 'onglet-cercle' : o === 'salon' ? 'onglet-salon' : `onglet-${o}`"
-        ><span aria-hidden="true">{{ ICONES_OUTILS[o] }}</span> {{ t(`cercles.qg.outils.${o}`) }}</RouterLink>
+        ><IconeCercle :nom="o" :taille="16" />{{ t(`cercles.qg.outils.${o}`) }}</RouterLink>
       </nav>
 
       <QgDuCercle v-if="outil === 'qg'" :key="`qg-${cercle.id}`" :cercle="cercle" :suivi="suivi" :titre-tour="titreTour" />
@@ -264,12 +261,6 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
             <p v-if="erreur" role="alert" class="erreur">{{ erreur }}</p>
           </section>
 
-          <!-- Le point du tour, calculé à partir des chiffres : c'est le repli prévu pour le résumé du Griot (resume_tour),
-               qui le remplacera quand le service IA le fournira. On ne le présente donc pas comme venant de l'IA. -->
-          <section v-if="tour && beneficiaire && suivi" class="point zone-sombre" aria-labelledby="point-titre" data-test="point">
-            <h2 id="point-titre" class="point__qui">{{ t('cercles.point') }}</h2>
-            <p class="point__texte">{{ t('cercles.pointTexte', { jour: suivi.jour, nom: prenom(beneficiaire.nom), faites: suivi.faites, total: suivi.total }) }} {{ t('cercles.joursRestants', { n: suivi.joursRestants }, suivi.joursRestants) }}.</p>
-          </section>
         </div>
       </div>
 
@@ -299,9 +290,6 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
 
 <style scoped>
 .cercle-page { display: grid; gap: var(--space-6); }
-.equipe-tete { display: flex; align-items: center; }
-.equipe-tete > * { margin-inline-start: -8px; }
-.equipe-tete :deep(.j-avatar) { box-shadow: 0 0 0 2px var(--surface); }
 /* La barre d'outils du QG : défilable sur mobile, jamais coupée. */
 .outils-nav {
   display: flex; gap: var(--space-1); padding: 4px; margin-top: calc(-1 * var(--space-8)); overflow-x: auto; scrollbar-width: none;
@@ -320,7 +308,6 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
 .anneau__trace { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .anneau__trace circle {
   fill: none; stroke: var(--line-strong); stroke-width: 0.5; stroke-dasharray: 1.2 1.8;
-  animation: tourne 60s linear infinite; transform-origin: 50% 50%;
 }
 
 .anneau__membre {
@@ -360,9 +347,6 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
 .avancement__barre { height: 10px; border-radius: var(--radius-pill); background: var(--surface-sunken, color-mix(in srgb, var(--ink) 8%, transparent)); overflow: hidden; }
 .avancement__barre i { display: block; height: 100%; border-radius: inherit; background: var(--action); animation: remplit var(--motion-celebrate) var(--ease-out) both; transform-origin: left; }
 
-.point { display: grid; gap: var(--space-2); padding: var(--space-5, 1.25rem) var(--space-6); border-radius: var(--radius-lg); background: var(--bg); color: var(--ink); }
-.point__qui { margin: 0; font-size: var(--type-body-sm-size); color: var(--action-ink); font-weight: 700; }
-.point__texte { margin: 0; line-height: 1.55; }
 
 .ordre h2 { margin-bottom: var(--space-4); }
 .ordre__liste { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
@@ -374,7 +358,6 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
 .ordre__ligne--en_cours { border-color: var(--proof); }
 .ordre__ligne--en_cours .ordre__statut { background: var(--proof); color: var(--on-proof); }
 .ordre__ligne--livre .ordre__statut { background: var(--action-soft); color: var(--action-ink); }
-@keyframes tourne { to { rotate: 360deg; } }
 @keyframes apparait { from { opacity: 0; scale: 0.6; } }
 @keyframes remplit { from { transform: scaleX(0); } }
 @media (prefers-reduced-motion: reduce) { .anneau__trace circle { animation: none; } }

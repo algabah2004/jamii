@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import EnTeteOutil from './EnTeteOutil.vue'
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { JAvatar } from '../../design-system'
@@ -47,13 +48,7 @@ const planning = computed(() => {
 
 <template>
   <section class="outil-calendrier" aria-labelledby="calendrier-titre" data-test="outil-calendrier-page">
-    <header class="tete carte">
-      <span class="icone" aria-hidden="true">📅</span>
-      <div>
-        <h2 id="calendrier-titre">{{ t('cercles.qg.outils.calendrier') }}</h2>
-        <p class="texte-discret">{{ t('cercles.qg.calendrierAide') }}</p>
-      </div>
-    </header>
+    <EnTeteOutil id="calendrier-titre" icone="calendrier" :titre="t('cercles.qg.outils.calendrier')" :aide="t('cercles.qg.calendrierAide')" />
 
     <section v-if="jours.length" class="carte" aria-labelledby="quinzaine">
       <h3 id="quinzaine">{{ t('cercles.qg.quinzaine', { n: tour?.numero, nom: prenom(tour?.beneficiaire.nom) }) }}</h3>
@@ -85,9 +80,6 @@ const planning = computed(() => {
 
 <style scoped>
 .outil-calendrier { display: grid; gap: var(--space-4); }
-.tete { display: flex; gap: var(--space-4); align-items: flex-start; }
-.tete h2, .tete p { margin: 0; }
-.icone { display: grid; place-items: center; flex: none; width: 48px; height: 48px; border-radius: 14px; background: var(--surface-raised); font-size: 24px; }
 h3 { margin: 0 0 var(--space-3); font-size: var(--type-body-size); }
 .jours { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); grid-template-columns: repeat(7, minmax(0, 1fr)); }
 .jour { display: grid; align-content: start; gap: 4px; min-height: 5.5rem; padding: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); font-size: var(--type-body-sm-size); }

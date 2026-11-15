@@ -76,7 +76,6 @@ describe('la page du cercle', () => {
     expect(page.find('[data-test="tour"]').text()).toContain('Tour 1 · le projet de Awa')
     expect(page.find('[data-test="tour"] h2').text()).toBe('Appli de covoiturage étudiant')
     expect(page.find('[data-test="avancement"]').text()).toContain('7 tâches sur 12')
-    expect(page.find('[data-test="point"]').text()).toContain('Jour 3 du tour de Awa')
     expect(page.findAll('[data-test="ordre"] li')).toHaveLength(6)
   })
 
@@ -424,42 +423,6 @@ describe('le salon du cercle', () => {
     await page.get('[data-test="terminer-appel"]').trigger('click')
     await vi.waitFor(() => expect(page.find('[data-test="lancer-appel"]').exists()).toBe(true))
     ouverture.mockRestore()
-    page.unmount()
-  })
-})
-
-describe('le tableau de bord du salon', () => {
-  it('montre comment créer la première tâche et affiche son responsable', async () => {
-    serveur.use(http.get('/api/projets/:projetId/taches', () => HttpResponse.json({ elements: [], curseurSuivant: null })))
-    const { page } = await ouvrir(`/cercles/${ID_DAKAR}?onglet=salon`)
-    await vi.waitFor(() => expect(page.find('[data-test="nouvelle-tache-salon"]').exists()).toBe(true))
-    expect(page.get('[data-test="toutes-les-taches"]').text()).toContain('Ajoute la première')
-    await page.get('#titre-tache-salon').setValue('Préparer le parcours mobile')
-    await page.get('#assignee-tache-salon').setValue('6f1c2a4e-8b7d-4c3e-9a10-2b5d7e9f0a11')
-    await page.get('[data-test="nouvelle-tache-salon"]').trigger('submit')
-    await vi.waitFor(() => expect(page.get('[data-test="toutes-les-taches"]').text()).toContain('Préparer le parcours mobile'))
-    expect(page.get('[data-test="toutes-les-taches"]').text()).toContain('Awa Diop')
-    page.unmount()
-  })
-
-  it('je prends une tâche libre, elle passe dans « Mes tâches », je la coche finie', async () => {
-    const { page } = await ouvrir(`/cercles/${ID_DAKAR}?onglet=salon`)
-    await vi.waitFor(() => expect(page.find('[data-test="prendre-libre"]').exists()).toBe(true))
-    expect(page.get('[data-test="mes-taches"]').findAll('li')).toHaveLength(0)
-    await page.get('[data-test="prendre-libre"]').trigger('click')
-    await vi.waitFor(() => expect(page.get('[data-test="mes-taches"]').findAll('li')).toHaveLength(1))
-    await page.get('[data-test="cocher-mienne"]').trigger('change')
-    await vi.waitFor(() => expect(page.get('[data-test="mes-taches"] li').classes()).toContain('tache--livree'))
-    expect(page.findAll('[data-test="membre-equipe"]')[0]!.text()).toContain('1/1 tâches livrées')
-    page.unmount()
-  })
-
-  it('chaque membre a son bouton « Écrire » vers la messagerie, sauf moi', async () => {
-    const { page } = await ouvrir(`/cercles/${ID_DAKAR}?onglet=salon`)
-    await vi.waitFor(() => expect(page.findAll('[data-test="membre-equipe"]')).toHaveLength(6))
-    const liens = page.findAll('[data-test="ecrire-membre"]').map((l) => l.attributes('href'))
-    expect(liens).toHaveLength(5)
-    expect(liens[0]).toMatch(/^\/messages\//)
     page.unmount()
   })
 })

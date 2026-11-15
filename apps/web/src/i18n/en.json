@@ -1485,31 +1485,7 @@
       }
     },
     "tableau": {
-      "aria": "Turn dashboard",
-      "toutes": "All tasks",
-      "aucune": "There are no tasks for this turn yet. Add the first one to organize the team's work.",
-      "nouvelle": "New task",
-      "exemple": "E.g. build the home page",
-      "responsable": "Owner",
-      "nonAttribuee": "Unassigned",
-      "etat": "Status",
-      "ajouter": "Add task",
-      "statut": {
-        "a_faire": "To do",
-        "en_cours": "In progress",
-        "livree": "Delivered"
-      },
-      "pasDeTour": "The dashboard opens with the first turn, after the draw.",
-      "avancement": "Turn progress",
-      "miennes": "My tasks",
-      "aucuneMienne": "You haven't taken a task yet. Pick one from the open tasks.",
-      "aucuneMienneSansTaches": "Tasks you take will appear here.",
-      "libres": "Open tasks",
-      "etAutres": "and {n} more in the “The circle” tab",
-      "equipe": "The team",
-      "livrees": "{n}/{total} tasks delivered",
-      "pointFait": "checked in",
-      "ecrire": "Message"
+      "pasDeTour": "The dashboard opens with the first turn, after the draw."
     },
     "repartition": {
       "intro": "Ayo can suggest who takes what, based on everyone’s skills and current workload.",
@@ -1579,7 +1555,6 @@
       "aucuneDecision": "No decisions recorded yet.",
       "jourSur": "Day {jour} of 14",
       "calendrierAvant": "The calendar opens with the first turn.",
-      "ordreAide": "The ring, the turn order, the code and delivering the turn.",
       "collineAria": "{aFaire} to do, {enCours} in progress, {livrees} delivered",
       "monter": "Figuring it out",
       "descendre": "Making it happen",
@@ -1587,7 +1562,6 @@
       "collineAide": "Uphill, what's still to do; at the top, what's in progress; downhill, what's delivered.",
       "tachesAide": "Break the project into small tasks. Everyone takes theirs and ticks them off when delivered.",
       "pointsAide": "Every day, the same question to the circle. Answers are grouped by day: read the team's day at a glance.",
-      "maReponse": "My answer for today",
       "pasEncore": "Not answered yet today: {noms}",
       "aucunPoint": "Nobody has answered yet. Go first!",
       "reponses": "1 answer | {n} answers",
@@ -1606,7 +1580,12 @@
       "planning": "The turn schedule",
       "livreLe": "Delivered on {date}",
       "du": "From {debut} to {fin}",
-      "vers": "Around {date} (estimated)"
+      "vers": "Around {date} (estimated)",
+      "ordreResume": "{n} of {total} turns delivered. The turn order, the code and delivering the turn.",
+      "prochain": {
+        "demo": "Mid-turn demo: {date}",
+        "livraison": "Delivery: {date}"
+      }
     }
   },
   "reseau": {

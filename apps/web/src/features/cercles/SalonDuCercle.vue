@@ -3,7 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import LienPersonne from '../../components/LienPersonne.vue'
 import { JAvatar } from '../../design-system'
-import TableauDuTour from './TableauDuTour.vue'
+import IconeCercle, { type NomIcone } from './IconeCercle.vue'
 import { useSession } from '../../session'
 import { ilYa } from '../vitrine/vitrine'
 import type { Avancement, Cercle } from './cercles'
@@ -253,13 +253,13 @@ function jour(date: Date) {
   if (meme(date, hier)) return t('cercles.salon.hier')
   return new Intl.DateTimeFormat(locale.value, { weekday: 'long', day: 'numeric', month: 'long' }).format(date)
 }
-const ICONES: Record<string, string> = {
-  cercle_cree: '✨',
-  membre_rejoint: '👋',
-  tirage: '🎲',
-  tour_ouvert: '🚀',
-  tour_livre: '✅',
-  cercle_termine: '🏁',
+const ICONES: Record<string, NomIcone> = {
+  cercle_cree: 'creation',
+  membre_rejoint: 'arrivee',
+  tirage: 'tirage',
+  tour_ouvert: 'depart',
+  tour_livre: 'livre',
+  cercle_termine: 'fin',
 }
 function evenement(m: MessageCercle) {
   const e = m.evenement!
@@ -287,7 +287,7 @@ const contexte = computed(() => {
         <ul class="presence__avatars" :aria-label="t('cercles.salon.pointsAria')">
           <li v-for="p in membres" :key="p.id" :class="{ fait: pointsDuJour.includes(p.id) }" :title="pointsDuJour.includes(p.id) ? t('cercles.salon.aFaitSonPoint', { nom: prenom(p.nom) }) : prenom(p.nom)">
             <LienPersonne :id="p.id" :nom="p.nom"><JAvatar :nom="p.nom" :url="p.avatarUrl" :taille="34" /></LienPersonne>
-            <span v-if="pointsDuJour.includes(p.id)" class="presence__coche" aria-hidden="true">✓</span>
+            <span v-if="pointsDuJour.includes(p.id)" class="presence__coche"><IconeCercle nom="coche" :taille="11" /></span>
           </li>
         </ul>
         <p class="presence__texte">{{ t('cercles.salon.pointsCompte', { n: pointsDuJour.length, total: membres.length }) }}</p>
@@ -311,8 +311,7 @@ const contexte = computed(() => {
     <p v-if="etat === 'chargement'" class="texte-discret" role="status">{{ t('etat.chargement') }}</p>
     <p v-else-if="etat === 'indisponible'" class="texte-discret" role="alert">{{ t('etat.indisponible') }}</p>
 
-    <div v-else class="salon__grille">
-    <div class="salon__corps carte">
+    <div v-else class="salon__corps carte">
       <!-- Épinglés : on aide d'abord qui bloque. -->
       <section v-if="coupsDeMain.length" class="coups" aria-labelledby="coups-titre" data-test="coups-de-main">
         <h3 id="coups-titre">{{ t('cercles.salon.coupsTitre', { n: coupsDeMain.length }, coupsDeMain.length) }}</h3>
@@ -338,7 +337,7 @@ const contexte = computed(() => {
             <li v-if="l.type === 'jour'" class="jour" role="separator"><span>{{ jour(l.date) }}</span></li>
 
             <li v-else-if="l.message.type === 'evenement'" class="evenement" :class="`evenement--${l.message.evenement?.code}`" data-test="evenement">
-              <span class="evenement__icone" aria-hidden="true">{{ ICONES[l.message.evenement?.code ?? ''] }}</span>
+              <span class="evenement__icone"><IconeCercle :nom="ICONES[l.message.evenement?.code ?? ''] ?? 'cercle'" :taille="14" /></span>
               <span>{{ evenement(l.message) }}</span>
               <time class="evenement__heure" :datetime="l.message.envoyeLe">{{ heure(l.message.envoyeLe) }}</time>
             </li>
@@ -367,11 +366,11 @@ const contexte = computed(() => {
                 <div v-else-if="l.message.type === 'coup_de_main'" class="demande" :class="{ 'demande--reglee': l.message.coupDeMain?.resoluLe }">
                   <p class="demande__titre">{{ t('cercles.salon.demandeTitre') }}</p>
                   <p class="message__texte">{{ l.message.texte }}</p>
-                  <p v-if="l.message.coupDeMain?.resoluLe" class="demande__statut">✓ {{ l.message.coupDeMain.resoluPar ? t('cercles.salon.regleePar', { nom: prenom(l.message.coupDeMain.resoluPar.nom) }) : t('cercles.salon.reglee') }}</p>
+                  <p v-if="l.message.coupDeMain?.resoluLe" class="demande__statut"><IconeCercle nom="coche" :taille="14" /> {{ l.message.coupDeMain.resoluPar ? t('cercles.salon.regleePar', { nom: prenom(l.message.coupDeMain.resoluPar.nom) }) : t('cercles.salon.reglee') }}</p>
                 </div>
 
                 <div v-else-if="l.message.type === 'decision'" class="decision-fil" data-test="decision-fil">
-                  <p class="decision-fil__titre">📌 {{ t('cercles.qg.decisionPrise') }}</p>
+                  <p class="decision-fil__titre"><IconeCercle nom="decisions" :taille="14" /> {{ t('cercles.qg.decisionPrise') }}</p>
                   <p class="message__texte">{{ l.message.texte }}</p>
                 </div>
 
@@ -392,7 +391,7 @@ const contexte = computed(() => {
         <div class="modes" role="radiogroup" :aria-label="t('cercles.salon.modes')">
           <button type="button" role="radio" :aria-checked="mode === 'texte'" class="mode" :class="{ actif: mode === 'texte' }" data-test="mode-texte" @click="choisir('texte')">{{ t('cercles.salon.modeTexte') }}</button>
           <button type="button" role="radio" :aria-checked="mode === 'point'" class="mode" :class="{ actif: mode === 'point' }" data-test="mode-point" @click="choisir('point')">
-            {{ t('cercles.salon.modePoint') }}<span v-if="pointFait" class="mode__fait" aria-hidden="true"> ✓</span>
+            {{ t('cercles.salon.modePoint') }}<IconeCercle v-if="pointFait" nom="coche" :taille="14" class="mode__fait" />
           </button>
           <button type="button" role="radio" :aria-checked="mode === 'coup_de_main'" class="mode mode--bloque" :class="{ actif: mode === 'coup_de_main' }" data-test="mode-bloque" @click="choisir('coup_de_main')">{{ t('cercles.salon.modeBloque') }}</button>
         </div>
@@ -430,8 +429,6 @@ const contexte = computed(() => {
         </div>
       </form>
     </div>
-    <TableauDuTour :key="tour?.projetId ?? 'aucun'" :projet-id="tour?.projetId ?? null" :membres="membres" :moi-id="moi?.id ?? null" :points-du-jour="pointsDuJour" />
-    </div>
   </section>
 </template>
 
@@ -467,8 +464,6 @@ const contexte = computed(() => {
 .appel__bouton:focus-visible, .appel__fin:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 @keyframes pulse { 70% { box-shadow: 0 0 0 8px rgb(46 173 95 / 0); } 100% { box-shadow: 0 0 0 0 rgb(46 173 95 / 0); } }
 
-.salon__grille { display: grid; gap: var(--space-4); grid-template-columns: minmax(0, 1fr) minmax(22rem, 26rem); align-items: start; }
-@media (max-width: 1000px) { .salon__grille { grid-template-columns: minmax(0, 1fr); } }
 .salon__corps { display: grid; gap: var(--space-4); padding: 0; overflow: hidden; }
 
 /* Les coups de main épinglés : la seule zone chaude du salon. */
@@ -498,7 +493,7 @@ const contexte = computed(() => {
 
 /* Les étapes du cercle : une ligne de chronique, centrée, discrète. */
 .evenement { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: var(--space-2); margin: var(--space-2) 0; color: var(--ink-muted); font-size: var(--type-body-sm-size); text-align: center; }
-.evenement__icone { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--surface-raised); border: 1px solid var(--line); font-size: 13px; }
+.evenement__icone { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--line); color: var(--ink-muted); }
 .evenement__heure { font-size: 0.75rem; opacity: 0.8; }
 .evenement--tirage, .evenement--tour_ouvert, .evenement--tour_livre, .evenement--cercle_termine { color: var(--ink); font-weight: 600; }
 
