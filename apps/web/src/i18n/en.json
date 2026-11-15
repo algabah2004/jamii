@@ -888,6 +888,17 @@
     "avancement": "Turn progress",
     "taches": "{faites} of {total} tasks",
     "joursRestants": "last day | 1 day left | {n} days left",
+    "tachesTour": {
+      "titre": "The turn's tasks",
+      "aucune": "No tasks yet. Break the project into small tasks: everyone picks the one they want.",
+      "nouvelle": "A new task (for example: sign-in screen)",
+      "ajouter": "Add",
+      "prendre": "I'll take it",
+      "lacher": "Drop it",
+      "prisePar": "Taken by {nom}",
+      "erreur": "The task couldn't be saved. Try again.",
+      "concurrente": "Someone changed this task in the meantime: the list is up to date, try again."
+    },
     "depot": "The project repository",
     "avantTirage": "The turn order has not been drawn yet.",
     "avantTirageAide": "The circle is full. | 1 more member is needed. | {n} more members are needed.",
@@ -915,7 +926,7 @@
     "ideeAide": "Who it is for and what it should do. The circle builds it during your turn.",
     "enregistrerIdee": "Save my idea",
     "tirer": "Draw the turn order",
-    "tirageAide": "Possible once the circle is full and everyone has shared an idea. The server draws the order once.",
+    "tirageAide": "Any member can start it once the circle is full and everyone has shared an idea. The server draws at random, only once.",
     "erreurs": {
       "cercle_complet": "The circle is already full.",
       "deja_membre": "You are already in this circle.",
@@ -1856,7 +1867,13 @@
       "type": "Answer type",
       "obligatoire": "Required answer",
       "aideQuestion": "Hint (optional)",
-      "aidePlaceholder": "E.g. a public link that opens without an account",
+      "aidePlaceholder": {
+        "texte_court": "E.g. a public link that opens without an account",
+        "texte_long": "E.g. a few sentences are enough",
+        "choix_unique": "E.g. pick the one closest to you",
+        "choix_multiples": "E.g. tick everything that applies",
+        "oui_non": "E.g. answer for today, not for later"
+      },
       "choix": "Possible choices ({min} to {max})",
       "choixN": "Choice {n}",
       "ajouterChoix": "+ Add a choice",

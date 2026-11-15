@@ -888,6 +888,17 @@
     "avancement": "Avancement du tour",
     "taches": "{faites} tâches sur {total}",
     "joursRestants": "dernier jour | 1 jour restant | {n} jours restants",
+    "tachesTour": {
+      "titre": "Les tâches du tour",
+      "aucune": "Pas encore de tâche. Découpez le projet en petites tâches : chacun prend celle qu’il veut.",
+      "nouvelle": "Une nouvelle tâche (par exemple : écran de connexion)",
+      "ajouter": "Ajouter",
+      "prendre": "Je prends",
+      "lacher": "Je lâche",
+      "prisePar": "Prise par {nom}",
+      "erreur": "La tâche n’a pas pu être enregistrée. Réessayez.",
+      "concurrente": "Quelqu’un a modifié cette tâche entre-temps : la liste est à jour, réessayez."
+    },
     "depot": "Le dépôt du projet",
     "avantTirage": "L'ordre de passage n'est pas encore tiré.",
     "avantTirageAide": "Le cercle est complet. | Il manque 1 membre. | Il manque {n} membres.",
@@ -915,7 +926,7 @@
     "ideeAide": "Pour qui, et ce qu'il doit faire. Le cercle le construira pendant ton tour.",
     "enregistrerIdee": "Enregistrer mon idée",
     "tirer": "Tirer l'ordre au sort",
-    "tirageAide": "Possible quand le cercle est complet et que chacun a déposé son idée. Le tirage est fait une seule fois, par le serveur.",
+    "tirageAide": "N'importe quel membre peut le lancer, quand le cercle est complet et que chacun a déposé son idée. C'est le serveur qui tire au hasard, une seule fois.",
     "erreurs": {
       "cercle_complet": "Le cercle est déjà complet.",
       "deja_membre": "Tu fais déjà partie de ce cercle.",
@@ -1856,7 +1867,13 @@
       "type": "Type de réponse",
       "obligatoire": "Réponse obligatoire",
       "aideQuestion": "Précision (facultatif)",
-      "aidePlaceholder": "Ex. : un lien public, que l'on peut ouvrir sans compte",
+      "aidePlaceholder": {
+        "texte_court": "Ex. : un lien public, que l'on peut ouvrir sans compte",
+        "texte_long": "Ex. : quelques phrases suffisent",
+        "choix_unique": "Ex. : choisis ce qui te ressemble le plus",
+        "choix_multiples": "Ex. : coche tout ce qui convient",
+        "oui_non": "Ex. : réponds pour aujourd'hui, pas pour plus tard"
+      },
       "choix": "Les choix possibles ({min} à {max})",
       "choixN": "Choix {n}",
       "ajouterChoix": "+ Ajouter un choix",

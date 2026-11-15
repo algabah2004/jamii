@@ -221,7 +221,9 @@ class CerclesController {
 			.map(m -> new Tour(m.rang(), statutTour(m, cercle), personne(comptes.get(m.utilisateurId())), m.projetId(),
 					m.depotUrl() == null ? null : new Depot(m.depotFournisseur(), m.depotUrl(), m.depotCloneUrl()), m.livreLe()))
 			.toList();
-		Tirage tirage = cercle.tirageLe() == null ? null : new Tirage(cercle.tirageLe(), cercle.createurId());
+		// Qui a lancé le tirage : n'importe quel membre depuis #157 (le créateur, pour les cercles tirés avant).
+		Tirage tirage = cercle.tirageLe() == null ? null
+				: new Tirage(cercle.tirageLe(), cercle.tireParId() != null ? cercle.tireParId() : cercle.createurId());
 		return new Cercle(cercle.id(), cercle.nom(), cercle.ville(), cercle.taille(), cercle.statut(), cercle.nombreMembres(),
 				personne(comptes.get(cercle.createurId())), cercle.creeLe(), membres, tours, cercle.tourEnCours(), tirage,
 				new Moi(cercle.createurId().equals(moi), estMembre));

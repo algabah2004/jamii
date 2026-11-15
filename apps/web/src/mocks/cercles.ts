@@ -31,12 +31,18 @@ function membre(i: number, rang: number | null, avecIdee = true): MembreCercle {
 }
 
 /** Un projet par tour ouvert : sa date de création et ses tâches donnent l'avancement (contracts/projets.yaml). */
-const projets = new Map<string, { creeLe: string; livrees: number; total: number }>()
+type TacheMock = { id: string; titre: string; statut: 'a_faire' | 'en_cours' | 'livree'; assignee: Personne | null; proposeeParIa: boolean; version: number; creeLe: string; livreeLe: string | null; jalonId: null; echeance: null }
+const projets = new Map<string, { creeLe: string; taches: TacheMock[] }>()
+let suivanteTache = 1
+const nouvelleTache = (titre: string, statut: TacheMock['statut'], creeLe: string, proposeeParIa = false): TacheMock => ({
+  id: `7a5c0000-0000-4000-8000-${String(suivanteTache++).padStart(12, '0')}`, titre, statut, assignee: null, proposeeParIa, version: 1, creeLe, livreeLe: statut === 'livree' ? creeLe : null, jalonId: null, echeance: null,
+})
 let suivantProjet = 1
 
 function ouvrirTour(t: Tour, depuisJours: number, livrees: number, total: number): Tour {
   const projetId = `b1d2c3a4-0000-4000-8000-${String(suivantProjet++).padStart(12, '0')}`
-  projets.set(projetId, { creeLe: ilYa(depuisJours), livrees, total })
+  const creeLe = ilYa(depuisJours)
+  projets.set(projetId, { creeLe, taches: Array.from({ length: total }, (_, i) => nouvelleTache(`Tâche ${i + 1}`, i < livrees ? 'livree' : 'a_faire', creeLe, true)) })
   const nom = slug(PERSONNES.find((x) => x.personne.id === t.beneficiaire.id)?.idee ?? t.beneficiaire.nom)
   return { ...t, statut: 'en_cours', projetId, depot: { fournisseur: 'gitea', url: `https://code.example.com/cercles/${nom}`, cloneUrl: `https://code.example.com/cercles/${nom}.git` } }
 }
@@ -180,7 +186,7 @@ export const handlersCercles = [
   http.post('/api/cercles/:id/tirage', ({ params }) => {
     const c = trouver(params.id)
     if (!c) return erreur('introuvable', 404)
-    if (!c.moi.estCreateur) return erreur('interdit', 403)
+    if (!c.moi.estMembre) return erreur('interdit', 403)
     if (c.tirage) return erreur('tirage_deja_fait')
     if (c.membres.length < c.taille) return erreur('cercle_incomplet')
     if (c.membres.some((m) => !m.aDeposeIdee)) return erreur('idees_manquantes')
@@ -218,8 +224,28 @@ export const handlersCercles = [
   }),
   http.get('/api/projets/:projetId/taches', ({ params }) => {
     const pr = projets.get(String(params.projetId))
+    return pr ? HttpResponse.json({ elements: pr.taches, suivant: null }) : erreur('introuvable', 404)
+  }),
+  http.post('/api/projets/:projetId/taches', async ({ params, request }) => {
+    const pr = projets.get(String(params.projetId))
     if (!pr) return erreur('introuvable', 404)
-    const elements = Array.from({ length: pr.total }, (_, i) => ({ id: `t${i}`, titre: `Tâche ${i + 1}`, statut: i < pr.livrees ? 'livree' : 'a_faire', proposeeParIa: true, version: 1, creeLe: pr.creeLe }))
-    return HttpResponse.json({ elements, suivant: null })
+    const { titre } = (await request.json()) as { titre?: string }
+    if (!titre || titre.trim().length < 3) return erreur('invalide', 400)
+    const tache = nouvelleTache(titre.trim(), 'a_faire', new Date().toISOString())
+    pr.taches.push(tache)
+    return HttpResponse.json(tache, { status: 201 })
+  }),
+  http.patch('/api/projets/:projetId/taches/:tacheId', async ({ params, request }) => {
+    const pr = projets.get(String(params.projetId))
+    const i = pr?.taches.findIndex((x) => x.id === params.tacheId) ?? -1
+    if (!pr || i < 0) return erreur('introuvable', 404)
+    const corps = (await request.json()) as { version: number; statut?: TacheMock['statut']; assigneeId?: string | null }
+    const avant = pr.taches[i]!
+    if (corps.version !== avant.version) return erreur('modification_concurrente', 409)
+    const assignee = corps.assigneeId === undefined ? avant.assignee : corps.assigneeId === null ? null : (PERSONNES.find((x) => x.personne.id === corps.assigneeId)?.personne ?? null)
+    const statut = corps.statut ?? avant.statut
+    const apres = { ...avant, assignee, statut, version: avant.version + 1, livreeLe: statut === 'livree' ? new Date().toISOString() : null }
+    pr.taches[i] = apres
+    return HttpResponse.json(apres)
   }),
 ]

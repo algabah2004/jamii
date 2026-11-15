@@ -7,7 +7,8 @@ import { useSession } from '../../session'
 import ProfilsRecommandes from '../reseau/ProfilsRecommandes.vue'
 import PartagerCercle from './PartagerCercle.vue'
 import CodeDuTour from './CodeDuTour.vue'
-import { avantTirage, deposerIdee, LIMITES, lireAvancement, lireCercle, livrerTour, ordreDePassage, positionsAnneau, pourcentage, rejoindreCercle, tirerAuSort, titreDuTour, tourEnCours, type Avancement, type Cercle, type Resultat } from './cercles'
+import TachesDuTour from './TachesDuTour.vue'
+import { avancement, avantTirage, deposerIdee, LIMITES, lireAvancement, lireCercle, livrerTour, ordreDePassage, positionsAnneau, pourcentage, rejoindreCercle, tirerAuSort, titreDuTour, tourEnCours, type Avancement, type Cercle, type Resultat, type Tache } from './cercles'
 
 /*
  * La page d'un cercle : qui en fait partie, l'ordre de passage, le tour en cours et où il en est.
@@ -48,6 +49,12 @@ watch(
   },
   { immediate: true },
 )
+// Quand on coche ou ajoute une tâche, la barre suit sans recharger : même jour du tour, nouveau compte.
+function majTaches(taches: Tache[]) {
+  if (!suivi.value) return
+  const { faites, total } = avancement(new Date().toISOString(), taches)
+  suivi.value = { ...suivi.value, faites, total }
+}
 // Avant le tirage, l'anneau montre aussi les places libres : on voit combien il manque de monde.
 const places = computed(() => positionsAnneau(cercle.value ? Math.max(cercle.value.taille, ordre.value.length) : 0))
 const placesLibres = computed(() => places.value.slice(ordre.value.length))
@@ -166,6 +173,7 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
               </div>
               <p>{{ t('cercles.taches', { faites: suivi.faites, total: suivi.total }) }} · {{ t('cercles.joursRestants', { n: suivi.joursRestants }, suivi.joursRestants) }}</p>
             </div>
+            <TachesDuTour v-if="membre && tour.projetId" :key="tour.projetId" :projet-id="tour.projetId" :moi-id="moi?.id ?? null" @maj="majTaches" />
             <CodeDuTour :key="`${cercle.id}-${tour.numero}`" :cercle-id="cercle.id" :numero="tour.numero" />
             <template v-if="peutLivrer">
               <JDeplier>
@@ -218,8 +226,8 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
             </template>
 
             <!-- Le tirage est fait par le serveur, une seule fois : ici on ne fait que le demander. -->
-            <JBouton v-if="createur" :desactive="!preparation.pret" :occupe="action === 'tirage'" data-test="tirer" @click="agir('tirage', () => tirerAuSort(cercle!.id))">{{ t('cercles.tirer') }}</JBouton>
-            <p v-if="createur" class="texte-discret">{{ t('cercles.tirageAide') }}</p>
+            <JBouton v-if="membre" :desactive="!preparation.pret" :occupe="action === 'tirage'" data-test="tirer" @click="agir('tirage', () => tirerAuSort(cercle!.id))">{{ t('cercles.tirer') }}</JBouton>
+            <p v-if="membre" class="texte-discret">{{ t('cercles.tirageAide') }}</p>
             <p v-if="erreur" role="alert" class="erreur">{{ erreur }}</p>
           </section>
 
