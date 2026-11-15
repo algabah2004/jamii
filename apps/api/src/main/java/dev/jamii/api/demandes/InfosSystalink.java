@@ -8,23 +8,20 @@ import java.util.Base64;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import dev.jamii.api.auth.Annuaire;
 import dev.jamii.api.auth.Compte;
-import dev.jamii.api.auth.Role;
 import dev.jamii.api.auth.UtilisateurConnecte;
 import dev.jamii.api.profils.ProfilsPublies;
+import dev.jamii.api.systalink.AccesSystalink;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -69,32 +66,19 @@ class InfosSystalink {
 
 	private final ProfilsPublies profils;
 
-	private final Set<String> acces;
+	private final AccesSystalink acces;
 
-	InfosSystalink(JdbcClient base, JsonMapper json, Annuaire annuaire, ProfilsPublies profils,
-			@Value("${jamii.clients-systalink.acces:}") String acces) {
+	InfosSystalink(JdbcClient base, JsonMapper json, Annuaire annuaire, ProfilsPublies profils, AccesSystalink acces) {
 		this.base = base;
 		this.json = json;
 		this.annuaire = annuaire;
 		this.profils = profils;
-		this.acces = java.util.Arrays.stream(acces.split(","))
-			.map(a -> a.strip().toLowerCase(Locale.ROOT))
-			.filter(a -> !a.isEmpty())
-			.collect(Collectors.toUnmodifiableSet());
+		this.acces = acces;
 	}
 
-	/** Le rôle `systalink` : un admin, ou un login GitHub ou un e-mail listé dans `SYSTALINK_ACCES`. */
+	/** Le rôle `systalink` (voir {@link AccesSystalink}). */
 	boolean aAcces(UtilisateurConnecte moi) {
-		if (moi.roles().contains(Role.ADMIN)) {
-			return true;
-		}
-		if (acces.isEmpty()) {
-			return false;
-		}
-		Optional<String> login = annuaire.lire(moi.id()).map(Compte::loginGithub);
-		Optional<String> email = annuaire.emailDeContact(moi.id());
-		return login.map(l -> acces.contains(l.toLowerCase(Locale.ROOT))).orElse(false)
-				|| email.map(e -> acces.contains(e.toLowerCase(Locale.ROOT))).orElse(false);
+		return acces.aAcces(moi);
 	}
 
 	@Transactional(readOnly = true)

@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import dev.jamii.api.auth.UtilisateurConnecte;
 
-/** Tendances du marché (public) et clients suivis (rôle Systalink) : contracts/systalink.yaml v0.2. */
+/** Tendances du marché et clients suivis, réservés au rôle Systalink : contracts/systalink.yaml v0.2. */
 @RestController
 class InfosSystalinkController {
 
@@ -36,7 +36,11 @@ class InfosSystalinkController {
 	}
 
 	@GetMapping("/api/systalink/tendances")
-	ResponseEntity<?> tendances(@RequestParam(required = false) String periode) {
+	ResponseEntity<?> tendances(@RequestParam(required = false) String periode,
+			@AuthenticationPrincipal UtilisateurConnecte moi) {
+		if (!infos.aAcces(moi)) {
+			return probleme(HttpStatus.FORBIDDEN, "interdit", null);
+		}
 		String p = periode == null || periode.isBlank() ? "mois" : periode;
 		Duration duree = switch (p) {
 			case "semaine" -> Duration.ofDays(7);
@@ -48,7 +52,7 @@ class InfosSystalinkController {
 			return probleme(HttpStatus.BAD_REQUEST, "validation", List.of(Map.of("champ", "periode", "code", "format_invalide")));
 		}
 		Instant depuis = duree == null ? null : Instant.now().minus(duree);
-		return ResponseEntity.ok().cacheControl(CacheControl.maxAge(Duration.ofMinutes(5)).cachePublic())
+		return ResponseEntity.ok().cacheControl(CacheControl.maxAge(Duration.ofMinutes(5)).cachePrivate())
 			.body(infos.tendances(p, depuis));
 	}
 

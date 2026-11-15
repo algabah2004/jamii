@@ -88,7 +88,7 @@ class InfosSystalinkTest {
 	}
 
 	@Test
-	void les_tendances_sont_publiques_et_regroupent_les_petits_secteurs() throws Exception {
+	void les_tendances_sont_reservees_a_systalink_et_regroupent_les_petits_secteurs() throws Exception {
 		String frequent = "sante-" + UUID.randomUUID().toString().substring(0, 6);
 		String rare = "rare-" + UUID.randomUUID().toString().substring(0, 6);
 		UtilisateurConnecte auteur = utilisateur("Auteur", "auteur." + UUID.randomUUID() + "@ex.sn", null);
@@ -97,7 +97,13 @@ class InfosSystalinkTest {
 		}
 		demande(auteur, rare, false, "Besoin rare");
 
-		MvcTestResult reponse = mvc.get().uri("/api/systalink/tendances?periode=semaine").exchange();
+		UtilisateurConnecte curieux = utilisateur("Curieux", "c." + UUID.randomUUID() + "@ex.sn", "curieux");
+		UtilisateurConnecte systalink = utilisateur("Systalink", "s." + UUID.randomUUID() + "@ex.sn", "equipe-systalink");
+		assertThat(mvc.get().uri("/api/systalink/tendances").exchange()).hasStatus(HttpStatus.UNAUTHORIZED);
+		assertThat(mvc.get().uri("/api/systalink/tendances").with(oauth2Login().oauth2User(curieux)).exchange())
+			.hasStatus(HttpStatus.FORBIDDEN);
+
+		MvcTestResult reponse = mvc.get().uri("/api/systalink/tendances?periode=semaine").with(oauth2Login().oauth2User(systalink)).exchange();
 
 		assertThat(reponse).hasStatusOk();
 		String texte = reponse.getResponse().getContentAsString();
@@ -106,7 +112,8 @@ class InfosSystalinkTest {
 		JsonNode tendances = corps(reponse);
 		assertThat(tendances.get("services").toString()).contains("orion", "datacloud-stockage");
 		assertThat(tendances.get("competencesManquantes").toString()).contains("react");
-		assertThat(mvc.get().uri("/api/systalink/tendances?periode=annee").exchange()).hasStatus(HttpStatus.BAD_REQUEST);
+		assertThat(mvc.get().uri("/api/systalink/tendances?periode=annee").with(oauth2Login().oauth2User(systalink)).exchange())
+			.hasStatus(HttpStatus.BAD_REQUEST);
 	}
 
 	@Test

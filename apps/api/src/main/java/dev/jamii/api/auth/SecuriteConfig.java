@@ -35,14 +35,14 @@ class SecuriteConfig {
 				// /error : pour qu'une route publique inconnue réponde 404, et non 401.
 				.requestMatchers("/health", "/health/**", "/api/auth/**", "/error").permitAll()
 				// Lectures publiques, sans connexion (le jury, un visiteur) : uniquement ces routes et seulement
-				// en GET. Elles ne montrent que des chiffres agrégés et ce que les projets montrent déjà à tous
-				// (contracts/systalink.yaml et contracts/vitrine.yaml, `security: []`). Toute autre route reste fermée.
+				// en GET. Elles ne montrent que ce que les projets montrent déjà à tous (contracts/vitrine.yaml,
+				// `security: []`). Toute autre route reste fermée. L'espace Systalink est réservé à son équipe (AccesSystalink).
 				// /api/profils/* : un profil publié, pour le lien partagé (#159). La recherche (/api/profils) reste réservée.
 				// /api/missions et /api/missions/* : les annonces publiques (contracts/missions.yaml). Le module décide, mission
 				// par mission, de ce que la personne a le droit de voir (404 sinon) ; le détail du travail reste fermé.
 				// /api/hackathons/*/equipes et /resultats : les équipes d'un hackathon publié et ses résultats une fois publiés
 				// (contracts/hackathons.yaml), sans les inscriptions ni les notes. /discussion : ses annonces, publiques comme lui.
-				.requestMatchers(HttpMethod.GET, "/api/systalink/tableau-de-bord", "/api/systalink/tendances", "/api/vitrine",
+				.requestMatchers(HttpMethod.GET, "/api/vitrine",
 						"/api/profils/*", "/api/missions", "/api/missions/*", "/api/hackathons", "/api/hackathons/*", "/api/hackathons/*/equipes",
 						"/api/hackathons/*/resultats", "/api/hackathons/*/discussion")
 				.permitAll()

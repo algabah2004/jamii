@@ -19,6 +19,17 @@ async function monter(adresse = '/systalink') {
 }
 
 describe('Tableau de bord Systalink', () => {
+  it('dit « réservé » à une personne connectée qui ne fait pas partie de l’équipe Systalink', async () => {
+    serveur.use(
+      http.get('/api/systalink/tableau-de-bord', () =>
+        HttpResponse.json({ code: 'interdit' }, { status: 403, headers: { 'Content-Type': 'application/problem+json' } }),
+      ),
+    )
+    const { page } = await monter()
+    expect(page.get('[data-test="reserve"]').text()).toContain('Réservé à l’équipe Systalink')
+    expect(page.find('[data-test="datacloud"]').exists()).toBe(false)
+  })
+
   it('met en avant les projets sur DataCloud et leur part parmi les projets en ligne', async () => {
     const { page } = await monter()
     const bloc = page.get('[data-test="datacloud"]').text()
