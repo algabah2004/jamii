@@ -752,7 +752,7 @@
       "faite": "Ta demande est publiée depuis le {date}. La communauté peut la voir.",
       "resumePublie": "Ce que la communauté voit :",
       "invalide": "Le résumé doit faire entre {min} et {max} caractères.",
-      "pasPrete": "Le cahier des charges n'est pas encore prêt. Réessaie dans un instant.",
+      "pasPrete": "Jamii attend encore l'analyse de l'IA pour ton besoin. Tu pourras le publier dès qu'elle sera terminée.",
       "dejaPubliee": "Cette demande est déjà publiée.",
       "erreur": "Ta demande n'a pas pu être publiée. Réessaie dans un instant.",
       "apercu": "Ce que la communauté verra",

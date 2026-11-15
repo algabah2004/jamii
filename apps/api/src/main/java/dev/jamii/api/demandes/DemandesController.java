@@ -202,7 +202,8 @@ class DemandesController {
 		}
 		Instant maintenant = Instant.now();
 		var etat = gestion.orientation(fiche.get(), maintenant);
-		if (!"terminee".equals(etat.statut()) || etat.resultat() == null) {
+		// Une orientation de secours (service IA injoignable) ne se publie pas : on attend la vraie analyse.
+		if (!"terminee".equals(etat.statut()) || etat.resultat() == null || etat.secours()) {
 			return probleme(HttpStatus.CONFLICT, "plan_non_pret", "Le cahier des charges n'est pas encore prêt", null);
 		}
 		try {

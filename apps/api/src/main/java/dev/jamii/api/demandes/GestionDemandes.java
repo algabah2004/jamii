@@ -94,7 +94,16 @@ class GestionDemandes {
 	}
 
 	/** L'état de l'orientation, tel que le service IA le décrit. Les champs absents ne sont pas écrits. */
-	record Etat(String statut, String origine, JsonNode resultat, String erreurCode) {
+	/**
+	 * `secours` : l'orientation a été calculée ici parce que le service IA ne répondait pas. Elle se lit, mais ne se publie
+	 * pas : ses compétences sont génériques, et une publication est définitive (revue de @sowibrr sur #263).
+	 */
+	record Etat(String statut, String origine, JsonNode resultat, String erreurCode, boolean secours) {
+
+		Etat(String statut, String origine, JsonNode resultat, String erreurCode) {
+			this(statut, origine, resultat, erreurCode, false);
+		}
+
 	}
 
 	/** Trop de demandes : à reprendre dans `attenteSecondes`. */
@@ -219,7 +228,7 @@ class GestionDemandes {
 			}
 			// Le secours n'est pas enregistré : dès que l'IA revient, la lecture suivante lui redonne la main.
 			PlansIa.Etat repli = secours.lire(secours.deposer(demande.cleIa(), entree));
-			return new Etat(repli.statut(), "repli", repli.resultat(), null);
+			return new Etat(repli.statut(), "repli", repli.resultat(), null, true);
 		}
 	}
 

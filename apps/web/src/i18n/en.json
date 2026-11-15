@@ -752,7 +752,7 @@
       "faite": "Your request has been published since {date}. The community can see it.",
       "resumePublie": "What the community sees:",
       "invalide": "The summary must be between {min} and {max} characters.",
-      "pasPrete": "The specification is not ready yet. Try again in a moment.",
+      "pasPrete": "Jamii is still waiting for the AI analysis of your need. You can publish it as soon as it is done.",
       "dejaPubliee": "This request is already published.",
       "erreur": "Your request could not be published. Try again in a moment.",
       "apercu": "What the community will see",

@@ -138,7 +138,7 @@ describe('publier sa demande', () => {
     await vi.waitFor(() => expect(page.find('[data-test="publication-formulaire"]').exists()).toBe(true), { timeout: 4000 })
     await page.get('[data-test="publication-formulaire"]').trigger('submit')
     await vi.waitFor(() => expect(page.find('[data-test="publication-erreur"]').exists()).toBe(true))
-    expect(page.get('[data-test="publication-erreur"]').text()).toContain('pas encore prêt')
+    expect(page.get('[data-test="publication-erreur"]').text()).toContain('Tu pourras le publier')
     expect(page.find('[data-test="publiee"]').exists()).toBe(false)
   })
 
