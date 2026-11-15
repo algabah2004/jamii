@@ -37,6 +37,10 @@ class ConnexionGithub implements OAuth2UserService<OAuth2UserRequest, OAuth2User
 		if (!(profil.getAttribute("id") instanceof Number githubId) || !(profil.getAttribute("login") instanceof String login)) {
 			throw new OAuth2AuthenticationException(new OAuth2Error("profil_github_invalide"));
 		}
+		java.util.UUID aLier = SecuriteConfig.compteALier();
+		if (aLier != null) {
+			return comptes.lier(aLier, githubId.longValue(), login, profil.getAttribute("avatar_url"));
+		}
 		return comptes.enregistrer(githubId.longValue(), login, profil.getAttribute("name"), profil.getAttribute("avatar_url"));
 	}
 

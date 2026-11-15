@@ -34,6 +34,12 @@ class SecuriteConfig {
 
 	private static final String ATTRIBUT_RETOUR = "jamii.retour";
 
+	/** L'identifiant du compte connecté qui relie son GitHub (`/api/auth/github?lier=1`, proposition 0005). */
+	static final String ATTRIBUT_LIER = "jamii.lier";
+
+	/** Là où revient une personne qui a relié son GitHub, ou qui n'y est pas arrivée. */
+	static final String RETOUR_LIER = "/profil";
+
 	@Bean
 	SecurityFilterChain securite(HttpSecurity http, ConnexionGithub connexionGithub, ErreursSecurite erreurs,
 			ClientRegistrationRepository clients, @Value("${jamii.web-url}") String webUrl) {
@@ -57,9 +63,14 @@ class SecuriteConfig {
 				.authorizationEndpoint(debut -> debut.authorizationRequestResolver(resolveurAvecRetour(clients)))
 				.redirectionEndpoint(retour -> retour.baseUri("/api/auth/*/retour"))
 				.userInfoEndpoint(profil -> profil.userService(connexionGithub))
-				.successHandler((requete, reponse, auth) -> reponse.sendRedirect(webUrl + retirerRetour(requete)))
-				.failureHandler((requete, reponse, echec) -> reponse
-					.sendRedirect(webUrl + "/connexion?erreur=" + codeEchec(echec, requete.getRequestURI()))))
+				.successHandler((requete, reponse, auth) -> {
+					boolean lier = retirerLier(requete);
+					reponse.sendRedirect(webUrl + (lier ? RETOUR_LIER + "?github=relie" : retirerRetour(requete)));
+				})
+				.failureHandler((requete, reponse, echec) -> {
+					String code = codeEchec(echec, requete.getRequestURI());
+					reponse.sendRedirect(webUrl + (retirerLier(requete) ? RETOUR_LIER + "?erreurGithub=" + code : "/connexion?erreur=" + code));
+				}))
 			.logout(sortie -> sortie.logoutUrl("/api/auth/deconnexion")
 				.logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT))
 				.deleteCookies("JAMII_SESSION"))
@@ -91,6 +102,15 @@ class SecuriteConfig {
 					return null;
 				}
 				requete.getSession().setAttribute(ATTRIBUT_RETOUR, CheminRetour.valider(requete.getParameter("retour")));
+				// Relier son GitHub : seulement pour une personne déjà connectée. Sinon, une connexion GitHub ordinaire.
+				var connecte = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+				if (!google && "1".equals(requete.getParameter("lier")) && connecte != null
+						&& connecte.getPrincipal() instanceof UtilisateurConnecte moi) {
+					requete.getSession().setAttribute(ATTRIBUT_LIER, moi.id());
+				}
+				else {
+					requete.getSession().removeAttribute(ATTRIBUT_LIER);
+				}
 				return parDefaut.resolve(requete);
 			}
 
@@ -100,6 +120,25 @@ class SecuriteConfig {
 			}
 
 		};
+	}
+
+	/** Le compte à relier, lu pendant le retour de GitHub (la requête en cours), ou `null`. */
+	static java.util.UUID compteALier() {
+		if (!(org.springframework.web.context.request.RequestContextHolder.getRequestAttributes()
+				instanceof org.springframework.web.context.request.ServletRequestAttributes attributs)) {
+			return null;
+		}
+		HttpSession session = attributs.getRequest().getSession(false);
+		return session != null && session.getAttribute(ATTRIBUT_LIER) instanceof java.util.UUID id ? id : null;
+	}
+
+	static boolean retirerLier(HttpServletRequest requete) {
+		HttpSession session = requete.getSession(false);
+		if (session == null || session.getAttribute(ATTRIBUT_LIER) == null) {
+			return false;
+		}
+		session.removeAttribute(ATTRIBUT_LIER);
+		return true;
 	}
 
 	static String retirerRetour(HttpServletRequest requete) {
@@ -137,6 +176,7 @@ class SecuriteConfig {
 		}
 		return switch (oauth.getError().getErrorCode()) {
 			case "access_denied" -> "refus_github";
+			case "github_deja_utilise", "compte_deja_relie" -> oauth.getError().getErrorCode();
 			case "invalid_state_parameter", "authorization_request_not_found", "invalid_request" -> "requete_invalide";
 			default -> "github_indisponible";
 		};

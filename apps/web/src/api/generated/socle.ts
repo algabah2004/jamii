@@ -444,6 +444,8 @@ export interface operations {
             query?: {
                 /** @description Chemin du front où revenir après la connexion. Chemin relatif uniquement (pas de redirection ouverte). */
                 retour?: components["parameters"]["Retour"];
+                /** @description `1` : relier ce GitHub au compte **déjà connecté** (venu par Google ou par e-mail, proposition 0005), au lieu d'ouvrir une session. Retour sur `/profil?github=relie`, ou `/profil?erreurGithub=` avec `github_deja_utilise` (ce GitHub a déjà un compte Jamii), `compte_deja_relie` (ce compte a déjà un autre GitHub), `refus_github`, `github_indisponible` ou `requete_invalide`. Ignoré sans session. */
+                lier?: "1";
             };
             header?: never;
             path?: never;

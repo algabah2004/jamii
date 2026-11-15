@@ -94,6 +94,19 @@ class Utilisateur {
 		this.misAJourLe = maintenant;
 	}
 
+	/**
+	 * Relier un compte GitHub à un compte venu par Google ou par e-mail (proposition 0005) : le login sert à générer la
+	 * carte de compétences. Le nom reste celui que la personne a choisi ; l'avatar GitHub seulement s'il n'y en a pas.
+	 */
+	void lierGithub(long githubId, String login, String avatarUrl, Instant maintenant) {
+		this.githubId = githubId;
+		this.loginGithub = login;
+		if (this.avatarUrl == null) {
+			this.avatarUrl = avatarUrl;
+		}
+		this.misAJourLe = maintenant;
+	}
+
 	UUID id() {
 		return id;
 	}

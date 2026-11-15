@@ -97,7 +97,7 @@
       "regenerer": "Update from GitHub",
       "enCours": "Reading your GitHub repositories…",
       "prive": "Your profile stays private until you publish it.",
-      "sansGithub": "Your account is not linked to GitHub. Sign in with GitHub to generate your profile.",
+      "sansGithub": "Your account is not linked to GitHub yet. Link it to generate your skills card from your public repositories.",
       "tropSouvent": "You have already updated your profile several times this hour. Try again a little later.",
       "erreurs": {
         "github_indisponible": "GitHub is not responding right now. Your previous profile is kept: try again in a few minutes.",
@@ -108,6 +108,15 @@
         "sujets": "The topics of your repositories",
         "etoiles": "The stars of your repositories",
         "jamais": "Never your private repositories"
+      },
+      "relier": "Link my GitHub",
+      "relie": "Your GitHub is linked. You can generate your skills card.",
+      "erreursLien": {
+        "github_deja_utilise": "This GitHub is already linked to another Jamii account. Sign in with GitHub to find that account.",
+        "compte_deja_relie": "Your account is already linked to another GitHub.",
+        "refus_github": "You declined access on GitHub: nothing was linked.",
+        "requete_invalide": "Linking with GitHub expired. Try again.",
+        "github_indisponible": "GitHub is not responding right now. Try again in a moment."
       }
     },
     "disponibilite": {
