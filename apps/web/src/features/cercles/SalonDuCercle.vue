@@ -3,6 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import LienPersonne from '../../components/LienPersonne.vue'
 import { JAvatar } from '../../design-system'
+import TableauDuTour from './TableauDuTour.vue'
 import { useSession } from '../../session'
 import { ilYa } from '../vitrine/vitrine'
 import type { Avancement, Cercle } from './cercles'
@@ -310,7 +311,8 @@ const contexte = computed(() => {
     <p v-if="etat === 'chargement'" class="texte-discret" role="status">{{ t('etat.chargement') }}</p>
     <p v-else-if="etat === 'indisponible'" class="texte-discret" role="alert">{{ t('etat.indisponible') }}</p>
 
-    <div v-else class="salon__corps carte">
+    <div v-else class="salon__grille">
+    <div class="salon__corps carte">
       <!-- Épinglés : on aide d'abord qui bloque. -->
       <section v-if="coupsDeMain.length" class="coups" aria-labelledby="coups-titre" data-test="coups-de-main">
         <h3 id="coups-titre">{{ t('cercles.salon.coupsTitre', { n: coupsDeMain.length }, coupsDeMain.length) }}</h3>
@@ -423,6 +425,8 @@ const contexte = computed(() => {
         </div>
       </form>
     </div>
+    <TableauDuTour :key="tour?.projetId ?? 'aucun'" :projet-id="tour?.projetId ?? null" :membres="membres" :moi-id="moi?.id ?? null" :points-du-jour="pointsDuJour" />
+    </div>
   </section>
 </template>
 
@@ -458,6 +462,8 @@ const contexte = computed(() => {
 .appel__bouton:focus-visible, .appel__fin:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 @keyframes pulse { 70% { box-shadow: 0 0 0 8px rgb(46 173 95 / 0); } 100% { box-shadow: 0 0 0 0 rgb(46 173 95 / 0); } }
 
+.salon__grille { display: grid; gap: var(--space-4); grid-template-columns: minmax(0, 1fr) minmax(16rem, 21rem); align-items: start; }
+@media (max-width: 1000px) { .salon__grille { grid-template-columns: minmax(0, 1fr); } }
 .salon__corps { display: grid; gap: var(--space-4); padding: 0; overflow: hidden; }
 
 /* Les coups de main épinglés : la seule zone chaude du salon. */

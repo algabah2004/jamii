@@ -361,3 +361,26 @@ describe('le salon du cercle', () => {
     page.unmount()
   })
 })
+
+describe('le tableau de bord du salon', () => {
+  it('je prends une tâche libre, elle passe dans « Mes tâches », je la coche finie', async () => {
+    const { page } = await ouvrir(`/cercles/${ID_DAKAR}?onglet=salon`)
+    await vi.waitFor(() => expect(page.find('[data-test="prendre-libre"]').exists()).toBe(true))
+    expect(page.get('[data-test="mes-taches"]').findAll('li')).toHaveLength(0)
+    await page.get('[data-test="prendre-libre"]').trigger('click')
+    await vi.waitFor(() => expect(page.get('[data-test="mes-taches"]').findAll('li')).toHaveLength(1))
+    await page.get('[data-test="cocher-mienne"]').trigger('change')
+    await vi.waitFor(() => expect(page.get('[data-test="mes-taches"] li').classes()).toContain('tache--livree'))
+    expect(page.findAll('[data-test="membre-equipe"]')[0]!.text()).toContain('1/1 tâches livrées')
+    page.unmount()
+  })
+
+  it('chaque membre a son bouton « Écrire » vers la messagerie, sauf moi', async () => {
+    const { page } = await ouvrir(`/cercles/${ID_DAKAR}?onglet=salon`)
+    await vi.waitFor(() => expect(page.findAll('[data-test="membre-equipe"]')).toHaveLength(6))
+    const liens = page.findAll('[data-test="ecrire-membre"]').map((l) => l.attributes('href'))
+    expect(liens).toHaveLength(5)
+    expect(liens[0]).toMatch(/^\/messages\//)
+    page.unmount()
+  })
+})
