@@ -2,12 +2,13 @@
 import { computed, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { JBouton, JChamp, JSquelette } from '../../design-system'
-import { LIMITES_JURY, listerRendus, noter, type Hackathon, type Rendu } from './hackathons'
+import { LIMITES_JURY, lireMesNotes, listerRendus, noter, type Hackathon, type Rendu } from './hackathons'
 
 /*
  * Noter, côté juré (contracts/hackathons.yaml, `listerRendus` et `noter`) : chaque rendu à juger, une valeur de 1 à 5
  * par critère de la grille et un commentaire. Le rendu de sa propre équipe n'apparaît pas (conflit d'intérêts). On
  * peut renoter tant que les résultats ne sont pas publiés : les nouvelles notes remplacent les précédentes.
+ * Les notes déjà données sont relues (`lireMesNotes`) : le juré retrouve où il en est en revenant sur la page.
  */
 const props = defineProps<{ hackathon: Hackathon }>()
 const { t, locale } = useI18n()
@@ -20,16 +21,23 @@ const saisies = reactive<Record<string, Saisie>>({})
 
 // L'identifiant d'un critère est facultatif dans le contrat (absent à la création) : seuls les critères enregistrés se notent.
 const criteres = computed(() => props.hackathon.criteres.filter((c): c is typeof c & { id: string } => !!c.id))
+const dateLimite = computed(() => new Intl.DateTimeFormat(locale.value, { dateStyle: 'long', timeStyle: 'short' }).format(new Date(props.hackathon.calendrier.resultatsLe)))
 const score = (n: number) => new Intl.NumberFormat(locale.value, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)
+/** Combien de rendus ont déjà des notes enregistrées : le juré sait ce qu'il lui reste. */
+const notes = computed(() => rendus.value.filter((r) => saisies[r.id]?.score != null).length)
 const complet = (s: Saisie) => criteres.value.every((c) => s.valeurs[c.id] != null)
 const message = (code: string) =>
   t(`hackathons.notation.erreurs.${['etat_invalide', 'delai_depasse', 'conflit_interets', 'validation'].includes(code) ? code : 'autre'}`)
 
 async function charger() {
   try {
-    rendus.value = await listerRendus(props.hackathon.id)
-    for (const r of rendus.value) {
-      saisies[r.id] ??= { valeurs: Object.fromEntries(criteres.value.map((c) => [c.id, null])), commentaire: '', score: null, envoi: false, code: null }
+    const [lus, deja] = await Promise.all([listerRendus(props.hackathon.id), lireMesNotes(props.hackathon.id).catch(() => [])])
+    rendus.value = lus
+    for (const r of lus) {
+      const d = deja.find((n) => n.renduId === r.id)
+      const valeurs: Record<string, number | null> = Object.fromEntries(criteres.value.map((c) => [c.id, null]))
+      for (const n of d?.notes ?? []) if (n.critereId in valeurs) valeurs[n.critereId] = n.valeur
+      saisies[r.id] ??= { valeurs, commentaire: d?.commentaire ?? '', score: d?.scorePondere ?? null, envoi: false, code: null }
     }
     etat.value = 'pret'
   } catch {
@@ -64,8 +72,16 @@ async function envoyer(rendu: Rendu) {
     <p v-else-if="etat === 'indisponible'" role="alert" class="texte-discret">{{ t('hackathons.notation.indisponible') }}</p>
     <p v-else-if="!rendus.length" class="texte-discret" data-test="aucun-rendu">{{ t('hackathons.notation.aucun') }}</p>
     <template v-else>
-    <article v-for="r in rendus" :key="r.id" class="rendu" :aria-labelledby="`rendu-${r.id}`" data-test="rendu-a-noter">
-      <h3 :id="`rendu-${r.id}`">{{ r.titre }}</h3>
+    <div class="progression" data-test="progression">
+      <p><strong>{{ t('hackathons.notation.progression', { n: notes, total: rendus.length }, notes) }}</strong></p>
+      <progress :value="notes" :max="rendus.length" :aria-label="t('hackathons.notation.progression', { n: notes, total: rendus.length }, notes)" />
+      <p v-if="hackathon.calendrier.resultatsLe" class="texte-discret">{{ t('hackathons.notation.avant', { date: dateLimite }) }}</p>
+    </div>
+    <article v-for="r in rendus" :key="r.id" class="rendu" :data-note="saisies[r.id]?.score != null" :aria-labelledby="`rendu-${r.id}`" data-test="rendu-a-noter">
+      <div class="rendu__tete">
+        <h3 :id="`rendu-${r.id}`">{{ r.titre }}</h3>
+        <span v-if="saisies[r.id]?.score != null" class="pastille" data-test="deja-note">{{ t('hackathons.notation.note') }}</span>
+      </div>
       <!-- Texte libre de l'équipe : affiché échappé, avec ses retours à la ligne. -->
       <p class="texte">{{ r.description }}</p>
       <ul class="liens">
@@ -119,5 +135,11 @@ legend { font-weight: 600; margin-bottom: var(--space-1); }
 .valeurs { display: flex; flex-wrap: wrap; gap: var(--space-4); }
 .valeurs label { display: inline-flex; gap: var(--space-1); align-items: center; min-height: 44px; }
 .succes { margin: 0; font-weight: 600; }
+.progression { display: grid; gap: var(--space-2); padding: var(--space-4); border-radius: var(--radius-md); background: color-mix(in srgb, var(--action) 10%, transparent); }
+.progression p { margin: 0; }
+.progression progress { inline-size: 100%; block-size: 0.5rem; accent-color: var(--action); }
+.rendu[data-note='true'] { border-inline-start: 4px solid var(--action); }
+.rendu__tete { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; justify-content: space-between; }
+.pastille { padding: 2px var(--space-3); border-radius: var(--radius-pill); border: 1px solid var(--action); font-size: var(--type-body-sm-size); font-weight: 700; }
 .erreur { margin: 0; color: var(--danger); font-weight: 600; }
 </style>

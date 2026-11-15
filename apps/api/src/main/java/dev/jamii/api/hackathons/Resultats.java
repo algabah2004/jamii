@@ -1,5 +1,6 @@
 package dev.jamii.api.hackathons;
 
+import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -25,7 +26,7 @@ class Resultats {
 	}
 
 	/** Une ligne du classement publié : le retour du jury est la liste de ses commentaires, sans nom. */
-	record Ligne(int rang, UUID equipeId, UUID renduId, List<String> retourDuJury) {
+	record Ligne(int rang, UUID equipeId, UUID renduId, BigDecimal scorePondere, List<String> retourDuJury) {
 	}
 
 	record Publies(Instant publieLe, List<Hackathons.Prix> prix, List<Gagnant> gagnants, List<Ligne> classement) {
@@ -122,7 +123,7 @@ class Resultats {
 			.query((rs, i) -> retours.computeIfAbsent(rs.getObject("rendu_id", UUID.class), k -> new ArrayList<>()).add(rs.getString("commentaire")))
 			.list();
 		List<Ligne> classement = jury.classement(hackathonId).stream()
-			.map(c -> new Ligne(c.rang(), c.equipeId(), c.renduId(), retours.getOrDefault(c.renduId(), List.of())))
+			.map(c -> new Ligne(c.rang(), c.equipeId(), c.renduId(), c.scorePondere(), retours.getOrDefault(c.renduId(), List.of())))
 			.toList();
 		return new Publies(publieLe, h.prix(), gagnants, classement);
 	}

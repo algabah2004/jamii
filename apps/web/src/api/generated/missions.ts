@@ -14,8 +14,8 @@ export interface paths {
         /**
          * Les missions publiques ouvertes aux propositions, ou les miennes
          * @description `vue=publiques` (par défaut, sans connexion) : les missions `publique` à l'état `publiee`, la plus récente d'abord.
-         *     `vue=miennes` (connexion requise) : celles dont je suis le client ou le développeur retenu, tous états confondus,
-         *     et celles où je suis invité.
+         *     `vue=miennes` (connexion requise) : celles dont je suis le client, tous états confondus, et, hors brouillon,
+         *     celles où je suis invité ou où j'ai proposé mes services (retenu ou non), tant que je ne me suis pas retiré.
          */
         get: operations["listerMissions"];
         put?: never;
@@ -527,6 +527,8 @@ export interface components {
             nombrePropositions: number;
             /** Format: date-time */
             publieeLe: string | null;
+            /** @description Vrai seulement dans « Les miennes », quand la personne a une action qui fait attendre l'autre partie (retenir, accepter un devis ou un jalon, livrer, déclarer un paiement, donner son avis…). Toujours faux ailleurs. */
+            aFaire?: boolean;
         };
         Mission: components["schemas"]["MissionResume"] & {
             /** Format: uuid */

@@ -61,9 +61,12 @@ paths:
       tags: [hackathons]
       operationId: listerHackathons
       summary: Les hackathons publiés, le plus proche d'abord
-      description: '`statut` filtre sur le statut calculé (`publie`, `en_cours`, `evaluation`, `resultats`). Les brouillons et les hackathons annulés n''y sont jamais.'
+      description: |
+        `statut` filtre sur le statut calculé (`publie`, `en_cours`, `evaluation`, `resultats`). Les brouillons et les hackathons annulés n'y sont jamais.
+        `vue=miens` (connexion requise, `statut` ignoré) : ceux que j'organise, brouillons et annulés compris, et, hors brouillon, ceux dont je suis juré ou où je suis inscrit. Le plus récent d'abord.
       security: [{}, { session: [] }]
       parameters:
+        - { name: vue, in: query, schema: { type: string, enum: [miens] } }
         - $ref: './socle.yaml#/components/parameters/Curseur'
         - $ref: './socle.yaml#/components/parameters/Limite'
         - { name: statut, in: query, schema: { $ref: '#/components/schemas/StatutHackathon' } }
@@ -74,6 +77,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/PageHackathons' }
         '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
     post:
       tags: [hackathons]
       operationId: creerHackathon
@@ -478,6 +482,25 @@ paths:
         '403': { $ref: './socle.yaml#/components/responses/Interdit' }
         '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
 
+  /api/hackathons/{hackathonId}/mes-notes:
+    parameters:
+      - $ref: '#/components/parameters/HackathonId'
+    get:
+      tags: [jury]
+      operationId: lireMesNotes
+      summary: 'Les notes que j''ai déjà données (juré), rendu par rendu'
+      description: Pour retrouver ses notes et voir ce qu'il reste à noter après avoir quitté la page. Réservé aux jurés (`403`).
+      security:
+        - session: []
+      responses:
+        '200':
+          description: Une entrée par rendu déjà noté.
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/NotesDuJure' } }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
   /api/hackathons/{hackathonId}/rendus/{renduId}/notes:
     parameters:
       - $ref: '#/components/parameters/HackathonId'
@@ -924,9 +947,10 @@ components:
           type: array
           items:
             type: object
-            required: [rang, equipe, rendu, retourDuJury]
+            required: [rang, equipe, rendu, scorePondere, retourDuJury]
             properties:
-              rang: { type: integer }
+              rang: { type: integer, description: 'Deux rendus au même score ont le même rang (ex aequo).' }
+              scorePondere: { type: number, description: 'Sur 5 : la moyenne des scores pondérés de ses jurés, à deux décimales.' }
               equipe: { $ref: '#/components/schemas/Equipe' }
               rendu: { $ref: '#/components/schemas/Rendu' }
               retourDuJury: { type: array, items: { type: string }, description: 'Les commentaires des jurés, sans leur nom.' }

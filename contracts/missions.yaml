@@ -79,8 +79,8 @@ paths:
       summary: Les missions publiques ouvertes aux propositions, ou les miennes
       description: |
         `vue=publiques` (par défaut, sans connexion) : les missions `publique` à l'état `publiee`, la plus récente d'abord.
-        `vue=miennes` (connexion requise) : celles dont je suis le client ou le développeur retenu, tous états confondus,
-        et celles où je suis invité.
+        `vue=miennes` (connexion requise) : celles dont je suis le client, tous états confondus, et, hors brouillon,
+        celles où je suis invité ou où j'ai proposé mes services (retenu ou non), tant que je ne me suis pas retiré.
       security: [{}, { session: [] }]
       parameters:
         - $ref: './socle.yaml#/components/parameters/Curseur'
@@ -759,6 +759,11 @@ components:
         client: { $ref: './projets.yaml#/components/schemas/PersonneResume' }
         nombrePropositions: { type: integer, minimum: 0 }
         publieeLe: { type: [string, 'null'], format: date-time }
+        aFaire:
+          type: boolean
+          description: >-
+            Vrai seulement dans « Les miennes », quand la personne a une action qui fait attendre l'autre partie
+            (retenir, accepter un devis ou un jalon, livrer, déclarer un paiement, donner son avis…). Toujours faux ailleurs.
 
     Mission:
       allOf:

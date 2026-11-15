@@ -1071,7 +1071,8 @@
       "publie": "À venir",
       "en_cours": "En cours",
       "evaluation": "En évaluation",
-      "resultats": "Résultats"
+      "resultats": "Résultats",
+      "miens": "Les miens"
     },
     "aucun": "Aucun hackathon pour le moment.",
     "indisponible": "Les hackathons ne sont pas disponibles pour le moment. Réessaie dans un instant.",
@@ -1282,7 +1283,10 @@
         "etat_invalide": "On ne peut plus ajouter de juré à ce hackathon.",
         "validation": "Ce profil n'existe pas, ou c'est le tien : l'organisateur ne fait pas partie du jury.",
         "autre": "L'invitation n'a pas abouti. Réessaie dans un instant."
-      }
+      },
+      "parmiContacts": "Choisir parmi mes contacts",
+      "choisirContact": "Choisis une personne",
+      "ouProfil": "Ou colle le lien de son profil, si ce n'est pas encore un contact."
     },
     "notation": {
       "titre": "Noter les projets",
@@ -1305,7 +1309,10 @@
         "conflit_interets": "Tu ne peux pas noter le projet de ta propre équipe.",
         "validation": "Chaque critère doit avoir une note de 1 à 5.",
         "autre": "Les notes n'ont pas pu être enregistrées. Réessaie dans un instant."
-      }
+      },
+      "progression": "{n} projet noté sur {total} | {n} projet noté sur {total} | {n} projets notés sur {total}",
+      "avant": "Tu peux noter et modifier tes notes jusqu'aux résultats, le {date}.",
+      "note": "Noté"
     },
     "confirmation": {
       "titre": "Confirmer les gagnants",
@@ -1335,7 +1342,9 @@
       "classement": "Le classement",
       "rang": "{rang}er | {rang}e",
       "voir": "Voir {titre}",
-      "retours": "Les retours du jury :"
+      "retours": "Les retours du jury :",
+      "exAequo": "ex aequo",
+      "score": "{score} / 5"
     },
     "tri": {
       "titre": "Les candidatures",
@@ -1357,6 +1366,21 @@
       "erreurs": {
         "etat_invalide": "Les candidatures ne peuvent plus changer pour ce hackathon.",
         "autre": "La réponse n'a pas été enregistrée. Réessaie dans un instant."
+      }
+    },
+    "aucunMiens": "Tu n'organises aucun hackathon, et tu n'es ni inscrit ni juré pour le moment.",
+    "pilotage": {
+      "titre": "Ton tableau de bord",
+      "equipes": "Équipes",
+      "seuls": "Sans équipe",
+      "jures": "Jurés",
+      "notation": "Notes données",
+      "rienAFaire": "Rien ne t'attend pour le moment.",
+      "alertes": {
+        "aucunJure": "Aucun juré : invite ton jury avant la fin des rendus.",
+        "candidatures": "Aucune candidature n'attend ta réponse. | Une candidature attend ta réponse. | {n} candidatures attendent ta réponse.",
+        "seuls": "Personne ne cherche d'équipe. | Une personne cherche encore une équipe. | {n} personnes cherchent encore une équipe.",
+        "notation": "Toutes les notes sont données. | Il manque une note du jury. | Il manque {n} notes du jury."
       }
     }
   },
@@ -1446,7 +1470,10 @@
         "etat_invalide": "Cette action n'est plus possible pour cette mission.",
         "limite_atteinte": "Tu as déjà publié 5 missions aujourd'hui. Réessaie demain.",
         "autre": "L'action n'a pas abouti. Réessaie dans un instant."
-      }
+      },
+      "candidatEnAttente": "Tu as proposé tes services : le client n'a pas encore choisi.",
+      "candidatRetenu": "Ta proposition est retenue : envoie ton devis au client.",
+      "voirMaProposition": "Voir ma proposition"
     },
     "suivi": {
       "titre": "Le travail",
@@ -1607,7 +1634,14 @@
         "validation": "Un champ n'est pas valide. Vérifie ce que tu as écrit.",
         "modification_concurrente": "La mission a changé entre-temps. Recharge la page.",
         "autre": "L'action n'a pas abouti. Réessaie dans un instant."
-      }
+      },
+      "trier": "Trier les propositions",
+      "tris": {
+        "recentes": "Les plus récentes",
+        "prix": "Prix le plus bas",
+        "delai": "Délai le plus court"
+      },
+      "auDessus": "Au-dessus du budget"
     },
     "devis": {
       "titre": "Envoyer mon devis",
@@ -1639,7 +1673,8 @@
         "interdit": "Tu n'as pas le droit de faire cette action.",
         "autre": "L'action n'a pas abouti. Réessaie dans un instant."
       }
-    }
+    },
+    "aFaire": "À toi de jouer"
   },
   "themes": {
     "passerClair": "Passer au thème clair",

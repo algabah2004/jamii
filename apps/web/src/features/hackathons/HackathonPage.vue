@@ -20,6 +20,7 @@ import NotationHackathon from './NotationHackathon.vue'
 import RenduEquipe from './RenduEquipe.vue'
 import ResultatsHackathon from './ResultatsHackathon.vue'
 import TriCandidatures from './TriCandidatures.vue'
+import PilotageHackathon from './PilotageHackathon.vue'
 import { useSession } from '../../session'
 
 /*
@@ -152,6 +153,8 @@ const annuler = () => (raisonValide.value ? agir(() => annulerHackathon(hackatho
 
       <div class="disposition">
         <div class="principal">
+          <!-- Une fois les résultats publiés, c'est ce qu'on vient voir : ils passent avant le défi. -->
+          <ResultatsHackathon v-if="hackathon.statut === 'resultats'" :hackathon="hackathon" />
           <article class="carte contenu">
             <p v-if="hackathon.statut === 'brouillon'" class="note" data-test="brouillon">{{ t('hackathons.detail.brouillon') }}</p>
 
@@ -207,14 +210,13 @@ const annuler = () => (raisonValide.value ? agir(() => annulerHackathon(hackatho
             </section>
           </article>
 
-          <ResultatsHackathon v-if="hackathon.statut === 'resultats'" :hackathon="hackathon" />
           <ConfirmerResultats v-if="peut('confirmer_resultats')" :hackathon="hackathon" @publie="rafraichir" />
-          <TriCandidatures v-if="peut('trier_inscriptions') && hackathon.modeInscription === 'candidature'" :hackathon="hackathon" />
+          <div v-if="peut('trier_inscriptions') && hackathon.modeInscription === 'candidature'" id="candidatures" class="ancre"><TriCandidatures :hackathon="hackathon" /></div>
           <div v-if="participe" id="participer"><InscriptionHackathon :hackathon="hackathon" @inscrit="rafraichir" /></div>
           <NotationHackathon v-if="peut('noter')" :hackathon="hackathon" />
-          <JuryHackathon v-if="voitJury" :hackathon="hackathon" />
+          <div v-if="voitJury" id="jury" class="ancre"><JuryHackathon :hackathon="hackathon" /></div>
           <RenduEquipe v-if="monEquipe" :hackathon="hackathon" :equipe-id="monEquipe" />
-          <EquipesHackathon v-if="voitEquipes" :hackathon="hackathon" />
+          <div v-if="voitEquipes" id="equipes" class="ancre"><EquipesHackathon :hackathon="hackathon" /></div>
         </div>
 
         <aside class="carte resume" :aria-label="t('hackathons.detail.resume')" data-test="resume">
@@ -253,6 +255,8 @@ const annuler = () => (raisonValide.value ? agir(() => annulerHackathon(hackatho
           </dl>
 
           <p class="client"><JAvatar :nom="hackathon.organisateur.nom" :url="hackathon.organisateur.avatarUrl" :taille="32" /> {{ t('hackathons.par', { nom: hackathon.organisateur.nom }) }}</p>
+
+          <PilotageHackathon v-if="hackathon.moi.role === 'organisateur' && !['brouillon', 'annule'].includes(hackathon.statut)" :hackathon="hackathon" />
 
           <div v-if="peut('publier') || peut('annuler')" class="actions">
             <div v-if="peut('publier')">
@@ -338,5 +342,5 @@ const annuler = () => (raisonValide.value ? agir(() => annulerHackathon(hackatho
 .annulation { display: grid; gap: var(--space-3); }
 .note { margin: 0; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); border-inline-start: 3px solid var(--cantaloupe); background: color-mix(in srgb, var(--surface) 60%, transparent); font-weight: 600; }
 .erreur { margin: 0; color: var(--danger); font-weight: 600; }
-#participer { scroll-margin-block-start: 6rem; }
+#participer, .ancre { scroll-margin-block-start: 6rem; }
 </style>

@@ -14,6 +14,7 @@ export interface paths {
         /**
          * Les hackathons publiés, le plus proche d'abord
          * @description `statut` filtre sur le statut calculé (`publie`, `en_cours`, `evaluation`, `resultats`). Les brouillons et les hackathons annulés n'y sont jamais.
+         *     `vue=miens` (connexion requise, `statut` ignoré) : ceux que j'organise, brouillons et annulés compris, et, hors brouillon, ceux dont je suis juré ou où je suis inscrit. Le plus récent d'abord.
          */
         get: operations["listerHackathons"];
         put?: never;
@@ -258,6 +259,28 @@ export interface paths {
         };
         /** Les rendus à noter (juré : les siens, sans celui de sa propre équipe) ou tous les rendus (organisateur, résultats) */
         get: operations["listerRendus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hackathons/{hackathonId}/mes-notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                hackathonId: components["parameters"]["HackathonId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Les notes que j'ai déjà données (juré), rendu par rendu
+         * @description Pour retrouver ses notes et voir ce qu'il reste à noter après avoir quitté la page. Réservé aux jurés (`403`).
+         */
+        get: operations["lireMesNotes"];
         put?: never;
         post?: never;
         delete?: never;
@@ -619,7 +642,10 @@ export interface components {
                 equipe: components["schemas"]["Equipe"];
             }[];
             classement: {
+                /** @description Deux rendus au même score ont le même rang (ex aequo). */
                 rang: number;
+                /** @description Sur 5 : la moyenne des scores pondérés de ses jurés, à deux décimales. */
+                scorePondere: number;
                 equipe: components["schemas"]["Equipe"];
                 rendu: components["schemas"]["Rendu"];
                 /** @description Les commentaires des jurés, sans leur nom. */
@@ -759,6 +785,7 @@ export interface operations {
     listerHackathons: {
         parameters: {
             query?: {
+                vue?: "miens";
                 /** @description Valeur opaque reçue dans `curseurSuivant`. Absent pour la première page. */
                 curseur?: components["parameters"]["Curseur"];
                 limite?: components["parameters"]["Limite"];
@@ -780,6 +807,7 @@ export interface operations {
                 };
             };
             400: components["responses"]["Invalide"];
+            401: components["responses"]["NonConnecte"];
         };
     };
     creerHackathon: {
@@ -1291,6 +1319,31 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PageRendus"];
+                };
+            };
+            401: components["responses"]["NonConnecte"];
+            403: components["responses"]["Interdit"];
+            404: components["responses"]["Introuvable"];
+        };
+    };
+    lireMesNotes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                hackathonId: components["parameters"]["HackathonId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Une entrée par rendu déjà noté. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotesDuJure"][];
                 };
             };
             401: components["responses"]["NonConnecte"];

@@ -73,12 +73,20 @@ const periode = (debut: string, fin: string) =>
         :data-test="`filtre-${f}`"
         @click="filtre = f"
       >{{ t(`hackathons.filtres.${f}`) }}</button>
+      <button
+        v-if="connecte"
+        type="button"
+        class="filtre filtre--miens"
+        :aria-pressed="filtre === 'miens'"
+        data-test="filtre-miens"
+        @click="filtre = 'miens'"
+      >{{ t('hackathons.filtres.miens') }}</button>
     </div>
 
     <JSquelette v-if="etat === 'chargement'" :nombre="3" />
     <p v-else-if="etat === 'indisponible'" role="alert" class="carte message" data-test="indisponible">{{ t('hackathons.indisponible') }}</p>
     <template v-else>
-      <p v-if="!hackathons.length" class="carte message" data-test="aucun">{{ t('hackathons.aucun') }}</p>
+      <p v-if="!hackathons.length" class="carte message" data-test="aucun">{{ filtre === 'miens' ? t('hackathons.aucunMiens') : t('hackathons.aucun') }}</p>
       <ul v-else class="liste" data-test="liste">
         <li v-for="h in hackathons" :key="h.id" class="carte hackathon" :data-statut="h.statut" data-test="hackathon">
           <div class="hackathon__banniere" :style="{ '--teinte': teinte(h.titre) }" aria-hidden="true">
@@ -121,6 +129,7 @@ const periode = (debut: string, fin: string) =>
   min-height: 40px; padding: 0 var(--space-4); border: 1px solid var(--line-strong); border-radius: var(--radius-pill);
   background: var(--surface); font-weight: 600; cursor: pointer;
 }
+.filtre--miens { margin-inline-start: auto; }
 .filtre[aria-pressed='true'] { background: var(--action); border-color: var(--action); color: var(--on-action); }
 .filtre:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .message { margin: 0; padding: var(--space-6); }

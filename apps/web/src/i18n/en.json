@@ -1071,7 +1071,8 @@
       "publie": "Upcoming",
       "en_cours": "Ongoing",
       "evaluation": "Being judged",
-      "resultats": "Results"
+      "resultats": "Results",
+      "miens": "Mine"
     },
     "aucun": "No hackathon for now.",
     "indisponible": "Hackathons are not available right now. Try again in a moment.",
@@ -1282,7 +1283,10 @@
         "etat_invalide": "Jurors can no longer be added to this hackathon.",
         "validation": "This profile does not exist, or it is yours: the organiser is not part of the jury.",
         "autre": "The invitation did not go through. Try again in a moment."
-      }
+      },
+      "parmiContacts": "Pick from my contacts",
+      "choisirContact": "Choose someone",
+      "ouProfil": "Or paste their profile link, if they aren't a contact yet."
     },
     "notation": {
       "titre": "Score the projects",
@@ -1305,7 +1309,10 @@
         "conflit_interets": "You cannot score your own team's project.",
         "validation": "Each criterion needs a score from 1 to 5.",
         "autre": "The scores could not be saved. Try again in a moment."
-      }
+      },
+      "progression": "{n} of {total} projects scored",
+      "avant": "You can score and change your scores until the results, on {date}.",
+      "note": "Scored"
     },
     "confirmation": {
       "titre": "Confirm the winners",
@@ -1335,7 +1342,9 @@
       "classement": "Ranking",
       "rang": "#{rang} | #{rang}",
       "voir": "See {titre}",
-      "retours": "Jury feedback:"
+      "retours": "Jury feedback:",
+      "exAequo": "tied",
+      "score": "{score} / 5"
     },
     "tri": {
       "titre": "Applications",
@@ -1357,6 +1366,21 @@
       "erreurs": {
         "etat_invalide": "Applications can no longer change for this hackathon.",
         "autre": "Your answer was not saved. Try again in a moment."
+      }
+    },
+    "aucunMiens": "You don't organise any hackathon, and you aren't registered or on a jury yet.",
+    "pilotage": {
+      "titre": "Your dashboard",
+      "equipes": "Teams",
+      "seuls": "Without a team",
+      "jures": "Jury members",
+      "notation": "Scores given",
+      "rienAFaire": "Nothing is waiting for you right now.",
+      "alertes": {
+        "aucunJure": "No jury yet: invite your jury before submissions close.",
+        "candidatures": "No application is waiting. | One application is waiting for your answer. | {n} applications are waiting for your answer.",
+        "seuls": "Nobody is looking for a team. | One person is still looking for a team. | {n} people are still looking for a team.",
+        "notation": "All scores are in. | One jury score is missing. | {n} jury scores are missing."
       }
     }
   },
@@ -1446,7 +1470,10 @@
         "etat_invalide": "This action is no longer possible for this mission.",
         "limite_atteinte": "You have already published 5 missions today. Try again tomorrow.",
         "autre": "The action did not go through. Try again in a moment."
-      }
+      },
+      "candidatEnAttente": "You offered your services: the client hasn't chosen yet.",
+      "candidatRetenu": "Your proposal was selected: send your quote to the client.",
+      "voirMaProposition": "See my proposal"
     },
     "suivi": {
       "titre": "The work",
@@ -1607,7 +1634,14 @@
         "validation": "A field is not valid. Check what you wrote.",
         "modification_concurrente": "The mission changed in the meantime. Reload the page.",
         "autre": "The action did not go through. Try again in a moment."
-      }
+      },
+      "trier": "Sort proposals",
+      "tris": {
+        "recentes": "Most recent",
+        "prix": "Lowest price",
+        "delai": "Shortest time"
+      },
+      "auDessus": "Above budget"
     },
     "devis": {
       "titre": "Send my quote",
@@ -1639,7 +1673,8 @@
         "interdit": "You are not allowed to do this.",
         "autre": "The action did not go through. Try again in a moment."
       }
-    }
+    },
+    "aFaire": "Your turn"
   },
   "themes": {
     "passerClair": "Switch to light theme",

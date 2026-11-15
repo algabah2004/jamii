@@ -93,6 +93,12 @@ class JuryController {
 		return new PageRendus(rendus.lire(page).stream().map(RendusController::vue).toList(), suivant);
 	}
 
+	/** Les notes que j'ai déjà données, en tant que juré. */
+	@GetMapping("/mes-notes")
+	List<Jury.NotesDuJure> mesNotes(@AuthenticationPrincipal UtilisateurConnecte moi, @PathVariable UUID hackathonId) {
+		return jury.mesNotes(hackathonId, moi.id());
+	}
+
 	@PutMapping("/rendus/{renduId}/notes")
 	Jury.NotesDuJure noter(@AuthenticationPrincipal UtilisateurConnecte moi, @PathVariable UUID hackathonId, @PathVariable UUID renduId,
 			@RequestBody Map<String, Object> corps) {

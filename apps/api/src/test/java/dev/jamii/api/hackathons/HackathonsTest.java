@@ -340,6 +340,23 @@ class HackathonsTest {
 	}
 
 	@Test
+	void les_miens_montrent_ce_que_j_organise_brouillons_compris_et_ce_ou_je_suis_inscrit() throws Exception {
+		UtilisateurConnecte awa = utilisateur("awa");
+		UtilisateurConnecte kofi = utilisateur("kofi");
+		String ouvert = publie(awa, 10).get("id").asString();
+		String brouillon = brouillon(awa, 10).get("id").asString();
+		String autre = publie(utilisateur("yann"), 10).get("id").asString();
+		assertThat(action("/api/hackathons/" + ouvert + "/inscriptions", "{}", kofi)).hasStatus(HttpStatus.CREATED);
+
+		assertThat(corpsDe(lire("/api/hackathons?vue=miens", awa)).get("elements").toString())
+			.contains(ouvert, brouillon).doesNotContain(autre);
+		assertThat(corpsDe(lire("/api/hackathons?vue=miens", kofi)).get("elements").toString())
+			.contains(ouvert).doesNotContain(brouillon).doesNotContain(autre);
+		assertThat(lire("/api/hackathons?vue=miens", null)).hasStatus(HttpStatus.UNAUTHORIZED);
+		assertThat(lire("/api/hackathons?vue=autre", awa)).hasStatus(HttpStatus.BAD_REQUEST);
+	}
+
+	@Test
 	void la_liste_se_filtre_par_statut_calcule_et_se_parcourt_par_curseur() throws Exception {
 		UtilisateurConnecte awa = utilisateur("awa");
 		String aVenir = publie(awa, 10).get("id").asString();

@@ -30,6 +30,10 @@ class ErreurHackathons extends RuntimeException {
 		return new ErreurHackathons(HttpStatus.NOT_FOUND, "introuvable", "Ressource introuvable", null, 0);
 	}
 
+	static ErreurHackathons nonConnecte() {
+		return new ErreurHackathons(HttpStatus.UNAUTHORIZED, "non_connecte", "Connexion requise", null, 0);
+	}
+
 	static ErreurHackathons interdit() {
 		return new ErreurHackathons(HttpStatus.FORBIDDEN, "interdit", "Accès refusé", null, 0);
 	}
