@@ -1,5 +1,6 @@
 import { http, HttpResponse } from 'msw'
 import type { components } from '../api/generated/hackathons'
+import { catalogueHackathons } from './catalogueHackathons'
 
 type S = components['schemas']
 export type Hackathon = S['Hackathon']
@@ -73,6 +74,7 @@ const hackathons = new Map<string, Hackathon>()
 const inscriptions = new Map<string, Inscription[]>()
 const equipes = new Map<string, Equipe[]>()
 const rendus = new Map<string, Rendu>()
+const hackathonDuRendu = new Map<string, string>()
 const jures = new Map<string, Jure[]>()
 /** Les scores pondérés donnés par Kofi, juré dans les maquettes, rendu par rendu. */
 const scores = new Map<string, number>()
@@ -88,8 +90,9 @@ const discussions = new Map<string, { communaute: string | null; annonces: Annon
 const discussionDe = (id: string) => discussions.get(id) ?? discussions.set(id, { communaute: null, annonces: [] }).get(id)!
 
 /** Pour un test : déposer le rendu d'une équipe, comme si elle l'avait rendu pendant le hackathon. */
-export function deposerRendu(rendu: Rendu) {
+export function deposerRendu(rendu: Rendu, hackathonId = 'd7a1e2c4-3b5f-4a6d-8e90-1f2a3b4c5d6e') {
   rendus.set(rendu.equipeId, rendu)
+  hackathonDuRendu.set(rendu.id, hackathonId)
 }
 
 /** Deux participants seuls, qui cherchent une équipe : de quoi montrer « Je cherche une équipe ». */
@@ -97,11 +100,12 @@ function seulDemo(personne: typeof FATOU, competences: string[]): Inscription {
   return { id: crypto.randomUUID(), personne, statut: 'acceptee', chercheEquipe: true, equipeId: null, competences, reponses: [], creeLe: dansHeures(-20) }
 }
 
-export function reinitialiserHackathons() {
+export function reinitialiserHackathons(avecCatalogue = import.meta.env.MODE === 'factice') {
   hackathons.clear()
   inscriptions.clear()
   equipes.clear()
   rendus.clear()
+  hackathonDuRendu.clear()
   jures.clear()
   scores.clear()
   retours.clear()
@@ -112,6 +116,13 @@ export function reinitialiserHackathons() {
   hackathons.set(h.id, h)
   inscriptions.set(h.id, [seulDemo(FATOU, ['flutter', 'ux-design']), seulDemo(MOUSSA, ['spring'])])
   equipes.set(h.id, [])
+  if (avecCatalogue) for (const d of catalogueHackathons()) {
+    hackathons.set(d.hackathon.id, d.hackathon)
+    equipes.set(d.hackathon.id, d.equipes)
+    inscriptions.set(d.hackathon.id, d.inscriptions)
+    for (const rendu of d.rendus) deposerRendu(rendu, d.hackathon.id)
+    if (d.resultats) resultats.set(d.hackathon.id, d.resultats)
+  }
 }
 
 /** Pour un test : changer un hackathon des maquettes (autre rôle, autre statut), que toutes les routes verront. */
@@ -131,8 +142,10 @@ function resume({ id, titre, theme, lieu, ville, statut, debutLe, finRendusLe, o
 
 export const handlersHackathons = [
   http.get('/api/hackathons', ({ request }) => {
-    const statut = new URL(request.url).searchParams.get('statut')
-    const liste = [...hackathons.values()].filter((h) => h.statut !== 'brouillon' && h.statut !== 'annule' && (!statut || h.statut === statut))
+    const parametres = new URL(request.url).searchParams
+    const statut = parametres.get('statut')
+    const miens = parametres.get('vue') === 'miens'
+    const liste = [...hackathons.values()].filter((h) => (miens ? h.moi.role !== 'visiteur' : h.statut !== 'brouillon' && h.statut !== 'annule') && (!statut || h.statut === statut))
     return HttpResponse.json({ elements: liste.map(resume), curseurSuivant: null })
   }),
 
@@ -269,7 +282,7 @@ export const handlersHackathons = [
 
   http.get('/api/hackathons/:id/equipes/:equipeId/rendu', ({ params }) => {
     const rendu = rendus.get(String(params.equipeId))
-    return rendu ? HttpResponse.json(rendu) : erreur(404, 'introuvable')
+    return rendu && hackathonDuRendu.get(rendu.id) === String(params.id) ? HttpResponse.json(rendu) : erreur(404, 'introuvable')
   }),
 
   http.put('/api/hackathons/:id/equipes/:equipeId/rendu', async ({ params, request }) => {
@@ -295,7 +308,7 @@ export const handlersHackathons = [
       version: (avant?.version ?? 0) + 1,
       modifieLe: new Date().toISOString(),
     }
-    rendus.set(rendu.equipeId, rendu)
+    deposerRendu(rendu, h.id)
     return HttpResponse.json(rendu, { status: avant ? 200 : 201 })
   }),
 
@@ -333,13 +346,14 @@ export const handlersHackathons = [
     return new HttpResponse(null, { status: 204 })
   }),
 
-  http.get('/api/hackathons/:id/mes-notes', () => HttpResponse.json([...mesNotes.values()])),
+  http.get('/api/hackathons/:id/mes-notes', ({ params }) => HttpResponse.json([...mesNotes.values()].filter((n) => hackathonDuRendu.get(n.renduId) === String(params.id)))),
 
-  http.get('/api/hackathons/:id/rendus', () => HttpResponse.json({ elements: [...rendus.values()], curseurSuivant: null })),
+  http.get('/api/hackathons/:id/rendus', ({ params }) => HttpResponse.json({ elements: [...rendus.values()].filter((r) => hackathonDuRendu.get(r.id) === String(params.id)), curseurSuivant: null })),
 
   http.put('/api/hackathons/:id/rendus/:renduId/notes', async ({ params, request }) => {
     const h = hackathons.get(String(params.id))
     if (!h) return erreur(404, 'introuvable')
+    if (hackathonDuRendu.get(String(params.renduId)) !== h.id) return erreur(404, 'introuvable')
     if (h.statut !== 'evaluation') return erreur(409, 'etat_invalide')
     const corps = (await request.json()) as { notes: { critereId: string; valeur: number }[]; commentaire: string | null }
     if (h.criteres.some((c) => !corps.notes.some((n) => n.critereId === c.id))) return erreur(400, 'validation')
@@ -353,7 +367,7 @@ export const handlersHackathons = [
     return HttpResponse.json({ renduId: String(params.renduId), notes: corps.notes, commentaire: corps.commentaire, scorePondere })
   }),
 
-  http.get('/api/hackathons/:id/notation', ({ params }) => HttpResponse.json({ jures: jures.get(String(params.id)) ?? [], classement: classer() })),
+  http.get('/api/hackathons/:id/notation', ({ params }) => HttpResponse.json({ jures: jures.get(String(params.id)) ?? [], classement: classer(String(params.id)) })),
 
   http.get('/api/hackathons/:id/resultats', ({ params }) => {
     const publies = resultats.get(String(params.id))
@@ -366,16 +380,16 @@ export const handlersHackathons = [
     if (h.statut !== 'evaluation') return erreur(409, 'etat_invalide')
     const corps = (await request.json()) as { version: number; gagnants: { prixId: string; equipeId: string; raison: string | null }[] }
     if (corps.version !== h.version) return erreur(409, 'modification_concurrente')
-    const proposes = classer().map((l) => l.equipeId)
+    const proposes = classer(h.id).map((l) => l.equipeId)
     const ecart = h.prix.some((p, i) => {
       const g = corps.gagnants.find((x) => x.prixId === p.id)
-      return !g || !rendus.has(g.equipeId) || (g.equipeId !== proposes[i] && !g.raison?.trim())
+      return !g || !rendus.has(g.equipeId) || hackathonDuRendu.get(rendus.get(g.equipeId)!.id) !== h.id || (g.equipeId !== proposes[i] && !g.raison?.trim())
     })
     if (ecart) return erreur(400, 'validation')
     const publies: Resultats = {
       publieLe: new Date().toISOString(),
       gagnants: h.prix.map((p) => ({ prix: p, equipe: equipeDe(corps.gagnants.find((g) => g.prixId === p.id)!.equipeId) })),
-      classement: classer().map((l) => {
+      classement: classer(h.id).map((l) => {
         const rendu = [...rendus.values()].find((r) => r.id === l.renduId)!
         return { rang: l.rang, equipe: equipeDe(rendu.equipeId), rendu, scorePondere: l.scorePondere, retourDuJury: retours.has(rendu.id) ? [retours.get(rendu.id)!] : [] }
       }),
@@ -387,8 +401,8 @@ export const handlersHackathons = [
 ]
 
 /** Le classement proposé : les rendus notés, du meilleur score au moins bon. */
-function classer() {
-  const classes = [...scores.entries()].sort((a, b) => b[1] - a[1])
+function classer(hackathonId: string) {
+  const classes = [...scores.entries()].filter(([id]) => hackathonDuRendu.get(id) === hackathonId).sort((a, b) => b[1] - a[1])
   return classes.map(([renduId, scorePondere]) => ({
     equipeId: [...rendus.values()].find((r) => r.id === renduId)?.equipeId ?? renduId,
     renduId,

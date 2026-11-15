@@ -1494,7 +1494,11 @@
       "nonAttribuee": "Unassigned",
       "etat": "Status",
       "ajouter": "Add task",
-      "statut": { "a_faire": "To do", "en_cours": "In progress", "livree": "Delivered" },
+      "statut": {
+        "a_faire": "To do",
+        "en_cours": "In progress",
+        "livree": "Delivered"
+      },
       "pasDeTour": "The dashboard opens with the first turn, after the draw.",
       "avancement": "Turn progress",
       "miennes": "My tasks",
@@ -2092,7 +2096,57 @@
       "discussion": "Announcements and discussion",
       "equipes": "Teams",
       "gestion": "Manage",
-      "nouvelles": "new announcement | new announcements"
+      "nouvelles": "new announcement | new announcements",
+      "projets": "Projects",
+      "calendrier": "Schedule",
+      "reglement": "Rules & prizes",
+      "resultats": "Results"
+    },
+    "decouverte": {
+      "filtres": "Filters",
+      "effacer": "Clear all",
+      "statut": "Hackathon status",
+      "duree": "Build duration",
+      "durees": {
+        "tous": "Any duration",
+        "court": "1–3 days",
+        "semaine": "4–7 days",
+        "long": "More than a week"
+      },
+      "trier": "Sort by",
+      "tris": {
+        "debut": "Start date",
+        "participants": "Participants",
+        "titre": "Hackathon name"
+      }
+    },
+    "evenement": {
+      "surtitre": "One challenge, one team, something to show",
+      "preparer": "Check the dates and prepare to take part.",
+      "construire": "Meet the teams and find your place.",
+      "partager": "Find your submission and the projects built.",
+      "nombrePrix": "{n} prize offered | {n} prizes offered",
+      "voirPrix": "Explore prizes and judging criteria",
+      "affiche": "BUILD\nTOGETHER."
+    },
+    "galerie": {
+      "surtitre": "Built during the hackathon",
+      "titre": "The project gallery",
+      "equipe": "Participating team",
+      "nombre": "No projects | {n} project | {n} projects",
+      "attenteTitre": "Projects are on their way.",
+      "attente": "Projects become public when results are published. Meanwhile, explore the schedule and meet the participating teams.",
+      "resultatsLe": "Results expected on {date}.",
+      "indisponible": "Projects are unavailable at the moment.",
+      "porteePublique": "Projects from the results published by the organizer.",
+      "porteeJury": "This space shows the submissions assigned to you for judging.",
+      "porteeOrganisateur": "Submitted projects appear here to prepare judging. They remain private until results are published.",
+      "recherche": "Search for a project or a team…",
+      "aucun": "No projects have been submitted yet.",
+      "details": "Read the presentation",
+      "code": "View source code",
+      "video": "Watch the demo video",
+      "voir": "Explore the project"
     }
   },
   "missions": {
@@ -2521,6 +2575,196 @@
       "aucune": "No answer",
       "voir": "See the answers",
       "masquer": "Hide the answers"
+    }
+  },
+  "creationGuidee": {
+    "etape": "Step {n} of {total}",
+    "precedent": "Back",
+    "continuer": "Continue",
+    "apercu": "Your preview",
+    "enDirect": "Live",
+    "parcours": "Creation steps",
+    "aDiscuter": "Budget to discuss",
+    "aDefinir": "To be decided",
+    "aDistance": "Remote",
+    "brouillon": "You are saving a draft. No one can see it until you publish it.",
+    "aucunPrix": "No prize announced",
+    "personnes": "people",
+    "oui": "Yes",
+    "non": "No",
+    "mission": {
+      "titre": {
+        "nom": "The title",
+        "titre": "What mission do you have in mind?",
+        "aide": "A simple title helps developers understand what you are looking for."
+      },
+      "besoin": {
+        "nom": "The work",
+        "titre": "What result are you looking for?",
+        "aide": "Describe the work, who it is for and what matters most."
+      },
+      "competences": {
+        "nom": "The skills",
+        "titre": "Which skills do you need?",
+        "aide": "Choose the skills that will help with this mission. You can discuss them with developers."
+      },
+      "modalites": {
+        "nom": "The details",
+        "titre": "What are the practical details?",
+        "aide": "Add a budget, preferred date and city if you know them. These details are optional."
+      },
+      "candidatures": {
+        "nom": "The proposals",
+        "titre": "Who can offer to help?",
+        "aide": "Choose who can see the mission and add any questions you want to ask developers."
+      },
+      "apercu": {
+        "nom": "The preview",
+        "titre": "Ready to save your draft?",
+        "aide": "Review your mission. You can still edit it before publishing."
+      },
+      "apercuVide": "Your next mission",
+      "exemples": {
+        "site": "A website for my association",
+        "appli": "An ordering application",
+        "design": "The mockups for my application"
+      }
+    },
+    "demande": {
+      "titre": {
+        "nom": "Your project",
+        "titre": "What project would you like to start?",
+        "aide": "Start with one simple sentence. You do not need to know the technical solution."
+      },
+      "description": {
+        "nom": "Your need",
+        "titre": "What needs to change?",
+        "aide": "Describe what you do today, the problem and what you would like to make easier."
+      },
+      "questions": {
+        "nom": "A little more detail",
+        "titre": "Help us understand your need",
+        "aide": "These three questions are optional. A few words help make the suggestions more useful."
+      },
+      "contexte": {
+        "nom": "The context",
+        "titre": "Where will this project fit?",
+        "aide": "Choose your sector, and add your city and timeline if you know them."
+      },
+      "apercu": {
+        "nom": "The preview",
+        "titre": "Does this describe your need?",
+        "aide": "Check the details before discovering solutions and people who can help."
+      },
+      "apercuVide": "Your next project"
+    },
+    "hackathon": {
+      "titre": {
+        "nom": "The name",
+        "titre": "What is your hackathon called?",
+        "aide": "Give it a name participants will remember."
+      },
+      "defi": {
+        "nom": "The challenge",
+        "titre": "What challenge will teams take on?",
+        "aide": "Describe the theme, the problem to solve and what teams will build."
+      },
+      "format": {
+        "nom": "The format",
+        "titre": "How will teams come together?",
+        "aide": "Online, in person or both: choose the format and the number of people per team."
+      },
+      "calendrier": {
+        "nom": "The schedule",
+        "titre": "What dates should everyone save?",
+        "aide": "Set the key dates, from registration to results. Times use your local time zone."
+      },
+      "participants": {
+        "nom": "Registration",
+        "titre": "How will participants join?",
+        "aide": "Choose the registration mode. You can add a questionnaire and the hackathon guidelines."
+      },
+      "jury": {
+        "nom": "The criteria",
+        "titre": "What makes a great project?",
+        "aide": "Set the judging criteria. Each weight reflects its relative importance."
+      },
+      "recompenses": {
+        "nom": "The prizes",
+        "titre": "What can teams win?",
+        "aide": "Add prizes and their partners, or skip this step if nothing has been planned yet."
+      },
+      "apercu": {
+        "nom": "The preview",
+        "titre": "Ready to save your hackathon?",
+        "aide": "Review the schedule, registration and criteria. Publish the draft when everything is ready."
+      },
+      "apercuVide": "Your next hackathon",
+      "exemples": {
+        "ecoles": "Schools Hackathon",
+        "quartier": "The neighbourhood digital challenge",
+        "sante": "Africa Health Hack"
+      }
+    }
+  },
+  "exploration": {
+    "effacer": "Clear search",
+    "reinitialiser": "Reset filters",
+    "ouvrir": "Open: {titre}",
+    "resultats": "No results | {n} result | {n} results",
+    "aucunResultat": "No results for this search.",
+    "essayerAutrement": "Try another word or broaden your filters to find an opportunity.",
+    "dansLaListe": "Search covers the items in this list. Use “See more” to load additional items.",
+    "missions": {
+      "surtitre": "Missions · skills that move things forward",
+      "titre": "Your talent.",
+      "accent": "A project that matters.",
+      "statMissions": "mission in this selection | missions in this selection",
+      "statCompetences": "skill needed | skills needed",
+      "explorer": "Find a mission",
+      "vedette": "A mission to discover",
+      "attenteTitre": "The next project starts here.",
+      "attente": "A clear need, the right skills and a collaboration that moves forward. Publish your mission or explore the opportunities.",
+      "recherche": "Search for a mission, a skill, a city…",
+      "resultats": "Projects for your skills"
+    },
+    "hackathons": {
+      "surtitre": "Hackathons · give your ideas momentum",
+      "titre": "One challenge.",
+      "accent": "So much to build.",
+      "statDefis": "challenge in this selection | challenges in this selection",
+      "statInscrits": "registration | registrations",
+      "statVilles": "city represented | cities represented",
+      "explorer": "Explore the challenges",
+      "vedette": "A challenge to discover",
+      "attenteTitre": "Build further, together.",
+      "attente": "Bring a team together, test your ideas and build something to show. Your next challenge could be right here.",
+      "recherche": "Search for a challenge, a theme, a city…",
+      "resultats": "Choose your next challenge"
+    },
+    "vitrine": {
+      "surtitre": "Showcase · built together, shared with everyone",
+      "titre": "Ideas.",
+      "accent": "Made real.",
+      "statProjets": "project in this selection | projects in this selection",
+      "statCreateurs": "creator | creators",
+      "statPays": "country represented | countries represented",
+      "explorer": "Explore the projects",
+      "creer": "Find my team",
+      "vedette": "Discover in the showcase",
+      "equipe": "Built by a team",
+      "membres": "{n} creator | {n} creators",
+      "attenteTitre": "The next project could be yours.",
+      "attente": "Useful projects, teams from across the continent and ideas making their way online.",
+      "recherche": "Search for a project, a team, a topic…",
+      "origine": "Project origin",
+      "origines": {
+        "tous": "All origins",
+        "cercle": "From a circle",
+        "demande": "For a business",
+        "idee": "Independent ideas"
+      },
+      "resultats": "What the community is building"
     }
   }
 }

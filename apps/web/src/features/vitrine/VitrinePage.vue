@@ -2,10 +2,13 @@
 import { JBouton, JFiltres, JIllustration, JSquelette } from '../../design-system'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute, useRouter } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { api } from '../../api/client'
 import CarteProjet from './CarteProjet.vue'
 import type { ProjetEnVitrine } from './vitrine'
+import EnteteExploration from '../../components/exploration/EnteteExploration.vue'
+import RechercheExploration from '../../components/exploration/RechercheExploration.vue'
+import { correspond } from '../../components/exploration/recherche'
 
 /** Une page de 12 cartes : 4 rangées de 3 sur ordinateur. */
 const LIMITE = 12
@@ -19,6 +22,15 @@ const projets = ref<ProjetEnVitrine[]>([])
 const curseur = ref<string | null>(null)
 const etat = ref<'chargement' | 'pret' | 'indisponible'>('chargement')
 const chargeLaSuite = ref(false)
+const recherche = ref('')
+const origine = ref<'tous' | 'cercle' | 'demande' | 'idee'>('tous')
+const vedette = computed(() => projets.value[0])
+const visibles = computed(() => projets.value.filter((p) => (origine.value === 'tous' || p.origine === origine.value) && correspond(recherche.value, [p.titre, p.accroche, ...p.equipe.map((m) => m.nom)])))
+const statistiques = computed(() => [
+  { valeur: projets.value.length, libelle: t('exploration.vitrine.statProjets', projets.value.length) },
+  { valeur: new Set(projets.value.flatMap((p) => p.equipe.map((m) => m.id))).size, libelle: t('exploration.vitrine.statCreateurs', new Set(projets.value.flatMap((p) => p.equipe.map((m) => m.id))).size) },
+  { valeur: new Set(projets.value.flatMap((p) => p.paysEquipe)).size, libelle: t('exploration.vitrine.statPays', new Set(projets.value.flatMap((p) => p.paysEquipe)).size) },
+])
 
 async function charger(suite = false) {
   if (suite) chargeLaSuite.value = true
@@ -54,22 +66,31 @@ function filtrer(datacloud: boolean) {
 </script>
 
 <template>
-  <section class="vitrine">
-    <header class="page-tete motif motif--capsules">
-      <div class="page-tete__texte">
-        <h1>{{ t('vitrine.titre') }}</h1>
-        <p>{{ t('vitrine.intro') }}</p>
+  <section class="vitrine exploration">
+    <EnteteExploration :surtitre="t('exploration.vitrine.surtitre')" :titre="t('exploration.vitrine.titre')" :accent="t('exploration.vitrine.accent')" :intro="t('vitrine.intro')" :statistiques="statistiques">
+      <template #actions><a href="#projets-vitrine" class="exploration__principal">{{ t('exploration.vitrine.explorer') }} <span aria-hidden="true">↗</span></a><RouterLink to="/cercles" class="exploration__secondaire">{{ t('exploration.vitrine.creer') }}</RouterLink></template>
+      <p class="exploration__surtitre">{{ t('exploration.vitrine.vedette') }}</p>
+      <div class="exploration__browser" aria-hidden="true"><div class="exploration__browser-barre"><i /><i /><i /><span>jamii / showcase</span></div><div class="exploration__browser-corps"><i /><i /><i /><i /></div></div>
+      <template v-if="vedette && etat === 'pret'"><h2>{{ vedette.titre }}</h2><p>{{ vedette.accroche }}</p><div class="exploration__pied-vedette"><div><small>{{ t('exploration.vitrine.equipe') }}</small><strong>{{ t('exploration.vitrine.membres', { n: vedette.equipe.length }, vedette.equipe.length) }}</strong></div><a href="#projets-vitrine" class="exploration__fleche" :aria-label="t('exploration.vitrine.explorer')">↓</a></div></template>
+      <template v-else><h2>{{ t('exploration.vitrine.attenteTitre') }}</h2><p>{{ t('exploration.vitrine.attente') }}</p></template>
+    </EnteteExploration>
+
+    <div class="exploration__outils" id="projets-vitrine">
+      <RechercheExploration v-model="recherche" :libelle="t('exploration.vitrine.recherche')" />
+      <div class="vitrine__filtres">
+        <JFiltres
+          :model-value="seulementSystalink ? 'systalink' : 'tous'"
+          :libelle="t('vitrine.filtre')"
+          :options="[
+            { valeur: 'tous', texte: t('vitrine.tous') },
+            { valeur: 'systalink', texte: t('vitrine.surSystalink') },
+          ]"
+          @update:model-value="(v) => filtrer(v === 'systalink')"
+        />
+        <div class="exploration__filtres" role="group" :aria-label="t('exploration.vitrine.origine')"><button v-for="o in (['tous', 'cercle', 'demande', 'idee'] as const)" :key="o" type="button" :aria-pressed="origine === o" :data-test="`origine-${o}`" @click="origine = o">{{ t(`exploration.vitrine.origines.${o}`) }}</button></div>
       </div>
-      <JFiltres
-        :model-value="seulementSystalink ? 'systalink' : 'tous'"
-        :libelle="t('vitrine.filtre')"
-        :options="[
-          { valeur: 'tous', texte: t('vitrine.tous') },
-          { valeur: 'systalink', texte: t('vitrine.surSystalink') },
-        ]"
-        @update:model-value="(v) => filtrer(v === 'systalink')"
-      />
-    </header>
+      <span v-if="curseur" class="texte-discret">{{ t('exploration.dansLaListe') }}</span>
+    </div>
 
     <JSquelette v-if="etat === 'chargement'" forme="cartes" :nombre="6" />
     <div v-else-if="etat === 'indisponible'" role="alert" class="etat-vide">
@@ -82,9 +103,11 @@ function filtrer(datacloud: boolean) {
     </div>
 
     <template v-else>
-      <ul class="grille-cartes" data-test="projets">
-        <li v-for="p in projets" :key="p.projetId">
-          <CarteProjet :projet="p" />
+      <div class="exploration__resultats"><h2>{{ t('exploration.vitrine.resultats') }}</h2><p aria-live="polite">{{ t('exploration.resultats', { n: visibles.length }, visibles.length) }}</p></div>
+      <div v-if="!visibles.length" class="exploration__vide" data-test="sans-resultat"><h2>{{ t('exploration.aucunResultat') }}</h2><p>{{ t('exploration.essayerAutrement') }}</p><button type="button" class="exploration__effacer" @click="recherche = ''; origine = 'tous'">{{ t('exploration.reinitialiser') }}</button></div>
+      <ul v-else class="grille-cartes" data-test="projets">
+        <li v-for="p in visibles" :key="p.projetId">
+          <CarteProjet :projet="p" illustration />
         </li>
       </ul>
       <JBouton v-if="curseur" variante="secondaire" class="suite" :occupe="chargeLaSuite" @click="charger(true)">
@@ -95,5 +118,8 @@ function filtrer(datacloud: boolean) {
 </template>
 
 <style scoped>
+.vitrine__filtres { display: flex; flex-wrap: wrap; gap: 16px 24px; justify-content: space-between; align-items: center; }
+.grille-cartes { gap: 24px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr)); }
+.grille-cartes > li { min-width: 0; }
 .suite { display: flex; margin: var(--space-8) auto 0; }
 </style>

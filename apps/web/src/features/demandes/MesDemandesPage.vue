@@ -90,7 +90,8 @@ const affichees = computed(() => (filtre.value === 'toutes' ? demandes.value : d
 </template>
 
 <style scoped>
-.mes-demandes { display: grid; gap: var(--space-6); max-width: 64rem; }
+.mes-demandes { display: grid; gap: var(--space-6); min-width: 0; }
+.page-tete.motif { margin-inline: 0; }
 .nouveau { justify-self: start; margin-top: var(--space-2); }
 .vide { display: grid; gap: var(--space-3); justify-items: start; padding: var(--space-8); }
 .vide h2, .vide p { margin: 0; }

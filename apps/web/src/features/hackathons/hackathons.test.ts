@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { http, HttpResponse } from 'msw'
 import { createMemoryHistory, createRouter, RouterView } from 'vue-router'
 import { serveur } from '../../test-setup'
@@ -9,9 +9,12 @@ import { reinitialiserHackathons } from '../../mocks/hackathons'
 import HackathonPage from './HackathonPage.vue'
 import HackathonsPage from './HackathonsPage.vue'
 import NouveauHackathonPage from './NouveauHackathonPage.vue'
-import { formaterMontant, lireCalendrier, lireQuestions, sommePoids, versInstant, versMontant } from './hackathons'
+import { formaterMontant, lireCalendrier, lireHackathon, lireQuestions, sommePoids, versInstant, versMontant } from './hackathons'
 
+import { continuer, jusquApercu, revenir } from '../../test/creationGuidee'
 beforeEach(() => reinitialiserHackathons())
+
+enableAutoUnmount(afterEach)
 
 async function monter(chemin: string) {
   ;(i18n.global.locale as unknown as { value: string }).value = 'fr'
@@ -95,34 +98,71 @@ describe('la liste des hackathons', () => {
     const { page } = await monter('/hackathons')
     await attendre(page, '[data-test="indisponible"]')
   })
+
+  it('recherche un thème sans tenir compte des accents et conserve le filtre de statut', async () => {
+    const { page } = await monter('/hackathons')
+    await attendre(page, '[data-test="liste"]')
+    await page.get('[data-test="filtre-publie"]').trigger('click')
+    await attendre(page, '[data-test="liste"]')
+    await page.get('[data-test="recherche-exploration"]').setValue('heberges DAKAR')
+    expect(page.findAll('[data-test="hackathon"]')).toHaveLength(1)
+    await page.get('[data-test="recherche-exploration"]').setValue('inexistant')
+    expect(page.find('[data-test="sans-resultat"]').exists()).toBe(true)
+    await page.get('[data-test="sans-resultat"] button').trigger('click')
+    expect(page.findAll('[data-test="hackathon"]')).toHaveLength(1)
+    expect(page.get('[data-test="filtre-publie"]').attributes('aria-pressed')).toBe('true')
+  })
+
+  it('combine le format et la durée, trie par inscrits et permet de tout effacer', async () => {
+    const base = await lireHackathon('d7a1e2c4-3b5f-4a6d-8e90-1f2a3b4c5d6e')
+    serveur.use(http.get('/api/hackathons', () => HttpResponse.json({ elements: [
+      { ...base, id: 'a', titre: 'Défi en ligne', lieu: 'en_ligne', nombreInscrits: 2, debutLe: '2026-12-01T09:00:00Z', finRendusLe: '2026-12-03T09:00:00Z' },
+      { ...base, id: 'b', titre: 'Défi à Dakar', lieu: 'sur_place', nombreInscrits: 20, debutLe: '2026-12-02T09:00:00Z', finRendusLe: '2026-12-07T09:00:00Z' },
+    ], curseurSuivant: null })))
+    const { page } = await monter('/hackathons')
+    await attendre(page, '[data-test="liste"]')
+    await page.get('[data-test="tri-hackathons"]').setValue('participants')
+    expect(page.findAll('[data-test="hackathon"]')[0]!.text()).toContain('Défi à Dakar')
+    await page.get('[data-test="lieu-en_ligne"]').setValue(true)
+    expect(page.findAll('[data-test="hackathon"]')).toHaveLength(1)
+    await page.get('[data-test="filtre-duree"]').setValue('semaine')
+    expect(page.find('[data-test="sans-resultat"]').exists()).toBe(true)
+    await page.get('[data-test="reinitialiser-filtres"]').trigger('click')
+    expect(page.findAll('[data-test="hackathon"]')).toHaveLength(2)
+  })
 })
 
 describe('créer un hackathon', () => {
   async function remplir(page: ReturnType<typeof mount>) {
-    const textes = page.findAll('input[type="text"]')
-    await textes[0]!.setValue('Hackathon des écoles')
-    await textes[1]!.setValue('Le numérique au service des écoles')
+    await page.get('input[type="text"]').setValue('Hackathon des écoles')
+    await continuer(page)
+    await page.get('input[type="text"]').setValue('Le numérique au service des écoles')
     await page.get('textarea').setValue('Deux jours pour construire un outil utile à une école de quartier.')
+    await continuer(page, 2)
     const dates = ['2026-12-01T09:00', '2026-12-10T09:00', '2026-12-12T09:00', '2026-12-14T09:00', '2026-12-16T09:00']
     const cles = ['ouvertes', 'fermees', 'debut', 'fin', 'resultats']
     for (const [i, cle] of cles.entries()) await page.get(`[data-test="date-${cle}"]`).setValue(dates[i]!)
+    await continuer(page, 2)
     const noms = page.findAll('[data-test="criteres"] input[type="text"]')
     await noms[0]!.setValue('Utilité')
     await noms[1]!.setValue('Qualité technique')
+    await continuer(page)
   }
 
   it('garde le bouton éteint tant que des champs obligatoires manquent', async () => {
     const { page } = await monter('/hackathons/nouveau')
-    expect(page.get('[data-test="enregistrer"]').attributes('disabled')).toBeDefined()
+    expect(page.get('[data-test="assistant-suivant"]').attributes('disabled')).toBeDefined()
     await remplir(page)
+    await jusquApercu(page)
     expect(page.get('[data-test="enregistrer"]').attributes('disabled')).toBeUndefined()
   })
 
   it('refuse des dates dans le désordre', async () => {
     const { page } = await monter('/hackathons/nouveau')
     await remplir(page)
+    await revenir(page, 3)
     await page.get('[data-test="date-fin"]').setValue('2026-12-11T09:00')
-    expect(page.get('[data-test="enregistrer"]').attributes('disabled')).toBeDefined()
+    expect(page.get('[data-test="assistant-suivant"]').attributes('disabled')).toBeDefined()
   })
 
   it('envoie le brouillon complet, avec les instants en UTC, puis ouvre le hackathon', async () => {
@@ -135,8 +175,10 @@ describe('créer un hackathon', () => {
     )
     const { page, routeur } = await monter('/hackathons/nouveau')
     await remplir(page)
+    await revenir(page, 4)
     await page.get('[data-test="mode-candidature"]').setValue(true)
     await page.get('[data-test="deploiement"]').setValue(true)
+    await jusquApercu(page)
     await page.get('[data-test="nouveau-hackathon"]').trigger('submit')
 
     await vi.waitFor(() => expect(routeur.currentRoute.value.path).toBe('/hackathons/abc'))
@@ -164,6 +206,7 @@ describe('créer un hackathon', () => {
     )
     const { page } = await monter('/hackathons/nouveau')
     await remplir(page)
+    await jusquApercu(page)
     await page.get('[data-test="nouveau-hackathon"]').trigger('submit')
     await vi.waitFor(() => expect(page.text()).toContain('Le nom doit faire entre 3 et 120 caractères.'))
     expect(page.text()).toContain('de un à huit critères')

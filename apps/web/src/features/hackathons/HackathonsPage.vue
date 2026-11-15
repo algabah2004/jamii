@@ -4,7 +4,10 @@ import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 import { JAvatar, JBouton, JSquelette } from '../../design-system'
 import { useSession } from '../../session'
-import { FILTRES, listerHackathons, type Filtre, type HackathonResume } from './hackathons'
+import { FILTRES, LIEUX, listerHackathons, type Filtre, type HackathonResume } from './hackathons'
+import EnteteExploration from '../../components/exploration/EnteteExploration.vue'
+import RechercheExploration from '../../components/exploration/RechercheExploration.vue'
+import { correspond } from '../../components/exploration/recherche'
 
 /*
  * Les hackathons publiés : à venir, en cours, en évaluation ou terminés. Lisible sans connexion ; en créer un demande
@@ -20,6 +23,24 @@ const suivant = ref<string | null>(null)
 const etat = ref<'chargement' | 'pret' | 'indisponible'>('chargement')
 const plus = ref(false)
 const connecte = computed(() => session.value === 'connecte')
+const recherche = ref('')
+const lieux = ref<(typeof LIEUX)[number][]>([])
+const duree = ref('tous')
+const tri = ref('debut')
+const vedette = computed(() => hackathons.value.find((h) => h.statut === 'publie' || h.statut === 'en_cours') ?? hackathons.value[0])
+const visibles = computed(() => hackathons.value.filter((h) => {
+  const jours = Math.max(1, Math.ceil((Date.parse(h.finRendusLe) - Date.parse(h.debutLe)) / 86_400_000))
+  return (!lieux.value.length || lieux.value.includes(h.lieu))
+    && (duree.value === 'tous' || (duree.value === 'court' ? jours <= 3 : duree.value === 'semaine' ? jours > 3 && jours <= 7 : jours > 7))
+    && correspond(recherche.value, [h.titre, h.theme, h.ville, h.organisateur.nom, t(`hackathons.lieux.${h.lieu}`)])
+}).sort((a, b) => tri.value === 'participants' ? b.nombreInscrits - a.nombreInscrits : tri.value === 'titre' ? a.titre.localeCompare(b.titre, locale.value) : Date.parse(a.debutLe) - Date.parse(b.debutLe)))
+const nombreFiltres = computed(() => Number(filtre.value !== 'tous') + lieux.value.length + Number(duree.value !== 'tous'))
+function reinitialiser() { filtre.value = 'tous'; lieux.value = []; duree.value = 'tous'; recherche.value = ''; tri.value = 'debut' }
+const statistiques = computed(() => [
+  { valeur: hackathons.value.length, libelle: t('exploration.hackathons.statDefis', hackathons.value.length) },
+  { valeur: hackathons.value.reduce((total, h) => total + h.nombreInscrits, 0), libelle: t('exploration.hackathons.statInscrits', hackathons.value.reduce((total, h) => total + h.nombreInscrits, 0)) },
+  { valeur: new Set(hackathons.value.map((h) => h.ville).filter(Boolean)).size, libelle: t('exploration.hackathons.statVilles', new Set(hackathons.value.map((h) => h.ville).filter(Boolean)).size) },
+])
 
 // Chaque chargement a son numéro : la réponse d'un ancien filtre, arrivée en retard, n'écrase pas la liste.
 let dernier = 0
@@ -54,41 +75,61 @@ const periode = (debut: string, fin: string) =>
 </script>
 
 <template>
-  <section class="hackathons">
-    <header class="page-tete motif motif--reseau">
-      <div class="page-tete__texte">
-        <h1>{{ t('hackathons.titre') }}</h1>
-        <p>{{ t('hackathons.intro') }}</p>
-      </div>
-      <RouterLink v-if="connecte" to="/hackathons/nouveau" class="creer" data-test="creer-un-hackathon">{{ t('hackathons.creer') }}</RouterLink>
-    </header>
+  <section class="hackathons exploration">
+    <EnteteExploration :surtitre="t('exploration.hackathons.surtitre')" :titre="t('exploration.hackathons.titre')" :accent="t('exploration.hackathons.accent')" :intro="t('hackathons.intro')" :statistiques="statistiques">
+      <template #actions><RouterLink v-if="connecte" to="/hackathons/nouveau" class="exploration__principal" data-test="creer-un-hackathon"><span aria-hidden="true">＋</span>{{ t('hackathons.creer') }}</RouterLink><a href="#hackathons-liste" class="exploration__secondaire">{{ t('exploration.hackathons.explorer') }} <span aria-hidden="true">↓</span></a></template>
+      <p class="exploration__surtitre">{{ t('exploration.hackathons.vedette') }}</p>
+      <template v-if="vedette && etat === 'pret'">
+        <div class="exploration__calendrier" aria-hidden="true"><strong>{{ jour(vedette.debutLe) }}</strong><span>{{ mois(vedette.debutLe) }}</span></div>
+        <h2><RouterLink :to="`/hackathons/${vedette.id}`">{{ vedette.titre }}</RouterLink></h2>
+        <p>{{ vedette.theme }}</p>
+        <div class="exploration__etiquettes"><span>{{ t(`hackathons.statuts.${vedette.statut}`) }}</span><span>{{ [t(`hackathons.lieux.${vedette.lieu}`), vedette.ville].filter(Boolean).join(' · ') }}</span></div>
+        <div class="exploration__pied-vedette"><div><small>{{ periode(vedette.debutLe, vedette.finRendusLe) }}</small><strong>{{ t('hackathons.inscrits', { n: vedette.nombreInscrits }, vedette.nombreInscrits) }}</strong></div><RouterLink :to="`/hackathons/${vedette.id}`" class="exploration__fleche" :aria-label="t('exploration.ouvrir', { titre: vedette.titre })">↗</RouterLink></div>
+      </template>
+      <template v-else><span class="exploration__icone" aria-hidden="true">⚑</span><h2>{{ t('exploration.hackathons.attenteTitre') }}</h2><p>{{ t('exploration.hackathons.attente') }}</p></template>
+    </EnteteExploration>
 
-    <div class="filtres" role="group" :aria-label="t('hackathons.titre')">
-      <button
-        v-for="f in FILTRES"
-        :key="f"
-        type="button"
-        class="filtre"
-        :aria-pressed="filtre === f"
-        :data-test="`filtre-${f}`"
-        @click="filtre = f"
-      >{{ t(`hackathons.filtres.${f}`) }}</button>
-      <button
-        v-if="connecte"
-        type="button"
-        class="filtre filtre--miens"
-        :aria-pressed="filtre === 'miens'"
-        data-test="filtre-miens"
-        @click="filtre = 'miens'"
-      >{{ t('hackathons.filtres.miens') }}</button>
+    <div class="exploration__outils" id="hackathons-liste">
+      <RechercheExploration v-model="recherche" :libelle="t('exploration.hackathons.recherche')" />
+      <span v-if="suivant" class="texte-discret">{{ t('exploration.dansLaListe') }}</span>
     </div>
+
+    <div class="catalogue">
+      <aside class="catalogue__filtres" :aria-label="t('hackathons.decouverte.filtres')">
+        <div class="catalogue__filtres-tete"><h2>{{ t('hackathons.decouverte.filtres') }} <span>{{ nombreFiltres }}</span></h2><button type="button" class="exploration__effacer" data-test="reinitialiser-filtres" @click="reinitialiser">{{ t('hackathons.decouverte.effacer') }}</button></div>
+        <fieldset class="catalogue__statuts"><legend>{{ t('hackathons.decouverte.statut') }}</legend>
+        <button
+          v-for="f in FILTRES"
+          :key="f"
+          type="button"
+          class="filtre"
+          :aria-pressed="filtre === f"
+          :data-test="`filtre-${f}`"
+          @click="filtre = f"
+        >{{ t(`hackathons.filtres.${f}`) }}</button>
+        <button
+          v-if="connecte"
+          type="button"
+          class="filtre filtre--miens"
+          :aria-pressed="filtre === 'miens'"
+          data-test="filtre-miens"
+          @click="filtre = 'miens'"
+        >{{ t('hackathons.filtres.miens') }}</button>
+        </fieldset>
+        <fieldset class="catalogue__formats"><legend>{{ t('hackathons.nouveau.lieu') }}</legend><label v-for="lieu in LIEUX" :key="lieu"><input v-model="lieux" type="checkbox" :value="lieu" :data-test="`lieu-${lieu}`" />{{ t(`hackathons.lieux.${lieu}`) }}</label></fieldset>
+        <label class="catalogue__duree"><span>{{ t('hackathons.decouverte.duree') }}</span><select v-model="duree" data-test="filtre-duree"><option value="tous">{{ t('hackathons.decouverte.durees.tous') }}</option><option value="court">{{ t('hackathons.decouverte.durees.court') }}</option><option value="semaine">{{ t('hackathons.decouverte.durees.semaine') }}</option><option value="long">{{ t('hackathons.decouverte.durees.long') }}</option></select></label>
+      </aside>
+
+      <div class="catalogue__contenu">
 
     <JSquelette v-if="etat === 'chargement'" :nombre="3" />
     <p v-else-if="etat === 'indisponible'" role="alert" class="carte message" data-test="indisponible">{{ t('hackathons.indisponible') }}</p>
     <template v-else>
+      <div class="exploration__resultats"><div><h2>{{ t('exploration.hackathons.resultats') }}</h2><p aria-live="polite">{{ t('exploration.resultats', { n: visibles.length }, visibles.length) }}</p></div><label class="catalogue__tri"><span>{{ t('hackathons.decouverte.trier') }}</span><select v-model="tri" data-test="tri-hackathons"><option value="debut">{{ t('hackathons.decouverte.tris.debut') }}</option><option value="participants">{{ t('hackathons.decouverte.tris.participants') }}</option><option value="titre">{{ t('hackathons.decouverte.tris.titre') }}</option></select></label></div>
       <p v-if="!hackathons.length" class="carte message" data-test="aucun">{{ filtre === 'miens' ? t('hackathons.aucunMiens') : t('hackathons.aucun') }}</p>
-      <ul v-else class="liste" data-test="liste">
-        <li v-for="h in hackathons" :key="h.id" class="carte hackathon" :data-statut="h.statut" data-test="hackathon">
+      <div v-else-if="!visibles.length" class="exploration__vide" data-test="sans-resultat"><h2>{{ t('exploration.aucunResultat') }}</h2><p>{{ t('exploration.essayerAutrement') }}</p><button type="button" class="exploration__effacer" @click="recherche = ''; lieux = []; duree = 'tous'">{{ t('exploration.reinitialiser') }}</button></div>
+      <ul v-else class="liste" :class="{ 'liste--unique': visibles.length === 1 }" data-test="liste">
+        <li v-for="h in visibles" :key="h.id" class="carte hackathon" :data-statut="h.statut" data-test="hackathon">
           <div class="hackathon__banniere" :style="{ '--teinte': teinte(h.titre) }" aria-hidden="true">
             <span class="hackathon__date">
               <span class="hackathon__jour">{{ jour(h.debutLe) }}</span>
@@ -114,24 +155,13 @@ const periode = (debut: string, fin: string) =>
         <JBouton :occupe="plus" data-test="plus" @click="charger(suivant ?? undefined)">{{ t('hackathons.plus') }}</JBouton>
       </div>
     </template>
+      </div>
+    </div>
   </section>
 </template>
 
 <style scoped>
-.hackathons { display: grid; gap: var(--space-6); }
-.page-tete a.creer {
-  align-self: center; display: inline-flex; align-items: center; min-height: 44px; padding: 0 var(--space-6);
-  border-radius: var(--radius-pill); background: var(--action); color: var(--on-action); font-weight: 700; text-decoration: none;
-}
-.page-tete a.creer:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-.filtres { display: flex; flex-wrap: wrap; gap: var(--space-2); }
-.filtre {
-  min-height: 40px; padding: 0 var(--space-4); border: 1px solid var(--line-strong); border-radius: var(--radius-pill);
-  background: var(--surface); font-weight: 600; cursor: pointer;
-}
-.filtre--miens { margin-inline-start: auto; }
-.filtre[aria-pressed='true'] { background: var(--action); border-color: var(--action); color: var(--on-action); }
-.filtre:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.hackathons { display: grid; gap: var(--space-6); min-width: 0; }
 .message { margin: 0; padding: var(--space-6); }
 
 /* Des cartes en grille ; toute la carte mène au hackathon (le lien du titre s'étend sur elle). */
@@ -173,4 +203,32 @@ const periode = (debut: string, fin: string) =>
 .etiquette { padding: 2px var(--space-3); border-radius: var(--radius-pill); border: 1px solid var(--line-strong); font-size: var(--type-body-sm-size); font-weight: 700; }
 .etiquette[data-statut='publie'], .etiquette[data-statut='en_cours'] { border-color: var(--action); }
 .suite { display: flex; justify-content: center; }
+.hackathons.exploration { gap: clamp(28px, 4vw, 48px); }
+.hackathon { border-radius: 24px; }
+.hackathon__banniere { block-size: 9rem; padding: 24px; }
+.hackathon__titre { font-size: 1.5rem; line-height: 1.3; letter-spacing: -.025em; }
+.catalogue { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 32px; align-items: start; }
+.catalogue__filtres { position: sticky; top: 100px; display: grid; gap: 24px; border: 1px solid var(--line); border-radius: 22px; padding: 22px; background: var(--surface); }
+.catalogue__filtres-tete { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
+.catalogue__filtres-tete h2 { display: flex; gap: 8px; align-items: center; margin: 0; font-size: 1.125rem; }
+.catalogue__filtres-tete h2 span { display: inline-grid; place-items: center; min-width: 24px; height: 24px; font-size: .8125rem; background: var(--action-soft); border-radius: 50%; }
+.catalogue__filtres-tete button { font-size: .875rem; }
+.catalogue fieldset { display: grid; gap: 8px; padding: 20px 0 0; margin: 0; border: 0; border-top: 1px solid var(--line); }
+.catalogue legend { font-weight: 700; font-size: .9375rem; padding-top: 16px; margin-bottom: 10px; }
+.catalogue__statuts button { display: flex; align-items: center; gap: 10px; text-align: start; padding: 9px 12px; min-height: 42px; background: transparent; border: 1px solid transparent; border-radius: 10px; color: var(--ink-muted); cursor: pointer; font-weight: 600; }
+.catalogue__statuts button::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--line-strong); }
+.catalogue__statuts button[aria-pressed='true'] { color: var(--proof-ink); background: var(--proof-soft); border-color: color-mix(in srgb, var(--proof) 30%, var(--line)); }
+.catalogue__statuts button[aria-pressed='true']::before { background: var(--proof); }
+.catalogue__formats label { display: flex; gap: 10px; align-items: center; min-height: 38px; font-size: .9375rem; }
+.catalogue__duree { display: grid; gap: 12px; font-size: .9375rem; font-weight: 700; }
+.catalogue__duree select { width: 100%; font-size: .875rem; font-weight: 400; }
+.catalogue__contenu { display: grid; gap: 24px; min-width: 0; }
+.catalogue__tri { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; font-size: .875rem; color: var(--ink-muted); }
+.catalogue__tri select { border-radius: 50px; font-size: .875rem; }
+.catalogue .liste { grid-template-columns: minmax(0, 1fr); }
+.catalogue .hackathon { grid-template-columns: 160px minmax(0, 1fr); grid-template-rows: auto; }
+.catalogue .hackathon__banniere { block-size: 100%; min-block-size: 240px; display: grid; align-content: center; justify-items: center; }
+.catalogue .hackathon__corps { padding: 28px; }
+@media (max-width: 900px) { .catalogue { grid-template-columns: 200px minmax(0, 1fr); gap: 20px; } .catalogue__filtres { padding: 16px; top: 125px; } .catalogue .hackathon { grid-template-columns: 100px minmax(0, 1fr); } .catalogue .hackathon__corps { padding: 20px; } .catalogue .hackathon__banniere { padding: 16px; } }
+@media (max-width: 680px) { .catalogue { grid-template-columns: minmax(0, 1fr); } .catalogue__filtres { position: static; grid-template-columns: repeat(2, minmax(0, 1fr)); } .catalogue__filtres-tete, .catalogue__duree { grid-column: 1 / -1; } .catalogue .hackathon { grid-template-columns: minmax(0, 1fr); } .catalogue .hackathon__banniere { min-block-size: 100px; justify-items: start; } }
 </style>

@@ -1494,7 +1494,11 @@
       "nonAttribuee": "Non attribuée",
       "etat": "État",
       "ajouter": "Ajouter la tâche",
-      "statut": { "a_faire": "À faire", "en_cours": "En cours", "livree": "Livrée" },
+      "statut": {
+        "a_faire": "À faire",
+        "en_cours": "En cours",
+        "livree": "Livrée"
+      },
       "pasDeTour": "Le tableau de bord s’ouvrira avec le premier tour, après le tirage.",
       "avancement": "Avancement du tour",
       "miennes": "Mes tâches",
@@ -2092,7 +2096,57 @@
       "discussion": "Annonces et échanges",
       "equipes": "Équipes",
       "gestion": "Gestion",
-      "nouvelles": "nouvelle annonce | nouvelles annonces"
+      "nouvelles": "nouvelle annonce | nouvelles annonces",
+      "projets": "Projets",
+      "calendrier": "Calendrier",
+      "reglement": "Règlement et prix",
+      "resultats": "Résultats"
+    },
+    "decouverte": {
+      "filtres": "Filtres",
+      "effacer": "Tout effacer",
+      "statut": "État du hackathon",
+      "duree": "Durée de construction",
+      "durees": {
+        "tous": "Toutes les durées",
+        "court": "1 à 3 jours",
+        "semaine": "4 à 7 jours",
+        "long": "Plus d’une semaine"
+      },
+      "trier": "Trier par",
+      "tris": {
+        "debut": "Date de début",
+        "participants": "Nombre d’inscrits",
+        "titre": "Nom du hackathon"
+      }
+    },
+    "evenement": {
+      "surtitre": "Un défi, une équipe, un projet à montrer",
+      "preparer": "Repère les dates et prépare ta participation.",
+      "construire": "Rencontre les équipes et trouve ta place.",
+      "partager": "Retrouve ton rendu et les réalisations.",
+      "nombrePrix": "{n} prix proposé | {n} prix proposés",
+      "voirPrix": "Découvrir les prix et les critères",
+      "affiche": "ON CONSTRUIT.\nENSEMBLE."
+    },
+    "galerie": {
+      "surtitre": "Construit pendant le hackathon",
+      "titre": "La galerie des projets",
+      "equipe": "Équipe participante",
+      "nombre": "Aucun projet | {n} projet | {n} projets",
+      "attenteTitre": "Les réalisations arrivent bientôt.",
+      "attente": "Les projets sont dévoilés au public avec les résultats. En attendant, consulte le calendrier et découvre les équipes participantes.",
+      "resultatsLe": "Résultats prévus le {date}.",
+      "indisponible": "Les projets ne sont pas disponibles pour le moment.",
+      "porteePublique": "Les réalisations du classement publié par l’organisateur.",
+      "porteeJury": "Cet espace présente les rendus qui te sont attribués pour l’évaluation.",
+      "porteeOrganisateur": "Les rendus reçus sont visibles ici pour préparer l’évaluation. Ils restent privés jusqu’à la publication des résultats.",
+      "recherche": "Chercher un projet ou une équipe…",
+      "aucun": "Aucun projet n’a encore été rendu.",
+      "details": "Lire la présentation",
+      "code": "Voir le code source",
+      "video": "Voir la vidéo de démonstration",
+      "voir": "Découvrir le projet"
     }
   },
   "missions": {
@@ -2521,6 +2575,196 @@
       "aucune": "Sans réponse",
       "voir": "Voir les réponses",
       "masquer": "Masquer les réponses"
+    }
+  },
+  "creationGuidee": {
+    "etape": "Étape {n} sur {total}",
+    "precedent": "Retour",
+    "continuer": "Continuer",
+    "apercu": "Ton aperçu",
+    "enDirect": "En direct",
+    "parcours": "Les étapes de création",
+    "aDiscuter": "Budget à discuter",
+    "aDefinir": "À définir ensemble",
+    "aDistance": "À distance",
+    "brouillon": "Tu enregistres un brouillon. Personne ne le voit tant que tu ne le publies pas.",
+    "aucunPrix": "Pas de récompense annoncée",
+    "personnes": "personnes",
+    "oui": "Oui",
+    "non": "Non",
+    "mission": {
+      "titre": {
+        "nom": "Le titre",
+        "titre": "Quelle mission veux-tu proposer ?",
+        "aide": "Un titre simple aide les développeurs à comprendre ce que tu recherches."
+      },
+      "besoin": {
+        "nom": "Le besoin",
+        "titre": "Quel résultat attends-tu ?",
+        "aide": "Explique le travail à réaliser, pour qui, et ce qui fera la différence."
+      },
+      "competences": {
+        "nom": "Les compétences",
+        "titre": "De quels talents as-tu besoin ?",
+        "aide": "Choisis les compétences utiles à cette mission. Tu pourras en discuter avec les développeurs."
+      },
+      "modalites": {
+        "nom": "Les modalités",
+        "titre": "Quel cadre pour cette mission ?",
+        "aide": "Précise ton budget, ta date souhaitée et ta ville si tu les connais. Ces informations restent facultatives."
+      },
+      "candidatures": {
+        "nom": "Les candidatures",
+        "titre": "Qui peut te proposer son aide ?",
+        "aide": "Choisis la visibilité de la mission et ajoute, si besoin, les questions à poser aux développeurs."
+      },
+      "apercu": {
+        "nom": "L’aperçu",
+        "titre": "Tout est prêt pour ton brouillon ?",
+        "aide": "Relis ta mission. Tu pourras encore la modifier avant de la publier."
+      },
+      "apercuVide": "Ta prochaine mission",
+      "exemples": {
+        "site": "Un site pour mon association",
+        "appli": "Une application de commandes",
+        "design": "Les maquettes de mon application"
+      }
+    },
+    "demande": {
+      "titre": {
+        "nom": "Ton projet",
+        "titre": "Quel projet veux-tu lancer ?",
+        "aide": "Commence par une phrase simple. Pas besoin de connaître la solution technique."
+      },
+      "description": {
+        "nom": "Ton besoin",
+        "titre": "Qu’est-ce qui doit changer ?",
+        "aide": "Raconte ce que tu fais aujourd’hui, le problème rencontré et ce que tu aimerais simplifier."
+      },
+      "questions": {
+        "nom": "Quelques précisions",
+        "titre": "Pour mieux comprendre ton besoin",
+        "aide": "Ces trois questions sont facultatives. Quelques mots suffisent pour rendre les propositions plus utiles."
+      },
+      "contexte": {
+        "nom": "Le contexte",
+        "titre": "Dans quel contexte travailles-tu ?",
+        "aide": "Choisis ton secteur et précise ta ville et ton délai si tu les connais."
+      },
+      "apercu": {
+        "nom": "L’aperçu",
+        "titre": "Ton besoin te ressemble ?",
+        "aide": "Vérifie les informations avant de découvrir les solutions et les personnes qui peuvent t’aider."
+      },
+      "apercuVide": "Ton prochain projet"
+    },
+    "hackathon": {
+      "titre": {
+        "nom": "Le nom",
+        "titre": "Comment s’appelle ton hackathon ?",
+        "aide": "Donne-lui un nom dont les participants se souviendront."
+      },
+      "defi": {
+        "nom": "Le défi",
+        "titre": "Quel défi allez-vous relever ?",
+        "aide": "Présente le thème, le problème à résoudre et ce que les équipes vont construire."
+      },
+      "format": {
+        "nom": "Le format",
+        "titre": "Comment les équipes se retrouvent-elles ?",
+        "aide": "En ligne, sur place ou les deux : précise le lieu et le nombre de personnes par équipe."
+      },
+      "calendrier": {
+        "nom": "Le calendrier",
+        "titre": "Quelles sont les dates à retenir ?",
+        "aide": "Pose les grandes étapes, des inscriptions à l’annonce des résultats. Les heures suivent ton fuseau local."
+      },
+      "participants": {
+        "nom": "Les inscriptions",
+        "titre": "Comment accueillir les participants ?",
+        "aide": "Choisis le mode d’inscription. Tu peux ajouter un questionnaire et les consignes du hackathon."
+      },
+      "jury": {
+        "nom": "Les critères",
+        "titre": "Qu’est-ce qui fera un bon projet ?",
+        "aide": "Définis les critères du jury. Le poids de chaque critère indique son importance relative."
+      },
+      "recompenses": {
+        "nom": "Les récompenses",
+        "titre": "Qu’est-ce que les équipes peuvent gagner ?",
+        "aide": "Ajoute tes récompenses et leurs partenaires, ou passe cette étape si rien n’est encore prévu."
+      },
+      "apercu": {
+        "nom": "L’aperçu",
+        "titre": "Prêt à enregistrer ton hackathon ?",
+        "aide": "Relis le programme, les inscriptions et les critères. Tu publieras le brouillon quand tout sera prêt."
+      },
+      "apercuVide": "Ton prochain hackathon",
+      "exemples": {
+        "ecoles": "Hackathon des écoles",
+        "quartier": "Le défi numérique du quartier",
+        "sante": "Hack Santé Afrique"
+      }
+    }
+  },
+  "exploration": {
+    "effacer": "Effacer la recherche",
+    "reinitialiser": "Réinitialiser les filtres",
+    "ouvrir": "Ouvrir : {titre}",
+    "resultats": "Aucun résultat | {n} résultat | {n} résultats",
+    "aucunResultat": "Aucun résultat pour cette recherche.",
+    "essayerAutrement": "Essaie un autre mot ou élargis les filtres pour retrouver une opportunité.",
+    "dansLaListe": "La recherche porte sur les éléments de cette liste. « Voir plus » permet d’en charger d’autres.",
+    "missions": {
+      "surtitre": "Missions · des compétences qui font avancer",
+      "titre": "Ton talent.",
+      "accent": "Un projet qui compte.",
+      "statMissions": "mission dans cette sélection | missions dans cette sélection",
+      "statCompetences": "compétence recherchée | compétences recherchées",
+      "explorer": "Trouver une mission",
+      "vedette": "Une mission à découvrir",
+      "attenteTitre": "Le prochain projet commence ici.",
+      "attente": "Un besoin précis, les bonnes compétences et une collaboration qui avance. Publie ta mission ou explore les opportunités.",
+      "recherche": "Chercher une mission, une compétence, une ville…",
+      "resultats": "Des projets pour tes compétences"
+    },
+    "hackathons": {
+      "surtitre": "Hackathons · les idées prennent leur élan",
+      "titre": "Un défi.",
+      "accent": "Tout à construire.",
+      "statDefis": "défi dans cette sélection | défis dans cette sélection",
+      "statInscrits": "inscription | inscriptions",
+      "statVilles": "ville représentée | villes représentées",
+      "explorer": "Explorer les défis",
+      "vedette": "Un défi à découvrir",
+      "attenteTitre": "À plusieurs, on va plus loin.",
+      "attente": "Réunis une équipe, confronte tes idées et construis quelque chose à montrer. Ton prochain défi est peut-être ici.",
+      "recherche": "Chercher un défi, un thème, une ville…",
+      "resultats": "Choisis ton prochain défi"
+    },
+    "vitrine": {
+      "surtitre": "Showcase · construit ensemble, partagé avec tous",
+      "titre": "Des idées.",
+      "accent": "Devenues réelles.",
+      "statProjets": "projet dans cette sélection | projets dans cette sélection",
+      "statCreateurs": "créateur | créateurs",
+      "statPays": "pays représenté | pays représentés",
+      "explorer": "Explorer les réalisations",
+      "creer": "Trouver mon équipe",
+      "vedette": "À découvrir dans la vitrine",
+      "equipe": "Construit en équipe",
+      "membres": "{n} créateur | {n} créateurs",
+      "attenteTitre": "La prochaine réalisation peut être la tienne.",
+      "attente": "Des projets utiles, des équipes de tout le continent et des idées qui passent à la mise en ligne.",
+      "recherche": "Chercher un projet, une équipe, un sujet…",
+      "origine": "Origine du projet",
+      "origines": {
+        "tous": "Toutes les origines",
+        "cercle": "Nés d’un cercle",
+        "demande": "Pour une PME",
+        "idee": "Initiatives libres"
+      },
+      "resultats": "Ce que la communauté construit"
     }
   }
 }

@@ -77,6 +77,18 @@ describe('Vitrine', () => {
     expect(routeur.currentRoute.value.query.hebergeur).toBe('datacloud')
   })
 
+  it('combine la recherche et l’origine du projet et propose de réinitialiser une recherche vide', async () => {
+    const { page } = await monter()
+    await page.get('[data-test="recherche-exploration"]').setValue('tontines')
+    expect(page.findAll('[data-test="projets"] > li')).toHaveLength(1)
+    await page.get('[data-test="origine-demande"]').trigger('click')
+    expect(page.find('[data-test="sans-resultat"]').exists()).toBe(true)
+    await page.get('[data-test="sans-resultat"] button').trigger('click')
+    expect(page.findAll('[data-test="projets"] > li')).toHaveLength(vitrineDemo.length)
+    await page.get('[data-test="recherche-exploration"]').setValue('couturiere THIES')
+    expect(page.findAll('[data-test="projets"] > li')).toHaveLength(1)
+  })
+
   it('ajoute la page suivante sous les projets déjà affichés', async () => {
     serveur.use(
       http.get('/api/vitrine', ({ request }) => {

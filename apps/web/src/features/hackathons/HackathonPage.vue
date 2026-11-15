@@ -22,6 +22,7 @@ import ResultatsHackathon from './ResultatsHackathon.vue'
 import DiscussionHackathon from './DiscussionHackathon.vue'
 import TriCandidatures from './TriCandidatures.vue'
 import PilotageHackathon from './PilotageHackathon.vue'
+import GalerieHackathon from './GalerieHackathon.vue'
 import { useSession } from '../../session'
 
 /*
@@ -104,6 +105,12 @@ const etapes = computed(() => {
 })
 /** La prochaine date à venir, mise en avant dans le résumé. */
 const prochaine = computed(() => etapes.value.find((e) => e.etat === 'avenir') ?? null)
+const periode = computed(() => hackathon.value ? new Intl.DateTimeFormat(locale.value, { day: 'numeric', month: 'short', year: 'numeric' }).formatRange(new Date(hackathon.value.debutLe), new Date(hackathon.value.finRendusLe)) : '')
+const dotations = computed(() => {
+  const montants = new Map<string, number>()
+  for (const prix of hackathon.value?.prix ?? []) if (prix.montant) montants.set(prix.montant.devise, (montants.get(prix.montant.devise) ?? 0) + prix.montant.centimes)
+  return [...montants].map(([devise, centimes]) => formaterMontant({ devise, centimes }, locale.value)).join(' · ')
+})
 /** Le poids de chaque critère, en part du total, pour une barre lisible d'un coup d'œil. */
 const criteres = computed(() => {
   const liste = hackathon.value?.criteres ?? []
@@ -130,26 +137,30 @@ const barreMobile = computed(() => Boolean(hackathon.value && hackathon.value.st
 
 // ---------------------------------------------------------------- les onglets
 
-type Onglet = 'presentation' | 'discussion' | 'equipes' | 'gestion'
+type Onglet = 'presentation' | 'projets' | 'equipes' | 'calendrier' | 'reglement' | 'discussion' | 'resultats' | 'gestion'
 const nouvellesAnnonces = ref(0)
 const onglets = computed<Onglet[]>(() => {
   const h = hackathon.value
-  if (!h || h.statut === 'brouillon') return ['presentation']
-  const liste: Onglet[] = ['presentation', 'discussion']
+  if (!h) return ['presentation']
+  if (h.statut === 'brouillon') return ['presentation', 'calendrier', 'reglement']
+  const liste: Onglet[] = ['presentation', 'projets']
   if (voitEquipes.value) liste.push('equipes')
+  liste.push('calendrier', 'reglement', 'discussion')
+  if (h.statut === 'resultats') liste.push('resultats')
   if (voitGestion.value) liste.push('gestion')
   return liste
 })
-const onglet = computed<Onglet>(() => onglets.value.find((o) => o === route.query.onglet) ?? 'presentation')
+const onglet = computed<Onglet>(() => onglets.value.find((o) => o === route.query.onglet) ?? (hackathon.value?.statut === 'resultats' ? 'resultats' : 'presentation'))
 /** Les liens internes (#jury, #equipes…) ouvrent l'onglet qui contient leur section. */
 const ONGLET_DE: Record<string, Onglet> = {
-  participer: 'presentation', noter: 'presentation', candidatures: 'gestion', jury: 'gestion', equipes: 'equipes', discussion: 'discussion',
+  participer: 'presentation', noter: 'presentation', candidatures: 'gestion', jury: 'gestion', equipes: 'equipes', discussion: 'discussion', calendrier: 'calendrier', criteres: 'reglement', prix: 'reglement', code: 'reglement', questions: 'reglement', projets: 'projets',
 }
 async function choisirOnglet(o: Onglet, ancre?: string) {
-  await routeur.replace({ query: { ...route.query, onglet: o === 'presentation' ? undefined : o }, hash: ancre ? `#${ancre}` : '' })
+  if (!onglets.value.includes(o)) return
+  await routeur.replace({ query: { ...route.query, onglet: o === 'presentation' && hackathon.value?.statut !== 'resultats' ? undefined : o }, hash: ancre ? `#${ancre}` : '' })
   // Le panneau n'est visible qu'une fois la route changée : on défile après, pas avant.
   await nextTick()
-  if (ancre) document.getElementById(ancre)?.scrollIntoView({ block: 'start' })
+  document.getElementById(ancre ?? `panneau-${o}`)?.scrollIntoView?.({ block: 'start' })
 }
 function suivreAncre() {
   const ancre = window.location.hash.slice(1)
@@ -215,41 +226,45 @@ const annuler = () => (raisonValide.value ? agir(() => annulerHackathon(hackatho
     <p v-else-if="etat === 'indisponible'" role="alert" class="carte message">{{ t('hackathons.indisponible') }}</p>
 
     <template v-else-if="hackathon">
-      <header class="page-tete motif motif--reseau">
-        <div class="page-tete__texte">
+      <header class="evenement__banniere">
+        <div class="evenement__introduction">
+          <p class="evenement__surtitre">{{ t('hackathons.evenement.surtitre') }}</p>
           <p class="etiquette" :data-statut="hackathon.statut" data-test="statut">{{ t(`hackathons.statuts.${hackathon.statut}`) }}</p>
-          <h1 data-test="titre">{{ hackathon.titre }}</h1>
+          <h1 id="titre-hackathon" data-test="titre">{{ hackathon.titre }}</h1>
           <p class="theme">{{ hackathon.theme }}</p>
+          <div class="evenement__meta"><span>{{ [t(`hackathons.lieux.${hackathon.lieu}`), hackathon.ville].filter(Boolean).join(' · ') }}</span><span>{{ periode }}</span><span>{{ t('hackathons.inscrits', { n: hackathon.nombreInscrits }, hackathon.nombreInscrits) }}</span></div>
+          <p class="evenement__organisateur"><JAvatar :nom="hackathon.organisateur.nom" :url="hackathon.organisateur.avatarUrl" :taille="28" />{{ t('hackathons.par', { nom: hackathon.organisateur.nom }) }}</p>
         </div>
+        <div class="evenement__affiche" aria-hidden="true"><span>Jamii<span>{{ t('hackathons.titre') }}</span></span><div class="evenement__symbole">&lt;/&gt;</div><i /><b>{{ t('hackathons.evenement.affiche') }}</b></div>
       </header>
+
+    <!-- Des onglets plutôt qu'une page de 5 000 px : chacun a son adresse (?onglet=…) pour être partagé. -->
+    <div v-if="onglets.length > 1" class="onglets" role="tablist" :aria-label="t('hackathons.onglets.titre')" @keydown="clavierOnglets">
+      <button
+        v-for="o in onglets"
+        :id="`onglet-${o}`"
+        :key="o"
+        type="button"
+        role="tab"
+        class="onglet"
+        :aria-selected="onglet === o"
+        :aria-controls="`panneau-${o}`"
+        :tabindex="onglet === o ? 0 : -1"
+        :data-test="`onglet-${o}`"
+        @click="void choisirOnglet(o)"
+      >
+        {{ t(`hackathons.onglets.${o}`) }}
+        <span v-if="o === 'discussion' && nouvellesAnnonces" class="onglet__pastille" data-test="nouvelles-annonces">
+          {{ nouvellesAnnonces }}<span class="visuellement-cache"> {{ t('hackathons.onglets.nouvelles', nouvellesAnnonces) }}</span>
+        </span>
+      </button>
+    </div>
 
       <div class="disposition">
         <div class="principal">
-          <!-- Des onglets plutôt qu'une page de 5 000 px : chacun a son adresse (?onglet=…) pour être partagé. -->
-          <div v-if="onglets.length > 1" class="onglets" role="tablist" :aria-label="t('hackathons.onglets.titre')" @keydown="clavierOnglets">
-            <button
-              v-for="o in onglets"
-              :id="`onglet-${o}`"
-              :key="o"
-              type="button"
-              role="tab"
-              class="onglet"
-              :aria-selected="onglet === o"
-              :aria-controls="`panneau-${o}`"
-              :tabindex="onglet === o ? 0 : -1"
-              :data-test="`onglet-${o}`"
-              @click="void choisirOnglet(o)"
-            >
-              {{ t(`hackathons.onglets.${o}`) }}
-              <span v-if="o === 'discussion' && nouvellesAnnonces" class="onglet__pastille" data-test="nouvelles-annonces">
-                {{ nouvellesAnnonces }}<span class="visuellement-cache"> {{ t('hackathons.onglets.nouvelles', nouvellesAnnonces) }}</span>
-              </span>
-            </button>
-          </div>
+
 
           <div v-show="onglet === 'presentation'" id="panneau-presentation" class="panneau" role="tabpanel" aria-labelledby="onglet-presentation">
-            <!-- Une fois les résultats publiés, c'est ce qu'on vient voir : ils passent avant le défi. -->
-            <ResultatsHackathon v-if="hackathon.statut === 'resultats'" :hackathon="hackathon" />
             <article class="carte contenu">
               <p v-if="hackathon.statut === 'brouillon'" class="note" data-test="brouillon">{{ t('hackathons.detail.brouillon') }}</p>
 
@@ -259,8 +274,23 @@ const annuler = () => (raisonValide.value ? agir(() => annulerHackathon(hackatho
                 <p class="texte" data-test="description">{{ hackathon.description }}</p>
               </section>
 
+              <div v-if="!['brouillon', 'annule'].includes(hackathon.statut)" class="evenement__parcours">
+                <button type="button" @click="choisirOnglet('calendrier')"><span>01</span><strong>{{ t('hackathons.onglets.calendrier') }}</strong><small>{{ t('hackathons.evenement.preparer') }}</small></button>
+                <button type="button" @click="choisirOnglet('equipes')"><span>02</span><strong>{{ t('hackathons.onglets.equipes') }}</strong><small>{{ t('hackathons.evenement.construire') }}</small></button>
+                <button type="button" @click="choisirOnglet('projets')"><span>03</span><strong>{{ t('hackathons.onglets.projets') }}</strong><small>{{ t('hackathons.evenement.partager') }}</small></button>
+              </div>
               <p v-if="hackathon.deploiementObligatoire" class="note" data-test="deploiement">{{ t('hackathons.detail.deploiement') }}</p>
 
+
+
+
+
+            </article>
+            <div v-if="participe" id="participer"><InscriptionHackathon :hackathon="hackathon" @inscrit="rafraichir" /></div>
+            <div v-if="peut('noter')" id="noter" class="ancre"><NotationHackathon :hackathon="hackathon" @progression="notation = $event" /></div>
+          </div>
+
+          <div v-show="onglet === 'calendrier'" id="panneau-calendrier" class="panneau" role="tabpanel" aria-labelledby="onglet-calendrier"><article class="carte contenu">
               <section aria-labelledby="calendrier">
                 <h2 id="calendrier">{{ t('hackathons.detail.calendrier') }}</h2>
                 <ol class="frise" data-test="calendrier">
@@ -271,7 +301,9 @@ const annuler = () => (raisonValide.value ? agir(() => annulerHackathon(hackatho
                   </li>
                 </ol>
               </section>
+          </article></div>
 
+          <div v-show="onglet === 'reglement'" id="panneau-reglement" class="panneau" role="tabpanel" aria-labelledby="onglet-reglement"><article class="carte contenu">
               <section aria-labelledby="criteres">
                 <h2 id="criteres">{{ t('hackathons.detail.criteres') }}</h2>
                 <ul class="criteres" data-test="criteres">
@@ -303,11 +335,14 @@ const annuler = () => (raisonValide.value ? agir(() => annulerHackathon(hackatho
                 <h2 id="code">{{ t('hackathons.detail.code') }}</h2>
                 <p class="texte">{{ hackathon.codeDeConduite }}</p>
               </section>
-            </article>
-            <div v-if="participe" id="participer"><InscriptionHackathon :hackathon="hackathon" @inscrit="rafraichir" /></div>
-            <div v-if="peut('noter')" id="noter" class="ancre"><NotationHackathon :hackathon="hackathon" @progression="notation = $event" /></div>
+          </article></div>
+
+          <div v-if="hackathon.statut !== 'brouillon'" v-show="onglet === 'projets'" id="panneau-projets" class="panneau" role="tabpanel" aria-labelledby="onglet-projets">
             <RenduEquipe v-if="monEquipe" :hackathon="hackathon" :equipe-id="monEquipe" />
+            <GalerieHackathon v-if="onglet === 'projets'" :hackathon="hackathon" />
           </div>
+
+          <div v-if="hackathon.statut === 'resultats'" v-show="onglet === 'resultats'" id="panneau-resultats" class="panneau" role="tabpanel" aria-labelledby="onglet-resultats"><ResultatsHackathon :hackathon="hackathon" /></div>
 
           <div v-if="voitGestion" v-show="onglet === 'gestion'" id="panneau-gestion" class="panneau" role="tabpanel" aria-labelledby="onglet-gestion">
             <ConfirmerResultats v-if="peut('confirmer_resultats')" :hackathon="hackathon" @publie="rafraichir" />
@@ -347,6 +382,8 @@ const annuler = () => (raisonValide.value ? agir(() => annulerHackathon(hackatho
           >{{ t('hackathons.detail.seConnecter') }}</RouterLink>
           <p v-else-if="hackathon.moi.role === 'participant'" class="resume__inscrit" data-test="inscrit">{{ t('hackathons.detail.inscrit') }}</p>
           <a v-if="hackathon.statut !== 'brouillon'" href="#discussion" class="j-bouton j-bouton--secondaire" data-test="aller-discussion">{{ t('hackathons.discussion.aller') }}</a>
+
+          <div v-if="hackathon.prix.length" class="resume__dotations"><span>{{ t('hackathons.detail.prix') }}</span><strong>{{ dotations || t('hackathons.evenement.nombrePrix', { n: hackathon.prix.length }, hackathon.prix.length) }}</strong><button type="button" @click="choisirOnglet('reglement', 'prix')">{{ t('hackathons.evenement.voirPrix') }} ↗</button></div>
 
           <dl class="faits">
             <div>
@@ -426,7 +463,7 @@ const annuler = () => (raisonValide.value ? agir(() => annulerHackathon(hackatho
 
 .disposition { display: grid; gap: var(--space-6); grid-template-columns: minmax(0, 1fr); align-items: start; }
 .principal { display: grid; gap: var(--space-6); min-width: 0; }
-.panneau { display: grid; gap: var(--space-6); min-width: 0; }
+.panneau { display: grid; gap: var(--space-6); min-width: 0; scroll-margin-top: 160px; }
 .onglets {
   display: flex; gap: var(--space-1); overflow-x: auto; scrollbar-width: none; padding: var(--space-1);
   border-radius: var(--radius-pill); background: var(--surface); border: 1px solid var(--line-strong);
@@ -500,4 +537,44 @@ const annuler = () => (raisonValide.value ? agir(() => annulerHackathon(hackatho
 .note { margin: 0; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); border-inline-start: 3px solid var(--cantaloupe); background: color-mix(in srgb, var(--surface) 60%, transparent); font-weight: 600; }
 .erreur { margin: 0; color: var(--danger); font-weight: 600; }
 #participer, .ancre { scroll-margin-block-start: 6rem; }
+.hackathon { padding-inline: clamp(0px, 1.5vw, 24px); min-width: 0; }
+.evenement__banniere { display: grid; grid-template-columns: minmax(0, 1fr) 270px; gap: 48px; align-items: center; padding: clamp(28px, 4vw, 56px); border-radius: 28px; color: #fff; background: radial-gradient(ellipse at 95% 0, #23546c 0, transparent 60%), var(--midnight); overflow: hidden; }
+.evenement__surtitre { font-size: .8125rem; letter-spacing: .14em; text-transform: uppercase; font-weight: 700; color: #d2e0e7; margin: 0 0 18px; }
+.evenement__banniere h1 { color: #fff; font-size: clamp(2.5rem, 4.5vw, 4.75rem); line-height: 1.05; letter-spacing: -.045em; margin: 18px 0; max-width: 22ch; overflow-wrap: anywhere; }
+.evenement__banniere .theme { color: #d2e0e7; font-size: 1.125rem; max-width: 60ch; line-height: 1.7; }
+.evenement__banniere .etiquette { color: #fff; background: #ffffff14; border-color: #ffffff50; }
+.evenement__meta { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 24px; font-size: .875rem; color: #e0e9ed; }
+.evenement__meta > span { display: flex; align-items: center; gap: 8px; }
+.evenement__meta > span::before { content: ''; width: 5px; height: 5px; background: var(--cantaloupe); border-radius: 50%; }
+.evenement__organisateur { display: flex; align-items: center; gap: 10px; margin: 24px 0 0; color: #e0e9ed; font-size: .875rem; }
+.evenement__affiche { position: relative; display: flex; flex-direction: column; justify-content: space-between; min-height: 285px; padding: 25px; color: var(--midnight); border-radius: 22px; background: var(--cantaloupe); transform: rotate(5deg); box-shadow: 14px 14px 0 #ffffff0e; }
+.evenement__affiche > span { display: flex; justify-content: space-between; gap: 10px; font-weight: 700; font-size: 1.25rem; font-family: var(--font-display); }
+.evenement__affiche > span > span { font-size: .8125rem; padding-top: 5px; }
+.evenement__symbole { text-align: center; font: 700 4.5rem var(--font-display); letter-spacing: -.08em; padding-block: 20px; }
+.evenement__affiche > b { font: 700 1.5rem/1.05 var(--font-display); letter-spacing: -.04em; white-space: pre-line; }
+.evenement__affiche > i { position: absolute; width: 80px; height: 80px; border: 1px solid #051a2540; border-radius: 50%; right: -15px; bottom: -20px; }
+.onglets { position: sticky; top: 80px; z-index: 5; padding: 8px; border-radius: 18px; gap: 6px; box-shadow: var(--ombre-carte); }
+.onglet { min-height: 46px; border-radius: 12px; font-size: .9375rem; }
+.onglet[aria-selected='true'] { background: var(--proof); color: var(--on-proof); }
+.contenu { border-radius: 24px; }
+.contenu h2 { font-size: 1.5rem; letter-spacing: -.025em; }
+.contenu section { scroll-margin-top: 160px; }
+.texte { line-height: 1.9; font-size: 1rem; overflow-wrap: anywhere; }
+.evenement__parcours { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.evenement__parcours button { display: grid; gap: 10px; text-align: start; padding: 20px; border-radius: 16px; border: 1px solid var(--line-strong); background: var(--surface); cursor: pointer; }
+.evenement__parcours button:hover { background: var(--action-soft); }
+.evenement__parcours span { font-size: .875rem; font-weight: 700; color: var(--proof-ink); }
+.evenement__parcours strong { font-size: 1rem; }
+.evenement__parcours small { font-size: .875rem; color: var(--ink-muted); line-height: 1.6; }
+.resume { padding: 28px; border-radius: 24px; }
+.resume :deep(.j-bouton--principal), .barre-mobile .j-bouton--principal { --action: var(--proof); --on-action: var(--on-proof); }
+.resume .j-bouton, .resume :deep(.j-bouton) { border-radius: 50px; }
+.resume__dotations { display: grid; gap: 10px; padding: 20px 0; border-block: 1px solid var(--line-strong); }
+.resume__dotations > span { font-size: .875rem; color: var(--ink-muted); }
+.resume__dotations strong { font: 700 1.65rem var(--font-display); letter-spacing: -.03em; overflow-wrap: anywhere; }
+.resume__dotations button { min-height: 36px; border: 0; background: transparent; color: var(--action-ink); padding: 0; font: inherit; text-align: start; cursor: pointer; font-size: .875rem; }
+#participer, .ancre { scroll-margin-top: 160px; }
+@media (min-width: 960px) { .disposition { grid-template-columns: minmax(0, 1fr) 330px; gap: 28px; } .resume { top: 154px; max-block-size: calc(100dvh - 170px); } }
+@media (max-width: 960px) { .onglets { top: 120px; } .evenement__banniere { grid-template-columns: minmax(0, 1fr) 200px; gap: 28px; } .evenement__affiche { min-height: 240px; padding: 20px; } .evenement__parcours { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 680px) { .evenement__banniere { grid-template-columns: minmax(0, 1fr); padding: 28px 24px; } .evenement__affiche { display: none; } .onglets { top: 76px; } }
 </style>

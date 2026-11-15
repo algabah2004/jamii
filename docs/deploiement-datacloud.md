@@ -61,6 +61,7 @@ Les trois images sont **vérifiées en local** : elles se construisent, démarre
   SPRING_PROFILES_ACTIVE=demo
   ```
   - `SPRING_PROFILES_ACTIVE=demo` charge les données de démonstration dans PostgreSQL : 24 cercles et les 18 comptes fictifs existants, ainsi que les communautés, missions et hackathons. Les 21 cercles de découverte se complètent au redémarrage même si la base contenait déjà la démo ; les cercles existants et les modifications des visiteurs sont conservés. Ce profil reste actif sur la version distante de démonstration. Le front y utilise la vraie API, sans MSW.
+  - Le catalogue ajoute aussi 12 hackathons portant la mention « Démo » : trois formats, inscriptions ouvertes, événements en cours, évaluation et résultats publiés. Chacun possède deux équipes ; les événements avancés ont des rendus, et celui de Thiès a un classement public. Les ajouts sont rejouables, sans réinscrire les membres partis ni écraser les événements existants. Les mêmes adresses d’événement fonctionnent dans l’aperçu factice, notamment `/hackathons/e2026115-0000-4000-8000-000000000012` pour les résultats et la galerie de Thiès. Les liens des prototypes en `.demo.jamii.test` sont fictifs.
   - Si la base de DataCloud refuse `require`, essayer `prefer` et le noter ici.
 - [ ] Contrôle de santé : `/health/readiness`. La première fois, compter 30 à 60 s (Flyway crée les tables).
 

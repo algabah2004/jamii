@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { http, HttpResponse } from 'msw'
 import { createMemoryHistory, createRouter, RouterView } from 'vue-router'
 import { serveur } from '../../test-setup'
@@ -11,7 +11,10 @@ import MissionsPage from './MissionsPage.vue'
 import NouvelleMissionPage from './NouvelleMissionPage.vue'
 import { decimales, formaterMontant, lireCompetences, versMontant } from './missions'
 
+import { continuer, jusquApercu } from '../../test/creationGuidee'
 beforeEach(() => reinitialiserMissions())
+
+enableAutoUnmount(afterEach)
 
 async function monter(chemin: string) {
   ;(i18n.global.locale as unknown as { value: string }).value = 'fr'
@@ -87,6 +90,20 @@ describe('la liste des missions', () => {
     expect(page.get('[data-test="aucune"]').text()).toContain('Aucune mission ouverte')
   })
 
+  it('recherche dans les compétences et la ville, puis permet de réinitialiser les filtres', async () => {
+    const { page } = await monter('/missions')
+    await attendre(page, '[data-test="liste"]')
+    await page.get('[data-test="recherche-exploration"]').setValue('VUE dakar')
+    expect(page.findAll('[data-test="mission"]')).toHaveLength(1)
+    await page.get('[data-test="filtre-distance"]').trigger('click')
+    expect(page.findAll('[data-test="mission"]')).toHaveLength(1)
+    await page.get('[data-test="recherche-exploration"]').setValue('inexistante')
+    expect(page.find('[data-test="sans-resultat"]').exists()).toBe(true)
+    await page.get('[data-test="sans-resultat"] button').trigger('click')
+    expect(page.findAll('[data-test="mission"]')).toHaveLength(1)
+    expect(page.get('[data-test="filtre-distance"]').attributes('aria-pressed')).toBe('false')
+  })
+
   it('le dit quand l’API ne répond pas', async () => {
     serveur.use(http.get('/api/missions', () => HttpResponse.json({ code: 'erreur' }, { status: 500 })))
     const { page } = await monter('/missions')
@@ -97,14 +114,18 @@ describe('la liste des missions', () => {
 describe('publier une mission', () => {
   async function remplir(page: ReturnType<typeof mount>) {
     await page.get('input[type="text"]').setValue('Un site pour mon association')
+    await continuer(page)
     await page.get('textarea').setValue('Une page pour présenter nos actions et recevoir des dons par Mobile Money.')
-    await page.findAll('input[type="text"]')[1]!.setValue('Vue, ux design')
+    await continuer(page)
+    await page.get('input[type="text"]').setValue('Vue, ux design')
+    await continuer(page)
   }
 
   it('garde le bouton éteint tant que le titre, la description et une compétence manquent', async () => {
     const { page } = await monter('/missions/nouvelle')
-    expect(page.get('[data-test="creer"]').attributes('disabled')).toBeDefined()
+    expect(page.get('[data-test="assistant-suivant"]').attributes('disabled')).toBeDefined()
     await remplir(page)
+    await jusquApercu(page)
     expect(page.get('[data-test="creer"]').attributes('disabled')).toBeUndefined()
   })
 
@@ -118,9 +139,11 @@ describe('publier une mission', () => {
     )
     const { page, routeur } = await monter('/missions/nouvelle')
     await remplir(page)
-    await page.findAll('input[type="text"]')[2]!.setValue('450 000')
+    await page.get('input[type="text"]').setValue('450 000')
     await page.get('[data-test="devise"]').setValue('XOF')
+    await continuer(page)
     await page.get('[data-test="invitation"]').setValue(true)
+    await jusquApercu(page)
     await page.get('[data-test="nouvelle-mission"]').trigger('submit')
 
     await vi.waitFor(() => expect(routeur.currentRoute.value.path).toBe('/missions/abc'))
@@ -138,7 +161,7 @@ describe('publier une mission', () => {
     serveur.use(http.post('/api/missions', () => ((envoye = true), HttpResponse.json({}, { status: 201 }))))
     const { page } = await monter('/missions/nouvelle')
     await remplir(page)
-    await page.findAll('input[type="text"]')[2]!.setValue('beaucoup')
+    await page.get('input[type="text"]').setValue('beaucoup')
     await page.get('[data-test="nouvelle-mission"]').trigger('submit')
     await vi.waitFor(() => expect(page.text()).toContain('pas un montant valide'))
     expect(envoye).toBe(false)
@@ -155,6 +178,7 @@ describe('publier une mission', () => {
     )
     const { page } = await monter('/missions/nouvelle')
     await remplir(page)
+    await jusquApercu(page)
     await page.get('[data-test="nouvelle-mission"]').trigger('submit')
     await vi.waitFor(() => expect(page.text()).toContain('Le titre doit faire entre 3 et 120 caractères.'))
     expect(page.text()).toContain('de une à dix compétences')
@@ -177,8 +201,12 @@ describe('une mission', () => {
   it('publie un brouillon, puis le statut change', async () => {
     const { page } = await monter('/missions/nouvelle')
     await page.get('input[type="text"]').setValue('Un site pour mon association')
+    await continuer(page)
     await page.get('textarea').setValue('Une page pour présenter nos actions et recevoir des dons par Mobile Money.')
-    await page.findAll('input[type="text"]')[1]!.setValue('vue')
+    await continuer(page)
+    await page.get('input[type="text"]').setValue('vue')
+    await continuer(page)
+    await jusquApercu(page)
     await page.get('[data-test="nouvelle-mission"]').trigger('submit')
     await vi.waitFor(() => expect(page.find('[data-test="brouillon"]').exists()).toBe(true), { timeout: 4000 })
     expect(page.get('[data-test="statut"]').text()).toBe('Brouillon')

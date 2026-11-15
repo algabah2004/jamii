@@ -218,6 +218,44 @@ class DonneesDemoTest {
 	}
 
 	@Test
+	void le_catalogue_ajoute_douze_evenements_avec_des_equipes_et_les_quatre_phases() {
+		assertThat(mvc.get().uri("/api/hackathons?limite=100")).hasStatusOk().bodyJson()
+			.extractingPath("$.elements.length()").asNumber().satisfies(n -> assertThat(n.intValue()).isGreaterThanOrEqualTo(14));
+		for (int i = 1; i <= 12; i++) {
+			var reponse = mvc.get().uri("/api/hackathons/" + DemoDecouverteHackathons.identifiant(i));
+			assertThat(reponse).hasStatusOk().bodyJson().extractingPath("$.titre").asString().contains("· Démo");
+			assertThat(reponse).bodyJson().extractingPath("$.nombreInscrits").isEqualTo(4);
+		}
+		for (var phase : java.util.Map.of(1, "publie", 9, "en_cours", 11, "evaluation", 12, "resultats").entrySet()) {
+			assertThat(mvc.get().uri("/api/hackathons/" + DemoDecouverteHackathons.identifiant(phase.getKey())))
+				.bodyJson().extractingPath("$.statut").isEqualTo(phase.getValue());
+		}
+		assertThat(compter("SELECT count(DISTINCT lieu) FROM hackathon WHERE id::text LIKE 'e2026115-%'")).isEqualTo(3);
+	}
+
+	@Test
+	void les_resultats_fictifs_de_thies_ont_deux_projets_et_un_prix_publics() {
+		var reponse = mvc.get().uri("/api/hackathons/" + DemoDecouverteHackathons.identifiant(12) + "/resultats");
+		assertThat(reponse).hasStatusOk().bodyJson().extractingPath("$.classement.length()").isEqualTo(2);
+		assertThat(reponse).bodyJson().extractingPath("$.classement[0].rendu.titre").isEqualTo("Ateliers ouverts");
+		assertThat(reponse).bodyJson().extractingPath("$.gagnants[0].prix.nom").isEqualTo("Prix du jury · Démo");
+	}
+
+	@Test
+	@Transactional
+	void un_redemarrage_complete_une_base_existante_sans_ecraser_ses_modifications() {
+		UUID conserve = DemoDecouverteHackathons.identifiant(1);
+		UUID manque = DemoDecouverteHackathons.identifiant(5);
+		base.sql("UPDATE hackathon SET titre = 'Titre modifié à conserver' WHERE id = :id").param("id", conserve).update();
+		base.sql("DELETE FROM inscription WHERE hackathon_id = :h AND utilisateur_id = :u").param("h", conserve).param("u", DonneesDemo.FATOU.id()).update();
+		base.sql("DELETE FROM hackathon WHERE id = :id").param("id", manque).update();
+		assertThat(demo.charger(Instant.now().plusSeconds(86400))).isFalse();
+		assertThat(compter("SELECT count(*) FROM hackathon WHERE id::text LIKE 'e2026115-%'")).isEqualTo(12);
+		assertThat(base.sql("SELECT titre FROM hackathon WHERE id = :id").param("id", conserve).query(String.class).single()).isEqualTo("Titre modifié à conserver");
+		assertThat(base.sql("SELECT count(*) FROM inscription WHERE hackathon_id = :id").param("id", conserve).query(Long.class).single()).isEqualTo(3);
+	}
+
+	@Test
 	void chaque_personne_de_demo_a_un_profil_publie_avec_ses_competences() {
 		assertThat(compter("SELECT count(*) FROM utilisateur u JOIN profil p ON p.utilisateur_id = u.id"
 				+ " WHERE u.email LIKE '%@demo.jamii.test' AND p.publie")).isEqualTo(18);

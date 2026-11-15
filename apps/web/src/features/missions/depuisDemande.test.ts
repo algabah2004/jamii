@@ -1,10 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { http, HttpResponse } from 'msw'
 import { createMemoryHistory, createRouter, RouterView } from 'vue-router'
 import { serveur } from '../../test-setup'
 import { i18n } from '../../i18n'
 import { chargerSession } from '../../session'
+import { continuer, jusquApercu } from '../../test/creationGuidee'
 import { reinitialiserMissions } from '../../mocks/missions'
 import type { Demande } from '../demandes/demandes'
 import NouvelleMissionPage from './NouvelleMissionPage.vue'
@@ -43,6 +44,7 @@ function demandeDemo(): Demande {
 }
 
 beforeEach(() => reinitialiserMissions())
+enableAutoUnmount(afterEach)
 
 describe('préparer une mission à partir d’une demande', () => {
   it('compose le besoin : le résumé, les objectifs, puis les fonctionnalités indispensables et utiles', () => {
@@ -101,10 +103,13 @@ describe('l’écran d’une nouvelle mission, venu d’une demande', () => {
     const page = await monter(`/missions/nouvelle?demande=${ID}`)
     await vi.waitFor(() => expect(page.find('[data-test="depuis-demande"]').exists()).toBe(true))
     expect(page.get('[data-test="depuis-demande"]').text()).toContain('« Boutique de pagnes »')
-    const champs = page.findAll('input[type="text"], textarea')
-    expect((champs[0]!.element as HTMLInputElement).value).toBe('Boutique de pagnes')
-    expect((champs[1]!.element as HTMLTextAreaElement).value).toContain('Catalogue : Photos et prix')
-    expect((champs[2]!.element as HTMLInputElement).value).toBe('vue, paiement-mobile, ux-design')
+    expect((page.get('input[type="text"]').element as HTMLInputElement).value).toBe('Boutique de pagnes')
+    await continuer(page)
+    expect((page.get('textarea').element as HTMLTextAreaElement).value).toContain('Catalogue : Photos et prix')
+    await continuer(page)
+    expect((page.get('input[type="text"]').element as HTMLInputElement).value).toBe('vue, paiement-mobile, ux-design')
+    expect(corps).toEqual({})
+    await jusquApercu(page)
 
     await page.get('[data-test="nouvelle-mission"]').trigger('submit')
     await vi.waitFor(() => expect(corps.titre).toBe('Boutique de pagnes'))
