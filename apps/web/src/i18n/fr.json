@@ -1192,7 +1192,15 @@
       "membre_rejoint": "{nom} a rejoint « {cercle} ».",
       "tirage_effectue": "L'ordre de passage de « {cercle} » est tiré.",
       "tour_livre": "Un tour de « {cercle} » est livré.",
-      "cercle_recommande": "« {cercle} » a besoin de ton profil."
+      "cercle_recommande": "« {cercle} » a besoin de ton profil.",
+      "proposition_recue": "{nom} propose ses services pour ta mission.",
+      "devis_recu": "{nom} t'a envoyé un devis.",
+      "mission_attribuee": "{nom} t'a choisi pour sa mission.",
+      "candidature_recue": "{nom} a candidaté à ton hackathon.",
+      "candidature_acceptee": "Ta candidature à un hackathon est acceptée.",
+      "candidature_refusee": "Ta candidature à un hackathon n'a pas été retenue.",
+      "candidature_attente": "Tu es sur la liste d'attente d'un hackathon.",
+      "invitation_equipe": "{nom} t'a ajouté à son équipe de hackathon."
     },
     "contacts": {
       "recues": "Demandes reçues",
