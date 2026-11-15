@@ -68,6 +68,7 @@
 - **Dans Jamii** : l'assistant de projet (`services/ia`) génère des plans, des suggestions et des réponses proposées, via l'interface `FournisseurIA` (Yokk ou un fournisseur simulé). L'IA propose, l'humain décide.
 - Chaque membre complète cette liste avec ses propres outils avant le 15 novembre.
   - **@rev22rse22 (bloc #19 : design system, profil, cercles, réseau, orientation)** : Claude Code (Claude Opus 5.5) pour le code du front et du module `reseau` de l'API, les tests, les contrats `reseau.yaml` et la revue visuelle des écrans (captures dans le navigateur, en clair, en sombre et sur mobile). Chaque PR le mentionne ; chaque écran a été relu à l'œil avant fusion.
+  - **@sowibrr (socle de l'API #17, freelance #158, hackathons et missions #166)** : Claude Code (Claude Opus 5.5) pour le code de l'API (`auth`, `demandes`, `missions`, `hackathons`, `vitrine`) et des écrans correspondants, les tests (dont AXE), les contrats `socle.yaml`, `demandes.yaml`, `missions.yaml` et `hackathons.yaml`, les données de démo et la documentation du module. Chaque PR le mentionne et a été relue avant fusion.
 
 ## Le problème de fond
 
