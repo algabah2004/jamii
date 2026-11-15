@@ -198,16 +198,16 @@
           "texte": "A company or a school sets a real problem and rewards the best ideas, with prizes in money or in services."
         }
       },
-      "sponsor": {
-        "titre": "Prizes and sponsors.",
-        "texte": "Each prize can have a sponsor and an amount, or no amount at all: visibility or hosting, for example on Systalink."
-      },
       "apercu": {
         "equipe": "Team",
         "jury": "Jury"
       },
       "voir": "See hackathons",
-      "organiser": "Organize a hackathon"
+      "organiser": "Organize a hackathon",
+      "prix": {
+        "titre": "Prizes.",
+        "texte": "Each prize can have an amount, or none at all: visibility or hosting, for example."
+      }
     }
   },
   "profil": {

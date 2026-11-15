@@ -49,6 +49,8 @@ describe('la section des hackathons, sur l’accueil', () => {
     }
     expect(s.findAll('[data-test="section-hackathons-etapes"] > li')).toHaveLength(4)
     expect(s.text()).toContain('jamais le projet de sa propre équipe')
+    expect(s.get('[data-test="section-hackathons-prix"]').text()).toContain('Chaque prix peut avoir un montant')
+    expect(s.text()).not.toContain('Systalink')
     expect(s.get('[data-test="section-hackathons-voir"]').attributes('href')).toBe('/hackathons')
     expect(s.find('a[href="/hackathons/nouveau"]').exists()).toBe(true)
   })

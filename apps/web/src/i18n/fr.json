@@ -198,16 +198,16 @@
           "texte": "Une entreprise ou une école pose un problème réel et récompense les meilleures idées, avec des prix en argent ou en services."
         }
       },
-      "sponsor": {
-        "titre": "Des prix et des sponsors.",
-        "texte": "Chaque prix peut avoir un sponsor et un montant, ou aucun montant : de la visibilité ou de l'hébergement, par exemple sur Systalink."
-      },
       "apercu": {
         "equipe": "Équipe",
         "jury": "Jury"
       },
       "voir": "Voir les hackathons",
-      "organiser": "Organiser un hackathon"
+      "organiser": "Organiser un hackathon",
+      "prix": {
+        "titre": "Des prix.",
+        "texte": "Chaque prix peut avoir un montant, ou n'en avoir aucun : de la visibilité ou de l'hébergement, par exemple."
+      }
     }
   },
   "profil": {

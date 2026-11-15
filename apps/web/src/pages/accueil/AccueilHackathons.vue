@@ -56,8 +56,8 @@ const CRITERES = [82, 64, 48] as const
       </li>
     </ul>
 
-    <p class="sponsor">
-      <strong>{{ t(`${cle}.sponsor.titre`) }}</strong> {{ t(`${cle}.sponsor.texte`) }}
+    <p class="prix" data-test="section-hackathons-prix">
+      <strong>{{ t(`${cle}.prix.titre`) }}</strong> {{ t(`${cle}.prix.texte`) }}
     </p>
   </AccueilSection>
 </template>
@@ -108,7 +108,7 @@ const CRITERES = [82, 64, 48] as const
 .format h4 { margin: 0; font-family: var(--font-display); font-size: 1.1875rem; }
 .format p { margin: 0; color: var(--ink-muted); line-height: 1.55; }
 
-.sponsor {
+.prix {
   margin: 0; padding: var(--space-4) var(--space-6); border-radius: var(--radius-md);
   background: var(--proof-soft); color: var(--ink); line-height: 1.6;
   border-inline-start: 4px solid var(--proof);
