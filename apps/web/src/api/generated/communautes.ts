@@ -93,6 +93,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/communautes/{slug}/membres": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Nom court de la communauté dans l'adresse (`flutter`, `fintech`, `antenne-dakar`). */
+                slug: components["parameters"]["Slug"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Les membres de la communauté (v0.3)
+         * @description Les modérateurs d'abord, puis les membres actifs ces 7 derniers jours (un message dans un salon, une
+         *     publication ou une réponse), puis les autres, des plus récents aux plus anciens. Jamais l'e-mail.
+         */
+        get: operations["listerMembres"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/communautes/{slug}/salons": {
         parameters: {
             query?: never;
@@ -361,6 +385,15 @@ export interface components {
             acceptee: boolean;
             /** Format: date-time */
             creeLe: string;
+        };
+        MembreCommunaute: {
+            personne: components["schemas"]["PersonneResume"];
+            /** @enum {string} */
+            role: "membre" | "moderateur";
+            /** Format: date-time */
+            rejointLe: string;
+            /** @description A écrit, publié ou répondu dans cette communauté ces 7 derniers jours. */
+            actif: boolean;
         };
         Salon: {
             /** Format: uuid */
@@ -701,6 +734,37 @@ export interface operations {
             403: components["responses"]["Interdit"];
             404: components["responses"]["Introuvable"];
             429: components["responses"]["TropDeRequetes"];
+        };
+    };
+    listerMembres: {
+        parameters: {
+            query?: {
+                limite?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Nom court de la communauté dans l'adresse (`flutter`, `fintech`, `antenne-dakar`). */
+                slug: components["parameters"]["Slug"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Les membres. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        total: number;
+                        elements: components["schemas"]["MembreCommunaute"][];
+                    };
+                };
+            };
+            400: components["responses"]["Invalide"];
+            401: components["responses"]["NonConnecte"];
+            404: components["responses"]["Introuvable"];
         };
     };
     listerSalons: {

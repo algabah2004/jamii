@@ -226,6 +226,19 @@ export const handlersCommunautes = [
     return HttpResponse.json(sansInterne(p), { status: 201, headers: { Location: `/api/publications/${p.id}` } })
   }),
 
+  http.get('/api/communautes/:slug/membres', ({ params }) => {
+    const c = etat.communautes.find((x) => x.slug === params.slug)
+    if (!c) return erreur(404, 'introuvable')
+    // Les gens qui ont écrit dans les salons de la communauté, et moi si j'en fais partie.
+    const vus = new Map<string, Personne>()
+    if (c.membre) vus.set(AWA.id, AWA)
+    for (const [cle, messages] of messagesSalons) if (cle.startsWith(`${c.slug}/`)) for (const m of messages) vus.set(m.auteur.id, m.auteur as Personne)
+    const elements = [...vus.values()].map((personne, i) => ({
+      personne, role: i === 1 ? 'moderateur' : 'membre', rejointLe: ilYa(24 * (30 - i)), actif: i < 4,
+    })).sort((a, b) => Number(b.role === 'moderateur') - Number(a.role === 'moderateur'))
+    return HttpResponse.json({ elements, total: c.nombreMembres })
+  }),
+
   http.get('/api/communautes/:slug/salons', ({ params }) => {
     const c = etat.communautes.find((x) => x.slug === params.slug)
     if (!c) return erreur(404, 'introuvable')

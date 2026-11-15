@@ -59,7 +59,7 @@ watch(etat, (e) => (e === 'connecte' ? suivreActivite() : arreterActivite()), { 
     </div>
   </header>
 
-  <main id="contenu" tabindex="-1">
+  <main id="contenu" tabindex="-1" :class="{ 'main--pleine': $route.meta.pleineLargeur }">
     <JSquelette v-if="etat === 'chargement'" />
     <div v-else-if="etat === 'indisponible'" role="alert" class="carte hors-ligne">
       <p>{{ t('etat.indisponible') }}</p>
@@ -98,6 +98,8 @@ watch(etat, (e) => (e === 'connecte' ? suivreActivite() : arreterActivite()), { 
 .entete__interieur, main, .pied__interieur { width: 100%; max-width: 72rem; margin-inline: auto; }
 main, .pied__interieur { padding-inline: var(--space-6); }
 @media (max-width: 720px) { main, .pied__interieur { padding-inline: var(--space-4); } }
+/* Les pages qui remplissent l'écran (l'espace d'une communauté) : toute la largeur, une petite marge. */
+main.main--pleine { max-width: none; padding-inline: var(--space-4); }
 
 .aller-au-contenu { position: absolute; left: var(--space-4); top: -4rem; z-index: 20; padding: var(--space-2) var(--space-4); background: var(--action); color: var(--on-action); border-radius: var(--radius-md); font-weight: 600; }
 .aller-au-contenu:focus { top: var(--space-2); }
