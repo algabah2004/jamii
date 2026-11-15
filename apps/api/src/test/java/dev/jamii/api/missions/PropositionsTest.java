@@ -134,6 +134,21 @@ class PropositionsTest {
 	}
 
 	@Test
+	void un_candidat_retrouve_la_mission_dans_les_miennes_tant_qu_il_ne_se_retire_pas() throws Exception {
+		UtilisateurConnecte awa = utilisateur("awa");
+		UtilisateurConnecte kofi = utilisateur("kofi");
+		UtilisateurConnecte yann = utilisateur("yann");
+		String m = mission(awa, "publique");
+		String deKofi = proposer(m, kofi);
+
+		assertThat(corps(lire("/api/missions?vue=miennes", kofi)).get("elements").toString()).contains(m);
+		assertThat(corps(lire("/api/missions?vue=miennes", yann)).get("elements").toString()).doesNotContain(m);
+
+		assertThat(action("/api/missions/" + m + "/propositions/" + deKofi + "/retirer", "{}", kofi)).hasStatus(HttpStatus.NO_CONTENT);
+		assertThat(corps(lire("/api/missions?vue=miennes", kofi)).get("elements").toString()).doesNotContain(m);
+	}
+
+	@Test
 	void deux_propositions_du_meme_developpeur_sont_refusees() throws Exception {
 		String m = mission(utilisateur("awa"), "publique");
 		UtilisateurConnecte kofi = utilisateur("kofi");

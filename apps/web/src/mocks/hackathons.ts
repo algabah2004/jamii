@@ -77,6 +77,7 @@ const jures = new Map<string, Jure[]>()
 const scores = new Map<string, number>()
 /** Les commentaires des jurés, rendu par rendu, et les résultats publiés, hackathon par hackathon. */
 const retours = new Map<string, string>()
+const mesNotes = new Map<string, { renduId: string; notes: { critereId: string; valeur: number }[]; commentaire: string | null; scorePondere: number }>()
 const resultats = new Map<string, Resultats>()
 const PERSONNES = [AWA, KOFI, FATOU, MOUSSA]
 
@@ -98,6 +99,7 @@ export function reinitialiserHackathons() {
   jures.clear()
   scores.clear()
   retours.clear()
+  mesNotes.clear()
   resultats.clear()
   const h = hackathonDemo()
   hackathons.set(h.id, h)
@@ -292,6 +294,8 @@ export const handlersHackathons = [
     return HttpResponse.json(jure, { status: 201 })
   }),
 
+  http.get('/api/hackathons/:id/mes-notes', () => HttpResponse.json([...mesNotes.values()])),
+
   http.get('/api/hackathons/:id/rendus', () => HttpResponse.json({ elements: [...rendus.values()], curseurSuivant: null })),
 
   http.put('/api/hackathons/:id/rendus/:renduId/notes', async ({ params, request }) => {
@@ -304,6 +308,7 @@ export const handlersHackathons = [
     const total = h.criteres.reduce((somme, c) => somme + c.poids * corps.notes.find((n) => n.critereId === c.id)!.valeur, 0)
     const scorePondere = Math.round((total / poids) * 100) / 100
     scores.set(String(params.renduId), scorePondere)
+    mesNotes.set(String(params.renduId), { renduId: String(params.renduId), notes: corps.notes, commentaire: corps.commentaire, scorePondere })
     if (corps.commentaire) retours.set(String(params.renduId), corps.commentaire)
     else retours.delete(String(params.renduId))
     return HttpResponse.json({ renduId: String(params.renduId), notes: corps.notes, commentaire: corps.commentaire, scorePondere })
@@ -333,7 +338,7 @@ export const handlersHackathons = [
       gagnants: h.prix.map((p) => ({ prix: p, equipe: equipeDe(corps.gagnants.find((g) => g.prixId === p.id)!.equipeId) })),
       classement: classer().map((l) => {
         const rendu = [...rendus.values()].find((r) => r.id === l.renduId)!
-        return { rang: l.rang, equipe: equipeDe(rendu.equipeId), rendu, retourDuJury: retours.has(rendu.id) ? [retours.get(rendu.id)!] : [] }
+        return { rang: l.rang, equipe: equipeDe(rendu.equipeId), rendu, scorePondere: l.scorePondere, retourDuJury: retours.has(rendu.id) ? [retours.get(rendu.id)!] : [] }
       }),
     }
     resultats.set(h.id, publies)

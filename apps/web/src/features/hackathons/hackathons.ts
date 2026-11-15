@@ -34,7 +34,8 @@ export const LIMITES = {
 export const LIEUX = ['en_ligne', 'sur_place', 'hybride'] as const
 export const MODES = ['ouvert', 'candidature'] as const
 export const FILTRES = ['tous', 'publie', 'en_cours', 'evaluation', 'resultats'] as const
-export type Filtre = (typeof FILTRES)[number]
+/** `miens` : ce que j'organise (brouillons compris), où je suis juré ou inscrit. Connexion requise. */
+export type Filtre = (typeof FILTRES)[number] | 'miens'
 
 /** Des devises du continent d'abord ; le contrat accepte toute devise ISO 4217 en majuscules. */
 export const DEVISES = ['XOF', 'XAF', 'KES', 'NGN', 'GHS', 'MAD', 'ZAR', 'EUR', 'USD'] as const
@@ -125,7 +126,13 @@ export function formaterDate(iso: string, langue: string): string {
 
 export async function listerHackathons(filtre: Filtre, curseur?: string): Promise<{ elements: HackathonResume[]; curseurSuivant: string | null }> {
   const { data, error } = await api.GET('/api/hackathons', {
-    params: { query: { limite: 20, ...(filtre === 'tous' ? {} : { statut: filtre }), ...(curseur ? { curseur } : {}) } },
+    params: {
+      query: {
+        limite: 20,
+        ...(filtre === 'miens' ? { vue: 'miens' as const } : filtre === 'tous' ? {} : { statut: filtre }),
+        ...(curseur ? { curseur } : {}),
+      },
+    },
   })
   if (error || !data) throw new Error('hackathons indisponibles')
   // Le contrat étend la page commune : ses éléments sont des `HackathonResume`, que le type généré ne précise pas.
@@ -244,6 +251,13 @@ export const noter = (id: string, renduId: string, notes: { critereId: string; v
   resultat<NotesDuJure>(
     api.PUT('/api/hackathons/{hackathonId}/rendus/{renduId}/notes', { params: { path: { hackathonId: id, renduId } }, body: { notes, commentaire } }),
   )
+
+/** Les notes que j'ai déjà données (juré) : pour les retrouver après avoir quitté la page. */
+export async function lireMesNotes(id: string): Promise<NotesDuJure[]> {
+  const { data, error } = await api.GET('/api/hackathons/{hackathonId}/mes-notes', { ...chemin(id) })
+  if (error || !data) throw new Error('notes indisponibles')
+  return data
+}
 
 export async function suivreNotation(id: string): Promise<Notation> {
   const { data, error } = await api.GET('/api/hackathons/{hackathonId}/notation', { ...chemin(id) })

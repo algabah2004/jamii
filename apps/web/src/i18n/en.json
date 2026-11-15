@@ -1071,7 +1071,8 @@
       "publie": "Upcoming",
       "en_cours": "Ongoing",
       "evaluation": "Being judged",
-      "resultats": "Results"
+      "resultats": "Results",
+      "miens": "Mine"
     },
     "aucun": "No hackathon for now.",
     "indisponible": "Hackathons are not available right now. Try again in a moment.",
@@ -1305,7 +1306,10 @@
         "conflit_interets": "You cannot score your own team's project.",
         "validation": "Each criterion needs a score from 1 to 5.",
         "autre": "The scores could not be saved. Try again in a moment."
-      }
+      },
+      "progression": "{n} of {total} projects scored",
+      "avant": "You can score and change your scores until the results, on {date}.",
+      "note": "Scored"
     },
     "confirmation": {
       "titre": "Confirm the winners",
@@ -1335,7 +1339,9 @@
       "classement": "Ranking",
       "rang": "#{rang} | #{rang}",
       "voir": "See {titre}",
-      "retours": "Jury feedback:"
+      "retours": "Jury feedback:",
+      "exAequo": "tied",
+      "score": "{score} / 5"
     },
     "tri": {
       "titre": "Applications",
@@ -1357,6 +1363,21 @@
       "erreurs": {
         "etat_invalide": "Applications can no longer change for this hackathon.",
         "autre": "Your answer was not saved. Try again in a moment."
+      }
+    },
+    "aucunMiens": "You don't organise any hackathon, and you aren't registered or on a jury yet.",
+    "pilotage": {
+      "titre": "Your dashboard",
+      "equipes": "Teams",
+      "seuls": "Without a team",
+      "jures": "Jury members",
+      "notation": "Scores given",
+      "rienAFaire": "Nothing is waiting for you right now.",
+      "alertes": {
+        "aucunJure": "No jury yet: invite your jury before submissions close.",
+        "candidatures": "No application is waiting. | One application is waiting for your answer. | {n} applications are waiting for your answer.",
+        "seuls": "Nobody is looking for a team. | One person is still looking for a team. | {n} people are still looking for a team.",
+        "notation": "All scores are in. | One jury score is missing. | {n} jury scores are missing."
       }
     }
   },

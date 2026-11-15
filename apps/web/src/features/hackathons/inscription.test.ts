@@ -76,7 +76,7 @@ describe('former son équipe', () => {
     await seuls[0]!.get('[data-test="inviter"]').trigger('click')
     await vi.waitFor(() => expect(page.get('[data-test="equipe"]').text()).toContain('2 sur 5'))
     expect(page.get('[data-test="equipe"]').text()).toContain('Fatou Ndiaye')
-    expect(page.findAll('[data-test="seul"]')).toHaveLength(1)
+    await vi.waitFor(() => expect(page.findAll('[data-test="seul"]')).toHaveLength(1))
   })
 
   it('pas d’équipes à montrer sur un brouillon', async () => {

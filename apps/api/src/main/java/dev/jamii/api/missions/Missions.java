@@ -136,7 +136,8 @@ class Missions {
 	}
 
 	/**
-	 * Une page de missions. `miennes` : celles dont je suis le client et celles où je suis invité (hors brouillon) ;
+	 * Une page de missions. `miennes` : celles dont je suis le client, celles où je suis invité et celles où j'ai
+	 * proposé mes services, retenu ou non, tant que je ne me suis pas retiré (hors brouillon) ;
 	 * sinon, les missions publiques encore ouvertes aux propositions.
 	 */
 	@Transactional(readOnly = true)
@@ -144,8 +145,10 @@ class Missions {
 		var requete = new StringBuilder("SELECT " + COLONNES + " FROM mission WHERE ");
 		if (miennes) {
 			requete.append("""
-					(client_id = :moi OR (statut <> 'brouillon'
-						AND EXISTS (SELECT 1 FROM invitation_mission i WHERE i.mission_id = mission.id AND i.utilisateur_id = :moi)))""");
+					(client_id = :moi OR (statut <> 'brouillon' AND (
+						EXISTS (SELECT 1 FROM invitation_mission i WHERE i.mission_id = mission.id AND i.utilisateur_id = :moi)
+						OR EXISTS (SELECT 1 FROM proposition p WHERE p.mission_id = mission.id AND p.developpeur_id = :moi
+							AND p.statut <> 'retiree'))))""");
 		}
 		else {
 			requete.append("statut = 'publiee' AND visibilite = 'publique'");

@@ -167,6 +167,8 @@ class ResultatsTest {
 		assertThat(res.at("/classement/0/rang").asInt()).isEqualTo(1);
 		assertThat(res.at("/classement/0/rendu/id").asString()).isEqualTo(s.renduMoussa());
 		assertThat(res.at("/classement/0/retourDuJury/0").asString()).isEqualTo("Utile dès demain");
+		assertThat(res.at("/classement/0/scorePondere").isNumber()).isTrue();
+		assertThat(res.at("/classement/0/scorePondere").asDouble()).isGreaterThanOrEqualTo(res.at("/classement/1/scorePondere").asDouble());
 		assertThat(res.toString()).doesNotContain("\"nom\":\"jo\"").doesNotContain("@secret.example");
 		assertThat(corpsDe(mvc.get().uri("/api/hackathons/" + s.hackathon()).exchange()).get("statut").asString()).isEqualTo("resultats");
 	}

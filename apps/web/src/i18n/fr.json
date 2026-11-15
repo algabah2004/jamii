@@ -1071,7 +1071,8 @@
       "publie": "À venir",
       "en_cours": "En cours",
       "evaluation": "En évaluation",
-      "resultats": "Résultats"
+      "resultats": "Résultats",
+      "miens": "Les miens"
     },
     "aucun": "Aucun hackathon pour le moment.",
     "indisponible": "Les hackathons ne sont pas disponibles pour le moment. Réessaie dans un instant.",
@@ -1305,7 +1306,10 @@
         "conflit_interets": "Tu ne peux pas noter le projet de ta propre équipe.",
         "validation": "Chaque critère doit avoir une note de 1 à 5.",
         "autre": "Les notes n'ont pas pu être enregistrées. Réessaie dans un instant."
-      }
+      },
+      "progression": "{n} projet noté sur {total} | {n} projet noté sur {total} | {n} projets notés sur {total}",
+      "avant": "Tu peux noter et modifier tes notes jusqu'aux résultats, le {date}.",
+      "note": "Noté"
     },
     "confirmation": {
       "titre": "Confirmer les gagnants",
@@ -1335,7 +1339,9 @@
       "classement": "Le classement",
       "rang": "{rang}er | {rang}e",
       "voir": "Voir {titre}",
-      "retours": "Les retours du jury :"
+      "retours": "Les retours du jury :",
+      "exAequo": "ex aequo",
+      "score": "{score} / 5"
     },
     "tri": {
       "titre": "Les candidatures",
@@ -1357,6 +1363,21 @@
       "erreurs": {
         "etat_invalide": "Les candidatures ne peuvent plus changer pour ce hackathon.",
         "autre": "La réponse n'a pas été enregistrée. Réessaie dans un instant."
+      }
+    },
+    "aucunMiens": "Tu n'organises aucun hackathon, et tu n'es ni inscrit ni juré pour le moment.",
+    "pilotage": {
+      "titre": "Ton tableau de bord",
+      "equipes": "Équipes",
+      "seuls": "Sans équipe",
+      "jures": "Jurés",
+      "notation": "Notes données",
+      "rienAFaire": "Rien ne t'attend pour le moment.",
+      "alertes": {
+        "aucunJure": "Aucun juré : invite ton jury avant la fin des rendus.",
+        "candidatures": "Aucune candidature n'attend ta réponse. | Une candidature attend ta réponse. | {n} candidatures attendent ta réponse.",
+        "seuls": "Personne ne cherche d'équipe. | Une personne cherche encore une équipe. | {n} personnes cherchent encore une équipe.",
+        "notation": "Toutes les notes sont données. | Il manque une note du jury. | Il manque {n} notes du jury."
       }
     }
   },
