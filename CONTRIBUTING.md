@@ -2,7 +2,7 @@
 
 ## Les règles
 
-1. **Pas de tâche, pas de code.** Tout travail part d'une **issue** attribuée par le chef de projet. Une idée ? Ouvre une issue « Proposition » : le chef de projet la valide ou non.
+1. **Personne n'attend l'accord de personne** (décision du 15/11). Une issue attribuée n'est plus obligatoire : une PR claire suffit. Tu peux modifier le module d'un autre si ça te débloque : mentionne-le (`@pseudo`) dans la PR.
 2. **On ne pousse jamais directement sur `main`.** On passe toujours par une branche et une Pull Request.
 3. **Tu fusionnes ta PR toi-même dès que les contrôles automatiques sont verts.** L'approbation du chef de projet n'est plus obligatoire (depuis le 11 novembre 2026, pour ne pas ralentir la dernière ligne droite). Il relit quand même les PR et peut laisser des remarques : corrige-les dans une PR suivante. Tu restes responsable de ce que tu fusionnes.
 4. **Aucun secret dans le code** (clés d'API, mots de passe). Ils vont dans `.env`, qui est ignoré par Git, et on documente les variables dans `.env.example`.
