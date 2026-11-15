@@ -1078,7 +1078,8 @@
         "lire": "Je lis ce que tu as écrit",
         "chercher": "Je cherche ce qui existe déjà",
         "preparer": "Je prépare tes options"
-      }
+      },
+      "publierMission": "Publier comme mission"
     },
     "priorites": {
       "indispensable": "Indispensable",
@@ -2009,7 +2010,14 @@
         "visibilite": "Choisis qui peut voir la mission.",
         "autre": "Ce champ n'est pas valide."
       },
-      "erreur": "La mission n'a pas pu être enregistrée. Réessaie dans un instant."
+      "erreur": "La mission n'a pas pu être enregistrée. Réessaie dans un instant.",
+      "depuisDemande": {
+        "note": "Préremplie depuis ta demande « {titre} ». Relis-la et corrige ce qu'il faut : personne ne la voit avant que tu la publies.",
+        "objectifs": "Objectifs",
+        "indispensables": "Fonctionnalités indispensables",
+        "utiles": "Fonctionnalités utiles",
+        "horsPerimetre": "Hors périmètre"
+      }
     },
     "detail": {
       "retour": "Toutes les missions",
