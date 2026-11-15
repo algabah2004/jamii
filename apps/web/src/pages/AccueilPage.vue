@@ -6,7 +6,10 @@ import { adresseConnexionGithub, api } from '../api/client'
 import { JIllustration } from '../design-system'
 import CarteProjet from '../features/vitrine/CarteProjet.vue'
 import AccueilHackathons from './accueil/AccueilHackathons.vue'
+import AccueilAppel from './accueil/AccueilAppel.vue'
+import AccueilFaq from './accueil/AccueilFaq.vue'
 import AccueilMissions from './accueil/AccueilMissions.vue'
+import AccueilSystalink from './accueil/AccueilSystalink.vue'
 import type { ProjetEnVitrine } from '../features/vitrine/vitrine'
 import { useSession } from '../session'
 
@@ -110,6 +113,7 @@ void (async () => {
 
     <AccueilMissions />
     <AccueilHackathons />
+    <AccueilSystalink />
 
     <section class="aussi" aria-labelledby="aussi-titre" data-test="aussi">
       <h2 id="aussi-titre">{{ t('accueil.aussi.titre') }}</h2>
@@ -123,6 +127,9 @@ void (async () => {
         </li>
       </ul>
     </section>
+
+    <AccueilFaq />
+    <AccueilAppel />
   </div>
 </template>
 

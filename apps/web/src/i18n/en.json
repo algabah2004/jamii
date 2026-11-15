@@ -208,6 +208,89 @@
         "titre": "Prizes.",
         "texte": "Each prize can have an amount, or none at all: visibility or hosting, for example."
       }
+    },
+    "sectionSystalink": {
+      "surtitre": "The Systalink cloud",
+      "titre": "Jamii runs on Systalink, in Dakar",
+      "intro": "Jamii is hosted on DataCloud, the Systalink cloud, in its Dakar region. And when your project needs it, Jamii suggests the right Systalink service at the right time.",
+      "moments": {
+        "enLigne": {
+          "titre": "Put a project online",
+          "texte": "When your project is ready, Jamii suggests DataCloud to put it online. Once online, it carries the “Hosted on Systalink” badge in the showcase."
+        },
+        "site": {
+          "titre": "A simple site for a small business",
+          "texte": "If a shop's need fits in a simple site, Jamii suggests Orion, which generates it with AI, before looking for a developer."
+        },
+        "outils": {
+          "titre": "Everyday tools",
+          "texte": "A domain name, a professional e-mail, a video room for the team: Jamii suggests the Systalink service that fits."
+        }
+      },
+      "promesse": {
+        "titre": "Recommended, never required.",
+        "texte": "You don't need a Systalink account to use Jamii, and a project hosted elsewhere also has its place in the showcase."
+      },
+      "voir": "See projects hosted on Systalink"
+    },
+    "faq": {
+      "surtitre": "Frequently asked questions",
+      "titre": "Everything you can do on Jamii",
+      "intro": "Answers to the questions we hear most, feature by feature.",
+      "questions": {
+        "quoi": {
+          "q": "What is Jamii?",
+          "r": "The exchange platform for African developers. Find teammates, talk in communities, answer small businesses' needs, and keep your projects alive all the way to going online."
+        },
+        "connexion": {
+          "q": "How do I sign in?",
+          "r": "With GitHub if you're a developer, with Google, or with your e-mail address: we send you a sign-in link, no password to remember."
+        },
+        "pasDev": {
+          "q": "I'm not a developer. Is Jamii for me?",
+          "r": "Yes. A shop, an association or a small business describes its need in its own words. Jamii's assistant turns it into a clear plan, says what already exists, and who can build the rest."
+        },
+        "cercle": {
+          "q": "What is a circle?",
+          "r": "A group of 4 to 6 developers who take turns building each member's project. At each turn, the whole circle helps one member move forward."
+        },
+        "paiement": {
+          "q": "How is a mission paid?",
+          "r": "The work is split into milestones, each with its amount. The client pays the developer directly, then each declares it in the mission: “paid”, then “received”. Jamii does not collect the money."
+        },
+        "hackathon": {
+          "q": "Who can organize a hackathon?",
+          "r": "Anyone signed in: a school, a company, a community. The hackathon stays a draft, visible only to you, until you publish it. It has its own discussion space, criteria and jury."
+        },
+        "vitrine": {
+          "q": "How does a project get into the showcase?",
+          "r": "When a project is online, Jamii checks that it responds, then shows it in the showcase with its team. A link that no longer responds does not appear."
+        },
+        "langues": {
+          "q": "Which languages is Jamii in?",
+          "r": "French and English. The assistant answers in the language of the person writing to it."
+        },
+        "donnees": {
+          "q": "What happens to my data?",
+          "r": "We collect the minimum. From your profile, you can export all your data or delete your account, at any time."
+        }
+      }
+    },
+    "appel": {
+      "titre": "Where do you want to start?",
+      "dev": {
+        "qui": "Developer",
+        "titre": "I build",
+        "texte": "Create your profile from your repositories, find a team and put your projects online.",
+        "action": "Sign in",
+        "actionConnecte": "See my profile"
+      },
+      "besoin": {
+        "qui": "Small business, association, shop",
+        "titre": "I have a need",
+        "texte": "Describe it in your own words. The assistant turns it into a plan, and developers can answer it.",
+        "action": "Describe my need"
+      }
     }
   },
   "profil": {
