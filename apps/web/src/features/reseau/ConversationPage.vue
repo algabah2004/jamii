@@ -36,11 +36,19 @@ const personne = ref<Personne | null>(null)
 const messages = ref<Message[]>([])
 const etat = ref<'chargement' | 'pret' | 'introuvable' | 'indisponible'>('chargement')
 const fil = ref<HTMLElement | null>(null)
+let versionConversation = 0
+let actif = true
 
 async function charger() {
+  const version = ++versionConversation
+  texte.value = ''
+  pieces.value = []
+  envoi.value = false
+  erreur.value = null
   etat.value = 'chargement'
   try {
     const r = await lireConversation(String(route.params.personneId))
+    if (!actif || version !== versionConversation) return
     if (!r) {
       etat.value = 'introuvable'
       return
@@ -48,23 +56,26 @@ async function charger() {
     personne.value = r.personne
     messages.value = r.messages
     etat.value = 'pret'
-    lien.value = await lireLien(r.personne.id).catch(() => null)
+    const contact = await lireLien(r.personne.id).catch(() => null)
+    if (!actif || version !== versionConversation) return
+    lien.value = contact
     // La lecture a marqué la conversation comme lue : la pastille du menu se met à jour tout de suite.
     void rafraichirActivite()
     emit('actualise')
     await descendre()
   } catch {
-    etat.value = 'indisponible'
+    if (actif && version === versionConversation) etat.value = 'indisponible'
   }
 }
-watch(() => route.params.personneId, charger, { immediate: true })
+
 
 /** Relire en silence : les nouveaux messages arrivent sans recharger l'écran. */
 async function relire() {
   if (etat.value !== 'pret' || (typeof document !== 'undefined' && document.visibilityState === 'hidden')) return
+  const version = versionConversation
   try {
     const r = await lireConversation(String(route.params.personneId))
-    if (!r) return
+    if (!r || !actif || version !== versionConversation) return
     const dernier = messages.value.at(-1)?.id
     const enBas = !fil.value || fil.value.scrollHeight - fil.value.scrollTop - fil.value.clientHeight < 80
     messages.value = r.messages
@@ -78,7 +89,7 @@ async function relire() {
   }
 }
 const minuterie = setInterval(() => void relire(), 5000)
-onBeforeUnmount(() => clearInterval(minuterie))
+onBeforeUnmount(() => { actif = false; clearInterval(minuterie) })
 
 async function descendre() {
   await nextTick()
@@ -132,10 +143,12 @@ const valide = computed(() => (texte.value.trim().length > 0 || pieces.value.len
 
 async function envoyer() {
   if (!valide.value || !personne.value || envoi.value) return
+  const version = versionConversation
   envoi.value = true
   erreur.value = null
   try {
     const r = await envoyerMessage(personne.value.id, texte.value, undefined, pieces.value.map((p) => p.id))
+    if (!actif || version !== versionConversation) return
     if (r.ok) {
       messages.value.push(r.message)
       emit('actualise')
@@ -146,14 +159,15 @@ async function envoyer() {
       composeur.value?.focus()
     } else erreur.value = t(`reseau.erreurs.${r.code ?? 'autre'}`, t('reseau.erreurs.autreMessage'))
   } catch {
-    erreur.value = t('etat.indisponible')
+    if (actif && version === versionConversation) erreur.value = t('etat.indisponible')
   } finally {
-    envoi.value = false
+    if (actif && version === versionConversation) envoi.value = false
   }
 }
 
 // ---------------------------------------------------------------- appeler (#157)
 const appel = ref<'repos' | 'envoi' | 'erreur'>('repos')
+watch(() => route.params.personneId, charger, { immediate: true })
 /**
  * L'onglet de l'appel s'ouvre pendant le clic (sinon le navigateur le bloque), puis reçoit l'adresse de la salle quand
  * l'API a répondu. L'appel est annoncé dans la conversation : l'autre personne le rejoint d'un clic.
@@ -304,6 +318,8 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
 
       <form class="saisie" data-test="form-message" @submit.prevent="envoyer">
         <Composeur
+          :key="personne.id"
+          :destinataire-id="personne.id"
           ref="composeur"
           v-model="texte"
           v-model:pieces="pieces"

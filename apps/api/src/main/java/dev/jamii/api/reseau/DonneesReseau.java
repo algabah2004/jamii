@@ -15,7 +15,7 @@ import dev.jamii.api.auth.DonneesPersonnelles;
 class DonneesReseau implements DonneesPersonnelles {
 
 	/** Seulement l'identifiant de l'autre personne : jamais ses données. */
-	record MessageExporte(UUID id, boolean envoye, UUID autre, String texte, UUID cercleId, String envoyeLe, String luLe) {
+	record MessageExporte(UUID id, boolean envoye, UUID autre, String texte, UUID cercleId, String envoyeLe, String luLe, List<UUID> pieces) {
 	}
 
 	record ContactExporte(UUID personne, String statut, String depuis) {
@@ -46,7 +46,7 @@ class DonneesReseau implements DonneesPersonnelles {
 		List<MessageExporte> messages = messagerie.tous(utilisateurId).stream().map(m -> {
 			boolean envoye = m.expediteurId().equals(utilisateurId);
 			return new MessageExporte(m.id(), envoye, envoye ? m.destinataireId() : m.expediteurId(), m.texte(),
-					m.cercleId(), m.envoyeLe().toString(), m.luLe() == null ? null : m.luLe().toString());
+					m.cercleId(), m.envoyeLe().toString(), m.luLe() == null ? null : m.luLe().toString(), m.pieces());
 		}).toList();
 		List<ContactExporte> liens = new java.util.ArrayList<>();
 		for (String statut : List.of("accepte", "recue", "envoyee")) {

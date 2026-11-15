@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ajusterZone } from '../../design-system/zonesDeTexte'
 import { ACCEPTES, envoyerFichier, PIECES_MAX, tailleLisible, type PieceJointe } from './fichiers'
@@ -18,6 +18,7 @@ import { appliquerFormat, type Format } from './miseEnForme'
 const props = withDefaults(
   defineProps<{
     modelValue: string
+    destinataireId?: string
     pieces?: PieceJointe[]
     placeholder: string
     libelleEnvoyer: string
@@ -42,6 +43,9 @@ const choix = ref<HTMLInputElement | null>(null)
 const enCours = ref<{ cle: string; nom: string }[]>([])
 const probleme = ref<string | null>(null)
 const survol = ref(false)
+
+let actif = true
+onBeforeUnmount(() => { actif = false })
 
 const pret = computed(() => !props.envoi && !enCours.value.length && (!!props.modelValue.trim() || props.pieces.length > 0))
 
@@ -110,7 +114,8 @@ async function joindre(fichiers: FileList | File[] | null) {
     liste.slice(0, Math.max(0, place)).map(async (f) => {
       const cle = `${f.name}-${f.size}-${Math.random()}`
       enCours.value = [...enCours.value, { cle, nom: f.name }]
-      const r = await envoyerFichier(f)
+      const r = await envoyerFichier(f, props.destinataireId)
+      if (!actif) return
       enCours.value = enCours.value.filter((x) => x.cle !== cle)
       if (r.ok) {
         pieces = [...pieces, r.piece]

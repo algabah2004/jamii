@@ -42,20 +42,21 @@ public class FichiersController {
 	}
 
 	@PostMapping(path = "/api/fichiers", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-	ResponseEntity<Fichiers.Piece> envoyer(@RequestParam("fichier") MultipartFile fichier, @AuthenticationPrincipal UtilisateurConnecte moi)
+	ResponseEntity<Fichiers.Piece> envoyer(@RequestParam("fichier") MultipartFile fichier,
+			@RequestParam(required = false) UUID destinataireId, @AuthenticationPrincipal UtilisateurConnecte moi)
 			throws IOException {
 		Instant maintenant = Instant.now();
 		long attente = fichiers.attenteAvantEnvoi(moi.id(), maintenant);
 		if (attente > 0) {
 			throw new ErreurFichier(429, "trop_de_requetes", "Trop de fichiers envoyés en une heure", attente);
 		}
-		var piece = fichiers.enregistrer(moi.id(), fichier.getOriginalFilename(), fichier.getBytes(), maintenant);
+		var piece = fichiers.enregistrer(moi.id(), fichier.getOriginalFilename(), fichier.getBytes(), maintenant, destinataireId);
 		return ResponseEntity.created(URI.create(piece.url())).body(piece);
 	}
 
 	@GetMapping("/api/fichiers/{id}")
-	ResponseEntity<Resource> lire(@PathVariable UUID id) {
-		var contenu = fichiers.lire(id).orElseThrow(() -> new ErreurFichier(404, "introuvable", "Fichier introuvable"));
+	ResponseEntity<Resource> lire(@PathVariable UUID id, @AuthenticationPrincipal UtilisateurConnecte moi) {
+		var contenu = fichiers.lire(id, moi.id()).orElseThrow(() -> new ErreurFichier(404, "introuvable", "Fichier introuvable"));
 		var piece = contenu.piece();
 		boolean enLigne = !"document".equals(piece.sorte()) || piece.type().equals("application/pdf") || piece.type().startsWith("text/plain");
 		return ResponseEntity.ok()
@@ -64,7 +65,7 @@ public class FichiersController {
 				.filename(piece.nom(), java.nio.charset.StandardCharsets.UTF_8).build().toString())
 			.header("X-Content-Type-Options", "nosniff")
 			.header("Content-Security-Policy", "default-src 'none'; img-src 'self'; media-src 'self'; style-src 'unsafe-inline'; sandbox")
-			.cacheControl(CacheControl.maxAge(Duration.ofDays(30)).cachePrivate().immutable())
+			.cacheControl(contenu.prive() ? CacheControl.noStore() : CacheControl.maxAge(Duration.ofDays(30)).cachePrivate().immutable())
 			.body(new ByteArrayResource(contenu.octets()));
 	}
 

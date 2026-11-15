@@ -76,6 +76,7 @@ class Messagerie {
 	}
 
 	/** Un message avec ses pièces jointes (déjà vérifiées par le module fichiers) : le texte devient alors facultatif. */
+	@Transactional
 	Ligne envoyer(UUID moi, UUID destinataire, String texteBrut, UUID cercleId, List<UUID> pieces) {
 		String texte = texteBrut == null ? "" : texteBrut.strip();
 		if (texte.isEmpty() && pieces.isEmpty()) {

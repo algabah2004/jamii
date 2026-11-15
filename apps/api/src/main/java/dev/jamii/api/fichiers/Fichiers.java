@@ -19,7 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Les fichiers joints (contracts/fichiers.yaml) : on les reçoit, on vérifie leur vrai type d'après leurs premiers
  * octets (jamais d'après le nom ni le type annoncé par le navigateur), et on les garde. Les autres modules (salons,
- * publications) n'en gardent que l'identifiant, et appellent {@link #pieces} pour vérifier et décrire leurs pièces jointes.
+ * publications) n'en gardent que l'identifiant, et appellent {@link #verifierPieces} pour vérifier et décrire leurs pièces jointes.
  * <p>
  * Refusés : tout ce qui pourrait s'exécuter dans le navigateur (HTML, SVG, JavaScript) ou ailleurs (exécutables).
  */
@@ -40,7 +40,7 @@ public class Fichiers {
 
 	static final int ENVOIS_PAR_HEURE = 60;
 
-	record Contenu(Piece piece, byte[] octets) {
+	record Contenu(Piece piece, byte[] octets, boolean prive) {
 	}
 
 	/** Un type reconnu : son type MIME et sa sorte. */
@@ -58,6 +58,15 @@ public class Fichiers {
 
 	@Transactional
 	Piece enregistrer(UUID proprietaire, String nomEnvoye, byte[] octets, Instant maintenant) {
+		return enregistrer(proprietaire, nomEnvoye, octets, maintenant, null);
+	}
+
+	@Transactional
+	Piece enregistrer(UUID proprietaire, String nomEnvoye, byte[] octets, Instant maintenant, UUID destinataire) {
+		if (destinataire != null && (destinataire.equals(proprietaire) || !base.sql("SELECT EXISTS (SELECT 1 FROM utilisateur WHERE id = :id)")
+				.param("id", destinataire).query(Boolean.class).single())) {
+			throw new ErreurFichier(404, "introuvable", "Destinataire introuvable");
+		}
 		Type type = reconnaitre(octets, nomEnvoye).orElseThrow(() -> new ErreurFichier(415, "type_refuse",
 				"Ce type de fichier n'est pas accepté : images, vidéos, PDF, documents texte, archives ZIP"));
 		long max = switch (type.sorte()) {
@@ -71,17 +80,25 @@ public class Fichiers {
 		UUID id = UUID.randomUUID();
 		String nom = nomPropre(nomEnvoye);
 		base.sql("""
-				INSERT INTO fichier (id, proprietaire_id, nom, type_mime, sorte, taille, cree_le)
-				VALUES (:id, :p, :nom, :mime, :sorte, :taille, :t)
+				INSERT INTO fichier (id, proprietaire_id, nom, type_mime, sorte, taille, cree_le, conversation_avec)
+				VALUES (:id, :p, :nom, :mime, :sorte, :taille, :t, :destinataire)
 				""")
 			.param("id", id).param("p", proprietaire).param("nom", nom).param("mime", type.mime()).param("sorte", type.sorte())
-			.param("taille", (long) octets.length).param("t", Timestamp.from(maintenant)).update();
+			.param("taille", (long) octets.length).param("t", Timestamp.from(maintenant))
+			.param("destinataire", destinataire, java.sql.Types.OTHER).update();
 		stockage.ecrire(id, octets);
 		return new Piece(id, nom, type.mime(), type.sorte(), octets.length, url(id));
 	}
 
-	Optional<Contenu> lire(UUID id) {
-		return decrire(List.of(id)).stream().findFirst().flatMap(p -> stockage.lire(id).map(o -> new Contenu(p, o)));
+	Optional<Contenu> lire(UUID id, UUID moi) {
+		var acces = base.sql("""
+				SELECT conversation_avec IS NOT NULL AS prive FROM fichier f
+				WHERE f.id = :id AND (f.conversation_avec IS NULL OR f.proprietaire_id = :moi OR
+				  (f.conversation_avec = :moi AND EXISTS (SELECT 1 FROM message m WHERE f.id = ANY(m.pieces)
+				    AND m.expediteur_id = f.proprietaire_id AND m.destinataire_id = f.conversation_avec)))
+				""").param("id", id).param("moi", moi).query((rs, n) -> rs.getBoolean("prive")).optional();
+		if (acces.isEmpty()) return Optional.empty();
+		return decrire(List.of(id)).stream().findFirst().flatMap(p -> stockage.lire(id).map(o -> new Contenu(p, o, acces.get())));
 	}
 
 	long attenteAvantEnvoi(UUID proprietaire, Instant maintenant) {
@@ -99,6 +116,15 @@ public class Fichiers {
 	 * (on ne joint pas le fichier de quelqu'un d'autre). Renvoie les identifiants dans l'ordre, ou lève une erreur 400.
 	 */
 	public List<UUID> verifierPieces(Collection<UUID> ids, UUID auteur) {
+		return verifierPieces(ids, auteur, null);
+	}
+
+	/** Un fichier privé ne peut ni changer de destinataire, ni être joint à un salon public. */
+	public List<UUID> verifierPiecesPrivees(Collection<UUID> ids, UUID auteur, UUID destinataire) {
+		return verifierPieces(ids, auteur, destinataire);
+	}
+
+	private List<UUID> verifierPieces(Collection<UUID> ids, UUID auteur, UUID destinataire) {
 		if (ids == null || ids.isEmpty()) {
 			return List.of();
 		}
@@ -106,8 +132,8 @@ public class Fichiers {
 		if (uniques.size() > PIECES_MAX) {
 			throw new ErreurFichier(400, "trop_de_pieces", "Au plus " + PIECES_MAX + " pièces jointes");
 		}
-		long miennes = base.sql("SELECT count(*) FROM fichier WHERE id IN (:ids) AND proprietaire_id = :a")
-			.param("ids", uniques).param("a", auteur).query(Long.class).single();
+		long miennes = base.sql("SELECT count(*) FROM fichier WHERE id IN (:ids) AND proprietaire_id = :a AND conversation_avec IS NOT DISTINCT FROM :destinataire")
+			.param("ids", uniques).param("a", auteur).param("destinataire", destinataire, java.sql.Types.OTHER).query(Long.class).single();
 		if (miennes != uniques.size()) {
 			throw new ErreurFichier(400, "piece_inconnue", "Une pièce jointe est introuvable");
 		}

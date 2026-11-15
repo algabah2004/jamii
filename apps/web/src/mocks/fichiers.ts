@@ -7,20 +7,20 @@ type Piece = components['schemas']['PieceJointe']
  * Les fichiers joints (contracts/fichiers.yaml) en mémoire, pour le mode factice et les tests : on garde le fichier
  * envoyé et on le rend tel quel. Le vrai serveur vérifie le type d'après les octets ; ici, d'après le type annoncé.
  */
-const fichiers = new Map<string, { piece: Piece; contenu: Blob }>()
+const fichiers = new Map<string, { piece: Piece; contenu: Blob; destinataire?: string }>()
 
 export function reinitialiserFichiers() {
   fichiers.clear()
 }
 
 /** Pour les tests : une pièce jointe connue du serveur simulé, sans passer par un envoi. */
-export function enregistrerPieceFactice(piece: Piece) {
-  fichiers.set(piece.id, { piece, contenu: new Blob([]) })
+export function enregistrerPieceFactice(piece: Piece, destinataire?: string) {
+  fichiers.set(piece.id, { piece, contenu: new Blob([]), destinataire })
 }
 
 /** Les pièces jointes connues, dans l'ordre demandé (pour les messages et publications des mocks). */
-export function piecesDe(ids: string[] | undefined): Piece[] {
-  return (ids ?? []).map((id) => fichiers.get(id)?.piece).filter((p): p is Piece => !!p)
+export function piecesDe(ids: string[] | undefined, destinataire?: string): Piece[] {
+  return (ids ?? []).map((id) => fichiers.get(id)?.destinataire === destinataire ? fichiers.get(id)?.piece : undefined).filter((p): p is Piece => !!p)
 }
 
 const sorteDe = (type: string): Piece['sorte'] => (type.startsWith('image/') ? 'image' : type.startsWith('video/') ? 'video' : 'document')
@@ -38,7 +38,7 @@ export const handlersFichiers = [
     const id = crypto.randomUUID()
     const nom = fichier instanceof File ? fichier.name : 'fichier'
     const piece: Piece = { id, nom, type, sorte, taille: fichier.size, url: `/api/fichiers/${id}` }
-    fichiers.set(id, { piece, contenu: fichier })
+    fichiers.set(id, { piece, contenu: fichier, destinataire: form.get('destinataireId')?.toString() })
     return HttpResponse.json(piece, { status: 201 })
   }),
   http.get('/api/fichiers/:id', ({ params }) => {

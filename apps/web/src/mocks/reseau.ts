@@ -126,7 +126,7 @@ export const handlersReseau = [
       invitations.set(c.id, (invitations.get(c.id) ?? new Set()).add(personneId))
       invitation = { cercle: resumeCercle(c) }
     }
-    const message: Message = { id: nouvelId(), deMoi: true, texte, invitation, envoyeLe: new Date().toISOString(), luLe: null, piecesJointes: piecesDe(corps.pieces) }
+    const message: Message = { id: nouvelId(), deMoi: true, texte, invitation, envoyeLe: new Date().toISOString(), luLe: null, piecesJointes: piecesDe(corps.pieces, personneId) }
     messages.set(personneId, [message, ...(messages.get(personneId) ?? [])])
     return HttpResponse.json(message, { status: 201 })
   }),

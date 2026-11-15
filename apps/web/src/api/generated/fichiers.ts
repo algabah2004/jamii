@@ -157,6 +157,11 @@ export interface operations {
                 "multipart/form-data": {
                     /** Format: binary */
                     fichier: string;
+                    /**
+                     * Format: uuid
+                     * @description Pour un message privé : réserve ce fichier à cette conversation. Seul son auteur le lit avant envoi ; ensuite, son destinataire aussi.
+                     */
+                    destinataireId?: string;
                 };
             };
         };

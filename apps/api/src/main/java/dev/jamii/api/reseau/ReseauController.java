@@ -208,8 +208,9 @@ class ReseauController {
 		if (corps == null) {
 			throw ErreurReseau.validation("texte", "obligatoire");
 		}
-		var pieces = fichiers.verifierPieces(corps.pieces(), moi.id());
-		var ligne = messagerie.envoyer(moi.id(), personne(personneId), corps.texte(), corps.cercleId(), pieces);
+		var destinataire = personne(personneId);
+		var pieces = fichiers.verifierPiecesPrivees(corps.pieces(), moi.id(), destinataire);
+		var ligne = messagerie.envoyer(moi.id(), destinataire, corps.texte(), corps.cercleId(), pieces);
 		return ResponseEntity.status(HttpStatus.CREATED).body(message(ligne, moi.id(), invitations(List.of(ligne))));
 	}
 
