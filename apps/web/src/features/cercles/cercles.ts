@@ -13,6 +13,7 @@ export type MembreCercle = components['schemas']['MembreCercle']
 export type Tour = components['schemas']['Tour']
 export type Idee = components['schemas']['Idee']
 export type Tache = ComposantsProjets['schemas']['Tache']
+export type Jalon = ComposantsProjets['schemas']['Jalon']
 
 export const TAILLES = [4, 5, 6] as const
 export const LIMITES = { nomMin: 3, nomMax: 80, ideeTitreMin: 3, ideeTitreMax: 120, ideeDescriptionMin: 10, ideeDescriptionMax: 5000 } as const
@@ -137,9 +138,15 @@ export async function lireTaches(projetId: string): Promise<Tache[] | null> {
 
 export type ResultatTache = { ok: true; tache: Tache } | { ok: false; code: string | null }
 
-export async function ajouterTache(projetId: string, titre: string, assigneeId?: string | null): Promise<ResultatTache> {
+/** Les détails d'une tâche qu'on écrit (création ou modification). */
+export type DetailsTache = { description?: string | null; priorite?: Tache['priorite']; echeance?: string | null; assigneeId?: string | null }
+
+export async function ajouterTache(projetId: string, titre: string, details: DetailsTache | string | null = {}): Promise<ResultatTache> {
+  // Ancienne forme : le 3e argument était le responsable.
+  const d: DetailsTache = typeof details === 'string' ? { assigneeId: details } : (details ?? {})
+  const corps = Object.fromEntries(Object.entries({ titre, ...d }).filter(([, v]) => v !== undefined && v !== null && v !== ''))
   try {
-    const { data, error } = await api.POST('/api/projets/{projetId}/taches', { params: { path: { projetId } }, body: { titre, ...(assigneeId ? { assigneeId } : {}) } })
+    const { data, error } = await api.POST('/api/projets/{projetId}/taches', { params: { path: { projetId } }, body: corps as { titre: string } })
     return data ? { ok: true, tache: data } : { ok: false, code: code(error) }
   } catch {
     return { ok: false, code: null }
@@ -147,7 +154,7 @@ export async function ajouterTache(projetId: string, titre: string, assigneeId?:
 }
 
 /** `version` vient de la tâche lue : si quelqu'un l'a changée entre-temps, l'API répond `modification_concurrente`. */
-export async function changerTache(projetId: string, tache: Tache, changement: { statut?: Tache['statut']; assigneeId?: string | null }): Promise<ResultatTache> {
+export async function changerTache(projetId: string, tache: Tache, changement: DetailsTache & { titre?: string; statut?: Tache['statut'] }): Promise<ResultatTache> {
   try {
     const { data, error } = await api.PATCH('/api/projets/{projetId}/taches/{tacheId}', {
       params: { path: { projetId, tacheId: tache.id } },
@@ -167,3 +174,42 @@ export const deposerIdee = (cercleId: string, idee: Idee) =>
 export const tirerAuSort = (cercleId: string) => resultat(api.POST('/api/cercles/{cercleId}/tirage', { params: { path: { cercleId } } }))
 export const livrerTour = (cercleId: string, numero: number) =>
   resultat(api.POST('/api/cercles/{cercleId}/tours/{numero}/livrer', { params: { path: { cercleId, numero } } }))
+
+// --- Le calendrier du tour : les jalons du projet, tenus par le chef de projet (contracts/projets.yaml) ---
+
+export async function lireJalons(projetId: string): Promise<Jalon[] | null> {
+  try {
+    const { data } = await api.GET('/api/projets/{projetId}/jalons', { params: { path: { projetId } } })
+    return data ?? null
+  } catch {
+    return null
+  }
+}
+
+export type ResultatJalon = { ok: true; jalon: Jalon } | { ok: false; code: string | null }
+
+export async function ajouterJalon(projetId: string, titre: string, echeance: string): Promise<ResultatJalon> {
+  try {
+    const { data, error } = await api.POST('/api/projets/{projetId}/jalons', { params: { path: { projetId } }, body: { titre, echeance } })
+    return data ? { ok: true, jalon: data } : { ok: false, code: code(error) }
+  } catch {
+    return { ok: false, code: null }
+  }
+}
+
+export async function changerJalon(projetId: string, jalonId: string, changement: { statut?: Jalon['statut']; titre?: string; echeance?: string | null }): Promise<ResultatJalon> {
+  try {
+    const { data, error } = await api.PATCH('/api/projets/{projetId}/jalons/{jalonId}', { params: { path: { projetId, jalonId } }, body: changement })
+    return data ? { ok: true, jalon: data } : { ok: false, code: code(error) }
+  } catch {
+    return { ok: false, code: null }
+  }
+}
+
+/**
+ * Le chef de projet : le membre dont c'est le tour. Il tient le calendrier et consigne les décisions. Avant le tirage
+ * et après le dernier tour, c'est le créateur du cercle.
+ */
+export function chefDeProjet(cercle: Pick<Cercle, 'tours' | 'tourEnCours' | 'createur'>) {
+  return cercle.tours.find((x) => x.numero === cercle.tourEnCours)?.beneficiaire ?? cercle.createur
+}

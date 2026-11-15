@@ -30,7 +30,7 @@ class Messagerie {
 
 	/** `salleAppel` : le message annonce un appel vocal et vidéo dans cette salle (#157). */
 	record Ligne(UUID id, UUID expediteurId, UUID destinataireId, String texte, UUID cercleId, Instant envoyeLe,
-			Instant luLe, String salleAppel) {
+			Instant luLe, String salleAppel, List<UUID> pieces) {
 	}
 
 	/** Un appel est « en cours » pendant une heure après son lancement, comme dans les salons. */
@@ -48,7 +48,7 @@ class Messagerie {
 	record Page<T>(List<T> elements, String curseurSuivant) {
 	}
 
-	private static final String COLONNES = "id, expediteur_id, destinataire_id, texte, cercle_id, envoye_le, lu_le, salle_appel";
+	private static final String COLONNES = "id, expediteur_id, destinataire_id, texte, cercle_id, envoye_le, lu_le, salle_appel, pieces";
 
 	private final JdbcClient base;
 
@@ -72,8 +72,13 @@ class Messagerie {
 
 	@Transactional
 	Ligne envoyer(UUID moi, UUID destinataire, String texteBrut, UUID cercleId) {
+		return envoyer(moi, destinataire, texteBrut, cercleId, List.of());
+	}
+
+	/** Un message avec ses pièces jointes (déjà vérifiées par le module fichiers) : le texte devient alors facultatif. */
+	Ligne envoyer(UUID moi, UUID destinataire, String texteBrut, UUID cercleId, List<UUID> pieces) {
 		String texte = texteBrut == null ? "" : texteBrut.strip();
-		if (texte.isEmpty()) {
+		if (texte.isEmpty() && pieces.isEmpty()) {
 			throw ErreurReseau.validation("texte", "obligatoire");
 		}
 		if (texte.length() > LONGUEUR_MAX) {
@@ -97,7 +102,7 @@ class Messagerie {
 		Instant maintenant = horloge.instant();
 		limiter(moi, destinataire, maintenant);
 
-		return ecrire(moi, destinataire, texte, cercleId, maintenant, null);
+		return ecrire(moi, destinataire, texte, cercleId, maintenant, null, pieces);
 	}
 
 	/**
@@ -117,12 +122,14 @@ class Messagerie {
 		byte[] octets = new byte[8];
 		HASARD.nextBytes(octets);
 		return ecrire(moi, destinataire, ANNONCE_APPEL, null, maintenant,
-				"jamii-prive-" + java.util.HexFormat.of().formatHex(octets));
+				"jamii-prive-" + java.util.HexFormat.of().formatHex(octets), List.of());
 	}
 
-	private Ligne ecrire(UUID moi, UUID destinataire, String texte, UUID cercleId, Instant maintenant, String salle) {
-		var ligne = new Ligne(UUID.randomUUID(), moi, destinataire, texte, cercleId, maintenant, null, salle);
-		base.sql("INSERT INTO message (" + COLONNES + ") VALUES (:id, :de, :a, :texte, :cercle, :le, NULL, :salle)")
+	private Ligne ecrire(UUID moi, UUID destinataire, String texte, UUID cercleId, Instant maintenant, String salle,
+			List<UUID> pieces) {
+		var ligne = new Ligne(UUID.randomUUID(), moi, destinataire, texte, cercleId, maintenant, null, salle, pieces);
+		base.sql("INSERT INTO message (" + COLONNES + ") VALUES (:id, :de, :a, :texte, :cercle, :le, NULL, :salle, CAST(:pieces AS UUID[]))")
+			.param("pieces", dev.jamii.api.fichiers.Fichiers.tableau(pieces))
 			.param("id", ligne.id())
 			.param("de", moi)
 			.param("a", destinataire)
@@ -242,7 +249,8 @@ class Messagerie {
 		Timestamp lu = l.getTimestamp("lu_le");
 		return new Ligne(l.getObject("id", UUID.class), l.getObject("expediteur_id", UUID.class),
 				l.getObject("destinataire_id", UUID.class), l.getString("texte"), l.getObject("cercle_id", UUID.class),
-				l.getTimestamp("envoye_le").toInstant(), lu == null ? null : lu.toInstant(), l.getString("salle_appel"));
+				l.getTimestamp("envoye_le").toInstant(), lu == null ? null : lu.toInstant(), l.getString("salle_appel"),
+				dev.jamii.api.fichiers.Fichiers.lireTableau(l, "pieces"));
 	}
 
 	private static <T> Page<T> page(List<T> lignes, int limite, java.util.function.Function<T, Curseur> cle) {

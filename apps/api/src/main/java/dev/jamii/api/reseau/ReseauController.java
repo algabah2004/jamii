@@ -62,7 +62,7 @@ class ReseauController {
 	record ProfilsRecommandes(List<String> competencesManquantes, List<ProfilRecommande> elements) {
 	}
 
-	record NouveauMessage(String texte, UUID cercleId) {
+	record NouveauMessage(String texte, UUID cercleId, List<UUID> pieces) {
 	}
 
 	record Invitation(CercleResume cercle) {
@@ -73,7 +73,7 @@ class ReseauController {
 	}
 
 	record Message(UUID id, boolean deMoi, String texte, Invitation invitation, Instant envoyeLe, Instant luLe,
-			Appel appel) {
+			Appel appel, List<dev.jamii.api.fichiers.Fichiers.Piece> piecesJointes) {
 	}
 
 	record Conversation(Personne personne, Message dernierMessage, int nonLus) {
@@ -115,9 +115,12 @@ class ReseauController {
 	/** Le serveur d'appels, le même que celui des salons (Jitsi pour la CADEV). */
 	private final String appels;
 
+	private final dev.jamii.api.fichiers.Fichiers fichiers;
+
 	ReseauController(ProfilsPublies profils, LectureCercles cercles, Messagerie messagerie, Annuaire annuaire,
-			Contacts contacts, Notifications notifications,
+			Contacts contacts, Notifications notifications, dev.jamii.api.fichiers.Fichiers fichiers,
 			@org.springframework.beans.factory.annotation.Value("${jamii.appels.url:https://meet.jit.si}") String appels) {
+		this.fichiers = fichiers;
 		this.appels = appels.replaceAll("/+$", "");
 		this.profils = profils;
 		this.cercles = cercles;
@@ -205,7 +208,8 @@ class ReseauController {
 		if (corps == null) {
 			throw ErreurReseau.validation("texte", "obligatoire");
 		}
-		var ligne = messagerie.envoyer(moi.id(), personne(personneId), corps.texte(), corps.cercleId());
+		var pieces = fichiers.verifierPieces(corps.pieces(), moi.id());
+		var ligne = messagerie.envoyer(moi.id(), personne(personneId), corps.texte(), corps.cercleId(), pieces);
 		return ResponseEntity.status(HttpStatus.CREATED).body(message(ligne, moi.id(), invitations(List.of(ligne))));
 	}
 
@@ -303,7 +307,7 @@ class ReseauController {
 		Appel appel = l.salleAppel() == null ? null : new Appel(appels + "/" + l.salleAppel(),
 				l.envoyeLe().isAfter(Instant.now().minus(Messagerie.DUREE_APPEL)));
 		return new Message(l.id(), l.expediteurId().equals(moi), l.texte(), cercle == null ? null : new Invitation(cercle),
-				l.envoyeLe(), l.luLe(), appel);
+				l.envoyeLe(), l.luLe(), appel, fichiers.decrire(l.pieces()));
 	}
 
 	private static CercleResume resume(LectureCercles.CercleLu c, Map<UUID, Compte> comptes) {
@@ -359,6 +363,11 @@ class ReseauController {
 		catch (IllegalArgumentException e) {
 			throw ErreurReseau.introuvable();
 		}
+	}
+
+	@ExceptionHandler(dev.jamii.api.fichiers.ErreurFichier.class)
+	ResponseEntity<org.springframework.http.ProblemDetail> erreurFichier(dev.jamii.api.fichiers.ErreurFichier e) {
+		return dev.jamii.api.fichiers.FichiersController.probleme(e);
 	}
 
 	@ExceptionHandler(ErreurReseau.class)

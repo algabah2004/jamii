@@ -4,6 +4,7 @@ import { handlers } from './mocks/handlers'
 import { reinitialiserCommunautes } from './mocks/communautes'
 import { reinitialiserProfil } from './mocks/profils'
 import { reinitialiserCercles } from './mocks/cercles'
+import { reinitialiserFichiers } from './mocks/fichiers'
 import { reinitialiserReseau } from './mocks/reseau'
 
 export const serveur = setupServer(...handlers)
@@ -13,6 +14,7 @@ afterEach(() => {
   reinitialiserCommunautes()
   reinitialiserProfil()
   reinitialiserCercles()
+  reinitialiserFichiers()
   reinitialiserReseau()
 })
 afterAll(() => serveur.close())

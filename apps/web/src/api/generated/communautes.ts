@@ -381,13 +381,14 @@ export interface components {
         NouvellePublication: {
             type: components["schemas"]["TypePublication"];
             titre: string;
-            /** @description Texte brut. */
+            /** @description Texte mis en forme (petit Markdown), 20 caractères au moins sans pièce jointe. */
             contenu: string;
             /**
              * Format: uuid
              * @description Obligatoire pour `montre_ton_projet`, interdit sinon.
              */
             projetId?: string;
+            pieces?: components["schemas"]["Pieces"];
         };
         /** @description Dans un fil, une publication se lit en entier (v0.6) : son texte et l'état de la réponse de l'IA. */
         PublicationResume: {
@@ -411,6 +412,7 @@ export interface components {
             contenu: string;
             /** @description Pour une question seulement. */
             propositionIa: components["schemas"]["PropositionIa"] | null;
+            piecesJointes: components["schemas"]["PieceJointe"][];
         };
         PagePublications: components["schemas"]["Page"] & {
             elements?: components["schemas"]["PublicationResume"][];
@@ -521,7 +523,7 @@ export interface components {
              */
             numero: number;
             auteur: components["schemas"]["PersonneResume"];
-            /** @description Texte brut */
+            /** @description Texte mis en forme (petit Markdown), affiché échappé. */
             texte: string;
             /** Format: date-time */
             envoyeLe: string;
@@ -531,10 +533,12 @@ export interface components {
                 id: string;
                 enCours: boolean;
             } | null;
+            piecesJointes: components["schemas"]["PieceJointe"][];
         };
         NouveauMessageSalon: {
-            /** @description Texte brut. */
+            /** @description Texte mis en forme (petit Markdown). Vide seulement avec des pièces jointes. */
             texte: string;
+            pieces?: components["schemas"]["Pieces"];
         };
         NouveauSignalement: {
             /** @enum {string} */
@@ -597,6 +601,25 @@ export interface components {
             /** Format: uri */
             avatarUrl?: string | null;
         };
+        PieceJointe: {
+            /** Format: uuid */
+            id: string;
+            /** @description Le nom du fichier, sans chemin. */
+            nom: string;
+            /** @description Le type MIME reconnu (image/png, video/mp4, application/pdf…). */
+            type: string;
+            /** @enum {string} */
+            sorte: "image" | "video" | "document";
+            /**
+             * Format: int64
+             * @description En octets.
+             */
+            taille: number;
+            /** @description Où le lire (`/api/fichiers/{id}`), avec la session. */
+            url: string;
+        };
+        /** @description Les identifiants des fichiers joints (envoyés avant par `POST /api/fichiers`, par la même personne). */
+        Pieces: string[];
     };
     responses: {
         /** @description Pas connecté ou session expirée (`code` = `non_connecte`). */

@@ -234,19 +234,23 @@ export interface components {
             lien: components["schemas"]["StatutLien"];
         };
         NouveauMessage: {
+            /** @description Texte mis en forme (petit Markdown). Vide seulement avec des pièces jointes. */
             texte: string;
             /**
              * Format: uuid
              * @description Pour inviter la personne à un cercle ouvert dont je suis membre.
              */
             cercleId?: string;
+            pieces?: components["schemas"]["Pieces"];
         };
         Message: {
             /** Format: uuid */
             id: string;
             /** @description C'est moi qui l'ai écrit. */
             deMoi: boolean;
+            /** @description Texte mis en forme (petit Markdown), affiché échappé. */
             texte: string;
+            piecesJointes: components["schemas"]["PieceJointe"][];
             invitation?: components["schemas"]["InvitationCercle"] | null;
             /** Format: date-time */
             envoyeLe: string;
@@ -402,6 +406,25 @@ export interface components {
             /** @description `null` à la dernière page. */
             curseurSuivant: string | null;
         };
+        PieceJointe: {
+            /** Format: uuid */
+            id: string;
+            /** @description Le nom du fichier, sans chemin. */
+            nom: string;
+            /** @description Le type MIME reconnu (image/png, video/mp4, application/pdf…). */
+            type: string;
+            /** @enum {string} */
+            sorte: "image" | "video" | "document";
+            /**
+             * Format: int64
+             * @description En octets.
+             */
+            taille: number;
+            /** @description Où le lire (`/api/fichiers/{id}`), avec la session. */
+            url: string;
+        };
+        /** @description Les identifiants des fichiers joints (envoyés avant par `POST /api/fichiers`, par la même personne). */
+        Pieces: string[];
     };
     responses: {
         /** @description Pas connecté ou session expirée (`code` = `non_connecte`). */

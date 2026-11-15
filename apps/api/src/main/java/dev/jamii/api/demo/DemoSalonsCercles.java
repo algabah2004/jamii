@@ -36,6 +36,7 @@ final class DemoSalonsCercles {
 	}
 
 	void charger() {
+		detaillerTaches();
 		histoire();
 		dakar();
 		abidjan();
@@ -73,6 +74,28 @@ final class DemoSalonsCercles {
 				""").param("cercles", cercles).update();
 	}
 
+	/** Les tâches du tour de Kofi, détaillées : ce qu'il faut faire, quand c'est fini, et par quoi commencer. */
+	private void detaillerTaches() {
+		String[][] details = {
+				{ "Synchroniser les pesées au retour du réseau", "haute",
+						"Quand le téléphone retrouve du réseau, envoyer au serveur les pesées faites hors ligne.\nFini quand deux téléphones qui ont pesé hors ligne retrouvent les mêmes totaux, sans doublon." },
+				{ "Enregistrer les pesées sans réseau", "haute",
+						"Garder chaque pesée sur le téléphone tant qu'il n'y a pas de réseau.\nFini quand une pesée faite en mode avion est toujours là après redémarrage." },
+				{ "Envoyer un reçu par SMS au producteur", "normale",
+						"Après chaque pesée, le producteur reçoit un SMS : poids, prix du kilo, montant dû.\nFini quand le SMS arrive sur un vrai téléphone en moins d'une minute." },
+				{ "Mettre l'API en ligne sur DataCloud", "normale",
+						"Déployer l'API et sa base sur DataCloud, avec une adresse fixe.\nFini quand l'appli d'un peseur synchronise avec l'API en ligne." },
+				{ "Former deux peseurs à l'application", "basse",
+						"Une séance d'une heure à la coopérative, avec deux peseurs.\nFini quand chacun a saisi seul dix pesées." } };
+		for (String[] d : details) {
+			base.sql("""
+					UPDATE tache SET priorite = :priorite, description = :description
+					WHERE titre = :titre AND description IS NULL
+					  AND projet_id = (SELECT projet_id FROM cercle_membre WHERE cercle_id = :c AND rang = 2)
+					""").param("titre", d[0]).param("priorite", d[1]).param("description", d[2]).param("c", DAKAR).update();
+		}
+	}
+
 	private void dakar() {
 		texte(DAKAR, 1, AWA, "Bravo à tous pour mon tour, les tisserandes ont déjà 40 commandes ! Place au carnet de Kofi 🚀", heures(70));
 		texte(DAKAR, 2, KOFI, "Merci ! J'ai découpé le projet en 12 tâches, prenez celles qui vous parlent.", heures(69));
@@ -86,7 +109,7 @@ final class DemoSalonsCercles {
 		coupDeMain(DAKAR, 8, MOUSSA, "L'APK ne s'installe pas sur les vieux Android 8. Une idée ?", heures(1), null, null);
 		texte(DAKAR, 9, AWA, "Appel demain 19 h pour la démo du tableau ? 🙌", Duration.ofMinutes(40));
 		inserer(DAKAR, 10, KOFI, "decision", "On garde Flutter pour l'appli des pesées : tout le cercle le connaît.", null, null, null, heures(68), null, null);
-		inserer(DAKAR, 11, AWA, "decision", "Démo intermédiaire jeudi à 19 h, livraison du tour le mardi suivant.", null, null, null, heures(20), null, null);
+		inserer(DAKAR, 11, KOFI, "decision", "Démo intermédiaire jeudi à 19 h, livraison du tour le mardi suivant.", null, null, null, heures(20), null, null);
 	}
 
 	private void abidjan() {

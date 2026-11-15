@@ -1,0 +1,97 @@
+openapi: 3.1.0
+info:
+  title: Jamii · Fichiers joints
+  version: 0.1.0
+  summary: Images, vidéos et documents joints aux messages des salons et aux publications.
+  description: |
+    On envoie d'abord le fichier (`POST /api/fichiers`), on reçoit son identifiant, puis on le joint à un message ou à une
+    publication (`pieces`, 6 au plus, seulement ses propres fichiers). Règles communes : docs/api-conventions.md.
+
+    **Types acceptés**, reconnus d'après les premiers octets du fichier (jamais d'après son nom ni le type annoncé) :
+    images PNG, JPEG, GIF, WebP (10 Mo) ; vidéos MP4, MOV, WebM (25 Mo) ; PDF, documents Office (docx, xlsx, pptx),
+    archives ZIP et fichiers texte (txt, md, csv, json, code ; 10 Mo). **Refusés** : tout ce qui pourrait s'exécuter
+    dans le navigateur (HTML, SVG, JavaScript) et les exécutables (`415 type_refuse`).
+
+    **Lire** un fichier demande d'être connecté. Il est servi avec son vrai type, `X-Content-Type-Options: nosniff` et une
+    politique de contenu qui interdit tout script ; les vidéos se lisent par morceaux (`Range`). Les documents autres que
+    PDF et texte se téléchargent.
+
+    **Stockage** : dans PostgreSQL aujourd'hui, derrière une interface ; le stockage objet de DataCloud pourra le
+    remplacer sans changer ce contrat.
+servers:
+  - url: http://localhost:8080
+
+security:
+  - session: []
+
+tags:
+  - { name: fichiers, description: Envoyer et lire les fichiers joints. }
+
+paths:
+  /api/fichiers:
+    post:
+      tags: [fichiers]
+      operationId: envoyerFichier
+      summary: Envoyer un fichier (60 par heure et par personne)
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [fichier]
+              properties:
+                fichier: { type: string, format: binary }
+      responses:
+        '201':
+          description: Fichier reçu.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PieceJointe' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '413': { description: '`trop_gros` : au-delà de la limite de sa sorte.', $ref: './socle.yaml#/components/responses/Invalide' }
+        '415': { description: '`type_refuse`.', $ref: './socle.yaml#/components/responses/Invalide' }
+        '429': { $ref: './socle.yaml#/components/responses/TropDeRequetes' }
+
+  /api/fichiers/{fichierId}:
+    parameters:
+      - { name: fichierId, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      tags: [fichiers]
+      operationId: lireFichier
+      summary: Lire un fichier (ses octets, avec son vrai type)
+      responses:
+        '200':
+          description: Le fichier.
+          content:
+            '*/*':
+              schema: { type: string, format: binary }
+        '206': { description: 'Une partie du fichier (en-tête `Range`), pour les vidéos.' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+
+components:
+  securitySchemes:
+    session: { $ref: './socle.yaml#/components/securitySchemes/session' }
+    csrf: { $ref: './socle.yaml#/components/securitySchemes/csrf' }
+
+  schemas:
+    PieceJointe:
+      type: object
+      required: [id, nom, type, sorte, taille, url]
+      properties:
+        id: { type: string, format: uuid }
+        nom: { type: string, maxLength: 200, description: 'Le nom du fichier, sans chemin.' }
+        type: { type: string, description: 'Le type MIME reconnu (image/png, video/mp4, application/pdf…).' }
+        sorte: { type: string, enum: [image, video, document] }
+        taille: { type: integer, format: int64, description: En octets. }
+        url: { type: string, description: 'Où le lire (`/api/fichiers/{id}`), avec la session.' }
+
+    Pieces:
+      type: array
+      maxItems: 6
+      description: 'Les identifiants des fichiers joints (envoyés avant par `POST /api/fichiers`, par la même personne).'
+      items: { type: string, format: uuid }

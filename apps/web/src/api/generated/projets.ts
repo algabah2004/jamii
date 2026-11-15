@@ -284,8 +284,10 @@ export interface paths {
         get: operations["listerJalons"];
         put?: never;
         /**
-         * Ajouter un jalon (membres)
+         * Ajouter un jalon (membres ; dans un tour de cercle, le chef de projet)
          * @description Sans `ordre`, le jalon se place après les autres. Sans `statut`, il est `prevu`.
+         *     Dans un projet d'`origine` `cercle`, les jalons sont le calendrier du tour : seul le porteur (le chef de projet,
+         *     membre dont c'est le tour) les crée et les modifie (`403 pas_chef_de_projet`). Les tâches restent à toute l'équipe.
          */
         post: operations["creerJalon"];
         delete?: never;
@@ -310,7 +312,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Modifier un jalon ou le marquer atteint (membres) */
+        /** Modifier un jalon ou le marquer atteint (membres ; dans un tour de cercle, le chef de projet) */
         patch: operations["modifierJalon"];
         trace?: never;
     };
@@ -369,6 +371,12 @@ export interface components {
         StatutCandidature: "envoyee" | "acceptee" | "refusee" | "retiree";
         /** @enum {string} */
         StatutTache: "a_faire" | "en_cours" | "livree";
+        /**
+         * @description Par quoi commencer. `normale` par défaut, et pour les tâches créées avant.
+         * @default normale
+         * @enum {string}
+         */
+        PrioriteTache: "haute" | "normale" | "basse";
         /** @description En minuscules, sans espace inutile (`flutter`, `postgresql`, `ux-design`). */
         Competence: string;
         /** @description Ce que le projet montre d'une personne. Jamais son e-mail. */
@@ -538,6 +546,9 @@ export interface components {
             /** Format: uuid */
             id: string;
             titre: string;
+            /** @description Ce qu'il faut faire, et quand c'est fini. `null` si personne ne l'a écrite. */
+            description: string | null;
+            priorite: components["schemas"]["PrioriteTache"];
             /** Format: uuid */
             jalonId?: string | null;
             assignee?: components["schemas"]["PersonneResume"] | null;
@@ -554,6 +565,9 @@ export interface components {
         };
         EcritureTache: {
             titre?: string;
+            /** @description Vide ou `null` : pas de description. */
+            description?: string | null;
+            priorite?: components["schemas"]["PrioriteTache"];
             /** Format: uuid */
             jalonId?: string | null;
             /**

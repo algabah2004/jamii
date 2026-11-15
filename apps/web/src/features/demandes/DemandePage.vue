@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LienRetour from '../../components/LienRetour.vue'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
@@ -267,7 +268,7 @@ const messageErreur = computed(() =>
     <RouterLink v-if="historique.length > 12" to="/demandes" class="historique__toutes">{{ t('demandes.mesDemandes.toutes') }}</RouterLink>
   </aside>
   <section class="demande fond-verre">
-    <p class="retour"><RouterLink to="/demandes">← {{ t('demandes.mesDemandes.titre') }}</RouterLink></p>
+    <p class="retour"><LienRetour to="/demandes">{{ t('demandes.mesDemandes.titre') }}</LienRetour></p>
 
     <JSquelette v-if="etat === 'chargement' && !demande" :nombre="3" />
     <div v-else-if="etat === 'introuvable'" class="etat-vide">

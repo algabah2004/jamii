@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import PiecesJointes from '../../components/texte/PiecesJointes.vue'
+import TexteRiche from '../../components/texte/TexteRiche.vue'
 import LienPersonne from '../../components/LienPersonne.vue'
 import { computed, nextTick, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -23,7 +25,10 @@ const { t, locale } = useI18n()
 
 const p = computed(() => props.publication)
 /** Une publication écrite dans le fil a pour titre le début de son texte : on ne le répète pas. */
-const titreSepare = computed(() => !p.value.contenu.startsWith(p.value.titre.replace(/…$/, '')))
+// Le titre n'est montré que s'il dit autre chose que le début du texte (sans les marques de mise en forme). Une
+// publication faite seulement d'une image a un titre écrit pour elle (« Awa a partagé une image ») : on le tait.
+const sansMarques = (texte: string) => texte.replace(/[*_~`>#]/g, '').replace(/\s+/g, ' ').trim()
+const titreSepare = computed(() => !!p.value.contenu.trim() && !sansMarques(p.value.contenu).startsWith(sansMarques(p.value.titre.replace(/…$/, ''))))
 const long = computed(() => p.value.contenu.length > 420)
 const deplie = ref(false)
 
@@ -125,7 +130,8 @@ async function copierLien() {
       </header>
 
       <p v-if="titreSepare" class="titre">{{ p.titre }}</p>
-      <p class="texte" :class="{ 'texte--coupe': long && !deplie }" data-test="texte">{{ p.contenu }}</p>
+      <TexteRiche v-if="p.contenu" class="texte" :class="{ 'texte--coupe': long && !deplie }" :texte="p.contenu" data-test="texte" />
+      <PiecesJointes :pieces="p.piecesJointes ?? []" class="medias" />
       <button v-if="long" type="button" class="lien" @click="deplie = !deplie">{{ deplie ? t('communautes.fil.voirMoins') : t('communautes.fil.voirPlus') }}</button>
 
       <p v-if="p.accepteeLe" class="statut statut--resolue">✓ {{ t('communautes.reponseAcceptee') }}</p>
@@ -162,7 +168,7 @@ async function copierLien() {
                 <span v-if="r.acceptee" class="pastille pastille--acceptee">✓ {{ t('communautes.fil.acceptee') }}</span>
                 <span v-else-if="r.proposeeParIa" class="pastille pastille--ia">{{ t('communautes.fil.aVerifier') }}</span>
               </p>
-              <p class="reponse__texte">{{ r.contenu }}</p>
+              <TexteRiche class="reponse__texte" :texte="r.contenu" />
               <p v-if="r.valideePar" class="texte-discret reponse__validee">{{ t('communautes.fil.valideePar', { nom: r.valideePar.nom }) }}</p>
               <div v-if="peutValider(r) || peutAccepter(r)" class="reponse__commandes">
                 <button v-if="peutValider(r)" type="button" class="petit" :data-test="`valider-${r.id}`" @click="agir('valider', r.id)">{{ t('communautes.fil.valider') }}</button>
@@ -201,8 +207,10 @@ async function copierLien() {
 .type--question { background: color-mix(in srgb, var(--electric-blue) 14%, transparent); color: var(--action-ink); }
 .type--montre_ton_projet { background: color-mix(in srgb, var(--cantaloupe) 18%, transparent); color: var(--proof-ink); }
 .titre { margin: 0; font-weight: 700; font-size: 1.0625rem; line-height: 1.35; }
-.texte { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.55; }
-.texte--coupe { display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
+.texte { margin: 0; }
+/* Un long texte se replie à une dizaine de lignes, avec un fondu en bas ; « Voir plus » le déplie. */
+.texte--coupe { max-height: 15rem; overflow: hidden; -webkit-mask-image: linear-gradient(to bottom, #000 70%, transparent); mask-image: linear-gradient(to bottom, #000 70%, transparent); }
+.medias { margin-top: var(--space-1); }
 .lien { justify-self: start; padding: 0; border: 0; background: none; color: var(--action-ink); font: inherit; font-size: var(--type-body-sm-size); font-weight: 600; cursor: pointer; }
 .lien--discret { color: var(--ink-muted); font-weight: 500; }
 .statut { margin: 0; font-size: 0.8125rem; font-weight: 600; }
@@ -224,7 +232,7 @@ async function copierLien() {
 .reponse__ia { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 10px; background: color-mix(in srgb, var(--electric-blue) 16%, transparent); color: var(--action-ink); font-size: 0.75rem; font-weight: 800; }
 .reponse__corps { display: grid; gap: 4px; min-width: 0; }
 .reponse__tete { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px var(--space-2); font-size: 0.875rem; }
-.reponse__texte { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.5; }
+.reponse__texte { margin: 0; }
 .reponse__validee { margin: 0; font-size: 0.8125rem; }
 .reponse--acceptee .reponse__texte { padding-inline-start: var(--space-3); border-inline-start: 3px solid #23a55a; }
 .pastille { padding: 1px 8px; border-radius: var(--radius-pill); font-size: 0.6875rem; font-weight: 700; }

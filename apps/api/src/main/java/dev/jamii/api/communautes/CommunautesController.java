@@ -44,7 +44,8 @@ class CommunautesController {
 
 	/** Dans un fil, chaque publication se lit en entier (contrat v0.6) : son texte et l'état de la réponse de l'IA. */
 	record PublicationResume(UUID id, String communaute, String type, String titre, PersonneResume auteur,
-			int nombreReponses, Instant accepteeLe, Instant creeLe, String contenu, PropositionIa propositionIa) {
+			int nombreReponses, Instant accepteeLe, Instant creeLe, String contenu, PropositionIa propositionIa,
+			List<dev.jamii.api.fichiers.Fichiers.Piece> piecesJointes) {
 	}
 
 	record PropositionIa(String statut) {
@@ -59,13 +60,13 @@ class CommunautesController {
 
 	record Publication(UUID id, String communaute, String type, String titre, PersonneResume auteur, int nombreReponses,
 			Instant accepteeLe, Instant creeLe, String contenu, UUID projetId, UUID reponseAccepteeId,
-			PropositionIa propositionIa, List<Reponse> reponses, Moi moi) {
+			PropositionIa propositionIa, List<Reponse> reponses, Moi moi, List<dev.jamii.api.fichiers.Fichiers.Piece> piecesJointes) {
 	}
 
 	record Page<T>(List<T> elements, String curseurSuivant) {
 	}
 
-	record NouvellePublication(String type, String titre, String contenu, UUID projetId) {
+	record NouvellePublication(String type, String titre, String contenu, UUID projetId, List<UUID> pieces) {
 	}
 
 	private final GestionCommunautes gestion;
@@ -78,13 +79,21 @@ class CommunautesController {
 
 	private final PropositionsIa ia;
 
+	private final dev.jamii.api.fichiers.Fichiers fichiers;
+
 	CommunautesController(GestionCommunautes gestion, Annuaire annuaire, Projets projets, VuesPublications vues,
-			PropositionsIa ia) {
+			PropositionsIa ia, dev.jamii.api.fichiers.Fichiers fichiers) {
+		this.fichiers = fichiers;
 		this.gestion = gestion;
 		this.annuaire = annuaire;
 		this.projets = projets;
 		this.vues = vues;
 		this.ia = ia;
+	}
+
+	@org.springframework.web.bind.annotation.ExceptionHandler(dev.jamii.api.fichiers.ErreurFichier.class)
+	ResponseEntity<org.springframework.http.ProblemDetail> erreurFichier(dev.jamii.api.fichiers.ErreurFichier e) {
+		return dev.jamii.api.fichiers.FichiersController.probleme(e);
 	}
 
 	@GetMapping("/api/communautes")
@@ -147,7 +156,7 @@ class CommunautesController {
 		var page = lignes.subList(0, Math.min(taille, lignes.size()));
 		Map<UUID, Compte> comptes = annuaire.lire(page.stream().map(GestionCommunautes.Resume::auteurId).filter(id -> id != null).toList());
 		String suivant = suite ? new GestionCommunautes.Curseur(page.getLast().creeLe().toString(), page.getLast().id().toString()).encoder() : null;
-		return ResponseEntity.ok(new Page<>(page.stream().map(r -> VuesPublications.resume(r, comptes)).toList(), suivant));
+		return ResponseEntity.ok(new Page<>(page.stream().map(r -> VuesPublications.resume(r, comptes, fichiers)).toList(), suivant));
 	}
 
 	@PostMapping("/api/communautes/{slug}/publications")
@@ -162,7 +171,9 @@ class CommunautesController {
 		if (titre.length() < 10 || titre.length() > 150) {
 			erreurs.add(Map.of("champ", "titre", "code", "longueur_invalide"));
 		}
-		if (contenu.length() < 20 || contenu.length() > 10000) {
+		// Avec une image ou une vidéo, le texte peut être court : la pièce jointe parle d'elle-même.
+		boolean avecPieces = demande.pieces() != null && !demande.pieces().isEmpty();
+		if (contenu.length() < (avecPieces ? 0 : 20) || contenu.length() > 10000) {
 			erreurs.add(Map.of("champ", "contenu", "code", "longueur_invalide"));
 		}
 		boolean projet = "montre_ton_projet".equals(demande.type());
@@ -190,8 +201,9 @@ class CommunautesController {
 			return Problemes.tropDeRequetes(attente, "Trop de publications en peu de temps");
 		}
 		boolean question = "question".equals(demande.type());
+		List<UUID> pieces = fichiers.verifierPieces(demande.pieces(), moi.id());
 		UUID id = gestion.publier(fiche.get().id(), moi.id(), demande.type(), titre, contenu, demande.projetId(),
-				question ? ia.statutInitial() : null, maintenant);
+				question ? ia.statutInitial() : null, pieces, maintenant);
 		// La réponse est lue avant de lancer l'IA : sinon une IA rapide pouvait répondre avant, et la création annonçait
 		// « prete » au lieu de « en_attente » (contrat). La question est visible tout de suite, la réponse de l'IA suit.
 		var publication = vues.publication(id, moi.id());

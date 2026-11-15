@@ -30,6 +30,8 @@ class EquipeController {
 
 	private static final Set<String> STATUTS_TACHE = Set.of("a_faire", "en_cours", "livree");
 
+	private static final Set<String> PRIORITES = Set.of("haute", "normale", "basse");
+
 	private static final Set<String> STATUTS_JALON = Set.of("prevu", "atteint");
 
 	private static final Set<String> CHAMPS_JALON = Set.of("titre", "echeance", "statut", "ordre");
@@ -37,8 +39,8 @@ class EquipeController {
 	record Jalon(UUID id, String titre, LocalDate echeance, String statut, int ordre) {
 	}
 
-	record Tache(UUID id, String titre, UUID jalonId, ProjetsController.PersonneResume assignee, String statut,
-			LocalDate echeance, Instant livreeLe, boolean proposeeParIa, int version, Instant creeLe) {
+	record Tache(UUID id, String titre, String description, String priorite, UUID jalonId, ProjetsController.PersonneResume assignee,
+			String statut, LocalDate echeance, Instant livreeLe, boolean proposeeParIa, int version, Instant creeLe) {
 	}
 
 	record PageTaches(List<Tache> elements, String curseurSuivant) {
@@ -95,13 +97,16 @@ class EquipeController {
 	@PostMapping("/api/projets/{projetId}/taches")
 	ResponseEntity<Tache> creerTache(@PathVariable UUID projetId, @RequestBody Map<String, Object> corps,
 			@AuthenticationPrincipal UtilisateurConnecte moi) {
-		var lecture = new Lecture(corps, Set.of("titre", "jalonId", "assigneeId", "echeance", "version"));
+		var lecture = new Lecture(corps, Set.of("titre", "description", "priorite", "jalonId", "assigneeId", "echeance", "version"));
 		String titre = lecture.titre(200, true);
+		String description = lecture.texteLibre("description", 2000);
+		String priorite = lecture.choix("priorite", PRIORITES);
 		UUID jalonId = lecture.identifiant("jalonId");
 		UUID assigneeId = lecture.identifiant("assigneeId");
 		LocalDate echeance = lecture.date("echeance");
 		lecture.verifier();
-		var tache = equipe.creerTache(projetId, moi.id(), titre, jalonId, assigneeId, echeance, Instant.now());
+		var tache = equipe.creerTache(projetId, moi.id(), titre, description, priorite, jalonId, assigneeId, echeance,
+				Instant.now());
 		return ResponseEntity.created(URI.create("/api/projets/" + projetId + "/taches/" + tache.id())).body(vue(tache));
 	}
 
@@ -109,8 +114,10 @@ class EquipeController {
 	@PatchMapping(path = "/api/projets/{projetId}/taches/{tacheId}", consumes = { "application/merge-patch+json", "application/json" })
 	Tache modifierTache(@PathVariable UUID projetId, @PathVariable UUID tacheId, @RequestBody Map<String, Object> patch,
 			@AuthenticationPrincipal UtilisateurConnecte moi) {
-		var lecture = new Lecture(patch, Set.of("titre", "jalonId", "assigneeId", "echeance", "statut", "version"));
+		var lecture = new Lecture(patch, Set.of("titre", "description", "priorite", "jalonId", "assigneeId", "echeance", "statut", "version"));
 		String titre = lecture.titre(200, false);
+		String description = lecture.texteLibre("description", 2000);
+		String priorite = lecture.choix("priorite", PRIORITES);
 		UUID jalonId = lecture.identifiant("jalonId");
 		UUID assigneeId = lecture.identifiant("assigneeId");
 		LocalDate echeance = lecture.date("echeance");
@@ -118,7 +125,7 @@ class EquipeController {
 		Integer version = lecture.entier("version", true);
 		lecture.verifier();
 		var modification = new TachesEtJalons.Modification(titre, patch.containsKey("jalonId"), jalonId, patch.containsKey("assigneeId"),
-				assigneeId, patch.containsKey("echeance"), echeance, statut, version);
+				assigneeId, patch.containsKey("echeance"), echeance, statut, version, patch.containsKey("description"), description, priorite);
 		return vue(equipe.modifier(projetId, tacheId, moi.id(), modification, Instant.now()));
 	}
 
@@ -162,6 +169,23 @@ class EquipeController {
 		Lecture(Map<String, Object> corps, Set<String> connus) {
 			this.corps = corps;
 			corps.keySet().stream().filter(cle -> !connus.contains(cle)).sorted().forEach(cle -> erreur(cle, "inconnu"));
+		}
+
+		/** Un texte facultatif : absent, null ou vide, il vaut null ; sinon au plus `max` caractères. */
+		String texteLibre(String champ, int max) {
+			Object valeur = corps.get(champ);
+			if (valeur == null) {
+				return null;
+			}
+			if (!(valeur instanceof String texte)) {
+				erreur(champ, "format_invalide");
+				return null;
+			}
+			String propre = texte.strip();
+			if (propre.length() > max) {
+				erreur(champ, "longueur_invalide");
+			}
+			return propre.isEmpty() ? null : propre;
 		}
 
 		/** Présent, le titre ne peut pas être null ; à la création, il est obligatoire. */
@@ -254,8 +278,8 @@ class EquipeController {
 	private static Tache vue(TachesEtJalons.Tache t, Map<UUID, Compte> comptes) {
 		Compte c = t.assigneeId() == null ? null : comptes.get(t.assigneeId());
 		var personne = c == null ? null : new ProjetsController.PersonneResume(c.id(), c.nom(), c.avatarUrl());
-		return new Tache(t.id(), t.titre(), t.jalonId(), personne, t.statut(), t.echeance(), t.livreeLe(), t.proposeeParIa(),
-				t.version(), t.creeLe());
+		return new Tache(t.id(), t.titre(), t.description(), t.priorite(), t.jalonId(), personne, t.statut(), t.echeance(), t.livreeLe(),
+				t.proposeeParIa(), t.version(), t.creeLe());
 	}
 
 }

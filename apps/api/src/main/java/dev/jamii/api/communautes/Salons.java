@@ -34,7 +34,8 @@ class Salons {
 	}
 
 	/** `appelId` : le message annonce cet appel ; `appelEnCours` : il l'est encore. */
-	record Message(UUID id, long numero, UUID auteurId, String texte, Instant envoyeLe, UUID appelId, boolean appelEnCours) {
+	record Message(UUID id, long numero, UUID auteurId, String texte, Instant envoyeLe, UUID appelId, boolean appelEnCours,
+			List<UUID> pieces) {
 	}
 
 	record Appel(UUID id, UUID salonId, UUID lancePar, String salle, Instant lanceLe) {
@@ -77,19 +78,25 @@ class Salons {
 	}
 
 	Message ecrire(UUID salon, UUID auteur, String texte, Instant maintenant) {
-		return ecrire(salon, auteur, texte, maintenant, null);
+		return ecrire(salon, auteur, texte, List.of(), maintenant);
 	}
 
-	private Message ecrire(UUID salon, UUID auteur, String texte, Instant maintenant, UUID appel) {
+	/** Un message avec ses pièces jointes (déjà vérifiées par le module fichiers). */
+	Message ecrire(UUID salon, UUID auteur, String texte, List<UUID> pieces, Instant maintenant) {
+		return ecrire(salon, auteur, texte, maintenant, null, pieces);
+	}
+
+	private Message ecrire(UUID salon, UUID auteur, String texte, Instant maintenant, UUID appel, List<UUID> pieces) {
 		UUID id = UUID.randomUUID();
 		long numero = base.sql("""
-				INSERT INTO message_salon (id, salon_id, auteur_id, texte, envoye_le, appel_id) VALUES (:id, :s, :a, :t, :le, :appel)
+				INSERT INTO message_salon (id, salon_id, auteur_id, texte, envoye_le, appel_id, pieces)
+				VALUES (:id, :s, :a, :t, :le, :appel, CAST(:pieces AS UUID[]))
 				RETURNING numero
 				""")
 			.param("id", id).param("s", salon).param("a", auteur).param("t", texte).param("le", Timestamp.from(maintenant))
-			.param("appel", appel)
+			.param("appel", appel).param("pieces", dev.jamii.api.fichiers.Fichiers.tableau(pieces))
 			.query(Long.class).single();
-		return new Message(id, numero, auteur, texte, maintenant, appel, appel != null);
+		return new Message(id, numero, auteur, texte, maintenant, appel, appel != null, pieces);
 	}
 
 	/** Secondes à attendre avant d'écrire encore, 0 si c'est possible tout de suite. */
@@ -127,7 +134,7 @@ class Salons {
 				INSERT INTO appel_salon (id, salon_id, lance_par, salle, lance_le) VALUES (:id, :s, :u, :salle, :le)
 				""").param("id", appel.id()).param("s", salon).param("u", auteur).param("salle", appel.salle())
 			.param("le", Timestamp.from(maintenant)).update();
-		ecrire(salon, auteur, annonce, maintenant, appel.id());
+		ecrire(salon, auteur, annonce, maintenant, appel.id(), List.of());
 		return appel;
 	}
 
@@ -157,7 +164,7 @@ class Salons {
 	private static Message message(ResultSet rs, int n) throws SQLException {
 		return new Message(rs.getObject("id", UUID.class), rs.getLong("numero"), rs.getObject("auteur_id", UUID.class),
 				rs.getString("texte"), rs.getTimestamp("envoye_le").toInstant(), rs.getObject("appel_id", UUID.class),
-				rs.getBoolean("appel_en_cours"));
+				rs.getBoolean("appel_en_cours"), dev.jamii.api.fichiers.Fichiers.lireTableau(rs, "pieces"));
 	}
 
 	private static Appel appel(ResultSet rs, int n) throws SQLException {

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Jamii · Projets d'équipe
-  version: 0.2.0
+  version: 0.3.0
   summary: Projets nés d'une idée ou d'une demande de PME, rôles recherchés, candidatures, équipe, tâches, jalons et continuité.
   description: |
     Responsable : @sowibrr (bloc #17). Règles communes : docs/api-conventions.md. Modèle : docs/modele-donnees.md §4.
@@ -373,8 +373,11 @@ paths:
     post:
       tags: [equipe]
       operationId: creerJalon
-      summary: Ajouter un jalon (membres)
-      description: Sans `ordre`, le jalon se place après les autres. Sans `statut`, il est `prevu`.
+      summary: Ajouter un jalon (membres ; dans un tour de cercle, le chef de projet)
+      description: |
+        Sans `ordre`, le jalon se place après les autres. Sans `statut`, il est `prevu`.
+        Dans un projet d'`origine` `cercle`, les jalons sont le calendrier du tour : seul le porteur (le chef de projet,
+        membre dont c'est le tour) les crée et les modifie (`403 pas_chef_de_projet`). Les tâches restent à toute l'équipe.
       requestBody:
         required: true
         content:
@@ -402,7 +405,7 @@ paths:
     patch:
       tags: [equipe]
       operationId: modifierJalon
-      summary: Modifier un jalon ou le marquer atteint (membres)
+      summary: Modifier un jalon ou le marquer atteint (membres ; dans un tour de cercle, le chef de projet)
       requestBody:
         required: true
         content:
@@ -524,6 +527,11 @@ components:
     StatutTache:
       type: string
       enum: [a_faire, en_cours, livree]
+    PrioriteTache:
+      type: string
+      description: 'Par quoi commencer. `normale` par défaut, et pour les tâches créées avant.'
+      enum: [haute, normale, basse]
+      default: normale
     Competence:
       type: string
       description: En minuscules, sans espace inutile (`flutter`, `postgresql`, `ux-design`).
@@ -709,10 +717,12 @@ components:
 
     Tache:
       type: object
-      required: [id, titre, statut, proposeeParIa, version, creeLe]
+      required: [id, titre, description, priorite, statut, proposeeParIa, version, creeLe]
       properties:
         id: { type: string, format: uuid }
         titre: { type: string }
+        description: { type: [string, 'null'], maxLength: 2000, description: 'Ce qu''il faut faire, et quand c''est fini. `null` si personne ne l''a écrite.' }
+        priorite: { $ref: '#/components/schemas/PrioriteTache' }
         jalonId: { type: [string, 'null'], format: uuid }
         assignee: { oneOf: [{ $ref: '#/components/schemas/PersonneResume' }, { type: 'null' }] }
         statut: { $ref: '#/components/schemas/StatutTache' }
@@ -727,6 +737,8 @@ components:
       additionalProperties: false
       properties:
         titre: { type: string, minLength: 3, maxLength: 200 }
+        description: { type: [string, 'null'], maxLength: 2000, description: 'Vide ou `null` : pas de description.' }
+        priorite: { $ref: '#/components/schemas/PrioriteTache' }
         jalonId: { type: [string, 'null'], format: uuid }
         assigneeId: { type: [string, 'null'], format: uuid, description: Un membre de l'équipe. }
         echeance: { type: [string, 'null'], format: date }

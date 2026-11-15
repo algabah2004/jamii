@@ -382,6 +382,48 @@ class EquipeTest {
 
 	// ---------------------------------------------------------------- créer des tâches et des jalons
 
+	@Test
+	void une_tache_a_une_description_et_une_priorite() throws Exception {
+		var porteur = utilisateur("Awa");
+		UUID projet = projet(porteur);
+		var creee = envoyer("/taches", projet,
+				"{\"titre\":\"Écran de connexion\",\"description\":\"  Connexion par numéro.\\nFini quand le code SMS marche.  \",\"priorite\":\"haute\"}", porteur);
+		assertThat(creee).hasStatus(HttpStatus.CREATED);
+		JsonNode t = corps(creee);
+		assertThat(t.get("priorite").asText()).isEqualTo("haute");
+		assertThat(t.get("description").asText()).isEqualTo("Connexion par numéro.\nFini quand le code SMS marche.");
+
+		var sansDetail = corps(envoyer("/taches", projet, "{\"titre\":\"Le logo\"}", porteur));
+		assertThat(sansDetail.get("priorite").asText()).isEqualTo("normale");
+		assertThat(sansDetail.get("description").isNull()).isTrue();
+
+		var modifiee = modifier(projet, UUID.fromString(t.get("id").asText()),
+				"{\"version\":" + t.get("version").asInt() + ",\"priorite\":\"basse\",\"description\":\"\"}", porteur);
+		assertThat(modifiee).hasStatusOk();
+		assertThat(corps(modifiee).get("priorite").asText()).isEqualTo("basse");
+		assertThat(corps(modifiee).get("description").isNull()).isTrue();
+
+		assertThat(envoyer("/taches", projet, "{\"titre\":\"Le logo\",\"priorite\":\"urgente\"}", porteur)).hasStatus(HttpStatus.BAD_REQUEST);
+	}
+
+	@Test
+	void dans_un_tour_de_cercle_seul_le_chef_de_projet_tient_le_calendrier() throws Exception {
+		var porteur = utilisateur("Awa");
+		var membre = utilisateur("Kofi");
+		UUID projet = projet(porteur, membre);
+		base.sql("UPDATE projet SET origine = 'cercle' WHERE id = :p").param("p", projet).update();
+
+		assertThat(envoyer("/jalons", projet, "{\"titre\":\"Démo du milieu\",\"echeance\":\"2026-11-19\"}", membre))
+			.hasStatus(HttpStatus.FORBIDDEN).bodyJson().extractingPath("$.code").isEqualTo("pas_chef_de_projet");
+		var jalon = envoyer("/jalons", projet, "{\"titre\":\"Démo du milieu\",\"echeance\":\"2026-11-19\"}", porteur);
+		assertThat(jalon).hasStatus(HttpStatus.CREATED);
+		UUID id = UUID.fromString(corps(jalon).get("id").asText());
+		assertThat(modifierJalon(projet, id, "{\"statut\":\"atteint\"}", membre)).hasStatus(HttpStatus.FORBIDDEN);
+		assertThat(modifierJalon(projet, id, "{\"statut\":\"atteint\"}", porteur)).hasStatusOk();
+		// Les tâches, elles, restent à toute l'équipe.
+		assertThat(envoyer("/taches", projet, "{\"titre\":\"Le logo\"}", membre)).hasStatus(HttpStatus.CREATED);
+	}
+
 	private MvcTestResult envoyer(String chemin, UUID projet, String corps, UtilisateurConnecte qui) {
 		return mvc.post().uri("/api/projets/" + projet + chemin).contentType(MediaType.APPLICATION_JSON).content(corps)
 			.with(csrf()).with(oauth2Login().oauth2User(qui)).exchange();

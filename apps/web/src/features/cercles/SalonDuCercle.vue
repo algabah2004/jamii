@@ -4,6 +4,10 @@ import { useI18n } from 'vue-i18n'
 import LienPersonne from '../../components/LienPersonne.vue'
 import { JAvatar } from '../../design-system'
 import IconeCercle, { type NomIcone } from './IconeCercle.vue'
+import Composeur from '../../components/texte/Composeur.vue'
+import PiecesJointes from '../../components/texte/PiecesJointes.vue'
+import TexteRiche from '../../components/texte/TexteRiche.vue'
+import type { PieceJointe } from '../../components/texte/fichiers'
 import { useSession } from '../../session'
 import { ilYa } from '../vitrine/vitrine'
 import type { Avancement, Cercle } from './cercles'
@@ -46,8 +50,6 @@ const coupe = ref(false)
 
 const lignes = computed(() => lignesDuSalon(messages.value))
 const tour = computed(() => props.cercle.tours.find((x) => x.numero === props.cercle.tourEnCours) ?? null)
-const membres = computed(() => props.cercle.membres.map((m) => m.personne))
-const pointFait = computed(() => !!moi.value && pointsDuJour.value.includes(moi.value.id))
 
 // ---------------------------------------------------------------- lecture en direct
 
@@ -120,24 +122,22 @@ onBeforeUnmount(() => {
 })
 
 // ---------------------------------------------------------------- écrire
+// Un message, ou une demande d'aide (« Je bloque ») qui reste en vue tant que personne ne l'a réglée. Le point du jour a
+// son propre outil (Point du soir) : le salon reste une conversation.
 
-const mode = ref<ModeSaisie>('texte')
+const bloque = ref(false)
+const mode = computed<ModeSaisie>(() => (bloque.value ? 'coup_de_main' : 'texte'))
 const texte = ref('')
-const point = ref({ fait: '', prevu: '', bloque: '' })
 const envoi = ref(false)
 const erreur = ref<string | null>(null)
-const zone = ref<HTMLTextAreaElement | null>(null)
+const pieces = ref<PieceJointe[]>([])
+const composeur = ref<InstanceType<typeof Composeur> | null>(null)
+const pret = computed(() => !envoi.value && (!!texte.value.trim() || (!bloque.value && pieces.value.length > 0)))
 
-const pret = computed(() => {
-  if (envoi.value) return false
-  if (mode.value === 'point') return !pointFait.value && !!point.value.fait.trim() && !!point.value.prevu.trim()
-  return !!texte.value.trim()
-})
-
-function choisir(m: ModeSaisie) {
-  mode.value = m
+function basculerBloque() {
+  bloque.value = !bloque.value
   erreur.value = null
-  void nextTick(() => (m === 'point' ? document.getElementById('point-fait')?.focus() : zone.value?.focus()))
+  void nextTick(() => composeur.value?.focus())
 }
 
 async function soumettre() {
@@ -145,25 +145,17 @@ async function soumettre() {
   envoi.value = true
   erreur.value = null
   try {
-    const r =
-      mode.value === 'point'
-        ? await envoyer(props.cercle.id, {
-            type: 'point',
-            point: { fait: point.value.fait.trim(), prevu: point.value.prevu.trim(), bloque: point.value.bloque.trim() || null },
-          })
-        : await envoyer(props.cercle.id, { type: mode.value, texte: texte.value.trim() })
+    const r = await envoyer(props.cercle.id, { type: mode.value as 'texte' | 'coup_de_main', texte: texte.value.trim(), pieces: pieces.value.map((p) => p.id) })
     if (!r.ok) {
-      erreur.value = t(
-        r.code === 'point_deja_fait' ? 'cercles.salon.erreurs.pointDejaFait' : r.statut === 429 ? 'cercles.salon.erreurs.trop' : 'cercles.salon.erreurs.envoi',
-      )
+      erreur.value = t(r.statut === 429 ? 'cercles.salon.erreurs.trop' : 'cercles.salon.erreurs.envoi')
       return
     }
     messages.value = fusionner(messages.value, [r.message])
     if (r.message.type === 'coup_de_main') coupsDeMain.value = [...coupsDeMain.value, r.message]
-    if (r.message.type === 'point' && moi.value) pointsDuJour.value = [...pointsDuJour.value, moi.value.id]
     texte.value = ''
-    point.value = { fait: '', prevu: '', bloque: '' }
-    if (mode.value !== 'texte') mode.value = 'texte'
+    pieces.value = []
+    bloque.value = false
+    composeur.value?.rafraichir()
     allerEnBas()
   } catch {
     erreur.value = t('cercles.salon.erreurs.envoi')
@@ -172,26 +164,17 @@ async function soumettre() {
   }
 }
 
-/** Entrée envoie, Maj+Entrée va à la ligne (comme partout ailleurs dans Jamii). */
-function touche(e: KeyboardEvent) {
-  if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
-    e.preventDefault()
-    void soumettre()
-  }
-}
-
 // ---------------------------------------------------------------- coups de main
 
 const enCours = ref<string | null>(null)
+const voirCoups = ref(false)
 
 /** « Je peux aider » : on répond dans le fil, en s'adressant à la personne. */
 function aider(m: MessageCercle) {
-  mode.value = 'texte'
+  bloque.value = false
+  voirCoups.value = false
   texte.value = `@${prenom(m.auteur?.nom)} `
-  void nextTick(() => {
-    zone.value?.focus()
-    zone.value?.setSelectionRange(texte.value.length, texte.value.length)
-  })
+  void nextTick(() => composeur.value?.focus())
 }
 
 async function regler(m: MessageCercle) {
@@ -276,288 +259,227 @@ const contexte = computed(() => {
 </script>
 
 <template>
-  <section class="salon" aria-labelledby="salon-titre" data-test="salon-cercle">
-    <header class="salon__tete carte">
+  <section class="salon carte" aria-labelledby="salon-titre" data-test="salon-cercle">
+    <!-- Une barre fine : de quoi on parle, et l'appel du cercle. -->
+    <header class="salon__barre">
       <div class="salon__titres">
-        <h2 id="salon-titre">{{ t('cercles.salon.titre') }}</h2>
+        <h2 id="salon-titre"><IconeCercle nom="salon" :taille="18" />{{ t('cercles.qg.outils.salon') }}</h2>
         <p v-if="contexte" class="salon__contexte" data-test="contexte">{{ contexte }}</p>
       </div>
-
-      <div class="presence" data-test="points-du-jour">
-        <ul class="presence__avatars" :aria-label="t('cercles.salon.pointsAria')">
-          <li v-for="p in membres" :key="p.id" :class="{ fait: pointsDuJour.includes(p.id) }" :title="pointsDuJour.includes(p.id) ? t('cercles.salon.aFaitSonPoint', { nom: prenom(p.nom) }) : prenom(p.nom)">
-            <LienPersonne :id="p.id" :nom="p.nom"><JAvatar :nom="p.nom" :url="p.avatarUrl" :taille="34" /></LienPersonne>
-            <span v-if="pointsDuJour.includes(p.id)" class="presence__coche"><IconeCercle nom="coche" :taille="11" /></span>
-          </li>
-        </ul>
-        <p class="presence__texte">{{ t('cercles.salon.pointsCompte', { n: pointsDuJour.length, total: membres.length }) }}</p>
-      </div>
-
-      <div class="appel" :class="{ 'appel--actif': appel }" data-test="appel-cercle">
+      <div class="appel" data-test="appel-cercle">
         <template v-if="appel">
-          <span class="appel__pulse" aria-hidden="true" />
-          <span class="appel__texte">{{ t('cercles.salon.appelEnCours', { nom: prenom(appel.lancePar?.nom) || t('cercles.salon.quelquun'), quand: ilYa(appel.lanceLe, locale) }) }}</span>
-          <a :href="appel.url" target="_blank" rel="noopener noreferrer" class="appel__bouton" data-test="rejoindre-appel">{{ t('cercles.salon.rejoindre') }}</a>
-          <button v-if="peutTerminer" type="button" class="appel__fin" data-test="terminer-appel" @click="raccrocher">{{ t('cercles.salon.terminer') }}</button>
+          <span class="appel__direct"><span class="appel__pulse" aria-hidden="true" />{{ t('cercles.salon.appelEnCours', { nom: prenom(appel.lancePar?.nom) || t('cercles.salon.quelquun'), quand: ilYa(appel.lanceLe, locale) }) }}</span>
+          <a :href="appel.url" target="_blank" rel="noopener noreferrer" class="bouton bouton--direct" data-test="rejoindre-appel">{{ t('cercles.salon.rejoindre') }}</a>
+          <button v-if="peutTerminer" type="button" class="bouton bouton--discret" data-test="terminer-appel" @click="raccrocher">{{ t('cercles.salon.terminer') }}</button>
         </template>
-        <button v-else type="button" class="appel__bouton" :disabled="etatAppel === 'envoi'" :aria-busy="etatAppel === 'envoi' || undefined" data-test="lancer-appel" @click="appeler">
-          <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h7A1.5 1.5 0 0 1 13 6.5v7a1.5 1.5 0 0 1-1.5 1.5h-7A1.5 1.5 0 0 1 3 13.5zM13 9l4-2.5v7L13 11" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" /></svg>
-          {{ t('cercles.salon.lancerAppel') }}
+        <button v-else type="button" class="bouton" :disabled="etatAppel === 'envoi'" :aria-busy="etatAppel === 'envoi' || undefined" data-test="lancer-appel" @click="appeler">
+          <IconeCercle nom="appel" :taille="16" />{{ t('cercles.salon.lancerAppel') }}
         </button>
-        <p v-if="etatAppel === 'erreur' || etatAppel === 'trop'" role="alert" class="erreur">{{ t(etatAppel === 'trop' ? 'cercles.salon.erreurs.tropAppels' : 'etat.indisponible') }}</p>
       </div>
+      <p v-if="etatAppel === 'erreur' || etatAppel === 'trop'" role="alert" class="erreur salon__erreur">{{ t(etatAppel === 'trop' ? 'cercles.salon.erreurs.tropAppels' : 'etat.indisponible') }}</p>
     </header>
 
-    <p v-if="etat === 'chargement'" class="texte-discret" role="status">{{ t('etat.chargement') }}</p>
-    <p v-else-if="etat === 'indisponible'" class="texte-discret" role="alert">{{ t('etat.indisponible') }}</p>
+    <!-- Les demandes d'aide ouvertes : une ligne discrète, dépliable. On aide d'abord qui bloque. -->
+    <section v-if="coupsDeMain.length" class="aides" aria-labelledby="coups-titre" data-test="coups-de-main">
+      <button type="button" class="aides__bascule" :aria-expanded="voirCoups" @click="voirCoups = !voirCoups">
+        <span class="aides__point" aria-hidden="true" />
+        <strong id="coups-titre">{{ t('cercles.salon.coupsTitre', { n: coupsDeMain.length }, coupsDeMain.length) }}</strong>
+        <span class="aides__apercu">{{ prenom(coupsDeMain[0]!.auteur?.nom) }} · {{ coupsDeMain[0]!.texte }}</span>
+        <span class="aides__voir">{{ voirCoups ? t('cercles.salon.masquer') : t('cercles.salon.voir') }}</span>
+      </button>
+      <ul v-show="voirCoups" class="aides__liste">
+        <li v-for="c in coupsDeMain" :key="c.id" class="aide" data-test="coup-de-main">
+          <LienPersonne :id="c.auteur?.id" :nom="c.auteur?.nom"><JAvatar :nom="c.auteur?.nom ?? '?'" :url="c.auteur?.avatarUrl" :taille="28" /></LienPersonne>
+          <p class="aide__texte"><strong>{{ prenom(c.auteur?.nom) }}</strong> {{ c.texte }} <span class="discret">· {{ ilYa(c.envoyeLe, locale) }}</span></p>
+          <span class="aide__actions">
+            <button v-if="c.auteur?.id !== moi?.id" type="button" class="bouton bouton--petit" data-test="aider" @click="aider(c)">{{ t('cercles.salon.aider') }}</button>
+            <button type="button" class="bouton bouton--petit" :disabled="enCours === c.id" data-test="regler" @click="regler(c)"><IconeCercle nom="coche" :taille="14" />{{ t('cercles.salon.regle') }}</button>
+          </span>
+        </li>
+      </ul>
+    </section>
 
-    <div v-else class="salon__corps carte">
-      <!-- Épinglés : on aide d'abord qui bloque. -->
-      <section v-if="coupsDeMain.length" class="coups" aria-labelledby="coups-titre" data-test="coups-de-main">
-        <h3 id="coups-titre">{{ t('cercles.salon.coupsTitre', { n: coupsDeMain.length }, coupsDeMain.length) }}</h3>
-        <ul>
-          <li v-for="c in coupsDeMain" :key="c.id" class="coup" data-test="coup-de-main">
-            <LienPersonne :id="c.auteur?.id" :nom="c.auteur?.nom"><JAvatar :nom="c.auteur?.nom ?? '?'" :url="c.auteur?.avatarUrl" :taille="32" /></LienPersonne>
-            <div class="coup__corps">
-              <p class="coup__qui"><strong>{{ prenom(c.auteur?.nom) }}</strong> <span class="texte-discret">· {{ ilYa(c.envoyeLe, locale) }}</span></p>
-              <p class="coup__texte">{{ c.texte }}</p>
-            </div>
-            <div class="coup__actions">
-              <button v-if="c.auteur?.id !== moi?.id" type="button" class="pilule" data-test="aider" @click="aider(c)">{{ t('cercles.salon.aider') }}</button>
-              <button type="button" class="pilule pilule--ok" :disabled="enCours === c.id" data-test="regler" @click="regler(c)">{{ t('cercles.salon.regle') }}</button>
+    <p v-if="etat === 'chargement'" class="salon__etat" role="status">{{ t('etat.chargement') }}</p>
+    <p v-else-if="etat === 'indisponible'" class="salon__etat" role="alert">{{ t('etat.indisponible') }}</p>
+
+    <div v-else class="fil-cadre">
+      <ol ref="liste" class="fil" aria-live="polite" :aria-label="t('cercles.salon.fil')" @scroll="enBas() && (nonVus = 0)">
+        <li v-if="!messages.length" class="vide">{{ t('cercles.salon.vide') }}</li>
+        <template v-for="l in lignes" :key="l.cle">
+          <li v-if="l.type === 'jour'" class="jour" role="separator"><span>{{ jour(l.date) }}</span></li>
+
+          <li v-else-if="l.message.type === 'evenement'" class="evenement" data-test="evenement">
+            <IconeCercle :nom="ICONES[l.message.evenement?.code ?? ''] ?? 'cercle'" :taille="14" />
+            <span>{{ evenement(l.message) }}</span>
+            <time :datetime="l.message.envoyeLe">{{ heure(l.message.envoyeLe) }}</time>
+          </li>
+
+          <li v-else class="message" :class="{ 'message--suite': l.suite }" data-test="message">
+            <span class="message__avatar">
+              <LienPersonne v-if="!l.suite" :id="l.message.auteur?.id" doublon><JAvatar :nom="l.message.auteur?.nom ?? '?'" :url="l.message.auteur?.avatarUrl" :taille="36" /></LienPersonne>
+              <time v-else class="message__heure-survol" :datetime="l.message.envoyeLe">{{ heure(l.message.envoyeLe) }}</time>
+            </span>
+            <div class="message__corps">
+              <p v-if="!l.suite" class="message__meta">
+                <LienPersonne :id="l.message.auteur?.id" class="message__nom">{{ l.message.auteur?.nom ?? t('communautes.compteSupprime') }}</LienPersonne>
+                <time :datetime="l.message.envoyeLe">{{ heure(l.message.envoyeLe) }}</time>
+              </p>
+
+              <template v-if="l.message.type === 'texte'">
+                <TexteRiche v-if="l.message.texte" :texte="l.message.texte" />
+                <PiecesJointes :pieces="l.message.piecesJointes ?? []" />
+              </template>
+
+              <div v-else-if="l.message.type === 'point' && l.message.point" class="bloc" data-test="point-du-jour">
+                <p class="bloc__titre"><IconeCercle nom="points" :taille="14" />{{ t('cercles.salon.sonPoint') }}</p>
+                <dl class="bloc__lignes">
+                  <div><dt>{{ t('cercles.salon.fait') }}</dt><dd>{{ l.message.point.fait }}</dd></div>
+                  <div><dt>{{ t('cercles.salon.prevu') }}</dt><dd>{{ l.message.point.prevu }}</dd></div>
+                  <div v-if="l.message.point.bloque" class="bloc__alerte"><dt>{{ t('cercles.salon.bloque') }}</dt><dd>{{ l.message.point.bloque }}</dd></div>
+                </dl>
+              </div>
+
+              <div v-else-if="l.message.type === 'coup_de_main'" class="bloc" :class="l.message.coupDeMain?.resoluLe ? 'bloc--regle' : 'bloc--aide'">
+                <p class="bloc__titre"><IconeCercle :nom="l.message.coupDeMain?.resoluLe ? 'coche' : 'priorite'" :taille="14" />{{ l.message.coupDeMain?.resoluLe ? (l.message.coupDeMain.resoluPar ? t('cercles.salon.regleePar', { nom: prenom(l.message.coupDeMain.resoluPar.nom) }) : t('cercles.salon.reglee')) : t('cercles.salon.demandeTitre') }}</p>
+                <TexteRiche :texte="l.message.texte ?? ''" />
+                <PiecesJointes :pieces="l.message.piecesJointes ?? []" compact />
+              </div>
+
+              <div v-else-if="l.message.type === 'decision'" class="bloc" data-test="decision-fil">
+                <p class="bloc__titre"><IconeCercle nom="decisions" :taille="14" />{{ t('cercles.qg.decisionPrise') }}</p>
+                <TexteRiche :texte="l.message.texte ?? ''" />
+              </div>
+
+              <p v-else-if="l.message.type === 'appel'" class="message__appel">
+                <IconeCercle nom="appel" :taille="16" />{{ t('cercles.salon.aLanceAppel') }}
+                <a v-if="l.message.appel?.enCours && appel && appel.id === l.message.appel.id" :href="appel.url" target="_blank" rel="noopener noreferrer" class="lien-fort">{{ t('cercles.salon.rejoindre') }}</a>
+                <span v-else class="discret">· {{ t('cercles.salon.appelTermine') }}</span>
+              </p>
             </div>
           </li>
-        </ul>
-      </section>
-
-      <div class="fil-cadre">
-        <ol ref="liste" class="fil" aria-live="polite" :aria-label="t('cercles.salon.fil')" @scroll="enBas() && (nonVus = 0)">
-          <li v-if="!messages.length" class="vide">{{ t('cercles.salon.vide') }}</li>
-          <template v-for="l in lignes" :key="l.cle">
-            <li v-if="l.type === 'jour'" class="jour" role="separator"><span>{{ jour(l.date) }}</span></li>
-
-            <li v-else-if="l.message.type === 'evenement'" class="evenement" :class="`evenement--${l.message.evenement?.code}`" data-test="evenement">
-              <span class="evenement__icone"><IconeCercle :nom="ICONES[l.message.evenement?.code ?? ''] ?? 'cercle'" :taille="14" /></span>
-              <span>{{ evenement(l.message) }}</span>
-              <time class="evenement__heure" :datetime="l.message.envoyeLe">{{ heure(l.message.envoyeLe) }}</time>
-            </li>
-
-            <li v-else class="message" :class="[`message--${l.message.type}`, { 'message--suite': l.suite }]" data-test="message">
-              <span class="message__avatar">
-                <LienPersonne v-if="!l.suite" :id="l.message.auteur?.id" doublon><JAvatar :nom="l.message.auteur?.nom ?? '?'" :url="l.message.auteur?.avatarUrl" :taille="38" /></LienPersonne>
-              </span>
-              <div class="message__corps">
-                <p v-if="!l.suite" class="message__meta">
-                  <strong><LienPersonne :id="l.message.auteur?.id">{{ l.message.auteur?.nom ?? t('communautes.compteSupprime') }}</LienPersonne></strong>
-                  <time :datetime="l.message.envoyeLe">{{ heure(l.message.envoyeLe) }}</time>
-                </p>
-
-                <p v-if="l.message.type === 'texte'" class="message__texte">{{ l.message.texte }}</p>
-
-                <div v-else-if="l.message.type === 'point' && l.message.point" class="point-jour" data-test="point-du-jour">
-                  <p class="point-jour__titre">{{ t('cercles.salon.sonPoint') }}</p>
-                  <dl>
-                    <div><dt>{{ t('cercles.salon.fait') }}</dt><dd>{{ l.message.point.fait }}</dd></div>
-                    <div><dt>{{ t('cercles.salon.prevu') }}</dt><dd>{{ l.message.point.prevu }}</dd></div>
-                    <div v-if="l.message.point.bloque" class="point-jour__bloque"><dt>{{ t('cercles.salon.bloque') }}</dt><dd>{{ l.message.point.bloque }}</dd></div>
-                  </dl>
-                </div>
-
-                <div v-else-if="l.message.type === 'coup_de_main'" class="demande" :class="{ 'demande--reglee': l.message.coupDeMain?.resoluLe }">
-                  <p class="demande__titre">{{ t('cercles.salon.demandeTitre') }}</p>
-                  <p class="message__texte">{{ l.message.texte }}</p>
-                  <p v-if="l.message.coupDeMain?.resoluLe" class="demande__statut"><IconeCercle nom="coche" :taille="14" /> {{ l.message.coupDeMain.resoluPar ? t('cercles.salon.regleePar', { nom: prenom(l.message.coupDeMain.resoluPar.nom) }) : t('cercles.salon.reglee') }}</p>
-                </div>
-
-                <div v-else-if="l.message.type === 'decision'" class="decision-fil" data-test="decision-fil">
-                  <p class="decision-fil__titre"><IconeCercle nom="decisions" :taille="14" /> {{ t('cercles.qg.decisionPrise') }}</p>
-                  <p class="message__texte">{{ l.message.texte }}</p>
-                </div>
-
-                <div v-else-if="l.message.type === 'appel'" class="annonce-appel">
-                  <span>{{ t('cercles.salon.aLanceAppel') }}</span>
-                  <a v-if="l.message.appel?.enCours && appel && appel.id === l.message.appel.id" :href="appel.url" target="_blank" rel="noopener noreferrer" class="pilule">{{ t('cercles.salon.rejoindre') }}</a>
-                  <span v-else class="texte-discret">{{ t('cercles.salon.appelTermine') }}</span>
-                </div>
-              </div>
-            </li>
-          </template>
-        </ol>
-        <button v-if="nonVus" type="button" class="nouveaux" @click="allerEnBas">{{ t('cercles.salon.nouveaux', { n: nonVus }, nonVus) }}</button>
-      </div>
-      <p v-if="coupe" class="texte-discret coupe" role="status">{{ t('cercles.salon.coupe') }}</p>
-
-      <form class="saisie" data-test="saisie" @submit.prevent="soumettre">
-        <div class="modes" role="radiogroup" :aria-label="t('cercles.salon.modes')">
-          <button type="button" role="radio" :aria-checked="mode === 'texte'" class="mode" :class="{ actif: mode === 'texte' }" data-test="mode-texte" @click="choisir('texte')">{{ t('cercles.salon.modeTexte') }}</button>
-          <button type="button" role="radio" :aria-checked="mode === 'point'" class="mode" :class="{ actif: mode === 'point' }" data-test="mode-point" @click="choisir('point')">
-            {{ t('cercles.salon.modePoint') }}<IconeCercle v-if="pointFait" nom="coche" :taille="14" class="mode__fait" />
-          </button>
-          <button type="button" role="radio" :aria-checked="mode === 'coup_de_main'" class="mode mode--bloque" :class="{ actif: mode === 'coup_de_main' }" data-test="mode-bloque" @click="choisir('coup_de_main')">{{ t('cercles.salon.modeBloque') }}</button>
-        </div>
-
-        <template v-if="mode === 'point'">
-          <p v-if="pointFait" class="texte-discret" data-test="point-deja-fait">{{ t('cercles.salon.pointFaitAujourdhui') }}</p>
-          <div v-else class="point-champs">
-            <label for="point-fait">{{ t('cercles.salon.fait') }}</label>
-            <textarea id="point-fait" v-model="point.fait" rows="2" :maxlength="LIMITES_SALON.point" :placeholder="t('cercles.salon.faitAide')" />
-            <label for="point-prevu">{{ t('cercles.salon.prevu') }}</label>
-            <textarea id="point-prevu" v-model="point.prevu" rows="2" :maxlength="LIMITES_SALON.point" :placeholder="t('cercles.salon.prevuAide')" />
-            <label for="point-bloque">{{ t('cercles.salon.bloqueFacultatif') }}</label>
-            <textarea id="point-bloque" v-model="point.bloque" rows="1" :maxlength="LIMITES_SALON.point" :placeholder="t('cercles.salon.bloqueAide')" />
-          </div>
         </template>
-        <div v-else class="zone" :class="{ 'zone--bloque': mode === 'coup_de_main' }">
-          <label for="salon-texte" class="visuellement-cache">{{ t(mode === 'coup_de_main' ? 'cercles.salon.bloquePlaceholder' : 'cercles.salon.placeholder') }}</label>
-          <textarea
-            id="salon-texte"
-            ref="zone"
-            v-model="texte"
-            rows="2"
-            :maxlength="LIMITES_SALON.texte"
-            :placeholder="t(mode === 'coup_de_main' ? 'cercles.salon.bloquePlaceholder' : 'cercles.salon.placeholder')"
-            @keydown="touche"
-          />
-        </div>
-
-        <div class="saisie__bas">
-          <p v-if="erreur" role="alert" class="erreur">{{ erreur }}</p>
-          <span v-else class="texte-discret saisie__aide">{{ mode === 'point' ? '' : t('cercles.salon.aideEntree') }}</span>
-          <button type="submit" class="envoyer" :class="{ 'envoyer--bloque': mode === 'coup_de_main' }" :disabled="!pret" :aria-busy="envoi || undefined" data-test="envoyer">
-            {{ t(mode === 'point' ? 'cercles.salon.envoyerPoint' : mode === 'coup_de_main' ? 'cercles.salon.envoyerBloque' : 'cercles.salon.envoyer') }}
-          </button>
-        </div>
-      </form>
+      </ol>
+      <button v-if="nonVus" type="button" class="nouveaux" @click="allerEnBas">{{ t('cercles.salon.nouveaux', { n: nonVus }, nonVus) }}</button>
     </div>
+    <p v-if="coupe" class="salon__etat" role="status">{{ t('cercles.salon.coupe') }}</p>
+
+    <!-- La saisie : un message, ou « Je bloque » pour demander de l'aide. -->
+    <form class="saisie" data-test="saisie" @submit.prevent="soumettre">
+      <Composeur
+        ref="composeur"
+        v-model="texte"
+        v-model:pieces="pieces"
+        id-zone="salon-texte"
+        :placeholder="t(bloque ? 'cercles.salon.bloquePlaceholder' : 'cercles.salon.placeholder')"
+        :libelle-envoyer="t(bloque ? 'cercles.salon.envoyerBloque' : 'cercles.salon.envoyer')"
+        :envoi="envoi"
+        :erreur="erreur"
+        :accent="bloque ? 'alerte' : 'normal'"
+        :max="LIMITES_SALON.texte"
+        @envoyer="soumettre"
+      >
+        <template #outils>
+          <span class="separateur" aria-hidden="true" />
+          <button type="button" class="bascule" :aria-pressed="bloque" data-test="mode-bloque" @click="basculerBloque">
+            <IconeCercle nom="priorite" :taille="14" />{{ t('cercles.salon.modeBloque') }}
+          </button>
+        </template>
+      </Composeur>
+    </form>
   </section>
 </template>
 
 <style scoped>
-.salon { display: grid; gap: var(--space-4); }
-.salon__tete { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-4) var(--space-6); align-items: center; }
-.salon__titres { display: grid; gap: var(--space-1); min-width: 0; }
-.salon__titres h2 { margin: 0; font-size: 1.375rem; }
-.salon__contexte { margin: 0; color: var(--ink-muted); }
+/* Une seule carte, à la hauteur de l'écran : la barre, le fil qui défile, la saisie collée en bas. */
+.salon { display: flex; flex-direction: column; height: clamp(28rem, calc(100dvh - 13.5rem), 56rem); padding: 0; overflow: hidden; }
 
-/* Qui a fait son point aujourd'hui : un anneau orange (la preuve) et une coche. */
-.presence { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); grid-column: 1 / -1; }
-.presence__avatars { display: flex; list-style: none; margin: 0; padding: 0; }
-.presence__avatars li { position: relative; margin-inline-end: -6px; }
-.presence__avatars li :deep(.j-avatar) { box-shadow: 0 0 0 2px var(--surface); opacity: 0.55; filter: grayscale(0.4); transition: opacity var(--motion-fast) var(--ease-out); }
-.presence__avatars li.fait :deep(.j-avatar) { opacity: 1; filter: none; box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--proof); }
-.presence__coche {
-  position: absolute; right: -2px; bottom: -2px; display: grid; place-items: center; width: 16px; height: 16px; border-radius: 50%;
-  background: var(--proof); color: #02070A; font-size: 10px; font-weight: 800; box-shadow: 0 0 0 2px var(--surface);
+.salon__barre { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-4) var(--space-6); border-bottom: 1px solid var(--line); }
+.salon__titres { display: grid; gap: 2px; min-width: 0; }
+.salon__titres h2 { margin: 0; display: flex; align-items: center; gap: var(--space-2); font-size: 1.125rem; }
+.salon__contexte { margin: 0; color: var(--ink-muted); font-size: var(--type-body-sm-size); }
+.salon__erreur { width: 100%; }
+.salon__etat { margin: 0; padding: var(--space-3) var(--space-6); color: var(--ink-muted); font-size: var(--type-body-sm-size); }
+
+.appel { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.appel__direct { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--ink-muted); font-size: var(--type-body-sm-size); }
+.appel__pulse { width: 8px; height: 8px; border-radius: 50%; background: #2EAD5F; box-shadow: 0 0 0 0 rgb(46 173 95 / 0.6); animation: pulse 1.6s infinite; }
+@keyframes pulse { 70% { box-shadow: 0 0 0 7px rgb(46 173 95 / 0); } 100% { box-shadow: 0 0 0 0 rgb(46 173 95 / 0); } }
+
+.bouton {
+  display: inline-flex; align-items: center; gap: var(--space-2); min-height: 38px; padding: 0 var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-pill);
+  background: var(--surface); color: var(--ink); font: inherit; font-size: var(--type-body-sm-size); font-weight: 600; text-decoration: none; cursor: pointer; white-space: nowrap;
 }
-.presence__texte { margin: 0 0 0 var(--space-3); color: var(--ink-muted); font-size: var(--type-body-sm-size); }
+.bouton:hover { border-color: var(--ink-muted); }
+.bouton:disabled { opacity: 0.6; cursor: progress; }
+.bouton:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.bouton--direct { background: #1F7A5C; border-color: #1F7A5C; color: #fff; }
+.bouton--direct:hover { background: #18654B; border-color: #18654B; }
+.bouton--discret { border-color: transparent; color: var(--ink-muted); }
+.bouton--petit { min-height: 32px; padding: 0 var(--space-3); font-size: 0.8125rem; }
 
-.appel { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); grid-column: 2; grid-row: 1; justify-self: end; }
-.appel--actif { padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4); border-radius: var(--radius-pill); background: var(--action-soft); }
-.appel__texte { color: var(--action-ink); font-weight: 600; font-size: var(--type-body-sm-size); }
-.appel__pulse { width: 10px; height: 10px; border-radius: 50%; background: #2EAD5F; box-shadow: 0 0 0 0 rgb(46 173 95 / 0.6); animation: pulse 1.6s infinite; }
-.appel__bouton {
-  display: inline-flex; align-items: center; gap: var(--space-2); min-height: 44px; padding: 0 var(--space-6); border: 0; border-radius: var(--radius-pill);
-  background: var(--action); color: var(--on-action); font: inherit; font-weight: 600; text-decoration: none; cursor: pointer;
-}
-.appel__bouton:disabled { opacity: 0.6; cursor: progress; }
-.appel__fin { min-height: 44px; padding: 0 var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-pill); background: var(--surface); color: var(--ink); font: inherit; cursor: pointer; }
-.appel__bouton:focus-visible, .appel__fin:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-@keyframes pulse { 70% { box-shadow: 0 0 0 8px rgb(46 173 95 / 0); } 100% { box-shadow: 0 0 0 0 rgb(46 173 95 / 0); } }
+/* Les demandes d'aide : une ligne, un point orange, rien de plus tant qu'on ne déplie pas. */
+.aides { border-bottom: 1px solid var(--line); background: var(--surface-raised); }
+.aides__bascule { display: flex; align-items: center; gap: var(--space-2); width: 100%; min-height: 44px; padding: 0 var(--space-6); border: 0; background: none; color: var(--ink); font: inherit; font-size: var(--type-body-sm-size); text-align: left; cursor: pointer; }
+.aides__bascule:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.aides__point { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--proof); }
+.aides__apercu { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-muted); }
+.aides__voir { flex: none; color: var(--action-ink); font-weight: 600; }
+.aides__liste { list-style: none; margin: 0; padding: 0 var(--space-6) var(--space-3); display: grid; gap: var(--space-2); }
+.aide { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--space-3); align-items: center; }
+.aide__texte { margin: 0; font-size: var(--type-body-sm-size); overflow-wrap: anywhere; }
+.aide__actions { display: flex; gap: var(--space-2); }
 
-.salon__corps { display: grid; gap: var(--space-4); padding: 0; overflow: hidden; }
-
-/* Les coups de main épinglés : la seule zone chaude du salon. */
-.coups { margin: 0; padding: var(--space-4) var(--space-6); background: var(--proof-soft); border-bottom: 1px solid color-mix(in srgb, var(--proof) 35%, transparent); }
-.coups h3 { margin: 0 0 var(--space-3); color: var(--proof-ink); font-size: var(--type-body-size); }
-.coups ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
-.coup { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--space-3); align-items: start; }
-.coup__corps p { margin: 0; }
-.coup__texte { overflow-wrap: anywhere; }
-.coup__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); justify-content: flex-end; }
-
-.pilule {
-  display: inline-flex; align-items: center; min-height: 36px; padding: 0 var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-pill);
-  background: var(--surface); color: var(--ink); font: inherit; font-size: var(--type-body-sm-size); font-weight: 600; text-decoration: none; cursor: pointer;
-}
-.pilule:hover { border-color: var(--action); }
-.pilule--ok { border-color: color-mix(in srgb, var(--proof) 60%, transparent); }
-.pilule:disabled { opacity: 0.6; cursor: progress; }
-.pilule:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-
-.fil-cadre { position: relative; }
-.fil { list-style: none; margin: 0; padding: var(--space-2) var(--space-6); display: grid; gap: 2px; max-height: min(62vh, 640px); min-height: 260px; overflow-y: auto; overscroll-behavior: contain; align-content: start; }
-.vide { padding: var(--space-8) 0; text-align: center; color: var(--ink-muted); }
-.jour { display: flex; align-items: center; gap: var(--space-3); margin: var(--space-4) 0 var(--space-2); color: var(--ink-muted); font-size: 0.8125rem; font-weight: 600; }
+.fil-cadre { position: relative; flex: 1; min-height: 0; }
+.fil { list-style: none; margin: 0; height: 100%; box-sizing: border-box; padding: var(--space-3) var(--space-6); display: grid; gap: 2px; overflow-y: auto; overscroll-behavior: contain; align-content: start; }
+.vide { padding: var(--space-12) 0; text-align: center; color: var(--ink-muted); }
+.jour { display: flex; align-items: center; gap: var(--space-3); margin: var(--space-4) 0 var(--space-2); color: var(--ink-muted); font-size: 0.75rem; font-weight: 700; }
 .jour::before, .jour::after { content: ''; flex: 1; height: 1px; background: var(--line); }
 .jour span::first-letter { text-transform: uppercase; }
 
-/* Les étapes du cercle : une ligne de chronique, centrée, discrète. */
-.evenement { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: var(--space-2); margin: var(--space-2) 0; color: var(--ink-muted); font-size: var(--type-body-sm-size); text-align: center; }
-.evenement__icone { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--line); color: var(--ink-muted); }
-.evenement__heure { font-size: 0.75rem; opacity: 0.8; }
-.evenement--tirage, .evenement--tour_ouvert, .evenement--tour_livre, .evenement--cercle_termine { color: var(--ink); font-weight: 600; }
+.evenement { display: flex; justify-content: center; align-items: center; gap: var(--space-2); margin: var(--space-1) 0; color: var(--ink-muted); font-size: 0.8125rem; text-align: center; }
+.evenement time { font-size: 0.75rem; opacity: 0.75; }
 
-.message { display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: var(--space-3); padding: var(--space-2) var(--space-2); margin: 0 calc(-1 * var(--space-2)); border-radius: var(--radius-md); }
+.message { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: var(--space-3); padding: var(--space-2) var(--space-2); margin: 0 calc(-1 * var(--space-2)); border-radius: var(--radius-md); }
 .message:hover { background: var(--surface-raised); }
-.message--suite { padding-top: 0; }
+.message--suite { padding-top: 2px; }
+.message__heure-survol { display: block; padding-top: 3px; color: var(--ink-muted); font-size: 0.6875rem; text-align: right; opacity: 0; }
+.message:hover .message__heure-survol { opacity: 1; }
 .message__corps { min-width: 0; display: grid; gap: var(--space-1); }
 .message__meta { margin: 0; display: flex; align-items: baseline; gap: var(--space-2); }
+.message__nom { font-weight: 700; }
 .message__meta time { color: var(--ink-muted); font-size: 0.75rem; }
-.message__texte { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.message__texte { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.5; }
+.message__appel { margin: 0; display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); color: var(--ink-muted); }
+.lien-fort { color: #1F7A5C; font-weight: 700; }
 
-.point-jour { padding: var(--space-3) var(--space-4); border: 1px solid var(--line); border-left: 3px solid var(--action); border-radius: var(--radius-md); background: var(--surface); max-width: 38rem; }
-.point-jour__titre { margin: 0 0 var(--space-2); color: var(--action-ink); font-size: 0.8125rem; font-weight: 700; }
-.point-jour dl { margin: 0; display: grid; gap: var(--space-2); }
-.point-jour dl > div { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); gap: var(--space-2); }
-.point-jour dt { color: var(--ink-muted); font-size: var(--type-body-sm-size); font-weight: 600; }
-.point-jour dd { margin: 0; overflow-wrap: anywhere; }
-.point-jour__bloque dt, .point-jour__bloque dd { color: var(--proof-ink); }
+/* Les messages structurés : un même bloc sobre, un seul accent de couleur à gauche quand il faut agir. */
+.bloc { display: grid; gap: var(--space-1); max-width: 40rem; padding: var(--space-3) var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); }
+.bloc__titre { margin: 0; display: inline-flex; align-items: center; gap: 6px; color: var(--ink-muted); font-size: 0.75rem; font-weight: 700; }
+.bloc--aide { border-left: 3px solid var(--proof); }
+.bloc--aide .bloc__titre { color: var(--proof-ink); }
+.bloc--regle .bloc__titre { color: var(--ink-muted); }
+.bloc__lignes { margin: 0; display: grid; gap: var(--space-1); }
+.bloc__lignes > div { display: grid; grid-template-columns: 4.5rem minmax(0, 1fr); gap: var(--space-2); }
+.bloc__lignes dt { color: var(--ink-muted); font-size: var(--type-body-sm-size); }
+.bloc__lignes dd { margin: 0; overflow-wrap: anywhere; }
+.bloc__alerte dt, .bloc__alerte dd { color: var(--proof-ink); }
+.discret { color: var(--ink-muted); }
 
-.demande { padding: var(--space-3) var(--space-4); border: 1px solid color-mix(in srgb, var(--proof) 55%, transparent); border-radius: var(--radius-md); background: var(--proof-soft); max-width: 38rem; display: grid; gap: var(--space-1); }
-.demande__titre { margin: 0; color: var(--proof-ink); font-size: 0.8125rem; font-weight: 700; }
-.demande--reglee { background: var(--surface); border-color: var(--line); }
-.demande--reglee .demande__titre { color: var(--ink-muted); }
-.demande__statut { margin: 0; color: var(--ink-muted); font-size: var(--type-body-sm-size); font-weight: 600; }
+.nouveaux { position: absolute; left: 50%; bottom: var(--space-3); translate: -50% 0; padding: var(--space-2) var(--space-4); border: 0; border-radius: var(--radius-pill); background: var(--ink); color: var(--surface); font: inherit; font-size: var(--type-body-sm-size); font-weight: 600; cursor: pointer; }
 
-.decision-fil { padding: var(--space-3) var(--space-4); border: 1px solid var(--line); border-left: 4px solid var(--proof); border-radius: var(--radius-md); background: var(--surface); max-width: 38rem; display: grid; gap: var(--space-1); }
-.decision-fil__titre { margin: 0; color: var(--proof-ink); font-size: 0.8125rem; font-weight: 700; }
-.annonce-appel { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); padding: var(--space-2) var(--space-3); border-radius: var(--radius-md); background: var(--action-soft); color: var(--action-ink); font-weight: 600; max-width: 38rem; }
-
-.nouveaux { position: absolute; left: 50%; bottom: var(--space-3); translate: -50% 0; padding: var(--space-2) var(--space-4); border: 0; border-radius: var(--radius-pill); background: var(--action); color: var(--on-action); font: inherit; font-weight: 600; cursor: pointer; box-shadow: 0 6px 20px rgb(2 7 10 / 0.25); }
-.coupe { margin: 0 var(--space-6); }
-
-/* La saisie : trois façons de parler au cercle. */
-.saisie { display: grid; gap: var(--space-3); padding: var(--space-4) var(--space-6) var(--space-6); border-top: 1px solid var(--line); }
-.modes { display: flex; flex-wrap: wrap; gap: var(--space-1); padding: 4px; border-radius: var(--radius-pill); background: var(--surface-raised); justify-self: start; }
-.mode { min-height: 36px; padding: 0 var(--space-4); border: 0; border-radius: var(--radius-pill); background: transparent; color: var(--ink-muted); font: inherit; font-size: var(--type-body-sm-size); font-weight: 600; cursor: pointer; }
-.mode.actif { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgb(2 7 10 / 0.15); }
-.mode--bloque.actif { background: var(--proof); color: #02070A; }
-.mode:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-.mode__fait { color: var(--proof-ink); }
-.zone textarea, .point-champs textarea {
-  width: 100%; box-sizing: border-box; padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-md);
-  background: var(--surface-raised); color: var(--ink); font: inherit; resize: vertical;
-}
-.zone--bloque textarea { border-color: color-mix(in srgb, var(--proof) 60%, transparent); }
-.zone textarea:focus-visible, .point-champs textarea:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
-.point-champs { display: grid; grid-template-columns: 8rem minmax(0, 1fr); gap: var(--space-2) var(--space-3); align-items: start; }
-.point-champs label { padding-top: var(--space-3); font-size: var(--type-body-sm-size); font-weight: 600; }
-.saisie__bas { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); }
-.saisie__aide { font-size: 0.8125rem; }
-.envoyer { min-height: 44px; padding: 0 var(--space-6); border: 0; border-radius: var(--radius-pill); background: var(--action); color: var(--on-action); font: inherit; font-weight: 600; cursor: pointer; margin-inline-start: auto; }
-.envoyer--bloque { background: var(--proof); color: #02070A; }
-.envoyer:disabled { opacity: 0.5; cursor: not-allowed; }
-.envoyer:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-.erreur { margin: 0; color: var(--danger); font-weight: 600; }
+.saisie { margin: var(--space-3) var(--space-6) var(--space-4); }
+.separateur { width: 1px; height: 18px; margin: 0 var(--space-1); background: var(--line); }
+.bascule { display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 0 var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-pill); background: transparent; color: var(--ink-muted); font: inherit; font-size: 0.8125rem; font-weight: 600; cursor: pointer; }
+.bascule[aria-pressed='true'] { border-color: var(--proof); background: var(--proof-soft); color: var(--proof-ink); }
+.bascule:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.erreur { margin: 0; color: var(--danger); font-size: var(--type-body-sm-size); font-weight: 600; }
 
 @media (max-width: 720px) {
-  .salon__tete { grid-template-columns: 1fr; }
-  .appel { grid-column: 1; grid-row: auto; justify-self: start; }
-  .coup { grid-template-columns: auto minmax(0, 1fr); }
-  .coup__actions { grid-column: 2; justify-content: flex-start; }
-  .point-champs { grid-template-columns: 1fr; }
-  .point-champs label { padding-top: 0; }
-  .fil { padding-inline: var(--space-3); }
+  .salon { height: calc(100dvh - 9rem); border-radius: var(--radius-md); }
+  .salon__barre, .aides__bascule, .fil { padding-inline: var(--space-4); }
+  .saisie { margin-inline: var(--space-3); }
+  .aide { grid-template-columns: auto minmax(0, 1fr); }
+  .aide__actions { grid-column: 2; }
 }
 @media (prefers-reduced-motion: reduce) { .appel__pulse { animation: none; } }
 </style>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LienRetour from '../../components/LienRetour.vue'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute } from 'vue-router'
@@ -123,7 +124,7 @@ async function agir(appel: (id: string, version: number) => Promise<Resultat<Mis
 
 <template>
   <section class="mission" :class="{ 'avec-barre': barreMobile }">
-    <p class="retour"><RouterLink to="/missions">{{ t('missions.detail.retour') }}</RouterLink></p>
+    <p class="retour"><LienRetour to="/missions">{{ t('missions.detail.retour') }}</LienRetour></p>
 
     <JSquelette v-if="etat === 'chargement'" :nombre="3" />
     <p v-else-if="etat === 'introuvable'" class="carte message" data-test="introuvable">{{ t('missions.detail.introuvable') }}</p>

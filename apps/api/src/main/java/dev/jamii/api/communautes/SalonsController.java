@@ -39,13 +39,13 @@ class SalonsController {
 	}
 
 	record MessageSalon(UUID id, long numero, CommunautesController.PersonneResume auteur, String texte, Instant envoyeLe,
-			AppelDuMessage appel) {
+			AppelDuMessage appel, List<dev.jamii.api.fichiers.Fichiers.Piece> piecesJointes) {
 	}
 
 	record Liste<T>(List<T> elements) {
 	}
 
-	record NouveauMessage(String texte) {
+	record NouveauMessage(String texte, List<UUID> pieces) {
 	}
 
 	private final GestionCommunautes communautes;
@@ -56,8 +56,11 @@ class SalonsController {
 
 	private final String appels;
 
-	SalonsController(GestionCommunautes communautes, Salons salons, Annuaire annuaire,
+	private final dev.jamii.api.fichiers.Fichiers fichiers;
+
+	SalonsController(GestionCommunautes communautes, Salons salons, Annuaire annuaire, dev.jamii.api.fichiers.Fichiers fichiers,
 			@Value("${jamii.appels.url:https://meet.jit.si}") String appels) {
+		this.fichiers = fichiers;
 		this.communautes = communautes;
 		this.salons = salons;
 		this.annuaire = annuaire;
@@ -108,7 +111,8 @@ class SalonsController {
 	ResponseEntity<?> ecrire(@PathVariable String slug, @PathVariable String salon, @RequestBody NouveauMessage demande,
 			@AuthenticationPrincipal UtilisateurConnecte moi) {
 		String texte = demande.texte() == null ? "" : demande.texte().strip();
-		if (texte.isEmpty() || texte.length() > 2000) {
+		boolean avecPieces = demande.pieces() != null && !demande.pieces().isEmpty();
+		if ((texte.isEmpty() && !avecPieces) || texte.length() > 2000) {
 			return Problemes.validation("texte", "longueur_invalide");
 		}
 		Instant maintenant = Instant.now();
@@ -124,7 +128,14 @@ class SalonsController {
 		if (attente > 0) {
 			return Problemes.tropDeRequetes(attente, "Trop de messages en peu de temps");
 		}
-		var message = salons.ecrire(leSalon.get().id(), moi.id(), texte, maintenant);
+		List<UUID> pieces;
+		try {
+			pieces = fichiers.verifierPieces(demande.pieces(), moi.id());
+		}
+		catch (dev.jamii.api.fichiers.ErreurFichier e) {
+			return dev.jamii.api.fichiers.FichiersController.probleme(e);
+		}
+		var message = salons.ecrire(leSalon.get().id(), moi.id(), texte, pieces, maintenant);
 		return ResponseEntity.status(HttpStatus.CREATED).body(message(message, annuaire.lire(List.of(moi.id()))));
 	}
 
@@ -175,9 +186,9 @@ class SalonsController {
 				membre ? appels + "/" + a.salle() : null);
 	}
 
-	private static MessageSalon message(Salons.Message m, Map<UUID, Compte> comptes) {
+	private MessageSalon message(Salons.Message m, Map<UUID, Compte> comptes) {
 		return new MessageSalon(m.id(), m.numero(), VuesPublications.personne(m.auteurId(), comptes), m.texte(), m.envoyeLe(),
-				m.appelId() == null ? null : new AppelDuMessage(m.appelId(), m.appelEnCours()));
+				m.appelId() == null ? null : new AppelDuMessage(m.appelId(), m.appelEnCours()), fichiers.decrire(m.pieces()));
 	}
 
 	private static Long entier(String valeur, long min, long max) {

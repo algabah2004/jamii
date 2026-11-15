@@ -29,7 +29,7 @@ class TachesEtJalons {
 	}
 
 	record Tache(UUID id, String titre, UUID jalonId, UUID assigneeId, String statut, LocalDate echeance, Instant livreeLe,
-			boolean proposeeParIa, int version, Instant creeLe) {
+			boolean proposeeParIa, int version, Instant creeLe, String description, String priorite) {
 	}
 
 	record Page(List<Tache> elements, String curseurSuivant) {
@@ -40,7 +40,8 @@ class TachesEtJalons {
 	 * si le champ était présent : absent, il ne change pas ; présent à null, il est vidé.
 	 */
 	record Modification(String titre, boolean changerJalon, UUID jalonId, boolean changerAssignee, UUID assigneeId,
-			boolean changerEcheance, LocalDate echeance, String statut, int version) {
+			boolean changerEcheance, LocalDate echeance, String statut, int version, boolean changerDescription, String description,
+			String priorite) {
 	}
 
 	/** Contre le remplissage abusif ; le contrat ne liste jamais plus de 50 jalons. */
@@ -48,7 +49,7 @@ class TachesEtJalons {
 
 	static final int JALONS_PAR_PROJET = 50;
 
-	private static final String COLONNES_TACHE = "id, titre, jalon_id, assignee_id, statut, echeance, livree_le, proposee_par_ia, version, cree_le";
+	private static final String COLONNES_TACHE = "id, titre, jalon_id, assignee_id, statut, echeance, livree_le, proposee_par_ia, version, cree_le, description, priorite";
 
 	private final JdbcClient base;
 
@@ -155,9 +156,12 @@ class TachesEtJalons {
 		LocalDate echeance = m.changerEcheance() ? m.echeance() : actuelle.echeance();
 		base.sql("""
 				UPDATE tache SET titre = :titre, jalon_id = :jalon, assignee_id = :assignee, echeance = :echeance,
-				                 statut = :statut, livree_le = :livree, version = version + 1
+				                 statut = :statut, livree_le = :livree, description = :description, priorite = :priorite,
+				                 version = version + 1
 				WHERE id = :t
 				""")
+			.param("description", m.changerDescription() ? m.description() : actuelle.description())
+			.param("priorite", m.priorite() == null ? actuelle.priorite() : m.priorite())
 			.param("titre", m.titre() == null ? actuelle.titre() : m.titre())
 			.param("jalon", jalon).param("assignee", assignee)
 			.param("echeance", echeance == null ? null : Date.valueOf(echeance))
@@ -170,7 +174,8 @@ class TachesEtJalons {
 
 	/** Ajoute une tâche, au statut `a_faire`. */
 	@Transactional
-	Tache creerTache(UUID projetId, UUID moi, String titre, UUID jalonId, UUID assigneeId, LocalDate echeance, Instant maintenant) {
+	Tache creerTache(UUID projetId, UUID moi, String titre, String description, String priorite, UUID jalonId, UUID assigneeId,
+			LocalDate echeance, Instant maintenant) {
 		exigerMembre(projetId, moi);
 		verrouillerProjet(projetId);
 		if (compter("tache", projetId) >= TACHES_PAR_PROJET) {
@@ -180,9 +185,10 @@ class TachesEtJalons {
 		exigerAssignable(projetId, assigneeId);
 		UUID id = UUID.randomUUID();
 		base.sql("""
-				INSERT INTO tache (id, projet_id, jalon_id, titre, assignee_id, echeance, cree_le)
-				VALUES (:id, :p, :jalon, :titre, :assignee, :echeance, :t)
+				INSERT INTO tache (id, projet_id, jalon_id, titre, description, priorite, assignee_id, echeance, cree_le)
+				VALUES (:id, :p, :jalon, :titre, :description, :priorite, :assignee, :echeance, :t)
 				""")
+			.param("description", description).param("priorite", priorite == null ? "normale" : priorite)
 			.param("id", id).param("p", projetId).param("jalon", jalonId).param("titre", titre).param("assignee", assigneeId)
 			.param("echeance", echeance == null ? null : Date.valueOf(echeance)).param("t", Timestamp.from(maintenant))
 			.update();
@@ -194,6 +200,7 @@ class TachesEtJalons {
 	@Transactional
 	Jalon creerJalon(UUID projetId, UUID moi, String titre, LocalDate echeance, String statut, Integer ordre, Instant maintenant) {
 		exigerMembre(projetId, moi);
+		exigerChefDeProjetSiCercle(projetId, moi);
 		verrouillerProjet(projetId);
 		if (compter("jalon", projetId) >= JALONS_PAR_PROJET) {
 			throw ErreurProjets.conflit("limite_atteinte", "Ce projet a déjà " + JALONS_PAR_PROJET + " jalons");
@@ -217,6 +224,7 @@ class TachesEtJalons {
 	Jalon modifierJalon(UUID projetId, UUID jalonId, UUID moi, String titre, boolean changerEcheance, LocalDate echeance, String statut,
 			Integer ordre, Instant maintenant) {
 		exigerMembre(projetId, moi);
+		exigerChefDeProjetSiCercle(projetId, moi);
 		Jalon actuel = base.sql("SELECT id, titre, echeance, statut, ordre FROM jalon WHERE id = :j AND projet_id = :p FOR UPDATE")
 			.param("j", jalonId).param("p", projetId)
 			.query(TachesEtJalons::jalon)
@@ -286,7 +294,21 @@ class TachesEtJalons {
 	private static Tache tache(ResultSet rs, int n) throws SQLException {
 		return new Tache(rs.getObject("id", UUID.class), rs.getString("titre"), rs.getObject("jalon_id", UUID.class),
 				rs.getObject("assignee_id", UUID.class), rs.getString("statut"), date(rs, "echeance"), instant(rs, "livree_le"),
-				rs.getBoolean("proposee_par_ia"), rs.getInt("version"), instant(rs, "cree_le"));
+				rs.getBoolean("proposee_par_ia"), rs.getInt("version"), instant(rs, "cree_le"), rs.getString("description"),
+				rs.getString("priorite"));
+	}
+
+	/**
+	 * Dans un tour de cercle, le calendrier (les jalons) est tenu par le chef de projet : le porteur, c'est-à-dire le
+	 * membre dont c'est le tour (#157). Les autres projets gardent la règle de l'équipe.
+	 */
+	private void exigerChefDeProjetSiCercle(UUID projetId, UUID moi) {
+		boolean refuse = base.sql("SELECT origine = 'cercle' AND porteur_id <> :moi FROM projet WHERE id = :p")
+			.param("p", projetId).param("moi", moi).query(Boolean.class).optional().orElse(false);
+		if (refuse) {
+			throw new ErreurProjets(org.springframework.http.HttpStatus.FORBIDDEN, "pas_chef_de_projet",
+					"Le calendrier du tour est tenu par son chef de projet", null, 0);
+		}
 	}
 
 	private void exigerMembre(UUID projetId, UUID moi) {

@@ -36,7 +36,9 @@ info:
     **Le salon du cercle** (v0.2, #157) : un fil privé aux membres (`403 pas_membre` pour les autres). On y écrit
     (`texte`), on y fait son **point du jour** (`point` : fait, prévu, bloqué ; un par jour UTC), on y demande un
     **coup de main** (`coup_de_main`, qui reste en haut tant qu'il n'est pas résolu) et on y lance un **appel**. Jamii
-    y écrit seul les étapes du cercle (v0.3 : et on y consigne les **décisions** de l'équipe, `decision`, relues à part).
+    y écrit seul les étapes du cercle (v0.3 : et on y consigne les **décisions** de l'équipe, `decision`, relues à part). Le
+    **chef de projet** est le membre dont c'est le tour (avant le tirage et après le dernier tour, le créateur) : lui seul
+    consigne les décisions (`403 pas_chef_de_projet`) et tient le calendrier du tour (les jalons du projet, `projets.yaml`).
     Jamii (`evenement` : création, arrivée d'un membre, tirage, tour ouvert ou livré, fin).
 
     **Dépôt de code** : chaque tour peut avoir un dépôt Git (`depot`), sur le Gitea de Jamii ou sur GitHub selon la
@@ -327,7 +329,7 @@ paths:
               schema: { $ref: '#/components/schemas/MessageCercle' }
         '400': { $ref: './socle.yaml#/components/responses/Invalide' }
         '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
-        '403': { description: '`pas_membre`.', $ref: './socle.yaml#/components/responses/Interdit' }
+        '403': { description: '`pas_membre`, ou `pas_chef_de_projet` pour une `decision`.', $ref: './socle.yaml#/components/responses/Interdit' }
         '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
         '409': { description: '`point_deja_fait`.', $ref: './socle.yaml#/components/responses/Conflit' }
         '429': { $ref: './socle.yaml#/components/responses/TropDeRequetes' }
@@ -604,7 +606,7 @@ components:
     MessageCercle:
       type: object
       description: Les champs propres à un type (`point`, `evenement`, `coupDeMain`, `appel`) valent `null` pour les autres.
-      required: [id, numero, type, auteur, texte, point, evenement, coupDeMain, appel, envoyeLe]
+      required: [id, numero, type, auteur, texte, point, evenement, coupDeMain, appel, envoyeLe, piecesJointes]
       properties:
         id: { type: string, format: uuid }
         numero: { type: integer, format: int64, description: 'Croissant. Sert de curseur (`apres`).' }
@@ -632,6 +634,7 @@ components:
                 enCours: { type: boolean }
             - type: 'null'
         envoyeLe: { type: string, format: date-time }
+        piecesJointes: { type: array, maxItems: 6, items: { $ref: './fichiers.yaml#/components/schemas/PieceJointe' } }
 
     PointDuJour:
       type: object
@@ -660,6 +663,7 @@ components:
         type: { type: string, enum: [texte, point, coup_de_main, decision] }
         texte: { type: string, minLength: 1, maxLength: 2000, description: 'Pour `texte`, `coup_de_main` et `decision`.' }
         point: { $ref: '#/components/schemas/PointDuJour' }
+        pieces: { $ref: './fichiers.yaml#/components/schemas/Pieces' }
 
     AppelCercle:
       type: object

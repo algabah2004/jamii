@@ -691,7 +691,7 @@
     "membres": "{n} member | {n} members",
     "questionsOuvertes": "no open question | {n} open question | {n} open questions",
     "tuEnFaisPartie": "You are a member",
-    "retour": "← All communities",
+    "retour": "All communities",
     "rejoindre": "Join",
     "quitter": "Leave",
     "poser": "Ask a question",
@@ -909,7 +909,12 @@
       "minimum": "At least 10 characters",
       "pagePublication": "Open the post on its own",
       "questionIa": "Question (the AI suggests an answer)",
-      "encore": "{n} more character | {n} more characters"
+      "encore": "{n} more character | {n} more characters",
+      "partage": {
+        "image": "{prenom} shared an image",
+        "video": "{prenom} shared a video",
+        "document": "{prenom} shared a document"
+      }
     },
     "appels": {
       "lancer": "Start a call",
@@ -923,7 +928,7 @@
     }
   },
   "question": {
-    "retourCommunaute": "← Back to the community",
+    "retourCommunaute": "Back to the community",
     "iaPrepare": "The AI is preparing an answer…",
     "iaIndisponible": "The AI did not suggest an answer. Community members can answer.",
     "proposeeParIa": "Suggested by the AI · to be checked by a peer",
@@ -1482,7 +1487,9 @@
         "pointDejaFait": "You've already posted your check-in today.",
         "trop": "Too many messages at once. Wait a moment.",
         "tropAppels": "Too many calls started in an hour. Try again later."
-      }
+      },
+      "voir": "Show",
+      "masquer": "Hide"
     },
     "tableau": {
       "pasDeTour": "The dashboard opens with the first turn, after the draw."
@@ -1585,7 +1592,88 @@
       "prochain": {
         "demo": "Mid-turn demo: {date}",
         "livraison": "Delivery: {date}"
-      }
+      },
+      "equipe": "The team",
+      "sonTour": "their turn",
+      "prochaineEtape": "Next milestone: {titre}, {date}"
+    },
+    "tache": {
+      "nouvelle": "New task",
+      "modifierTitre": "Edit task",
+      "titre": "Title",
+      "titreExemple": "For example: the sign-in screen",
+      "aFaire": "What needs doing",
+      "aFaireExemple": "Context, steps, useful links…",
+      "finiQuand": "It's done when…",
+      "finiQuandStocke": "Done when",
+      "finiQuandExemple": "For example: you sign in with a phone number and the SMS code arrives.",
+      "priorite": "Priority",
+      "priorites": {
+        "haute": "High",
+        "normale": "Normal",
+        "basse": "Low"
+      },
+      "prioritesAide": {
+        "haute": "Do first",
+        "normale": "In the flow of the turn",
+        "basse": "If there's time"
+      },
+      "echeance": "Due date",
+      "sansEcheance": "No due date",
+      "responsable": "Owner",
+      "personne": "Nobody yet",
+      "moi": "{nom} (me)",
+      "creer": "Create task",
+      "enregistrer": "Save",
+      "modifier": "Edit",
+      "fermer": "Close",
+      "statuts": {
+        "a_faire": "To do",
+        "en_cours": "In progress",
+        "livree": "Delivered"
+      },
+      "echeances": {
+        "depassee": "overdue",
+        "aujourdhui": "today",
+        "demain": "tomorrow",
+        "plus_tard": "upcoming"
+      },
+      "creee": "Created",
+      "parAyo": "suggested by Ayo",
+      "sansDescription": "No description yet.",
+      "ajouterDescription": "Write one",
+      "livrer": "Mark delivered",
+      "rouvrir": "Reopen",
+      "filtres": "Which tasks to show",
+      "filtresNoms": {
+        "toutes": "To do",
+        "miennes": "Mine",
+        "libres": "Open"
+      },
+      "aucuneOuverte": "Everything is delivered. Well done!",
+      "aucune": {
+        "miennes": "You have no tasks in progress.",
+        "libres": "Every task has an owner."
+      },
+      "livrees": "1 delivered task | {n} delivered tasks",
+      "cocher": "Mark “{titre}” delivered",
+      "rouvrirLibelle": "Reopen “{titre}”"
+    },
+    "chef": {
+      "titre": "project lead",
+      "calendrierTenuPar": "Kept by {nom}, this turn's project lead. The 14 days, its milestones, delivery, and the schedule of every turn.",
+      "decisionsTenuesPar": "Recorded by {nom}, this turn's project lead. What the team decided, written once and found without digging through the room.",
+      "proposerDecision": "This turn's decisions are recorded by {nom}, the project lead. Something to decide? Suggest it in the room.",
+      "proposerEtape": "The calendar is kept by {nom}, the project lead. A date to suggest?",
+      "allerAuSalon": "Go to the room",
+      "etapes": "The turn's milestones",
+      "aucuneEtapeChef": "Set your turn's milestones: a demo, a code review, a test with real users…",
+      "aucuneEtape": "{nom} hasn't set any milestones yet.",
+      "titreEtape": "Milestone title",
+      "titreEtapeExemple": "For example: demo at the cooperative",
+      "ajouterEtape": "Add",
+      "marquerAtteinte": "Mark “{titre}” reached",
+      "reserveCalendrier": "The turn's calendar is kept by its project lead."
     }
   },
   "reseau": {
@@ -2792,6 +2880,45 @@
         "idee": "Independent ideas"
       },
       "resultats": "What the community is building"
+    }
+  },
+  "texteRiche": {
+    "barre": "Formatting",
+    "aide": "Enter to send · Shift + Enter for a new line",
+    "formats": {
+      "gras": "Bold",
+      "italique": "Italic",
+      "barre": "Strikethrough",
+      "code": "Code",
+      "bloc": "Code block",
+      "lien": "Link",
+      "liste": "List",
+      "citation": "Quote"
+    },
+    "exemples": {
+      "gras": "bold text",
+      "italique": "italic text",
+      "barre": "struck text",
+      "code": "code",
+      "bloc": "your code here",
+      "lien": "link text",
+      "liste": "item",
+      "citation": "quote"
+    },
+    "aideFil": "Ctrl/⌘ + Enter to post"
+  },
+  "fichiers": {
+    "joindre": "Attach files (images, videos, PDF…)",
+    "joints": "Attachments",
+    "retirer": "Remove {nom}",
+    "envoi": "Uploading…",
+    "ouvrir": "Open",
+    "erreurs": {
+      "trop_gros": "“{nom}” is too large: 10 MB max, 25 MB for a video.",
+      "type_refuse": "“{nom}” isn't accepted: images, videos, PDF, documents.",
+      "trop_de_requetes": "Too many files sent this hour. Try again later.",
+      "erreur": "“{nom}” couldn't be uploaded. Try again.",
+      "tropDePieces": "{n} attachments at most."
     }
   }
 }

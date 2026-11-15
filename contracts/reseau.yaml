@@ -359,19 +359,21 @@ components:
       type: object
       required: [texte]
       properties:
-        texte: { type: string, minLength: 1, maxLength: 2000 }
+        texte: { type: string, maxLength: 2000, description: 'Texte mis en forme (petit Markdown). Vide seulement avec des pièces jointes.' }
         cercleId:
           type: string
           format: uuid
           description: Pour inviter la personne à un cercle ouvert dont je suis membre.
+        pieces: { $ref: './fichiers.yaml#/components/schemas/Pieces' }
 
     Message:
       type: object
-      required: [id, deMoi, texte, envoyeLe]
+      required: [id, deMoi, texte, envoyeLe, piecesJointes]
       properties:
         id: { type: string, format: uuid }
         deMoi: { type: boolean, description: "C'est moi qui l'ai écrit." }
-        texte: { type: string }
+        texte: { type: string, description: 'Texte mis en forme (petit Markdown), affiché échappé.' }
+        piecesJointes: { type: array, maxItems: 6, items: { $ref: './fichiers.yaml#/components/schemas/PieceJointe' } }
         invitation:
           oneOf:
             - $ref: '#/components/schemas/InvitationCercle'

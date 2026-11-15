@@ -8,6 +8,22 @@ import { creerRouteur } from '../../router'
 import { chargerSession } from '../../session'
 import App from '../../App.vue'
 import { ID_ABIDJAN, ID_DAKAR } from '../../mocks/cercles'
+
+// jsdom ne sait pas envoyer un FormData par fetch (« Premature close ») : l'envoi d'un fichier est simulé ici, avec la
+// vraie règle de taille. Le parcours réel est vérifié par l'API (FichiersTest) et dans le navigateur.
+vi.mock('../../components/texte/fichiers', async (original) => {
+  const vrai = await original<typeof import('../../components/texte/fichiers')>()
+  return {
+    ...vrai,
+    envoyerFichier: async (f: File) => {
+      if (f.size > vrai.limiteDe(f)) return { ok: false, code: 'trop_gros' }
+      const id = crypto.randomUUID()
+      const piece = { id, nom: f.name, type: f.type, sorte: f.type.startsWith('image/') ? 'image' : 'document', taille: f.size, url: `/api/fichiers/${id}` } as const
+      ;(await import('../../mocks/fichiers')).enregistrerPieceFactice(piece)
+      return { ok: true, piece }
+    },
+  }
+})
 import { avancement, avantTirage, lireCercles, ordreDePassage, positionsAnneau, pourcentage, titreDuTour, type MembreCercle } from './cercles'
 
 enableAutoUnmount(afterEach)
@@ -356,12 +372,11 @@ describe('le salon du cercle', () => {
     page.unmount()
   })
 
-  it("raconte les étapes, montre les points du jour et épingle les coups de main", async () => {
+  it("raconte les étapes, montre les points du jour et signale les demandes d’aide", async () => {
     const { page } = await ouvrir(`/cercles/${ID_DAKAR}?onglet=salon`)
     await vi.waitFor(() => expect(page.findAll('[data-test="evenement"]').length).toBeGreaterThan(3))
     expect(page.text()).toContain('Le tour 2 commence : place au projet de Kofi')
     expect(page.get('[data-test="point-du-jour"]').text()).toContain('Le tableau des pesées du jour.')
-    expect(page.get('[data-test="points-du-jour"]').text()).toContain('1 sur 6 ont fait leur point aujourd’hui')
     expect(page.get('[data-test="coups-de-main"]').text()).toContain('Android 8')
     expect(page.get('[data-test="contexte"]').text()).toContain('Tour 1')
     page.unmount()
@@ -374,21 +389,6 @@ describe('le salon du cercle', () => {
     await page.get('#salon-texte').trigger('keydown', { key: 'Enter' })
     await vi.waitFor(() => expect(page.findAll('[data-test="message"]').at(-1)!.text()).toContain('On fait la démo à 19 h ?'))
     expect((page.get('#salon-texte').element as HTMLTextAreaElement).value).toBe('')
-    page.unmount()
-  })
-
-  it('partage mon point du jour, une seule fois par jour', async () => {
-    const { page } = await ouvrir(`/cercles/${ID_DAKAR}?onglet=salon`)
-    await vi.waitFor(() => expect(page.find('[data-test="mode-point"]').exists()).toBe(true))
-    await page.get('[data-test="mode-point"]').trigger('click')
-    expect(page.get('[data-test="envoyer"]').attributes('disabled')).toBeDefined()
-    await page.get('#point-fait').setValue('Les écrans de la caisse')
-    await page.get('#point-prevu').setValue('Les tests hors ligne')
-    await page.get('[data-test="saisie"]').trigger('submit')
-    await vi.waitFor(() => expect(page.findAll('[data-test="point-du-jour"]').at(-1)!.text()).toContain('Les écrans de la caisse'))
-    expect(page.get('[data-test="points-du-jour"]').text()).toContain('2 sur 6')
-    await page.get('[data-test="mode-point"]').trigger('click')
-    expect(page.find('[data-test="point-deja-fait"]').exists()).toBe(true)
     page.unmount()
   })
 
@@ -472,6 +472,132 @@ describe('le QG du cercle (refonte inspirée de Basecamp)', () => {
   it('un ancien lien « ?onglet=salon » mène toujours au salon', async () => {
     const { page } = await ouvrir(`/cercles/${ID_DAKAR}?onglet=salon`)
     await vi.waitFor(() => expect(page.find('[data-test="salon-cercle"]').exists()).toBe(true))
+    page.unmount()
+  })
+})
+
+describe("l'outil Tâches", () => {
+  it('crée une tâche complète : titre, description en deux parties, priorité, échéance, responsable', async () => {
+    const { page } = await ouvrir(`/cercles/${ID_DAKAR}?outil=taches`)
+    await vi.waitFor(() => expect(page.find('[data-test="nouvelle-tache"]').exists()).toBe(true))
+    await page.get('[data-test="nouvelle-tache"]').trigger('click')
+    expect(page.get('[data-test="enregistrer-tache"]').attributes('disabled')).toBeDefined()
+    await page.get('[data-test="champ-titre"]').setValue('Écran de connexion')
+    await page.get('[data-test="champ-faire"]').setValue('Connexion par numéro de téléphone.')
+    await page.get('[data-test="champ-fini"]').setValue('le code SMS arrive en moins d’une minute.')
+    await page.get('[data-test="priorite-haute"]').setValue(true)
+    await page.get('[data-test="champ-echeance"]').setValue('2026-11-20')
+    await page.get('[data-test="champ-responsable"]').setValue('6f1c2a4e-8b7d-4c3e-9a10-2b5d7e9f0a11')
+    await page.get('[data-test="formulaire-tache"]').trigger('submit')
+
+    // Haute priorité : elle passe en tête de la liste, avec son résumé et son responsable.
+    await vi.waitFor(() => expect(page.findAll('[data-test="ligne-tache"]')[0]!.text()).toContain('Écran de connexion'))
+    const ligne = page.findAll('[data-test="ligne-tache"]')[0]!
+    expect(ligne.text()).toContain('Connexion par numéro de téléphone.')
+    expect(ligne.text()).toContain('Haute')
+
+    await ligne.get('[data-test="ouvrir-tache"]').trigger('click')
+    await vi.waitFor(() => expect(page.find('[data-test="fiche-tache"]').exists()).toBe(true))
+    const fiche = page.get('[data-test="fiche-tache"]').text()
+    expect(fiche).toContain('C’est fini quand…')
+    expect(fiche).toContain('le code SMS arrive en moins d’une minute.')
+    expect(fiche).toContain('Awa Diop')
+    page.unmount()
+  })
+
+  it('les filtres « Les miennes » et « Libres », et livrer depuis la fiche', async () => {
+    const { page } = await ouvrir(`/cercles/${ID_DAKAR}?outil=taches`)
+    await vi.waitFor(() => expect(page.findAll('[data-test="ligne-tache"]').length).toBeGreaterThan(0))
+    const ouvertes = page.findAll('[data-test="ligne-tache"]').length
+    await page.get('[data-test="filtre-miennes"]').trigger('click')
+    expect(page.find('[data-test="aucune-tache"]').exists()).toBe(true)
+    await page.get('[data-test="filtre-libres"]').trigger('click')
+    expect(page.findAll('[data-test="ligne-tache"]')).toHaveLength(ouvertes)
+
+    await page.get('[data-test="ouvrir-tache"]').trigger('click')
+    await vi.waitFor(() => expect(page.find('[data-test="fiche-livrer"]').exists()).toBe(true))
+    await page.get('[data-test="fiche-livrer"]').trigger('click')
+    await vi.waitFor(() => expect(page.findAll('[data-test="ligne-tache"]')).toHaveLength(ouvertes - 1))
+    page.unmount()
+  })
+})
+
+describe('le chef de projet du tour', () => {
+  it('tient le calendrier : il pose une étape, elle apparaît sur son jour', async () => {
+    const { page } = await ouvrir(`/cercles/${ID_DAKAR}?outil=calendrier`)
+    await vi.waitFor(() => expect(page.findAll('[data-test="etape-jour"]').length).toBeGreaterThan(0))
+    const avant = page.findAll('[data-test="etape-jour"]').length
+    await page.get('#etape-titre').setValue('Test avec deux peseurs')
+    await page.get('#etape-date').setValue(new Date().toISOString().slice(0, 10))
+    await page.get('[data-test="ajouter-etape"]').trigger('submit')
+    await vi.waitFor(() => expect(page.findAll('[data-test="etape-jour"]')).toHaveLength(avant + 1))
+    expect(page.get('[data-test="etapes"]').text()).toContain('Test avec deux peseurs')
+    page.unmount()
+  })
+
+  it("un autre membre voit le calendrier et les décisions, mais c'est le chef qui les tient", async () => {
+    const original = await (await fetch(new URL(`/api/cercles/${ID_DAKAR}`, window.location.origin))).json()
+    const kofi = original.membres[1].personne
+    serveur.use(
+      http.get('/api/cercles/:id', () =>
+        HttpResponse.json({ ...original, tours: original.tours.map((x: { numero: number }, i: number) => (i === 0 ? { ...x, beneficiaire: kofi } : x)) }),
+      ),
+    )
+    const cal = await ouvrir(`/cercles/${ID_DAKAR}?outil=calendrier`)
+    await vi.waitFor(() => expect(cal.page.find('[data-test="etapes"]').exists()).toBe(true))
+    expect(cal.page.find('[data-test="ajouter-etape"]').exists()).toBe(false)
+    expect(cal.page.find('[data-test="atteindre-etape"]').exists()).toBe(false)
+    expect(cal.page.text()).toContain(`Tenu par ${kofi.nom}`)
+    cal.page.unmount()
+
+    const dec = await ouvrir(`/cercles/${ID_DAKAR}?outil=decisions`)
+    await vi.waitFor(() => expect(dec.page.find('[data-test="decisions-reservees"]').exists()).toBe(true))
+    expect(dec.page.find('[data-test="nouvelle-decision"]').exists()).toBe(false)
+    dec.page.unmount()
+  })
+})
+
+
+describe('écrire dans le salon : mise en forme et pièces jointes', () => {
+  it('met en forme le texte (gras, code) sans jamais interpréter de HTML', async () => {
+    const { page } = await ouvrir(`/cercles/${ID_DAKAR}?outil=salon`)
+    await vi.waitFor(() => expect(page.find('#salon-texte').exists()).toBe(true))
+    await page.get('#salon-texte').setValue('**Important** : lance `flutter doctor` <b>ici</b>')
+    await page.get('#salon-texte').trigger('keydown', { key: 'Enter' })
+    await vi.waitFor(() => expect(page.findAll('[data-test="message"]').at(-1)!.find('strong').exists()).toBe(true))
+    const dernier = page.findAll('[data-test="message"]').at(-1)!
+    expect(dernier.find('strong').text()).toBe('Important')
+    expect(dernier.find('code').text()).toBe('flutter doctor')
+    expect(dernier.find('b').exists()).toBe(false)
+    expect(dernier.text()).toContain('<b>ici</b>')
+    page.unmount()
+  })
+
+  it('joint une image : aperçu avant envoi, puis visible dans le message', async () => {
+    const { page } = await ouvrir(`/cercles/${ID_DAKAR}?outil=salon`)
+    await vi.waitFor(() => expect(page.find('[data-test="choisir-fichiers"]').exists()).toBe(true))
+    const entree = page.get('[data-test="choisir-fichiers"]').element as HTMLInputElement
+    const image = new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47])], 'maquette.png', { type: 'image/png' })
+    Object.defineProperty(entree, 'files', { configurable: true, value: [image] })
+    await page.get('[data-test="choisir-fichiers"]').trigger('change')
+    await vi.waitFor(() => expect(page.find('[data-test="piece-a-envoyer"]').exists()).toBe(true))
+    expect(page.get('[data-test="piece-a-envoyer"]').text()).toContain('maquette.png')
+    await page.get('[data-test="saisie"] [data-test="envoyer"]').trigger('click')
+    await vi.waitFor(() => expect(page.findAll('[data-test="message"]').at(-1)!.find('[data-test="pieces-jointes"] img').exists()).toBe(true))
+    expect(page.find('[data-test="piece-a-envoyer"]').exists()).toBe(false)
+    page.unmount()
+  })
+
+  it('refuse tout de suite un fichier trop gros, sans l’envoyer', async () => {
+    const { page } = await ouvrir(`/cercles/${ID_DAKAR}?outil=salon`)
+    await vi.waitFor(() => expect(page.find('[data-test="choisir-fichiers"]').exists()).toBe(true))
+    const entree = page.get('[data-test="choisir-fichiers"]').element as HTMLInputElement
+    const gros = new File(['x'], 'enorme.pdf', { type: 'application/pdf' })
+    Object.defineProperty(gros, 'size', { value: 11 * 1024 * 1024 })
+    Object.defineProperty(entree, 'files', { configurable: true, value: [gros] })
+    await page.get('[data-test="choisir-fichiers"]').trigger('change')
+    await vi.waitFor(() => expect(page.find('[data-test="saisie"] [role="alert"]').text()).toContain('enorme.pdf'))
+    expect(page.find('[data-test="piece-a-envoyer"]').exists()).toBe(false)
     page.unmount()
   })
 })

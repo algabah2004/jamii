@@ -5,7 +5,7 @@ import { RouterLink } from 'vue-router'
 import { useSession } from '../../session'
 import CollineDuTour from './CollineDuTour.vue'
 import IconeCercle from './IconeCercle.vue'
-import { lireTaches, pourcentage, type Avancement, type Cercle, type Tache } from './cercles'
+import { lireJalons, lireTaches, pourcentage, type Avancement, type Cercle, type Jalon, type Tache } from './cercles'
 import { joursDuTour } from './qg'
 import { lireSalon, prenom, type SalonCercle } from './salon'
 
@@ -20,13 +20,17 @@ const { moi } = useSession()
 
 const salon = ref<SalonCercle | null>(null)
 const taches = ref<Tache[]>([])
+const jalons = ref<Jalon[]>([])
 const tour = computed(() => props.cercle.tours.find((x) => x.numero === props.cercle.tourEnCours) ?? null)
 
 onMounted(async () => {
-  const [s, liste] = await Promise.all([
+  const projet = tour.value?.projetId
+  const [s, liste, etapes] = await Promise.all([
     lireSalon(props.cercle.id).catch(() => null),
-    tour.value?.projetId ? lireTaches(tour.value.projetId) : Promise.resolve([] as Tache[]),
+    projet ? lireTaches(projet) : Promise.resolve([] as Tache[]),
+    projet ? lireJalons(projet) : Promise.resolve([] as Jalon[]),
   ])
+  jalons.value = etapes ?? []
   if (s?.ok) salon.value = s.salon
   taches.value = liste ?? []
 })
@@ -36,12 +40,14 @@ const miennes = computed(() => taches.value.filter((x) => x.assignee?.id === moi
 const points = computed(() => salon.value?.pointsDuJour ?? [])
 const pointFait = computed(() => !!moi.value && points.value.includes(moi.value.id))
 const jours = computed(() => (props.suivi && tour.value ? joursDuTour(new Date(Date.now() - (props.suivi.jour - 1) * 86_400_000).toISOString()) : []))
-/** La prochaine étape datée du tour : la démo du milieu, puis la livraison. */
+/** La prochaine étape du tour posée par le chef de projet ; à défaut, la livraison. */
 const prochainJalon = computed(() => {
-  const j = jours.value.find((x) => x.jalon && !x.passe)
-  if (!j?.jalon) return null
-  const date = new Intl.DateTimeFormat(locale.value, { weekday: 'long', day: 'numeric', month: 'long' }).format(j.date)
-  return t(`cercles.qg.prochain.${j.jalon}`, { date })
+  const aujourdhui = new Date().toISOString().slice(0, 10)
+  const etape = [...jalons.value].filter((x) => x.statut === 'prevu' && x.echeance && x.echeance >= aujourdhui).sort((a, b) => a.echeance!.localeCompare(b.echeance!))[0]
+  const format = (d: Date) => new Intl.DateTimeFormat(locale.value, { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).format(d)
+  if (etape) return t('cercles.qg.prochaineEtape', { titre: etape.titre, date: format(new Date(`${etape.echeance}T12:00:00Z`)) })
+  const livraison = jours.value.find((x) => x.jalon === 'livraison')
+  return livraison ? t('cercles.qg.prochain.livraison', { date: format(livraison.date) }) : null
 })
 const lien = (outil: string) => ({ query: { outil } })
 </script>

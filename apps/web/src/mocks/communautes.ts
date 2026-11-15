@@ -1,4 +1,5 @@
 import { http, HttpResponse } from 'msw'
+import { piecesDe } from './fichiers'
 import type { components } from '../api/generated/communautes'
 
 type Communaute = components['schemas']['Communaute']
@@ -22,7 +23,7 @@ const ilYa = (heures: number) => new Date(Date.now() - heures * 3_600_000).toISO
 
 type Etat = {
   communautes: Communaute[]
-  publications: (Publication & { iaPreteLe?: number })[]
+  publications: (Omit<Publication, 'piecesJointes'> & { piecesJointes?: Publication['piecesJointes']; iaPreteLe?: number })[]
 }
 
 function reponse(r: Partial<Reponse> & Pick<Reponse, 'id' | 'contenu'>): Reponse {
@@ -95,8 +96,9 @@ const SALONS = [
   { slug: 'projets', nom: 'projets', sujet: "Montrer ce qu'on construit et trouver des coéquipiers." },
 ]
 let numeroSalon = 0
-const message = (auteur: Personne, texte: string, minutes: number): MessageSalon => ({
+const message = (auteur: Personne, texte: string, minutes: number, pieces: string[] = []): MessageSalon => ({
   id: crypto.randomUUID(), numero: ++numeroSalon, auteur, texte, envoyeLe: new Date(Date.now() - minutes * 60_000).toISOString(), appel: null,
+  piecesJointes: piecesDe(pieces),
 })
 function messagesInitiaux(): Map<string, MessageSalon[]> {
   numeroSalon = 0
@@ -183,7 +185,7 @@ function erreur(status: number, code: string) {
 }
 
 function sansInterne({ iaPreteLe: _interne, ...p }: Etat['publications'][number]): Publication {
-  return p
+  return { ...p, piecesJointes: p.piecesJointes ?? [] }
 }
 
 export const handlersCommunautes = [
@@ -230,13 +232,13 @@ export const handlersCommunautes = [
     if (!c) return erreur(404, 'introuvable')
     if (!c.membre) return erreur(403, 'pas_membre')
     const corps = (await request.json()) as components['schemas']['NouvellePublication']
-    if (corps.titre.trim().length < 10 || corps.contenu.trim().length < 20) return erreur(400, 'validation')
+    if (corps.titre.trim().length < 10 || corps.contenu.trim().length < (corps.pieces?.length ? 0 : 20)) return erreur(400, 'validation')
     const question = corps.type === 'question'
     const p: Etat['publications'][number] = {
       id: crypto.randomUUID(), communaute: c.slug, type: corps.type, titre: corps.titre.trim(), contenu: corps.contenu.trim(),
       auteur: AWA, nombreReponses: 0, accepteeLe: null, creeLe: new Date().toISOString(), projetId: corps.projetId ?? null,
       reponseAccepteeId: null, propositionIa: question ? { statut: 'en_attente' } : null,
-      moi: { estAuteur: true, estMembre: true }, reponses: [],
+      moi: { estAuteur: true, estMembre: true }, reponses: [], piecesJointes: piecesDe(corps.pieces),
       iaPreteLe: question ? Date.now() + DELAI_IA_MS : undefined,
     }
     etat.publications.push(p)
@@ -338,10 +340,11 @@ export const handlersCommunautes = [
     const c = etat.communautes.find((x) => x.slug === params.slug)
     if (!c || !salonsDe(String(params.slug)).some((s) => s.slug === params.salon)) return erreur(404, 'introuvable')
     if (!c.membre) return erreur(403, 'pas_membre')
-    const texte = ((await request.json()) as { texte?: string }).texte?.trim() ?? ''
-    if (!texte || texte.length > 2000) return erreur(400, 'validation')
+    const corps = (await request.json()) as { texte?: string; pieces?: string[] }
+    const texte = corps.texte?.trim() ?? ''
+    if ((!texte && !corps.pieces?.length) || texte.length > 2000) return erreur(400, 'validation')
     const cle = `${params.slug}/${params.salon}`
-    const m = message(AWA, texte, 0)
+    const m = message(AWA, texte, 0, corps.pieces)
     messagesSalons.set(cle, [...(messagesSalons.get(cle) ?? []), m])
     return HttpResponse.json(m, { status: 201 })
   }),

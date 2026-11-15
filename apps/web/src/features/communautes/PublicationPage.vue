@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LienRetour from '../../components/LienRetour.vue'
 import LienPersonne from '../../components/LienPersonne.vue'
 import { JAvatar, JBadgePreuve, JBouton, JChamp, JIllustration, JSquelette } from '../../design-system'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
@@ -135,7 +136,7 @@ async function repondre() {
     </div>
 
     <template v-else-if="publication">
-      <p class="retour"><RouterLink :to="{ path: `/communautes/${publication.communaute}`, query: {} }">{{ t('question.retourCommunaute') }}</RouterLink></p>
+      <p class="retour"><LienRetour :to="{ path: `/communautes/${publication.communaute}`, query: {} }">{{ t('question.retourCommunaute') }}</LienRetour></p>
 
       <!-- Toute la discussion dans un seul panneau : le message, les réponses, puis la zone de réponse. -->
       <section class="discussion" :class="{ 'discussion--resolue': dejaAcceptee }">
