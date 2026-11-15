@@ -129,26 +129,26 @@ async function toutConfier() {
         </li>
       </TransitionGroup>
 
-      <div v-if="moiId && membres.length && (libres.length || visibles.length)" class="ayo" data-test="repartition-ayo">
-        <div class="ayo__tete">
+      <div v-if="moiId && membres.length && (libres.length || visibles.length)" class="repartition" data-test="repartition-ayo">
+        <div class="repartition__tete">
           <AyoAvatar :taille="32" :reflechit="reflechit" />
-          <p class="ayo__texte">{{ t('cercles.repartition.intro') }}</p>
+          <p class="repartition__texte">{{ t('cercles.repartition.intro') }}</p>
           <button v-if="!suggestions || !visibles.length" type="button" class="lien lien--ayo" :disabled="reflechit" :aria-busy="reflechit || undefined" data-test="demander-ayo" @click="demanderAyo">
             {{ t('cercles.repartition.demander') }}
           </button>
         </div>
         <template v-if="suggestions">
-          <ul v-if="visibles.length" class="ayo__liste">
-            <li v-for="s in visibles" :key="s.tache.id" class="ayo__ligne" data-test="suggestion">
-              <span class="ayo__quoi"><strong>{{ s.tache.titre }}</strong> → {{ s.membre.nom }}</span>
-              <span class="ayo__pourquoi">
+          <ul v-if="visibles.length" class="repartition__liste">
+            <li v-for="s in visibles" :key="s.tache.id" class="repartition__ligne" data-test="suggestion">
+              <span class="repartition__quoi"><strong>{{ s.tache.titre }}</strong> → {{ s.membre.nom }}</span>
+              <span class="repartition__pourquoi">
                 {{ s.competences.length ? t('cercles.repartition.parCompetences', { competences: s.competences.join(', ') }) : t('cercles.repartition.parCharge', { n: s.charge }, s.charge) }}
               </span>
               <button type="button" class="lien" :disabled="enCours === s.tache.id" data-test="confier" @click="confier(s)">{{ t('cercles.repartition.confier') }}</button>
             </li>
           </ul>
           <p v-else class="note" data-test="repartition-vide">{{ t('cercles.repartition.rien') }}</p>
-          <div v-if="visibles.length > 1" class="ayo__actions">
+          <div v-if="visibles.length > 1" class="repartition__actions">
             <button type="button" class="lien lien--ayo" :disabled="!!enCours" data-test="tout-confier" @click="toutConfier">{{ t('cercles.repartition.toutConfier') }}</button>
           </div>
           <p class="note">{{ t('cercles.repartition.note') }}</p>
@@ -200,15 +200,15 @@ async function toutConfier() {
 .ajout__bouton:disabled { opacity: 0.5; cursor: not-allowed; }
 .ajout__bouton:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 /* Ayo propose une répartition : la même carte douce que ses conseils sur les demandes. */
-.ayo { display: grid; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-radius: var(--radius-lg); background: var(--action-soft); }
-.ayo__tete { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
-.ayo__texte { flex: 1; min-width: 12rem; margin: 0; font-size: var(--type-body-sm-size); }
-.ayo__liste { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
-.ayo__ligne { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-1) var(--space-3); align-items: center; padding: var(--space-2) var(--space-3); border-radius: var(--radius-md); background: var(--surface); }
-.ayo__quoi { overflow-wrap: anywhere; }
-.ayo__pourquoi { grid-column: 1; color: var(--ink-muted); font-size: var(--type-body-sm-size); }
-.ayo__ligne .lien { grid-column: 2; grid-row: 1 / span 2; }
-.ayo__actions { display: flex; justify-content: flex-end; }
+.repartition { display: grid; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-radius: var(--radius-lg); background: var(--action-soft); }
+.repartition__tete { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+.repartition__texte { flex: 1; min-width: 12rem; margin: 0; font-size: var(--type-body-sm-size); }
+.repartition__liste { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
+.repartition__ligne { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-1) var(--space-3); align-items: center; padding: var(--space-2) var(--space-3); border-radius: var(--radius-md); background: var(--surface); }
+.repartition__quoi { overflow-wrap: anywhere; }
+.repartition__pourquoi { grid-column: 1; color: var(--ink-muted); font-size: var(--type-body-sm-size); }
+.repartition__ligne .lien { grid-column: 2; grid-row: 1 / span 2; }
+.repartition__actions { display: flex; justify-content: flex-end; }
 .lien--ayo { background: var(--surface); border-color: var(--action); color: var(--action-ink); font-weight: 600; }
 .erreur { margin: 0; color: var(--danger); font-size: var(--type-body-sm-size); font-weight: 600; }
 .tache-move { transition: transform var(--motion-base) var(--ease-out); }
