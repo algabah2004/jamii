@@ -915,7 +915,7 @@
     "ideeAide": "Pour qui, et ce qu'il doit faire. Le cercle le construira pendant ton tour.",
     "enregistrerIdee": "Enregistrer mon idée",
     "tirer": "Tirer l'ordre au sort",
-    "tirageAide": "Possible quand le cercle est complet et que chacun a déposé son idée. Le tirage est fait une seule fois, par le serveur.",
+    "tirageAide": "N'importe quel membre peut le lancer, quand le cercle est complet et que chacun a déposé son idée. C'est le serveur qui tire au hasard, une seule fois.",
     "erreurs": {
       "cercle_complet": "Le cercle est déjà complet.",
       "deja_membre": "Tu fais déjà partie de ce cercle.",

@@ -915,7 +915,7 @@
     "ideeAide": "Who it is for and what it should do. The circle builds it during your turn.",
     "enregistrerIdee": "Save my idea",
     "tirer": "Draw the turn order",
-    "tirageAide": "Possible once the circle is full and everyone has shared an idea. The server draws the order once.",
+    "tirageAide": "Any member can start it once the circle is full and everyone has shared an idea. The server draws at random, only once.",
     "erreurs": {
       "cercle_complet": "The circle is already full.",
       "deja_membre": "You are already in this circle.",

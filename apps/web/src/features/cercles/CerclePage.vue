@@ -218,8 +218,8 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
             </template>
 
             <!-- Le tirage est fait par le serveur, une seule fois : ici on ne fait que le demander. -->
-            <JBouton v-if="createur" :desactive="!preparation.pret" :occupe="action === 'tirage'" data-test="tirer" @click="agir('tirage', () => tirerAuSort(cercle!.id))">{{ t('cercles.tirer') }}</JBouton>
-            <p v-if="createur" class="texte-discret">{{ t('cercles.tirageAide') }}</p>
+            <JBouton v-if="membre" :desactive="!preparation.pret" :occupe="action === 'tirage'" data-test="tirer" @click="agir('tirage', () => tirerAuSort(cercle!.id))">{{ t('cercles.tirer') }}</JBouton>
+            <p v-if="membre" class="texte-discret">{{ t('cercles.tirageAide') }}</p>
             <p v-if="erreur" role="alert" class="erreur">{{ erreur }}</p>
           </section>
 

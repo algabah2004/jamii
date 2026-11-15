@@ -105,7 +105,7 @@ describe('la page du cercle', () => {
     expect(page.find('[data-test="commits"]').exists()).toBe(false)
   })
 
-  it("cache les idées et les boutons du créateur à qui n'est pas membre", async () => {
+  it("cache les idées et le bouton du tirage à qui n'est pas membre", async () => {
     const { page } = await ouvrir(`/cercles/${ID_ABIDJAN}`)
     await vi.waitFor(() => expect(page.find('[data-test="attente-tirage"]').exists()).toBe(true))
     expect(page.find('[data-test="attente-tirage"]').text()).toContain('Il manque 2 membres')
@@ -189,7 +189,7 @@ describe('du cercle vide au tirage', () => {
     expect((page.get('[data-test="champ-nom"]').element as HTMLInputElement).value).toBe('Cercle Ubuntu')
   })
 
-  it('rejoint un cercle ouvert : on voit alors les idées, mais pas le bouton du créateur', async () => {
+  it('rejoint un cercle ouvert : on voit alors les idées, et le bouton du tirage, grisé tant que le cercle n’est pas prêt', async () => {
     const { page } = await ouvrir(`/cercles/${ID_ABIDJAN}`)
     await vi.waitFor(() => expect(page.find('[data-test="rejoindre"]').exists()).toBe(true))
     await page.find('[data-test="rejoindre"]').trigger('click')
@@ -197,7 +197,9 @@ describe('du cercle vide au tirage', () => {
     expect(page.find('[data-test="rejoindre"]').exists()).toBe(false)
     expect(page.find('[data-test="ordre"]').text()).toContain('Boutique en ligne')
     expect(page.find('[data-test="ouvrir-idee"]').exists()).toBe(true)
-    expect(page.find('[data-test="tirer"]').exists()).toBe(false)
+    // N'importe quel membre peut lancer le tirage (#157) ; ici le cercle n'est pas complet : bouton grisé.
+    expect(page.find('[data-test="tirer"]').exists()).toBe(true)
+    expect(page.find('[data-test="tirer"]').attributes('disabled')).toBeDefined()
   })
 
   it("explique un refus de l'API au lieu d'échouer en silence", async () => {
