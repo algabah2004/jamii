@@ -241,7 +241,7 @@ class CerclesController {
 				personne(comptes.get(f.createurId())), f.creeLe());
 	}
 
-	private static PersonneResume personne(Compte compte) {
+	static PersonneResume personne(Compte compte) {
 		return new PersonneResume(compte.id(), compte.nom(), compte.avatarUrl());
 	}
 
@@ -254,6 +254,11 @@ class CerclesController {
 
 	@ExceptionHandler(ErreurCercle.class)
 	ResponseEntity<ProblemDetail> erreur(ErreurCercle e) {
+		return probleme(e);
+	}
+
+	/** La réponse d'une erreur métier des cercles (partagée avec le salon du cercle). */
+	static ResponseEntity<ProblemDetail> probleme(ErreurCercle e) {
 		ProblemDetail probleme = ProblemDetail.forStatus(e.statut);
 		probleme.setType(URI.create("urn:jamii:erreur:" + e.code));
 		probleme.setTitle(e.getMessage());

@@ -87,11 +87,44 @@ export const ID_SAINT_LOUIS = 'a0c1e2c1-0000-4000-8000-0000000051a1'
 export const ID_ABIDJAN = 'a0c1e2c1-0000-4000-8000-0000000ab1d1'
 
 let cercles: Cercle[] = []
+
+// --- Le salon des cercles (contracts/cercles.yaml v0.2) ---
+type MessageCercle = components['schemas']['MessageCercle']
+type AppelCercle = components['schemas']['AppelCercle']
+const salons = new Map<string, MessageCercle[]>()
+const appels = new Map<string, AppelCercle>()
+let suivantNumero = 1
+const ilYaMinutes = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOString()
+const personneDe = (i: number) => PERSONNES[i]!.personne
+
+function poster(cercleId: string, m: Omit<MessageCercle, 'id' | 'numero' | 'auteur' | 'texte' | 'point' | 'evenement' | 'coupDeMain' | 'appel'> & Partial<MessageCercle>): MessageCercle {
+  const message: MessageCercle = { id: `5a10${String(suivantNumero).padStart(4, '0')}-0000-4000-8000-000000000000`, numero: suivantNumero++, auteur: null, texte: null, point: null, evenement: null, coupDeMain: null, appel: null, ...m }
+  salons.set(cercleId, [...(salons.get(cercleId) ?? []), message])
+  return message
+}
+
+/** Le salon du cercle de Dakar, au 3e jour du tour de Kofi : de quoi voir chaque sorte de message. */
+function salonDakar() {
+  const ev = (code: NonNullable<MessageCercle['evenement']>['code'], minutes: number, personne: Personne | null, tour: number | null = null) =>
+    poster(ID_DAKAR, { type: 'evenement', envoyeLe: ilYaMinutes(minutes), evenement: { code, tour, personne } })
+  ev('cercle_cree', 60 * 24 * 12, personneDe(0))
+  ev('tirage', 60 * 24 * 9, personneDe(2))
+  ev('tour_ouvert', 60 * 24 * 9, personneDe(0), 1)
+  ev('tour_livre', 60 * 24 * 3, personneDe(0), 1)
+  ev('tour_ouvert', 60 * 24 * 3, personneDe(1), 2)
+  poster(ID_DAKAR, { type: 'texte', auteur: personneDe(1), texte: 'J’ai découpé le projet en 12 tâches, prenez celles qui vous parlent.', envoyeLe: ilYaMinutes(60 * 24 * 3 - 10) })
+  poster(ID_DAKAR, { type: 'point', auteur: personneDe(1), point: { fait: 'La connexion par numéro de téléphone.', prevu: 'Le tableau des pesées du jour.', bloque: null }, envoyeLe: ilYaMinutes(90) })
+  poster(ID_DAKAR, { type: 'coup_de_main', auteur: personneDe(3), texte: 'L’APK ne s’installe pas sur les vieux Android 8. Une idée ?', coupDeMain: { resoluLe: null, resoluPar: null }, envoyeLe: ilYaMinutes(45) })
+}
 /** Remet les cercles de démo à leur état de départ (entre deux tests). */
 export function reinitialiserCercles() {
   projets.clear()
   suivantProjet = 1
   cercles = [cercleSaintLouis(), cercleDakar(), cercleAbidjan()]
+  salons.clear()
+  suivantNumero = 1
+  appels.clear()
+  salonDakar()
 }
 /** Les cercles de démo tels qu'ils sont maintenant (pour les recommandations de mocks/reseau.ts). */
 export const cerclesDemo = () => cercles
@@ -112,7 +145,70 @@ function melanger<T>(liste: T[]): T[] {
   return copie
 }
 
+const salonDe = (id: unknown) => {
+  const c = trouver(id)
+  if (!c) return { reponse: erreur('introuvable', 404) }
+  if (!c.moi.estMembre) return { reponse: erreur('pas_membre', 403) }
+  return { cercle: c, messages: salons.get(c.id) ?? [] }
+}
+const debutDuJour = () => new Date().toISOString().slice(0, 10)
+
 export const handlersCercles = [
+  http.get('/api/cercles/:id/salon', ({ params, request }) => {
+    const s = salonDe(params.id)
+    if (s.reponse) return s.reponse
+    const apres = new URL(request.url).searchParams.get('apres')
+    const elements = apres === null ? s.messages.slice(-100) : s.messages.filter((m) => m.numero > Number(apres))
+    return HttpResponse.json({
+      elements,
+      coupsDeMain: s.messages.filter((m) => m.type === 'coup_de_main' && !m.coupDeMain?.resoluLe),
+      pointsDuJour: [...new Set(s.messages.filter((m) => m.type === 'point' && m.envoyeLe.slice(0, 10) === debutDuJour()).map((m) => m.auteur!.id))],
+      appel: appels.get(s.cercle.id) ?? null,
+    })
+  }),
+  http.post('/api/cercles/:id/salon/messages', async ({ params, request }) => {
+    const s = salonDe(params.id)
+    if (s.reponse) return s.reponse
+    const corps = (await request.json()) as { type: string; texte?: string; point?: { fait: string; prevu: string; bloque?: string | null } }
+    const moi = PERSONNES[0]!.personne
+    const maintenant = new Date().toISOString()
+    if (corps.type === 'point') {
+      if (!corps.point?.fait?.trim() || !corps.point?.prevu?.trim()) return erreur('validation', 400)
+      if (s.messages.some((m) => m.type === 'point' && m.auteur?.id === moi.id && m.envoyeLe.slice(0, 10) === debutDuJour())) return erreur('point_deja_fait')
+      return HttpResponse.json(poster(s.cercle.id, { type: 'point', auteur: moi, point: { fait: corps.point.fait, prevu: corps.point.prevu, bloque: corps.point.bloque ?? null }, envoyeLe: maintenant }), { status: 201 })
+    }
+    if (!corps.texte?.trim() || !['texte', 'coup_de_main'].includes(corps.type)) return erreur('validation', 400)
+    const type = corps.type as 'texte' | 'coup_de_main'
+    return HttpResponse.json(poster(s.cercle.id, { type, auteur: moi, texte: corps.texte.trim(), coupDeMain: type === 'coup_de_main' ? { resoluLe: null, resoluPar: null } : null, envoyeLe: maintenant }), { status: 201 })
+  }),
+  http.post('/api/cercles/:id/salon/messages/:messageId/resolu', ({ params }) => {
+    const s = salonDe(params.id)
+    if (s.reponse) return s.reponse
+    const m = s.messages.find((x) => x.id === params.messageId)
+    if (!m) return erreur('introuvable', 404)
+    if (m.type !== 'coup_de_main') return erreur('pas_un_coup_de_main')
+    if (!m.coupDeMain?.resoluLe) m.coupDeMain = { resoluLe: new Date().toISOString(), resoluPar: PERSONNES[0]!.personne }
+    return HttpResponse.json(m)
+  }),
+  http.post('/api/cercles/:id/salon/appel', ({ params }) => {
+    const s = salonDe(params.id)
+    if (s.reponse) return s.reponse
+    const deja = appels.get(s.cercle.id)
+    if (deja) return HttpResponse.json(deja)
+    const appel: AppelCercle = { id: `a9e10000-0000-4000-8000-${String(suivantNumero).padStart(12, '0')}`, lancePar: PERSONNES[0]!.personne, lanceLe: new Date().toISOString(), url: 'https://meet.jit.si/jamii-cercle-demo' }
+    appels.set(s.cercle.id, appel)
+    poster(s.cercle.id, { type: 'appel', auteur: PERSONNES[0]!.personne, appel: { id: appel.id, enCours: true }, envoyeLe: appel.lanceLe })
+    return HttpResponse.json(appel, { status: 201 })
+  }),
+  http.delete('/api/cercles/:id/salon/appel', ({ params }) => {
+    const s = salonDe(params.id)
+    if (s.reponse) return s.reponse
+    const appel = appels.get(s.cercle.id)
+    if (!appel) return erreur('introuvable', 404)
+    appels.delete(s.cercle.id)
+    for (const m of s.messages) if (m.appel?.id === appel.id) m.appel = { id: appel.id, enCours: false }
+    return new HttpResponse(null, { status: 204 })
+  }),
   http.get('/api/cercles', ({ request }) => {
     const portee = new URL(request.url).searchParams.get('portee') ?? 'ouverts'
     const liste = portee === 'mes' ? cercles.filter((c) => c.moi.estMembre) : cercles.filter((c) => c.statut === 'ouvert' && !c.tirage && c.nombreMembres < c.taille)

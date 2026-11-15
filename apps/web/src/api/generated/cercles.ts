@@ -181,6 +181,100 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/cercles/{cercleId}/salon": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cercleId: components["parameters"]["CercleId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Le salon du cercle (membres seulement)
+         * @description Sans `apres` : les `limite` derniers messages. Avec `apres` (un `numero`) : ceux arrivés depuis, pour relire le
+         *     salon toutes les quelques secondes. Toujours du plus ancien au plus récent. Renvoie aussi, à chaque fois, les
+         *     coups de main ouverts, qui a fait son point aujourd'hui (jour UTC) et l'appel en cours.
+         */
+        get: operations["lireSalonCercle"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cercles/{cercleId}/salon/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cercleId: components["parameters"]["CercleId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Écrire, faire son point du jour ou demander un coup de main (membres)
+         * @description Au plus 20 messages par minute et par personne (`429`). Un seul point par personne et par jour UTC (`409 point_deja_fait`).
+         */
+        post: operations["ecrireSalonCercle"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cercles/{cercleId}/salon/messages/{messageId}/resolu": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cercleId: components["parameters"]["CercleId"];
+                messageId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Marquer un coup de main résolu (n'importe quel membre)
+         * @description Idempotent. Le premier qui l'a résolu reste celui qu'on affiche.
+         */
+        post: operations["resoudreCoupDeMain"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cercles/{cercleId}/salon/appel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cercleId: components["parameters"]["CercleId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Lancer l'appel du cercle, ou rejoindre celui qui est en cours (membres)
+         * @description Un seul appel à la fois : s'il y en a un, `200` avec celui-ci. Sinon une salle neuve est créée (`201`), et un
+         *     message `appel` l'annonce dans le salon. Un appel est « en cours » une heure au plus. Au plus 10 appels lancés
+         *     par heure et par personne (`429`).
+         */
+        post: operations["lancerAppelCercle"];
+        /** Terminer l'appel en cours (celui qui l'a lancé, ou le créateur du cercle) */
+        delete: operations["terminerAppelCercle"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -324,6 +418,81 @@ export interface components {
              * @description Le membre qui a lancé le tirage (le créateur, pour les cercles tirés avant #157).
              */
             parId: string;
+        };
+        SalonCercle: {
+            elements: components["schemas"]["MessageCercle"][];
+            /** @description Les coups de main pas encore résolus, du plus ancien au plus récent. */
+            coupsDeMain: components["schemas"]["MessageCercle"][];
+            /** @description Les membres qui ont fait leur point aujourd'hui (jour UTC). */
+            pointsDuJour: string[];
+            appel: components["schemas"]["AppelCercle"] | null;
+        };
+        /** @enum {string} */
+        TypeMessageCercle: "texte" | "point" | "coup_de_main" | "evenement" | "appel";
+        /** @description Les champs propres à un type (`point`, `evenement`, `coupDeMain`, `appel`) valent `null` pour les autres. */
+        MessageCercle: {
+            /** Format: uuid */
+            id: string;
+            /**
+             * Format: int64
+             * @description Croissant. Sert de curseur (`apres`).
+             */
+            numero: number;
+            type: components["schemas"]["TypeMessageCercle"];
+            /** @description `null` pour un événement (écrit par Jamii). */
+            auteur: components["schemas"]["PersonneResume"] | null;
+            texte: string | null;
+            point: components["schemas"]["PointDuJour"] | null;
+            evenement: components["schemas"]["EvenementCercle"] | null;
+            coupDeMain: {
+                /**
+                 * Format: date-time
+                 * @description `null` tant que personne ne l'a résolu.
+                 */
+                resoluLe: string | null;
+                resoluPar: components["schemas"]["PersonneResume"] | null;
+            } | null;
+            appel: {
+                /** Format: uuid */
+                id: string;
+                enCours: boolean;
+            } | null;
+            /** Format: date-time */
+            envoyeLe: string;
+        };
+        PointDuJour: {
+            /** @description Ce que j'ai fait depuis mon dernier point. */
+            fait: string;
+            /** @description Ce que je fais ensuite. */
+            prevu: string;
+            /** @description Ce qui me bloque, s'il y a quelque chose. */
+            bloque?: string | null;
+        };
+        EvenementCercle: {
+            /** @enum {string} */
+            code: "cercle_cree" | "membre_rejoint" | "tirage" | "tour_ouvert" | "tour_livre" | "cercle_termine";
+            tour: number | null;
+            /** @description De qui parle l'événement : le créateur, le nouveau membre, qui a tiré, le bénéficiaire du tour. */
+            personne: components["schemas"]["PersonneResume"] | null;
+        };
+        NouveauMessageCercle: {
+            /** @enum {string} */
+            type: "texte" | "point" | "coup_de_main";
+            /** @description Pour `texte` et `coup_de_main`. */
+            texte?: string;
+            point?: components["schemas"]["PointDuJour"];
+        };
+        AppelCercle: {
+            /** Format: uuid */
+            id: string;
+            lancePar: components["schemas"]["PersonneResume"] | null;
+            /** Format: date-time */
+            lanceLe: string;
+            /**
+             * Format: uri
+             * @description L'adresse de la salle (Jitsi). Une salle neuve à chaque appel.
+             */
+            url: string;
         };
         /**
          * @description Base de toute liste paginée. Un contrat l'étend ainsi :
@@ -664,6 +833,160 @@ export interface operations {
             };
             401: components["responses"]["NonConnecte"];
             403: components["responses"]["Interdit"];
+            404: components["responses"]["Introuvable"];
+        };
+    };
+    lireSalonCercle: {
+        parameters: {
+            query?: {
+                apres?: number;
+                limite?: number;
+            };
+            header?: never;
+            path: {
+                cercleId: components["parameters"]["CercleId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Le salon. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SalonCercle"];
+                };
+            };
+            400: components["responses"]["Invalide"];
+            401: components["responses"]["NonConnecte"];
+            /** @description `pas_membre`. */
+            403: components["responses"]["Interdit"];
+            404: components["responses"]["Introuvable"];
+        };
+    };
+    ecrireSalonCercle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cercleId: components["parameters"]["CercleId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NouveauMessageCercle"];
+            };
+        };
+        responses: {
+            /** @description Envoyé. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageCercle"];
+                };
+            };
+            400: components["responses"]["Invalide"];
+            401: components["responses"]["NonConnecte"];
+            /** @description `pas_membre`. */
+            403: components["responses"]["Interdit"];
+            404: components["responses"]["Introuvable"];
+            /** @description `point_deja_fait`. */
+            409: components["responses"]["Conflit"];
+            429: components["responses"]["TropDeRequetes"];
+        };
+    };
+    resoudreCoupDeMain: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cercleId: components["parameters"]["CercleId"];
+                messageId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Le coup de main, résolu. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageCercle"];
+                };
+            };
+            401: components["responses"]["NonConnecte"];
+            /** @description `pas_membre`. */
+            403: components["responses"]["Interdit"];
+            404: components["responses"]["Introuvable"];
+            /** @description `pas_un_coup_de_main`. */
+            409: components["responses"]["Conflit"];
+        };
+    };
+    lancerAppelCercle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cercleId: components["parameters"]["CercleId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description L'appel déjà en cours. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppelCercle"];
+                };
+            };
+            /** @description Appel lancé. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppelCercle"];
+                };
+            };
+            401: components["responses"]["NonConnecte"];
+            /** @description `pas_membre`. */
+            403: components["responses"]["Interdit"];
+            404: components["responses"]["Introuvable"];
+            429: components["responses"]["TropDeRequetes"];
+        };
+    };
+    terminerAppelCercle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cercleId: components["parameters"]["CercleId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Terminé. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["NonConnecte"];
+            /** @description `pas_membre` ou `pas_lanceur`. */
+            403: components["responses"]["Interdit"];
+            /** @description Pas d'appel en cours. */
             404: components["responses"]["Introuvable"];
         };
     };

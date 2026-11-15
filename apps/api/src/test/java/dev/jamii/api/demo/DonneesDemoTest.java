@@ -223,6 +223,20 @@ class DonneesDemoTest {
 	}
 
 	@Test
+	void le_salon_du_cercle_de_dakar_raconte_son_histoire_et_vit() {
+		var salon = mvc.get().uri("/api/cercles/" + DonneesDemo.DAKAR + "/salon?limite=100").with(oauth2Login().oauth2User(connecte(DonneesDemo.AWA)));
+		assertThat(salon).hasStatusOk();
+		assertThat(salon).bodyJson().extractingPath("$.elements[0].evenement.code").isEqualTo("cercle_cree");
+		assertThat(salon).bodyJson().extractingPath("$.elements[*].type").asArray().contains("evenement", "texte", "point", "coup_de_main");
+		assertThat(salon).bodyJson().extractingPath("$.coupsDeMain.length()").isEqualTo(1);
+		assertThat(salon).bodyJson().extractingPath("$.coupsDeMain[0].auteur.nom").isEqualTo("Moussa Traoré");
+		long evenements = compter("SELECT count(*) FROM message_cercle WHERE cercle_id = '" + DonneesDemo.DAKAR + "' AND type = 'evenement'");
+		new DemoSalonsCercles(base, java.time.Instant.now()).charger();
+		assertThat(compter("SELECT count(*) FROM message_cercle WHERE cercle_id = '" + DonneesDemo.DAKAR + "' AND type = 'evenement'"))
+			.as("recharger n'ajoute pas l'histoire une 2e fois").isEqualTo(evenements);
+	}
+
+	@Test
 	void aucun_compte_de_demo_n_a_de_login_github_ni_d_adresse_joignable() {
 		assertThat(compter("SELECT count(*) FROM utilisateur WHERE email LIKE '%@demo.jamii.test'")).as("les 6 de la démo et les 12 des communautés").isEqualTo(18);
 		assertThat(compter("SELECT count(*) FROM utilisateur WHERE email LIKE '%@demo.jamii.test' AND login_github IS NOT NULL")).isZero();
