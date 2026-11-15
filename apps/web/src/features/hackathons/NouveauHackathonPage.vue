@@ -15,6 +15,8 @@ import {
   versMontant,
   type NouveauHackathon,
 } from './hackathons'
+import EditeurQuestionnaire from '../questionnaires/EditeurQuestionnaire.vue'
+import { nettoyer, problemes, type Question } from '../questionnaires/questionnaire'
 
 /*
  * Créer un hackathon : on enregistre d'abord un brouillon (personne ne le voit), puis on le publie depuis la page du
@@ -36,6 +38,7 @@ const mode = ref<(typeof MODES)[number]>('ouvert')
 const deploiement = ref(false)
 const code = ref('')
 const questions = ref('')
+const questionnaire = ref<Question[]>([])
 const criteres = ref([{ nom: '', poids: 50 }, { nom: '', poids: 50 }])
 const prix = ref<{ nom: string; montant: string; devise: string; sponsor: string }[]>([])
 const envoi = ref<'repos' | 'envoi' | 'erreur'>('repos')
@@ -52,7 +55,8 @@ const valide = computed(
     description.value.trim().length >= LIMITES.descriptionMin &&
     calendrier.value !== null &&
     min.value >= 1 && max.value <= 10 && min.value <= max.value &&
-    criteresValides.value,
+    criteresValides.value &&
+    !Object.keys(problemes(questionnaire.value)).length,
 )
 
 /** Le message d'un champ en erreur ; une erreur sur un élément (`criteres[0].nom`) est montrée sur toute sa liste. */
@@ -90,6 +94,7 @@ async function creer() {
     ...(ville.value.trim() ? { ville: ville.value.trim() } : {}),
     ...(code.value.trim() ? { codeDeConduite: code.value.trim() } : {}),
     ...(questionsLues.length ? { questions: questionsLues } : {}),
+    ...(questionnaire.value.length ? { questionnaire: nettoyer(questionnaire.value) } : {}),
     ...(lesPrix.length ? { prix: lesPrix } : {}),
   }
   envoi.value = 'envoi'
@@ -155,6 +160,10 @@ async function creer() {
         <legend>{{ t('hackathons.nouveau.mode') }}</legend>
         <label v-for="m in MODES" :key="m"><input v-model="mode" type="radio" name="mode" :value="m" :data-test="`mode-${m}`" /> <span>{{ t(`hackathons.nouveau.${m}`) }}</span></label>
       </fieldset>
+      <div class="questionnaire">
+        <EditeurQuestionnaire v-model="questionnaire" contexte="hackathon" />
+        <p v-if="erreur('questionnaire')" role="alert" class="erreur">{{ erreur('questionnaire') }}</p>
+      </div>
       <label class="case"><input v-model="deploiement" type="checkbox" data-test="deploiement" /> <span>{{ t('hackathons.nouveau.deploiement') }}</span></label>
 
       <JChamp v-model="code" :libelle="t('hackathons.nouveau.code')" :aide="t('hackathons.nouveau.aideCode')" multiligne :lignes="4" :maxlength="LIMITES.codeMax" />
@@ -210,4 +219,5 @@ legend { font-size: var(--type-label-size); font-weight: var(--type-label-weight
 .lien:disabled { opacity: 0.5; cursor: default; }
 .lien:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .erreur { margin: 0; color: var(--danger); font-weight: 600; }
+.questionnaire { display: grid; gap: var(--space-2); padding: var(--space-4); border-radius: var(--radius-md); border: 1px solid var(--line-strong); }
 </style>

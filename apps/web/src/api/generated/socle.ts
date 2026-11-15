@@ -63,6 +63,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/google": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Commencer la connexion avec Google (#260)
+         * @description Redirige vers Google (autorisations `profile` et `email` seulement). Au retour, le compte est reconnu par l'adresse vérifiée par Google : une personne venue par un lien e-mail retrouve son compte. Une adresse non vérifiée est refusée. Jamais fusionné avec un compte GitHub. Si Google n'est pas configuré sur ce serveur : `404`. Échecs renvoyés sur `/connexion?erreur=` : `refus_google`, `google_indisponible`, `email_non_verifie`, `requete_invalide`.
+         */
+        get: operations["connexionGoogle"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/fournisseurs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Les façons de se connecter proposées par ce serveur
+         * @description Le site ne montre « Continuer avec Google » que si `google` est vrai. Aucune donnée secrète.
+         */
+        get: operations["fournisseursConnexion"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/lien-email": {
         parameters: {
             query?: never;
@@ -215,6 +255,34 @@ export interface components {
              * @example format_invalide
              */
             code: string;
+        };
+        /**
+         * @description Une question d'un questionnaire personnalisé (#257) : posée par l'organisateur d'un hackathon à l'inscription
+         *     (`hackathons.yaml`), ou par le client d'une mission dans une proposition (`missions.yaml`). Dix au plus par
+         *     questionnaire. `choix` (de 2 à 8, sans doublon) seulement pour `choix_unique` et `choix_multiples`.
+         */
+        Question: {
+            /** @description Choisi par le front (`q1`, `q2`…), unique dans le questionnaire : les réponses s'y rattachent. */
+            id: string;
+            intitule: string;
+            /** @description Une précision sous la question. */
+            aide?: string | null;
+            /** @enum {string} */
+            type: "texte_court" | "texte_long" | "choix_unique" | "choix_multiples" | "oui_non";
+            /** @default false */
+            obligatoire: boolean;
+            choix?: string[];
+        };
+        Questionnaire: components["schemas"]["Question"][];
+        /**
+         * @description La réponse à une question. `valeur` : un texte (200 caractères au plus pour `texte_court`, 2 000 pour `texte_long`),
+         *     l'un des `choix` pour `choix_unique`, `oui` ou `non` pour `oui_non`, une liste de `choix` pour `choix_multiples`.
+         *     Une réponse vide compte comme absente. En cas d'erreur, le 400 la signale sous `reponses.<id de la question>`
+         *     (`obligatoire`, `valeur_inconnue`, `trop_long`, `type_invalide`).
+         */
+        Reponse: {
+            questionId: string;
+            valeur: string | string[];
         };
         /**
          * @description Base de toute liste paginée. Un contrat l'étend ainsi :
@@ -376,6 +444,8 @@ export interface operations {
             query?: {
                 /** @description Chemin du front où revenir après la connexion. Chemin relatif uniquement (pas de redirection ouverte). */
                 retour?: components["parameters"]["Retour"];
+                /** @description `1` : relier ce GitHub au compte **déjà connecté** (venu par Google ou par e-mail, proposition 0005), au lieu d'ouvrir une session. Retour sur `/profil?github=relie`, ou `/profil?erreurGithub=` avec `github_deja_utilise` (ce GitHub a déjà un compte Jamii), `compte_deja_relie` (ce compte a déjà un autre GitHub), `refus_github`, `github_indisponible` ou `requete_invalide`. Ignoré sans session. */
+                lier?: "1";
             };
             header?: never;
             path?: never;
@@ -417,6 +487,52 @@ export interface operations {
                 content?: never;
             };
             429: components["responses"]["TropDeRequetes"];
+        };
+    };
+    connexionGoogle: {
+        parameters: {
+            query?: {
+                /** @description Chemin du front où revenir après la connexion. Chemin relatif uniquement (pas de redirection ouverte). */
+                retour?: components["parameters"]["Retour"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Vers Google. */
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["Introuvable"];
+        };
+    };
+    fournisseursConnexion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Oui ou non pour chaque façon de se connecter. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        github: boolean;
+                        google: boolean;
+                        email: boolean;
+                    };
+                };
+            };
         };
     };
     demanderLienEmail: {

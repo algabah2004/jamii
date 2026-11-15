@@ -364,14 +364,15 @@ class CerclesTest {
 	// ---------------------------------------------------------------- tirage
 
 	@Test
-	void le_tirage_est_reserve_au_createur_et_exige_un_cercle_complet_avec_toutes_les_idees() {
+	void le_tirage_est_reserve_aux_membres_et_exige_un_cercle_complet_avec_toutes_les_idees() {
 		UtilisateurConnecte awa = utilisateur("Awa");
 		String id = creerCercle(awa, 4);
 		UtilisateurConnecte kofi = utilisateur("Kofi");
 		rejoindre(id, kofi);
 
-		assertThat(ecrire("POST", "/api/cercles/" + id + "/tirage", kofi, null)).hasStatus(HttpStatus.FORBIDDEN);
-		MvcTestResult incomplet = ecrire("POST", "/api/cercles/" + id + "/tirage", awa, null);
+		assertThat(ecrire("POST", "/api/cercles/" + id + "/tirage", utilisateur("Passant"), null))
+			.as("un non-membre ne tire pas").hasStatus(HttpStatus.FORBIDDEN);
+		MvcTestResult incomplet = ecrire("POST", "/api/cercles/" + id + "/tirage", kofi, null);
 		assertThat(incomplet).hasStatus(HttpStatus.CONFLICT);
 		assertThat(incomplet).bodyJson().extractingPath("$.code").isEqualTo("cercle_incomplet");
 
@@ -383,6 +384,19 @@ class CerclesTest {
 		assertThat(sansIdees).bodyJson().extractingPath("$.code").isEqualTo("idees_manquantes");
 		assertThat(base.sql("SELECT statut FROM cercle WHERE id = :c").param("c", UUID.fromString(id)).query(String.class).single())
 			.as("un tirage refusé ne change rien").isEqualTo("ouvert");
+	}
+
+	@Test
+	void n_importe_quel_membre_peut_lancer_le_tirage_et_il_est_enregistre_comme_celui_qui_l_a_lance() {
+		Pret pret = cercleComplet();
+		UtilisateurConnecte autre = pret.membres().stream().filter(m -> !m.id().equals(pret.createur().id())).findFirst().orElseThrow();
+
+		MvcTestResult reponse = ecrire("POST", "/api/cercles/" + pret.id() + "/tirage", autre, null);
+
+		assertThat(reponse).hasStatusOk();
+		assertThat(reponse).bodyJson().extractingPath("$.tirage.parId").isEqualTo(autre.id().toString());
+		assertThat(ecrire("POST", "/api/cercles/" + pret.id() + "/tirage", pret.createur(), null))
+			.as("une seule fois, même pour le créateur").hasStatus(HttpStatus.CONFLICT);
 	}
 
 	@Test
@@ -693,6 +707,17 @@ class CerclesTest {
 		}
 	}
 
+
+	@Test
+	void la_ville_est_facultative_un_cercle_se_cree_avec_son_nom_et_sa_taille() {
+		UtilisateurConnecte moi = utilisateur("Sans ville");
+		var json = assertThat(ecrire("POST", "/api/cercles", moi, "{\"nom\":\"Cercle en ligne\",\"taille\":5}"))
+			.hasStatus(HttpStatus.CREATED).bodyJson();
+		json.extractingPath("$.nom").isEqualTo("Cercle en ligne");
+		json.extractingPath("$.ville").isNull();
+		assertThat(lire("/api/cercles?portee=mes", moi)).hasStatusOk().bodyJson()
+			.extractingPath("$.elements[0].ville").isNull();
+	}
 
 	// ---------------------------------------------------------------- activité du dépôt d'un tour
 

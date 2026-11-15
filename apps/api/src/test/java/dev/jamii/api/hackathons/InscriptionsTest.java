@@ -98,6 +98,12 @@ class InscriptionsTest {
 		return json.readTree(r.getResponse().getContentAsString());
 	}
 
+	/** Les types de notification d'une personne, pour ce hackathon (le lien mène à sa page). */
+	private List<String> notifications(UtilisateurConnecte qui, String hackathon) {
+		return base.sql("SELECT type FROM notification WHERE utilisateur_id = :u AND lien = :l ORDER BY type")
+			.param("u", qui.id()).param("l", "/hackathons/" + hackathon).query(String.class).list();
+	}
+
 	private JsonNode inscrire(String hackathon, UtilisateurConnecte qui) throws Exception {
 		MvcTestResult r = poster("/api/hackathons/" + hackathon + "/inscriptions", "{\"competences\":[\"flutter\",\"go\"]}", qui);
 		assertThat(r).hasStatus(HttpStatus.CREATED);
@@ -263,13 +269,24 @@ class InscriptionsTest {
 		assertThat(iKofi.get("statut").asString()).isEqualTo("en_attente");
 		assertThat(corpsDe(lire("/api/hackathons/" + h, awa)).at("/moi/actions").toString()).contains("trier_inscriptions");
 
+		// L'organisateur est prévenu de chaque candidature, le candidat n'a rien reçu avant la décision.
+		assertThat(notifications(awa, h)).containsExactly("candidature_recue", "candidature_recue");
+		assertThat(notifications(kofi, h)).isEmpty();
+
+		// Le candidat retrouve le statut de sa candidature en relisant le hackathon.
+		assertThat(corpsDe(lire("/api/hackathons/" + h, kofi)).at("/moi/inscription").asString()).isEqualTo("en_attente");
+		assertThat(corpsDe(lire("/api/hackathons/" + h, awa)).at("/moi/inscription").isNull()).isTrue();
+
 		assertThat(trier(h, iFatou.get("id").asString(), "acceptee", kofi)).hasStatus(HttpStatus.FORBIDDEN);
 		assertThat(trier(h, iFatou.get("id").asString(), "acceptee", awa)).hasStatus(HttpStatus.OK);
+		assertThat(corpsDe(lire("/api/hackathons/" + h, fatou)).at("/moi/inscription").asString()).isEqualTo("acceptee");
+		assertThat(notifications(fatou, h)).containsExactly("candidature_acceptee");
 		String e = equipe(h, "Les Griots", kofi).get("id").asString();
 		assertThat(inviter(h, e, fatou, kofi)).hasStatus(HttpStatus.OK);
 
 		MvcTestResult refus = trier(h, iKofi.get("id").asString(), "refusee", awa);
 		assertThat(refus).hasStatus(HttpStatus.OK);
+		assertThat(notifications(kofi, h)).containsExactly("candidature_refusee");
 		assertThat(corpsDe(refus).get("equipeId").isNull()).isTrue();
 		assertThat(base.sql("SELECT count(*) FROM equipe WHERE id = :e").param("e", UUID.fromString(e)).query(Integer.class).single()).isZero();
 		assertThat(base.sql("SELECT count(*) FROM inscription WHERE id = :i AND equipe_id IS NULL")
@@ -285,6 +302,8 @@ class InscriptionsTest {
 		UtilisateurConnecte awa = utilisateur("awa");
 		String h = publie(awa, "ouvert", 4);
 		JsonNode i = inscrire(h, utilisateur("kofi"));
+		// En mode libre, l'inscription est acceptée tout de suite : il n'y a pas de candidature à annoncer.
+		assertThat(notifications(awa, h)).isEmpty();
 		MvcTestResult r = trier(h, i.get("id").asString(), "refusee", awa);
 		assertThat(r).hasStatus(HttpStatus.CONFLICT);
 		assertThat(code(corpsDe(r))).isEqualTo("etat_invalide");

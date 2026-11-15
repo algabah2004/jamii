@@ -5,6 +5,7 @@
  */
 import { api } from '../../api/client'
 import type { components } from '../../api/generated/hackathons'
+import type { Reponse } from '../questionnaires/questionnaire'
 
 type Schemas = components['schemas']
 export type Hackathon = Schemas['Hackathon']
@@ -164,11 +165,12 @@ export const LIMITES_EQUIPE = { nomMin: 2, nomMax: 60 } as const
 
 const chemin = (hackathonId: string) => ({ params: { path: { hackathonId } } })
 
-export const sInscrire = (id: string, chercheEquipe: boolean) =>
-  resultat<Inscription>(api.POST('/api/hackathons/{hackathonId}/inscriptions', { ...chemin(id), body: { chercheEquipe } }))
+export const sInscrire = (id: string, chercheEquipe: boolean, reponses: Reponse[] = []) =>
+  resultat<Inscription>(api.POST('/api/hackathons/{hackathonId}/inscriptions', { ...chemin(id), body: { chercheEquipe, ...(reponses.length ? { reponses } : {}) } }))
 
-export const creerEquipe = (id: string, nom: string) =>
-  resultat<Equipe>(api.POST('/api/hackathons/{hackathonId}/equipes', { ...chemin(id), body: { nom } }))
+/** Les réponses ne servent que si je ne suis pas encore inscrit : l'inscription naît avec l'équipe. */
+export const creerEquipe = (id: string, nom: string, reponses: Reponse[] = []) =>
+  resultat<Equipe>(api.POST('/api/hackathons/{hackathonId}/equipes', { ...chemin(id), body: { nom, ...(reponses.length ? { reponses } : {}) } }))
 
 export const inviterMembre = (id: string, equipeId: string, utilisateurId: string) =>
   resultat<Equipe>(
@@ -275,7 +277,9 @@ export type Espace = { nom: string; nombreMembres: number; questionsOuvertes: nu
 export async function lireEspace(slug: string): Promise<Espace | null> {
   const chemin = { params: { path: { slug } } }
   const [c, s] = await Promise.all([api.GET('/api/communautes/{slug}', chemin), api.GET('/api/communautes/{slug}/salons', chemin)])
-  if (!c.data) return null
+  // `null` : la communauté liée n'existe pas (ou plus). Toute autre panne est une erreur, pour ne pas la confondre avec ça.
+  if (c.response.status === 404) return null
+  if (!c.data) throw new Error('espace indisponible')
   const { nom, nombreMembres, questionsOuvertes, membre } = c.data
   return { nom, nombreMembres, questionsOuvertes, membre, salons: (s.data?.elements ?? []).slice(0, 4).map(({ slug, nom }) => ({ slug, nom })) }
 }

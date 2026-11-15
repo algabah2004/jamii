@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LienPersonne from '../../components/LienPersonne.vue'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
@@ -37,6 +38,8 @@ const TEXTE_MAX = 2000
 const annonces = ref<Annonce[]>([])
 const communaute = ref<string | null>(null)
 const espace = ref<Espace | null>(null)
+/** La communauté liée n'existe pas (ou plus) : on le dit, au lieu de mener à une page introuvable. */
+const disparue = ref(false)
 const questions = ref<QuestionOuverte[]>([])
 const etat = ref<'chargement' | 'pret' | 'indisponible'>('chargement')
 const texte = ref('')
@@ -61,13 +64,16 @@ const teinte = computed(() => (communaute.value ? teinteDe(communaute.value) : n
 const salons = computed(() => espace.value?.salons.length ? espace.value.salons : [{ slug: 'general', nom: 'général' }])
 
 async function chargerEspace(slug: string) {
+  disparue.value = false
   if (!connecte.value) {
     espace.value = null
     questions.value = []
     return
   }
-  const [e, q] = await Promise.all([lireEspace(slug).catch(() => null), questionsOuvertes(slug).catch(() => [])])
-  espace.value = e
+  // `undefined` : la communauté ne répond pas (panne), ce qui n'est pas la même chose qu'une communauté disparue (`null`).
+  const [e, q] = await Promise.all([lireEspace(slug).catch(() => undefined), questionsOuvertes(slug).catch(() => [])])
+  espace.value = e ?? null
+  disparue.value = e === null
   questions.value = q
 }
 
@@ -175,9 +181,9 @@ async function ouvrir() {
             <div class="annonce__corps">
               <p class="annonce__tete">
                 <span class="personne">
-                  <JAvatar :nom="a.auteur.nom" :url="a.auteur.avatarUrl" :taille="28" />
+                  <LienPersonne :id="a.auteur.id" doublon><JAvatar :nom="a.auteur.nom" :url="a.auteur.avatarUrl" :taille="28" /></LienPersonne>
                   <span>
-                    <strong>{{ a.auteur.nom }}</strong>
+                    <strong><LienPersonne :id="a.auteur.id">{{ a.auteur.nom }}</LienPersonne></strong>
                     <span class="role">{{ t('hackathons.discussion.organisation') }}</span>
                   </span>
                 </span>
@@ -227,9 +233,10 @@ async function ouvrir() {
               </div>
             </div>
 
-            <p>{{ t('hackathons.discussion.aideEspace') }}</p>
+            <p v-if="disparue" class="texte-discret" role="status" data-test="espace-disparu">{{ t('hackathons.discussion.espaceDisparu') }}</p>
+            <p v-else>{{ t('hackathons.discussion.aideEspace') }}</p>
 
-            <template v-if="connecte">
+            <template v-if="connecte && !disparue">
               <div class="sous-bloc">
                 <p class="sous-titre">{{ t('hackathons.discussion.questionsOuvertes') }}</p>
                 <ul v-if="questions.length" class="questions" data-test="questions">
@@ -253,7 +260,7 @@ async function ouvrir() {
               </nav>
             </template>
 
-            <div class="liens">
+            <div v-if="!disparue" class="liens">
               <RouterLink :to="`/communautes/${communaute}?onglet=ouvertes`" class="j-bouton j-bouton--principal" data-test="poser-question">
                 {{ t('hackathons.discussion.poser') }}
               </RouterLink>

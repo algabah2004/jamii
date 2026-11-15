@@ -97,7 +97,8 @@ describe('les salons en direct', () => {
     await vi.waitFor(() => expect(page.findAll('[data-test="membre"]').length).toBeGreaterThan(2))
     expect(routeur.currentRoute.value.query.voir).toBe('membres')
     expect(page.findAll('[data-test="membre"]')[0]!.text()).toContain('Modération')
-    expect(page.find('[data-test="membre"] a').attributes('href')).toMatch(/^\/messages\//)
+    expect(page.find('[data-test="membre"] .membre__ecrire').attributes('href')).toMatch(/^\/messages\//)
+    expect(page.find('[data-test="membre"] [data-test="lien-personne"]').attributes('href')).toMatch(/^\/p\//)
     page.unmount()
   })
 

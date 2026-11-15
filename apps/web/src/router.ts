@@ -65,7 +65,7 @@ export const routes: RouteRecordRaw[] = [
     path: '/cercles/:id',
     name: 'cercle',
     component: () => import('./features/cercles/CerclePage.vue'),
-    meta: { connexionRequise: true },
+    meta: { connexionRequise: true, pleineLargeur: true },
   },
   // Le réseau (contracts/reseau.yaml) : écrire à un développeur, recevoir une invitation à un cercle.
   {

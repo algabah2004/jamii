@@ -34,7 +34,7 @@ class GestionCercles {
 	private static final SecureRandom HASARD = new SecureRandom();
 
 	record Fiche(UUID id, String nom, String ville, int taille, UUID createurId, String statut, Integer tourEnCours,
-			Instant tirageLe, Instant creeLe, int nombreMembres) {
+			Instant tirageLe, Instant creeLe, int nombreMembres, UUID tireParId) {
 	}
 
 	record Membre(UUID utilisateurId, Instant rejointLe, String ideeTitre, String ideeDescription, Integer rang,
@@ -54,10 +54,14 @@ class GestionCercles {
 
 	private final Annuaire annuaire;
 
-	GestionCercles(JdbcClient base, Projets projets, Annuaire annuaire) {
+	/** Le salon du cercle raconte ce qui s'y passe : chaque étape y écrit un événement, dans la même transaction. */
+	private final SalonCercle salon;
+
+	GestionCercles(JdbcClient base, Projets projets, Annuaire annuaire, SalonCercle salon) {
 		this.base = base;
 		this.projets = projets;
 		this.annuaire = annuaire;
+		this.salon = salon;
 	}
 
 	// ---------------------------------------------------------------- lecture
@@ -87,7 +91,7 @@ class GestionCercles {
 				: "c.statut = 'ouvert' AND (SELECT count(*) FROM cercle_membre m WHERE m.cercle_id = c.id) < c.taille";
 		String apres = avant == null ? "" : "AND (c.cree_le, c.id) < (:avant, :avantId)";
 		var requete = base.sql("""
-				SELECT c.id, c.nom, c.ville, c.taille, c.createur_id, c.statut, c.tour_en_cours, c.tirage_le, c.cree_le,
+				SELECT c.id, c.nom, c.ville, c.taille, c.createur_id, c.statut, c.tour_en_cours, c.tirage_le, c.cree_le, c.tire_par,
 				       (SELECT count(*) FROM cercle_membre m WHERE m.cercle_id = c.id) AS nombre_membres
 				FROM cercle c
 				WHERE %s %s
@@ -134,6 +138,7 @@ class GestionCercles {
 			.param("id", id).param("nom", nom).param("ville", ville).param("taille", taille).param("moi", moi)
 			.param("t", t).update();
 		ajouterMembre(id, moi, t);
+		salon.evenement(id, "cercle_cree", null, moi, maintenant);
 		return id;
 	}
 
@@ -155,6 +160,7 @@ class GestionCercles {
 		catch (DuplicateKeyException dejaMembre) {
 			throw ErreurCercle.conflit("deja_membre", "Tu es déjà membre de ce cercle");
 		}
+		salon.evenement(cercleId, "membre_rejoint", null, moi, maintenant);
 	}
 
 	@Transactional
@@ -174,7 +180,10 @@ class GestionCercles {
 	@Transactional
 	int tirer(UUID cercleId, UUID moi, Instant maintenant) {
 		Fiche cercle = fiche(cercleId, true).orElseThrow(ErreurCercle::introuvable);
-		if (!cercle.createurId().equals(moi)) {
+		// N'importe quel membre peut lancer le tirage (#157) : c'est le serveur qui tire au hasard, personne ne choisit.
+		boolean membre = base.sql("SELECT EXISTS (SELECT 1 FROM cercle_membre WHERE cercle_id = :c AND utilisateur_id = :u)")
+			.param("c", cercleId).param("u", moi).query(Boolean.class).single();
+		if (!membre) {
 			throw ErreurCercle.interdit();
 		}
 		if (!"ouvert".equals(cercle.statut())) {
@@ -193,8 +202,9 @@ class GestionCercles {
 			base.sql("UPDATE cercle_membre SET rang = :rang WHERE cercle_id = :c AND utilisateur_id = :u")
 				.param("rang", i + 1).param("c", cercleId).param("u", membres.get(i).utilisateurId()).update();
 		}
-		base.sql("UPDATE cercle SET statut = 'en_cours', tour_en_cours = 1, tirage_le = :t, version = version + 1 WHERE id = :id")
-			.param("t", Timestamp.from(maintenant)).param("id", cercleId).update();
+		base.sql("UPDATE cercle SET statut = 'en_cours', tour_en_cours = 1, tirage_le = :t, tire_par = :u, version = version + 1 WHERE id = :id")
+			.param("t", Timestamp.from(maintenant)).param("u", moi).param("id", cercleId).update();
+		salon.evenement(cercleId, "tirage", null, moi, maintenant);
 		ouvrirTour(cercleId, 1, maintenant);
 		return 1;
 	}
@@ -222,9 +232,11 @@ class GestionCercles {
 		base.sql("UPDATE cercle_membre SET livre_le = :t WHERE cercle_id = :c AND rang = :n")
 			.param("t", t).param("c", cercleId).param("n", numero).update();
 		proprietaire.map(Membre::projetId).ifPresent(projet -> projets.marquerLivre(projet, maintenant));
+		salon.evenement(cercleId, "tour_livre", numero, proprietaire.map(Membre::utilisateurId).orElse(null), maintenant);
 		if (numero == cercle.taille()) {
 			base.sql("UPDATE cercle SET statut = 'termine', tour_en_cours = NULL, version = version + 1 WHERE id = :id")
 				.param("id", cercleId).update();
+			salon.evenement(cercleId, "cercle_termine", null, null, maintenant);
 			return 0;
 		}
 		base.sql("UPDATE cercle SET tour_en_cours = :n, version = version + 1 WHERE id = :id")
@@ -270,6 +282,7 @@ class GestionCercles {
 				beneficiaire.ideeTitre(), beneficiaire.ideeDescription(), maintenant);
 		base.sql("UPDATE cercle_membre SET projet_id = :p WHERE cercle_id = :c AND rang = :n")
 			.param("p", projet).param("c", cercleId).param("n", numero).update();
+		salon.evenement(cercleId, "tour_ouvert", numero, beneficiaire.utilisateurId(), maintenant);
 	}
 
 	private void ajouterMembre(UUID cercleId, UUID utilisateurId, Timestamp quand) {
@@ -291,7 +304,7 @@ class GestionCercles {
 			return Optional.empty();
 		}
 		return base.sql("""
-				SELECT c.id, c.nom, c.ville, c.taille, c.createur_id, c.statut, c.tour_en_cours, c.tirage_le, c.cree_le,
+				SELECT c.id, c.nom, c.ville, c.taille, c.createur_id, c.statut, c.tour_en_cours, c.tirage_le, c.cree_le, c.tire_par,
 				       (SELECT count(*) FROM cercle_membre m WHERE m.cercle_id = c.id) AS nombre_membres
 				FROM cercle c WHERE c.id = :id
 				""")
@@ -324,7 +337,7 @@ class GestionCercles {
 		return new Fiche(rs.getObject("id", UUID.class), rs.getString("nom"), rs.getString("ville"), rs.getInt("taille"),
 				rs.getObject("createur_id", UUID.class), rs.getString("statut"), entier(rs, "tour_en_cours"),
 				rs.getTimestamp("tirage_le") == null ? null : rs.getTimestamp("tirage_le").toInstant(),
-				rs.getTimestamp("cree_le").toInstant(), rs.getInt("nombre_membres"));
+				rs.getTimestamp("cree_le").toInstant(), rs.getInt("nombre_membres"), rs.getObject("tire_par", UUID.class));
 	}
 
 }

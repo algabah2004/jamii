@@ -5,6 +5,11 @@
 
 ## 0. Au début de chaque session : qui est ton développeur ?
 
+> ✅ **Jusqu'à la soumission (15/11, 17 h GMT), personne n'attend l'accord de personne.** Décision du chef de projet, le 15/11 à 11 h 50 GMT.
+> - Tu as besoin d'un changement dans le module d'un autre ? **Fais-le toi-même dans ta PR** et mentionne la personne (`@pseudo`) pour qu'elle soit au courant. Tu n'ouvres pas de demande et tu n'attends pas de réponse.
+> - Pas besoin d'issue attribuée ni de proposition acceptée : une PR claire suffit.
+> - Ce qui reste obligatoire : la CI verte, et les règles CADEV du §3 (code promo, secrets, licences, déclaration de l'IA). Ce ne sont pas des accords, c'est le règlement.
+
 > 🚨 **Jusqu'au 15 novembre : lis d'abord [`docs/priorites.md`](docs/priorites.md).** Le chef de projet y fixe ce que chacun doit faire **aujourd'hui** et qui bloque qui. Il **passe avant le plan du bloc**. Dans ton résumé, commence par la priorité du jour de ton développeur et l'heure limite.
 
 Avant toute chose :
@@ -15,7 +20,7 @@ Avant toute chose :
    gh issue view 54 --comments                    # où en sont les autres blocs
    gh issue list --label demande --assignee @me   # ce que les autres attendent de lui
    ```
-   Une demande ouverte **passe avant son propre travail** : quelqu'un est bloqué en l'attendant. Signale-la dès ton résumé.
+   Une demande ouverte vaut d'être signalée dans ton résumé, mais personne n'est obligé de l'attendre : son auteur peut faire la modification lui-même.
 4. **Commence par lui résumer, en 5 lignes maximum** :
    - son bloc et son but ;
    - où il en est (cases cochées, branches et PR ouvertes : `gh pr list --author @me`) ;
@@ -26,15 +31,10 @@ Avant toute chose :
 ### À la fin de chaque session : préviens les autres
 
 - **Écris un point dans le fil #54** (`gh issue comment 54 --body "…"`), au format donné dans le ticket : fait, ensuite, bloqué par, ce qui change pour les autres. Un seul commentaire court, et aucun s'il n'y a rien de nouveau. Montre-le à ton développeur avant de l'envoyer.
-- **Tu as besoin de quelque chose d'un autre bloc ?** Ne touche pas à son territoire et ne laisse pas un commentaire perdu dans son ticket : ouvre **une demande**, attribuée à la bonne personne.
-  ```bash
-  gh issue create --label demande --assignee <pseudo> \
-    --title "Demande à @<pseudo> : <ce qu'il faut, en une ligne>" \
-    --body "Pourquoi, ce qui est attendu précisément, pour quand, et ce que ça bloque."
-  ```
-- **Une demande traitée se ferme**, avec le numéro de la PR qui y répond. Sans réponse sous 12 heures, ajoute l'étiquette `bloqué` : le chef de projet tranche.
+- **Tu as besoin de quelque chose d'un autre module ?** Fais la modification toi-même dans ta PR, et mentionne son responsable (`@pseudo`) dans la description pour qu'il soit au courant. N'attends pas sa réponse.
+- **Une demande déjà ouverte qui te concerne** : fais-la si tu peux, puis ferme-la avec le numéro de ta PR.
 
-Le plan est un **point de départ** : si ton développeur veut le changer, aide-le à réécrire son fichier `docs/blocs/<bloc>.md` dans une PR. Ne change jamais le but ni le critère « terminé quand » sans l'accord du chef de projet.
+Le plan est un **point de départ** : si ton développeur veut le changer, aide-le à réécrire son fichier `docs/blocs/<bloc>.md` dans une PR. Si le but change, dis-le dans le fil #54.
 
 ## 1. Le projet en 30 secondes
 
@@ -82,13 +82,13 @@ Tu n'es pas là pour dire oui. Tu es là pour que le résultat soit **excellent*
 
 ### Après
 7. **Termine chaque contribution par la section « Pistes d'amélioration »** (voir le §4) : ce que tu ferais ensuite, les risques que tu vois et les questions encore ouvertes.
-8. **Si une idée dépasse ta tâche, n'élargis pas le périmètre en silence.** Rédige une proposition dans `docs/propositions/`.
+8. **Si une idée dépasse ta tâche, n'élargis pas le périmètre en silence** : dis-le dans la description de la PR, ou fais une PR à part.
 
 ## 3. Règles non négociables
 
 ### Travail par blocs
-- Le développeur qui t'utilise possède **un bloc** (voir `docs/blocs/`). **Reste dans son territoire.** Si un fichier d'un autre bloc doit changer, **ne le modifie pas** : rédige la demande à poster dans le ticket du bloc concerné.
-- **Le contrat avant le code** : ne code jamais contre l'implémentation d'un autre bloc. Code contre son contrat dans `contracts/`. S'il manque, utilise des données factices (MSW côté front, bouchon côté back) et signale le manque.
+- Le développeur qui t'utilise possède **un module** (voir `docs/equipe.md`). Il peut aussi modifier celui d'un autre quand ça le débloque : il le fait dans sa PR et mentionne le responsable (`@pseudo`), sans attendre son accord.
+- **Le contrat avant le code** : code contre les contrats de `contracts/`. S'il en manque un, écris-le ou complète-le toi-même dans ta PR.
 - **Petites PR** (environ 400 lignes maximum, hors fichiers générés) : découpe le bloc en étapes fusionnables tous les 2 ou 3 jours.
 
 ### Branchement Systalink (notre point fort)
@@ -105,13 +105,13 @@ Tu n'es pas là pour dire oui. Tu es là pour que le résultat soit **excellent*
 - **L'usage de l'IA se déclare** : note dans ta PR quels outils d'IA tu as utilisés.
 
 ### Général
-- **Pas de code sans issue attribuée.** On ne pousse jamais sur `main` : on passe par une branche `<n°issue>-<description>`, puis une PR avec `Closes #n`.
+- **On ne pousse jamais sur `main`** : on passe par une branche `<n°issue>-<description>` (le ticket de ton module suffit), puis une PR. Une issue attribuée n'est pas obligatoire.
 - **Le moins de branches possible.** Avant d'en créer une, lance `gh pr list --author @me` :
   - si le travail continue le sujet d'une PR ouverte, **ajoute des commits sur sa branche** ;
   - une nouvelle branche part **toujours de `main` à jour**, **jamais de la branche d'une autre PR** (pas de PR empilées).
 - **Aucun secret dans le code**, les commits, les logs ou les tests. Les secrets vont dans `.env`, et on documente les variables dans `.env.example`.
 - **Interface :** uniquement les mots de `docs/vocabulaire.md`. Pas de métaphore sportive ni d'autre thème.
-- **Architecture :** pour s'écarter de `docs/architecture.md`, il faut une proposition acceptée par le chef de projet.
+- **Architecture :** si tu t'écartes de `docs/architecture.md`, explique pourquoi dans la PR.
 - **Tests :** toute logique métier est testée. Un bug corrigé doit avoir son test.
 - **Données personnelles :** on collecte le minimum, avec consentement, et l'utilisateur peut exporter ou supprimer ses données.
 - **Messages de commit :** `feat|fix|docs|refactor|test|chore: description (#n)`.

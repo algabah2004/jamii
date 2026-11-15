@@ -3,36 +3,67 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { JBouton, JChamp } from '../../design-system'
 import { creerEquipe, LIMITES_EQUIPE, sInscrire, type Hackathon, type Resultat } from './hackathons'
+import RemplirQuestionnaire from '../questionnaires/RemplirQuestionnaire.vue'
+import { erreursParQuestion, erreursRestantes, focaliserQuestion, manquantes, resumeErreurs, versReponses, type Valeurs } from '../questionnaires/questionnaire'
 
 /*
  * Participer à un hackathon (contracts/hackathons.yaml, `sInscrire` et `creerEquipe`) : s'inscrire seul, en se
  * signalant ou non comme « je cherche une équipe », ou créer directement son équipe (l'inscription suit).
+ * Si l'organisation a posé des questions, on y répond d'abord : elles valent pour les deux chemins.
  */
 const props = defineProps<{ hackathon: Hackathon }>()
 const emit = defineEmits<{ inscrit: [] }>()
 const { t } = useI18n()
+/** Sa candidature, si elle n'est pas encore acceptée : l'organisateur n'a pas répondu, ou l'a mise en liste d'attente. */
+const candidature = computed(() => {
+  const s = props.hackathon.moi.inscription
+  return s === 'en_attente' || s === 'attente' ? s : null
+})
 
 const chercheEquipe = ref(true)
 const nom = ref('')
 const envoi = ref(false)
 const code = ref<string | null>(null)
+const valeurs = ref<Valeurs>({})
+const erreursQuestions = ref<Record<string, string>>({})
+
+/** Les questions ne se posent qu'à qui n'est pas encore inscrit (un inscrit peut encore créer son équipe). */
+const questions = computed(() => (peut('sinscrire') ? props.hackathon.questionnaire : []))
+const resteAFaire = computed(() => resumeErreurs(erreursRestantes(questions.value, valeurs.value, erreursQuestions.value)))
 
 const peut = (action: string) => (props.hackathon.moi.actions as string[]).includes(action)
 const nomValide = computed(() => nom.value.trim().length >= LIMITES_EQUIPE.nomMin)
 const message = computed(() => {
   if (!code.value) return ''
+  if (code.value === 'validation' && Object.keys(erreursQuestions.value).length) {
+    // Tout est corrigé depuis le refus : plus rien à dire, le bouton suffit.
+    if (!resteAFaire.value) return ''
+    const n = resteAFaire.value.manquantes
+    if (n) return t('questionnaire.remplir.manquantes', { n }, n)
+  }
   const connus = ['deja_inscrit', 'delai_depasse', 'equipes_verrouillees', 'etat_invalide', 'validation']
   return t(`hackathons.inscription.erreurs.${connus.includes(code.value) ? code.value : 'autre'}`)
 })
 
 async function agir(appel: () => Promise<Resultat<unknown>>) {
   if (envoi.value) return
+  // Les réponses obligatoires sont signalées tout de suite ; l'API revérifie de toute façon.
+  const vides = manquantes(questions.value, valeurs.value)
+  erreursQuestions.value = Object.fromEntries(vides.map((id) => [id, 'obligatoire']))
+  if (vides.length) {
+    code.value = 'validation'
+    focaliserQuestion(vides[0]!)
+    return
+  }
   envoi.value = true
   code.value = null
   try {
     const r = await appel()
     if (r.ok) emit('inscrit')
-    else code.value = r.code ?? 'autre'
+    else {
+      code.value = r.code ?? 'autre'
+      erreursQuestions.value = erreursParQuestion(r.champs)
+    }
   } catch {
     code.value = 'autre'
   } finally {
@@ -40,18 +71,28 @@ async function agir(appel: () => Promise<Resultat<unknown>>) {
   }
 }
 
-const inscrire = () => agir(() => sInscrire(props.hackathon.id, chercheEquipe.value))
+const reponses = () => versReponses(questions.value, valeurs.value)
+const inscrire = () => agir(() => sInscrire(props.hackathon.id, chercheEquipe.value, reponses()))
 function creer() {
-  if (nomValide.value) void agir(() => creerEquipe(props.hackathon.id, nom.value.trim()))
+  if (nomValide.value) void agir(() => creerEquipe(props.hackathon.id, nom.value.trim(), reponses()))
 }
 </script>
 
 <template>
   <section class="carte participer" aria-labelledby="participer-titre" data-test="participer">
     <h2 id="participer-titre">{{ t('hackathons.inscription.titre') }}</h2>
-    <p class="texte-discret">
+    <div v-if="candidature" class="statut" data-test="statut-candidature" :data-statut="candidature">
+      <p class="statut__titre">{{ t(`hackathons.inscription.candidature.${candidature}.titre`) }}</p>
+      <p class="texte-discret">{{ t(`hackathons.inscription.candidature.${candidature}.aide`) }}</p>
+    </div>
+    <p v-else class="texte-discret">
       {{ hackathon.modeInscription === 'candidature' ? t('hackathons.inscription.introCandidature') : t('hackathons.inscription.intro') }}
     </p>
+
+    <div v-if="questions.length" class="questions" data-test="questions-inscription">
+      <h3>{{ t('questionnaire.remplir.titre') }}</h3>
+      <RemplirQuestionnaire v-model="valeurs" :questions="questions" :erreurs="erreursQuestions" />
+    </div>
 
     <div v-if="peut('sinscrire')" class="choix" data-test="inscription-seul">
       <h3>{{ t('hackathons.inscription.seul') }}</h3>
@@ -88,4 +129,9 @@ function creer() {
 .choix { display: grid; gap: var(--space-3); padding: var(--space-4); border: 1px solid var(--line-strong); border-radius: var(--radius-md); }
 .case { display: flex; gap: var(--space-2); align-items: center; min-height: 44px; }
 .erreur { margin: 0; color: var(--danger); font-weight: 600; }
+.questions { display: grid; gap: var(--space-3); }
+/* Le statut de la candidature : un encart, avec le texte pour le dire (la couleur ne fait que le souligner). */
+.statut { display: grid; gap: var(--space-1); padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); border-inline-start: 3px solid var(--cantaloupe); background: color-mix(in srgb, var(--cantaloupe) 10%, transparent); }
+.statut p { margin: 0; }
+.statut__titre { font-weight: 700; }
 </style>

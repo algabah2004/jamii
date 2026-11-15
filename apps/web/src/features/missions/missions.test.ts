@@ -208,7 +208,7 @@ describe('une mission', () => {
         HttpResponse.json({
           id: ID, titre: '<img src=x onerror=alert(1)>', besoin: '<b>gras</b> et <script>alert(1)</script>', statut: 'publiee',
           competences: [], budget: null, aDistance: true, client: { id: ID, nom: 'Awa', avatarUrl: null },
-          nombrePropositions: 0, publieeLe: null, visibilite: 'publique', version: 1, creeLe: '2026-11-14T10:00:00Z',
+          nombrePropositions: 0, publieeLe: null, visibilite: 'publique', questionnaire: [], version: 1, creeLe: '2026-11-14T10:00:00Z',
           moi: { role: 'visiteur', actions: ['proposer'] }, travail: null,
         }),
       ),
@@ -219,5 +219,16 @@ describe('une mission', () => {
     expect(page.find('script').exists()).toBe(false)
     expect(page.get('[data-test="besoin"]').text()).toContain('<b>gras</b>')
     expect(page.find('[data-test="form-proposer"]').exists()).toBe(true)
+  })
+})
+
+describe('les textes des missions', () => {
+  it('0 se met au singulier, et les échanges n’invitent plus à choisir une fois le développeur retenu', () => {
+    ;(i18n.global.locale as unknown as { value: string }).value = 'fr'
+    const t = i18n.global.t as (cle: string, valeurs: Record<string, unknown>, n?: number) => string
+    expect(t('missions.propositions', { n: 0 }, 0)).toBe('0 proposition')
+    expect(t('missions.propositions', { n: 1 }, 1)).toBe('1 proposition')
+    expect(t('missions.propositions', { n: 3 }, 3)).toBe('3 propositions')
+    expect(t('missions.echanges.vide', { nom: 'Kofi' })).toBe('Pas encore de message avec Kofi.')
   })
 })

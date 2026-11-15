@@ -45,7 +45,7 @@ async function rejoindre(c: Cercle) {
     <div v-for="c in cercles" :key="c.id" class="carte-cercle" data-test="carte-cercle">
       <span class="carte-cercle__titre">{{ t('cercles.partage.carte') }}</span>
       <RouterLink :to="`/cercles/${c.id}`" class="carte-cercle__nom">{{ c.nom }}</RouterLink>
-      <span class="texte-discret">{{ c.ville }} · {{ t('cercles.membres', { n: c.membres.length, taille: c.taille }) }}</span>
+      <span class="texte-discret">{{ c.ville ? `${c.ville} · ` : '' }}{{ t('cercles.membres', { n: c.membres.length, taille: c.taille }) }}</span>
       <span class="places" aria-hidden="true"><i v-for="n in c.taille" :key="n" :class="{ pleine: n <= c.membres.length }" /></span>
       <JBouton v-if="accueille(c)" :occupe="action === c.id" data-test="rejoindre-depuis-publication" @click="rejoindre(c)">{{ t('cercles.rejoindre') }}</JBouton>
       <RouterLink v-else :to="`/cercles/${c.id}`" class="j-bouton j-bouton--secondaire">{{ t('cercles.ouvrir') }}</RouterLink>

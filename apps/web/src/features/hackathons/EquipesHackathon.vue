@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LienPersonne from '../../components/LienPersonne.vue'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { JAvatar, JBouton, JSquelette } from '../../design-system'
@@ -70,7 +71,7 @@ async function inviter(personne: Inscription) {
         </p>
         <ul class="membres" :aria-label="t('hackathons.equipes.membres', { nom: e.nom })">
           <li v-for="m in e.membres" :key="m.id">
-            <JAvatar :nom="m.nom" :url="m.avatarUrl" :taille="24" /> {{ m.nom }}
+            <LienPersonne :id="m.id" class="personne-lien"><JAvatar :nom="m.nom" :url="m.avatarUrl" :taille="24" /> {{ m.nom }}</LienPersonne>
             <span v-if="m.id === e.chef.id" class="texte-discret">· {{ t('hackathons.equipes.chef') }}</span>
           </li>
         </ul>
@@ -82,7 +83,7 @@ async function inviter(personne: Inscription) {
       <p v-if="!seuls.length" class="texte-discret" data-test="aucun-seul">{{ t('hackathons.equipes.aucunSeul') }}</p>
       <ul v-else class="seuls">
         <li v-for="s in seuls" :key="s.id" data-test="seul">
-          <span class="personne"><JAvatar :nom="s.personne.nom" :url="s.personne.avatarUrl" :taille="24" /> {{ s.personne.nom }}</span>
+          <LienPersonne :id="s.personne.id" class="personne"><JAvatar :nom="s.personne.nom" :url="s.personne.avatarUrl" :taille="24" /> {{ s.personne.nom }}</LienPersonne>
           <span v-if="s.competences.length" class="texte-discret">{{ s.competences.join(', ') }}</span>
           <JBouton variante="secondaire" :occupe="envoi === s.personne.id" data-test="inviter" @click="inviter(s)">{{ t('hackathons.equipes.inviter') }}</JBouton>
         </li>
@@ -102,7 +103,7 @@ async function inviter(personne: Inscription) {
 .liste > li[data-mienne='true'] { border-color: var(--action); }
 .tete { margin: 0; display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: baseline; }
 .etiquette { margin: 0; }
-.membres li, .personne { display: flex; gap: var(--space-2); align-items: center; }
+.membres li, .personne, .personne-lien { display: flex; gap: var(--space-2); align-items: center; }
 .seuls li { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; justify-content: space-between; }
 .texte-discret { margin: 0; }
 .erreur { margin: 0; color: var(--danger); font-weight: 600; }

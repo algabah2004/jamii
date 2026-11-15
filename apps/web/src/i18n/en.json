@@ -20,7 +20,7 @@
     "githubTexte": "Sign in with GitHub. Your skills map is built from your public repositories.",
     "ou": "or",
     "emailTitre": "You have a need, without a GitHub account",
-    "emailTexte": "Small business, association or individual: get a sign-in link by email. No password.",
+    "emailTexte": "Business, association or individual: no GitHub account and no password needed.",
     "email": "Your email address",
     "emailInvalide": "This email address is not valid.",
     "recevoirLien": "Get a sign-in link",
@@ -37,9 +37,14 @@
     "erreurs": {
       "refus_github": "You declined access on GitHub: nothing was shared. You can try again, or get a link by email.",
       "requete_invalide": "The GitHub sign-in expired. Try again.",
-      "github_indisponible": "GitHub is not responding right now. Try again in a moment, or get a link by email."
+      "github_indisponible": "GitHub is not responding right now. Try again in a moment, or get a link by email.",
+      "refus_google": "You declined access on Google: nothing was shared. Try again, or get a link by email.",
+      "google_indisponible": "Google is not responding right now. Try again in a moment, or get a link by email.",
+      "email_non_verifie": "Google has not confirmed your email address. Get a sign-in link by email instead."
     },
-    "seConnecter": "Sign in"
+    "seConnecter": "Sign in",
+    "google": "Continue with Google",
+    "googleOu": "Or get a sign-in link by email:"
   },
   "accueil": {
     "titre": "Find your team, build your project, put it online.",
@@ -80,7 +85,291 @@
       "apercuEnLigne": "Online and verified",
       "apercuProfil": "Proven profile"
     },
-    "decrireBesoin": "I have a need for my business"
+    "decrireBesoin": "I have a need for my business",
+    "sectionMissions": {
+      "surtitre": "Freelance",
+      "titre": "Missions: hire a developer, milestone by milestone",
+      "intro": "A small business, a shop or an association has a specific need. It posts it as a mission, developers from across the continent offer their services, and the work is split into milestones, each with its own amount and timeframe.",
+      "titreEtapes": "How it works",
+      "etapes": {
+        "1": {
+          "titre": "Post the mission",
+          "texte": "Describe the need, the budget and the skills. The mission is public, or visible only to the developers you invite."
+        },
+        "2": {
+          "titre": "Receive proposals",
+          "texte": "Developers offer their services. You talk with them, pick one, then they send you a quote split into milestones."
+        },
+        "3": {
+          "titre": "Move forward milestone by milestone",
+          "texte": "The developer delivers each milestone. You accept it or ask for a revision. Everyone always sees the next step."
+        },
+        "4": {
+          "titre": "Pay and leave a review",
+          "texte": "The client declares the payment, the developer confirms receiving it. At the end, each leaves a review for the other."
+        }
+      },
+      "cotes": {
+        "client": {
+          "titre": "You have a need",
+          "points": [
+            "Start from your need, or from the plan prepared with Ayo.",
+            "Compare proposals and profiles before choosing.",
+            "Pay milestone by milestone, never all at once."
+          ],
+          "lien": "Post a mission"
+        },
+        "developpeur": {
+          "titre": "You are a developer",
+          "points": [
+            "Find missions that need your skills.",
+            "Send a clear quote: milestones, amounts, timeframes.",
+            "Ask for an extension if needed, and a moderator settles any disagreement."
+          ],
+          "lien": "See missions"
+        }
+      },
+      "argent": {
+        "titre": "What about money?",
+        "texte": "Jamii does not collect the payment: the client pays the developer directly, then each declares it in the mission (“paid”, then “received”). Everyone sees where each milestone stands."
+      },
+      "apercu": {
+        "devis": "Quote",
+        "paye": "Paid",
+        "recu": "Received",
+        "livre": "Delivered",
+        "aFaire": "To do",
+        "propositions": "Proposals received"
+      },
+      "voir": "See missions",
+      "publier": "Post a mission"
+    },
+    "sectionHackathons": {
+      "surtitre": "Hackathons, challenges and innovation contests",
+      "titre": "Run a challenge, from the first sign-up to the winners",
+      "intro": "A school, a company, a community or a city launches a challenge. Jamii handles sign-ups, teams, hand-ins and jury scoring, online, on site or both.",
+      "titreEtapes": "How it works",
+      "etapes": {
+        "1": {
+          "titre": "Create and publish",
+          "texte": "The organizer sets the calendar, the team size, the scored criteria and their weight, the prizes and the code of conduct."
+        },
+        "2": {
+          "titre": "Sign up and form teams",
+          "texte": "Open sign-up or by application. People on their own find each other on the “Looking for a team” board."
+        },
+        "3": {
+          "titre": "Hand in the project",
+          "texte": "Each team hands in its product link and answers the questions. The hand-in can be edited until the deadline."
+        },
+        "4": {
+          "titre": "Score and publish results",
+          "texte": "The jury scores each criterion from 1 to 5, never its own team's project. The organizer confirms the winners."
+        }
+      },
+      "formats": {
+        "titre": "Three formats",
+        "hackathon": {
+          "signe": "48 h",
+          "titre": "Hackathon",
+          "texte": "A short, intense event, online, on site or hybrid. Teams build a product that works."
+        },
+        "challenge": {
+          "signe": "4 wk",
+          "titre": "Challenge",
+          "texte": "A challenge over several weeks, to go further: teams hand in a finished project before the deadline."
+        },
+        "concours": {
+          "signe": "★",
+          "titre": "Innovation contest",
+          "texte": "A company or a school sets a real problem and rewards the best ideas, with prizes in money or in services."
+        }
+      },
+      "apercu": {
+        "equipe": "Team",
+        "jury": "Jury"
+      },
+      "voir": "See hackathons",
+      "organiser": "Organize a hackathon",
+      "prix": {
+        "titre": "Prizes.",
+        "texte": "Each prize can have an amount, or none at all: visibility or hosting, for example."
+      }
+    },
+    "faq": {
+      "surtitre": "Frequently asked questions",
+      "titre": "The questions we hear most",
+      "intro": "Answers to the questions we hear most, feature by feature.",
+      "questions": {
+        "quoi": {
+          "q": "What is Jamii?",
+          "r": "The exchange platform for African developers. Find teammates, talk in communities, answer small businesses' needs, and keep your projects alive all the way to going online."
+        },
+        "connexion": {
+          "q": "How do I sign in?",
+          "r": "With GitHub if you're a developer, with Google, or with your e-mail address: we send you a sign-in link, no password to remember."
+        },
+        "pasDev": {
+          "q": "I'm not a developer. Is Jamii for me?",
+          "r": "Yes. A shop, an association or a small business describes its need in its own words. Jamii's assistant turns it into a clear plan, says what already exists, and who can build the rest."
+        },
+        "cercle": {
+          "q": "What is a circle?",
+          "r": "A group of 4 to 6 developers who take turns building each member's project. At each turn, the whole circle helps one member move forward."
+        },
+        "paiement": {
+          "q": "How is a mission paid?",
+          "r": "The work is split into milestones, each with its amount. The client pays the developer directly, then each declares it in the mission: “paid”, then “received”. Jamii does not collect the money."
+        },
+        "hackathon": {
+          "q": "Who can organize a hackathon?",
+          "r": "Anyone signed in: a school, a company, a community. The hackathon stays a draft, visible only to you, until you publish it. It has its own discussion space, criteria and jury."
+        },
+        "vitrine": {
+          "q": "How does a project get into the showcase?",
+          "r": "When a project is online, Jamii checks that it responds, then shows it in the showcase with its team. A link that no longer responds does not appear."
+        },
+        "langues": {
+          "q": "Which languages is Jamii in?",
+          "r": "French and English. The assistant answers in the language of the person writing to it."
+        },
+        "donnees": {
+          "q": "What happens to my data?",
+          "r": "We collect the minimum. From your profile, you can export all your data or delete your account, at any time."
+        }
+      }
+    },
+    "appel": {
+      "titre": "Where do you want to start?",
+      "dev": {
+        "qui": "Developer",
+        "titre": "I build",
+        "texte": "Create your profile from your repositories, find a team and put your projects online.",
+        "action": "Sign in",
+        "actionConnecte": "See my profile"
+      },
+      "besoin": {
+        "qui": "Small business, association, shop",
+        "titre": "I have a need",
+        "texte": "Describe it in your own words. The assistant turns it into a plan, and developers can answer it.",
+        "action": "Describe my need"
+      }
+    },
+    "fonctionnalites": {
+      "surtitre": "Features",
+      "titre": "Everything you need to build together",
+      "intro": "Each part of Jamii answers a moment in a project's life: introduce yourself, find help, form a team, and show the result.",
+      "communautes": {
+        "titre": "Communities that help each other",
+        "texte": "Join a community or create your own. Ask your question in a room, and mark the answer that helped you so it serves the next person.",
+        "points": [
+          "Discussion rooms",
+          "Questions and answers",
+          "Accepted answer"
+        ],
+        "lien": "See communities"
+      },
+      "cercles": {
+        "titre": "Circles",
+        "texte": "4 to 6 developers take turns building each member's project. At each turn, the whole circle helps one member move forward.",
+        "points": [
+          "4 to 6 members",
+          "One turn per project"
+        ],
+        "lien": "See circles"
+      },
+      "assistant": {
+        "titre": "An assistant for your need",
+        "texte": "Describe your need in your own words. The assistant turns it into a specification, milestones and tasks, and says which roles are still missing.",
+        "points": [
+          "Specification",
+          "Milestones and tasks",
+          "Roles to find"
+        ],
+        "lien": "Describe my need"
+      },
+      "vitrine": {
+        "titre": "The showcase of live projects",
+        "texte": "The projects the community has put online, with their team. Jamii checks that each link responds before showing it.",
+        "points": [
+          "Verified link",
+          "The team and its countries"
+        ],
+        "lien": "See the showcase",
+        "enLigne": "Online"
+      },
+      "profil": {
+        "titre": "A profile that proves",
+        "texte": "No CV: your profile shows your repositories, your live projects and your teammates' reviews, on a skills map.",
+        "points": [
+          "Skills map",
+          "GitHub repositories",
+          "Teammates' reviews"
+        ],
+        "lien": "See my profile"
+      },
+      "messages": {
+        "titre": "Messages and notifications",
+        "texte": "Write to a teammate, keep your contacts, and get notified of what concerns you: a proposal, an invitation, an application.",
+        "points": [
+          "Messages",
+          "Contacts",
+          "Notifications"
+        ],
+        "lien": "Open my messages"
+      }
+    },
+    "sectionCercles": {
+      "surtitre": "Tech Tontine",
+      "titre": "Circles: an African tradition, adapted to software",
+      "intro": "Take turns building each member's project. 4 to 6 developers commit together: at each turn, the whole circle builds one member's project.",
+      "histoire": {
+        "accroche": "A tontine is not only about money.",
+        "tradition": "The tontine is known all over the continent. A group pools money and, at each turn, one of its members receives the whole amount.",
+        "esprit": "But look closer: what holds a tontine together is the gathering. Neighbours, colleagues and friends meet, talk, share their news and support each other. Money sets the rhythm; the community is the real goal.",
+        "jamii": "Jamii wants to bring African developers together, so it was natural to start from this spirit of sharing. In a circle, we don't pool money, we pool work."
+      },
+      "paralleles": {
+        "tontine": "In a tontine",
+        "cercle": "In a circle",
+        "part": {
+          "titre": "Everyone brings their share",
+          "tontine": "Each member gives money, on a fixed date.",
+          "cercle": "Each member gives time and skills."
+        },
+        "tour": {
+          "titre": "Everyone gets a turn",
+          "tontine": "At each turn, one member receives what the group gathered.",
+          "cercle": "At each turn, the whole circle builds one member's project."
+        },
+        "ensemble": {
+          "titre": "We move forward together",
+          "tontine": "People meet, talk and help each other.",
+          "cercle": "We learn from each other, turn after turn."
+        }
+      },
+      "titreEtapes": "How a circle works",
+      "etapes": {
+        "1": {
+          "titre": "Form a circle",
+          "texte": "Create a circle or join one. It brings together 4 to 6 developers who commit together."
+        },
+        "2": {
+          "titre": "Submit your idea",
+          "texte": "Each member submits the idea of the project they want built during their turn."
+        },
+        "3": {
+          "titre": "Draw the order",
+          "texte": "The order of turns is drawn at random by Jamii: nobody chooses who goes first."
+        },
+        "4": {
+          "titre": "Build, turn after turn",
+          "texte": "The whole circle builds the turn's project, then delivers it. The Griot, the assistant that plans and sums up the turn, helps things move."
+        }
+      },
+      "voir": "See circles",
+      "creer": "Create a circle"
+    }
   },
   "profil": {
     "titre": "Profile",
@@ -92,7 +381,7 @@
       "regenerer": "Update from GitHub",
       "enCours": "Reading your GitHub repositories…",
       "prive": "Your profile stays private until you publish it.",
-      "sansGithub": "Your account is not linked to GitHub. Sign in with GitHub to generate your profile.",
+      "sansGithub": "Your account is not linked to GitHub yet. Link it to generate your skills card from your public repositories.",
       "tropSouvent": "You have already updated your profile several times this hour. Try again a little later.",
       "erreurs": {
         "github_indisponible": "GitHub is not responding right now. Your previous profile is kept: try again in a few minutes.",
@@ -103,6 +392,15 @@
         "sujets": "The topics of your repositories",
         "etoiles": "The stars of your repositories",
         "jamais": "Never your private repositories"
+      },
+      "relier": "Link my GitHub",
+      "relie": "Your GitHub is linked. You can generate your skills card.",
+      "erreursLien": {
+        "github_deja_utilise": "This GitHub is already linked to another Jamii account. Sign in with GitHub to find that account.",
+        "compte_deja_relie": "Your account is already linked to another GitHub.",
+        "refus_github": "You declined access on GitHub: nothing was linked.",
+        "requete_invalide": "Linking with GitHub expired. Try again.",
+        "github_indisponible": "GitHub is not responding right now. Try again in a moment."
       }
     },
     "disponibilite": {
@@ -246,7 +544,8 @@
       "decouvrir": "Discover Jamii",
       "invitationTitre": "Show what you can do, too.",
       "invitationTexte": "On Jamii, projects you launch with a team become proof.",
-      "rejoindre": "Create my profile"
+      "rejoindre": "Create my profile",
+      "nonPublie": "{nom} hasn't published their profile yet. You can already message them."
     }
   },
   "etat": {
@@ -269,7 +568,7 @@
       "mois": "Last 30 days",
       "tout": "Since the start"
     },
-    "surDatacloud": "projects online on DataCloud",
+    "surDatacloud": "Projects online on DataCloud",
     "partDatacloud": "{part}% of online projects are hosted on DataCloud",
     "inscrits": "Members",
     "projetsCrees": "Projects created",
@@ -305,7 +604,14 @@
       "systaone": "SystaONE",
       "hebergement": "Hosting and online shop",
       "email": "Professional e-mail",
-      "domaines": "Domain names"
+      "domaines": "Domain names",
+      "boutique-en-ligne": "Online shop",
+      "email-professionnel": "Business email",
+      "nom-de-domaine": "Domain name",
+      "datacloud-application": "DataCloud · app",
+      "datacloud-base-de-donnees": "DataCloud · database",
+      "datacloud-stockage": "DataCloud · storage",
+      "datacloud-serveur": "DataCloud · server"
     },
     "tendances": {
       "titre": "Market trends",
@@ -320,7 +626,8 @@
       "competence": "Skill",
       "demandes": "Needs",
       "profils": "Profiles",
-      "autres": "Others"
+      "autres": "Others",
+      "legende": "In red: fewer profiles than needs."
     },
     "clients": {
       "titre": "Clients who want to be followed",
@@ -343,7 +650,8 @@
     "reserve": {
       "titre": "For the Systalink team only",
       "texte": "This space shows Systalink what Jamii brings them. If you are on the Systalink team, ask the Jamii team to add your account."
-    }
+    },
+    "dontDatacloud": "{n} on DataCloud"
   },
   "vitrine": {
     "titre": "Showcase",
@@ -770,7 +1078,8 @@
         "lire": "Reading what you wrote",
         "chercher": "Looking for what already exists",
         "preparer": "Preparing your options"
-      }
+      },
+      "publierMission": "Publish as a mission"
     },
     "priorites": {
       "indispensable": "Must have",
@@ -784,7 +1093,10 @@
       "education": "Education",
       "agriculture": "Agriculture",
       "association": "Non-profit",
-      "autre": "Other"
+      "autre": "Other",
+      "transport": "Transport",
+      "finance": "Finance",
+      "administration": "Public sector"
     },
     "offres": {
       "libelle": "Receive Systalink offers tailored to my project",
@@ -888,6 +1200,17 @@
     "avancement": "Turn progress",
     "taches": "{faites} of {total} tasks",
     "joursRestants": "last day | 1 day left | {n} days left",
+    "tachesTour": {
+      "titre": "The turn's tasks",
+      "aucune": "No tasks yet. Break the project into small tasks: everyone picks the one they want.",
+      "nouvelle": "A new task (for example: sign-in screen)",
+      "ajouter": "Add",
+      "prendre": "I'll take it",
+      "lacher": "Drop it",
+      "prisePar": "Taken by {nom}",
+      "erreur": "The task couldn't be saved. Try again.",
+      "concurrente": "Someone changed this task in the meantime: the list is up to date, try again."
+    },
     "depot": "The project repository",
     "avantTirage": "The turn order has not been drawn yet.",
     "avantTirageAide": "The circle is full. | 1 more member is needed. | {n} more members are needed.",
@@ -915,7 +1238,7 @@
     "ideeAide": "Who it is for and what it should do. The circle builds it during your turn.",
     "enregistrerIdee": "Save my idea",
     "tirer": "Draw the turn order",
-    "tirageAide": "Possible once the circle is full and everyone has shared an idea. The server draws the order once.",
+    "tirageAide": "Any member can start it once the circle is full and everyone has shared an idea. The server draws at random, only once.",
     "erreurs": {
       "cercle_complet": "The circle is already full.",
       "deja_membre": "You are already in this circle.",
@@ -927,15 +1250,42 @@
     },
     "nouveau": {
       "titre": "Create a circle",
-      "intro": "You will be its first member. Others join, everyone shares an idea, then you draw the turn order.",
       "nom": "Circle name",
-      "nomAide": "For example, Dakar circle.",
-      "ville": "City",
       "taille": "How many of you?",
       "personnes": "{n} people",
-      "tailleAide": "{n} two-week turns: everyone gets their project built.",
       "creer": "Create the circle",
-      "duBesoin": "Once the circle is created, you can invite {noms} in one click."
+      "duBesoin": "Once the circle is created, you can invite {noms} in one click.",
+      "etape": "Step {n} of {total}",
+      "suivant": "Continue",
+      "retour": "Back",
+      "entree": "Enter ↵ to continue",
+      "nomExemple": "Ubuntu Circle",
+      "inspirations": "For inspiration:",
+      "q": {
+        "nom": "What is your circle called?",
+        "nomAide": "A short name others will recognise. You can invite developers from all over the continent: the circle works online.",
+        "taille": "How many of you will there be?",
+        "tailleAide": "Including you. Every member gets a turn: for two weeks, the whole circle builds their project.",
+        "apercu": "Ready to launch “{nom}”?"
+      },
+      "duree": "{semaines} weeks in total",
+      "promesses": {
+        "membre": "You are its first member.",
+        "idees": "{n} people join, and each one submits a project idea.",
+        "tirage": "Once the circle is full, you draw the turn order at random.",
+        "tours": "{n} two-week turns: everyone leaves with their project built."
+      },
+      "apercu": "Circle preview",
+      "places": "{n} places left to fill.",
+      "tailleAVenir": "Choose how many of you there will be.",
+      "etapes": {
+        "nom": "The name",
+        "taille": "How many",
+        "apercu": "How it works"
+      },
+      "succes": "“{nom}” is created!",
+      "succesAide": "Now invite the {n} other members.",
+      "entrer": "Enter the circle"
     },
     "membresTitre": "Members",
     "livrer": "Deliver the turn",
@@ -975,7 +1325,8 @@
       "voir": "See the post",
       "erreur": "The post wasn't published. Try again.",
       "aucuneCommunaute": "Join a community first to post there.",
-      "carte": "Tech Tontine circle"
+      "carte": "Tech Tontine circle",
+      "contenuSansVille": "We take turns building each member's project, online. There is still room: join us here {lien}"
     },
     "code": {
       "titre": "The turn's code",
@@ -994,6 +1345,107 @@
         "fusionnee": "Merged",
         "fermee": "Closed"
       }
+    },
+    "sousTitreSansVille": "{n} members",
+    "onglets": {
+      "aria": "The circle and its room",
+      "cercle": "The circle",
+      "salon": "Room"
+    },
+    "salon": {
+      "titre": "The circle's room",
+      "contexteAvant": "Before the draw · {n} of {taille} members. Get to know each other and sharpen your ideas.",
+      "contexteTour": "Turn {n} · {titre}",
+      "contexteJour": "day {jour} of 14 · {faites}/{total} tasks",
+      "contexteTermine": "The circle is complete. Well done, everyone!",
+      "pointsAria": "Members, and who posted their daily check-in",
+      "pointsCompte": "{n} of {total} posted their check-in today",
+      "aFaitSonPoint": "{nom} posted their check-in today",
+      "lancerAppel": "Start a circle call",
+      "appelEnCours": "Call in progress · started by {nom} {quand}",
+      "rejoindre": "Join",
+      "terminer": "End",
+      "aLanceAppel": "started a circle call",
+      "appelTermine": "Call ended",
+      "coupsTitre": "A member needs a hand | {n} members need a hand",
+      "aider": "I can help",
+      "regle": "It's sorted",
+      "fil": "The circle's messages",
+      "vide": "Nothing yet. Start the conversation!",
+      "aujourdhui": "today",
+      "hier": "yesterday",
+      "quelquun": "Someone",
+      "evenements": {
+        "cercle_cree": "{nom} created the circle",
+        "membre_rejoint": "{nom} joined the circle",
+        "tirage": "{nom} ran the draw: the turn order is set",
+        "tour_ouvert": "Turn {n} begins: over to {nom}'s project",
+        "tour_livre": "Turn {n} is delivered: well done on {nom}'s project",
+        "cercle_termine": "Every turn is delivered: the circle is complete"
+      },
+      "sonPoint": "Daily check-in",
+      "fait": "Done",
+      "prevu": "Next",
+      "bloque": "Blocked",
+      "bloqueFacultatif": "Blocked (optional)",
+      "faitAide": "What you did since your last check-in",
+      "prevuAide": "What you're doing next",
+      "bloqueAide": "What's blocking you, if anything",
+      "demandeTitre": "Needs a hand",
+      "reglee": "Sorted",
+      "regleePar": "Sorted thanks to {nom}",
+      "nouveaux": "1 new message | {n} new messages",
+      "coupe": "Connection lost, retrying…",
+      "modes": "What you want to tell the circle",
+      "modeTexte": "Message",
+      "modePoint": "My check-in",
+      "modeBloque": "I'm stuck",
+      "pointFaitAujourdhui": "You've already posted your check-in today. See you tomorrow!",
+      "placeholder": "Write to the circle…",
+      "bloquePlaceholder": "What are you stuck on? Be specific: the circle will help you faster.",
+      "aideEntree": "Enter to send, Shift + Enter for a new line",
+      "envoyer": "Send",
+      "envoyerPoint": "Share my check-in",
+      "envoyerBloque": "Ask for a hand",
+      "erreurs": {
+        "envoi": "The message didn't go through. Try again.",
+        "pointDejaFait": "You've already posted your check-in today.",
+        "trop": "Too many messages at once. Wait a moment.",
+        "tropAppels": "Too many calls started in an hour. Try again later."
+      }
+    },
+    "tableau": {
+      "aria": "Turn dashboard",
+      "toutes": "All tasks",
+      "aucune": "There are no tasks for this turn yet. Add the first one to organize the team's work.",
+      "nouvelle": "New task",
+      "exemple": "E.g. build the home page",
+      "responsable": "Owner",
+      "nonAttribuee": "Unassigned",
+      "etat": "Status",
+      "ajouter": "Add task",
+      "statut": { "a_faire": "To do", "en_cours": "In progress", "livree": "Delivered" },
+      "pasDeTour": "The dashboard opens with the first turn, after the draw.",
+      "avancement": "Turn progress",
+      "miennes": "My tasks",
+      "aucuneMienne": "You haven't taken a task yet. Pick one from the open tasks.",
+      "aucuneMienneSansTaches": "Tasks you take will appear here.",
+      "libres": "Open tasks",
+      "etAutres": "and {n} more in the “The circle” tab",
+      "equipe": "The team",
+      "livrees": "{n}/{total} tasks delivered",
+      "pointFait": "checked in",
+      "ecrire": "Message"
+    },
+    "repartition": {
+      "intro": "Ayo can suggest who takes what, based on everyone’s skills and current workload.",
+      "demander": "Ayo, suggest a split",
+      "parCompetences": "For their skills: {competences}",
+      "parCharge": "No task in progress: the work gets shared | {n} task in progress, the least busy | {n} tasks in progress, the least busy",
+      "confier": "Assign",
+      "toutConfier": "Assign all as suggested",
+      "rien": "Every task already has someone.",
+      "note": "A suggestion computed from profiles: nothing is assigned without your click. This round's beneficiary is never picked."
     }
   },
   "reseau": {
@@ -1071,7 +1523,15 @@
       "membre_rejoint": "{nom} joined “{cercle}”.",
       "tirage_effectue": "The turn order of “{cercle}” has been drawn.",
       "tour_livre": "A turn of “{cercle}” has been delivered.",
-      "cercle_recommande": "“{cercle}” needs your profile."
+      "cercle_recommande": "“{cercle}” needs your profile.",
+      "proposition_recue": "{nom} offered their services for your mission.",
+      "devis_recu": "{nom} sent you a quote.",
+      "mission_attribuee": "{nom} picked you for their mission.",
+      "candidature_recue": "{nom} applied to your hackathon.",
+      "candidature_acceptee": "Your application to a hackathon is accepted.",
+      "candidature_refusee": "Your application to a hackathon was not selected.",
+      "candidature_attente": "You are on a hackathon's waiting list.",
+      "invitation_equipe": "{nom} added you to their hackathon team."
     },
     "contacts": {
       "recues": "Requests received",
@@ -1088,6 +1548,31 @@
         "envoyee": "Request sent",
         "accepte": "In your contacts"
       }
+    },
+    "discussion": {
+      "aujourdhui": "Today",
+      "hier": "Yesterday",
+      "appeler": "Call {nom}",
+      "appelImpossible": "The call could not be started. Try again.",
+      "tuAppelles": "You started a call",
+      "tAppelle": "{nom} is calling you",
+      "enCours": "Ongoing",
+      "termine": "Call ended",
+      "rejoindre": "Join",
+      "lu": "Read",
+      "envoye": "Sent",
+      "aideClavier": "Enter to send, Shift + Enter for a new line."
+    },
+    "profil": {
+      "ecrire": "Message {nom}",
+      "enContact": "Connected",
+      "contact": {
+        "aucun": "Add to contacts",
+        "envoyee": "Request sent · cancel",
+        "recue": "Accept their request",
+        "accepte": "Connected"
+      },
+      "voir": "View {nom}'s profile"
     }
   },
   "hackathons": {
@@ -1212,7 +1697,16 @@
         "limite_atteinte": "You have already published 3 hackathons today. Try again tomorrow.",
         "validation": "Something is missing: check the code of conduct and the dates.",
         "autre": "The action did not go through. Try again in a moment."
-      }
+      },
+      "aNoter": "{n} project left to score | {n} projects left to score",
+      "toutNote": "All projects are scored",
+      "noter": "Score the projects",
+      "noterCourt": "Score",
+      "candidature": {
+        "en_attente": "Your application is waiting for the organiser.",
+        "attente": "You're on the waiting list."
+      },
+      "voirCandidature": "See"
     },
     "inscription": {
       "titre": "Take part",
@@ -1232,6 +1726,16 @@
         "etat_invalide": "This hackathon is not accepting registrations right now.",
         "validation": "The team name must be between 2 and 60 characters.",
         "autre": "Registration did not go through. Try again in a moment."
+      },
+      "candidature": {
+        "en_attente": {
+          "titre": "Application sent",
+          "aide": "The organiser picks the participants. Come back here to see the answer."
+        },
+        "attente": {
+          "titre": "You're on the waiting list",
+          "aide": "The organiser kept your application without declining it. Come back here to see the answer."
+        }
       }
     },
     "equipes": {
@@ -1370,7 +1874,7 @@
       "classement": "Ranking",
       "rang": "#{rang} | #{rang}",
       "voir": "See {titre}",
-      "retours": "Jury feedback:",
+      "retours": "Jury feedback ({n})",
       "exAequo": "tied",
       "score": "{score} / 5"
     },
@@ -1451,7 +1955,8 @@
       "aucuneQuestion": "No questions waiting. Ask the first one!",
       "salonsTitre": "Channels",
       "rejoindre": "Join the community",
-      "voir": "See the community"
+      "voir": "See the community",
+      "espaceDisparu": "This community is no longer available. The organisers can open another one."
     },
     "onglets": {
       "titre": "Hackathon sections",
@@ -1515,7 +2020,14 @@
         "visibilite": "Choose who can see the mission.",
         "autre": "This field is not valid."
       },
-      "erreur": "The mission could not be saved. Try again in a moment."
+      "erreur": "The mission could not be saved. Try again in a moment.",
+      "depuisDemande": {
+        "note": "Prefilled from your request \"{titre}\". Review it and fix what needs fixing: nobody sees it until you publish it.",
+        "objectifs": "Goals",
+        "indispensables": "Must-have features",
+        "utiles": "Useful features",
+        "horsPerimetre": "Out of scope"
+      }
     },
     "detail": {
       "retour": "All missions",
@@ -1551,7 +2063,15 @@
       },
       "candidatEnAttente": "You offered your services: the client hasn't chosen yet.",
       "candidatRetenu": "Your proposal was selected: send your quote to the client.",
-      "voirMaProposition": "See my proposal"
+      "voirMaProposition": "See my proposal",
+      "prochaine": "Next step",
+      "etapeSuivante": {
+        "verifier": "Review milestone {n}",
+        "payer": "Pay milestone {n}",
+        "livrer": "Deliver milestone {n}",
+        "recevoir": "Confirm payment for milestone {n}"
+      },
+      "voirJalon": "See the milestone"
     },
     "suivi": {
       "titre": "The work",
@@ -1619,7 +2139,8 @@
         "validation": "A field is not valid. Check what you wrote.",
         "interdit": "You are not allowed to do this.",
         "autre": "The action did not go through. Try again in a moment."
-      }
+      },
+      "enRetard": "Late"
     },
     "fin": {
       "annulation": {
@@ -1768,16 +2289,110 @@
       "ecrire": "Write to {nom}",
       "envoyer": "Send",
       "ecrireClient": "Write to the client",
-      "prudence": "Keep your messages and payments on Jamii: if there's a disagreement, that's what counts.",
+      "prudence": "Keep your messages on Jamii, and record your payments here: if there's a disagreement, that's what counts.",
       "erreurs": {
         "trop": "Too many messages at once. Try again in a moment.",
         "autre": "The message wasn't sent. Try again."
       },
-      "fermer": "Close messages"
+      "fermer": "Close messages",
+      "vide": "No messages with {nom} yet."
     }
   },
   "themes": {
     "passerClair": "Switch to light theme",
     "passerSombre": "Switch to dark theme"
+  },
+  "questionnaire": {
+    "types": {
+      "texte_court": "Short answer",
+      "texte_long": "Paragraph",
+      "choix_unique": "Single choice",
+      "choix_multiples": "Multiple choice",
+      "oui_non": "Yes or no"
+    },
+    "editeur": {
+      "titre": "Your questions",
+      "aide": {
+        "hackathon": "Asked to everyone who registers. You read the answers in “Management” to sort applications.",
+        "mission": "Asked to every developer who offers their services. You read the answers on each proposal."
+      },
+      "fige": "People have already answered: the questions can no longer change, so their answers keep their meaning.",
+      "intitule": "Question {n}",
+      "intitulePlaceholder": "Write your question",
+      "type": "Answer type",
+      "obligatoire": "Required answer",
+      "aideQuestion": "Hint (optional)",
+      "aidePlaceholder": {
+        "texte_court": "E.g. a public link that opens without an account",
+        "texte_long": "E.g. a few sentences are enough",
+        "choix_unique": "E.g. pick the one closest to you",
+        "choix_multiples": "E.g. tick everything that applies",
+        "oui_non": "E.g. answer for today, not for later"
+      },
+      "choix": "Possible choices ({min} to {max})",
+      "choixN": "Choice {n}",
+      "ajouterChoix": "+ Add a choice",
+      "retirerChoix": "Remove choice {n}",
+      "monter": "Move question {n} up",
+      "descendre": "Move question {n} down",
+      "retirer": "Remove",
+      "vide": "No questions yet. Add one, or start from a template.",
+      "modeles": "Start from a template:",
+      "ajouter": "+ Blank question",
+      "plein": "{max} questions at most: remove one to add another."
+    },
+    "modeles": {
+      "lien": {
+        "court": "GitHub or portfolio link",
+        "intitule": "Your GitHub or portfolio link"
+      },
+      "niveau": {
+        "court": "Level",
+        "intitule": "Your level in the challenge's technology",
+        "choix": "Beginner;Comfortable;Expert"
+      },
+      "disponibilites": {
+        "court": "Availability",
+        "intitule": "When are you available?",
+        "choix": "Weekday evenings;Weekends;Daytime"
+      },
+      "motivation": {
+        "court": "Motivation",
+        "intitule": "Why do you want to take part?"
+      },
+      "experience": {
+        "court": "Experience",
+        "intitule": "Have you already delivered a project like this?"
+      },
+      "deplacement": {
+        "court": "Travel",
+        "intitule": "Can you come to our place if needed?"
+      }
+    },
+    "erreurs": {
+      "intitule": "Write the question (at least 3 characters).",
+      "choix": "Give at least two choices.",
+      "doublon": "Two choices are the same."
+    },
+    "remplir": {
+      "titre": "The organisers' questions",
+      "titreMission": "The client's questions",
+      "obligatoire": "required",
+      "oui": "Yes",
+      "non": "No",
+      "manquantes": "One required answer is missing. | {n} required answers are missing.",
+      "erreurs": {
+        "obligatoire": "This answer is required.",
+        "trop_long": "This answer is too long.",
+        "valeur_inconnue": "This choice doesn't exist: reload the page.",
+        "autre": "This answer isn't valid."
+      }
+    },
+    "reponses": {
+      "titre": "Answers to the questions",
+      "aucune": "No answer",
+      "voir": "See the answers",
+      "masquer": "Hide the answers"
+    }
   }
 }

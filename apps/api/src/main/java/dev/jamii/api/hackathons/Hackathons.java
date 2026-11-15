@@ -1,5 +1,6 @@
 package dev.jamii.api.hackathons;
 
+import dev.jamii.api.questionnaires.Questionnaire;
 import java.nio.charset.StandardCharsets;
 import java.sql.Array;
 import java.sql.ResultSet;
@@ -51,7 +52,8 @@ class Hackathons {
 
 	record Hackathon(UUID id, UUID organisateurId, String titre, String theme, String description, String lieu, String ville,
 			Calendrier calendrier, int tailleMin, int tailleMax, String modeInscription, boolean deploiementObligatoire,
-			String codeDeConduite, List<String> questions, String statutBase, int version, Instant creeLe,
+			String codeDeConduite, List<String> questions, List<Questionnaire.Question> questionnaire, String statutBase, int version,
+			Instant creeLe,
 			List<Critere> criteres, List<Prix> prix) {
 
 		/** Le statut tel que la personne le voit, calculé du calendrier à l'instant `maintenant`. */
@@ -67,11 +69,14 @@ class Hackathons {
 
 	}
 
-	/** Un hackathon, et ce que la personne qui le lit est pour lui : `organisateur`, `jure`, `participant` (avec son équipe) ou `visiteur`. */
-	record Lecture(Hackathon hackathon, String role, UUID equipeId) {
+	/**
+	 * Un hackathon, et ce que la personne qui le lit est pour lui : `organisateur`, `jure`, `participant` (avec son équipe)
+	 * ou `visiteur`. `inscription` est le statut de son inscription (`en_attente`, `acceptee` ou `attente`), `null` si elle n'en a pas.
+	 */
+	record Lecture(Hackathon hackathon, String role, UUID equipeId, String inscription) {
 
 		Lecture(Hackathon hackathon, String role) {
-			this(hackathon, role, null);
+			this(hackathon, role, null, null);
 		}
 
 	}
@@ -79,7 +84,7 @@ class Hackathons {
 	/** Un hackathon nouveau, déjà validé par le contrôleur. */
 	record Nouveau(String titre, String theme, String description, String lieu, String ville, Calendrier calendrier,
 			int tailleMin, int tailleMax, String modeInscription, boolean deploiementObligatoire, String codeDeConduite,
-			List<String> questions, List<Critere> criteres, List<Prix> prix) {
+			List<String> questions, List<Questionnaire.Question> questionnaire, List<Critere> criteres, List<Prix> prix) {
 	}
 
 	/**
@@ -88,7 +93,7 @@ class Hackathons {
 	 */
 	record Modification(int version, Set<String> presents, String titre, String theme, String description, String lieu,
 			String ville, Calendrier calendrier, Boolean deploiementObligatoire, String codeDeConduite, List<String> questions,
-			List<Critere> criteres, List<Prix> prix) {
+			List<Questionnaire.Question> questionnaire, List<Critere> criteres, List<Prix> prix) {
 	}
 
 	record Page(List<Hackathon> elements, String curseurSuivant) {
@@ -102,7 +107,7 @@ class Hackathons {
 	private static final String COLONNES = """
 			id, organisateur_id, titre, theme, description, lieu, ville, inscriptions_ouvertes_le, inscriptions_fermees_le,
 			debut_le, fin_rendus_le, resultats_le, taille_min, taille_max, mode_inscription, deploiement_obligatoire,
-			code_de_conduite, questions, statut_base, version, cree_le""";
+			code_de_conduite, questions, questionnaire, statut_base, version, cree_le""";
 
 	private final JdbcClient base;
 
@@ -123,9 +128,9 @@ class Hackathons {
 		base.sql("""
 				INSERT INTO hackathon (id, organisateur_id, titre, theme, description, lieu, ville, inscriptions_ouvertes_le,
 					inscriptions_fermees_le, debut_le, fin_rendus_le, resultats_le, taille_min, taille_max, mode_inscription,
-					deploiement_obligatoire, code_de_conduite, questions, cree_le)
+					deploiement_obligatoire, code_de_conduite, questions, questionnaire, cree_le)
 				VALUES (:id, :orga, :titre, :theme, :description, :lieu, :ville, :ouvertes, :fermees, :debut, :fin, :resultats,
-					:tmin, :tmax, :mode, :deploiement, :code, :questions, :maintenant)
+					:tmin, :tmax, :mode, :deploiement, :code, :questions, CAST(:questionnaire AS jsonb), :maintenant)
 				""")
 			.param("id", id).param("orga", organisateur).param("titre", n.titre()).param("theme", n.theme())
 			.param("description", n.description()).param("lieu", n.lieu()).param("ville", n.ville(), java.sql.Types.VARCHAR)
@@ -135,6 +140,7 @@ class Hackathons {
 			.param("resultats", Timestamp.from(n.calendrier().resultatsLe())).param("tmin", n.tailleMin())
 			.param("tmax", n.tailleMax()).param("mode", n.modeInscription()).param("deploiement", n.deploiementObligatoire())
 			.param("code", n.codeDeConduite(), java.sql.Types.VARCHAR).param("questions", n.questions().toArray(String[]::new))
+			.param("questionnaire", Questionnaire.enJson(n.questionnaire()))
 			.param("maintenant", Timestamp.from(maintenant()))
 			.update();
 		remplacerCriteres(id, n.criteres());
@@ -228,6 +234,11 @@ class Hackathons {
 		if ("publie".equals(statut) && m.presents().contains("criteres")) {
 			throw ErreurHackathons.conflit("etat_invalide", "Les critères ne changent plus une fois le hackathon publié");
 		}
+		// Les réponses déjà données gardent leur sens : on ne change plus les questions une fois quelqu'un inscrit.
+		if (m.presents().contains("questionnaire") && !m.questionnaire().equals(h.questionnaire())
+				&& base.sql("SELECT EXISTS (SELECT 1 FROM inscription WHERE hackathon_id = :h)").param("h", id).query(Boolean.class).single()) {
+			throw ErreurHackathons.conflit("questionnaire_fige", "Des personnes se sont déjà inscrites : le questionnaire ne change plus");
+		}
 		Calendrier calendrier = m.presents().contains("calendrier") ? m.calendrier() : h.calendrier();
 		if (!calendrier.ordonne()) {
 			throw ErreurHackathons.validation("calendrier", "dates_dans_le_desordre");
@@ -236,7 +247,7 @@ class Hackathons {
 				UPDATE hackathon SET titre = :titre, theme = :theme, description = :description, lieu = :lieu, ville = :ville,
 				  inscriptions_ouvertes_le = :ouvertes, inscriptions_fermees_le = :fermees, debut_le = :debut,
 				  fin_rendus_le = :fin, resultats_le = :resultats, deploiement_obligatoire = :deploiement,
-				  code_de_conduite = :code, questions = :questions, version = version + 1
+				  code_de_conduite = :code, questions = :questions, questionnaire = CAST(:questionnaire AS jsonb), version = version + 1
 				WHERE id = :id
 				""")
 			.param("titre", m.presents().contains("titre") ? m.titre() : h.titre())
@@ -251,6 +262,7 @@ class Hackathons {
 			.param("deploiement", m.presents().contains("deploiementObligatoire") ? m.deploiementObligatoire() : h.deploiementObligatoire())
 			.param("code", m.presents().contains("codeDeConduite") ? m.codeDeConduite() : h.codeDeConduite(), java.sql.Types.VARCHAR)
 			.param("questions", (m.presents().contains("questions") ? m.questions() : h.questions()).toArray(String[]::new))
+			.param("questionnaire", Questionnaire.enJson(m.presents().contains("questionnaire") ? m.questionnaire() : h.questionnaire()))
 			.param("id", id)
 			.update();
 		if (m.presents().contains("criteres")) {
@@ -342,17 +354,20 @@ class Hackathons {
 			return Optional.empty();
 		}
 		if (moi != null) {
-			var inscrit = base.sql("SELECT equipe_id FROM inscription WHERE hackathon_id = :h AND utilisateur_id = :u AND statut <> 'refusee'")
-				.param("h", h.id()).param("u", moi).query((rs, i) -> Optional.ofNullable(rs.getObject("equipe_id", UUID.class))).optional();
-			UUID equipe = inscrit.flatMap(e -> e).orElse(null);
+			record Mienne(UUID equipeId, String statut) {
+			}
+			var inscrit = base.sql("SELECT equipe_id, statut FROM inscription WHERE hackathon_id = :h AND utilisateur_id = :u AND statut <> 'refusee'")
+				.param("h", h.id()).param("u", moi).query((rs, i) -> new Mienne(rs.getObject("equipe_id", UUID.class), rs.getString("statut"))).optional();
+			UUID equipe = inscrit.map(Mienne::equipeId).orElse(null);
+			String statutInscription = inscrit.map(Mienne::statut).orElse(null);
 			// Un juré peut aussi être inscrit : il reste juré, et ne note pas le projet de son équipe.
 			boolean jure = base.sql("SELECT 1 FROM jure WHERE hackathon_id = :h AND utilisateur_id = :u").param("h", h.id()).param("u", moi)
 				.query(Integer.class).optional().isPresent();
 			if (jure) {
-				return Optional.of(new Lecture(h, "jure", equipe));
+				return Optional.of(new Lecture(h, "jure", equipe, statutInscription));
 			}
 			if (inscrit.isPresent()) {
-				return Optional.of(new Lecture(h, "participant", equipe));
+				return Optional.of(new Lecture(h, "participant", equipe, statutInscription));
 			}
 		}
 		return Optional.of(new Lecture(h, "visiteur"));
@@ -383,7 +398,7 @@ class Hackathons {
 			.param("id", id).query(Hackathons::hackathon).optional().orElseThrow(ErreurHackathons::introuvable);
 		return new Hackathon(h.id(), h.organisateurId(), h.titre(), h.theme(), h.description(), h.lieu(), h.ville(), h.calendrier(),
 				h.tailleMin(), h.tailleMax(), h.modeInscription(), h.deploiementObligatoire(), h.codeDeConduite(), h.questions(),
-				h.statutBase(), h.version(), h.creeLe(), criteres(id), prix(id));
+				h.questionnaire(), h.statutBase(), h.version(), h.creeLe(), criteres(id), prix(id));
 	}
 
 	private List<Critere> criteres(UUID hackathon) {
@@ -436,7 +451,7 @@ class Hackathons {
 						rs.getTimestamp("fin_rendus_le").toInstant(), rs.getTimestamp("resultats_le").toInstant()),
 				rs.getInt("taille_min"), rs.getInt("taille_max"), rs.getString("mode_inscription"),
 				rs.getBoolean("deploiement_obligatoire"), rs.getString("code_de_conduite"),
-				List.of((String[]) questions.getArray()), rs.getString("statut_base"), rs.getInt("version"),
+				List.of((String[]) questions.getArray()), Questionnaire.questions(rs.getString("questionnaire")), rs.getString("statut_base"), rs.getInt("version"),
 				rs.getTimestamp("cree_le").toInstant(), List.of(), List.of());
 	}
 

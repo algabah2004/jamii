@@ -1,5 +1,6 @@
 package dev.jamii.api.hackathons;
 
+import dev.jamii.api.questionnaires.Questionnaire;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -182,6 +183,11 @@ final class Corps {
 			}
 		}
 		return objets;
+	}
+
+	/** Un questionnaire personnalisé : `Questionnaire` vérifie tout, ses erreurs vont dans la même réponse. */
+	List<Questionnaire.Question> questionnaire(String champ) {
+		return Questionnaire.lire(corps.get(champ), prefixe + champ, (c, code) -> liste.add(Map.of("champ", c, "code", code)));
 	}
 
 	/** Une liste de textes (les questions posées à chaque rendu). */

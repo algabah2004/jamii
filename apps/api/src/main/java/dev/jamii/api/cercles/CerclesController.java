@@ -112,12 +112,13 @@ class CerclesController {
 	@PostMapping("/api/cercles")
 	ResponseEntity<Cercle> creer(@RequestBody CreationCercle demande, @AuthenticationPrincipal UtilisateurConnecte moi) {
 		String nom = demande.nom() == null ? "" : demande.nom().strip();
-		String ville = demande.ville() == null ? "" : demande.ville().strip();
+		// Facultative : le formulaire ne la demande plus ; une ville envoyée par un ancien client est encore vérifiée.
+		String ville = demande.ville() == null || demande.ville().isBlank() ? null : demande.ville().strip();
 		List<Map<String, String>> erreurs = new ArrayList<>();
 		if (nom.length() < 3 || nom.length() > 80) {
 			erreurs.add(Map.of("champ", "nom", "code", "longueur_invalide"));
 		}
-		if (ville.length() < 2 || ville.length() > 80) {
+		if (ville != null && (ville.length() < 2 || ville.length() > 80)) {
 			erreurs.add(Map.of("champ", "ville", "code", "longueur_invalide"));
 		}
 		if (demande.taille() == null || demande.taille() < 4 || demande.taille() > 6) {
@@ -220,7 +221,9 @@ class CerclesController {
 			.map(m -> new Tour(m.rang(), statutTour(m, cercle), personne(comptes.get(m.utilisateurId())), m.projetId(),
 					m.depotUrl() == null ? null : new Depot(m.depotFournisseur(), m.depotUrl(), m.depotCloneUrl()), m.livreLe()))
 			.toList();
-		Tirage tirage = cercle.tirageLe() == null ? null : new Tirage(cercle.tirageLe(), cercle.createurId());
+		// Qui a lancé le tirage : n'importe quel membre depuis #157 (le créateur, pour les cercles tirés avant).
+		Tirage tirage = cercle.tirageLe() == null ? null
+				: new Tirage(cercle.tirageLe(), cercle.tireParId() != null ? cercle.tireParId() : cercle.createurId());
 		return new Cercle(cercle.id(), cercle.nom(), cercle.ville(), cercle.taille(), cercle.statut(), cercle.nombreMembres(),
 				personne(comptes.get(cercle.createurId())), cercle.creeLe(), membres, tours, cercle.tourEnCours(), tirage,
 				new Moi(cercle.createurId().equals(moi), estMembre));
@@ -238,7 +241,7 @@ class CerclesController {
 				personne(comptes.get(f.createurId())), f.creeLe());
 	}
 
-	private static PersonneResume personne(Compte compte) {
+	static PersonneResume personne(Compte compte) {
 		return new PersonneResume(compte.id(), compte.nom(), compte.avatarUrl());
 	}
 
@@ -251,6 +254,11 @@ class CerclesController {
 
 	@ExceptionHandler(ErreurCercle.class)
 	ResponseEntity<ProblemDetail> erreur(ErreurCercle e) {
+		return probleme(e);
+	}
+
+	/** La réponse d'une erreur métier des cercles (partagée avec le salon du cercle). */
+	static ResponseEntity<ProblemDetail> probleme(ErreurCercle e) {
 		ProblemDetail probleme = ProblemDetail.forStatus(e.statut);
 		probleme.setType(URI.create("urn:jamii:erreur:" + e.code));
 		probleme.setTitle(e.getMessage());

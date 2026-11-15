@@ -1,5 +1,6 @@
 package dev.jamii.api.hackathons;
 
+import dev.jamii.api.questionnaires.Questionnaire;
 import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -38,7 +39,7 @@ class HackathonsController {
 	record TailleEquipe(int min, int max) {
 	}
 
-	record Moi(String role, UUID equipeId, List<String> actions) {
+	record Moi(String role, UUID equipeId, String inscription, List<String> actions) {
 	}
 
 	record HackathonResume(UUID id, String titre, String theme, String lieu, String ville, String statut, Instant debutLe,
@@ -48,7 +49,7 @@ class HackathonsController {
 	record HackathonVue(UUID id, String titre, String theme, String lieu, String ville, String statut, Instant debutLe,
 			Instant finRendusLe, PersonneResume organisateur, int nombreInscrits, String description,
 			Hackathons.Calendrier calendrier, TailleEquipe tailleEquipe, String modeInscription, boolean deploiementObligatoire,
-			String codeDeConduite, List<String> questions, List<Hackathons.Critere> criteres, List<Hackathons.Prix> prix,
+			String codeDeConduite, List<String> questions, List<Questionnaire.Question> questionnaire, List<Hackathons.Critere> criteres, List<Hackathons.Prix> prix,
 			int version, Instant creeLe, Moi moi) {
 	}
 
@@ -141,8 +142,8 @@ class HackathonsController {
 				h.calendrier().finRendusLe(), personne(h.organisateurId(), organisateur),
 				hackathons.nombresInscrits(List.of(h.id())).getOrDefault(h.id(), 0), h.description(), h.calendrier(),
 				new TailleEquipe(h.tailleMin(), h.tailleMax()), h.modeInscription(), h.deploiementObligatoire(), h.codeDeConduite(),
-				h.questions(), h.criteres(), h.prix(), h.version(), h.creeLe(),
-				new Moi(l.role(), l.equipeId(), actions(l, statut, qui, h, maintenant)));
+				h.questions(), h.questionnaire(), h.criteres(), h.prix(), h.version(), h.creeLe(),
+				new Moi(l.role(), l.equipeId(), l.inscription(), actions(l, statut, qui, h, maintenant)));
 	}
 
 	private static HackathonResume resume(Hackathons.Hackathon h, Compte organisateur, Instant maintenant, int inscrits) {
@@ -201,7 +202,7 @@ class HackathonsController {
 
 	private static Hackathons.Nouveau lireNouveau(Map<String, Object> corps) {
 		Corps c = new Corps(corps, Set.of("titre", "theme", "description", "lieu", "ville", "calendrier", "tailleEquipe", "modeInscription",
-				"deploiementObligatoire", "codeDeConduite", "questions", "criteres", "prix"));
+				"deploiementObligatoire", "codeDeConduite", "questions", "questionnaire", "criteres", "prix"));
 		String titre = c.texte("titre", 3, 120, true);
 		String theme = c.texte("theme", 2, 120, true);
 		String description = c.texte("description", 20, 8000, true);
@@ -223,16 +224,18 @@ class HackathonsController {
 		boolean deploiement = c.booleen("deploiementObligatoire", false);
 		String code = c.texte("codeDeConduite", 20, 4000, false);
 		List<String> questions = c.textes("questions", 5, 200);
+		List<Questionnaire.Question> questionnaire = c.questionnaire("questionnaire");
 		List<Hackathons.Critere> criteres = criteres(c, true);
 		List<Hackathons.Prix> prix = prix(c);
 		c.verifier();
 		return new Hackathons.Nouveau(titre, theme, description, lieu, ville, calendrier, min, max, mode, deploiement, code,
-				questions == null ? List.of() : questions, criteres, prix == null ? List.of() : prix);
+				questions == null ? List.of() : questions, questionnaire == null ? List.of() : questionnaire, criteres,
+				prix == null ? List.of() : prix);
 	}
 
 	private static Hackathons.Modification lireModification(Map<String, Object> corps) {
 		Corps c = new Corps(corps, Set.of("version", "titre", "theme", "description", "lieu", "ville", "calendrier",
-				"deploiementObligatoire", "codeDeConduite", "questions", "criteres", "prix"));
+				"deploiementObligatoire", "codeDeConduite", "questions", "questionnaire", "criteres", "prix"));
 		int version = c.entier("version", 0, Integer.MAX_VALUE, true);
 		Set<String> presents = new HashSet<>(corps.keySet());
 		presents.remove("version");
@@ -245,17 +248,19 @@ class HackathonsController {
 		Boolean deploiement = corps.containsKey("deploiementObligatoire") ? c.booleen("deploiementObligatoire", false) : null;
 		String code = c.texte("codeDeConduite", 20, 4000, false);
 		List<String> questions = c.textes("questions", 5, 200);
+		List<Questionnaire.Question> questionnaire = c.questionnaire("questionnaire");
 		List<Hackathons.Critere> criteres = criteres(c, false);
 		List<Hackathons.Prix> prix = prix(c);
 		// Un champ présent mais vide n'est pas « absent » : `titre`, `theme`, `description` et `lieu` ne se vident pas.
-		for (String obligatoire : List.of("titre", "theme", "description", "lieu", "deploiementObligatoire", "questions", "criteres", "prix")) {
+		for (String obligatoire : List.of("titre", "theme", "description", "lieu", "deploiementObligatoire", "questions", "questionnaire", "criteres", "prix")) {
 			if (corps.containsKey(obligatoire) && corps.get(obligatoire) == null) {
 				c.ajouter(obligatoire, "ne_peut_pas_etre_vide");
 			}
 		}
 		c.verifier();
 		return new Hackathons.Modification(version, presents, titre, theme, description, lieu, ville, calendrier, deploiement, code,
-				questions == null ? List.of() : questions, criteres, prix == null ? List.of() : prix);
+				questions == null ? List.of() : questions, questionnaire == null ? List.of() : questionnaire, criteres,
+				prix == null ? List.of() : prix);
 	}
 
 	private static Hackathons.Calendrier calendrier(Corps c, boolean obligatoire) {

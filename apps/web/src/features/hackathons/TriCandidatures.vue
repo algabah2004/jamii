@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { JAvatar, JBouton, JSquelette } from '../../design-system'
 import { DECISIONS, listerInscriptions, trierInscription, type Hackathon, type Inscription } from './hackathons'
+import ReponsesQuestionnaire from '../questionnaires/ReponsesQuestionnaire.vue'
 
 /*
  * Trier les candidatures, côté organisateur, quand le hackathon est sur candidature (contracts/hackathons.yaml,
@@ -65,6 +66,8 @@ async function decider(inscription: Inscription, statut: (typeof DECISIONS)[numb
               <p class="statut" data-test="statut-candidature">{{ t(`hackathons.tri.statuts.${i.statut}`) }}</p>
             </div>
           </div>
+          <!-- Les réponses au questionnaire : ce qui aide le plus à trier. -->
+          <ReponsesQuestionnaire :questions="hackathon.questionnaire" :reponses="i.reponses" />
           <div class="decisions" role="group" :aria-label="t('hackathons.tri.decider', { nom: i.personne.nom })">
             <template v-for="d in DECISIONS" :key="d">
               <JBouton

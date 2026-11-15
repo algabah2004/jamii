@@ -1,9 +1,13 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { RouterLink, useRouter } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { JBouton, JChamp } from '../../design-system'
+import { lireDemande } from '../demandes/demandes'
+import { prefillDepuisDemande } from './depuisDemande'
 import { creerMission, DEVISES, LIMITES, lireCompetences, versMontant, type NouvelleMission } from './missions'
+import EditeurQuestionnaire from '../questionnaires/EditeurQuestionnaire.vue'
+import { nettoyer, problemes, type Question } from '../questionnaires/questionnaire'
 
 /*
  * Publier une mission : on enregistre d'abord un brouillon (personne ne le voit), puis on le publie depuis la page de la
@@ -12,6 +16,34 @@ import { creerMission, DEVISES, LIMITES, lireCompetences, versMontant, type Nouv
  */
 const { t } = useI18n()
 const router = useRouter()
+const route = useRoute()
+
+/** La demande dont part la mission (`?demande=<id>`) : elle préremplit le brouillon, et la mission y est rattachée. */
+const demandeId = ref<string | null>(null)
+const demandeTitre = ref('')
+const idDemande = typeof route.query.demande === 'string' ? route.query.demande : null
+onMounted(async () => {
+  if (!idDemande) return
+  try {
+    const demande = await lireDemande(idDemande)
+    if (!demande) return
+    const base = prefillDepuisDemande(demande, {
+      objectifs: t('missions.nouvelle.depuisDemande.objectifs'),
+      indispensables: t('missions.nouvelle.depuisDemande.indispensables'),
+      utiles: t('missions.nouvelle.depuisDemande.utiles'),
+      horsPerimetre: t('missions.nouvelle.depuisDemande.horsPerimetre'),
+    })
+    // Rien n'écrase ce que la personne a déjà commencé à écrire pendant le chargement.
+    if (!titre.value) titre.value = base.titre
+    if (!besoin.value) besoin.value = base.besoin
+    if (!competences.value) competences.value = base.competences
+    if (!ville.value) ville.value = base.ville
+    demandeId.value = demande.id
+    demandeTitre.value = demande.titre
+  } catch {
+    // La demande ne répond pas : le formulaire reste vide, la mission se crée sans elle.
+  }
+})
 
 const titre = ref('')
 const besoin = ref('')
@@ -23,12 +55,14 @@ const ville = ref('')
 const visibilite = ref<'publique' | 'invitation'>('publique')
 const envoi = ref<'repos' | 'envoi' | 'erreur'>('repos')
 const champs = ref<Record<string, string>>({})
+const questionnaire = ref<Question[]>([])
 
 const valide = computed(
   () =>
     titre.value.trim().length >= LIMITES.titreMin &&
     besoin.value.trim().length >= LIMITES.besoinMin &&
-    lireCompetences(competences.value).length > 0,
+    lireCompetences(competences.value).length > 0 &&
+    !Object.keys(problemes(questionnaire.value)).length,
 )
 
 /** Le message d'un champ en erreur : un texte par champ, quel que soit le code. */
@@ -41,6 +75,7 @@ async function creer() {
   const montant = budget.value.trim() ? versMontant(budget.value, devise.value) : null
   if (budget.value.trim() && !montant) return void (champs.value = { budget: 'montant_invalide' })
   const mission: NouvelleMission = {
+    ...(demandeId.value ? { demandeId: demandeId.value } : {}),
     titre: titre.value.trim(),
     besoin: besoin.value.trim(),
     competences: lireCompetences(competences.value),
@@ -50,6 +85,7 @@ async function creer() {
     ...(montant ? { budget: montant } : {}),
     ...(date.value ? { dateSouhaitee: date.value } : {}),
     ...(ville.value.trim() ? { ville: ville.value.trim() } : {}),
+    ...(questionnaire.value.length ? { questionnaire: nettoyer(questionnaire.value) } : {}),
   }
   envoi.value = 'envoi'
   try {
@@ -74,6 +110,7 @@ async function creer() {
     </header>
 
     <form class="carte formulaire" data-test="nouvelle-mission" @submit.prevent="creer">
+      <p v-if="demandeId" class="note" role="status" data-test="depuis-demande">{{ t('missions.nouvelle.depuisDemande.note', { titre: demandeTitre }) }}</p>
       <JChamp v-model="titre" :libelle="t('missions.nouvelle.champTitre')" :aide="t('missions.nouvelle.aideTitre')" :erreur="erreur('titre')" :maxlength="LIMITES.titreMax" requis />
       <JChamp
         v-model="besoin"
@@ -111,6 +148,10 @@ async function creer() {
         <label><input v-model="visibilite" type="radio" name="visibilite" value="invitation" data-test="invitation" /> <span>{{ t('missions.nouvelle.invitation') }}</span></label>
       </fieldset>
 
+      <div class="questionnaire">
+        <EditeurQuestionnaire v-model="questionnaire" contexte="mission" />
+      </div>
+
       <p v-if="envoi === 'erreur'" role="alert" class="erreur" data-test="erreur">{{ t('missions.nouvelle.erreur') }}</p>
       <div>
         <JBouton type="submit" :desactive="!valide" :occupe="envoi === 'envoi'" data-test="creer">{{ t('missions.nouvelle.creer') }}</JBouton>
@@ -130,4 +171,6 @@ async function creer() {
 .devise select, .date input { min-height: 44px; padding: 0 var(--space-3); border: 1px solid var(--line-strong); border-radius: var(--radius-md); background: var(--surface); color: inherit; font: inherit; }
 .choix label { display: flex; gap: var(--space-3); align-items: center; font-weight: 400; }
 .erreur { margin: 0; color: var(--danger); font-weight: 600; }
+.note { margin: 0; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); border-inline-start: 3px solid var(--cantaloupe); background: color-mix(in srgb, var(--surface) 60%, transparent); font-weight: 600; }
+.questionnaire { padding: var(--space-4); border-radius: var(--radius-md); border: 1px solid var(--line-strong); }
 </style>

@@ -40,6 +40,10 @@ input:not([type='radio'], [type='checkbox'], [type='range']), select, textarea {
 }
 input[type='radio'], input[type='checkbox'] { accent-color: var(--action); width: 1.1em; height: 1.1em; }
 
+/* Les options d'un menu ont leur propre fond : on leur donne l'encre et la surface du thème, sinon une encre
+   claire héritée d'une zone sombre devient illisible sur le fond blanc du navigateur. */
+select option { color: var(--ink); background: var(--surface); }
+
 ::selection { background: var(--action-soft); color: var(--ink); }
 
 img, svg { max-width: 100%; }
@@ -180,3 +184,5 @@ body::before {
 .etat-vide::after { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; border-radius: inherit; background-color: var(--action-ink); opacity: 0.08;
   -webkit-mask: url('../../../../docs/design/motifs/ondes.svg') repeat 0 0 / 64px 28px; mask: url('../../../../docs/design/motifs/ondes.svg') repeat 0 0 / 64px 28px; }
 .page-tete.motif { padding: var(--space-6); margin-inline: calc(-1 * var(--space-6)); border-radius: var(--radius-lg); }
+/* Sur téléphone, la page n'a que 16 px de marge (App.vue) : le motif déborde d'autant, pas plus. */
+@media (max-width: 720px) { .page-tete.motif { margin-inline: calc(-1 * var(--space-4)); padding-inline: var(--space-4); } }

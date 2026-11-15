@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Jamii · Cercles (Tech Tontine)
-  version: 0.1.0
+  version: 0.2.0
   summary: Un cercle de 4 à 6 développeurs construit, à tour de rôle, le projet de chacun.
   description: |
     Responsable : @sowibrr (bloc #17). Règles communes : docs/api-conventions.md. Plan : docs/priorites.md, demande #98.
@@ -23,14 +23,20 @@ info:
     navigateur. Il est **enregistré** : `tirage.effectueLe` et `tirage.parId` disent quand et par qui, et l'ordre ne
     change plus jamais.
 
-    **Droits** : tout utilisateur connecté voit un cercle (nom, ville, membres, tours). Seuls les membres du cercle voient
+    **Droits** : tout utilisateur connecté voit un cercle (nom, membres, tours). Seuls les membres du cercle voient
     les **idées** des autres. Seul le créateur tire au sort. Le tour peut être livré par le membre à qui il appartient
     ou par le créateur.
 
     **CSRF** : toute requête POST, PUT, PATCH ou DELETE envoie l'en-tête `X-XSRF-TOKEN` (socle.yaml, schéma `csrf`).
 
     **Codes d'erreur métier** (champ `code` de `Erreur`, réponse 409) : `cercle_complet`, `deja_membre`,
-    `tirage_deja_fait`, `cercle_incomplet`, `idees_manquantes`, `tour_non_en_cours`, `cercle_termine`.
+    `tirage_deja_fait`, `cercle_incomplet`, `idees_manquantes`, `tour_non_en_cours`, `cercle_termine`,
+    `point_deja_fait`, `pas_un_coup_de_main`.
+
+    **Le salon du cercle** (v0.2, #157) : un fil privé aux membres (`403 pas_membre` pour les autres). On y écrit
+    (`texte`), on y fait son **point du jour** (`point` : fait, prévu, bloqué ; un par jour UTC), on y demande un
+    **coup de main** (`coup_de_main`, qui reste en haut tant qu'il n'est pas résolu) et on y lance un **appel**. Jamii
+    y écrit seul les étapes du cercle (`evenement` : création, arrivée d'un membre, tirage, tour ouvert ou livré, fin).
 
     **Dépôt de code** : chaque tour peut avoir un dépôt Git (`depot`), sur le Gitea de Jamii ou sur GitHub selon la
     configuration du serveur (`DEPOT_CODE`). `depot` vaut `null` tant qu'il n'existe pas : le front n'affiche alors rien.
@@ -44,6 +50,7 @@ tags:
   - { name: cercles, description: 'Créer, trouver et rejoindre un cercle.' }
   - { name: tirage, description: 'Déposer son idée, tirer l''ordre au sort.' }
   - { name: tours, description: Faire avancer les tours. }
+  - { name: salon, description: 'Le salon privé du cercle : messages, points du jour, coups de main, appels.' }
 
 paths:
   /api/cercles:
@@ -169,11 +176,12 @@ paths:
     post:
       tags: [tirage]
       operationId: tirerOrdre
-      summary: Tirer l'ordre de passage au sort (le créateur, une seule fois)
+      summary: Tirer l'ordre de passage au sort (n'importe quel membre, une seule fois)
       description: |
         Sans corps. Le serveur mélange les membres avec `SecureRandom`, enregistre l'ordre et le moment du tirage, puis
         crée le projet du tour 1. Conditions, dans cet ordre :
-        - `403` si tu n'es pas le créateur ;
+        - `403` si tu n'es pas membre du cercle (#157 : n'importe quel membre peut lancer le tirage, puisque c'est le
+          serveur qui tire au hasard ; `tirage.parId` dit qui l'a lancé) ;
         - `409 tirage_deja_fait` si l'ordre est déjà tiré (rien ne change) ;
         - `409 cercle_incomplet` s'il manque des membres (`taille` n'est pas atteinte) ;
         - `409 idees_manquantes` si un membre n'a pas déposé d'idée.
@@ -269,6 +277,125 @@ paths:
         '403': { $ref: './socle.yaml#/components/responses/Interdit' }
         '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
 
+  /api/cercles/{cercleId}/salon:
+    parameters:
+      - $ref: '#/components/parameters/CercleId'
+    get:
+      tags: [salon]
+      operationId: lireSalonCercle
+      summary: Le salon du cercle (membres seulement)
+      description: |
+        Sans `apres` : les `limite` derniers messages. Avec `apres` (un `numero`) : ceux arrivés depuis, pour relire le
+        salon toutes les quelques secondes. Toujours du plus ancien au plus récent. Renvoie aussi, à chaque fois, les
+        coups de main ouverts, qui a fait son point aujourd'hui (jour UTC) et l'appel en cours.
+      parameters:
+        - { name: apres, in: query, schema: { type: integer, minimum: 0, format: int64 } }
+        - { name: limite, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 50 } }
+      responses:
+        '200':
+          description: Le salon.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SalonCercle' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { description: '`pas_membre`.', $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+
+  /api/cercles/{cercleId}/salon/messages:
+    parameters:
+      - $ref: '#/components/parameters/CercleId'
+    post:
+      tags: [salon]
+      operationId: ecrireSalonCercle
+      summary: Écrire, faire son point du jour ou demander un coup de main (membres)
+      description: Au plus 20 messages par minute et par personne (`429`). Un seul point par personne et par jour UTC (`409 point_deja_fait`).
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NouveauMessageCercle' }
+      responses:
+        '201':
+          description: Envoyé.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MessageCercle' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { description: '`pas_membre`.', $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { description: '`point_deja_fait`.', $ref: './socle.yaml#/components/responses/Conflit' }
+        '429': { $ref: './socle.yaml#/components/responses/TropDeRequetes' }
+
+  /api/cercles/{cercleId}/salon/messages/{messageId}/resolu:
+    parameters:
+      - $ref: '#/components/parameters/CercleId'
+      - { name: messageId, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      tags: [salon]
+      operationId: resoudreCoupDeMain
+      summary: Marquer un coup de main résolu (n'importe quel membre)
+      description: Idempotent. Le premier qui l'a résolu reste celui qu'on affiche.
+      security:
+        - session: []
+          csrf: []
+      responses:
+        '200':
+          description: Le coup de main, résolu.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MessageCercle' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { description: '`pas_membre`.', $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { description: '`pas_un_coup_de_main`.', $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/cercles/{cercleId}/salon/appel:
+    parameters:
+      - $ref: '#/components/parameters/CercleId'
+    post:
+      tags: [salon]
+      operationId: lancerAppelCercle
+      summary: Lancer l'appel du cercle, ou rejoindre celui qui est en cours (membres)
+      description: |
+        Un seul appel à la fois : s'il y en a un, `200` avec celui-ci. Sinon une salle neuve est créée (`201`), et un
+        message `appel` l'annonce dans le salon. Un appel est « en cours » une heure au plus. Au plus 10 appels lancés
+        par heure et par personne (`429`).
+      security:
+        - session: []
+          csrf: []
+      responses:
+        '200':
+          description: L'appel déjà en cours.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AppelCercle' }
+        '201':
+          description: Appel lancé.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AppelCercle' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { description: '`pas_membre`.', $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '429': { $ref: './socle.yaml#/components/responses/TropDeRequetes' }
+    delete:
+      tags: [salon]
+      operationId: terminerAppelCercle
+      summary: Terminer l'appel en cours (celui qui l'a lancé, ou le créateur du cercle)
+      security:
+        - session: []
+          csrf: []
+      responses:
+        '204': { description: Terminé. }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { description: '`pas_membre` ou `pas_lanceur`.', $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { description: Pas d'appel en cours., $ref: './socle.yaml#/components/responses/Introuvable' }
+
 components:
   securitySchemes:
     session: { $ref: './socle.yaml#/components/securitySchemes/session' }
@@ -294,10 +421,15 @@ components:
     CreationCercle:
       type: object
       additionalProperties: false
-      required: [nom, ville, taille]
+      required: [nom, taille]
       properties:
         nom: { type: string, minLength: 3, maxLength: 80, examples: ['Cercle de Dakar'] }
-        ville: { type: string, minLength: 2, maxLength: 80, description: Texte libre. }
+        ville:
+          type: string
+          minLength: 2
+          maxLength: 80
+          deprecated: true
+          description: "Facultative depuis le 15/11 : le formulaire ne la demande plus (un cercle travaille en ligne). Encore acceptée pour les anciens clients."
         taille: { type: integer, minimum: 4, maximum: 6, description: 'Nombre de membres, créateur compris.' }
 
     Idee:
@@ -314,7 +446,7 @@ components:
       properties:
         id: { type: string, format: uuid }
         nom: { type: string }
-        ville: { type: string }
+        ville: { type: [string, 'null'], description: 'null pour les cercles créés sans ville.' }
         taille: { type: integer, minimum: 4, maximum: 6 }
         statut: { $ref: '#/components/schemas/StatutCercle' }
         nombreMembres: { type: integer, minimum: 1, maximum: 6 }
@@ -452,4 +584,86 @@ components:
       required: [effectueLe, parId]
       properties:
         effectueLe: { type: string, format: date-time }
-        parId: { type: string, format: uuid, description: Le créateur du cercle. }
+        parId: { type: string, format: uuid, description: 'Le membre qui a lancé le tirage (le créateur, pour les cercles tirés avant #157).' }
+
+    SalonCercle:
+      type: object
+      required: [elements, coupsDeMain, pointsDuJour, appel]
+      properties:
+        elements: { type: array, items: { $ref: '#/components/schemas/MessageCercle' } }
+        coupsDeMain: { type: array, maxItems: 10, description: 'Les coups de main pas encore résolus, du plus ancien au plus récent.', items: { $ref: '#/components/schemas/MessageCercle' } }
+        pointsDuJour: { type: array, description: 'Les membres qui ont fait leur point aujourd''hui (jour UTC).', items: { type: string, format: uuid } }
+        appel: { oneOf: [{ $ref: '#/components/schemas/AppelCercle' }, { type: 'null' }] }
+
+    TypeMessageCercle:
+      type: string
+      enum: [texte, point, coup_de_main, evenement, appel]
+
+    MessageCercle:
+      type: object
+      description: Les champs propres à un type (`point`, `evenement`, `coupDeMain`, `appel`) valent `null` pour les autres.
+      required: [id, numero, type, auteur, texte, point, evenement, coupDeMain, appel, envoyeLe]
+      properties:
+        id: { type: string, format: uuid }
+        numero: { type: integer, format: int64, description: 'Croissant. Sert de curseur (`apres`).' }
+        type: { $ref: '#/components/schemas/TypeMessageCercle' }
+        auteur:
+          description: '`null` pour un événement (écrit par Jamii).'
+          oneOf: [{ $ref: './projets.yaml#/components/schemas/PersonneResume' }, { type: 'null' }]
+        texte: { type: [string, 'null'], maxLength: 2000 }
+        point: { oneOf: [{ $ref: '#/components/schemas/PointDuJour' }, { type: 'null' }] }
+        evenement: { oneOf: [{ $ref: '#/components/schemas/EvenementCercle' }, { type: 'null' }] }
+        coupDeMain:
+          oneOf:
+            - type: object
+              required: [resoluLe, resoluPar]
+              properties:
+                resoluLe: { type: [string, 'null'], format: date-time, description: '`null` tant que personne ne l''a résolu.' }
+                resoluPar: { oneOf: [{ $ref: './projets.yaml#/components/schemas/PersonneResume' }, { type: 'null' }] }
+            - type: 'null'
+        appel:
+          oneOf:
+            - type: object
+              required: [id, enCours]
+              properties:
+                id: { type: string, format: uuid }
+                enCours: { type: boolean }
+            - type: 'null'
+        envoyeLe: { type: string, format: date-time }
+
+    PointDuJour:
+      type: object
+      additionalProperties: false
+      required: [fait, prevu]
+      properties:
+        fait: { type: string, minLength: 1, maxLength: 500, description: "Ce que j'ai fait depuis mon dernier point." }
+        prevu: { type: string, minLength: 1, maxLength: 500, description: Ce que je fais ensuite. }
+        bloque: { type: [string, 'null'], maxLength: 500, description: "Ce qui me bloque, s'il y a quelque chose." }
+
+    EvenementCercle:
+      type: object
+      required: [code, tour, personne]
+      properties:
+        code: { type: string, enum: [cercle_cree, membre_rejoint, tirage, tour_ouvert, tour_livre, cercle_termine] }
+        tour: { type: [integer, 'null'], minimum: 1, maximum: 6 }
+        personne:
+          description: 'De qui parle l''événement : le créateur, le nouveau membre, qui a tiré, le bénéficiaire du tour.'
+          oneOf: [{ $ref: './projets.yaml#/components/schemas/PersonneResume' }, { type: 'null' }]
+
+    NouveauMessageCercle:
+      type: object
+      additionalProperties: false
+      required: [type]
+      properties:
+        type: { type: string, enum: [texte, point, coup_de_main] }
+        texte: { type: string, minLength: 1, maxLength: 2000, description: 'Pour `texte` et `coup_de_main`.' }
+        point: { $ref: '#/components/schemas/PointDuJour' }
+
+    AppelCercle:
+      type: object
+      required: [id, lancePar, lanceLe, url]
+      properties:
+        id: { type: string, format: uuid }
+        lancePar: { oneOf: [{ $ref: './projets.yaml#/components/schemas/PersonneResume' }, { type: 'null' }] }
+        lanceLe: { type: string, format: date-time }
+        url: { type: string, format: uri, description: 'L''adresse de la salle (Jitsi). Une salle neuve à chaque appel.' }

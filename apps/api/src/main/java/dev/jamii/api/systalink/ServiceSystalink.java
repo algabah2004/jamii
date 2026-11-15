@@ -27,6 +27,7 @@ public enum ServiceSystalink {
 			case "systaone" -> Optional.of(SYSTAONE);
 			case "boutique-en-ligne" -> Optional.of(HEBERGEMENT);
 			case "email-professionnel" -> Optional.of(EMAIL);
+			case "yokk" -> Optional.of(YOKK);
 			default -> Optional.empty();
 		};
 	}

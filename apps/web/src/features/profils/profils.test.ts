@@ -3,6 +3,7 @@ import { mount } from '@vue/test-utils'
 import { http, HttpResponse } from 'msw'
 import { createMemoryHistory } from 'vue-router'
 import { serveur } from '../../test-setup'
+import { moiDemo } from '../../mocks/handlers'
 import { i18n } from '../../i18n'
 import { creerRouteur } from '../../router'
 import { chargerSession } from '../../session'
@@ -37,6 +38,25 @@ describe('Mon profil', () => {
     expect(page.get('[data-test="depots"]').text()).toContain('marche-facile')
     expect(page.get('[data-test="visibilite"]').text()).toContain('privé')
     expect(page.find('[data-test="projets-vide"]').exists()).toBe(true)
+  })
+
+  it('sans GitHub relié, propose « Relier mon GitHub », puis dit quand c’est fait ou pourquoi ça a échoué', async () => {
+    serveur.use(http.get('/api/me', () => HttpResponse.json({ ...moiDemo, loginGithub: null, methodesConnexion: ['email'] })))
+    let page = await ouvrir()
+    await vi.waitFor(() => expect(page.find('[data-test="relier-github"]').exists()).toBe(true))
+    expect(page.get('[data-test="relier-github"]').attributes('href')).toBe('/api/auth/github?lier=1')
+    expect(page.find('[data-test="generer"]').exists()).toBe(false)
+    page.unmount()
+
+    page = await ouvrir('/profil?erreurGithub=github_deja_utilise')
+    await vi.waitFor(() => expect(page.find('[data-test="erreur-lien"]').exists()).toBe(true))
+    expect(page.get('[data-test="erreur-lien"]').text()).toContain('déjà relié à un autre compte')
+    page.unmount()
+
+    serveur.use(http.get('/api/me', () => HttpResponse.json(moiDemo)))
+    page = await ouvrir('/profil?github=relie')
+    await vi.waitFor(() => expect(page.find('[data-test="github-relie"]').exists()).toBe(true))
+    expect(page.find('[data-test="generer"]').exists()).toBe(true)
   })
 
   it('la carte de compétences : rien de gardé d’avance, je retire ce qui est faux, puis je garde le reste avec ses preuves', async () => {
@@ -166,6 +186,32 @@ describe('profil professionnel (#159)', () => {
     serveur.use(http.get('/api/profils/:id', () => probleme(404, 'introuvable')))
     const page = await ouvrir('/p/inconnu')
     await vi.waitFor(() => expect(page.find('[data-test="introuvable"]').exists()).toBe(true))
+  })
+
+  it("propose d'écrire à la personne et de se mettre en contact", async () => {
+    serveur.use(http.get('/api/profils/:id', () => HttpResponse.json(pro)))
+    const page = await ouvrir('/p/b2c3')
+    await vi.waitFor(() => expect(page.find('[data-test="ecrire"]').exists()).toBe(true))
+    expect(page.get('[data-test="ecrire"]').text()).toBe('Écrire à Kofi')
+    expect(page.get('[data-test="ecrire"]').attributes('href')).toBe('/messages/b2c3')
+  })
+
+  it("montre au moins qui c'est, avec les actions, quand le profil n'est pas publié", async () => {
+    const kofi = 'c1a00000-0000-4000-8000-000000000002'
+    const page = await ouvrir(`/p/${kofi}`)
+    await vi.waitFor(() => expect(page.find('[data-test="non-publie"]').exists()).toBe(true))
+    expect(page.get('[data-test="non-publie"] h1').text()).toBe('Kofi Yao')
+    expect(page.get('[data-test="ecrire"]').attributes('href')).toBe(`/messages/${kofi}`)
+    await vi.waitFor(() => expect(page.find('[data-test="contact"]').text()).toBe('Ajouter aux contacts'))
+    await page.get('[data-test="contact"]').trigger('click')
+    await vi.waitFor(() => expect(page.get('[data-test="contact"]').text()).toBe('Demande envoyée · annuler'))
+  })
+
+  it("n'affiche pas les actions sur son propre profil", async () => {
+    serveur.use(http.get('/api/profils/:id', () => HttpResponse.json({ ...pro, utilisateurId: '6f1c2a4e-8b7d-4c3e-9a10-2b5d7e9f0a11' })))
+    const page = await ouvrir('/p/6f1c2a4e-8b7d-4c3e-9a10-2b5d7e9f0a11')
+    await vi.waitFor(() => expect(page.find('[data-test="identite"]').exists()).toBe(true))
+    expect(page.find('[data-test="actions-profil"]').exists()).toBe(false)
   })
 
   it('le lien public et le drapeau se construisent sans erreur', () => {

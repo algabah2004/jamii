@@ -722,6 +722,7 @@ components:
         ville: { type: [string, 'null'], maxLength: 80 }
         pays: { oneOf: [{ $ref: './profils.yaml#/components/schemas/Pays' }, { type: 'null' }] }
         aDistance: { type: boolean, default: true }
+        questionnaire: { $ref: './socle.yaml#/components/schemas/Questionnaire', description: 'Questions posées dans « Proposer mes services » (#257). Fixées à la création.' }
 
     ModificationMission:
       type: object
@@ -769,9 +770,10 @@ components:
       allOf:
         - $ref: '#/components/schemas/MissionResume'
         - type: object
-          required: [besoin, visibilite, version, creeLe, moi]
+          required: [besoin, visibilite, questionnaire, version, creeLe, moi]
           properties:
             demandeId: { type: [string, 'null'], format: uuid }
+            questionnaire: { $ref: './socle.yaml#/components/schemas/Questionnaire' }
             besoin: { type: string, description: 'Texte brut, affiché échappé.' }
             dateSouhaitee: { type: [string, 'null'], format: date }
             visibilite: { type: string, enum: [publique, invitation] }
@@ -814,7 +816,7 @@ components:
         message: { type: string, minLength: 30, maxLength: 4000, description: 'Comment je m''y prendrais, ce que j''ai déjà fait de proche.' }
         prix: { $ref: '#/components/schemas/Montant' }
         delaiJours: { type: integer, minimum: 1, maximum: 365 }
-        reponses: { type: array, maxItems: 5, items: { type: string, maxLength: 1000 }, description: 'Réponses aux questions du client, dans l''ordre.' }
+        reponses: { type: array, maxItems: 10, items: { $ref: './socle.yaml#/components/schemas/Reponse' }, description: 'Réponses au questionnaire de la mission (`400` sous `reponses.<id>` si une réponse obligatoire manque).' }
 
     Proposition:
       type: object
@@ -825,7 +827,7 @@ components:
         message: { type: string }
         prix: { $ref: '#/components/schemas/Montant' }
         delaiJours: { type: integer }
-        reponses: { type: array, items: { type: string } }
+        reponses: { type: array, items: { $ref: './socle.yaml#/components/schemas/Reponse' }, description: 'Lues par le client et par le développeur seulement.' }
         statut: { type: string, enum: [envoyee, retenue, acceptee, non_retenue, retiree] }
         envoyeeLe: { type: string, format: date-time }
 

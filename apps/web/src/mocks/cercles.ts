@@ -31,12 +31,18 @@ function membre(i: number, rang: number | null, avecIdee = true): MembreCercle {
 }
 
 /** Un projet par tour ouvert : sa date de création et ses tâches donnent l'avancement (contracts/projets.yaml). */
-const projets = new Map<string, { creeLe: string; livrees: number; total: number }>()
+type TacheMock = { id: string; titre: string; statut: 'a_faire' | 'en_cours' | 'livree'; assignee: Personne | null; proposeeParIa: boolean; version: number; creeLe: string; livreeLe: string | null; jalonId: null; echeance: null }
+const projets = new Map<string, { creeLe: string; taches: TacheMock[] }>()
+let suivanteTache = 1
+const nouvelleTache = (titre: string, statut: TacheMock['statut'], creeLe: string, proposeeParIa = false): TacheMock => ({
+  id: `7a5c0000-0000-4000-8000-${String(suivanteTache++).padStart(12, '0')}`, titre, statut, assignee: null, proposeeParIa, version: 1, creeLe, livreeLe: statut === 'livree' ? creeLe : null, jalonId: null, echeance: null,
+})
 let suivantProjet = 1
 
 function ouvrirTour(t: Tour, depuisJours: number, livrees: number, total: number): Tour {
   const projetId = `b1d2c3a4-0000-4000-8000-${String(suivantProjet++).padStart(12, '0')}`
-  projets.set(projetId, { creeLe: ilYa(depuisJours), livrees, total })
+  const creeLe = ilYa(depuisJours)
+  projets.set(projetId, { creeLe, taches: Array.from({ length: total }, (_, i) => nouvelleTache(`Tâche ${i + 1}`, i < livrees ? 'livree' : 'a_faire', creeLe, true)) })
   const nom = slug(PERSONNES.find((x) => x.personne.id === t.beneficiaire.id)?.idee ?? t.beneficiaire.nom)
   return { ...t, statut: 'en_cours', projetId, depot: { fournisseur: 'gitea', url: `https://code.example.com/cercles/${nom}`, cloneUrl: `https://code.example.com/cercles/${nom}.git` } }
 }
@@ -81,11 +87,44 @@ export const ID_SAINT_LOUIS = 'a0c1e2c1-0000-4000-8000-0000000051a1'
 export const ID_ABIDJAN = 'a0c1e2c1-0000-4000-8000-0000000ab1d1'
 
 let cercles: Cercle[] = []
+
+// --- Le salon des cercles (contracts/cercles.yaml v0.2) ---
+type MessageCercle = components['schemas']['MessageCercle']
+type AppelCercle = components['schemas']['AppelCercle']
+const salons = new Map<string, MessageCercle[]>()
+const appels = new Map<string, AppelCercle>()
+let suivantNumero = 1
+const ilYaMinutes = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOString()
+const personneDe = (i: number) => PERSONNES[i]!.personne
+
+function poster(cercleId: string, m: Omit<MessageCercle, 'id' | 'numero' | 'auteur' | 'texte' | 'point' | 'evenement' | 'coupDeMain' | 'appel'> & Partial<MessageCercle>): MessageCercle {
+  const message: MessageCercle = { id: `5a10${String(suivantNumero).padStart(4, '0')}-0000-4000-8000-000000000000`, numero: suivantNumero++, auteur: null, texte: null, point: null, evenement: null, coupDeMain: null, appel: null, ...m }
+  salons.set(cercleId, [...(salons.get(cercleId) ?? []), message])
+  return message
+}
+
+/** Le salon du cercle de Dakar, au 3e jour du tour de Kofi : de quoi voir chaque sorte de message. */
+function salonDakar() {
+  const ev = (code: NonNullable<MessageCercle['evenement']>['code'], minutes: number, personne: Personne | null, tour: number | null = null) =>
+    poster(ID_DAKAR, { type: 'evenement', envoyeLe: ilYaMinutes(minutes), evenement: { code, tour, personne } })
+  ev('cercle_cree', 60 * 24 * 12, personneDe(0))
+  ev('tirage', 60 * 24 * 9, personneDe(2))
+  ev('tour_ouvert', 60 * 24 * 9, personneDe(0), 1)
+  ev('tour_livre', 60 * 24 * 3, personneDe(0), 1)
+  ev('tour_ouvert', 60 * 24 * 3, personneDe(1), 2)
+  poster(ID_DAKAR, { type: 'texte', auteur: personneDe(1), texte: 'J’ai découpé le projet en 12 tâches, prenez celles qui vous parlent.', envoyeLe: ilYaMinutes(60 * 24 * 3 - 10) })
+  poster(ID_DAKAR, { type: 'point', auteur: personneDe(1), point: { fait: 'La connexion par numéro de téléphone.', prevu: 'Le tableau des pesées du jour.', bloque: null }, envoyeLe: ilYaMinutes(90) })
+  poster(ID_DAKAR, { type: 'coup_de_main', auteur: personneDe(3), texte: 'L’APK ne s’installe pas sur les vieux Android 8. Une idée ?', coupDeMain: { resoluLe: null, resoluPar: null }, envoyeLe: ilYaMinutes(45) })
+}
 /** Remet les cercles de démo à leur état de départ (entre deux tests). */
 export function reinitialiserCercles() {
   projets.clear()
   suivantProjet = 1
   cercles = [cercleSaintLouis(), cercleDakar(), cercleAbidjan()]
+  salons.clear()
+  suivantNumero = 1
+  appels.clear()
+  salonDakar()
 }
 /** Les cercles de démo tels qu'ils sont maintenant (pour les recommandations de mocks/reseau.ts). */
 export const cerclesDemo = () => cercles
@@ -106,19 +145,83 @@ function melanger<T>(liste: T[]): T[] {
   return copie
 }
 
+const salonDe = (id: unknown) => {
+  const c = trouver(id)
+  if (!c) return { reponse: erreur('introuvable', 404) }
+  if (!c.moi.estMembre) return { reponse: erreur('pas_membre', 403) }
+  return { cercle: c, messages: salons.get(c.id) ?? [] }
+}
+const debutDuJour = () => new Date().toISOString().slice(0, 10)
+
 export const handlersCercles = [
+  http.get('/api/cercles/:id/salon', ({ params, request }) => {
+    const s = salonDe(params.id)
+    if (s.reponse) return s.reponse
+    const apres = new URL(request.url).searchParams.get('apres')
+    const elements = apres === null ? s.messages.slice(-100) : s.messages.filter((m) => m.numero > Number(apres))
+    return HttpResponse.json({
+      elements,
+      coupsDeMain: s.messages.filter((m) => m.type === 'coup_de_main' && !m.coupDeMain?.resoluLe),
+      pointsDuJour: [...new Set(s.messages.filter((m) => m.type === 'point' && m.envoyeLe.slice(0, 10) === debutDuJour()).map((m) => m.auteur!.id))],
+      appel: appels.get(s.cercle.id) ?? null,
+    })
+  }),
+  http.post('/api/cercles/:id/salon/messages', async ({ params, request }) => {
+    const s = salonDe(params.id)
+    if (s.reponse) return s.reponse
+    const corps = (await request.json()) as { type: string; texte?: string; point?: { fait: string; prevu: string; bloque?: string | null } }
+    const moi = PERSONNES[0]!.personne
+    const maintenant = new Date().toISOString()
+    if (corps.type === 'point') {
+      if (!corps.point?.fait?.trim() || !corps.point?.prevu?.trim()) return erreur('validation', 400)
+      if (s.messages.some((m) => m.type === 'point' && m.auteur?.id === moi.id && m.envoyeLe.slice(0, 10) === debutDuJour())) return erreur('point_deja_fait')
+      return HttpResponse.json(poster(s.cercle.id, { type: 'point', auteur: moi, point: { fait: corps.point.fait, prevu: corps.point.prevu, bloque: corps.point.bloque ?? null }, envoyeLe: maintenant }), { status: 201 })
+    }
+    if (!corps.texte?.trim() || !['texte', 'coup_de_main'].includes(corps.type)) return erreur('validation', 400)
+    const type = corps.type as 'texte' | 'coup_de_main'
+    return HttpResponse.json(poster(s.cercle.id, { type, auteur: moi, texte: corps.texte.trim(), coupDeMain: type === 'coup_de_main' ? { resoluLe: null, resoluPar: null } : null, envoyeLe: maintenant }), { status: 201 })
+  }),
+  http.post('/api/cercles/:id/salon/messages/:messageId/resolu', ({ params }) => {
+    const s = salonDe(params.id)
+    if (s.reponse) return s.reponse
+    const m = s.messages.find((x) => x.id === params.messageId)
+    if (!m) return erreur('introuvable', 404)
+    if (m.type !== 'coup_de_main') return erreur('pas_un_coup_de_main')
+    if (!m.coupDeMain?.resoluLe) m.coupDeMain = { resoluLe: new Date().toISOString(), resoluPar: PERSONNES[0]!.personne }
+    return HttpResponse.json(m)
+  }),
+  http.post('/api/cercles/:id/salon/appel', ({ params }) => {
+    const s = salonDe(params.id)
+    if (s.reponse) return s.reponse
+    const deja = appels.get(s.cercle.id)
+    if (deja) return HttpResponse.json(deja)
+    const appel: AppelCercle = { id: `a9e10000-0000-4000-8000-${String(suivantNumero).padStart(12, '0')}`, lancePar: PERSONNES[0]!.personne, lanceLe: new Date().toISOString(), url: 'https://meet.jit.si/jamii-cercle-demo' }
+    appels.set(s.cercle.id, appel)
+    poster(s.cercle.id, { type: 'appel', auteur: PERSONNES[0]!.personne, appel: { id: appel.id, enCours: true }, envoyeLe: appel.lanceLe })
+    return HttpResponse.json(appel, { status: 201 })
+  }),
+  http.delete('/api/cercles/:id/salon/appel', ({ params }) => {
+    const s = salonDe(params.id)
+    if (s.reponse) return s.reponse
+    const appel = appels.get(s.cercle.id)
+    if (!appel) return erreur('introuvable', 404)
+    appels.delete(s.cercle.id)
+    for (const m of s.messages) if (m.appel?.id === appel.id) m.appel = { id: appel.id, enCours: false }
+    return new HttpResponse(null, { status: 204 })
+  }),
   http.get('/api/cercles', ({ request }) => {
     const portee = new URL(request.url).searchParams.get('portee') ?? 'ouverts'
     const liste = portee === 'mes' ? cercles.filter((c) => c.moi.estMembre) : cercles.filter((c) => c.statut === 'ouvert' && !c.tirage && c.nombreMembres < c.taille)
     return HttpResponse.json({ elements: liste.map(resume), suivant: null })
   }),
   http.post('/api/cercles', async ({ request }) => {
-    const c = (await request.json()) as { nom: string; ville: string; taille: number }
-    if (!c.nom || c.nom.length < 3 || !c.ville || c.ville.length < 2 || ![4, 5, 6].includes(c.taille)) return erreur('invalide', 400)
+    const c = (await request.json()) as { nom: string; ville?: string; taille: number }
+    // La ville est facultative depuis le 15/11 : le formulaire ne la demande plus.
+    if (!c.nom || c.nom.length < 3 || (c.ville != null && c.ville.length < 2) || ![4, 5, 6].includes(c.taille)) return erreur('invalide', 400)
     // En démo, les autres membres rejoignent tout de suite avec leur idée : on peut aller au tirage seule.
     const membres = [membre(0, null, false), ...[1, 2, 3, 4, 5].slice(0, c.taille - 1).map((i) => membre(i, null))]
     const cercle: Cercle = {
-      id: `a0c1e2c1-0000-4000-8000-${String(cercles.length + 1).padStart(12, '0')}`, nom: c.nom, ville: c.ville, taille: c.taille, statut: 'ouvert',
+      id: `a0c1e2c1-0000-4000-8000-${String(cercles.length + 1).padStart(12, '0')}`, nom: c.nom, ville: c.ville ?? null, taille: c.taille, statut: 'ouvert',
       nombreMembres: membres.length, createur: PERSONNES[0]!.personne, creeLe: new Date().toISOString(),
       membres, tours: [], tourEnCours: null, tirage: null, moi: { estCreateur: true, estMembre: true },
     }
@@ -179,7 +282,7 @@ export const handlersCercles = [
   http.post('/api/cercles/:id/tirage', ({ params }) => {
     const c = trouver(params.id)
     if (!c) return erreur('introuvable', 404)
-    if (!c.moi.estCreateur) return erreur('interdit', 403)
+    if (!c.moi.estMembre) return erreur('interdit', 403)
     if (c.tirage) return erreur('tirage_deja_fait')
     if (c.membres.length < c.taille) return erreur('cercle_incomplet')
     if (c.membres.some((m) => !m.aDeposeIdee)) return erreur('idees_manquantes')
@@ -217,8 +320,33 @@ export const handlersCercles = [
   }),
   http.get('/api/projets/:projetId/taches', ({ params }) => {
     const pr = projets.get(String(params.projetId))
+    return pr ? HttpResponse.json({ elements: pr.taches, suivant: null }) : erreur('introuvable', 404)
+  }),
+  http.post('/api/projets/:projetId/taches', async ({ params, request }) => {
+    const pr = projets.get(String(params.projetId))
     if (!pr) return erreur('introuvable', 404)
-    const elements = Array.from({ length: pr.total }, (_, i) => ({ id: `t${i}`, titre: `Tâche ${i + 1}`, statut: i < pr.livrees ? 'livree' : 'a_faire', proposeeParIa: true, version: 1, creeLe: pr.creeLe }))
-    return HttpResponse.json({ elements, suivant: null })
+    const { titre, assigneeId } = (await request.json()) as { titre?: string; assigneeId?: string }
+    if (!titre || titre.trim().length < 3) return erreur('invalide', 400)
+    const tache = nouvelleTache(titre.trim(), 'a_faire', new Date().toISOString())
+    if (assigneeId) {
+      const personne = PERSONNES.find((x) => x.personne.id === assigneeId)?.personne
+      if (!personne) return erreur('pas_membre', 409)
+      tache.assignee = personne
+    }
+    pr.taches.push(tache)
+    return HttpResponse.json(tache, { status: 201 })
+  }),
+  http.patch('/api/projets/:projetId/taches/:tacheId', async ({ params, request }) => {
+    const pr = projets.get(String(params.projetId))
+    const i = pr?.taches.findIndex((x) => x.id === params.tacheId) ?? -1
+    if (!pr || i < 0) return erreur('introuvable', 404)
+    const corps = (await request.json()) as { version: number; statut?: TacheMock['statut']; assigneeId?: string | null }
+    const avant = pr.taches[i]!
+    if (corps.version !== avant.version) return erreur('modification_concurrente', 409)
+    const assignee = corps.assigneeId === undefined ? avant.assignee : corps.assigneeId === null ? null : (PERSONNES.find((x) => x.personne.id === corps.assigneeId)?.personne ?? null)
+    const statut = corps.statut ?? avant.statut
+    const apres = { ...avant, assignee, statut, version: avant.version + 1, livreeLe: statut === 'livree' ? new Date().toISOString() : null }
+    pr.taches[i] = apres
+    return HttpResponse.json(apres)
   }),
 ]

@@ -164,7 +164,7 @@ const periode = (debut: string, fin: string) =>
 .lien-carte { color: inherit; text-decoration: none; }
 .lien-carte::after { content: ''; position: absolute; inset: 0; z-index: 1; }
 .lien-carte:focus-visible { outline: none; }
-.hackathon:hover .lien-carte { text-decoration: underline; }
+.hackathon:hover .lien-carte { color: var(--action-ink); }
 .hackathon__theme { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .hackathon__periode { font-size: var(--type-body-sm-size); font-weight: 600; }
 .hackathon__bas { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; justify-content: space-between; padding-block-start: var(--space-3); border-block-start: 1px solid var(--line-strong); font-size: var(--type-body-sm-size); }

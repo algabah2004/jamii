@@ -15,7 +15,7 @@ export type Idee = components['schemas']['Idee']
 export type Tache = ComposantsProjets['schemas']['Tache']
 
 export const TAILLES = [4, 5, 6] as const
-export const LIMITES = { nomMin: 3, nomMax: 80, villeMin: 2, villeMax: 80, ideeTitreMin: 3, ideeTitreMax: 120, ideeDescriptionMin: 10, ideeDescriptionMax: 5000 } as const
+export const LIMITES = { nomMin: 3, nomMax: 80, ideeTitreMin: 3, ideeTitreMax: 120, ideeDescriptionMin: 10, ideeDescriptionMax: 5000 } as const
 /** Un tour dure deux semaines (docs/priorites.md). */
 export const DUREE_TOUR_JOURS = 14
 const JOUR = 86_400_000
@@ -116,8 +116,42 @@ export async function lireAvancement(projetId: string): Promise<Avancement | nul
   }
 }
 
-export const creerCercle = (c: { nom: string; ville: string; taille: number }) =>
-  resultat(api.POST('/api/cercles', { body: { nom: c.nom.trim(), ville: c.ville.trim(), taille: c.taille } }))
+/** Les tâches du projet d'un tour (100 au plus, de quoi tenir deux semaines). `null` si on n'y a pas accès. */
+export async function lireTaches(projetId: string): Promise<Tache[] | null> {
+  try {
+    const { data } = await api.GET('/api/projets/{projetId}/taches', { params: { path: { projetId }, query: { limite: 100 } } })
+    return data?.elements ?? null
+  } catch {
+    return null
+  }
+}
+
+export type ResultatTache = { ok: true; tache: Tache } | { ok: false; code: string | null }
+
+export async function ajouterTache(projetId: string, titre: string, assigneeId?: string | null): Promise<ResultatTache> {
+  try {
+    const { data, error } = await api.POST('/api/projets/{projetId}/taches', { params: { path: { projetId } }, body: { titre, ...(assigneeId ? { assigneeId } : {}) } })
+    return data ? { ok: true, tache: data } : { ok: false, code: code(error) }
+  } catch {
+    return { ok: false, code: null }
+  }
+}
+
+/** `version` vient de la tâche lue : si quelqu'un l'a changée entre-temps, l'API répond `modification_concurrente`. */
+export async function changerTache(projetId: string, tache: Tache, changement: { statut?: Tache['statut']; assigneeId?: string | null }): Promise<ResultatTache> {
+  try {
+    const { data, error } = await api.PATCH('/api/projets/{projetId}/taches/{tacheId}', {
+      params: { path: { projetId, tacheId: tache.id } },
+      body: { ...changement, version: tache.version },
+    })
+    return data ? { ok: true, tache: data } : { ok: false, code: code(error) }
+  } catch {
+    return { ok: false, code: null }
+  }
+}
+
+export const creerCercle = (c: { nom: string; taille: number }) =>
+  resultat(api.POST('/api/cercles', { body: { nom: c.nom.trim(), taille: c.taille } }))
 export const rejoindreCercle = (cercleId: string) => resultat(api.POST('/api/cercles/{cercleId}/membres', { params: { path: { cercleId } } }))
 export const deposerIdee = (cercleId: string, idee: Idee) =>
   resultat(api.PUT('/api/cercles/{cercleId}/membres/moi/idee', { params: { path: { cercleId } }, body: { titre: idee.titre.trim(), description: idee.description.trim() } }))
