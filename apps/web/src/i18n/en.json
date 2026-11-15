@@ -1428,7 +1428,7 @@
       "classement": "Ranking",
       "rang": "#{rang} | #{rang}",
       "voir": "See {titre}",
-      "retours": "Jury feedback:",
+      "retours": "Jury feedback ({n})",
       "exAequo": "tied",
       "score": "{score} / 5"
     },
@@ -1835,12 +1835,13 @@
       "ecrire": "Write to {nom}",
       "envoyer": "Send",
       "ecrireClient": "Write to the client",
-      "prudence": "Keep your messages and payments on Jamii: if there's a disagreement, that's what counts.",
+      "prudence": "Keep your messages on Jamii, and record your payments here: if there's a disagreement, that's what counts.",
       "erreurs": {
         "trop": "Too many messages at once. Try again in a moment.",
         "autre": "The message wasn't sent. Try again."
       },
-      "fermer": "Close messages"
+      "fermer": "Close messages",
+      "vide": "No messages with {nom} yet."
     }
   },
   "themes": {

@@ -28,6 +28,11 @@ const peutRepondre = computed(() => peut('accepter_jalon') && statut.value === '
 const peutRetoucher = computed(() => peut('demander_retouche') && statut.value === 'livre' && retouchesRestantes.value > 0)
 const peutPayer = computed(() => peut('declarer_paye') && ['livre', 'accepte'].includes(statut.value) && props.jalon.paiement === 'non_paye')
 const peutRecevoir = computed(() => peut('declarer_recu') && props.jalon.paiement === 'declare_paye')
+/** L'acceptation automatique n'est annoncée que si elle est encore à venir, et hors désaccord. */
+const acceptationAVenir = computed(() => {
+  const le = props.jalon.acceptationAutomatiqueLe
+  return statut.value === 'livre' && Boolean(le) && !props.mission.travail?.desaccord && Date.parse(le!) > Date.now()
+})
 
 const retoucheOuverte = ref(false)
 const raison = ref('')
@@ -72,7 +77,7 @@ async function retoucher() {
     </dl>
     <p v-if="jalon.description" class="description">{{ jalon.description }}</p>
 
-    <p v-if="statut === 'livre' && jalon.acceptationAutomatiqueLe" class="note" data-test="acceptation-automatique">
+    <p v-if="acceptationAVenir" class="note" data-test="acceptation-automatique">
       {{ t('missions.suivi.acceptationAutomatique', { date: date(jalon.acceptationAutomatiqueLe) }) }}
     </p>
     <p v-if="statut === 'accepte' && jalon.accepteLe" class="texte-discret" data-test="accepte-le">

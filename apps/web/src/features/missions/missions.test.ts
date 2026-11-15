@@ -221,3 +221,14 @@ describe('une mission', () => {
     expect(page.find('[data-test="form-proposer"]').exists()).toBe(true)
   })
 })
+
+describe('les textes des missions', () => {
+  it('0 se met au singulier, et les échanges n’invitent plus à choisir une fois le développeur retenu', () => {
+    ;(i18n.global.locale as unknown as { value: string }).value = 'fr'
+    const t = i18n.global.t as (cle: string, valeurs: Record<string, unknown>, n?: number) => string
+    expect(t('missions.propositions', { n: 0 }, 0)).toBe('0 proposition')
+    expect(t('missions.propositions', { n: 1 }, 1)).toBe('1 proposition')
+    expect(t('missions.propositions', { n: 3 }, 3)).toBe('3 propositions')
+    expect(t('missions.echanges.vide', { nom: 'Kofi' })).toBe('Pas encore de message avec Kofi.')
+  })
+})
