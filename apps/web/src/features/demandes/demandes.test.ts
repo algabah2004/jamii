@@ -278,9 +278,9 @@ describe('du besoin au cercle', () => {
     await vi.waitFor(() => expect(routeur.currentRoute.value.name).toBe('nouveau-cercle'))
     expect(routeur.currentRoute.value.fullPath).toBe('/cercles/nouveau')
     await vi.waitFor(() => expect(page.find('[data-test="nouveau-cercle"]').exists()).toBe(true))
-    const champs = page.findAll('[data-test="nouveau-cercle"] input:not([type="radio"])')
-    expect((champs[0]!.element as HTMLInputElement).value).toBe('Nos dossiers')
-    expect((champs[1]!.element as HTMLInputElement).value).toBe('Dakar')
+    // Le titre du besoin devient le nom du cercle ; la ville n'est plus demandée (un cercle travaille en ligne).
+    expect((page.get('[data-test="champ-nom"]').element as HTMLInputElement).value).toBe('Nos dossiers')
+    expect(page.find('[data-test="nouveau-cercle"]').text()).not.toContain('Ville')
     // Les développeurs recommandés suivent : ils seront invités en un clic une fois le cercle créé.
     expect(page.find('[data-test="du-besoin"]').text()).toContain('inviter Kwame, Ibrahima et Amina en un clic')
   })

@@ -112,12 +112,13 @@ class CerclesController {
 	@PostMapping("/api/cercles")
 	ResponseEntity<Cercle> creer(@RequestBody CreationCercle demande, @AuthenticationPrincipal UtilisateurConnecte moi) {
 		String nom = demande.nom() == null ? "" : demande.nom().strip();
-		String ville = demande.ville() == null ? "" : demande.ville().strip();
+		// Facultative : le formulaire ne la demande plus ; une ville envoyée par un ancien client est encore vérifiée.
+		String ville = demande.ville() == null || demande.ville().isBlank() ? null : demande.ville().strip();
 		List<Map<String, String>> erreurs = new ArrayList<>();
 		if (nom.length() < 3 || nom.length() > 80) {
 			erreurs.add(Map.of("champ", "nom", "code", "longueur_invalide"));
 		}
-		if (ville.length() < 2 || ville.length() > 80) {
+		if (ville != null && (ville.length() < 2 || ville.length() > 80)) {
 			erreurs.add(Map.of("champ", "ville", "code", "longueur_invalide"));
 		}
 		if (demande.taille() == null || demande.taille() < 4 || demande.taille() > 6) {

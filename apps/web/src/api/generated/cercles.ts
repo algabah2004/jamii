@@ -194,8 +194,11 @@ export interface components {
         CreationCercle: {
             /** @example Cercle de Dakar */
             nom: string;
-            /** @description Texte libre. */
-            ville: string;
+            /**
+             * @deprecated
+             * @description Facultative depuis le 15/11 : le formulaire ne la demande plus (un cercle travaille en ligne). Encore acceptée pour les anciens clients.
+             */
+            ville?: string;
             /** @description Nombre de membres, créateur compris. */
             taille: number;
         };
@@ -208,7 +211,8 @@ export interface components {
             /** Format: uuid */
             id: string;
             nom: string;
-            ville: string;
+            /** @description null pour les cercles créés sans ville. */
+            ville: string | null;
             taille: number;
             statut: components["schemas"]["StatutCercle"];
             nombreMembres: number;

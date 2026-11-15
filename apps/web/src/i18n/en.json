@@ -927,15 +927,42 @@
     },
     "nouveau": {
       "titre": "Create a circle",
-      "intro": "You will be its first member. Others join, everyone shares an idea, then you draw the turn order.",
       "nom": "Circle name",
-      "nomAide": "For example, Dakar circle.",
-      "ville": "City",
       "taille": "How many of you?",
       "personnes": "{n} people",
-      "tailleAide": "{n} two-week turns: everyone gets their project built.",
       "creer": "Create the circle",
-      "duBesoin": "Once the circle is created, you can invite {noms} in one click."
+      "duBesoin": "Once the circle is created, you can invite {noms} in one click.",
+      "etape": "Step {n} of {total}",
+      "suivant": "Continue",
+      "retour": "Back",
+      "entree": "Enter ↵ to continue",
+      "nomExemple": "Ubuntu Circle",
+      "inspirations": "For inspiration:",
+      "q": {
+        "nom": "What is your circle called?",
+        "nomAide": "A short name others will recognise. You can invite developers from all over the continent: the circle works online.",
+        "taille": "How many of you will there be?",
+        "tailleAide": "Including you. Every member gets a turn: for two weeks, the whole circle builds their project.",
+        "apercu": "Ready to launch “{nom}”?"
+      },
+      "duree": "{semaines} weeks in total",
+      "promesses": {
+        "membre": "You are its first member.",
+        "idees": "{n} people join, and each one submits a project idea.",
+        "tirage": "Once the circle is full, you draw the turn order at random.",
+        "tours": "{n} two-week turns: everyone leaves with their project built."
+      },
+      "apercu": "Circle preview",
+      "places": "{n} places left to fill.",
+      "tailleAVenir": "Choose how many of you there will be.",
+      "etapes": {
+        "nom": "The name",
+        "taille": "How many",
+        "apercu": "How it works"
+      },
+      "succes": "“{nom}” is created!",
+      "succesAide": "Now invite the {n} other members.",
+      "entrer": "Enter the circle"
     },
     "membresTitre": "Members",
     "livrer": "Deliver the turn",
@@ -975,7 +1002,8 @@
       "voir": "See the post",
       "erreur": "The post wasn't published. Try again.",
       "aucuneCommunaute": "Join a community first to post there.",
-      "carte": "Tech Tontine circle"
+      "carte": "Tech Tontine circle",
+      "contenuSansVille": "We take turns building each member's project, online. There is still room: join us here {lien}"
     },
     "code": {
       "titre": "The turn's code",
@@ -994,7 +1022,8 @@
         "fusionnee": "Merged",
         "fermee": "Closed"
       }
-    }
+    },
+    "sousTitreSansVille": "{n} members"
   },
   "reseau": {
     "competences": "Skills",

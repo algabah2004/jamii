@@ -95,7 +95,7 @@ function etape(c: CercleResume): string {
           </span>
           <i v-for="n in vedette.cercle.taille - vedette.cercle.membres.length" :key="`libre-${n}`" class="visages__libre" />
         </span>
-        <span v-if="vedette.tour" class="vedette__cercle">{{ vedette.cercle.nom }} · {{ vedette.cercle.ville }}</span>
+        <span v-if="vedette.tour" class="vedette__cercle">{{ vedette.cercle.nom }}{{ vedette.cercle.ville ? ` · ${vedette.cercle.ville}` : '' }}</span>
         <span v-if="vedette.tour && suivi" class="vedette__suivi">
           <span class="barre" role="progressbar" :aria-valuenow="pourcentage(suivi)" aria-valuemin="0" aria-valuemax="100" :aria-label="t('cercles.avancement')">
             <i :style="{ width: `${pourcentage(suivi)}%` }" />
@@ -124,7 +124,7 @@ function etape(c: CercleResume): string {
                 <strong>{{ r.cercle.nom }}</strong>
                 <span class="pastille-statut">{{ t('cercles.membres', { n: r.cercle.nombreMembres, taille: r.cercle.taille }) }}</span>
               </span>
-              <span class="texte-discret">{{ r.cercle.ville }}</span>
+              <span v-if="r.cercle.ville" class="texte-discret">{{ r.cercle.ville }}</span>
               <span class="places" aria-hidden="true">
                 <i v-for="n in r.cercle.taille" :key="n" :class="{ pleine: n <= r.cercle.nombreMembres }" />
               </span>
@@ -147,7 +147,7 @@ function etape(c: CercleResume): string {
                 <strong>{{ c.nom }}</strong>
                 <span class="pastille-statut" :class="`pastille-statut--${c.statut}`">{{ t(`cercles.statut.${c.statut}`) }}</span>
               </span>
-              <span class="texte-discret">{{ c.ville }} · {{ t('cercles.membres', { n: c.nombreMembres, taille: c.taille }) }}</span>
+              <span class="texte-discret">{{ c.ville ? `${c.ville} · ` : '' }}{{ t('cercles.membres', { n: c.nombreMembres, taille: c.taille }) }}</span>
               <!-- Les visages des membres, et les places encore libres en pointillés. -->
               <span v-if="details[c.id]" class="visages visages--petit" aria-hidden="true">
                 <span v-for="m in details[c.id]!.membres" :key="m.personne.id" class="visages__un">
@@ -174,7 +174,7 @@ function etape(c: CercleResume): string {
                 <strong>{{ c.nom }}</strong>
                 <span class="pastille-statut">{{ t('cercles.membres', { n: c.nombreMembres, taille: c.taille }) }}</span>
               </span>
-              <span class="texte-discret">{{ c.ville }}</span>
+              <span v-if="c.ville" class="texte-discret">{{ c.ville }}</span>
               <span class="places" aria-hidden="true">
                 <i v-for="n in c.taille" :key="n" :class="{ pleine: n <= c.nombreMembres }" />
               </span>
