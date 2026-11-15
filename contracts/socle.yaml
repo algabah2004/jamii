@@ -282,6 +282,43 @@ components:
         champ: { type: string, description: 'Chemin du champ, par exemple `roles[0].titre`.' }
         code: { type: string, examples: [obligatoire, trop_court, format_invalide] }
 
+    Question:
+      type: object
+      additionalProperties: false
+      description: |
+        Une question d'un questionnaire personnalisé (#257) : posée par l'organisateur d'un hackathon à l'inscription
+        (`hackathons.yaml`), ou par le client d'une mission dans une proposition (`missions.yaml`). Dix au plus par
+        questionnaire. `choix` (de 2 à 8, sans doublon) seulement pour `choix_unique` et `choix_multiples`.
+      required: [id, intitule, type, obligatoire]
+      properties:
+        id: { type: string, pattern: '^[a-z0-9]{1,12}$', description: 'Choisi par le front (`q1`, `q2`…), unique dans le questionnaire : les réponses s''y rattachent.' }
+        intitule: { type: string, minLength: 3, maxLength: 200 }
+        aide: { type: [string, 'null'], maxLength: 300, description: 'Une précision sous la question.' }
+        type: { type: string, enum: [texte_court, texte_long, choix_unique, choix_multiples, oui_non] }
+        obligatoire: { type: boolean, default: false }
+        choix: { type: array, minItems: 2, maxItems: 8, uniqueItems: true, items: { type: string, minLength: 1, maxLength: 80 } }
+
+    Questionnaire:
+      type: array
+      maxItems: 10
+      items: { $ref: '#/components/schemas/Question' }
+
+    Reponse:
+      type: object
+      additionalProperties: false
+      description: |
+        La réponse à une question. `valeur` : un texte (200 caractères au plus pour `texte_court`, 2 000 pour `texte_long`),
+        l'un des `choix` pour `choix_unique`, `oui` ou `non` pour `oui_non`, une liste de `choix` pour `choix_multiples`.
+        Une réponse vide compte comme absente. En cas d'erreur, le 400 la signale sous `reponses.<id de la question>`
+        (`obligatoire`, `valeur_inconnue`, `trop_long`, `type_invalide`).
+      required: [questionId, valeur]
+      properties:
+        questionId: { type: string }
+        valeur:
+          oneOf:
+            - { type: string, maxLength: 2000 }
+            - { type: array, maxItems: 8, items: { type: string } }
+
     Page:
       type: object
       description: |

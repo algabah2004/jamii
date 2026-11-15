@@ -1,5 +1,6 @@
 package dev.jamii.api.missions;
 
+import dev.jamii.api.questionnaires.Questionnaire;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.time.Clock;
@@ -8,6 +9,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.beans.factory.ObjectProvider;
@@ -28,11 +30,12 @@ class Propositions {
 
 	/** Une proposition telle que la base la garde. */
 	record Proposition(UUID id, UUID missionId, UUID developpeurId, String message, Missions.Montant prix, int delaiJours,
-			List<String> reponses, String statut, Instant envoyeeLe) {
+			List<Questionnaire.Reponse> reponses, String statut, Instant envoyeeLe) {
 	}
 
 	/** Une proposition nouvelle, déjà validée par le contrôleur. */
-	record Nouvelle(String message, Missions.Montant prix, int delaiJours, List<String> reponses) {
+	/** `reponses` : telles que reçues, vérifiées ici contre le questionnaire de la mission. */
+	record Nouvelle(String message, Missions.Montant prix, int delaiJours, Object reponses) {
 	}
 
 	record Page(List<Proposition> elements, String curseurSuivant) {
@@ -43,7 +46,7 @@ class Propositions {
 
 	private static final Duration JOUR = Duration.ofHours(24);
 
-	private static final String COLONNES = "id, mission_id, developpeur_id, message, prix_centimes, devise, delai_jours, reponses, statut, cree_le";
+	private static final String COLONNES = "id, mission_id, developpeur_id, message, prix_centimes, devise, delai_jours, reponses_questionnaire, statut, cree_le";
 
 	private final JdbcClient base;
 
@@ -91,15 +94,21 @@ class Propositions {
 			throw ErreurMissions.limiteAtteinte("Trop de propositions envoyées aujourd'hui",
 					Duration.between(maintenant, liberee).toSeconds() + 1);
 		}
+		List<Map<String, String>> erreurs = new ArrayList<>();
+		List<Questionnaire.Reponse> reponses = Questionnaire.verifier(n.reponses(), m.questionnaire(), "reponses",
+				(champ, code) -> erreurs.add(Map.of("champ", champ, "code", code)));
+		if (!erreurs.isEmpty()) {
+			throw ErreurMissions.validation(erreurs);
+		}
 		UUID id = UUID.randomUUID();
 		try {
 			base.sql("""
-					INSERT INTO proposition (id, mission_id, developpeur_id, message, prix_centimes, devise, delai_jours, reponses, cree_le)
-					VALUES (:id, :m, :d, :message, :centimes, :devise, :delai, :reponses, :t)
+					INSERT INTO proposition (id, mission_id, developpeur_id, message, prix_centimes, devise, delai_jours, reponses_questionnaire, cree_le)
+					VALUES (:id, :m, :d, :message, :centimes, :devise, :delai, CAST(:reponses AS jsonb), :t)
 					""")
 				.param("id", id).param("m", missionId).param("d", moi).param("message", n.message())
 				.param("centimes", n.prix().centimes()).param("devise", n.prix().devise()).param("delai", n.delaiJours())
-				.param("reponses", n.reponses().toArray(String[]::new)).param("t", Timestamp.from(maintenant))
+				.param("reponses", Questionnaire.enJson(reponses)).param("t", Timestamp.from(maintenant))
 				.update();
 		}
 		catch (DuplicateKeyException e) {
@@ -191,11 +200,10 @@ class Propositions {
 	}
 
 	private static Proposition proposition(java.sql.ResultSet rs, int ligne) throws java.sql.SQLException {
-		String[] reponses = (String[]) rs.getArray("reponses").getArray();
 		return new Proposition(rs.getObject("id", UUID.class), rs.getObject("mission_id", UUID.class),
 				rs.getObject("developpeur_id", UUID.class), rs.getString("message"),
 				new Missions.Montant(rs.getLong("prix_centimes"), rs.getString("devise")), rs.getInt("delai_jours"),
-				List.of(reponses), rs.getString("statut"), rs.getTimestamp("cree_le").toInstant());
+				Questionnaire.reponses(rs.getString("reponses_questionnaire")), rs.getString("statut"), rs.getTimestamp("cree_le").toInstant());
 	}
 
 	/** Le curseur de la liste : la date d'envoi et l'identifiant de la dernière proposition, en base 64. */

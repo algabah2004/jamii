@@ -547,6 +547,8 @@ export interface components {
             codeDeConduite?: string;
             /** @description Questions posées à chaque rendu. */
             questions?: string[];
+            /** @description Questions posées à l'inscription (#257). */
+            questionnaire?: components["schemas"]["Questionnaire"];
             criteres: components["schemas"]["Critere"][];
             prix?: components["schemas"]["Prix"][];
         };
@@ -563,6 +565,8 @@ export interface components {
             deploiementObligatoire?: boolean;
             codeDeConduite?: string;
             questions?: string[];
+            /** @description Se change tant que personne ne s'est inscrit (`409 questionnaire_fige` ensuite) : les réponses déjà données gardent leur sens. */
+            questionnaire?: components["schemas"]["Questionnaire"];
             criteres?: components["schemas"]["Critere"][];
             prix?: components["schemas"]["Prix"][];
         };
@@ -595,6 +599,7 @@ export interface components {
             deploiementObligatoire: boolean;
             codeDeConduite?: string | null;
             questions: string[];
+            questionnaire: components["schemas"]["Questionnaire"];
             criteres: components["schemas"]["Critere"][];
             prix: components["schemas"]["Prix"][];
             version: number;
@@ -616,6 +621,8 @@ export interface components {
             /** Format: uuid */
             id: string;
             personne: components["schemas"]["PersonneResume"];
+            /** @description Ses réponses au questionnaire. Lues par l'organisateur (tri) et par la personne elle-même seulement. */
+            reponses: components["schemas"]["Reponse"][];
             statut: components["schemas"]["StatutInscription"];
             chercheEquipe: boolean;
             /** Format: uuid */
@@ -800,6 +807,34 @@ export interface components {
             /** @description Identifiant à retrouver dans les journaux. */
             traceId?: string;
             erreurs?: components["schemas"]["ErreurChamp"][];
+        };
+        /**
+         * @description Une question d'un questionnaire personnalisé (#257) : posée par l'organisateur d'un hackathon à l'inscription
+         *     (`hackathons.yaml`), ou par le client d'une mission dans une proposition (`missions.yaml`). Dix au plus par
+         *     questionnaire. `choix` (de 2 à 8, sans doublon) seulement pour `choix_unique` et `choix_multiples`.
+         */
+        Question: {
+            /** @description Choisi par le front (`q1`, `q2`…), unique dans le questionnaire : les réponses s'y rattachent. */
+            id: string;
+            intitule: string;
+            /** @description Une précision sous la question. */
+            aide?: string | null;
+            /** @enum {string} */
+            type: "texte_court" | "texte_long" | "choix_unique" | "choix_multiples" | "oui_non";
+            /** @default false */
+            obligatoire: boolean;
+            choix?: string[];
+        };
+        Questionnaire: components["schemas"]["Question"][];
+        /**
+         * @description La réponse à une question. `valeur` : un texte (200 caractères au plus pour `texte_court`, 2 000 pour `texte_long`),
+         *     l'un des `choix` pour `choix_unique`, `oui` ou `non` pour `oui_non`, une liste de `choix` pour `choix_multiples`.
+         *     Une réponse vide compte comme absente. En cas d'erreur, le 400 la signale sous `reponses.<id de la question>`
+         *     (`obligatoire`, `valeur_inconnue`, `trop_long`, `type_invalide`).
+         */
+        Reponse: {
+            questionId: string;
+            valeur: string | string[];
         };
         /** @description En minuscules, sans espace inutile (`flutter`, `postgresql`, `ux-design`). */
         Competence: string;
@@ -1099,6 +1134,8 @@ export interface operations {
                      */
                     chercheEquipe?: boolean;
                     competences?: components["schemas"]["Competence"][];
+                    /** @description Les réponses au questionnaire du hackathon (`400` sous `reponses.<id>` si une réponse obligatoire manque). */
+                    reponses?: components["schemas"]["Reponse"][];
                 };
             };
         };
@@ -1224,6 +1261,8 @@ export interface operations {
             content: {
                 "application/json": {
                     nom: string;
+                    /** @description Si je ne suis pas encore inscrit : mes réponses au questionnaire, vérifiées comme pour `sInscrire`. */
+                    reponses?: components["schemas"]["Reponse"][];
                 };
             };
         };

@@ -1,5 +1,6 @@
 package dev.jamii.api.missions;
 
+import dev.jamii.api.questionnaires.Questionnaire;
 import java.sql.Array;
 import java.sql.Date;
 import java.sql.ResultSet;
@@ -38,12 +39,13 @@ class Missions {
 	/** Une mission telle que la base la garde. */
 	record Mission(UUID id, UUID clientId, UUID demandeId, String titre, String besoin, List<String> competences,
 			Montant budget, LocalDate dateSouhaitee, String visibilite, String ville, String pays, boolean aDistance,
-			String statut, int version, Instant creeLe, Instant publieeLe, UUID developpeurId) {
+			String statut, int version, Instant creeLe, Instant publieeLe, UUID developpeurId, List<Questionnaire.Question> questionnaire) {
 	}
 
 	/** Une mission nouvelle, déjà validée par le contrôleur. */
 	record Nouvelle(UUID demandeId, String titre, String besoin, List<String> competences, Montant budget,
-			LocalDate dateSouhaitee, String visibilite, String ville, String pays, boolean aDistance) {
+			LocalDate dateSouhaitee, String visibilite, String ville, String pays, boolean aDistance,
+			List<Questionnaire.Question> questionnaire) {
 	}
 
 	/** Une mission, et ce que la personne qui la lit est pour elle : `client`, `invite` ou `visiteur`. */
@@ -60,7 +62,7 @@ class Missions {
 
 	private static final String COLONNES = """
 			id, client_id, demande_id, titre, besoin, competences, budget_centimes, devise, date_souhaitee, visibilite,
-			ville, pays, a_distance, statut, version, cree_le, publiee_le, developpeur_id""";
+			ville, pays, a_distance, statut, version, cree_le, publiee_le, developpeur_id, questionnaire""";
 
 	/** L'ordre de la liste : la publication la plus récente d'abord, et la création pour un brouillon. */
 	private static final String TRI = "COALESCE(publiee_le, cree_le)";
@@ -88,9 +90,9 @@ class Missions {
 		UUID id = UUID.randomUUID();
 		base.sql("""
 				INSERT INTO mission (id, client_id, demande_id, titre, besoin, competences, budget_centimes, devise,
-					date_souhaitee, visibilite, ville, pays, a_distance, cree_le)
+					date_souhaitee, visibilite, ville, pays, a_distance, questionnaire, cree_le)
 				VALUES (:id, :client, :demande, :titre, :besoin, :competences, :centimes, :devise,
-					:date, :visibilite, :ville, :pays, :aDistance, :maintenant)
+					:date, :visibilite, :ville, :pays, :aDistance, CAST(:questionnaire AS jsonb), :maintenant)
 				""")
 			.param("id", id)
 			.param("client", client)
@@ -105,6 +107,7 @@ class Missions {
 			.param("ville", n.ville())
 			.param("pays", n.pays())
 			.param("aDistance", n.aDistance())
+			.param("questionnaire", Questionnaire.enJson(n.questionnaire()))
 			.param("maintenant", Timestamp.from(horloge.instant()))
 			.update();
 		return id;
@@ -330,7 +333,7 @@ class Missions {
 				date == null ? null : date.toLocalDate(), rs.getString("visibilite"), rs.getString("ville"),
 				rs.getString("pays"), rs.getBoolean("a_distance"), rs.getString("statut"), rs.getInt("version"),
 				rs.getTimestamp("cree_le").toInstant(), publiee == null ? null : publiee.toInstant(),
-				rs.getObject("developpeur_id", UUID.class));
+				rs.getObject("developpeur_id", UUID.class), Questionnaire.questions(rs.getString("questionnaire")));
 	}
 
 	/** Le curseur de la liste : l'instant de tri et l'identifiant de la dernière mission, en base 64 (opaque pour le front). */

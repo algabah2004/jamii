@@ -1,5 +1,6 @@
 package dev.jamii.api.hackathons;
 
+import dev.jamii.api.questionnaires.Questionnaire;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -31,7 +32,8 @@ class DonneesHackathons implements DonneesPersonnelles {
 	record Organise(UUID id, String titre, Instant creeLe) {
 	}
 
-	record MonInscription(UUID hackathonId, String statut, UUID equipeId, boolean chercheEquipe, List<String> competences, Instant creeLe) {
+	record MonInscription(UUID hackathonId, String statut, UUID equipeId, boolean chercheEquipe, List<String> competences,
+			List<Questionnaire.Reponse> reponses, Instant creeLe) {
 	}
 
 	record MonRendu(UUID id, UUID hackathonId, UUID equipeId, String titre, String lienProduit, Instant modifieLe) {
@@ -58,12 +60,13 @@ class DonneesHackathons implements DonneesPersonnelles {
 			.query((rs, i) -> new Organise(rs.getObject("id", UUID.class), rs.getString("titre"), rs.getTimestamp("cree_le").toInstant()))
 			.list();
 		List<MonInscription> inscriptions = base.sql("""
-				SELECT hackathon_id, statut, equipe_id, cherche_equipe, competences, cree_le FROM inscription
+				SELECT hackathon_id, statut, equipe_id, cherche_equipe, competences, reponses, cree_le FROM inscription
 				WHERE utilisateur_id = :u ORDER BY cree_le, id
 				""").param("u", utilisateurId)
 			.query((rs, i) -> new MonInscription(rs.getObject("hackathon_id", UUID.class), rs.getString("statut"),
 					rs.getObject("equipe_id", UUID.class), rs.getBoolean("cherche_equipe"),
-					List.of((String[]) rs.getArray("competences").getArray()), rs.getTimestamp("cree_le").toInstant()))
+					List.of((String[]) rs.getArray("competences").getArray()), Questionnaire.reponses(rs.getString("reponses")),
+					rs.getTimestamp("cree_le").toInstant()))
 			.list();
 		List<MonRendu> rendus = base.sql("""
 				SELECT r.id, r.hackathon_id, r.equipe_id, r.titre, r.lien_produit, r.modifie_le FROM rendu r

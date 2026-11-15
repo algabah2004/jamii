@@ -53,6 +53,7 @@ function hackathonDemo(): Hackathon {
     deploiementObligatoire: true,
     codeDeConduite: 'Respect de chacun, aucun harcèlement, le code de chaque équipe reste le sien.',
     questions: ["Quel problème d'un commerçant résolvez-vous ?"],
+    questionnaire: [],
     criteres: [
       { id: 'c1000000-0000-4000-8000-000000000001', nom: 'Utilité pour un commerçant', poids: 50 },
       { id: 'c1000000-0000-4000-8000-000000000002', nom: 'Qualité technique', poids: 30 },
@@ -93,7 +94,7 @@ export function deposerRendu(rendu: Rendu) {
 
 /** Deux participants seuls, qui cherchent une équipe : de quoi montrer « Je cherche une équipe ». */
 function seulDemo(personne: typeof FATOU, competences: string[]): Inscription {
-  return { id: crypto.randomUUID(), personne, statut: 'acceptee', chercheEquipe: true, equipeId: null, competences, creeLe: dansHeures(-20) }
+  return { id: crypto.randomUUID(), personne, statut: 'acceptee', chercheEquipe: true, equipeId: null, competences, reponses: [], creeLe: dansHeures(-20) }
 }
 
 export function reinitialiserHackathons() {
@@ -154,6 +155,7 @@ export const handlersHackathons = [
       deploiementObligatoire: corps.deploiementObligatoire ?? false,
       codeDeConduite: corps.codeDeConduite ?? null,
       questions: corps.questions ?? [],
+      questionnaire: corps.questionnaire ?? [],
       criteres: corps.criteres.map((c, i) => ({ ...c, id: `c2000000-0000-4000-8000-00000000000${i + 1}` })),
       prix: (corps.prix ?? []).map((p, i) => ({ ...p, id: `p2000000-0000-4000-8000-00000000000${i + 1}` })),
       statut: 'brouillon',
@@ -187,13 +189,23 @@ export const handlersHackathons = [
     if (!h) return erreur(404, 'introuvable')
     const liste = inscriptions.get(h.id) ?? []
     if (liste.some((i) => i.personne.id === KOFI.id)) return erreur(409, 'deja_inscrit')
+    const corps = (await request.json()) as { chercheEquipe?: boolean; reponses?: Inscription['reponses'] }
+    // Comme l'API : une réponse obligatoire manquante donne un 400 sous `reponses.<id>`.
+    const manquantes = h.questionnaire.filter((q) => q.obligatoire && !corps.reponses?.some((r) => r.questionId === q.id && String(r.valeur).trim()))
+    if (manquantes.length) {
+      return HttpResponse.json(
+        { type: 'urn:jamii:erreur:validation', title: 'validation', status: 400, code: 'validation', erreurs: manquantes.map((q) => ({ champ: `reponses.${q.id}`, code: 'obligatoire' })) },
+        { status: 400, headers: { 'Content-Type': 'application/problem+json' } },
+      )
+    }
     const inscription: Inscription = {
       id: crypto.randomUUID(),
       personne: KOFI,
       statut: h.modeInscription === 'ouvert' ? 'acceptee' : 'en_attente',
-      chercheEquipe: ((await request.json()) as { chercheEquipe?: boolean }).chercheEquipe ?? true,
+      chercheEquipe: corps.chercheEquipe ?? true,
       equipeId: null,
       competences: [],
+      reponses: corps.reponses ?? [],
       creeLe: new Date().toISOString(),
     }
     liste.push(inscription)

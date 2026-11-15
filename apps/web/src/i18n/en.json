@@ -1808,5 +1808,92 @@
   "themes": {
     "passerClair": "Switch to light theme",
     "passerSombre": "Switch to dark theme"
+  },
+  "questionnaire": {
+    "types": {
+      "texte_court": "Short answer",
+      "texte_long": "Paragraph",
+      "choix_unique": "Single choice",
+      "choix_multiples": "Multiple choice",
+      "oui_non": "Yes or no"
+    },
+    "editeur": {
+      "titre": "Your questions",
+      "aide": {
+        "hackathon": "Asked to everyone who registers. You read the answers in “Management” to sort applications.",
+        "mission": "Asked to every developer who offers their services. You read the answers on each proposal."
+      },
+      "fige": "People have already answered: the questions can no longer change, so their answers keep their meaning.",
+      "intitule": "Question {n}",
+      "intitulePlaceholder": "Write your question",
+      "type": "Answer type",
+      "obligatoire": "Required answer",
+      "aideQuestion": "Hint (optional)",
+      "aidePlaceholder": "E.g. a public link that opens without an account",
+      "choix": "Possible choices ({min} to {max})",
+      "choixN": "Choice {n}",
+      "ajouterChoix": "+ Add a choice",
+      "retirerChoix": "Remove choice {n}",
+      "monter": "Move question {n} up",
+      "descendre": "Move question {n} down",
+      "retirer": "Remove",
+      "vide": "No questions yet. Add one, or start from a template.",
+      "modeles": "Start from a template:",
+      "ajouter": "+ Blank question",
+      "plein": "{max} questions at most: remove one to add another."
+    },
+    "modeles": {
+      "lien": {
+        "court": "GitHub or portfolio link",
+        "intitule": "Your GitHub or portfolio link"
+      },
+      "niveau": {
+        "court": "Level",
+        "intitule": "Your level in the challenge's technology",
+        "choix": "Beginner;Comfortable;Expert"
+      },
+      "disponibilites": {
+        "court": "Availability",
+        "intitule": "When are you available?",
+        "choix": "Weekday evenings;Weekends;Daytime"
+      },
+      "motivation": {
+        "court": "Motivation",
+        "intitule": "Why do you want to take part?"
+      },
+      "experience": {
+        "court": "Experience",
+        "intitule": "Have you already delivered a project like this?"
+      },
+      "deplacement": {
+        "court": "Travel",
+        "intitule": "Can you come to our place if needed?"
+      }
+    },
+    "erreurs": {
+      "intitule": "Write the question (at least 3 characters).",
+      "choix": "Give at least two choices.",
+      "doublon": "Two choices are the same."
+    },
+    "remplir": {
+      "titre": "The organisers' questions",
+      "titreMission": "The client's questions",
+      "obligatoire": "required",
+      "oui": "Yes",
+      "non": "No",
+      "manquantes": "One required answer is missing. | {n} required answers are missing.",
+      "erreurs": {
+        "obligatoire": "This answer is required.",
+        "trop_long": "This answer is too long.",
+        "valeur_inconnue": "This choice doesn't exist: reload the page.",
+        "autre": "This answer isn't valid."
+      }
+    },
+    "reponses": {
+      "titre": "Answers to the questions",
+      "aucune": "No answer",
+      "voir": "See the answers",
+      "masquer": "Hide the answers"
+    }
   }
 }

@@ -1,5 +1,6 @@
 package dev.jamii.api.missions;
 
+import dev.jamii.api.questionnaires.Questionnaire;
 import java.net.URI;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
@@ -39,7 +40,7 @@ class MissionsController {
 	private static final Pattern COMPETENCE = Pattern.compile("^[a-z0-9][a-z0-9.+#-]*$");
 
 	private static final Set<String> CHAMPS = Set.of("demandeId", "titre", "besoin", "competences", "budget", "dateSouhaitee",
-			"visibilite", "ville", "pays", "aDistance");
+			"visibilite", "ville", "pays", "aDistance", "questionnaire");
 
 	private final Missions missions;
 
@@ -131,8 +132,10 @@ class MissionsController {
 		if (corps.containsKey("aDistance") && !(corps.get("aDistance") instanceof Boolean)) {
 			e.ajouter("aDistance", "type_invalide");
 		}
+		List<Questionnaire.Question> questionnaire = Questionnaire.lire(corps.get("questionnaire"), "questionnaire", e::ajouter);
 		e.verifier();
-		return new Missions.Nouvelle(demandeId, titre, besoin, competences, budget, date, visibilite, ville, pays, aDistance);
+		return new Missions.Nouvelle(demandeId, titre, besoin, competences, budget, date, visibilite, ville, pays, aDistance,
+				questionnaire == null ? List.of() : questionnaire);
 	}
 
 	/**
