@@ -132,3 +132,10 @@ describe('AXE, exploration des cercles', () => {
     expect(await violations('/cercles', '[data-test="cercles-ouverts"]')).toEqual([])
   })
 })
+
+
+describe('AXE, création guidée d’un besoin', () => {
+  it('la première étape et les exemples', async () => {
+    expect(await violations('/demandes/nouvelle', '[data-test="demande"]')).toEqual([])
+  })
+})

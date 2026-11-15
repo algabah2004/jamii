@@ -2522,5 +2522,135 @@
       "voir": "Voir les réponses",
       "masquer": "Masquer les réponses"
     }
+  },
+  "creationGuidee": {
+    "etape": "Étape {n} sur {total}",
+    "precedent": "Retour",
+    "continuer": "Continuer",
+    "apercu": "Ton aperçu",
+    "enDirect": "En direct",
+    "parcours": "Les étapes de création",
+    "aDiscuter": "Budget à discuter",
+    "aDefinir": "À définir ensemble",
+    "aDistance": "À distance",
+    "brouillon": "Tu enregistres un brouillon. Personne ne le voit tant que tu ne le publies pas.",
+    "aucunPrix": "Pas de récompense annoncée",
+    "personnes": "personnes",
+    "oui": "Oui",
+    "non": "Non",
+    "mission": {
+      "titre": {
+        "nom": "Le titre",
+        "titre": "Quelle mission veux-tu proposer ?",
+        "aide": "Un titre simple aide les développeurs à comprendre ce que tu recherches."
+      },
+      "besoin": {
+        "nom": "Le besoin",
+        "titre": "Quel résultat attends-tu ?",
+        "aide": "Explique le travail à réaliser, pour qui, et ce qui fera la différence."
+      },
+      "competences": {
+        "nom": "Les compétences",
+        "titre": "De quels talents as-tu besoin ?",
+        "aide": "Choisis les compétences utiles à cette mission. Tu pourras en discuter avec les développeurs."
+      },
+      "modalites": {
+        "nom": "Les modalités",
+        "titre": "Quel cadre pour cette mission ?",
+        "aide": "Précise ton budget, ta date souhaitée et ta ville si tu les connais. Ces informations restent facultatives."
+      },
+      "candidatures": {
+        "nom": "Les candidatures",
+        "titre": "Qui peut te proposer son aide ?",
+        "aide": "Choisis la visibilité de la mission et ajoute, si besoin, les questions à poser aux développeurs."
+      },
+      "apercu": {
+        "nom": "L’aperçu",
+        "titre": "Tout est prêt pour ton brouillon ?",
+        "aide": "Relis ta mission. Tu pourras encore la modifier avant de la publier."
+      },
+      "apercuVide": "Ta prochaine mission",
+      "exemples": {
+        "site": "Un site pour mon association",
+        "appli": "Une application de commandes",
+        "design": "Les maquettes de mon application"
+      }
+    },
+    "demande": {
+      "titre": {
+        "nom": "Ton projet",
+        "titre": "Quel projet veux-tu lancer ?",
+        "aide": "Commence par une phrase simple. Pas besoin de connaître la solution technique."
+      },
+      "description": {
+        "nom": "Ton besoin",
+        "titre": "Qu’est-ce qui doit changer ?",
+        "aide": "Raconte ce que tu fais aujourd’hui, le problème rencontré et ce que tu aimerais simplifier."
+      },
+      "questions": {
+        "nom": "Quelques précisions",
+        "titre": "Pour mieux comprendre ton besoin",
+        "aide": "Ces trois questions sont facultatives. Quelques mots suffisent pour rendre les propositions plus utiles."
+      },
+      "contexte": {
+        "nom": "Le contexte",
+        "titre": "Dans quel contexte travailles-tu ?",
+        "aide": "Choisis ton secteur et précise ta ville et ton délai si tu les connais."
+      },
+      "apercu": {
+        "nom": "L’aperçu",
+        "titre": "Ton besoin te ressemble ?",
+        "aide": "Vérifie les informations avant de découvrir les solutions et les personnes qui peuvent t’aider."
+      },
+      "apercuVide": "Ton prochain projet"
+    },
+    "hackathon": {
+      "titre": {
+        "nom": "Le nom",
+        "titre": "Comment s’appelle ton hackathon ?",
+        "aide": "Donne-lui un nom dont les participants se souviendront."
+      },
+      "defi": {
+        "nom": "Le défi",
+        "titre": "Quel défi allez-vous relever ?",
+        "aide": "Présente le thème, le problème à résoudre et ce que les équipes vont construire."
+      },
+      "format": {
+        "nom": "Le format",
+        "titre": "Comment les équipes se retrouvent-elles ?",
+        "aide": "En ligne, sur place ou les deux : précise le lieu et le nombre de personnes par équipe."
+      },
+      "calendrier": {
+        "nom": "Le calendrier",
+        "titre": "Quelles sont les dates à retenir ?",
+        "aide": "Pose les grandes étapes, des inscriptions à l’annonce des résultats. Les heures suivent ton fuseau local."
+      },
+      "participants": {
+        "nom": "Les inscriptions",
+        "titre": "Comment accueillir les participants ?",
+        "aide": "Choisis le mode d’inscription. Tu peux ajouter un questionnaire et les consignes du hackathon."
+      },
+      "jury": {
+        "nom": "Les critères",
+        "titre": "Qu’est-ce qui fera un bon projet ?",
+        "aide": "Définis les critères du jury. Le poids de chaque critère indique son importance relative."
+      },
+      "recompenses": {
+        "nom": "Les récompenses",
+        "titre": "Qu’est-ce que les équipes peuvent gagner ?",
+        "aide": "Ajoute tes récompenses et leurs partenaires, ou passe cette étape si rien n’est encore prévu."
+      },
+      "apercu": {
+        "nom": "L’aperçu",
+        "titre": "Prêt à enregistrer ton hackathon ?",
+        "aide": "Relis le programme, les inscriptions et les critères. Tu publieras le brouillon quand tout sera prêt."
+      },
+      "apercuVide": "Ton prochain hackathon",
+      "exemples": {
+        "ecoles": "Hackathon des écoles",
+        "quartier": "Le défi numérique du quartier",
+        "sante": "Hack Santé Afrique"
+      }
+    }
   }
 }

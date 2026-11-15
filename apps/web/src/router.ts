@@ -106,7 +106,7 @@ export const routes: RouteRecordRaw[] = [
     path: '/demandes/nouvelle',
     name: 'nouvelle-demande',
     component: () => import('./features/demandes/NouvelleDemandePage.vue'),
-    meta: { connexionRequise: true },
+    meta: { connexionRequise: true, pleineLargeur: true },
   },
   {
     path: '/demandes/:id',
@@ -121,7 +121,7 @@ export const routes: RouteRecordRaw[] = [
     path: '/missions/nouvelle',
     name: 'nouvelle-mission',
     component: () => import('./features/missions/NouvelleMissionPage.vue'),
-    meta: { connexionRequise: true },
+    meta: { connexionRequise: true, pleineLargeur: true },
   },
   { path: '/missions/:id', name: 'mission', component: () => import('./features/missions/MissionPage.vue') },
   { path: '/hackathons', name: 'hackathons', component: () => import('./features/hackathons/HackathonsPage.vue') },
@@ -129,7 +129,7 @@ export const routes: RouteRecordRaw[] = [
     path: '/hackathons/nouveau',
     name: 'nouveau-hackathon',
     component: () => import('./features/hackathons/NouveauHackathonPage.vue'),
-    meta: { connexionRequise: true },
+    meta: { connexionRequise: true, pleineLargeur: true },
   },
   { path: '/hackathons/:id', name: 'hackathon', component: () => import('./features/hackathons/HackathonPage.vue') },
   {

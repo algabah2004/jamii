@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { http, HttpResponse } from 'msw'
 import { createMemoryHistory, createRouter, RouterView } from 'vue-router'
 import { serveur } from '../../test-setup'
@@ -11,7 +11,10 @@ import HackathonsPage from './HackathonsPage.vue'
 import NouveauHackathonPage from './NouveauHackathonPage.vue'
 import { formaterMontant, lireCalendrier, lireQuestions, sommePoids, versInstant, versMontant } from './hackathons'
 
+import { continuer, jusquApercu, revenir } from '../../test/creationGuidee'
 beforeEach(() => reinitialiserHackathons())
+
+enableAutoUnmount(afterEach)
 
 async function monter(chemin: string) {
   ;(i18n.global.locale as unknown as { value: string }).value = 'fr'
@@ -99,30 +102,35 @@ describe('la liste des hackathons', () => {
 
 describe('créer un hackathon', () => {
   async function remplir(page: ReturnType<typeof mount>) {
-    const textes = page.findAll('input[type="text"]')
-    await textes[0]!.setValue('Hackathon des écoles')
-    await textes[1]!.setValue('Le numérique au service des écoles')
+    await page.get('input[type="text"]').setValue('Hackathon des écoles')
+    await continuer(page)
+    await page.get('input[type="text"]').setValue('Le numérique au service des écoles')
     await page.get('textarea').setValue('Deux jours pour construire un outil utile à une école de quartier.')
+    await continuer(page, 2)
     const dates = ['2026-12-01T09:00', '2026-12-10T09:00', '2026-12-12T09:00', '2026-12-14T09:00', '2026-12-16T09:00']
     const cles = ['ouvertes', 'fermees', 'debut', 'fin', 'resultats']
     for (const [i, cle] of cles.entries()) await page.get(`[data-test="date-${cle}"]`).setValue(dates[i]!)
+    await continuer(page, 2)
     const noms = page.findAll('[data-test="criteres"] input[type="text"]')
     await noms[0]!.setValue('Utilité')
     await noms[1]!.setValue('Qualité technique')
+    await continuer(page)
   }
 
   it('garde le bouton éteint tant que des champs obligatoires manquent', async () => {
     const { page } = await monter('/hackathons/nouveau')
-    expect(page.get('[data-test="enregistrer"]').attributes('disabled')).toBeDefined()
+    expect(page.get('[data-test="assistant-suivant"]').attributes('disabled')).toBeDefined()
     await remplir(page)
+    await jusquApercu(page)
     expect(page.get('[data-test="enregistrer"]').attributes('disabled')).toBeUndefined()
   })
 
   it('refuse des dates dans le désordre', async () => {
     const { page } = await monter('/hackathons/nouveau')
     await remplir(page)
+    await revenir(page, 3)
     await page.get('[data-test="date-fin"]').setValue('2026-12-11T09:00')
-    expect(page.get('[data-test="enregistrer"]').attributes('disabled')).toBeDefined()
+    expect(page.get('[data-test="assistant-suivant"]').attributes('disabled')).toBeDefined()
   })
 
   it('envoie le brouillon complet, avec les instants en UTC, puis ouvre le hackathon', async () => {
@@ -135,8 +143,10 @@ describe('créer un hackathon', () => {
     )
     const { page, routeur } = await monter('/hackathons/nouveau')
     await remplir(page)
+    await revenir(page, 4)
     await page.get('[data-test="mode-candidature"]').setValue(true)
     await page.get('[data-test="deploiement"]').setValue(true)
+    await jusquApercu(page)
     await page.get('[data-test="nouveau-hackathon"]').trigger('submit')
 
     await vi.waitFor(() => expect(routeur.currentRoute.value.path).toBe('/hackathons/abc'))
@@ -164,6 +174,7 @@ describe('créer un hackathon', () => {
     )
     const { page } = await monter('/hackathons/nouveau')
     await remplir(page)
+    await jusquApercu(page)
     await page.get('[data-test="nouveau-hackathon"]').trigger('submit')
     await vi.waitFor(() => expect(page.text()).toContain('Le nom doit faire entre 3 et 120 caractères.'))
     expect(page.text()).toContain('de un à huit critères')
