@@ -80,7 +80,30 @@
       "apercuEnLigne": "Online and verified",
       "apercuProfil": "Proven profile"
     },
-    "decrireBesoin": "I have a need for my business"
+    "decrireBesoin": "I have a need for my business",
+    "aussi": {
+      "titre": "Also on Jamii",
+      "cercles": {
+        "titre": "Circles",
+        "texte": "4 to 6 developers take turns building each member’s project. Systalink backs the circle.",
+        "lien": "See circles"
+      },
+      "besoin": {
+        "titre": "Have a need?",
+        "texte": "Shop, firm, association: describe it in your own words. Ayo tells you what already exists, and who can build the rest.",
+        "lien": "Describe my need"
+      },
+      "missions": {
+        "titre": "Missions",
+        "texte": "Clients are looking for a developer. Apply, send your quote and deliver step by step.",
+        "lien": "See missions"
+      },
+      "hackathons": {
+        "titre": "Hackathons",
+        "texte": "Challenges open to all: form a team, build a project and have it judged by a jury.",
+        "lien": "See hackathons"
+      }
+    }
   },
   "profil": {
     "titre": "Profile",
