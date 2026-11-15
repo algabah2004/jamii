@@ -60,7 +60,7 @@ Les trois images sont **vérifiées en local** : elles se construisent, démarre
   IA_JETON_INTERNE=<secret 1>
   SPRING_PROFILES_ACTIVE=demo
   ```
-  - `SPRING_PROFILES_ACTIVE=demo` charge les 3 cercles et les 6 comptes de démo (#125). À retirer après la CADEV.
+  - `SPRING_PROFILES_ACTIVE=demo` charge les données de démonstration dans PostgreSQL : 24 cercles et les 18 comptes fictifs existants, ainsi que les communautés, missions et hackathons. Les 21 cercles de découverte se complètent au redémarrage même si la base contenait déjà la démo ; les cercles existants et les modifications des visiteurs sont conservés. Ce profil reste actif sur la version distante de démonstration. Le front y utilise la vraie API, sans MSW.
   - Si la base de DataCloud refuse `require`, essayer `prefer` et le noter ici.
 - [ ] Contrôle de santé : `/health/readiness`. La première fois, compter 30 à 60 s (Flyway crée les tables).
 

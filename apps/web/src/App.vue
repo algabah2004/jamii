@@ -13,7 +13,8 @@ const { etat, moi, accesSystalink } = useSession()
 
 // Les pastilles : relues toutes les 30 s tant qu'on est connecté et que l'onglet est visible (features/reseau/activite.ts).
 const activite = useActivite()
-// Toute nouveauté (message, invitation, demande de contact) crée une notification : une seule pastille suffit.
+// Messages et notifications ont chacun leur accès et leur compteur.
+const messagesNonLus = computed(() => activite.value?.messagesNonLus ?? 0)
 const nonLus = computed(() => activite.value?.notificationsNonLues ?? 0)
 watch(etat, (e) => (e === 'connecte' ? suivreActivite() : arreterActivite()), { immediate: true })
 </script>
@@ -24,8 +25,8 @@ watch(etat, (e) => (e === 'connecte' ? suivreActivite() : arreterActivite()), { 
     <div class="entete__interieur verre">
       <RouterLink to="/" class="marque">Jamii<span class="marque__point" aria-hidden="true" /></RouterLink>
       <nav :aria-label="t('menu.principal')">
-        <RouterLink v-if="etat === 'connecte'" to="/cercles">{{ t('menu.cercles') }}</RouterLink>
         <RouterLink v-if="etat === 'connecte'" to="/communautes">{{ t('menu.communautes') }}</RouterLink>
+        <RouterLink v-if="etat === 'connecte'" to="/cercles">{{ t('menu.cercles') }}</RouterLink>
         <RouterLink v-if="etat === 'connecte'" to="/demandes" :class="{ 'router-link-active': $route.path.startsWith('/demandes') }">{{ t('menu.demandes') }}</RouterLink>
         <RouterLink to="/missions">{{ t('menu.missions') }}</RouterLink>
         <RouterLink to="/hackathons">{{ t('menu.hackathons') }}</RouterLink>
@@ -48,7 +49,12 @@ watch(etat, (e) => (e === 'connecte' ? suivreActivite() : arreterActivite()), { 
           <!-- Clair ou sombre en un clic : les autres réglages (langue, « Système ») sont dans le pied de page. -->
           <BoutonTheme />
           <!-- Le profil se reconnaît à son visage : l'avatar mène au profil, le nom reste lisible par tous. -->
-          <RouterLink to="/notifications" class="icone-entete" :class="{ 'router-link-active': ['/messages', '/contacts'].some((p) => $route.path.startsWith(p)) }" data-test="lien-activite" :aria-label="t('reseau.onglets.lien', { n: nonLus }, nonLus)">
+          <RouterLink to="/messages" class="acces-messages icone-entete" :class="{ 'router-link-active': $route.path.startsWith('/messages') }" data-test="lien-messages" :aria-label="t('reseau.messages.lien', { n: messagesNonLus }, messagesNonLus)" :title="t('reseau.messages.titre')">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 4h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-6 4V6a2 2 0 0 1 2-2Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M7 9h10M7 13h6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+            <span class="acces-messages__texte">{{ t('reseau.messages.titre') }}</span>
+            <span v-if="messagesNonLus" class="icone-entete__pastille" aria-hidden="true">{{ messagesNonLus > 9 ? '9+' : messagesNonLus }}</span>
+          </RouterLink>
+          <RouterLink to="/notifications" class="icone-entete" :class="{ 'router-link-active': $route.path.startsWith('/contacts') }" data-test="lien-activite" :aria-label="t('reseau.onglets.lien', { n: nonLus }, nonLus)">
             <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20.5a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" /></svg>
             <span v-if="nonLus" class="icone-entete__pastille" aria-hidden="true">{{ nonLus > 9 ? '9+' : nonLus }}</span>
           </RouterLink>
@@ -62,7 +68,7 @@ watch(etat, (e) => (e === 'connecte' ? suivreActivite() : arreterActivite()), { 
     </div>
   </header>
 
-  <main id="contenu" tabindex="-1" :class="{ 'main--pleine': $route.meta.pleineLargeur }">
+  <main id="contenu" tabindex="-1" :class="{ 'main--pleine': $route.meta.pleineLargeur, 'main--messagerie': $route.meta.messagerie }">
     <JSquelette v-if="etat === 'chargement'" />
     <div v-else-if="etat === 'indisponible'" role="alert" class="carte hors-ligne">
       <p>{{ t('etat.indisponible') }}</p>
@@ -71,12 +77,12 @@ watch(etat, (e) => (e === 'connecte' ? suivreActivite() : arreterActivite()), { 
     <!-- Passage d'une page à l'autre : un fondu court, sans rien remonter quand seul le filtre change. -->
     <RouterView v-else v-slot="{ Component, route: courante }">
       <Transition name="page" mode="out-in">
-        <component :is="Component" :key="courante.path" />
+        <component :is="Component" :key="courante.meta.messagerie ? 'messagerie' : courante.path" />
       </Transition>
     </RouterView>
   </main>
 
-  <footer class="pied motif motif--ondes motif--haut" :class="{ 'pied--reglages': etat === 'connecte' }">
+  <footer v-if="!$route.meta.messagerie" class="pied motif motif--ondes motif--haut" :class="{ 'pied--reglages': etat === 'connecte' }">
     <div class="pied__interieur">
       <div class="pied__marque">
         <RouterLink to="/" class="marque">Jamii<span class="marque__point" aria-hidden="true" /></RouterLink>
@@ -103,6 +109,11 @@ watch(etat, (e) => (e === 'connecte' ? suivreActivite() : arreterActivite()), { 
 main, .pied__interieur { padding-inline: var(--space-6); }
 @media (max-width: 720px) { main, .pied__interieur { padding-inline: var(--space-4); } }
 /* Les pages qui remplissent l'écran (l'espace d'une communauté) : toute la largeur, une petite marge. */
+#app:has(.main--messagerie) { height: 100dvh; min-height: 0; }
+main.main--messagerie { display: flex; flex-direction: column; min-height: 0; padding-block: var(--space-4); }
+.acces-messages.icone-entete { width: auto; padding-inline: 12px; display: flex; gap: 8px; border: 1px solid var(--line); border-radius: var(--radius-pill); text-decoration: none; font-size: 0.8125rem; font-weight: 600; }
+.acces-messages.icone-entete.router-link-active { background: var(--proof-soft); color: var(--proof-ink); border-color: color-mix(in srgb, var(--proof) 40%, var(--line)); }
+@media (max-width: 480px) { .acces-messages__texte { display: none; } .acces-messages.icone-entete { width: 40px; padding: 0; justify-content: center; } }
 main.main--pleine { max-width: none; padding-inline: var(--space-4); }
 
 .aller-au-contenu { position: absolute; left: var(--space-4); top: -4rem; z-index: 20; padding: var(--space-2) var(--space-4); background: var(--action); color: var(--on-action); border-radius: var(--radius-md); font-weight: 600; }
@@ -118,7 +129,9 @@ main.main--pleine { max-width: none; padding-inline: var(--space-4); }
   padding-inline: var(--space-6) var(--space-2);
   border-radius: var(--radius-pill);
 }
-.entete nav { flex: 1; display: flex; align-items: center; gap: var(--space-1); white-space: nowrap; overflow-x: auto; }
+.entete nav { flex: 1; display: flex; align-items: center; gap: var(--space-1); white-space: nowrap; overflow-x: auto; scrollbar-width: none; }
+/* Pas de barre de défilement dans le menu : il se resserre avant de déborder (voir les paliers plus bas). */
+.entete nav::-webkit-scrollbar { display: none; }
 
 /* Les liens sont des capsules ; la page active est une goutte de verre teintée. */
 .entete nav a {
@@ -159,6 +172,14 @@ main.main--pleine { max-width: none; padding-inline: var(--space-4); }
    quelle que soit la largeur (la capsule de l'en-tête ne dépasse jamais 70rem). */
 .entete--connecte .reglages--entete { display: none; }
 .pied--reglages .reglages--pied { display: flex; }
+/* Portable (jusqu'à 1600 px de large, soit la plupart des portables à 100 % ou 125 %) : le menu se resserre et
+   « Espace Systalink » devient « Systalink », pour que tout tienne sans barre de défilement. */
+@media (max-width: 1600px) {
+  .entete__interieur { column-gap: var(--space-4); }
+  .entete nav a { padding: 0 var(--space-3); }
+  .lien-long { display: none; }
+  .lien-court { display: inline; }
+}
 /* Entre tablette et grand écran, « Espace Systalink » se raccourcit et les réglages passent aussi en bas. */
 @media (max-width: 1180px) {
   .entete nav a { padding: 0 var(--space-3); }
@@ -183,6 +204,10 @@ main.main--pleine { max-width: none; padding-inline: var(--space-4); }
 }
 /* Téléphone : les 6 entrées du menu passent sur deux lignes plutôt que d'en cacher une hors de l'écran. */
 @media (max-width: 480px) {
+  /* La marque et les boutons tiennent sur une seule ligne : l'en-tête mange moins l'écran. */
+  .entete__interieur { column-gap: var(--space-2); padding-inline: var(--space-3) var(--space-1); }
+  .actions { gap: 2px; }
+  .deconnexion { padding: var(--space-1); }
   .entete nav { flex-wrap: wrap; justify-content: center; row-gap: 2px; padding-block: 2px; }
   .entete nav a { min-height: 36px; }
 }

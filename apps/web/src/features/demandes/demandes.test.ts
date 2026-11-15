@@ -8,7 +8,7 @@ import { creerRouteur } from '../../router'
 import { chargerSession } from '../../session'
 import App from '../../App.vue'
 import { orientationDemo, planDemo, RECOMMANDES } from '../../mocks/demandes'
-import { demandeValide, etatAnalyse, fonctionnalitesParPriorite, jalonsAvecTaches, type Demande } from './demandes'
+import { dateCourte, demandeValide, etatAnalyse, fonctionnalitesParPriorite, jalonsAvecTaches, type Demande } from './demandes'
 
 async function ouvrir(adresse: string) {
   ;(i18n.global.locale as unknown as { value: string }).value = 'fr'
@@ -101,6 +101,18 @@ describe('Une PME décrit son besoin', () => {
     await vi.waitFor(() => expect(page.find('[data-test="plan-echec"]').exists()).toBe(true))
     expect(page.find('main img').exists()).toBe(false)
     expect(page.text()).toContain('<img src=x onerror="alert(1)">')
+  })
+
+  it('propose de publier le plan comme mission, à côté du lancement du projet', async () => {
+    const { page, routeur } = await ouvrir('/demandes/nouvelle')
+    await page.get('[data-test="exemple"]').trigger('click')
+    await page.get('[data-test="demande"]').trigger('submit')
+    await vi.waitFor(() => expect(page.find('[data-test="publier-mission"]').exists()).toBe(true), { timeout: 4000 })
+    const id = String(routeur.currentRoute.value.params.id)
+    const lien = page.get('[data-test="publier-mission"]')
+    expect(lien.text()).toBe('Publier comme mission')
+    expect(lien.attributes('href')).toBe(`/missions/nouvelle?demande=${id}`)
+    expect(page.find('[data-test="lancer"]').exists()).toBe(true)
   })
 
   it('signale qu’une autre équipe a déjà pris la demande', async () => {
@@ -372,5 +384,12 @@ describe('du besoin au cercle', () => {
     expect(page.find('[data-test="nouveau-cercle"]').text()).not.toContain('Ville')
     // Les développeurs recommandés suivent : ils seront invités en un clic une fois le cercle créé.
     expect(page.find('[data-test="du-besoin"]').text()).toContain('inviter Kwame, Ibrahima et Amina en un clic')
+  })
+})
+
+describe('dateCourte', () => {
+  it('suit la langue de Jamii, pas celle du navigateur', () => {
+    expect(dateCourte('2026-11-15T10:00:00Z', 'fr')).toBe('15 nov.')
+    expect(dateCourte('2026-11-15T10:00:00Z', 'en')).toBe('Nov 15')
   })
 })

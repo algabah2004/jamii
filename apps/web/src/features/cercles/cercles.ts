@@ -90,9 +90,18 @@ async function resultat(appel: Promise<{ data?: unknown; error?: unknown }>): Pr
 }
 
 export async function lireCercles(portee: 'mes' | 'ouverts'): Promise<CercleResume[]> {
-  const { data, error } = await api.GET('/api/cercles', { params: { query: { portee } } })
-  if (error || !data) throw new Error('cercles indisponibles')
-  return data.elements ?? []
+  const elements: CercleResume[] = []
+  const curseurs = new Set<string>()
+  let curseur: string | undefined
+  do {
+    const { data, error } = await api.GET('/api/cercles', { params: { query: { portee, limite: 100, ...(curseur ? { curseur } : {}) } } })
+    if (error || !data) throw new Error('cercles indisponibles')
+    elements.push(...(data.elements ?? []))
+    curseur = data.curseurSuivant ?? undefined
+    if (curseur && curseurs.has(curseur)) throw new Error('pagination des cercles invalide')
+    if (curseur) curseurs.add(curseur)
+  } while (curseur)
+  return elements
 }
 
 export async function lireCercle(id: string): Promise<Cercle | null> {
@@ -128,9 +137,9 @@ export async function lireTaches(projetId: string): Promise<Tache[] | null> {
 
 export type ResultatTache = { ok: true; tache: Tache } | { ok: false; code: string | null }
 
-export async function ajouterTache(projetId: string, titre: string): Promise<ResultatTache> {
+export async function ajouterTache(projetId: string, titre: string, assigneeId?: string | null): Promise<ResultatTache> {
   try {
-    const { data, error } = await api.POST('/api/projets/{projetId}/taches', { params: { path: { projetId } }, body: { titre } })
+    const { data, error } = await api.POST('/api/projets/{projetId}/taches', { params: { path: { projetId } }, body: { titre, ...(assigneeId ? { assigneeId } : {}) } })
     return data ? { ok: true, tache: data } : { ok: false, code: code(error) }
   } catch {
     return { ok: false, code: null }

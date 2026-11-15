@@ -128,7 +128,7 @@ const budget = (m: MissionResume) => (m.budget ? formaterMontant(m.budget, local
 .lien-carte { color: inherit; text-decoration: none; }
 .lien-carte::after { content: ''; position: absolute; inset: 0; z-index: 1; }
 .lien-carte:focus-visible { outline: none; }
-.mission:hover .lien-carte { text-decoration: underline; }
+.mission:hover .lien-carte { color: var(--action-ink); }
 .competences { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-2); align-content: start; }
 .competences li { padding: 2px var(--space-3); border-radius: var(--radius-pill); border: 1px solid var(--line-strong); font-size: var(--type-body-sm-size); font-weight: 600; }
 .competences__plus { color: var(--ink-muted); }

@@ -462,7 +462,7 @@ const contexte = computed(() => {
 .appel__bouton:focus-visible, .appel__fin:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 @keyframes pulse { 70% { box-shadow: 0 0 0 8px rgb(46 173 95 / 0); } 100% { box-shadow: 0 0 0 0 rgb(46 173 95 / 0); } }
 
-.salon__grille { display: grid; gap: var(--space-4); grid-template-columns: minmax(0, 1fr) minmax(16rem, 21rem); align-items: start; }
+.salon__grille { display: grid; gap: var(--space-4); grid-template-columns: minmax(0, 1fr) minmax(22rem, 26rem); align-items: start; }
 @media (max-width: 1000px) { .salon__grille { grid-template-columns: minmax(0, 1fr); } }
 .salon__corps { display: grid; gap: var(--space-4); padding: 0; overflow: hidden; }
 

@@ -53,7 +53,7 @@ export const routes: RouteRecordRaw[] = [
     path: '/cercles',
     name: 'cercles',
     component: () => import('./features/cercles/CerclesPage.vue'),
-    meta: { connexionRequise: true },
+    meta: { connexionRequise: true, pleineLargeur: true },
   },
   {
     path: '/cercles/nouveau',
@@ -65,14 +65,14 @@ export const routes: RouteRecordRaw[] = [
     path: '/cercles/:id',
     name: 'cercle',
     component: () => import('./features/cercles/CerclePage.vue'),
-    meta: { connexionRequise: true },
+    meta: { connexionRequise: true, pleineLargeur: true },
   },
   // Le réseau (contracts/reseau.yaml) : écrire à un développeur, recevoir une invitation à un cercle.
   {
     path: '/messages',
     name: 'messages',
     component: () => import('./features/reseau/MessagesPage.vue'),
-    meta: { connexionRequise: true },
+    meta: { connexionRequise: true, pleineLargeur: true, messagerie: true },
   },
   {
     path: '/notifications',
@@ -89,8 +89,8 @@ export const routes: RouteRecordRaw[] = [
   {
     path: '/messages/:personneId',
     name: 'conversation',
-    component: () => import('./features/reseau/ConversationPage.vue'),
-    meta: { connexionRequise: true },
+    component: () => import('./features/reseau/MessagesPage.vue'),
+    meta: { connexionRequise: true, pleineLargeur: true, messagerie: true },
   },
   // Une personne ou une PME décrit son besoin, Jamii l'oriente (étape 1 de la démo). Connexion requise
   // (GitHub ou e-mail : une PME n'a pas besoin de compte GitHub). `/besoin` est l'adresse à donner.
