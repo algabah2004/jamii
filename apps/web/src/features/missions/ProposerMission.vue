@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { JBouton, JChamp } from '../../design-system'
 import { DEVISES, LIMITES_PROPOSITION, proposer, versMontant, type Mission } from './missions'
 import RemplirQuestionnaire from '../questionnaires/RemplirQuestionnaire.vue'
-import { erreursParQuestion, focaliserQuestion, manquantes, versReponses, type Valeurs } from '../questionnaires/questionnaire'
+import { erreursParQuestion, erreursRestantes, focaliserQuestion, manquantes, resumeErreurs, versReponses, type Valeurs } from '../questionnaires/questionnaire'
 
 /*
  * Un développeur propose ses services (contracts/missions.yaml, `proposer`) : comment il s'y prendrait, son prix et
@@ -35,8 +35,12 @@ const delaiValide = computed(() => jours.value !== null && jours.value >= LIMITE
 const pret = computed(() => message.value.trim().length >= LIMITES_PROPOSITION.messageMin && montant.value !== null && delaiValide.value)
 const erreur = computed(() => {
   if (!code.value) return ''
-  const n = Object.values(erreursQuestions.value).filter((c) => c === 'obligatoire').length
-  if (code.value === 'validation' && Object.keys(erreursQuestions.value).length) return t('questionnaire.remplir.manquantes', { n }, Math.max(n, 1))
+  if (code.value === 'validation' && Object.keys(erreursQuestions.value).length) {
+    const reste = resumeErreurs(erreursRestantes(props.mission.questionnaire, valeurs.value, erreursQuestions.value))
+    // Tout est corrigé depuis le refus : plus rien à dire, le bouton suffit.
+    if (!reste) return ''
+    if (reste.manquantes) return t('questionnaire.remplir.manquantes', { n: reste.manquantes }, reste.manquantes)
+  }
   const connus = ['deja_candidat', 'propre_mission', 'etat_invalide', 'limite_atteinte', 'validation']
   return t(`missions.proposition.erreurs.${connus.includes(code.value) ? code.value : 'autre'}`)
 })

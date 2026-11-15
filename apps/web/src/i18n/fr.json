@@ -1829,7 +1829,13 @@
       "type": "Type de réponse",
       "obligatoire": "Réponse obligatoire",
       "aideQuestion": "Précision (facultatif)",
-      "aidePlaceholder": "Ex. : un lien public, que l'on peut ouvrir sans compte",
+      "aidePlaceholder": {
+        "texte_court": "Ex. : un lien public, que l'on peut ouvrir sans compte",
+        "texte_long": "Ex. : quelques phrases suffisent",
+        "choix_unique": "Ex. : choisis ce qui te ressemble le plus",
+        "choix_multiples": "Ex. : coche tout ce qui convient",
+        "oui_non": "Ex. : réponds pour aujourd'hui, pas pour plus tard"
+      },
       "choix": "Les choix possibles ({min} à {max})",
       "choixN": "Choix {n}",
       "ajouterChoix": "+ Ajouter un choix",

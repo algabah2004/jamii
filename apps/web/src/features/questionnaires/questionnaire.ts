@@ -84,6 +84,21 @@ export function manquantes(questions: readonly Question[], valeurs: Valeurs): st
   return questions.filter((q) => q.obligatoire && !repondues.has(q.id)).map((q) => q.id)
 }
 
+/**
+ * Les erreurs encore valables : une question obligatoire qui a maintenant une réponse perd son erreur tout de suite.
+ * Les autres erreurs de l'API (`trop_long`, `valeur_inconnue`…) restent jusqu'au prochain envoi.
+ */
+export function erreursRestantes(questions: readonly Question[], valeurs: Valeurs, erreurs: Record<string, string>): Record<string, string> {
+  const repondues = new Set(versReponses(questions, valeurs).map((r) => r.questionId))
+  return Object.fromEntries(Object.entries(erreurs).filter(([id, code]) => !(code === 'obligatoire' && repondues.has(id))))
+}
+
+/** Le message sous le formulaire après un refus : `null` s'il n'y a plus rien à signaler, sinon le nombre de réponses obligatoires qui manquent encore. */
+export function resumeErreurs(restantes: Record<string, string>): { manquantes: number } | null {
+  const codes = Object.values(restantes)
+  return codes.length ? { manquantes: codes.filter((c) => c === 'obligatoire').length } : null
+}
+
 /** Met le focus sur le premier champ d'une question, pour qu'on sache tout de suite quoi remplir (WCAG 3.3.1). */
 export function focaliserQuestion(id: string): void {
   document.querySelector<HTMLElement>(`[data-test="question-${id}"] :is(input, textarea)`)?.focus()
