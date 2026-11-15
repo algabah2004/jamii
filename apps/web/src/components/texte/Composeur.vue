@@ -205,7 +205,7 @@ function coller(e: ClipboardEvent) {
           <button type="button" class="outil" :aria-label="t('fichiers.joindre')" :title="t('fichiers.joindre')" :disabled="pieces.length + enCours.length >= 6" data-test="joindre" @click="choix?.click()">
             <svg viewBox="0 0 20 20" width="17" height="17" aria-hidden="true"><path d="M15.5 9.5 10 15a3.5 3.5 0 0 1-5-5l6-6a2.3 2.3 0 0 1 3.3 3.3l-6 6a1.2 1.2 0 0 1-1.7-1.7L12 6.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
           </button>
-          <input ref="choix" type="file" multiple :accept="ACCEPTES" class="visuellement-cache" tabindex="-1" data-test="choisir-fichiers" @change="joindre(($event.target as HTMLInputElement).files)" />
+          <input ref="choix" type="file" multiple :aria-label="t('fichiers.joindre')" :accept="ACCEPTES" class="visuellement-cache" tabindex="-1" data-test="choisir-fichiers" @change="joindre(($event.target as HTMLInputElement).files)" />
         </template>
         <slot name="outils" />
       </div>
