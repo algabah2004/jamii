@@ -4,13 +4,18 @@ import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { JAvatar, JSquelette } from '../../design-system'
 import { ajouterTache, changerTache, lireTaches, type Tache } from './cercles'
+import AyoAvatar from '../demandes/AyoAvatar.vue'
+import { lireCompetences, proposerRepartition, type Suggestion } from './repartition'
 
 /*
  * Les tâches du tour : le travail que le cercle cotise au projet du bénéficiaire (contracts/projets.yaml). Tous les
  * membres du cercle sont dans l'équipe du projet : chacun peut ajouter une tâche, en prendre une, la cocher livrée.
  * Ordre d'affichage : en cours, à faire, puis livrées. La barre d'avancement de la page suit (`maj`).
  */
-const props = defineProps<{ projetId: string; moiId: string | null }>()
+const props = withDefaults(
+  defineProps<{ projetId: string; moiId: string | null; membres?: { id: string; nom: string }[]; beneficiaireId?: string | null }>(),
+  { membres: () => [], beneficiaireId: null },
+)
 const emit = defineEmits<{ maj: [taches: Tache[]] }>()
 const { t } = useI18n()
 
@@ -67,6 +72,26 @@ const cocher = (tache: Tache) => modifier(tache, { statut: tache.statut === 'liv
 const prendre = (tache: Tache) => modifier(tache, { assigneeId: props.moiId, statut: 'en_cours' })
 const lacher = (tache: Tache) => modifier(tache, { assigneeId: null, statut: 'a_faire' })
 const aMoi = (tache: Tache) => !!props.moiId && tache.assignee?.id === props.moiId
+
+// Ayo propose qui prend quoi (repartition.ts) ; un membre confie chaque tâche d'un clic, rien n'est fait sans lui.
+const libres = computed(() => taches.value.filter((x) => x.statut === 'a_faire' && !x.assignee))
+const suggestions = ref<Suggestion[] | null>(null)
+const reflechit = ref(false)
+async function demanderAyo() {
+  reflechit.value = true
+  const membres = await lireCompetences(props.membres)
+  suggestions.value = proposerRepartition(taches.value, membres, props.beneficiaireId)
+  reflechit.value = false
+}
+const encoreLibre = (s: Suggestion) => libres.value.some((x) => x.id === s.tache.id)
+const visibles = computed(() => (suggestions.value ?? []).filter(encoreLibre))
+async function confier(s: Suggestion) {
+  const actuelle = taches.value.find((x) => x.id === s.tache.id)
+  if (actuelle) await modifier(actuelle, { assigneeId: s.membre.id, statut: 'en_cours' })
+}
+async function toutConfier() {
+  for (const s of [...visibles.value]) await confier(s)
+}
 </script>
 
 <template>
@@ -103,6 +128,32 @@ const aMoi = (tache: Tache) => !!props.moiId && tache.assignee?.id === props.moi
           </span>
         </li>
       </TransitionGroup>
+
+      <div v-if="moiId && membres.length && (libres.length || visibles.length)" class="ayo" data-test="repartition-ayo">
+        <div class="ayo__tete">
+          <AyoAvatar :taille="32" :reflechit="reflechit" />
+          <p class="ayo__texte">{{ t('cercles.repartition.intro') }}</p>
+          <button v-if="!suggestions || !visibles.length" type="button" class="lien lien--ayo" :disabled="reflechit" :aria-busy="reflechit || undefined" data-test="demander-ayo" @click="demanderAyo">
+            {{ t('cercles.repartition.demander') }}
+          </button>
+        </div>
+        <template v-if="suggestions">
+          <ul v-if="visibles.length" class="ayo__liste">
+            <li v-for="s in visibles" :key="s.tache.id" class="ayo__ligne" data-test="suggestion">
+              <span class="ayo__quoi"><strong>{{ s.tache.titre }}</strong> → {{ s.membre.nom }}</span>
+              <span class="ayo__pourquoi">
+                {{ s.competences.length ? t('cercles.repartition.parCompetences', { competences: s.competences.join(', ') }) : t('cercles.repartition.parCharge', { n: s.charge }, s.charge) }}
+              </span>
+              <button type="button" class="lien" :disabled="enCours === s.tache.id" data-test="confier" @click="confier(s)">{{ t('cercles.repartition.confier') }}</button>
+            </li>
+          </ul>
+          <p v-else class="note" data-test="repartition-vide">{{ t('cercles.repartition.rien') }}</p>
+          <div v-if="visibles.length > 1" class="ayo__actions">
+            <button type="button" class="lien lien--ayo" :disabled="!!enCours" data-test="tout-confier" @click="toutConfier">{{ t('cercles.repartition.toutConfier') }}</button>
+          </div>
+          <p class="note">{{ t('cercles.repartition.note') }}</p>
+        </template>
+      </div>
 
       <form class="ajout" data-test="ajouter-tache" @submit.prevent="ajouter">
         <label for="nouvelle-tache" class="visuellement-cache">{{ t('cercles.tachesTour.nouvelle') }}</label>
@@ -148,6 +199,17 @@ const aMoi = (tache: Tache) => !!props.moiId && tache.assignee?.id === props.moi
 }
 .ajout__bouton:disabled { opacity: 0.5; cursor: not-allowed; }
 .ajout__bouton:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+/* Ayo propose une répartition : la même carte douce que ses conseils sur les demandes. */
+.ayo { display: grid; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-radius: var(--radius-lg); background: var(--action-soft); }
+.ayo__tete { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+.ayo__texte { flex: 1; min-width: 12rem; margin: 0; font-size: var(--type-body-sm-size); }
+.ayo__liste { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
+.ayo__ligne { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-1) var(--space-3); align-items: center; padding: var(--space-2) var(--space-3); border-radius: var(--radius-md); background: var(--surface); }
+.ayo__quoi { overflow-wrap: anywhere; }
+.ayo__pourquoi { grid-column: 1; color: var(--ink-muted); font-size: var(--type-body-sm-size); }
+.ayo__ligne .lien { grid-column: 2; grid-row: 1 / span 2; }
+.ayo__actions { display: flex; justify-content: flex-end; }
+.lien--ayo { background: var(--surface); border-color: var(--action); color: var(--action-ink); font-weight: 600; }
 .erreur { margin: 0; color: var(--danger); font-size: var(--type-body-sm-size); font-weight: 600; }
 .tache-move { transition: transform var(--motion-base) var(--ease-out); }
 @media (prefers-reduced-motion: reduce) { .tache-move { transition: none; } }

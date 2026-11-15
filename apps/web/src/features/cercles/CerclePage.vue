@@ -187,7 +187,7 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
               </div>
               <p>{{ t('cercles.taches', { faites: suivi.faites, total: suivi.total }) }} · {{ t('cercles.joursRestants', { n: suivi.joursRestants }, suivi.joursRestants) }}</p>
             </div>
-            <TachesDuTour v-if="membre && tour.projetId" :key="tour.projetId" :projet-id="tour.projetId" :moi-id="moi?.id ?? null" @maj="majTaches" />
+            <TachesDuTour v-if="membre && tour.projetId" :key="tour.projetId" :projet-id="tour.projetId" :moi-id="moi?.id ?? null" :membres="cercle.membres.map((m) => m.personne)" :beneficiaire-id="tour.beneficiaire.id" @maj="majTaches" />
             <CodeDuTour :key="`${cercle.id}-${tour.numero}`" :cercle-id="cercle.id" :numero="tour.numero" />
             <template v-if="peutLivrer">
               <JDeplier>
