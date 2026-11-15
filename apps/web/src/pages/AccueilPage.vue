@@ -5,6 +5,7 @@ import { RouterLink, useRoute } from 'vue-router'
 import { adresseConnexionGithub, api } from '../api/client'
 import { JIllustration } from '../design-system'
 import CarteProjet from '../features/vitrine/CarteProjet.vue'
+import AccueilMissionsHackathons from './AccueilMissionsHackathons.vue'
 import type { ProjetEnVitrine } from '../features/vitrine/vitrine'
 import { useSession } from '../session'
 
@@ -21,12 +22,10 @@ const ETAPES = [
   { cle: 'enLigne', illustration: 'en-ligne', lien: '/vitrine' },
 ] as const
 
-/** Le reste de Jamii, en une ligne : de quoi comprendre chaque module sans avoir à l'ouvrir. */
+/** Le reste de Jamii, en une ligne. Les missions et les hackathons ont leur propre section, plus haut. */
 const MODULES = [
   { cle: 'cercles', lien: '/cercles' },
   { cle: 'besoin', lien: '/besoin' },
-  { cle: 'missions', lien: '/missions' },
-  { cle: 'hackathons', lien: '/hackathons' },
 ] as const
 
 // Le projet de la scène est un vrai projet en ligne, lu dans la vitrine. Si elle ne répond pas, une maquette le remplace.
@@ -107,6 +106,8 @@ void (async () => {
         </li>
       </ol>
     </section>
+
+    <AccueilMissionsHackathons />
 
     <section class="aussi" aria-labelledby="aussi-titre" data-test="aussi">
       <h2 id="aussi-titre">{{ t('accueil.aussi.titre') }}</h2>
@@ -280,7 +281,7 @@ void (async () => {
 
 /* Le reste de Jamii : des cartes sobres qui se soulèvent au survol, sans soulignement. */
 .aussi h2 { margin-bottom: var(--space-6); }
-.modules { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-4); grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.modules { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-4); grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .module {
   display: grid; gap: var(--space-2); align-content: start; height: 100%; padding: var(--space-6);
   color: var(--ink); text-decoration: none; border: 1px solid var(--line);
@@ -290,7 +291,6 @@ void (async () => {
 .module__titre { font-family: var(--font-display); font-size: 1.125rem; }
 .module__texte { color: var(--ink-muted); line-height: 1.5; }
 .module__lien { margin-top: var(--space-1); color: var(--action-ink); font-weight: 600; font-size: var(--type-body-sm-size); }
-@media (max-width: 1000px) { .modules { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 560px) { .modules { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { .module { transition: none; } .module:hover { transform: none; } }
 

@@ -97,16 +97,55 @@
         "titre": "Have a need?",
         "texte": "Shop, firm, association: describe it in your own words. Ayo tells you what already exists, and who can build the rest.",
         "lien": "Describe my need"
-      },
+      }
+    },
+    "vedette": {
+      "surtitre": "Work together",
+      "titre": "Paid missions, hackathons open to all",
+      "intro": "On Jamii, a need becomes paid work, and a challenge becomes a live project. Everything happens in one place, from the first message to the last milestone.",
       "missions": {
+        "pour": "For small businesses and developers",
         "titre": "Missions",
-        "texte": "Clients are looking for a developer. Apply, send your quote and deliver step by step.",
-        "lien": "See missions"
+        "texte": "A shop, an association or a small business posts its need. Developers offer their services, and the work moves forward milestone by milestone.",
+        "pastille": "Quote",
+        "etapes": {
+          "1": {
+            "titre": "Post",
+            "texte": "The client describes the need, or starts from the plan prepared with Ayo."
+          },
+          "2": {
+            "titre": "Choose",
+            "texte": "Developers send a proposal and a quote. The client compares, talks with them and chooses."
+          },
+          "3": {
+            "titre": "Deliver milestone by milestone",
+            "texte": "Each milestone is paid, delivered, then received by the client. Everyone always knows where the work stands."
+          }
+        },
+        "voir": "See missions",
+        "creer": "Post a mission"
       },
       "hackathons": {
+        "pour": "For organizers and teams",
         "titre": "Hackathons",
-        "texte": "Challenges open to all: form a team, build a project and have it judged by a jury.",
-        "lien": "See hackathons"
+        "texte": "A challenge open to all, from sign-up to results. Each hackathon has its own discussion space, and a jury to score the projects handed in.",
+        "pastille": "Team",
+        "etapes": {
+          "1": {
+            "titre": "Sign up",
+            "texte": "Freely or by application: the organizer accepts, declines or puts you on the waiting list."
+          },
+          "2": {
+            "titre": "Form your team",
+            "texte": "Invite your teammates and talk with other participants in the hackathon's space."
+          },
+          "3": {
+            "titre": "Hand in and get scored",
+            "texte": "The team hands in its project with the product link. The jury scores, then the results are published."
+          }
+        },
+        "voir": "See hackathons",
+        "creer": "Organize a hackathon"
       }
     }
   },

@@ -97,16 +97,55 @@
         "titre": "Tu as un besoin ?",
         "texte": "Commerçant, cabinet, association : décris-le avec tes mots. Ayo te dit ce qui existe déjà, et qui peut faire le reste.",
         "lien": "Décrire mon besoin"
-      },
+      }
+    },
+    "vedette": {
+      "surtitre": "Travailler ensemble",
+      "titre": "Des missions payées, des hackathons ouverts à tous",
+      "intro": "Sur Jamii, un besoin devient un travail payé, et un défi devient un projet en ligne. Tout se passe au même endroit, du premier message au dernier jalon.",
       "missions": {
+        "pour": "Pour les PME et les développeurs",
         "titre": "Les missions",
-        "texte": "Des clients cherchent un développeur. Propose-toi, envoie ton devis et livre étape par étape.",
-        "lien": "Voir les missions"
+        "texte": "Un commerçant, une association ou une PME publie son besoin. Des développeurs proposent leurs services, et le travail avance jalon par jalon.",
+        "pastille": "Devis",
+        "etapes": {
+          "1": {
+            "titre": "Publier",
+            "texte": "Le client décrit son besoin, ou repart du plan préparé avec Ayo."
+          },
+          "2": {
+            "titre": "Choisir",
+            "texte": "Les développeurs envoient une proposition et un devis. Le client compare, échange et choisit."
+          },
+          "3": {
+            "titre": "Livrer jalon par jalon",
+            "texte": "Chaque jalon est payé, livré, puis reçu par le client. Chacun sait toujours où en est le travail."
+          }
+        },
+        "voir": "Voir les missions",
+        "creer": "Publier une mission"
       },
       "hackathons": {
+        "pour": "Pour les organisateurs et les équipes",
         "titre": "Les hackathons",
-        "texte": "Des défis ouverts à tous : forme une équipe, construis un projet et fais-le noter par un jury.",
-        "lien": "Voir les hackathons"
+        "texte": "Un défi ouvert à tous, de l'inscription aux résultats. Chaque hackathon a son espace de discussion, et un jury pour noter les projets rendus.",
+        "pastille": "Équipe",
+        "etapes": {
+          "1": {
+            "titre": "S'inscrire",
+            "texte": "Librement ou sur candidature : l'organisateur accepte, refuse ou met en liste d'attente."
+          },
+          "2": {
+            "titre": "Former son équipe",
+            "texte": "Invite tes coéquipiers et échange avec les autres participants dans l'espace du hackathon."
+          },
+          "3": {
+            "titre": "Rendre et être noté",
+            "texte": "L'équipe rend son projet avec le lien du produit. Le jury note, puis les résultats sont publiés."
+          }
+        },
+        "voir": "Voir les hackathons",
+        "creer": "Organiser un hackathon"
       }
     }
   },
