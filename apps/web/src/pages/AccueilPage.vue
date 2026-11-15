@@ -7,6 +7,7 @@ import { JIllustration } from '../design-system'
 import CarteProjet from '../features/vitrine/CarteProjet.vue'
 import AccueilHackathons from './accueil/AccueilHackathons.vue'
 import AccueilAppel from './accueil/AccueilAppel.vue'
+import AccueilCercles from './accueil/AccueilCercles.vue'
 import AccueilFaq from './accueil/AccueilFaq.vue'
 import AccueilFonctionnalites from './accueil/AccueilFonctionnalites.vue'
 import AccueilMissions from './accueil/AccueilMissions.vue'
@@ -106,6 +107,7 @@ void (async () => {
     </section>
 
     <AccueilFonctionnalites />
+    <AccueilCercles />
     <AccueilMissions />
     <AccueilHackathons />
 

@@ -32,6 +32,8 @@ defineProps<{
       <div class="section__apercu" aria-hidden="true"><slot name="apercu" /></div>
     </div>
 
+    <slot name="avant" />
+
     <h3 class="section__titre-etapes">{{ titreEtapes }}</h3>
     <ol class="etapes" :data-test="`${id}-etapes`">
       <li v-for="(e, i) in etapes" :key="i" v-apparait="i * 110" class="etape">

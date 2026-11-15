@@ -4,6 +4,7 @@ import type { Component } from 'vue'
 import { createMemoryHistory } from 'vue-router'
 import { i18n } from '../../i18n'
 import { creerRouteur } from '../../router'
+import AccueilCercles from './AccueilCercles.vue'
 import AccueilHackathons from './AccueilHackathons.vue'
 import AccueilMissions from './AccueilMissions.vue'
 
@@ -59,5 +60,34 @@ describe('la section des hackathons, sur l’accueil', () => {
     const s = await monter(AccueilHackathons, 'en')
     expect(s.get('[data-test="format-concours"] h4').text()).toBe('Innovation contest')
     expect(s.get('[data-test="section-hackathons-voir"]').text()).toContain('See hackathons')
+  })
+})
+
+describe('la section des cercles, sur l’accueil', () => {
+  it('raconte l’idée de la tontine, puis le cercle en quatre étapes', async () => {
+    const s = await monter(AccueilCercles)
+    expect(s.get('#section-cercles-titre').text()).toContain('une tradition africaine')
+    // Le sous-titre que le vocabulaire impose au premier affichage de la Tech Tontine.
+    expect(s.text()).toContain('Construisez à tour de rôle le projet de chaque membre')
+    const histoire = s.get('[data-test="section-cercles-histoire"]').text()
+    expect(histoire).toContain("ce n'est pas qu'une affaire d'argent")
+    expect(histoire).toContain('mais du travail')
+    expect(s.findAll('[data-test^="parallele-"]')).toHaveLength(3)
+    expect(s.findAll('[data-test="section-cercles-etapes"] > li')).toHaveLength(4)
+    expect(s.text()).toContain("Le Griot, l'assistant qui planifie et résume le tour")
+    expect(s.get('[data-test="section-cercles-voir"]').attributes('href')).toBe('/cercles')
+    expect(s.find('a[href="/cercles/nouveau"]').exists()).toBe(true)
+  })
+
+  it('n’emploie aucun des mots imagés que le vocabulaire interdit', async () => {
+    const texte = (await monter(AccueilCercles)).text().toLowerCase()
+    for (const mot of ['pot', 'cotis', 'caisse', 'cagnotte']) {
+      expect(texte.split(/[^a-zàâçéèêëîïôûùüÿœ]+/).some((m) => m.startsWith(mot))).toBe(false)
+    }
+  })
+
+  it('existe aussi en anglais', async () => {
+    const s = await monter(AccueilCercles, 'en')
+    expect(s.get('#section-cercles-titre').text()).toBe('Circles: an African tradition, adapted to software')
   })
 })

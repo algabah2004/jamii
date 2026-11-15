@@ -318,6 +318,57 @@
         ],
         "lien": "Open my messages"
       }
+    },
+    "sectionCercles": {
+      "surtitre": "Tech Tontine",
+      "titre": "Circles: an African tradition, adapted to software",
+      "intro": "Take turns building each member's project. 4 to 6 developers commit together: at each turn, the whole circle builds one member's project.",
+      "histoire": {
+        "accroche": "A tontine is not only about money.",
+        "tradition": "The tontine is known all over the continent. A group pools money and, at each turn, one of its members receives the whole amount.",
+        "esprit": "But look closer: what holds a tontine together is the gathering. Neighbours, colleagues and friends meet, talk, share their news and support each other. Money sets the rhythm; the community is the real goal.",
+        "jamii": "Jamii wants to bring African developers together, so it was natural to start from this spirit of sharing. In a circle, we don't pool money, we pool work."
+      },
+      "paralleles": {
+        "tontine": "In a tontine",
+        "cercle": "In a circle",
+        "part": {
+          "titre": "Everyone brings their share",
+          "tontine": "Each member gives money, on a fixed date.",
+          "cercle": "Each member gives time and skills."
+        },
+        "tour": {
+          "titre": "Everyone gets a turn",
+          "tontine": "At each turn, one member receives what the group gathered.",
+          "cercle": "At each turn, the whole circle builds one member's project."
+        },
+        "ensemble": {
+          "titre": "We move forward together",
+          "tontine": "People meet, talk and help each other.",
+          "cercle": "We learn from each other, turn after turn."
+        }
+      },
+      "titreEtapes": "How a circle works",
+      "etapes": {
+        "1": {
+          "titre": "Form a circle",
+          "texte": "Create a circle or join one. It brings together 4 to 6 developers who commit together."
+        },
+        "2": {
+          "titre": "Submit your idea",
+          "texte": "Each member submits the idea of the project they want built during their turn."
+        },
+        "3": {
+          "titre": "Draw the order",
+          "texte": "The order of turns is drawn at random by Jamii: nobody chooses who goes first."
+        },
+        "4": {
+          "titre": "Build, turn after turn",
+          "texte": "The whole circle builds the turn's project, then delivers it. The Griot, the assistant that plans and sums up the turn, helps things move."
+        }
+      },
+      "voir": "See circles",
+      "creer": "Create a circle"
     }
   },
   "profil": {
