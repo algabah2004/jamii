@@ -554,6 +554,12 @@
       "creer": "Créer le salon",
       "exemple": "nouveau-salon",
       "sujetExemple": "Le sujet du salon apparaîtra ici."
+    },
+    "supprimerSalon": {
+      "bouton": "Supprimer le salon",
+      "titre": "Supprimer #{salon} ?",
+      "texte": "Le salon est vide : il sera supprimé pour tout le monde. C'est définitif. | Le salon et son message seront supprimés pour tout le monde. C'est définitif. | Le salon et ses {n} messages seront supprimés pour tout le monde. C'est définitif.",
+      "confirmer": "Supprimer le salon"
     }
   },
   "question": {

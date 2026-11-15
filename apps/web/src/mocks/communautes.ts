@@ -136,7 +136,9 @@ function messagesInitiaux(): Map<string, MessageSalon[]> {
 let messagesSalons = messagesInitiaux()
 /** Les salons créés pendant la visite (v0.4), en plus des trois de départ. */
 let salonsCrees = new Map<string, { slug: string; nom: string; sujet: string }[]>()
-const salonsDe = (slug: string) => [...SALONS, ...(salonsCrees.get(slug) ?? [])]
+/** Les salons supprimés pendant la visite (v0.5). */
+let salonsSupprimes = new Set<string>()
+const salonsDe = (slug: string) => [...SALONS, ...(salonsCrees.get(slug) ?? [])].filter((s) => !salonsSupprimes.has(`${slug}/${s.slug}`))
 const nomCourt = (nom: string) => nom.replace(/^#\s*/, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
 
 /** Pour les tests : repart des données de démo. */
@@ -144,6 +146,7 @@ export function reinitialiserCommunautes() {
   etat = etatInitial()
   messagesSalons = messagesInitiaux()
   salonsCrees = new Map()
+  salonsSupprimes = new Set()
 }
 
 function questionsOuvertes(slug: string) {
@@ -269,6 +272,16 @@ export const handlersCommunautes = [
     const salon = { slug, nom: corps.nom!.replace(/^#\s*/, '').trim().toLowerCase(), sujet: corps.sujet!.trim() }
     salonsCrees.set(c.slug, [...(salonsCrees.get(c.slug) ?? []), salon])
     return HttpResponse.json({ id: crypto.randomUUID(), ...salon, appelUrl: `https://meet.jit.si/jamii-${c.slug}-${slug}-demo` }, { status: 201 })
+  }),
+
+  http.delete('/api/communautes/:slug/salons/:salon', ({ params }) => {
+    const c = etat.communautes.find((x) => x.slug === params.slug)
+    if (!c || !salonsDe(c.slug).some((s) => s.slug === params.salon)) return erreur(404, 'introuvable')
+    if (!c.moderateur) return erreur(403, 'pas_moderateur')
+    if (params.salon === 'general') return erreur(409, 'salon_protege')
+    salonsSupprimes.add(`${c.slug}/${params.salon}`)
+    messagesSalons.delete(`${c.slug}/${params.salon}`)
+    return new HttpResponse(null, { status: 204 })
   }),
 
   http.get('/api/communautes/:slug/salons', ({ params }) => {

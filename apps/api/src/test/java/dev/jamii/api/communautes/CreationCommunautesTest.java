@@ -148,6 +148,39 @@ class CreationCommunautesTest {
 	}
 
 	@Test
+	void un_moderateur_supprime_un_salon_et_ses_messages_mais_jamais_general() throws Exception {
+		UtilisateurConnecte awa = utilisateur("Awa");
+		UtilisateurConnecte kofi = utilisateur("Kofi");
+		String slug = corps(creer(awa, unique("Suppression"))).get("slug").asString();
+		mvc.post().uri("/api/communautes/{s}/adhesion", slug).with(csrf()).with(oauth2Login().oauth2User(kofi)).exchange();
+		post(awa, "/api/communautes/{s}/salons/projets/messages", "{\"texte\":\"Un message\"}", slug);
+
+		MvcTestResult refuse = mvc.delete().uri("/api/communautes/{s}/salons/projets", slug).with(csrf())
+			.with(oauth2Login().oauth2User(kofi)).exchange();
+		assertThat(refuse).hasStatus(HttpStatus.FORBIDDEN);
+		assertThat(corps(refuse).get("code").asString()).isEqualTo("pas_moderateur");
+
+		MvcTestResult general = mvc.delete().uri("/api/communautes/{s}/salons/general", slug).with(csrf())
+			.with(oauth2Login().oauth2User(awa)).exchange();
+		assertThat(general).hasStatus(HttpStatus.CONFLICT);
+		assertThat(corps(general).get("code").asString()).isEqualTo("salon_protege");
+
+		assertThat(mvc.delete().uri("/api/communautes/{s}/salons/projets", slug).with(oauth2Login().oauth2User(awa)).exchange())
+			.as("sans jeton CSRF").hasStatus(HttpStatus.FORBIDDEN);
+		assertThat(mvc.delete().uri("/api/communautes/{s}/salons/projets", slug).with(csrf()).with(oauth2Login().oauth2User(awa)).exchange())
+			.hasStatus(HttpStatus.NO_CONTENT);
+		assertThat(mvc.delete().uri("/api/communautes/{s}/salons/projets", slug).with(csrf()).with(oauth2Login().oauth2User(awa)).exchange())
+			.as("déjà supprimé").hasStatus(HttpStatus.NOT_FOUND);
+
+		JsonNode salons = corps(mvc.get().uri("/api/communautes/{s}/salons", slug).with(oauth2Login().oauth2User(kofi)).exchange()).get("elements");
+		assertThat(salons).hasSize(2);
+		assertThat(base.sql("""
+				SELECT count(*) FROM message_salon m JOIN salon s ON s.id = m.salon_id JOIN communaute c ON c.id = s.communaute_id
+				WHERE c.slug = :s
+				""").param("s", slug).query(Long.class).single()).as("les messages partent avec le salon").isZero();
+	}
+
+	@Test
 	void un_salon_dans_une_communaute_inconnue_404_et_nom_vide_400() throws Exception {
 		UtilisateurConnecte awa = utilisateur("Awa");
 		String slug = corps(creer(awa, unique("Vide"))).get("slug").asString();

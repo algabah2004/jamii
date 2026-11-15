@@ -12,13 +12,13 @@ type Communaute = components['schemas']['Communaute']
  * - à droite, sur grand écran, ce qui se passe en direct.
  * Sur téléphone : une colonne, la barre devient une rangée qui défile en haut.
  */
-defineProps<{ actuelle?: string; actif?: string; communaute?: Communaute | null }>()
+defineProps<{ actuelle?: string; actif?: string; communaute?: Communaute | null; recharge?: number }>()
 const { t } = useI18n()
 </script>
 
 <template>
   <div class="espace" :class="{ 'espace--cote': $slots.contexte }">
-    <BarreCommunaute v-if="actuelle" :slug="actuelle" :actif="actif ?? 'fil'" :communaute="communaute" class="espace__barre" />
+    <BarreCommunaute v-if="actuelle" :key="`${actuelle}-${recharge ?? 0}`" :slug="actuelle" :actif="actif ?? 'fil'" :communaute="communaute" class="espace__barre" />
     <div class="espace__principal" :aria-label="t('communautes.espace.fil')"><slot /></div>
     <aside v-if="$slots.contexte" class="espace__cote"><slot name="contexte" /></aside>
   </div>

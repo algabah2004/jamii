@@ -5,6 +5,7 @@ import { api } from '../../api/client'
 import type { components } from '../../api/generated/communautes'
 import { JAvatar, JBouton } from '../../design-system'
 import { marquerLu } from './lus'
+import SupprimerSalon from './SupprimerSalon.vue'
 
 /*
  * Un salon d'une communauté, sur toute la hauteur (contracts/communautes.yaml v0.2, #155) :
@@ -17,8 +18,8 @@ import { marquerLu } from './lus'
 type Salon = components['schemas']['Salon']
 type Message = components['schemas']['MessageSalon']
 
-const props = defineProps<{ slug: string; salon?: string; membre: boolean; adhesionEnCours?: boolean }>()
-const emit = defineEmits<{ rejoindre: []; salons: [salons: Salon[]] }>()
+const props = defineProps<{ slug: string; salon?: string; membre: boolean; moderateur?: boolean; adhesionEnCours?: boolean }>()
+const emit = defineEmits<{ rejoindre: []; salons: [salons: Salon[]]; supprime: [salon: string] }>()
 const { t, locale } = useI18n()
 
 const INTERVALLE = 3000
@@ -225,6 +226,15 @@ function teinte(id: string) {
         <p class="salon__sujet">{{ actuel.sujet }}</p>
         <div class="salon__actions">
           <slot name="actions" />
+          <!-- # général ne se supprime pas : c'est là qu'on arrive dans la communauté. -->
+          <SupprimerSalon
+            v-if="moderateur && actuel.slug !== 'general'"
+            :slug="slug"
+            :salon="actuel.slug"
+            :nom="actuel.nom"
+            :messages="messages.length"
+            @supprime="emit('supprime', $event)"
+          />
           <a
             v-if="actuel.appelUrl"
             :href="actuel.appelUrl"

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Jamii · Communautés et entraide
-  version: 0.4.0
+  version: 0.5.0
   summary: Communautés thématiques, questions-réponses où l'IA propose et un pair valide, discussions, signalements.
   description: |
     Responsable : @rev22rse22 (module communautés, #155 ; repris d'@Amar233-ui le 14/11). Règles communes : docs/api-conventions.md. Modèle : docs/modele-donnees.md
@@ -33,7 +33,7 @@ info:
 
     **CSRF** : toute requête POST ou DELETE envoie l'en-tête `X-XSRF-TOKEN` (socle.yaml, schéma `csrf`).
 
-    **Codes d'erreur métier** (champ `code` de `Erreur`) : `pas_membre` (403), `pas_moderateur` (403), `salon_existe` (409), `pas_auteur_question` (403),
+    **Codes d'erreur métier** (champ `code` de `Erreur`) : `pas_membre` (403), `pas_moderateur` (403), `salon_existe` (409), `salon_protege` (409), `pas_auteur_question` (403),
     `propre_question` (409, valider la réponse de l'IA à sa propre question), `deja_acceptee` (409),
     `pas_une_question` (409), `pas_proposee_par_ia` (409, valider une réponse humaine), `proposee_par_ia` (409,
     accepter la réponse de l'IA au lieu de la faire valider), `propre_reponse` (409, accepter sa propre réponse :
@@ -260,6 +260,27 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Salon' }
         '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/communautes/{slug}/salons/{salon}:
+    parameters:
+      - $ref: '#/components/parameters/Slug'
+      - $ref: '#/components/parameters/SalonSlug'
+    delete:
+      tags: [salons]
+      operationId: supprimerSalon
+      summary: Supprimer un salon et tous ses messages (modérateurs seulement, v0.5)
+      description: |
+        Définitif : les messages du salon sont supprimés avec lui. `#général` ne se supprime pas (`409 salon_protege`) :
+        c'est là qu'on arrive dans une communauté. Un autre membre reçoit `403` (`pas_moderateur`).
+      security:
+        - session: []
+          csrf: []
+      responses:
+        '204': { description: Supprimé. }
         '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
         '403': { $ref: './socle.yaml#/components/responses/Interdit' }
         '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
