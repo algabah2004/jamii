@@ -46,8 +46,18 @@ export function minutesAvant(entete: string | null): number {
   return Number.isFinite(secondes) && secondes > 0 ? Math.ceil(secondes / 60) : 1
 }
 
-/** Les codes posés par l'API sur `/connexion?erreur=…` quand la connexion GitHub échoue. */
-const ERREURS_GITHUB = ['refus_github', 'requete_invalide', 'github_indisponible'] as const
+/** Les façons de se connecter que le serveur propose. Google n'est montré que s'il est configuré. */
+export async function lireFournisseurs(): Promise<{ google: boolean }> {
+  try {
+    const { data } = await api.GET('/api/auth/fournisseurs')
+    return { google: data?.google === true }
+  } catch {
+    return { google: false }
+  }
+}
+
+/** Les codes posés par l'API sur `/connexion?erreur=…` quand la connexion GitHub ou Google échoue. */
+const ERREURS_GITHUB = ['refus_github', 'requete_invalide', 'github_indisponible', 'refus_google', 'google_indisponible', 'email_non_verifie'] as const
 export type ErreurGithub = (typeof ERREURS_GITHUB)[number]
 
 export function erreurGithub(code: unknown): ErreurGithub | null {

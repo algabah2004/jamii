@@ -3,6 +3,7 @@ import { mount } from '@vue/test-utils'
 import { http, HttpResponse } from 'msw'
 import { createMemoryHistory } from 'vue-router'
 import { serveur } from '../../test-setup'
+import { moiDemo } from '../../mocks/handlers'
 import { i18n } from '../../i18n'
 import { creerRouteur } from '../../router'
 import { chargerSession } from '../../session'
@@ -37,6 +38,25 @@ describe('Mon profil', () => {
     expect(page.get('[data-test="depots"]').text()).toContain('marche-facile')
     expect(page.get('[data-test="visibilite"]').text()).toContain('privé')
     expect(page.find('[data-test="projets-vide"]').exists()).toBe(true)
+  })
+
+  it('sans GitHub relié, propose « Relier mon GitHub », puis dit quand c’est fait ou pourquoi ça a échoué', async () => {
+    serveur.use(http.get('/api/me', () => HttpResponse.json({ ...moiDemo, loginGithub: null, methodesConnexion: ['email'] })))
+    let page = await ouvrir()
+    await vi.waitFor(() => expect(page.find('[data-test="relier-github"]').exists()).toBe(true))
+    expect(page.get('[data-test="relier-github"]').attributes('href')).toBe('/api/auth/github?lier=1')
+    expect(page.find('[data-test="generer"]').exists()).toBe(false)
+    page.unmount()
+
+    page = await ouvrir('/profil?erreurGithub=github_deja_utilise')
+    await vi.waitFor(() => expect(page.find('[data-test="erreur-lien"]').exists()).toBe(true))
+    expect(page.get('[data-test="erreur-lien"]').text()).toContain('déjà relié à un autre compte')
+    page.unmount()
+
+    serveur.use(http.get('/api/me', () => HttpResponse.json(moiDemo)))
+    page = await ouvrir('/profil?github=relie')
+    await vi.waitFor(() => expect(page.find('[data-test="github-relie"]').exists()).toBe(true))
+    expect(page.find('[data-test="generer"]').exists()).toBe(true)
   })
 
   it('la carte de compétences : rien de gardé d’avance, je retire ce qui est faux, puis je garde le reste avec ses preuves', async () => {
