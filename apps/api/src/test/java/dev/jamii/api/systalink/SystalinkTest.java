@@ -2,6 +2,7 @@ package dev.jamii.api.systalink;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oauth2Login;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 
 import java.time.Instant;
@@ -27,12 +28,17 @@ import org.springframework.test.web.servlet.assertj.MvcTestResult;
 
 import dev.jamii.api.TestcontainersConfiguration;
 import dev.jamii.api.auth.Annuaire;
+import dev.jamii.api.auth.Role;
+import dev.jamii.api.auth.UtilisateurConnecte;
 
 /** Les routes de contracts/systalink.yaml, sur un vrai PostgreSQL. */
 @SpringBootTest
 @AutoConfigureMockMvc
 @Import({ TestcontainersConfiguration.class, SystalinkTest.ModulesSimules.class })
 class SystalinkTest {
+
+	/** Un admin a toujours accès à l'espace Systalink (AccesSystalink). */
+	private static final UtilisateurConnecte ADMIN = new UtilisateurConnecte(UUID.randomUUID(), Set.of(Role.ADMIN));
 
 	@Autowired
 	MockMvcTester mvc;
@@ -125,10 +131,10 @@ class SystalinkTest {
 		moments.proposer(ServiceSystalink.ORION, ContexteMoment.DEMANDE, UUID.randomUUID());
 		accepter(propose.momentId());
 
-		MvcTestResult reponse = mvc.get().uri("/api/systalink/tableau-de-bord?periode=semaine").with(user("awa")).exchange();
+		MvcTestResult reponse = mvc.get().uri("/api/systalink/tableau-de-bord?periode=semaine").with(oauth2Login().oauth2User(ADMIN)).exchange();
 
 		assertThat(reponse).hasStatusOk();
-		assertThat(reponse.getResponse().getHeader("Cache-Control")).isEqualTo("max-age=300, public");
+		assertThat(reponse.getResponse().getHeader("Cache-Control")).isEqualTo("max-age=300, private");
 		var json = assertThat(reponse).bodyJson();
 		json.extractingPath("$.periode").isEqualTo("semaine");
 		// Le total vient du vrai module auth (Annuaire), dont la table est partagée avec les autres tests.
@@ -192,11 +198,24 @@ class SystalinkTest {
 
 	@Test
 	void une_periode_inconnue_repond_400_validation() {
-		MvcTestResult reponse = mvc.get().uri("/api/systalink/tableau-de-bord?periode=annee").with(user("awa")).exchange();
+		MvcTestResult reponse = mvc.get().uri("/api/systalink/tableau-de-bord?periode=annee").with(oauth2Login().oauth2User(ADMIN)).exchange();
 
 		assertThat(reponse).hasStatus(HttpStatus.BAD_REQUEST).hasContentType("application/problem+json");
 		assertThat(reponse).bodyJson().extractingPath("$.code").isEqualTo("validation");
 		assertThat(reponse).bodyJson().extractingPath("$.erreurs[0].champ").isEqualTo("periode");
+	}
+
+	@Test
+	void l_espace_systalink_est_reserve_a_son_equipe() {
+		var membre = new UtilisateurConnecte(UUID.randomUUID(), Set.of(Role.MEMBRE));
+
+		assertThat(mvc.get().uri("/api/systalink/tableau-de-bord")).hasStatus(HttpStatus.UNAUTHORIZED);
+		assertThat(mvc.get().uri("/api/systalink/tableau-de-bord").with(oauth2Login().oauth2User(membre)))
+			.hasStatus(HttpStatus.FORBIDDEN);
+		assertThat(mvc.get().uri("/api/systalink/acces").with(oauth2Login().oauth2User(membre)))
+			.bodyJson().extractingPath("$.acces").isEqualTo(false);
+		assertThat(mvc.get().uri("/api/systalink/acces").with(oauth2Login().oauth2User(ADMIN)))
+			.bodyJson().extractingPath("$.acces").isEqualTo(true);
 	}
 
 	private MvcTestResult accepter(UUID momentId) {

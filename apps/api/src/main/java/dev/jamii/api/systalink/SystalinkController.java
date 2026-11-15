@@ -10,13 +10,16 @@ import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/** Routes de contracts/systalink.yaml. */
+import dev.jamii.api.auth.UtilisateurConnecte;
+
+/** Routes de contracts/systalink.yaml, réservées au rôle Systalink (sauf « accepter », appelé par tout utilisateur). */
 @RestController
 @EnableConfigurationProperties(LiensSystalink.class)
 class SystalinkController {
@@ -25,16 +28,29 @@ class SystalinkController {
 
 	private final MomentsSystalink moments;
 
-	SystalinkController(CalculTableauDeBord calcul, MomentsSystalink moments) {
+	private final AccesSystalink acces;
+
+	SystalinkController(CalculTableauDeBord calcul, MomentsSystalink moments, AccesSystalink acces) {
 		this.calcul = calcul;
 		this.moments = moments;
+		this.acces = acces;
+	}
+
+	/** Pour le menu : le lien vers l'espace Systalink ne s'affiche qu'à son équipe. */
+	@GetMapping("/api/systalink/acces")
+	Map<String, Boolean> acces(@AuthenticationPrincipal UtilisateurConnecte moi) {
+		return Map.of("acces", acces.aAcces(moi));
 	}
 
 	@GetMapping("/api/systalink/tableau-de-bord")
-	ResponseEntity<?> tableauDeBord(@RequestParam(required = false) String periode) {
+	ResponseEntity<?> tableauDeBord(@RequestParam(required = false) String periode,
+			@AuthenticationPrincipal UtilisateurConnecte moi) {
+		if (!acces.aAcces(moi)) {
+			return probleme(HttpStatus.FORBIDDEN, "interdit", "Réservé à l'équipe Systalink", null);
+		}
 		return Periode.lire(periode)
 			.<ResponseEntity<?>>map(p -> ResponseEntity.ok()
-				.cacheControl(CacheControl.maxAge(CalculTableauDeBord.DUREE_CACHE).cachePublic())
+				.cacheControl(CacheControl.maxAge(CalculTableauDeBord.DUREE_CACHE).cachePrivate())
 				.body(calcul.pour(p)))
 			.orElseGet(() -> probleme(HttpStatus.BAD_REQUEST, "validation", "Certains champs sont invalides",
 					List.of(Map.of("champ", "periode", "code", "format_invalide"))));

@@ -303,6 +303,8 @@
       "systatalk": "SystaTalk",
       "systaforms": "SystaForms",
       "systaone": "SystaONE",
+      "hebergement": "Hosting and online shop",
+      "email": "Professional e-mail",
       "domaines": "Domain names"
     },
     "tendances": {
@@ -337,6 +339,10 @@
         "client": "Client",
         "sans_suite": "No follow-up"
       }
+    },
+    "reserve": {
+      "titre": "For the Systalink team only",
+      "texte": "This space shows Systalink what Jamii brings them. If you are on the Systalink team, ask the Jamii team to add your account."
     }
   },
   "vitrine": {
@@ -847,6 +853,28 @@
       "exemple": "For example: I don’t want to sell online, only show my items.",
       "envoyer": "Send",
       "limite": "You have already added 5 details to this request. Describe a new need to start over."
+    },
+    "quota": "You have used all of today's advice. Ayo will be back tomorrow, and your requests stay in “Your requests”.",
+    "ayo": {
+      "nom": "Ayo",
+      "role": "your Jamii advisor",
+      "reflechit": "Ayo is thinking about your need…",
+      "conseil": "My advice",
+      "maintenant": "What now?",
+      "autres": "See the other options ({n}) | See the other option | See the other options ({n})",
+      "libre": "You don’t have to do anything: take time to compare, and come back whenever you like.",
+      "question": {
+        "repondre": "Answer",
+        "libre": "Or answer in your own words…",
+        "passer": "Skip, give me your advice"
+      },
+      "pasCa": {
+        "titre": "Not quite right?",
+        "cher": "It’s too expensive for me",
+        "complique": "It’s too complicated for me",
+        "autre": "I’m looking for something else"
+      },
+      "restants": "No advice left today | 1 piece of advice left today | {n} pieces of advice left today"
     }
   },
   "cercles": {

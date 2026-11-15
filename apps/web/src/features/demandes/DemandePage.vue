@@ -20,6 +20,7 @@ import {
   type Demande,
   type DemandeResumee,
 } from './demandes'
+import AyoAvatar from './AyoAvatar.vue'
 import PublierDemande from './PublierDemande.vue'
 
 /*
@@ -104,13 +105,13 @@ const etapeEnCours = computed(() => Math.min(ETAPES.length - 1, Math.floor(secon
  * précisions ; le fil montre ce qu'elle a écrit, puis la dernière réponse de l'assistant.
  */
 const precision = ref('')
-const envoiPrecision = ref<'repos' | 'envoi' | 'erreur' | 'limite'>('repos')
+const envoiPrecision = ref<'repos' | 'envoi' | 'erreur' | 'limite' | 'quota'>('repos')
 async function envoyerPrecision() {
   if (!demande.value || precision.value.trim().length < 3) return
   envoiPrecision.value = 'envoi'
   try {
     const r = await preciserDemande(demande.value.id, precision.value)
-    if (r === 'limite') return void (envoiPrecision.value = 'limite')
+    if (r === 'limite' || r === 'quota') return void (envoiPrecision.value = r)
     if (!r) return void (envoiPrecision.value = 'erreur')
     demande.value = r
     precision.value = ''
@@ -124,6 +125,36 @@ async function envoyerPrecision() {
   } catch {
     envoiPrecision.value = 'erreur'
   }
+}
+
+/**
+ * Ayo pose au plus une question, seulement si la réponse changerait son conseil et que rien n'a encore été précisé.
+ * On peut répondre d'un clic, avec ses mots, ou passer : le conseil est déjà prêt, il attend juste derrière.
+ */
+const questionPassee = ref(false)
+watch(id, () => (questionPassee.value = false))
+const questionOuverte = computed(
+  () => Boolean(orientation.value?.question?.texte) && !demande.value?.precisions?.length && !questionPassee.value,
+)
+const reponseLibre = ref('')
+function repondre(texte: string) {
+  if (texte.trim().length < 3) return
+  precision.value = texte
+  reponseLibre.value = ''
+  void envoyerPrecision()
+}
+
+/** Le premier service est le conseil principal d'Ayo ; les autres restent à un clic, sans s'imposer. */
+const principal = computed(() => orientation.value?.services[0] ?? null)
+const autresServices = computed(() => orientation.value?.services.slice(1) ?? [])
+const etapesAyo = computed(() => orientation.value?.etapes ?? [])
+const autresOuverts = ref(false)
+
+/** « Ce n'est pas tout à fait ça ? » : une raison toute prête, que la personne complète si elle veut. */
+const RAISONS = ['cher', 'complique', 'autre'] as const
+function pasCa(raison: (typeof RAISONS)[number]) {
+  precision.value = t(`demandes.ayo.pasCa.${raison}`) + (raison === 'autre' ? ' : ' : '.')
+  requestAnimationFrame(() => document.getElementById('precision')?.focus())
 }
 
 /** Le plan technique est écrit pour les développeurs : replié par défaut, ouvert d'un clic. */
@@ -224,9 +255,9 @@ const messageErreur = computed(() =>
       </header>
 
       <div v-if="enPreparation" class="carte attente" role="status" data-test="plan-attente">
-        <span class="points" aria-hidden="true"><i /><i /><i /></span>
+        <AyoAvatar :taille="52" reflechit />
         <div>
-          <strong>{{ t('demandes.plan.prepare') }}</strong>
+          <strong>{{ t('demandes.ayo.reflechit') }}</strong>
           <ol class="etapes" data-test="etapes">
             <li v-for="(e, i) in ETAPES" :key="e" :class="{ 'etapes--faite': i < etapeEnCours, 'etapes--en-cours': i === etapeEnCours }">
               <span aria-hidden="true">{{ i < etapeEnCours ? '✓' : i === etapeEnCours ? '•' : '·' }}</span> {{ t(`demandes.plan.etapes.${e}`) }}
@@ -246,39 +277,58 @@ const messageErreur = computed(() =>
         <p class="proposition" data-test="plan-propose">✨ {{ t('demandes.plan.propose') }}</p>
         <p v-if="repli" class="carte repli" role="status" data-test="plan-repli">{{ t(orientation ? 'demandes.orientation.repli' : 'demandes.plan.repli') }}</p>
 
-        <!-- Ce que l'assistant dit d'abord : il a compris, il explique simplement ce qui peut aider. -->
+        <!-- Ayo parle d'abord : il a compris, il explique simplement ce qui peut aider. -->
         <section v-if="orientation" class="assistant" aria-labelledby="compris" data-test="compris">
-          <span class="assistant__avatar" aria-hidden="true">J</span>
+          <AyoAvatar class="assistant__avatar" :taille="48" />
           <div class="bulle bulle--jamii">
+            <p class="assistant__nom"><strong>{{ t('demandes.ayo.nom') }}</strong> · {{ t('demandes.ayo.role') }}</p>
             <h2 id="compris" class="visuellement-cache">{{ t('demandes.orientation.compris') }}</h2>
             <p class="resume">{{ orientation.message || orientation.resume }}</p>
           </div>
         </section>
 
-        <!-- Les chemins possibles, côte à côte : la personne choisit, Jamii ne vend rien. Aucune donnée ne sort de Jamii. -->
-        <section v-if="orientation" class="chemins" aria-labelledby="options" data-test="chemins">
-          <div class="chemins__tete">
-            <h2 id="options">{{ t('demandes.chemins.titre') }}</h2>
-            <p class="texte-discret">{{ t('demandes.chemins.aide') }}</p>
+        <!-- Sa question, si la réponse change le conseil : un clic, ses mots, ou passer. -->
+        <section v-if="orientation?.question && questionOuverte" class="carte question-ayo" aria-labelledby="question-ayo" data-test="question-ayo">
+          <h2 id="question-ayo" class="question-ayo__texte">{{ orientation.question.texte }}</h2>
+          <div class="puces">
+            <button
+              v-for="s in orientation.question.suggestions"
+              :key="s"
+              type="button"
+              class="puce"
+              :disabled="envoiPrecision === 'envoi'"
+              data-test="suggestion"
+              @click="repondre(s)"
+            >{{ s }}</button>
           </div>
+          <form class="question-ayo__libre" @submit.prevent="repondre(reponseLibre)">
+            <input v-model="reponseLibre" maxlength="500" :aria-label="t('demandes.ayo.question.libre')" :placeholder="t('demandes.ayo.question.libre')" />
+            <JBouton type="submit" variante="secondaire" :occupe="envoiPrecision === 'envoi'" :disabled="reponseLibre.trim().length < 3">{{ t('demandes.ayo.question.repondre') }}</JBouton>
+          </form>
+          <p v-if="envoiPrecision === 'quota'" role="alert" class="erreur" data-test="quota">{{ t('demandes.quota') }}</p>
+          <p v-else-if="envoiPrecision === 'limite'" role="alert" class="erreur">{{ t('demandes.discuter.limite') }}</p>
+          <p v-else-if="envoiPrecision === 'erreur'" role="alert" class="erreur">{{ t('etat.indisponible') }}</p>
+          <button type="button" class="bouton-lien question-ayo__passer" data-test="passer" @click="questionPassee = true">{{ t('demandes.ayo.question.passer') }} →</button>
+        </section>
+
+        <!-- Le conseil : une recommandation principale, les prochaines étapes, le reste à un clic. Jamii ne vend rien. -->
+        <section v-if="orientation && !questionOuverte" class="chemins" aria-labelledby="options" data-test="chemins">
+          <h2 id="options" class="visuellement-cache">{{ t('demandes.chemins.titre') }}</h2>
           <div class="chemins__liste">
-            <article v-if="orientation.services.length" class="carte chemin" data-test="services-systalink">
-              <span class="chemin__badge">{{ orientation.developpeursNecessaires ? t('demandes.chemins.pret.badgeAvecDev') : t('demandes.chemins.pret.badge') }}</span>
-              <h3>{{ orientation.developpeursNecessaires ? t('demandes.chemins.pret.titreAvecDev') : t('demandes.chemins.pret.titre') }}</h3>
-              <ul class="chemin__services">
-                <li v-for="s in orientation.services" :key="s.id" data-test="service">
-                  <strong>{{ s.nom }}</strong>
-                  <p>{{ s.pourCeBesoin }}</p>
-                  <p v-if="s.prixIndicatif" class="chemin__prix">{{ s.prixIndicatif }}</p>
-                  <a :href="s.lien" target="_blank" rel="noopener noreferrer" class="chemin__action" data-test="voir-service" @click="signalerClicService(s.momentId)">
-                    {{ t('demandes.orientation.voirService') }}<span class="visuellement-cache"> : {{ s.nom }}</span> ↗</a>
-                </li>
-              </ul>
+            <article v-if="principal" class="carte chemin chemin--principal" data-test="services-systalink">
+              <span class="chemin__badge">{{ t('demandes.ayo.conseil') }}</span>
+              <div class="chemin__services" data-test="service">
+                <h3>{{ principal.nom }}</h3>
+                <p>{{ principal.pourCeBesoin }}</p>
+                <p v-if="principal.prixIndicatif" class="chemin__prix">{{ principal.prixIndicatif }}</p>
+                <a :href="principal.lien" target="_blank" rel="noopener noreferrer" class="chemin__action" data-test="voir-service" @click="signalerClicService(principal.momentId)">
+                  {{ t('demandes.orientation.voirService') }}<span class="visuellement-cache"> : {{ principal.nom }}</span> ↗</a>
+              </div>
               <p class="chemin__note">{{ t('demandes.chemins.pret.partenaire') }}</p>
             </article>
 
-            <article v-if="orientation.developpeursNecessaires" class="carte chemin" data-test="chemin-developpeurs">
-              <span class="chemin__badge chemin__badge--dev">{{ t('demandes.chemins.surMesure.badge') }}</span>
+            <article v-if="orientation.developpeursNecessaires" class="carte chemin" :class="{ 'chemin--principal': !principal }" data-test="chemin-developpeurs">
+              <span class="chemin__badge chemin__badge--dev">{{ principal ? t('demandes.chemins.surMesure.badge') : t('demandes.ayo.conseil') }}</span>
               <h3>{{ t('demandes.chemins.surMesure.titre') }}</h3>
               <p>{{ t('demandes.chemins.surMesure.texte') }}</p>
               <ul v-if="plan" class="chemin__chiffres">
@@ -292,29 +342,56 @@ const messageErreur = computed(() =>
               </div>
             </article>
 
-            <article v-if="!orientation.services.length && !orientation.developpeursNecessaires" class="carte chemin">
+            <article v-if="!principal && !orientation.developpeursNecessaires" class="carte chemin chemin--principal">
               <h3>{{ t('demandes.chemins.aucun.titre') }}</h3>
               <p>{{ t('demandes.chemins.aucun.texte') }}</p>
               <RouterLink to="/communautes" class="chemin__action">{{ t('demandes.chemins.aucun.action') }}</RouterLink>
             </article>
           </div>
-          <p v-if="orientation.services.length && orientation.developpeursNecessaires" class="chemins__conseil">💡 {{ t('demandes.chemins.lesDeux') }}</p>
+
+          <section v-if="etapesAyo.length" class="carte maintenant" aria-labelledby="maintenant" data-test="etapes-ayo">
+            <h3 id="maintenant">{{ t('demandes.ayo.maintenant') }}</h3>
+            <ol>
+              <li v-for="e in etapesAyo" :key="e">{{ e }}</li>
+            </ol>
+          </section>
+
+          <div v-if="autresServices.length" class="autres">
+            <button type="button" class="bouton-lien" :aria-expanded="autresOuverts" aria-controls="autres-services" data-test="voir-autres" @click="autresOuverts = !autresOuverts">
+              {{ t('demandes.ayo.autres', { n: autresServices.length }, autresServices.length) }}</button>
+            <ul v-show="autresOuverts" id="autres-services" class="autres__liste">
+              <li v-for="s in autresServices" :key="s.id" class="carte autre" data-test="service">
+                <strong>{{ s.nom }}</strong>
+                <p>{{ s.pourCeBesoin }}</p>
+                <p v-if="s.prixIndicatif" class="chemin__prix">{{ s.prixIndicatif }}</p>
+                <a :href="s.lien" target="_blank" rel="noopener noreferrer" class="chemin__action" data-test="voir-service" @click="signalerClicService(s.momentId)">
+                  {{ t('demandes.orientation.voirService') }}<span class="visuellement-cache"> : {{ s.nom }}</span> ↗</a>
+              </li>
+            </ul>
+          </div>
+          <p class="chemins__libre" data-test="libre">🤝 {{ t('demandes.ayo.libre') }}</p>
         </section>
 
-        <form v-if="orientation" class="carte discuter" data-test="preciser" @submit.prevent="envoyerPrecision">
+        <form v-if="orientation && !questionOuverte" class="carte discuter" data-test="preciser" @submit.prevent="envoyerPrecision">
           <label for="precision" class="discuter__titre">
-            <strong>{{ t('demandes.discuter.titre') }}</strong>
+            <strong>{{ t('demandes.ayo.pasCa.titre') }}</strong>
             <span class="texte-discret">{{ t('demandes.discuter.aide') }}</span>
           </label>
+          <div class="puces">
+            <button v-for="r in RAISONS" :key="r" type="button" class="puce" :data-test="`pas-ca-${r}`" @click="pasCa(r)">{{ t(`demandes.ayo.pasCa.${r}`) }}</button>
+          </div>
           <div class="discuter__ligne">
             <textarea id="precision" v-model="precision" maxlength="500" rows="2" :placeholder="t('demandes.discuter.exemple')" @keydown.enter.exact.prevent="envoyerPrecision" />
             <JBouton type="submit" :occupe="envoiPrecision === 'envoi'" :disabled="precision.trim().length < 3" data-test="envoyer-precision">{{ t('demandes.discuter.envoyer') }}</JBouton>
           </div>
           <p v-if="envoiPrecision === 'limite'" role="alert" class="erreur">{{ t('demandes.discuter.limite') }}</p>
+          <p v-else-if="envoiPrecision === 'quota'" role="alert" class="erreur" data-test="quota">{{ t('demandes.quota') }}</p>
           <p v-else-if="envoiPrecision === 'erreur'" role="alert" class="erreur">{{ t('etat.indisponible') }}</p>
+          <p v-if="demande.conseilsRestants !== undefined" class="texte-discret discuter__restants" data-test="conseils-restants">
+            {{ t('demandes.ayo.restants', { n: demande.conseilsRestants }, demande.conseilsRestants) }}</p>
         </form>
 
-        <section v-if="orientation?.developpeursNecessaires" class="bloc-nu" aria-labelledby="developpeurs" data-test="developpeurs">
+        <section v-if="orientation?.developpeursNecessaires && !questionOuverte" class="bloc-nu" aria-labelledby="developpeurs" data-test="developpeurs">
           <div class="bloc-nu__tete">
             <div>
               <h2 id="developpeurs">{{ t('demandes.orientation.developpeurs') }}</h2>
@@ -341,7 +418,7 @@ const messageErreur = computed(() =>
         </section>
       </template>
 
-      <div v-if="plan && orientation" class="details-bascule">
+      <div v-if="plan && orientation && !questionOuverte" class="details-bascule">
         <button type="button" class="bouton-lien" :aria-expanded="detailsOuverts" aria-controls="details-projet" @click="detailsOuverts = !detailsOuverts">
           {{ detailsOuverts ? t('demandes.chemins.masquerProjet') : t('demandes.chemins.surMesure.voirProjet') }}</button>
       </div>
@@ -474,7 +551,33 @@ const messageErreur = computed(() =>
 .bulle--jamii { background: var(--surface); border: 1px solid var(--line); border-end-start-radius: 4px; max-width: 100%; }
 .bulle--jamii .resume { margin: 0; font-size: 1.0625rem; }
 .assistant { display: grid; grid-template-columns: auto 1fr; gap: var(--space-3); align-items: end; }
-.assistant__avatar { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--action); color: var(--on-action); font-family: var(--font-display); font-weight: 700; }
+.assistant__nom { margin: 0 0 var(--space-1); font-size: var(--type-body-sm-size); color: var(--ink-muted); }
+.assistant__nom strong { color: var(--ink); }
+.question-ayo { display: grid; gap: var(--space-4); border-inline-start: 3px solid var(--action); }
+.question-ayo__texte { margin: 0; font-size: 1.1875rem; }
+.question-ayo__libre { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+.question-ayo__libre input { flex: 1 1 16rem; min-height: 44px; padding: 0 var(--space-3); border: 1px solid var(--line-strong); border-radius: var(--radius-md); background: var(--surface); color: var(--ink); font: inherit; }
+.question-ayo__passer { justify-self: start; }
+.puces { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.puce {
+  min-height: 40px; padding: 0 var(--space-4); border: 1px solid var(--line-strong); border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--surface) 70%, transparent); color: var(--ink); font: inherit; font-size: var(--type-body-sm-size); font-weight: 600; cursor: pointer;
+  transition: border-color var(--motion-fast) var(--ease-out), background var(--motion-fast) var(--ease-out);
+}
+.puce:hover:not(:disabled) { border-color: var(--action); background: var(--action-soft); }
+.puce:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.puce:disabled { opacity: 0.6; cursor: wait; }
+.chemin--principal { border: 2px solid var(--action); }
+.maintenant { display: grid; gap: var(--space-2); }
+.maintenant h3 { margin: 0; font-size: 1.0625rem; }
+.maintenant ol { margin: 0; padding-inline-start: 1.4em; display: grid; gap: var(--space-2); line-height: 1.5; }
+.maintenant ::marker { font-weight: 700; color: var(--action-ink); }
+.autres { display: grid; gap: var(--space-3); justify-items: start; }
+.autres__liste { list-style: none; margin: 0; padding: 0; width: 100%; display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr)); }
+.autre { display: grid; gap: var(--space-2); align-content: start; }
+.autre p { margin: 0; }
+.chemins__libre { margin: 0; color: var(--ink-muted); }
+.discuter__restants { margin: 0; font-size: var(--type-body-sm-size); }
 .discuter { display: grid; gap: var(--space-3); }
 .discuter__titre { display: grid; gap: 2px; }
 .discuter__ligne { display: flex; gap: var(--space-3); align-items: flex-end; flex-wrap: wrap; }
@@ -512,11 +615,6 @@ const messageErreur = computed(() =>
 .attente strong { display: block; }
 .attente p { margin: var(--space-1) 0 0; color: var(--ink-muted); font-size: var(--type-body-sm-size); }
 .attente--echec { justify-content: space-between; }
-.points { display: inline-flex; gap: 5px; }
-.points i { width: 8px; height: 8px; border-radius: 50%; background: var(--action); animation: respire 1.2s var(--ease-out) infinite; }
-.points i:nth-child(2) { animation-delay: 0.15s; }
-.points i:nth-child(3) { animation-delay: 0.3s; }
-@keyframes respire { 50% { opacity: 0.25; transform: translateY(-3px); } }
 @media (prefers-reduced-motion: reduce) { .points i { animation: none; } }
 
 /* Charte : une proposition de l'IA n'est pas une preuve, d'où le pointillé et pas d'orange. */

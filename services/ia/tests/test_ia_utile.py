@@ -371,3 +371,61 @@ def test_une_analyse_de_profil_refuse_toute_donnee_personnelle(client, jeton):
     reponse = deposer(client, jeton, corps={"type": "analyse_profil", "entree": entree})
     assert reponse.status_code == 400
     assert {"champ": "entree.login", "code": "champ_inconnu"} in reponse.json()["erreurs"]
+
+
+# --- Ayo : conseil honnête, prochaines étapes, une question au plus ---
+
+
+def test_ayo_donne_ses_etapes_et_au_plus_une_question_avec_ses_suggestions():
+    reponse = json.dumps(
+        {
+            "message": "Tu perds des commandes sur WhatsApp.",
+            "resume": "Tu veux que tes clients commandent seuls.",
+            "secteur": "commerce",
+            "services": [{"id": "boutique-en-ligne", "pourCeBesoin": "Tes clients commandent."}],
+            "etapes": [
+                "  Note tes 10 produits  ",
+                "",
+                "Prends-les en photo",
+                "Ouvre ta boutique",
+                "x",
+            ],
+            "question": {
+                "texte": "Tes clients paient surtout comment ?",
+                "suggestions": ["Mobile Money", "À la livraison", "", "Carte", "Autre"],
+            },
+            "developpeursNecessaires": False,
+        }
+    )
+    resultat = orientation.lire(reponse, BESOIN_CABINET, CATALOGUE)
+
+    assert resultat["etapes"] == [
+        "Note tes 10 produits",
+        "Prends-les en photo",
+        "Ouvre ta boutique",
+    ]
+    assert resultat["question"] == {
+        "texte": "Tes clients paient surtout comment ?",
+        "suggestions": ["Mobile Money", "À la livraison", "Carte"],
+    }
+    assert resultat["services"][0]["lien"].startswith("https://systalink.com/")
+
+
+def test_sans_question_ni_etapes_la_reponse_reste_valide():
+    reponse = json.dumps(
+        {"resume": "Tu veux un site.", "secteur": "commerce", "services": [], "question": "oui"}
+    )
+    resultat = orientation.lire(reponse, BESOIN_CABINET, CATALOGUE)
+
+    assert resultat["etapes"] == []
+    assert "question" not in resultat
+
+
+def test_ayo_connait_les_limites_de_chaque_service_et_reste_honnete():
+    fiches = {f["id"]: f for f in CATALOGUE.pour_l_ia()}
+    # Orion n'est pas une boutique : la fiche le dit, et la consigne interdit de le prétendre.
+    assert "boutique" in fiches["orion"]["limites"]
+    assert "pasPourToi" in fiches["boutique-en-ligne"]
+    assert "systaone" not in fiches
+    for regle in ("Hors sujet", "Ne fais jamais la publicité", "Jamais « tu dois »", "pasPourToi"):
+        assert regle in orientation.CONSIGNE

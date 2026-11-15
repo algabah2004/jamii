@@ -124,6 +124,8 @@ paths:
         « Ce n'est pas tout à fait ça » : la personne écrit ce qui ne lui convient pas. L'analyse repart avec le besoin
         de départ **et** toutes les précisions (l'orientation repasse à `en_attente`). **5 précisions au plus** par
         demande (`409 trop_de_precisions` ensuite : décrire un nouveau besoin). Pour un autre utilisateur, `404`.
+        Une précision compte comme un conseil : au-delà de 6 conseils sur 24 heures (demandes et précisions), `429` avec
+        le code `quota_du_jour` (la limite de l'heure garde le code `trop_de_requetes`).
       security:
         - session: []
           csrf: []
@@ -147,6 +149,7 @@ paths:
         '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
         '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
         '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+        '429': { $ref: './socle.yaml#/components/responses/TropDeRequetes' }
 
   /api/demandes/{demandeId}/offres-systalink:
     parameters:
@@ -304,6 +307,11 @@ components:
             Les développeurs qui peuvent répondre au besoin, du plus adapté au moins adapté. Vide tant que
             l'orientation n'est pas terminée, ou si `developpeursNecessaires` vaut `false`. Seuls les profils publiés.
           items: { $ref: '#/components/schemas/Recommandation' }
+        conseilsRestants:
+          type: integer
+          minimum: 0
+          maximum: 6
+          description: Les conseils d'Ayo qu'il reste à l'auteur sur 24 heures glissantes (une nouvelle demande ou une précision chacun). À 0, `429 quota_du_jour`.
         precisions:
           type: array
           maxItems: 5

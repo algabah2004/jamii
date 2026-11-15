@@ -49,8 +49,9 @@ class SecuriteTest {
 	}
 
 	@Test
-	void tableau_de_bord_et_vitrine_se_lisent_sans_connexion() {
-		assertThat(mvc.get().uri("/api/systalink/tableau-de-bord")).hasStatus(HttpStatus.OK);
+	void la_vitrine_se_lit_sans_connexion_mais_pas_l_espace_systalink() {
+		assertThat(mvc.get().uri("/api/systalink/tableau-de-bord")).hasStatus(HttpStatus.UNAUTHORIZED);
+		assertThat(mvc.get().uri("/api/systalink/tendances")).hasStatus(HttpStatus.UNAUTHORIZED);
 		// La vitrine n'est pas encore codée : ce qui compte, c'est qu'elle ne soit pas refusée (401).
 		assertThat(mvc.get().uri("/api/vitrine").exchange().getResponse().getStatus()).isNotEqualTo(401);
 	}

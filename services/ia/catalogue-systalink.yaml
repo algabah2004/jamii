@@ -1,60 +1,108 @@
-# Catalogue des services Systalink proposés par l'orientation d'un besoin (contracts/ia.yaml, `orientation_besoin`).
+# Catalogue des services Systalink qu'Ayo peut conseiller (contracts/ia.yaml, `orientation_besoin`).
 #
 # C'est un fichier de DONNÉES : Systalink peut le modifier sans toucher au code (autre chemin : IA_CATALOGUE).
 # L'IA ne peut proposer QUE les services listés ici, par leur `id` ; un identifiant inconnu est retiré du résultat.
-# `pourQuoi` est donné à l'IA pour qu'elle choisisse ; `nom`, `prixIndicatif` et `lien` sont recopiés tels quels.
+# `pourQuoi`, `limites` et `pasPourToi` sont donnés à l'IA pour qu'elle choisisse honnêtement ; `nom`, `prixIndicatif`
+# et `lien` sont recopiés tels quels, jamais écrits par l'IA.
 # `pourQui` : `tous` (utilisable sans développeur, par défaut) ou `developpeurs` (ne sert qu'à héberger ce que des
 # développeurs construisent : jamais proposé seul à quelqu'un qui n'a pas besoin de développeurs).
 #
-# Sources : docs/systalink-services.md (vu le 10/11/2026). Les prix marqués « à confirmer » sont à vérifier par Systalink.
+# Sources : pages publiques systalink.com/fr lues le 15/11/2026 (orion, hebergement-web, hebergement-cms,
+# email-professionnel, nom-de-domaine, server-cloud, stockage-objets, base-de-donnees, tarifications) et la console
+# DataCloud vue le 10/11/2026 (docs/systalink-services.md). SystaONE a été retiré : introuvable sur le site le 15/11.
 
 services:
   - id: orion
     nom: Orion, site web créé par IA
     pourQuoi: >-
-      Un site vitrine simple (présentation, coordonnées, services, horaires) sans développeur. Convient à une PME,
-      un cabinet, une association ou un commerce qui veut être trouvé en ligne.
-    prixIndicatif: Offre Free à vie, puis à partir de 5 000 FCFA par mois
-    lien: https://systalink.com
+      On décrit son activité avec ses mots et Orion crée, met en ligne et héberge un site de présentation
+      (activité, services, horaires, contact). On modifie ensuite textes, couleurs et sections soi-même.
+    limites: >-
+      Site de présentation. Le site de Systalink ne dit pas qu'Orion gère un panier ou un paiement en ligne :
+      ne le présente jamais comme une boutique. L'offre gratuite donne 1 site à une adresse en .systalink.com.
+    pasPourToi: >-
+      Si la personne veut que ses clients achètent et paient en ligne, conseille plutôt la boutique en ligne.
+    prixIndicatif: Offre gratuite à vie (1 site), puis 5 000 FCFA par mois
+    lien: https://systalink.com/fr/orion
+
+  - id: boutique-en-ligne
+    nom: Boutique en ligne (WordPress avec WooCommerce, ou PrestaShop)
+    pourQuoi: >-
+      Une vraie boutique où les clients voient les produits, les mettent dans un panier et commandent. Installée en
+      un clic sur l'hébergement web de Systalink, avec le certificat de sécurité et les sauvegardes.
+    limites: >-
+      Il faut la remplir et la régler soi-même (produits, livraison, paiement) : compter quelques jours, ou l'aide
+      d'un proche ou d'un développeur. Le site de Systalink ne précise pas les moyens de paiement des clients.
+    pasPourToi: >-
+      Pour quelques produits seulement et des clients qui commandent déjà par message, une page WhatsApp Business ou
+      un simple site de présentation suffit pour commencer.
+    prixIndicatif: Hébergement dès 2 525 FCFA par mois (payé à l'année)
+    lien: https://systalink.com/fr/hebergement-cms
+
+  - id: email-professionnel
+    nom: Adresse e-mail professionnelle
+    pourQuoi: >-
+      Une adresse à son nom (contact@monentreprise.sn) qui inspire confiance aux clients et partenaires, lisible sur
+      téléphone et ordinateur, avec protection contre les virus et les messages indésirables.
+    limites: >-
+      Demande un nom de domaine. Prix par boîte : chaque personne de l'équipe compte.
+    pasPourToi: >-
+      Si la personne parle surtout à ses clients par WhatsApp ou téléphone, ce n'est pas la priorité.
+    prixIndicatif: Dès 499 FCFA par mois et par adresse
+    lien: https://systalink.com/fr/email-professionnel
+
+  - id: nom-de-domaine
+    nom: Nom de domaine
+    pourQuoi: >-
+      Une adresse internet à son nom (monentreprise.sn, .ci, .com, .africa…), activée tout de suite, pour un site ou
+      des adresses e-mail professionnelles.
+    limites: >-
+      Seul, il ne fait rien : il sert à un site ou à des adresses e-mail. Le prix dépend de l'extension.
+    pasPourToi: >-
+      Inutile tant qu'il n'y a ni site ni e-mail professionnel à y relier.
+    prixIndicatif: Dès 8 503 FCFA (.africa), 10 351 FCFA (.com), 19 600 FCFA (.sn)
+    lien: https://systalink.com/fr/nom-de-domaine
 
   - id: datacloud-application
-    nom: DataCloud, hébergement d'application
+    nom: DataCloud, mise en ligne d'une application
     pourQui: developpeurs
     pourQuoi: >-
-      Mettre en ligne une application web sur mesure (Java, Python, Node, PHP, Docker…) construite par des
-      développeurs, hébergée à Dakar.
-    prixIndicatif: À partir de 800 FCFA par mois (à confirmer)
+      Mettre en ligne une application sur mesure construite par des développeurs (Java, Python, Node, PHP, Docker…),
+      depuis GitHub, hébergée à Dakar.
+    limites: >-
+      Ne sert à rien sans une application déjà construite par des développeurs.
+    prixIndicatif: null
     lien: https://platform.systalink.com
 
   - id: datacloud-base-de-donnees
     nom: DataCloud, base de données gérée
     pourQui: developpeurs
     pourQuoi: >-
-      Garder des données structurées en sécurité (clients, dossiers, stocks, commandes) pour une application, avec
-      sauvegardes, hébergée à Dakar.
-    prixIndicatif: null
-    lien: https://platform.systalink.com
+      Garder en sécurité les données d'une application sur mesure (clients, dossiers, stocks, commandes), avec
+      sauvegardes et surveillance, gérées par Systalink.
+    limites: >-
+      Sert à une application construite par des développeurs, pas à ranger soi-même des fichiers.
+    prixIndicatif: Dès 3 000 FCFA par mois (petite base pour démarrer)
+    lien: https://systalink.com/fr/base-de-donnees
 
   - id: datacloud-stockage
     nom: DataCloud, stockage de fichiers
     pourQui: developpeurs
     pourQuoi: >-
-      Stocker et partager de nombreux fichiers et documents (PDF, photos, archives) de façon sûre, compatible avec
-      l'API S3.
-    prixIndicatif: null
-    lien: https://platform.systalink.com
+      Garder et partager en sécurité de nombreux fichiers (PDF, photos, archives, sauvegardes) pour une application,
+      avec chiffrement et historique des versions.
+    limites: >-
+      Pensé pour une application ou des sauvegardes automatiques, pas comme un dossier partagé à ouvrir à la main.
+    prixIndicatif: Dès 3 280 FCFA par mois (250 Go)
+    lien: https://systalink.com/fr/stockage-objets
 
-  - id: nom-de-domaine
-    nom: Nom de domaine
+  - id: datacloud-serveur
+    nom: DataCloud, serveur cloud
+    pourQui: developpeurs
     pourQuoi: >-
-      Une adresse web à son nom (monentreprise.sn, .com…) pour un site ou des adresses e-mail professionnelles.
-    prixIndicatif: null
-    lien: https://systalink.com
-
-  - id: systaone
-    nom: SystaONE (SystaDrive, SystaMail, SystaTalk, SystaForms)
-    pourQuoi: >-
-      Les outils de bureau d'une équipe : partage de documents, messagerie professionnelle, discussion d'équipe et
-      formulaires. Convient à un cabinet ou une PME qui perd des documents ou communique mal en interne.
-    prixIndicatif: Essai de 14 jours, puis 2 000 à 12 000 FCFA par utilisateur et par mois
-    lien: https://systalink.com
+      Un serveur réservé, prêt en quelques minutes, pour des développeurs qui installent eux-mêmes une application
+      métier (gestion, clients, intranet).
+    limites: >-
+      Le serveur n'est pas géré par Systalink par défaut : il faut quelqu'un qui sait l'administrer.
+    prixIndicatif: Dès 12 365 FCFA par mois
+    lien: https://systalink.com/fr/server-cloud
