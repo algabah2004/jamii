@@ -172,6 +172,7 @@ describe('les échanges entre le client et un développeur', () => {
     const envoyes = echanges()
     const page = await monter()
     await attendre(page, '[data-test="choisir"]')
+    await attendre(page, '[data-test="ecrire-developpeur"]')
     await page.get('[data-test="ecrire-developpeur"]').trigger('click')
     await attendre(page, '[data-test="message"]')
     expect(page.get('[data-test="echanges"]').text()).toContain('Échanges avec Kofi Mensah')
