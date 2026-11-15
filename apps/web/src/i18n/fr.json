@@ -1382,6 +1382,35 @@
         "seuls": "Personne ne cherche d'équipe. | Une personne cherche encore une équipe. | {n} personnes cherchent encore une équipe.",
         "notation": "Toutes les notes sont données. | Il manque une note du jury. | Il manque {n} notes du jury."
       }
+    },
+    "discussion": {
+      "titre": "Annonces et échanges",
+      "aller": "Annonces et questions",
+      "indisponible": "La discussion ne répond pas pour le moment.",
+      "annonces": "Annonces de l'organisation",
+      "nouvelle": "Nouvelle annonce à tous les participants",
+      "exemple": "Ex. : le dépôt des rendus ouvre demain à 9 h. Pensez à vérifier que votre lien répond.",
+      "aideAnnonce": "Visible par tous, même sans compte.",
+      "publier": "Publier l'annonce",
+      "retirer": "Retirer",
+      "aucuneAnnonce": "Aucune annonce pour le moment.",
+      "toutes": "Voir les {n} annonces",
+      "moins": "Voir moins",
+      "espace": "Questions et échanges",
+      "aideEspace": "Pose ta question à l'organisation et aux autres participants, ou discute dans les salons. La meilleure réponse est mise en avant.",
+      "questionsOuvertes": "Questions qui attendent une réponse",
+      "reponses": "aucune réponse | une réponse | {n} réponses",
+      "poser": "Poser une question",
+      "salons": "Ouvrir les salons",
+      "connexion": "Il faut un compte Jamii pour poser une question ou écrire dans un salon.",
+      "aideOuvrir": "Ouvre un espace d'échange : une communauté dédiée au hackathon, avec des salons et des questions-réponses. Tu en es modératrice ou modérateur.",
+      "ouvrir": "Ouvrir l'espace d'échange",
+      "pasEncore": "L'organisation n'a pas encore ouvert d'espace d'échange.",
+      "erreurs": {
+        "etat_invalide": "Ce hackathon est annulé : on ne publie plus d'annonce.",
+        "trop_de_requetes": "Trop d'envois d'un coup. Réessaie dans un moment.",
+        "autre": "Ça n'a pas marché. Réessaie dans un moment."
+      }
     }
   },
   "missions": {
@@ -1641,7 +1670,8 @@
         "prix": "Prix le plus bas",
         "delai": "Délai le plus court"
       },
-      "auDessus": "Au-dessus du budget"
+      "auDessus": "Au-dessus du budget",
+      "ecrire": "Écrire"
     },
     "devis": {
       "titre": "Envoyer mon devis",
@@ -1674,7 +1704,25 @@
         "autre": "L'action n'a pas abouti. Réessaie dans un instant."
       }
     },
-    "aFaire": "À toi de jouer"
+    "aFaire": "À toi de jouer",
+    "echanges": {
+      "titre": "Échanges",
+      "titreAvec": "Échanges avec {nom}",
+      "toutVoir": "Toute la conversation dans Messages",
+      "choisir": "Pour échanger avec un développeur, clique sur « Écrire » dans sa proposition.",
+      "indisponible": "Les messages ne répondent pas pour le moment.",
+      "videClient": "Pas encore de message avec {nom}. Pose tes questions avant de choisir : délais, étapes, ce qui est compris.",
+      "videDeveloppeur": "Une question sur la mission ? Écris au client, avant ou après avoir proposé tes services.",
+      "fil": "Messages échangés",
+      "ecrire": "Écrire à {nom}",
+      "envoyer": "Envoyer",
+      "ecrireClient": "Écrire au client",
+      "prudence": "Gardez vos échanges et vos paiements sur Jamii : en cas de désaccord, c'est ce qui compte.",
+      "erreurs": {
+        "trop": "Trop de messages d'un coup. Réessaie dans un moment.",
+        "autre": "Le message n'est pas parti. Réessaie."
+      }
+    }
   },
   "themes": {
     "passerClair": "Passer au thème clair",

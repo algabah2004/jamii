@@ -5,6 +5,7 @@ import { RouterLink, useRoute } from 'vue-router'
 import { JAvatar, JBouton, JSquelette } from '../../design-system'
 import { fermerMission, formaterMontant, lireMission, publierMission, type Mission, type Resultat } from './missions'
 import DevisPropose from './DevisPropose.vue'
+import EchangesMission from './EchangesMission.vue'
 import EnvoyerDevis from './EnvoyerDevis.vue'
 import PropositionsMission from './PropositionsMission.vue'
 import ProposerMission from './ProposerMission.vue'
@@ -56,6 +57,23 @@ const voitPropositions = computed(() => {
   const m = mission.value
   if (!m) return false
   return m.moi.role === 'candidat' || (m.moi.role === 'client' && ['publiee', 'fermee'].includes(m.statut))
+})
+
+/** Avec qui le client échange : la personne choisie depuis une proposition, sinon le développeur retenu. */
+type Interlocuteur = { id: string; nom: string; avatarUrl?: string | null }
+const choisi = ref<Interlocuteur | null>(null)
+function ecrireA(p: Interlocuteur) {
+  choisi.value = p
+  document.getElementById('echanges')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+/** Les échanges : le client avec un développeur ; un développeur connecté (candidat, retenu, invité) avec le client. */
+const echanges = computed<{ visible: boolean; avec: Interlocuteur | null }>(() => {
+  const m = mission.value
+  if (!m || m.statut === 'brouillon' || !session.moi.value) return { visible: false, avec: null }
+  if (m.moi.role === 'client') return { visible: true, avec: choisi.value ?? m.travail?.developpeur ?? null }
+  const parties = ['candidat', 'developpeur_retenu', 'invite']
+  if (parties.includes(m.moi.role) || (m.moi.role === 'visiteur' && m.statut === 'publiee')) return { visible: true, avec: m.client }
+  return { visible: false, avec: null }
 })
 
 const etapeActuelle = computed(() => ETAPES.indexOf(mission.value?.statut as (typeof ETAPES)[number]))
@@ -142,10 +160,11 @@ async function agir(appel: (id: string, version: number) => Promise<Resultat<Mis
           </article>
 
           <div v-if="peut('proposer')" id="proposer"><ProposerMission :mission="mission" @envoyee="rafraichir" /></div>
-          <PropositionsMission v-if="voitPropositions" :mission="mission" @maj="mission = $event" @recharger="rafraichir" />
+          <PropositionsMission v-if="voitPropositions" :mission="mission" @maj="mission = $event" @recharger="rafraichir" @ecrire="ecrireA" />
           <DevisPropose v-if="mission.travail && !devisAccepte" :mission="mission" :travail="mission.travail" @maj="mission = $event" />
           <EnvoyerDevis v-if="peut('envoyer_devis')" id="envoyer-devis" :mission="mission" :remplace="Boolean(mission.travail)" @envoye="rafraichir" />
           <SuiviMission v-if="mission.travail && devisAccepte" :mission="mission" :travail="mission.travail" @maj="mission = $event" />
+          <div v-if="echanges.visible" id="echanges"><EchangesMission :mission="mission" :avec="echanges.avec" /></div>
         </div>
 
         <aside class="carte resume" :aria-label="t('missions.detail.resume')" data-test="resume">
@@ -165,6 +184,10 @@ async function agir(appel: (id: string, version: number) => Promise<Resultat<Mis
             class="j-bouton j-bouton--principal"
             data-test="se-connecter"
           >{{ t('missions.detail.seConnecter') }}</RouterLink>
+
+          <a v-if="echanges.visible && mission.moi.role !== 'client'" href="#echanges" class="j-bouton j-bouton--secondaire" data-test="aller-echanges">
+            {{ t('missions.echanges.ecrireClient') }}
+          </a>
 
           <dl class="faits">
             <div v-if="dateSouhaitee">
@@ -246,7 +269,7 @@ async function agir(appel: (id: string, version: number) => Promise<Resultat<Mis
 .actions p { margin: var(--space-2) 0 0; }
 .note { margin: 0; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); border-inline-start: 3px solid var(--cantaloupe); background: color-mix(in srgb, var(--surface) 60%, transparent); font-weight: 600; }
 .erreur { margin: 0; color: var(--danger); font-weight: 600; }
-#proposer, #propositions-titre, #envoyer-devis { scroll-margin-block-start: 6rem; }
+#proposer, #propositions-titre, #envoyer-devis, #echanges { scroll-margin-block-start: 6rem; }
 .statut-candidat { margin: 0; display: grid; gap: var(--space-2); padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); border-inline-start: 3px solid var(--line-strong); font-weight: 600; }
 .statut-candidat[data-retenu='true'] { border-color: var(--cantaloupe); background: color-mix(in srgb, var(--cantaloupe) 10%, transparent); }
 </style>

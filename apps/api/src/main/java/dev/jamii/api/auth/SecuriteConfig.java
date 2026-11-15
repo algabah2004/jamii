@@ -41,10 +41,10 @@ class SecuriteConfig {
 				// /api/missions et /api/missions/* : les annonces publiques (contracts/missions.yaml). Le module décide, mission
 				// par mission, de ce que la personne a le droit de voir (404 sinon) ; le détail du travail reste fermé.
 				// /api/hackathons/*/equipes et /resultats : les équipes d'un hackathon publié et ses résultats une fois publiés
-				// (contracts/hackathons.yaml), sans les inscriptions ni les notes.
+				// (contracts/hackathons.yaml), sans les inscriptions ni les notes. /discussion : ses annonces, publiques comme lui.
 				.requestMatchers(HttpMethod.GET, "/api/systalink/tableau-de-bord", "/api/systalink/tendances", "/api/vitrine",
 						"/api/profils/*", "/api/missions", "/api/missions/*", "/api/hackathons", "/api/hackathons/*", "/api/hackathons/*/equipes",
-						"/api/hackathons/*/resultats")
+						"/api/hackathons/*/resultats", "/api/hackathons/*/discussion")
 				.permitAll()
 				.anyRequest().authenticated())
 			.oauth2Login(oauth -> oauth

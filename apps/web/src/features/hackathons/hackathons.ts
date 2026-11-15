@@ -225,6 +225,50 @@ export type NotesDuJure = Schemas['NotesDuJure']
 
 export const LIMITES_JURY = { groupeMax: 40, commentaireMax: 2000 } as const
 
+// ---------------------------------------------------------------- la discussion
+
+export type Annonce = Schemas['Annonce']
+export type DiscussionHackathon = Schemas['Discussion']
+export type QuestionOuverte = { id: string; titre: string; nombreReponses: number }
+
+export async function lireDiscussion(id: string): Promise<DiscussionHackathon> {
+  const { data, error } = await api.GET('/api/hackathons/{hackathonId}/discussion', { ...chemin(id) })
+  if (error || !data) throw new Error('discussion indisponible')
+  return data
+}
+
+export const annoncer = (id: string, texte: string) =>
+  resultat<Annonce>(api.POST('/api/hackathons/{hackathonId}/annonces', { ...chemin(id), body: { texte } }))
+
+export async function retirerAnnonce(id: string, annonceId: string): Promise<boolean> {
+  const { response } = await api.DELETE('/api/hackathons/{hackathonId}/annonces/{annonceId}', {
+    params: { path: { hackathonId: id, annonceId } },
+  })
+  return response.ok
+}
+
+/**
+ * Ouvrir l'espace d'échange : une communauté (contracts/communautes.yaml) dont l'organisateur devient modérateur, avec
+ * ses salons de départ, puis liée au hackathon. Si la création échoue (limite de 3 par jour…), rien n'est lié.
+ */
+export async function ouvrirEspace(h: Hackathon): Promise<Resultat<string>> {
+  const cree = await api.POST('/api/communautes', {
+    body: { nom: h.titre.slice(0, 80), description: `Questions et échanges du hackathon « ${h.titre} ».`.slice(0, 500), theme: 'autre' },
+  })
+  if (!cree.data) return { ok: false, ...echec(cree.error) }
+  const slug = cree.data.slug
+  const { response, error } = await api.PUT('/api/hackathons/{hackathonId}/communaute', { ...chemin(h.id), body: { communaute: slug } })
+  return response.ok ? { ok: true, valeur: slug } : { ok: false, ...echec(error) }
+}
+
+/** Les questions encore sans réponse acceptée dans l'espace d'échange (les communautés demandent une connexion). */
+export async function questionsOuvertes(slug: string): Promise<QuestionOuverte[]> {
+  const { data } = await api.GET('/api/communautes/{slug}/publications', {
+    params: { path: { slug }, query: { type: 'question', sansReponseAcceptee: true, limite: 3 } },
+  })
+  return (data?.elements ?? []).map((p) => ({ id: p.id, titre: p.titre, nombreReponses: p.nombreReponses }))
+}
+
 /** L'identifiant d'un compte, tiré du lien de son profil Jamii (`…/p/<uuid>`, la page publique de son profil) ou donné tel quel ; `null` sinon. */
 export function lireIdentifiant(texte: string): string | null {
   const trouve = texte.trim().match(/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/?$/i)

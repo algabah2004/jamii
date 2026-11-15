@@ -147,3 +147,57 @@ describe('proposer ses services', () => {
     expect(page.find('[data-test="retirer"]').exists()).toBe(false)
   })
 })
+
+describe('les échanges entre le client et un développeur', () => {
+  const echanges = () => {
+    const envoyes: unknown[] = []
+    serveur.use(
+      http.get('/api/conversations/:id/messages', ({ params }) =>
+        HttpResponse.json({
+          personne: { id: String(params.id), nom: 'Kofi Mensah', avatarUrl: null },
+          elements: [{ id: 'm1', deMoi: false, texte: 'Bonjour, le paiement Wave est-il déjà ouvert ?', envoyeLe: '2026-11-14T13:00:00Z', luLe: null }],
+          curseurSuivant: null,
+        }),
+      ),
+      http.post('/api/conversations/:id/messages', async ({ request }) => {
+        const corps = (await request.json()) as { texte: string }
+        envoyes.push(corps)
+        return HttpResponse.json({ id: 'm2', deMoi: true, texte: corps.texte, envoyeLe: '2026-11-14T13:05:00Z', luLe: null }, { status: 201 })
+      }),
+    )
+    return envoyes
+  }
+
+  it('la cliente choisit une proposition, lit la conversation et répond', async () => {
+    const envoyes = echanges()
+    const page = await monter()
+    await attendre(page, '[data-test="choisir"]')
+    await attendre(page, '[data-test="ecrire-developpeur"]')
+    await page.get('[data-test="ecrire-developpeur"]').trigger('click')
+    await attendre(page, '[data-test="message"]')
+    expect(page.get('[data-test="echanges"]').text()).toContain('Échanges avec Kofi Mensah')
+    expect(page.get('[data-test="message"]').text()).toContain('paiement Wave')
+    await page.get('[data-test="form-echange"] textarea').setValue('Oui, le compte marchand est prêt.')
+    await page.get('[data-test="form-echange"]').trigger('submit')
+    await vi.waitFor(() => expect(page.findAll('[data-test="message"]')).toHaveLength(2))
+    expect(envoyes).toEqual([{ texte: 'Oui, le compte marchand est prêt.' }])
+    expect(page.get('[data-test="ouvrir-messages"]').attributes('href')).toMatch(/^\/messages\//)
+  })
+
+  it('un développeur écrit au client avant de proposer ses services', async () => {
+    echanges()
+    visiteur()
+    const page = await monter()
+    await attendre(page, '[data-test="aller-echanges"]')
+    expect(page.get('[data-test="aller-echanges"]').attributes('href')).toBe('#echanges')
+    await attendre(page, '[data-test="form-echange"]')
+    expect(page.find('[data-test="ecrire-developpeur"]').exists()).toBe(false)
+  })
+
+  it('rien à échanger sur un brouillon', async () => {
+    modifierMission(ID, (m) => (m.statut = 'brouillon'))
+    const page = await monter()
+    await attendre(page, '[data-test="titre"]')
+    expect(page.find('[data-test="echanges"]').exists()).toBe(false)
+  })
+})

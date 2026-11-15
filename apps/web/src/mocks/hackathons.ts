@@ -81,6 +81,11 @@ const mesNotes = new Map<string, { renduId: string; notes: { critereId: string; 
 const resultats = new Map<string, Resultats>()
 const PERSONNES = [AWA, KOFI, FATOU, MOUSSA]
 
+/** La discussion de chaque hackathon : ses annonces (la plus récente d'abord) et la communauté liée. */
+type AnnonceMaquette = { id: string; auteur: typeof AWA; texte: string; publieeLe: string }
+const discussions = new Map<string, { communaute: string | null; annonces: AnnonceMaquette[] }>()
+const discussionDe = (id: string) => discussions.get(id) ?? discussions.set(id, { communaute: null, annonces: [] }).get(id)!
+
 /** Pour un test : déposer le rendu d'une équipe, comme si elle l'avait rendu pendant le hackathon. */
 export function deposerRendu(rendu: Rendu) {
   rendus.set(rendu.equipeId, rendu)
@@ -100,6 +105,7 @@ export function reinitialiserHackathons() {
   scores.clear()
   retours.clear()
   mesNotes.clear()
+  discussions.clear()
   resultats.clear()
   const h = hackathonDemo()
   hackathons.set(h.id, h)
@@ -292,6 +298,27 @@ export const handlersHackathons = [
     const jure: Jure = { personne, groupe, rendusNotes: 0, rendusATraiter: rendus.size }
     jures.set(h.id, [...(jures.get(h.id) ?? []).filter((j) => j.personne.id !== personne.id), jure])
     return HttpResponse.json(jure, { status: 201 })
+  }),
+
+  http.get('/api/hackathons/:id/discussion', ({ params }) => {
+    if (!hackathons.get(String(params.id))) return erreur(404, 'introuvable')
+    return HttpResponse.json(discussionDe(String(params.id)))
+  }),
+  http.post('/api/hackathons/:id/annonces', async ({ params, request }) => {
+    const { texte } = (await request.json()) as { texte: string }
+    if (!texte?.trim()) return HttpResponse.json({ code: 'validation', erreurs: [{ champ: 'texte', code: 'obligatoire' }] }, { status: 400 })
+    const annonce = { id: crypto.randomUUID(), auteur: AWA, texte: texte.trim(), publieeLe: new Date().toISOString() }
+    discussionDe(String(params.id)).annonces.unshift(annonce)
+    return HttpResponse.json(annonce, { status: 201 })
+  }),
+  http.delete('/api/hackathons/:id/annonces/:annonceId', ({ params }) => {
+    const d = discussionDe(String(params.id))
+    d.annonces = d.annonces.filter((a) => a.id !== params.annonceId)
+    return new HttpResponse(null, { status: 204 })
+  }),
+  http.put('/api/hackathons/:id/communaute', async ({ params, request }) => {
+    discussionDe(String(params.id)).communaute = ((await request.json()) as { communaute: string | null }).communaute
+    return new HttpResponse(null, { status: 204 })
   }),
 
   http.get('/api/hackathons/:id/mes-notes', () => HttpResponse.json([...mesNotes.values()])),
