@@ -9,9 +9,10 @@ import type { paths as CheminsCercles } from './generated/cercles'
 import type { paths as CheminsReseau } from './generated/reseau'
 import type { paths as CheminsMissions } from './generated/missions'
 import type { paths as CheminsHackathons } from './generated/hackathons'
+import type { paths as CheminsFichiers } from './generated/fichiers'
 
 /** Un chemin par contrat : on ajoute ici chaque nouveau contrat généré. */
-type paths = CheminsSocle & CheminsSystalink & CheminsVitrine & CheminsCommunautes & CheminsProfils & CheminsProjets & CheminsCercles & CheminsReseau & CheminsMissions & CheminsHackathons
+type paths = CheminsSocle & CheminsSystalink & CheminsVitrine & CheminsCommunautes & CheminsProfils & CheminsProjets & CheminsCercles & CheminsReseau & CheminsMissions & CheminsHackathons & CheminsFichiers
 
 const METHODES_PROTEGEES = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
 

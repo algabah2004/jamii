@@ -36,7 +36,7 @@ class SalonCercle {
 
 	record Message(UUID id, long numero, String type, UUID auteurId, String texte, String fait, String prevu,
 			String bloque, String evenement, Integer tour, UUID personneId, Instant resoluLe, UUID resoluPar,
-			UUID appelId, boolean appelEnCours, Instant envoyeLe) {
+			UUID appelId, boolean appelEnCours, Instant envoyeLe, List<UUID> pieces) {
 	}
 
 	record Appel(UUID id, UUID lancePar, String salle, Instant lanceLe) {
@@ -46,7 +46,7 @@ class SalonCercle {
 
 	private static final String COLONNES = """
 			m.id, m.numero, m.type, m.auteur_id, m.texte, m.point_fait, m.point_prevu, m.point_bloque, m.evenement,
-			m.evenement_tour, m.evenement_personne, m.resolu_le, m.resolu_par, m.appel_id, m.envoye_le,
+			m.evenement_tour, m.evenement_personne, m.resolu_le, m.resolu_par, m.appel_id, m.envoye_le, m.pieces,
 			(a.id IS NOT NULL AND a.termine_le IS NULL AND a.lance_le > :limiteAppel) AS appel_en_cours
 			""";
 
@@ -112,24 +112,37 @@ class SalonCercle {
 	// ---------------------------------------------------------------- écriture
 
 	Message ecrire(UUID cercle, UUID auteur, String texte, Instant maintenant) {
-		return inserer(cercle, auteur, "texte", texte, null, null, null, null, null, null, null, maintenant);
+		return ecrire(cercle, auteur, texte, List.of(), maintenant);
+	}
+
+	/** Un message libre, avec ses pièces jointes (déjà vérifiées par le module fichiers). */
+	Message ecrire(UUID cercle, UUID auteur, String texte, List<UUID> pieces, Instant maintenant) {
+		return inserer(cercle, auteur, "texte", texte, null, null, null, null, null, null, null, pieces, maintenant);
 	}
 
 	Message point(UUID cercle, UUID auteur, String fait, String prevu, String bloque, Instant maintenant) {
-		return inserer(cercle, auteur, "point", null, fait, prevu, bloque, null, null, null, null, maintenant);
+		return inserer(cercle, auteur, "point", null, fait, prevu, bloque, null, null, null, null, List.of(), maintenant);
 	}
 
 	Message decision(UUID cercle, UUID auteur, String texte, Instant maintenant) {
-		return inserer(cercle, auteur, "decision", texte, null, null, null, null, null, null, null, maintenant);
+		return decision(cercle, auteur, texte, List.of(), maintenant);
+	}
+
+	Message decision(UUID cercle, UUID auteur, String texte, List<UUID> pieces, Instant maintenant) {
+		return inserer(cercle, auteur, "decision", texte, null, null, null, null, null, null, null, pieces, maintenant);
 	}
 
 	Message coupDeMain(UUID cercle, UUID auteur, String texte, Instant maintenant) {
-		return inserer(cercle, auteur, "coup_de_main", texte, null, null, null, null, null, null, null, maintenant);
+		return coupDeMain(cercle, auteur, texte, List.of(), maintenant);
+	}
+
+	Message coupDeMain(UUID cercle, UUID auteur, String texte, List<UUID> pieces, Instant maintenant) {
+		return inserer(cercle, auteur, "coup_de_main", texte, null, null, null, null, null, null, null, pieces, maintenant);
 	}
 
 	/** Écrit par Jamii quand le cercle avance. `personne` : de qui parle l'événement (peut être null). */
 	void evenement(UUID cercle, String evenement, Integer tour, UUID personne, Instant maintenant) {
-		inserer(cercle, null, "evenement", null, null, null, null, evenement, tour, personne, null, maintenant);
+		inserer(cercle, null, "evenement", null, null, null, null, evenement, tour, personne, null, List.of(), maintenant);
 	}
 
 	/** Marque un coup de main résolu. Sans effet s'il l'est déjà (le premier qui l'a résolu reste). */
@@ -139,20 +152,20 @@ class SalonCercle {
 	}
 
 	private Message inserer(UUID cercle, UUID auteur, String type, String texte, String fait, String prevu, String bloque,
-			String evenement, Integer tour, UUID personne, UUID appel, Instant maintenant) {
+			String evenement, Integer tour, UUID personne, UUID appel, List<UUID> pieces, Instant maintenant) {
 		UUID id = UUID.randomUUID();
 		long numero = base.sql("""
 				INSERT INTO message_cercle (id, cercle_id, auteur_id, type, texte, point_fait, point_prevu, point_bloque,
-				                            evenement, evenement_tour, evenement_personne, appel_id, envoye_le)
-				VALUES (:id, :c, :a, :type, :texte, :fait, :prevu, :bloque, :ev, :tour, :p, :appel, :le)
+				                            evenement, evenement_tour, evenement_personne, appel_id, envoye_le, pieces)
+				VALUES (:id, :c, :a, :type, :texte, :fait, :prevu, :bloque, :ev, :tour, :p, :appel, :le, CAST(:pieces AS UUID[]))
 				RETURNING numero
 				""")
 			.param("id", id).param("c", cercle).param("a", auteur).param("type", type).param("texte", texte)
 			.param("fait", fait).param("prevu", prevu).param("bloque", bloque).param("ev", evenement).param("tour", tour)
-			.param("p", personne).param("appel", appel).param("le", Timestamp.from(maintenant))
+			.param("p", personne).param("appel", appel).param("le", Timestamp.from(maintenant)).param("pieces", tableau(pieces))
 			.query(Long.class).single();
 		return new Message(id, numero, type, auteur, texte, fait, prevu, bloque, evenement, tour, personne, null, null, appel,
-				appel != null, maintenant);
+				appel != null, maintenant, pieces);
 	}
 
 	/** Secondes à attendre avant d'écrire encore, 0 si c'est possible tout de suite. */
@@ -185,7 +198,7 @@ class SalonCercle {
 		base.sql("INSERT INTO appel_cercle (id, cercle_id, lance_par, salle, lance_le) VALUES (:id, :c, :u, :salle, :le)")
 			.param("id", appel.id()).param("c", cercle).param("u", auteur).param("salle", appel.salle())
 			.param("le", Timestamp.from(maintenant)).update();
-		inserer(cercle, auteur, "appel", null, null, null, null, null, null, null, appel.id(), maintenant);
+		inserer(cercle, auteur, "appel", null, null, null, null, null, null, null, appel.id(), List.of(), maintenant);
 		return appel;
 	}
 
@@ -225,7 +238,21 @@ class SalonCercle {
 				rs.getString("point_prevu"), rs.getString("point_bloque"), rs.getString("evenement"), leTour,
 				rs.getObject("evenement_personne", UUID.class), resolu == null ? null : resolu.toInstant(),
 				rs.getObject("resolu_par", UUID.class), rs.getObject("appel_id", UUID.class), rs.getBoolean("appel_en_cours"),
-				rs.getTimestamp("envoye_le").toInstant());
+				rs.getTimestamp("envoye_le").toInstant(), pieces(rs));
+	}
+
+	/** Un tableau PostgreSQL de UUID, écrit en texte (`{a,b}`) : portable quel que soit le pilote. */
+	static String tableau(List<UUID> ids) {
+		return "{" + String.join(",", ids.stream().map(UUID::toString).toList()) + "}";
+	}
+
+	static List<UUID> pieces(ResultSet rs) throws SQLException {
+		java.sql.Array a = rs.getArray("pieces");
+		if (a == null) {
+			return List.of();
+		}
+		Object[] valeurs = (Object[]) a.getArray();
+		return java.util.Arrays.stream(valeurs).map(v -> v instanceof UUID u ? u : UUID.fromString(v.toString())).toList();
 	}
 
 }

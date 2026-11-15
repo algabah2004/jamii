@@ -1,17 +1,23 @@
 <script setup lang="ts">
+import EnTeteOutil from './EnTeteOutil.vue'
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import LienPersonne from '../../components/LienPersonne.vue'
 import { JAvatar } from '../../design-system'
 import { ilYa } from '../vitrine/vitrine'
-import type { Cercle } from './cercles'
+import { RouterLink } from 'vue-router'
+import { chefDeProjet, type Cercle } from './cercles'
+import { prenom } from './salon'
 import { envoyer, LIMITES_SALON, lireSalon, type MessageCercle } from './salon'
 
 /*
  * Les décisions du cercle (le « message board » de Basecamp, réduit à l'essentiel) : ce que l'équipe a tranché, écrit
  * une fois, retrouvé sans fouiller le salon. « On part sur Flutter », « la démo est jeudi ».
  */
-const props = defineProps<{ cercle: Cercle }>()
+const props = defineProps<{ cercle: Cercle; moiId: string | null }>()
+// Les décisions du tour sont consignées par son chef de projet (le membre dont c'est le tour) ; les autres les proposent dans le salon.
+const chef = computed(() => chefDeProjet(props.cercle))
+const jeSuisChef = computed(() => !!props.moiId && chef.value.id === props.moiId)
 const { t, locale } = useI18n()
 
 const decisions = ref<MessageCercle[]>([])
@@ -41,15 +47,13 @@ async function consigner() {
 
 <template>
   <section class="outil-decisions" aria-labelledby="decisions-titre" data-test="outil-decisions-page">
-    <header class="tete carte">
-      <span class="icone" aria-hidden="true">📌</span>
-      <div>
-        <h2 id="decisions-titre">{{ t('cercles.qg.outils.decisions') }}</h2>
-        <p class="texte-discret">{{ t('cercles.qg.decisionsAide') }}</p>
-      </div>
-    </header>
+    <EnTeteOutil id="decisions-titre" icone="decisions" :titre="t('cercles.qg.outils.decisions')" :aide="t('cercles.chef.decisionsTenuesPar', { nom: chef.nom })" />
 
-    <form class="carte nouvelle" data-test="nouvelle-decision" @submit.prevent="consigner">
+    <p v-if="!jeSuisChef" class="carte reserve" data-test="decisions-reservees">
+      {{ t('cercles.chef.proposerDecision', { nom: prenom(chef.nom) }) }}
+      <RouterLink :to="{ query: { outil: 'salon' } }">{{ t('cercles.chef.allerAuSalon') }}</RouterLink>
+    </p>
+    <form v-else class="carte nouvelle" data-test="nouvelle-decision" @submit.prevent="consigner">
       <label for="decision-texte">{{ t('cercles.qg.nouvelleDecision') }}</label>
       <textarea id="decision-texte" v-model="texte" rows="2" :maxlength="LIMITES_SALON.texte" :placeholder="t('cercles.qg.decisionExemple')" />
       <p v-if="erreur" role="alert" class="erreur">{{ t('cercles.salon.erreurs.envoi') }}</p>
@@ -73,9 +77,7 @@ async function consigner() {
 
 <style scoped>
 .outil-decisions { display: grid; gap: var(--space-4); max-width: 52rem; }
-.tete { display: flex; gap: var(--space-4); align-items: flex-start; }
-.tete h2, .tete p { margin: 0; }
-.icone { display: grid; place-items: center; flex: none; width: 48px; height: 48px; border-radius: 14px; background: var(--surface-raised); font-size: 24px; }
+.reserve { margin: 0; color: var(--ink-muted); }
 .nouvelle { display: grid; gap: var(--space-2); }
 .nouvelle label { font-weight: 600; }
 .nouvelle textarea { width: 100%; box-sizing: border-box; padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface-raised); color: var(--ink); font: inherit; resize: vertical; }

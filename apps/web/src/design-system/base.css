@@ -30,6 +30,16 @@ a:hover { text-decoration-thickness: 2px; }
 
 button, input, select, textarea { font: inherit; color: inherit; }
 
+/* Les zones d'écriture grandissent avec leur texte (zonesDeTexte.ts) : jamais de barre de défilement avant cette hauteur. */
+textarea { max-height: 40vh; overflow-y: hidden; }
+
+/* Les barres de défilement, fines et discrètes partout (Windows et Linux les montrent toujours, macOS les cache). */
+* { scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background-color: var(--ink-muted); }
+
 /* Champs natifs : le même habillage que JChamp, pour les formulaires qui ne l'utilisent pas encore. */
 input:not([type='radio'], [type='checkbox'], [type='range']), select, textarea {
   min-height: 44px;

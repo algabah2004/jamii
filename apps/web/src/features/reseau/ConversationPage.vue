@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import Composeur from '../../components/texte/Composeur.vue'
+import PiecesJointes from '../../components/texte/PiecesJointes.vue'
+import TexteRiche from '../../components/texte/TexteRiche.vue'
+import type { PieceJointe } from '../../components/texte/fichiers'
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
@@ -32,11 +36,19 @@ const personne = ref<Personne | null>(null)
 const messages = ref<Message[]>([])
 const etat = ref<'chargement' | 'pret' | 'introuvable' | 'indisponible'>('chargement')
 const fil = ref<HTMLElement | null>(null)
+let versionConversation = 0
+let actif = true
 
 async function charger() {
+  const version = ++versionConversation
+  texte.value = ''
+  pieces.value = []
+  envoi.value = false
+  erreur.value = null
   etat.value = 'chargement'
   try {
     const r = await lireConversation(String(route.params.personneId))
+    if (!actif || version !== versionConversation) return
     if (!r) {
       etat.value = 'introuvable'
       return
@@ -44,23 +56,26 @@ async function charger() {
     personne.value = r.personne
     messages.value = r.messages
     etat.value = 'pret'
-    lien.value = await lireLien(r.personne.id).catch(() => null)
+    const contact = await lireLien(r.personne.id).catch(() => null)
+    if (!actif || version !== versionConversation) return
+    lien.value = contact
     // La lecture a marqué la conversation comme lue : la pastille du menu se met à jour tout de suite.
     void rafraichirActivite()
     emit('actualise')
     await descendre()
   } catch {
-    etat.value = 'indisponible'
+    if (actif && version === versionConversation) etat.value = 'indisponible'
   }
 }
-watch(() => route.params.personneId, charger, { immediate: true })
+
 
 /** Relire en silence : les nouveaux messages arrivent sans recharger l'écran. */
 async function relire() {
   if (etat.value !== 'pret' || (typeof document !== 'undefined' && document.visibilityState === 'hidden')) return
+  const version = versionConversation
   try {
     const r = await lireConversation(String(route.params.personneId))
-    if (!r) return
+    if (!r || !actif || version !== versionConversation) return
     const dernier = messages.value.at(-1)?.id
     const enBas = !fil.value || fil.value.scrollHeight - fil.value.scrollTop - fil.value.clientHeight < 80
     messages.value = r.messages
@@ -74,7 +89,7 @@ async function relire() {
   }
 }
 const minuterie = setInterval(() => void relire(), 5000)
-onBeforeUnmount(() => clearInterval(minuterie))
+onBeforeUnmount(() => { actif = false; clearInterval(minuterie) })
 
 async function descendre() {
   await nextTick()
@@ -122,47 +137,37 @@ async function ajouter() {
 const texte = ref('')
 const envoi = ref(false)
 const erreur = ref<string | null>(null)
-const valide = computed(() => texte.value.trim().length > 0 && texte.value.length <= LONGUEUR_MESSAGE)
-const zone = ref<HTMLTextAreaElement | null>(null)
-
-/** La zone grandit avec le texte, jusqu'à six lignes environ. */
-function ajuster() {
-  const z = zone.value
-  if (!z) return
-  z.style.height = 'auto'
-  z.style.height = `${Math.min(z.scrollHeight, 160)}px`
-}
-watch(texte, () => nextTick(ajuster))
-
-function touche(e: KeyboardEvent) {
-  if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
-    e.preventDefault()
-    void envoyer()
-  }
-}
+const pieces = ref<PieceJointe[]>([])
+const composeur = ref<InstanceType<typeof Composeur> | null>(null)
+const valide = computed(() => (texte.value.trim().length > 0 || pieces.value.length > 0) && texte.value.length <= LONGUEUR_MESSAGE)
 
 async function envoyer() {
   if (!valide.value || !personne.value || envoi.value) return
+  const version = versionConversation
   envoi.value = true
   erreur.value = null
   try {
-    const r = await envoyerMessage(personne.value.id, texte.value)
+    const r = await envoyerMessage(personne.value.id, texte.value, undefined, pieces.value.map((p) => p.id))
+    if (!actif || version !== versionConversation) return
     if (r.ok) {
       messages.value.push(r.message)
       emit('actualise')
       texte.value = ''
+      pieces.value = []
+      composeur.value?.rafraichir()
       await descendre()
-      zone.value?.focus()
+      composeur.value?.focus()
     } else erreur.value = t(`reseau.erreurs.${r.code ?? 'autre'}`, t('reseau.erreurs.autreMessage'))
   } catch {
-    erreur.value = t('etat.indisponible')
+    if (actif && version === versionConversation) erreur.value = t('etat.indisponible')
   } finally {
-    envoi.value = false
+    if (actif && version === versionConversation) envoi.value = false
   }
 }
 
 // ---------------------------------------------------------------- appeler (#157)
 const appel = ref<'repos' | 'envoi' | 'erreur'>('repos')
+watch(() => route.params.personneId, charger, { immediate: true })
 /**
  * L'onglet de l'appel s'ouvre pendant le clic (sinon le navigateur le bloque), puis reçoit l'adresse de la salle quand
  * l'API a répondu. L'appel est annoncé dans la conversation : l'autre personne le rejoint d'un clic.
@@ -286,7 +291,8 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
               </div>
 
               <div v-else class="bulle">
-                <p class="bulle__texte">{{ m.texte }}</p>
+                <TexteRiche v-if="m.texte" class="bulle__texte" :texte="m.texte" />
+                <PiecesJointes :pieces="m.piecesJointes ?? []" />
                 <!-- L'invitation : le cercle tel qu'il est maintenant, et le bouton pour le rejoindre s'il reste de la place. -->
                 <div v-if="m.invitation" class="invitation" data-test="invitation">
                   <span class="invitation__titre">{{ t('reseau.messages.invitation') }}</span>
@@ -310,23 +316,23 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
         <p v-if="erreurInvitation" role="alert" class="erreur">{{ erreurInvitation }}</p>
       </div>
 
-      <form class="saisie verre" data-test="form-message" @submit.prevent="envoyer">
-        <p v-if="erreur" role="alert" class="erreur saisie__erreur">{{ erreur }}</p>
-        <label for="message" class="visuellement-cache">{{ t('reseau.messages.ecrire', { nom: prenom(personne.nom) }) }}</label>
-        <textarea
-          id="message"
-          ref="zone"
+      <form class="saisie" data-test="form-message" @submit.prevent="envoyer">
+        <Composeur
+          :key="personne.id"
+          :destinataire-id="personne.id"
+          ref="composeur"
           v-model="texte"
-          rows="1"
-          :maxlength="LONGUEUR_MESSAGE"
+          v-model:pieces="pieces"
+          id-zone="message"
           :placeholder="t('reseau.messages.ecrire', { nom: prenom(personne.nom) })"
-          @keydown="touche"
+          :libelle-envoyer="t('reseau.messages.envoyer')"
+          :envoi="envoi"
+          :erreur="erreur"
+          :max="LONGUEUR_MESSAGE"
+          test-envoyer="envoyer-message"
+          @envoyer="envoyer"
         />
-        <button type="submit" class="rond rond--envoyer" :disabled="!valide || envoi" :aria-label="t('reseau.messages.envoyer')" data-test="envoyer-message">
-          <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M3.4 16.6 17 10 3.4 3.4l1.9 5.4L12 10l-6.7 1.2-1.9 5.4Z" fill="currentColor" /></svg>
-        </button>
       </form>
-      <p class="aide texte-discret">{{ t('reseau.discussion.aideClavier') }}</p>
     </div>
   </section>
 </template>
@@ -382,7 +388,7 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
 .bulle--moi .bulle { background: var(--proof); color: var(--on-proof); border-bottom-right-radius: 6px; }
 .ligne--suite.bulle--autre .bulle { border-top-left-radius: 6px; }
 .ligne--suite.bulle--moi .bulle { border-top-right-radius: 6px; }
-.bulle__texte { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.55; }
+.bulle__texte { margin: 0; }
 .bulle__meta { display: inline-flex; justify-self: end; gap: 4px; align-items: center; font-size: 0.8125rem; opacity: 0.85; }
 .bulle__lu { letter-spacing: -2px; }
 .bulle__lu--oui { font-weight: 800; }
@@ -400,14 +406,7 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
 .appel-carte__rejoindre { padding: 6px 14px; border-radius: var(--radius-pill); background: var(--success, #1f9d55); color: #fff; font-weight: 700; text-decoration: none; white-space: nowrap; }
 .appel-carte__rejoindre:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
-.saisie { display: flex; align-items: flex-end; flex-wrap: wrap; gap: var(--space-2); padding: 10px; margin: -14px 24px 0; border-radius: 30px; z-index: 2; }
-.saisie textarea {
-  flex: 1; min-width: 0; min-height: 44px; max-height: 160px; padding: 11px var(--space-4); resize: none;
-  border: 1px solid transparent; border-radius: 22px; background: transparent; color: var(--ink); font: inherit; line-height: 1.4;
-}
-.saisie textarea:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
-.saisie__erreur { flex-basis: 100%; }
-.aide { margin: 0; padding: 8px 36px 16px; font-size: 0.8125rem; background: var(--bg); }
+.saisie { margin: 0 var(--space-6) var(--space-4); z-index: 2; }
 .erreur { margin: 0; color: var(--danger); font-weight: 600; }
 
 @keyframes arrive { from { opacity: 0; transform: translateY(6px); } }
@@ -422,7 +421,7 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
   .tete__actions { margin-left: auto; }
   .tete__actions .j-bouton { font-size: 0.8125rem; padding-inline: 8px; }
   .fil { padding: 30px 16px 40px; }
-  .saisie { padding: 8px; margin: -14px 12px 12px; }
+  .saisie { margin: 0 var(--space-3) var(--space-3); }
   .aide { display: none; }
   .bulle { max-width: 85%; }
 }

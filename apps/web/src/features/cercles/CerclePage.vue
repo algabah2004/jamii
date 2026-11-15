@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LienRetour from '../../components/LienRetour.vue'
 import LienPersonne from '../../components/LienPersonne.vue'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -16,7 +17,8 @@ import OutilPoints from './OutilPoints.vue'
 import OutilDecisions from './OutilDecisions.vue'
 import OutilCalendrier from './OutilCalendrier.vue'
 import { outilDepuis, OUTILS } from './qg'
-import { avancement, avantTirage, deposerIdee, LIMITES, lireAvancement, lireCercle, livrerTour, ordreDePassage, positionsAnneau, pourcentage, rejoindreCercle, tirerAuSort, titreDuTour, tourEnCours, type Avancement, type Cercle, type Resultat, type Tache } from './cercles'
+import IconeCercle from './IconeCercle.vue'
+import { avancement, avantTirage, chefDeProjet, deposerIdee, LIMITES, lireAvancement, lireCercle, livrerTour, ordreDePassage, positionsAnneau, pourcentage, rejoindreCercle, tirerAuSort, titreDuTour, tourEnCours, type Avancement, type Cercle, type Resultat, type Tache } from './cercles'
 
 /*
  * La page d'un cercle : qui en fait partie, l'ordre de passage, le tour en cours et où il en est.
@@ -72,7 +74,6 @@ const membre = computed(() => !!cercle.value?.moi.estMembre)
 // Le QG du cercle, à la façon d'un projet Basecamp : des outils (salon, tâches, point du soir, décisions, calendrier,
 // le cercle), chacun à son adresse (`?outil=`) pour qu'un lien mène droit à l'un d'eux. Les autres voient le cercle.
 const outil = computed(() => outilDepuis(route.query, membre.value, !!cercle.value?.tirage))
-const ICONES_OUTILS: Record<string, string> = { qg: '🏠', salon: '💬', taches: '✅', points: '🌙', decisions: '📌', calendrier: '📅', cercle: '⭕' }
 const createur = computed(() => !!cercle.value?.moi.estCreateur)
 const preparation = computed(() => (cercle.value ? avantTirage(cercle.value) : null))
 const monIdee = computed(() => cercle.value?.membres.find((m) => m.personne.id === moi.value?.id)?.idee ?? null)
@@ -124,8 +125,8 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
 
 <template>
   <section class="cercle-page">
-    <p class="retour"><RouterLink to="/cercles">{{ t('cercles.tous') }}</RouterLink></p>
 
+    <LienRetour v-if="etat !== 'pret'" to="/cercles">{{ t('cercles.tous') }}</LienRetour>
     <JSquelette v-if="etat === 'chargement'" :nombre="3" />
     <div v-else-if="etat === 'introuvable'" class="etat-vide">
       <h1>{{ t('introuvable.titre') }}</h1>
@@ -137,17 +138,18 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
     </div>
 
     <template v-else-if="cercle">
-      <header class="page-tete motif motif--reseau">
-        <div class="page-tete__texte">
+      <header class="cercle-tete">
+        <LienRetour to="/cercles">{{ t('cercles.tous') }}</LienRetour>
+        <div class="cercle-tete__ligne">
           <h1>{{ cercle.nom }}</h1>
-          <p>{{ cercle.ville ? t('cercles.sousTitre', { n: cercle.membres.length, ville: cercle.ville }) : t('cercles.sousTitreSansVille', { n: cercle.membres.length }) }}</p>
-        </div>
-        <div v-if="membre" class="equipe-tete" :aria-label="t('cercles.membresTitre')">
-          <LienPersonne v-for="m in cercle.membres" :key="m.personne.id" :id="m.personne.id" :nom="m.personne.nom"><JAvatar :nom="m.personne.nom" :url="m.personne.avatarUrl" :taille="34" /></LienPersonne>
+          <p class="cercle-tete__infos">{{ cercle.ville ? t('cercles.sousTitre', { n: cercle.membres.length, ville: cercle.ville }) : t('cercles.sousTitreSansVille', { n: cercle.membres.length }) }}</p>
         </div>
       </header>
 
-      <nav v-if="membre" class="outils-nav" :aria-label="t('cercles.onglets.aria')">
+      <div class="espace" :class="{ 'espace--outils': membre }">
+      <!-- La barre latérale du cercle : ses outils, puis l'équipe. Sur mobile, une rangée qui défile. -->
+      <aside v-if="membre" class="barre-laterale">
+      <nav class="outils-nav" :aria-label="t('cercles.onglets.aria')">
         <RouterLink
           v-for="o in OUTILS"
           :key="o"
@@ -156,15 +158,30 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
           :class="{ actif: outil === o }"
           :aria-current="outil === o ? 'page' : undefined"
           :data-test="o === 'cercle' ? 'onglet-cercle' : o === 'salon' ? 'onglet-salon' : `onglet-${o}`"
-        ><span aria-hidden="true">{{ ICONES_OUTILS[o] }}</span> {{ t(`cercles.qg.outils.${o}`) }}</RouterLink>
+        ><IconeCercle :nom="o" :taille="18" /><span>{{ t(`cercles.qg.outils.${o}`) }}</span></RouterLink>
       </nav>
+      <section class="equipe" :aria-label="t('cercles.qg.equipe')">
+        <h2 class="equipe__titre">{{ t('cercles.qg.equipe') }}</h2>
+        <ul>
+          <li v-for="m in cercle.membres" :key="m.personne.id">
+            <LienPersonne :id="m.personne.id" class="equipe__membre">
+              <JAvatar :nom="m.personne.nom" :url="m.personne.avatarUrl" :taille="24" />
+              <span>{{ m.personne.nom }}</span>
+              <span v-if="m.personne.id === chefDeProjet(cercle).id" class="equipe__tour">{{ t('cercles.chef.titre') }}</span>
+            </LienPersonne>
+          </li>
+        </ul>
+      </section>
+      </aside>
+
+      <div class="espace__contenu">
 
       <QgDuCercle v-if="outil === 'qg'" :key="`qg-${cercle.id}`" :cercle="cercle" :suivi="suivi" :titre-tour="titreTour" />
       <SalonDuCercle v-else-if="outil === 'salon'" :key="cercle.id" :cercle="cercle" :suivi="suivi" :titre-tour="titreTour" />
       <OutilTaches v-else-if="outil === 'taches'" :cercle="cercle" :moi-id="moi?.id ?? null" @maj="majTaches" />
       <OutilPoints v-else-if="outil === 'points'" :cercle="cercle" />
-      <OutilDecisions v-else-if="outil === 'decisions'" :cercle="cercle" />
-      <OutilCalendrier v-else-if="outil === 'calendrier'" :cercle="cercle" :suivi="suivi" />
+      <OutilDecisions v-else-if="outil === 'decisions'" :cercle="cercle" :moi-id="moi?.id ?? null" />
+      <OutilCalendrier v-else-if="outil === 'calendrier'" :cercle="cercle" :suivi="suivi" :moi-id="moi?.id ?? null" />
 
       <template v-else>
       <div class="mise-en-page">
@@ -264,12 +281,6 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
             <p v-if="erreur" role="alert" class="erreur">{{ erreur }}</p>
           </section>
 
-          <!-- Le point du tour, calculé à partir des chiffres : c'est le repli prévu pour le résumé du Griot (resume_tour),
-               qui le remplacera quand le service IA le fournira. On ne le présente donc pas comme venant de l'IA. -->
-          <section v-if="tour && beneficiaire && suivi" class="point zone-sombre" aria-labelledby="point-titre" data-test="point">
-            <h2 id="point-titre" class="point__qui">{{ t('cercles.point') }}</h2>
-            <p class="point__texte">{{ t('cercles.pointTexte', { jour: suivi.jour, nom: prenom(beneficiaire.nom), faites: suivi.faites, total: suivi.total }) }} {{ t('cercles.joursRestants', { n: suivi.joursRestants }, suivi.joursRestants) }}.</p>
-          </section>
         </div>
       </div>
 
@@ -293,25 +304,48 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
         </ol>
       </section>
       </template>
+      </div>
+      </div>
     </template>
   </section>
 </template>
 
 <style scoped>
-.cercle-page { display: grid; gap: var(--space-6); }
-.equipe-tete { display: flex; align-items: center; }
-.equipe-tete > * { margin-inline-start: -8px; }
-.equipe-tete :deep(.j-avatar) { box-shadow: 0 0 0 2px var(--surface); }
-/* La barre d'outils du QG : défilable sur mobile, jamais coupée. */
-.outils-nav {
-  display: flex; gap: var(--space-1); padding: 4px; margin-top: calc(-1 * var(--space-8)); overflow-x: auto; scrollbar-width: none;
-  border-radius: var(--radius-pill); background: var(--surface); border: 1px solid var(--line); width: fit-content; max-width: 100%;
+.cercle-page { display: grid; gap: var(--space-6); width: 100%; max-width: 84rem; margin-inline: auto; }
+/* Un en-tête compact : le retour, puis le nom du cercle et ses infos sur une ligne. La place va aux outils. */
+.cercle-tete { display: grid; gap: var(--space-2); padding-top: var(--space-2); }
+.cercle-tete__ligne { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1) var(--space-4); }
+.cercle-tete h1 { margin: 0; font-size: clamp(1.625rem, 3vw, 2.125rem); line-height: 1.15; letter-spacing: -0.5px; }
+.cercle-tete__infos { margin: 0; color: var(--ink-muted); }
+/* L'espace d'un membre : la barre latérale à gauche, l'outil ouvert à droite. */
+.espace { display: grid; gap: var(--space-6); }
+.espace--outils { grid-template-columns: 14.5rem minmax(0, 1fr); align-items: start; }
+.espace__contenu { display: grid; gap: var(--space-6); min-width: 0; }
+.barre-laterale { position: sticky; top: calc(var(--space-12) + var(--space-8)); display: grid; gap: var(--space-6); }
+.outils-nav { display: grid; gap: 2px; }
+.outil-lien {
+  display: flex; align-items: center; gap: var(--space-3); min-height: 42px; padding: 0 var(--space-3); border-radius: var(--radius-md);
+  color: var(--ink-muted); font-weight: 600; text-decoration: none; white-space: nowrap;
+  transition: background var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out);
 }
-.outil-lien { flex: none; min-height: 40px; display: inline-flex; align-items: center; gap: 6px; padding: 0 var(--space-4); border-radius: var(--radius-pill); color: var(--ink-muted); font-weight: 600; text-decoration: none; white-space: nowrap; }
-.outil-lien:hover { color: var(--ink); background: var(--surface-raised); }
-.outil-lien.actif { background: var(--ink); color: var(--surface); }
-.outil-lien:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
-.retour { margin: 0; font-size: var(--type-body-sm-size); }
+.outil-lien:hover { color: var(--ink); background: color-mix(in srgb, var(--surface) 70%, transparent); }
+.outil-lien.actif { color: var(--ink); background: var(--surface); box-shadow: 0 0 0 1px var(--line); }
+.outil-lien.actif :deep(svg) { color: var(--action); }
+.outil-lien:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.equipe { display: grid; gap: var(--space-2); padding-top: var(--space-4); border-top: 1px solid var(--line); }
+.equipe__titre { margin: 0 0 var(--space-1); padding: 0 var(--space-3); color: var(--ink-muted); font-size: 0.75rem; font-weight: 700; }
+.equipe ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.equipe__membre { display: flex; align-items: center; gap: var(--space-2); min-height: 36px; padding: 0 var(--space-3); border-radius: var(--radius-md); font-size: var(--type-body-sm-size); }
+.equipe__membre:hover { background: color-mix(in srgb, var(--surface) 70%, transparent); text-decoration: none !important; }
+.equipe__membre span:first-of-type { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.equipe__tour { margin-inline-start: auto; color: var(--proof-ink); font-size: 0.6875rem; font-weight: 700; }
+@media (max-width: 900px) {
+  .espace--outils { grid-template-columns: minmax(0, 1fr); margin-top: 0; }
+  .barre-laterale { position: static; }
+  .outils-nav { display: flex; gap: var(--space-1); overflow-x: auto; scrollbar-width: none; margin-inline: calc(-1 * var(--space-4)); padding-inline: var(--space-4); }
+  .outil-lien { flex: none; min-height: 40px; }
+  .equipe { display: none; }
+}
 .mise-en-page { display: grid; gap: var(--space-6); grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); align-items: start; }
 @media (max-width: 860px) { .mise-en-page { grid-template-columns: 1fr; } }
 
@@ -320,7 +354,6 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
 .anneau__trace { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .anneau__trace circle {
   fill: none; stroke: var(--line-strong); stroke-width: 0.5; stroke-dasharray: 1.2 1.8;
-  animation: tourne 60s linear infinite; transform-origin: 50% 50%;
 }
 
 .anneau__membre {
@@ -360,9 +393,6 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
 .avancement__barre { height: 10px; border-radius: var(--radius-pill); background: var(--surface-sunken, color-mix(in srgb, var(--ink) 8%, transparent)); overflow: hidden; }
 .avancement__barre i { display: block; height: 100%; border-radius: inherit; background: var(--action); animation: remplit var(--motion-celebrate) var(--ease-out) both; transform-origin: left; }
 
-.point { display: grid; gap: var(--space-2); padding: var(--space-5, 1.25rem) var(--space-6); border-radius: var(--radius-lg); background: var(--bg); color: var(--ink); }
-.point__qui { margin: 0; font-size: var(--type-body-sm-size); color: var(--action-ink); font-weight: 700; }
-.point__texte { margin: 0; line-height: 1.55; }
 
 .ordre h2 { margin-bottom: var(--space-4); }
 .ordre__liste { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
@@ -374,7 +404,6 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
 .ordre__ligne--en_cours { border-color: var(--proof); }
 .ordre__ligne--en_cours .ordre__statut { background: var(--proof); color: var(--on-proof); }
 .ordre__ligne--livre .ordre__statut { background: var(--action-soft); color: var(--action-ink); }
-@keyframes tourne { to { rotate: 360deg; } }
 @keyframes apparait { from { opacity: 0; scale: 0.6; } }
 @keyframes remplit { from { transform: scaleX(0); } }
 @media (prefers-reduced-motion: reduce) { .anneau__trace circle { animation: none; } }

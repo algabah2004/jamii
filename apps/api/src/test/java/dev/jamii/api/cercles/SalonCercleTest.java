@@ -205,14 +205,20 @@ class SalonCercleTest {
 	}
 
 	@Test
-	void une_decision_est_consignee_et_relue_a_part() {
+	void seul_le_chef_de_projet_du_tour_consigne_une_decision() {
 		Cercle c = cercleTire();
-		assertThat(envoyer("POST", salon(c) + "/messages", c.membres().get(1), "{\"type\":\"decision\",\"texte\":\"On part sur Flutter\"}"))
+		UUID chef = base.sql("SELECT utilisateur_id FROM cercle_membre WHERE cercle_id = :c AND rang = 1")
+			.param("c", UUID.fromString(c.id())).query(UUID.class).single();
+		UtilisateurConnecte leChef = c.membres().stream().filter(m -> m.id().equals(chef)).findFirst().orElseThrow();
+		UtilisateurConnecte unAutre = c.membres().stream().filter(m -> !m.id().equals(chef)).findFirst().orElseThrow();
+
+		assertThat(envoyer("POST", salon(c) + "/messages", unAutre, "{\"type\":\"decision\",\"texte\":\"On part sur Flutter\"}"))
+			.hasStatus(HttpStatus.FORBIDDEN).bodyJson().extractingPath("$.code").isEqualTo("pas_chef_de_projet");
+		assertThat(envoyer("POST", salon(c) + "/messages", leChef, "{\"type\":\"decision\",\"texte\":\"On part sur Flutter\"}"))
 			.hasStatus(HttpStatus.CREATED).bodyJson().extractingPath("$.type").isEqualTo("decision");
-		envoyer("POST", salon(c) + "/messages", c.membres().get(2), "{\"type\":\"decision\",\"texte\":\"La démo est vendredi\"}");
-		var lu = lire(salon(c), c.createur());
+		envoyer("POST", salon(c) + "/messages", leChef, "{\"type\":\"decision\",\"texte\":\"La démo est vendredi\"}");
+		var lu = lire(salon(c), unAutre);
 		assertThat(lu).bodyJson().extractingPath("$.decisions[*].texte").asArray().containsExactly("La démo est vendredi", "On part sur Flutter");
-		assertThat(lu).bodyJson().extractingPath("$.decisions[0].auteur.nom").isEqualTo("Fatou");
 	}
 
 }

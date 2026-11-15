@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LienRetour from '../../components/LienRetour.vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
@@ -219,7 +220,7 @@ const annuler = () => (raisonValide.value ? agir(() => annulerHackathon(hackatho
 
 <template>
   <section class="hackathon" :class="{ 'avec-barre': barreMobile }">
-    <p class="retour"><RouterLink to="/hackathons">{{ t('hackathons.detail.retour') }}</RouterLink></p>
+    <p class="retour"><LienRetour to="/hackathons">{{ t('hackathons.detail.retour') }}</LienRetour></p>
 
     <JSquelette v-if="etat === 'chargement'" :nombre="3" />
     <p v-else-if="etat === 'introuvable'" class="carte message" data-test="introuvable">{{ t('hackathons.detail.introuvable') }}</p>

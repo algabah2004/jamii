@@ -461,6 +461,7 @@ export interface components {
             } | null;
             /** Format: date-time */
             envoyeLe: string;
+            piecesJointes: components["schemas"]["PieceJointe"][];
         };
         PointDuJour: {
             /** @description Ce que j'ai fait depuis mon dernier point. */
@@ -483,6 +484,7 @@ export interface components {
             /** @description Pour `texte`, `coup_de_main` et `decision`. */
             texte?: string;
             point?: components["schemas"]["PointDuJour"];
+            pieces?: components["schemas"]["Pieces"];
         };
         AppelCercle: {
             /** Format: uuid */
@@ -545,6 +547,25 @@ export interface components {
             traceId?: string;
             erreurs?: components["schemas"]["ErreurChamp"][];
         };
+        PieceJointe: {
+            /** Format: uuid */
+            id: string;
+            /** @description Le nom du fichier, sans chemin. */
+            nom: string;
+            /** @description Le type MIME reconnu (image/png, video/mp4, application/pdf…). */
+            type: string;
+            /** @enum {string} */
+            sorte: "image" | "video" | "document";
+            /**
+             * Format: int64
+             * @description En octets.
+             */
+            taille: number;
+            /** @description Où le lire (`/api/fichiers/{id}`), avec la session. */
+            url: string;
+        };
+        /** @description Les identifiants des fichiers joints (envoyés avant par `POST /api/fichiers`, par la même personne). */
+        Pieces: string[];
     };
     responses: {
         /** @description Entrée invalide (`code` = `validation`, détail dans `erreurs`). */
@@ -894,7 +915,7 @@ export interface operations {
             };
             400: components["responses"]["Invalide"];
             401: components["responses"]["NonConnecte"];
-            /** @description `pas_membre`. */
+            /** @description `pas_membre`, ou `pas_chef_de_projet` pour une `decision`. */
             403: components["responses"]["Interdit"];
             404: components["responses"]["Introuvable"];
             /** @description `point_deja_fait`. */

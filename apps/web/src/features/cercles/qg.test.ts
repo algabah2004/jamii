@@ -21,11 +21,11 @@ describe('le QG du cercle', () => {
     expect(e!.y).toBeLessThan(a!.y)
   })
 
-  it('compte 14 jours, marque aujourd’hui, la démo au 7e jour et la livraison au 14e', () => {
+  it('compte 14 jours, marque aujourd’hui et la livraison au 14e', () => {
     const jours = joursDuTour('2026-11-12T09:00:00Z', new Date('2026-11-15T10:00:00Z'))
     expect(jours).toHaveLength(14)
     expect(jours.findIndex((j) => j.aujourdhui)).toBe(3)
-    expect(jours[6]!.jalon).toBe('demo')
+    expect(jours[6]!.jalon).toBeNull()
     expect(jours[13]!.jalon).toBe('livraison')
   })
 })

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LienRetour from '../../components/LienRetour.vue'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
@@ -66,7 +67,7 @@ async function creer() {
     <JSquelette v-if="etat === 'chargement'" :nombre="2" />
     <div v-else-if="etat === 'introuvable'" class="etat-vide">
       <h1>{{ t('introuvable.titre') }}</h1>
-      <RouterLink to="/communautes">{{ t('communautes.retour') }}</RouterLink>
+      <LienRetour to="/communautes">{{ t('communautes.retour') }}</LienRetour>
     </div>
     <p v-else-if="etat === 'indisponible'" role="alert" class="etat-vide">{{ t('etat.indisponible') }}</p>
 

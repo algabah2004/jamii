@@ -27,10 +27,10 @@ export async function lireProfilsRecommandes(cercleId: string): Promise<{ compet
 export type Envoi = { ok: true; message: Message } | { ok: false; code: string | null }
 
 /** Écrire à quelqu'un ; avec `cercleId`, le message porte l'invitation à ce cercle. */
-export async function envoyerMessage(personneId: string, texte: string, cercleId?: string): Promise<Envoi> {
+export async function envoyerMessage(personneId: string, texte: string, cercleId?: string, pieces: string[] = []): Promise<Envoi> {
   const { data, error } = await api.POST('/api/conversations/{personneId}/messages', {
     params: { path: { personneId } },
-    body: { texte: texte.trim(), ...(cercleId ? { cercleId } : {}) },
+    body: { texte: texte.trim(), ...(cercleId ? { cercleId } : {}), ...(pieces.length ? { pieces } : {}) },
   })
   return data ? { ok: true, message: data } : { ok: false, code: (error as { code?: string } | undefined)?.code ?? null }
 }

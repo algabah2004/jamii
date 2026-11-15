@@ -53,7 +53,7 @@ export function pointsParJour(messages: MessageCercle[]) {
   return [...jours.entries()].sort(([a], [b]) => b.localeCompare(a)).map(([jour, points]) => ({ jour, points }))
 }
 
-/** Les 14 jours du tour, à partir de sa date d'ouverture : le jour d'aujourd'hui, la démo du milieu, la livraison. */
+/** Les 14 jours du tour, à partir de sa date d'ouverture : aujourd'hui, et la livraison (fixe : la règle de la tontine). */
 export function joursDuTour(debut: string, maintenant = new Date()) {
   const premier = new Date(debut)
   premier.setUTCHours(0, 0, 0, 0)
@@ -67,7 +67,7 @@ export function joursDuTour(debut: string, maintenant = new Date()) {
       iso,
       aujourdhui: iso === aujourdhui,
       passe: iso < aujourdhui,
-      jalon: i === 6 ? ('demo' as const) : i === DUREE_TOUR_JOURS - 1 ? ('livraison' as const) : null,
+      jalon: i === DUREE_TOUR_JOURS - 1 ? ('livraison' as const) : null,
     }
   })
 }

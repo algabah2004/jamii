@@ -3,7 +3,7 @@ import type { Tache } from './cercles'
 import { competencesUtiles, proposerRepartition } from './repartition'
 
 const tache = (id: string, titre: string, extra: Partial<Tache> = {}): Tache => ({
-  id, titre, statut: 'a_faire', proposeeParIa: false, version: 1, creeLe: `2026-11-15T10:0${id}:00Z`, assignee: null, ...extra,
+  id, titre, description: null, priorite: 'normale', statut: 'a_faire', proposeeParIa: false, version: 1, creeLe: `2026-11-15T10:0${id}:00Z`, assignee: null, ...extra,
 })
 const awa = { id: 'a', nom: 'Awa', competences: ['react', 'ux-design'] }
 const kofi = { id: 'k', nom: 'Kofi', competences: ['spring', 'postgresql'] }

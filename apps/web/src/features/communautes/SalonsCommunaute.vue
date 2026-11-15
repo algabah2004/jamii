@@ -9,6 +9,10 @@ import { useSession } from '../../session'
 import { ilYa } from '../vitrine/vitrine'
 import { marquerLu } from './lus'
 import SupprimerSalon from './SupprimerSalon.vue'
+import Composeur from '../../components/texte/Composeur.vue'
+import PiecesJointes from '../../components/texte/PiecesJointes.vue'
+import TexteRiche from '../../components/texte/TexteRiche.vue'
+import type { PieceJointe } from '../../components/texte/fichiers'
 
 /*
  * Un salon d'une communauté, sur toute la hauteur (contracts/communautes.yaml v0.2, #155) :
@@ -226,9 +230,10 @@ const lignes = computed<Ligne[]>(() => {
 })
 
 const texte = ref('')
-const zone = ref<HTMLTextAreaElement | null>(null)
+const pieces = ref<PieceJointe[]>([])
+const composeur = ref<InstanceType<typeof Composeur> | null>(null)
 const envoi = ref<'repos' | 'envoi' | 'erreur' | 'trop'>('repos')
-const valide = computed(() => texte.value.trim().length > 0 && texte.value.length <= LONGUEUR)
+const valide = computed(() => (texte.value.trim().length > 0 || pieces.value.length > 0) && texte.value.length <= LONGUEUR)
 async function envoyer() {
   const salon = actuel.value
   if (!salon || !valide.value || envoi.value === 'envoi') return
@@ -236,32 +241,18 @@ async function envoyer() {
   try {
     const { data, response } = await api.POST('/api/communautes/{slug}/salons/{salon}/messages', {
       params: { path: { slug: props.slug, salon: salon.slug } },
-      body: { texte: texte.value.trim() },
+      body: { texte: texte.value.trim(), pieces: pieces.value.map((p) => p.id) },
     })
     if (!data) return void (envoi.value = response.status === 429 ? 'trop' : 'erreur')
     texte.value = ''
+    pieces.value = []
     envoi.value = 'repos'
     ajouter([...messages.value, data], true)
-    void nextTick(ajusterZone)
+    composeur.value?.rafraichir()
   } catch {
     envoi.value = 'erreur'
   }
 }
-/** Entrée envoie, Maj + Entrée passe à la ligne. */
-function touche(e: KeyboardEvent) {
-  if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
-    e.preventDefault()
-    void envoyer()
-  }
-}
-/** La zone d'écriture grandit avec le texte, jusqu'à une dizaine de lignes. */
-function ajusterZone() {
-  const el = zone.value
-  if (!el) return
-  el.style.height = 'auto'
-  el.style.height = `${Math.min(el.scrollHeight, 240)}px`
-}
-watch(texte, () => void nextTick(ajusterZone))
 
 const heure = (iso: string) => new Intl.DateTimeFormat(locale.value, { hour: '2-digit', minute: '2-digit' }).format(new Date(iso))
 /** Une couleur de nom stable par personne, prise dans la charte : on reconnaît qui parle d'un coup d'œil. */
@@ -342,7 +333,10 @@ function teinte(id: string) {
                     {{ t('communautes.appels.rejoindre') }}<span class="visuellement-cache"> {{ t('communautes.salons.nouvelOnglet') }}</span>
                   </a>
                 </div>
-                <p v-else class="message__texte">{{ l.message.texte }}</p>
+                <template v-else>
+                  <TexteRiche v-if="l.message.texte" :texte="l.message.texte" class="message__texte" />
+                  <PiecesJointes :pieces="l.message.piecesJointes ?? []" />
+                </template>
               </div>
             </li>
           </template>
@@ -355,25 +349,18 @@ function teinte(id: string) {
       <p v-if="coupe" class="salon__coupe" role="status">{{ t('communautes.salons.coupe') }}</p>
 
       <form v-if="membre" class="ecrire" data-test="ecrire" @submit.prevent="envoyer">
-        <div class="ecrire__boite">
-          <label class="visuellement-cache" :for="`ecrire-${actuel.slug}`">{{ t('communautes.salons.ecrireDans', { salon: actuel.nom }) }}</label>
-          <textarea
-            :id="`ecrire-${actuel.slug}`"
-            ref="zone"
-            v-model="texte"
-            rows="1"
-            :maxlength="LONGUEUR"
-            :placeholder="t('communautes.salons.ecrireDans', { salon: actuel.nom })"
-            @keydown="touche"
-          />
-          <button type="submit" class="ecrire__envoyer" :disabled="!valide || envoi === 'envoi'" :aria-label="t('communautes.salons.envoyer')">
-            <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M3 10 17 3l-4 14-3-6-7-1Z" fill="currentColor" /></svg>
-          </button>
-        </div>
-        <p v-if="envoi === 'erreur' || envoi === 'trop'" role="alert" class="ecrire__erreur">
-          {{ envoi === 'trop' ? t('communautes.salons.trop') : t('etat.indisponible') }}
-        </p>
-        <p v-else class="ecrire__aide" aria-hidden="true">{{ t('communautes.salons.aideClavier') }}</p>
+        <Composeur
+          ref="composeur"
+          v-model="texte"
+          v-model:pieces="pieces"
+          :id-zone="`ecrire-${actuel.slug}`"
+          :placeholder="t('communautes.salons.ecrireDans', { salon: actuel.nom })"
+          :libelle-envoyer="t('communautes.salons.envoyer')"
+          :envoi="envoi === 'envoi'"
+          :erreur="envoi === 'trop' ? t('communautes.salons.trop') : envoi === 'erreur' ? t('etat.indisponible') : null"
+          :max="LONGUEUR"
+          @envoyer="envoyer"
+        />
       </form>
       <div v-else class="rejoindre">
         <p>{{ t('communautes.salons.rejoindre') }}</p>
@@ -470,25 +457,6 @@ button.appel:disabled { opacity: 0.6; cursor: progress; }
 .salon__coupe { margin: 0; padding: 0 var(--space-4) var(--space-2); color: var(--ink-muted); font-size: var(--type-body-sm-size); }
 
 .ecrire { padding: 0 var(--space-4) var(--space-3); }
-.ecrire__boite {
-  display: flex; align-items: flex-end; gap: var(--space-2); padding: var(--space-1) var(--space-1) var(--space-1) var(--space-4);
-  border-radius: var(--radius-md); background: var(--surface-raised); border: 1px solid transparent;
-  transition: border-color var(--motion-fast) var(--ease-out);
-}
-.ecrire__boite:focus-within { border-color: var(--line-strong); }
-.ecrire textarea {
-  flex: 1; min-width: 0; min-height: 40px; max-height: 240px; resize: none; padding: 10px 0; border: 0; outline: 0;
-  background: transparent; color: var(--ink); font: inherit; line-height: 1.4;
-}
-.ecrire__envoyer {
-  display: grid; place-items: center; width: 40px; height: 40px; flex-shrink: 0; border: 0; border-radius: var(--radius-sm);
-  background: var(--action); color: var(--on-action); cursor: pointer;
-  transition: opacity var(--motion-fast) var(--ease-out);
-}
-.ecrire__envoyer:disabled { background: transparent; color: var(--ink-muted); cursor: default; }
-.ecrire__envoyer:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-.ecrire__aide { margin: var(--space-1) 0 0; color: var(--ink-muted); font-size: 0.75rem; }
-.ecrire__erreur { margin: var(--space-1) 0 0; color: var(--danger); font-weight: 600; font-size: var(--type-body-sm-size); }
 
 .rejoindre {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3);

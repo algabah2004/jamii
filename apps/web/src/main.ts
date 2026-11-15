@@ -1,6 +1,7 @@
 import { createApp } from 'vue'
 import App from './App.vue'
 import { demarrerDesignSystem } from './design-system'
+import { installerZonesDeTexte } from './design-system/zonesDeTexte'
 import { i18n } from './i18n'
 import { creerRouteur } from './router'
 import { chargerSession } from './session'
@@ -15,6 +16,7 @@ async function demarrer() {
   // La session est connue avant la première navigation, pour que le garde du routeur décide juste.
   await chargerSession()
   createApp(App).use(i18n).use(creerRouteur()).mount('#app')
+  installerZonesDeTexte()
 }
 
 void demarrer()

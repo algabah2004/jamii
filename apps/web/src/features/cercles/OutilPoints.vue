@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import EnTeteOutil from './EnTeteOutil.vue'
+import IconeCercle from './IconeCercle.vue'
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import LienPersonne from '../../components/LienPersonne.vue'
@@ -59,17 +61,10 @@ function libelleJour(iso: string) {
 
 <template>
   <section class="outil-points" aria-labelledby="points-titre" data-test="outil-points-page">
-    <header class="tete carte">
-      <span class="icone" aria-hidden="true">🌙</span>
-      <div>
-        <h2 id="points-titre">{{ t('cercles.qg.outils.points') }}</h2>
-        <p class="question">« {{ t('cercles.qg.question') }} »</p>
-        <p class="texte-discret">{{ t('cercles.qg.pointsAide') }}</p>
-      </div>
-    </header>
+    <EnTeteOutil id="points-titre" icone="points" :titre="t('cercles.qg.outils.points')" :aide="t('cercles.qg.pointsAide')" />
 
     <form v-if="!fait" class="carte reponse" data-test="repondre-point" @submit.prevent="repondre">
-      <h3>{{ t('cercles.qg.maReponse') }}</h3>
+      <h3>{{ t('cercles.qg.question') }}</h3>
       <label for="op-fait">{{ t('cercles.salon.fait') }}</label>
       <textarea id="op-fait" v-model="point.fait" rows="2" :maxlength="LIMITES_SALON.point" :placeholder="t('cercles.salon.faitAide')" />
       <label for="op-prevu">{{ t('cercles.salon.prevu') }}</label>
@@ -79,7 +74,7 @@ function libelleJour(iso: string) {
       <p v-if="erreur" role="alert" class="erreur">{{ erreur }}</p>
       <button type="submit" class="envoyer" :disabled="!pret">{{ t('cercles.salon.envoyerPoint') }}</button>
     </form>
-    <p v-else class="carte fait" data-test="point-fait">✓ {{ t('cercles.salon.pointFaitAujourdhui') }}</p>
+    <p v-else class="carte fait" data-test="point-fait"><IconeCercle nom="coche" /> {{ t('cercles.salon.pointFaitAujourdhui') }}</p>
 
     <p v-if="manquants.length && etat === 'pret'" class="texte-discret">{{ t('cercles.qg.pasEncore', { noms: manquants.map((p) => prenom(p.nom)).join(', ') }) }}</p>
 
@@ -108,10 +103,6 @@ function libelleJour(iso: string) {
 
 <style scoped>
 .outil-points { display: grid; gap: var(--space-4); max-width: 52rem; }
-.tete { display: flex; gap: var(--space-4); align-items: flex-start; }
-.tete h2, .tete p { margin: 0; }
-.icone { display: grid; place-items: center; flex: none; width: 48px; height: 48px; border-radius: 14px; background: var(--surface-raised); font-size: 24px; }
-.question { font-size: 1.25rem; font-style: italic; margin: var(--space-1) 0 !important; }
 .reponse { display: grid; gap: var(--space-2); }
 .reponse h3 { margin: 0 0 var(--space-1); font-size: var(--type-body-size); }
 .reponse label { font-weight: 600; font-size: var(--type-body-sm-size); }

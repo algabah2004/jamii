@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LienRetour from '../LienRetour.vue'
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
@@ -43,7 +44,7 @@ function avancer() {
 
 <template>
   <section class="assistant" :aria-label="titre">
-    <header class="assistant__haut"><RouterLink :to="retour" class="retour">← {{ retourLibelle }}</RouterLink><span class="rang" aria-live="polite">{{ t('creationGuidee.etape', { n: etape + 1, total: etapes.length }) }}</span></header>
+    <header class="assistant__haut"><LienRetour :to="retour">{{ retourLibelle }}</LienRetour><span class="rang" aria-live="polite">{{ t('creationGuidee.etape', { n: etape + 1, total: etapes.length }) }}</span></header>
     <div class="progression" role="progressbar" :aria-label="titre" :aria-valuenow="etape + 1" :aria-valuemin="1" :aria-valuemax="etapes.length"><span :style="{ width: `${(etape + 1) / etapes.length * 100}%` }" /></div>
     <div class="scene">
       <form class="carte panneau" :data-test="testFormulaire" novalidate @submit.prevent="avancer">

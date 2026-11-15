@@ -9,6 +9,7 @@ import { handlersMissions } from './missions'
 import { handlersHackathons } from './hackathons'
 import { handlersCercles } from './cercles'
 import { handlersReseau } from './reseau'
+import { handlersFichiers } from './fichiers'
 
 type Moi = components['schemas']['Moi']
 type TableauDeBord = ComposantsSystalink['schemas']['TableauDeBord']
@@ -83,6 +84,7 @@ export const tableauDemo: TableauDeBord = {
 let connecte = true
 
 export const handlers = [
+  ...handlersFichiers,
   ...handlersVitrine,
   ...handlersCommunautes,
   ...handlersProfils,

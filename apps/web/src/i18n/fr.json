@@ -691,7 +691,7 @@
     "membres": "{n} membre | {n} membres",
     "questionsOuvertes": "aucune question ouverte | {n} question ouverte | {n} questions ouvertes",
     "tuEnFaisPartie": "Tu en fais partie",
-    "retour": "← Toutes les communautés",
+    "retour": "Toutes les communautés",
     "rejoindre": "Rejoindre",
     "quitter": "Quitter",
     "poser": "Poser une question",
@@ -909,7 +909,12 @@
       "minimum": "10 caractères au moins",
       "pagePublication": "Ouvrir la publication seule",
       "questionIa": "Question (l'IA propose une réponse)",
-      "encore": "Encore {n} caractère | Encore {n} caractères"
+      "encore": "Encore {n} caractère | Encore {n} caractères",
+      "partage": {
+        "image": "{prenom} a partagé une image",
+        "video": "{prenom} a partagé une vidéo",
+        "document": "{prenom} a partagé un document"
+      }
     },
     "appels": {
       "lancer": "Lancer un appel",
@@ -923,7 +928,7 @@
     }
   },
   "question": {
-    "retourCommunaute": "← Retour à la communauté",
+    "retourCommunaute": "Retour à la communauté",
     "iaPrepare": "L'IA prépare une réponse…",
     "iaIndisponible": "L'IA n'a pas proposé de réponse. Les membres de la communauté peuvent répondre.",
     "proposeeParIa": "Proposée par l'IA · à vérifier par un pair",
@@ -1482,34 +1487,12 @@
         "pointDejaFait": "Tu as déjà fait ton point aujourd’hui.",
         "trop": "Trop de messages d’un coup. Attends un instant.",
         "tropAppels": "Trop d’appels lancés en une heure. Réessaie plus tard."
-      }
+      },
+      "voir": "Voir",
+      "masquer": "Masquer"
     },
     "tableau": {
-      "aria": "Tableau de bord du tour",
-      "toutes": "Toutes les tâches",
-      "aucune": "Aucune tâche pour ce tour. Ajoute la première pour organiser le travail de l’équipe.",
-      "nouvelle": "Nouvelle tâche",
-      "exemple": "Ex. Créer la page d’accueil",
-      "responsable": "Responsable",
-      "nonAttribuee": "Non attribuée",
-      "etat": "État",
-      "ajouter": "Ajouter la tâche",
-      "statut": {
-        "a_faire": "À faire",
-        "en_cours": "En cours",
-        "livree": "Livrée"
-      },
-      "pasDeTour": "Le tableau de bord s’ouvrira avec le premier tour, après le tirage.",
-      "avancement": "Avancement du tour",
-      "miennes": "Mes tâches",
-      "aucuneMienne": "Tu n’as pas encore pris de tâche. Choisis-en une parmi les tâches libres.",
-      "aucuneMienneSansTaches": "Les tâches que tu prendras apparaîtront ici.",
-      "libres": "Tâches libres",
-      "etAutres": "et {n} autres dans l’onglet « Le cercle »",
-      "equipe": "L’équipe",
-      "livrees": "{n}/{total} tâches livrées",
-      "pointFait": "point fait",
-      "ecrire": "Écrire"
+      "pasDeTour": "Le tableau de bord s’ouvrira avec le premier tour, après le tirage."
     },
     "repartition": {
       "intro": "Ayo peut proposer qui prend quoi, d'après les compétences de chacun et ce qu'il porte déjà.",
@@ -1579,7 +1562,6 @@
       "aucuneDecision": "Aucune décision consignée pour l’instant.",
       "jourSur": "Jour {jour} sur 14",
       "calendrierAvant": "Le calendrier s’ouvre avec le premier tour.",
-      "ordreAide": "L’anneau, l’ordre de passage, le code et la livraison du tour.",
       "collineAria": "{aFaire} à faire, {enCours} en cours, {livrees} livrées",
       "monter": "On cherche comment faire",
       "descendre": "On sait faire, on livre",
@@ -1587,7 +1569,6 @@
       "collineAide": "En montée, ce qui reste à faire ; au sommet, ce qui est en cours ; en descente, ce qui est livré.",
       "tachesAide": "Découpez le projet en petites tâches. Chacun prend les siennes et les coche quand elles sont livrées.",
       "pointsAide": "Chaque jour, la même question au cercle. Les réponses sont rangées par jour : on relit la journée de l’équipe d’un coup.",
-      "maReponse": "Ma réponse d’aujourd’hui",
       "pasEncore": "Pas encore répondu aujourd’hui : {noms}",
       "aucunPoint": "Personne n’a encore répondu. Lance-toi !",
       "reponses": "1 réponse | {n} réponses",
@@ -1606,7 +1587,93 @@
       "planning": "Le planning des tours",
       "livreLe": "Livré le {date}",
       "du": "Du {debut} au {fin}",
-      "vers": "Vers le {date} (estimé)"
+      "vers": "Vers le {date} (estimé)",
+      "ordreResume": "{n} tours livrés sur {total}. L’ordre de passage, le code et la livraison du tour.",
+      "prochain": {
+        "demo": "Démo du milieu : {date}",
+        "livraison": "Livraison : {date}"
+      },
+      "equipe": "L’équipe",
+      "sonTour": "son tour",
+      "prochaineEtape": "Prochaine étape : {titre}, {date}"
+    },
+    "tache": {
+      "nouvelle": "Nouvelle tâche",
+      "modifierTitre": "Modifier la tâche",
+      "titre": "Titre",
+      "titreExemple": "Par exemple : l’écran de connexion",
+      "aFaire": "Ce qu’il faut faire",
+      "aFaireExemple": "Le contexte, les étapes, les liens utiles…",
+      "finiQuand": "C’est fini quand…",
+      "finiQuandStocke": "Fini quand",
+      "finiQuandExemple": "Par exemple : on se connecte avec un numéro et le code SMS arrive.",
+      "priorite": "Priorité",
+      "priorites": {
+        "haute": "Haute",
+        "normale": "Normale",
+        "basse": "Basse"
+      },
+      "prioritesAide": {
+        "haute": "À faire en premier",
+        "normale": "Dans le cours du tour",
+        "basse": "Si on a le temps"
+      },
+      "echeance": "Échéance",
+      "sansEcheance": "Pas d’échéance",
+      "responsable": "Responsable",
+      "personne": "Personne pour l’instant",
+      "moi": "{nom} (moi)",
+      "creer": "Créer la tâche",
+      "enregistrer": "Enregistrer",
+      "modifier": "Modifier",
+      "fermer": "Fermer",
+      "statuts": {
+        "a_faire": "À faire",
+        "en_cours": "En cours",
+        "livree": "Livrée"
+      },
+      "echeances": {
+        "depassee": "dépassée",
+        "aujourdhui": "aujourd’hui",
+        "demain": "demain",
+        "plus_tard": "à venir"
+      },
+      "creee": "Créée",
+      "parAyo": "proposée par Ayo",
+      "sansDescription": "Pas encore de description.",
+      "ajouterDescription": "En écrire une",
+      "livrer": "Marquer livrée",
+      "rouvrir": "Rouvrir",
+      "filtres": "Quelles tâches montrer",
+      "filtresNoms": {
+        "toutes": "À faire",
+        "miennes": "Les miennes",
+        "libres": "Libres"
+      },
+      "aucuneOuverte": "Tout est livré. Bravo !",
+      "aucune": {
+        "miennes": "Tu n’as aucune tâche en cours.",
+        "libres": "Toutes les tâches ont quelqu’un."
+      },
+      "livrees": "1 tâche livrée | {n} tâches livrées",
+      "cocher": "Marquer « {titre} » livrée",
+      "rouvrirLibelle": "Rouvrir « {titre} »"
+    },
+    "chef": {
+      "titre": "chef de projet",
+      "calendrierTenuPar": "Tenu par {nom}, chef de projet de ce tour. Les 14 jours, ses étapes, la livraison, et le planning de tous les tours.",
+      "decisionsTenuesPar": "Consignées par {nom}, chef de projet de ce tour. Ce que l’équipe a tranché, écrit une fois et retrouvé sans fouiller le salon.",
+      "proposerDecision": "Les décisions de ce tour sont consignées par {nom}, chef de projet. Une idée à trancher ? Propose-la dans le salon.",
+      "proposerEtape": "Le calendrier est tenu par {nom}, chef de projet. Une date à proposer ?",
+      "allerAuSalon": "Aller au salon",
+      "etapes": "Les étapes du tour",
+      "aucuneEtapeChef": "Pose les étapes de ton tour : une démo, une revue de code, un test avec de vrais utilisateurs…",
+      "aucuneEtape": "{nom} n’a pas encore posé d’étape.",
+      "titreEtape": "Titre de l’étape",
+      "titreEtapeExemple": "Par exemple : démo à la coopérative",
+      "ajouterEtape": "Ajouter",
+      "marquerAtteinte": "Marquer « {titre} » atteinte",
+      "reserveCalendrier": "Le calendrier du tour est tenu par son chef de projet."
     }
   },
   "reseau": {
@@ -2813,6 +2880,45 @@
         "idee": "Initiatives libres"
       },
       "resultats": "Ce que la communauté construit"
+    }
+  },
+  "texteRiche": {
+    "barre": "Mise en forme",
+    "aide": "Entrée pour envoyer · Maj + Entrée pour aller à la ligne",
+    "formats": {
+      "gras": "Gras",
+      "italique": "Italique",
+      "barre": "Barré",
+      "code": "Code",
+      "bloc": "Bloc de code",
+      "lien": "Lien",
+      "liste": "Liste",
+      "citation": "Citation"
+    },
+    "exemples": {
+      "gras": "texte en gras",
+      "italique": "texte en italique",
+      "barre": "texte barré",
+      "code": "code",
+      "bloc": "ton code ici",
+      "lien": "texte du lien",
+      "liste": "élément",
+      "citation": "citation"
+    },
+    "aideFil": "Ctrl/⌘ + Entrée pour publier"
+  },
+  "fichiers": {
+    "joindre": "Joindre des fichiers (images, vidéos, PDF…)",
+    "joints": "Pièces jointes",
+    "retirer": "Retirer {nom}",
+    "envoi": "Envoi…",
+    "ouvrir": "Ouvrir",
+    "erreurs": {
+      "trop_gros": "« {nom} » est trop gros : 10 Mo au plus, 25 Mo pour une vidéo.",
+      "type_refuse": "« {nom} » n’est pas accepté : images, vidéos, PDF, documents.",
+      "trop_de_requetes": "Trop de fichiers envoyés en une heure. Réessaie plus tard.",
+      "erreur": "« {nom} » n’a pas pu être envoyé. Réessaie.",
+      "tropDePieces": "{n} pièces jointes au plus."
     }
   }
 }

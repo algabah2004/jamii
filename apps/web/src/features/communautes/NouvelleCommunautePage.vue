@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LienRetour from '../../components/LienRetour.vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRouter } from 'vue-router'
@@ -136,7 +137,7 @@ function touche(e: KeyboardEvent) {
 <template>
   <section class="assistant" aria-labelledby="titre-etape" @keydown="touche">
     <header class="assistant__haut">
-      <RouterLink to="/communautes" class="retour">{{ t('communautes.retour') }}</RouterLink>
+      <LienRetour to="/communautes">{{ t('communautes.retour') }}</LienRetour>
       <p v-if="!creee" class="assistant__rang" aria-live="polite">{{ t('communautes.nouvelle.etape', { n: rang + 1, total: ETAPES.length }) }}</p>
     </header>
     <div v-if="!creee" class="progression" role="progressbar" :aria-valuenow="rang + 1" aria-valuemin="1" :aria-valuemax="ETAPES.length" :aria-label="t('communautes.nouvelle.titre')">

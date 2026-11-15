@@ -1,4 +1,5 @@
 import { http, HttpResponse } from 'msw'
+import { piecesDe } from './fichiers'
 import type { components } from '../api/generated/reseau'
 import { cerclesDemo, resumeCercle } from './cercles'
 
@@ -51,11 +52,11 @@ export function reinitialiserReseau() {
   // Kofi invite Awa dans son cercle d'Abidjan (non lu), Amina lui a répondu hier (lu).
   const abidjan = cerclesDemo().find((c) => c.id === ABIDJAN)
   messages.set(KOFI, [
-    { id: nouvelId(), deMoi: false, texte: 'Salut Awa ! Notre cercle cherche quelqu’un qui connaît Flutter. Tu nous rejoins ?', invitation: abidjan ? { cercle: resumeCercle(abidjan) } : null, envoyeLe: ilYa(12), luLe: null },
+    { id: nouvelId(), deMoi: false, texte: 'Salut Awa ! Notre cercle cherche quelqu’un qui connaît Flutter. Tu nous rejoins ?', invitation: abidjan ? { cercle: resumeCercle(abidjan) } : null, envoyeLe: ilYa(12), luLe: null, piecesJointes: [] },
   ])
   messages.set(PROFILS[1].utilisateurId, [
-    { id: nouvelId(), deMoi: false, texte: 'Avec plaisir, je regarde ton idée ce soir.', invitation: null, envoyeLe: ilYa(60 * 20), luLe: ilYa(60 * 19) },
-    { id: nouvelId(), deMoi: true, texte: 'Bonjour Amina, tu aurais un moment pour relire les écrans de mon appli ?', invitation: null, envoyeLe: ilYa(60 * 22), luLe: ilYa(60 * 21) },
+    { id: nouvelId(), deMoi: false, texte: 'Avec plaisir, je regarde ton idée ce soir.', invitation: null, envoyeLe: ilYa(60 * 20), luLe: ilYa(60 * 19), piecesJointes: [] },
+    { id: nouvelId(), deMoi: true, texte: 'Bonjour Amina, tu aurais un moment pour relire les écrans de mon appli ?', invitation: null, envoyeLe: ilYa(60 * 22), luLe: ilYa(60 * 21), piecesJointes: [] },
   ])
   // Amina est un contact ; Ibrahima (Saint-Louis) a demandé à en être un.
   const AMINA = PROFILS[1].utilisateurId
@@ -113,9 +114,9 @@ export const handlersReseau = [
     const personneId = String(params.personneId)
     if (personneId === AWA) return erreur('soi_meme')
     if (!personne(personneId)) return erreur('introuvable', 404)
-    const corps = (await request.json()) as { texte?: string; cercleId?: string }
+    const corps = (await request.json()) as { texte?: string; cercleId?: string; pieces?: string[] }
     const texte = corps.texte?.trim() ?? ''
-    if (!texte || texte.length > 2000) return erreur('validation', 400)
+    if ((!texte && !corps.pieces?.length) || texte.length > 2000) return erreur('validation', 400)
     let invitation: Message['invitation'] = null
     if (corps.cercleId) {
       const c = cerclesDemo().find((x) => x.id === corps.cercleId)
@@ -125,7 +126,7 @@ export const handlersReseau = [
       invitations.set(c.id, (invitations.get(c.id) ?? new Set()).add(personneId))
       invitation = { cercle: resumeCercle(c) }
     }
-    const message: Message = { id: nouvelId(), deMoi: true, texte, invitation, envoyeLe: new Date().toISOString(), luLe: null }
+    const message: Message = { id: nouvelId(), deMoi: true, texte, invitation, envoyeLe: new Date().toISOString(), luLe: null, piecesJointes: piecesDe(corps.pieces, personneId) }
     messages.set(personneId, [message, ...(messages.get(personneId) ?? [])])
     return HttpResponse.json(message, { status: 201 })
   }),
@@ -135,7 +136,7 @@ export const handlersReseau = [
     if (personneId === AWA) return erreur('soi_meme')
     if (!personne(personneId)) return erreur('introuvable', 404)
     const salle = `jamii-prive-${Math.random().toString(16).slice(2, 14)}`
-    const message: Message = { id: nouvelId(), deMoi: true, texte: '📞 Appel vocal', invitation: null, envoyeLe: new Date().toISOString(), luLe: null, appel: { url: `https://meet.jit.si/${salle}`, enCours: true } }
+    const message: Message = { id: nouvelId(), deMoi: true, texte: '📞 Appel vocal', invitation: null, envoyeLe: new Date().toISOString(), luLe: null, appel: { url: `https://meet.jit.si/${salle}`, enCours: true }, piecesJointes: [] }
     messages.set(personneId, [message, ...(messages.get(personneId) ?? [])])
     return HttpResponse.json(message, { status: 201 })
   }),

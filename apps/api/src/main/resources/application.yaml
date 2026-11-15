@@ -2,6 +2,11 @@
 spring:
   application:
     name: jamii-api
+  # Les fichiers joints (module fichiers) : 25 Mo au plus (une courte vidéo) ; chaque sorte a sa propre limite.
+  servlet:
+    multipart:
+      max-file-size: 25MB
+      max-request-size: 26MB
   datasource:
     # sslmode : « prefer » en local (pas de TLS dans docker compose), « require » ou « verify-full » en production.
     url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:jamii}?sslmode=${POSTGRES_SSLMODE:prefer}

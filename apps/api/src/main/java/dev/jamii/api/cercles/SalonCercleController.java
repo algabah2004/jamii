@@ -27,6 +27,9 @@ import dev.jamii.api.auth.Annuaire;
 import dev.jamii.api.auth.Compte;
 import dev.jamii.api.auth.UtilisateurConnecte;
 import dev.jamii.api.cercles.CerclesController.PersonneResume;
+import dev.jamii.api.fichiers.ErreurFichier;
+import dev.jamii.api.fichiers.Fichiers;
+import dev.jamii.api.fichiers.FichiersController;
 
 /**
  * Le salon du cercle (contracts/cercles.yaml v0.2, #157) : réservé aux membres. On y écrit, on y fait son point du
@@ -48,7 +51,7 @@ class SalonCercleController {
 	}
 
 	record MessageCercle(UUID id, long numero, String type, PersonneResume auteur, String texte, Point point,
-			Evenement evenement, CoupDeMain coupDeMain, AppelDuMessage appel, Instant envoyeLe) {
+			Evenement evenement, CoupDeMain coupDeMain, AppelDuMessage appel, Instant envoyeLe, List<Fichiers.Piece> piecesJointes) {
 	}
 
 	record AppelCercle(UUID id, PersonneResume lancePar, Instant lanceLe, String url) {
@@ -58,7 +61,7 @@ class SalonCercleController {
 			AppelCercle appel) {
 	}
 
-	record NouveauMessage(String type, String texte, Point point) {
+	record NouveauMessage(String type, String texte, Point point, List<UUID> pieces) {
 	}
 
 	private static final int TEXTE_MAX = 2000;
@@ -71,10 +74,13 @@ class SalonCercleController {
 
 	private final Annuaire annuaire;
 
+	private final Fichiers fichiers;
+
 	private final String appels;
 
-	SalonCercleController(GestionCercles gestion, SalonCercle salon, Annuaire annuaire,
+	SalonCercleController(GestionCercles gestion, SalonCercle salon, Annuaire annuaire, Fichiers fichiers,
 			@Value("${jamii.appels.url:https://meet.jit.si}") String appels) {
+		this.fichiers = fichiers;
 		this.gestion = gestion;
 		this.salon = salon;
 		this.annuaire = annuaire;
@@ -120,15 +126,21 @@ class SalonCercleController {
 		switch (type) {
 			case "texte", "coup_de_main", "decision" -> {
 				String texte = propre(demande.texte());
-				if (texte == null || texte.length() > TEXTE_MAX) {
+				var cercle = membre(cercleId, moi.id());
+				List<UUID> pieces = fichiers.verifierPieces(demande.pieces(), moi.id());
+				// Un message peut n'être qu'une pièce jointe ; une demande d'aide ou une décision s'écrit toujours.
+				boolean texteRequis = !"texte".equals(type) || pieces.isEmpty();
+				if ((texte == null && texteRequis) || (texte != null && texte.length() > TEXTE_MAX)) {
 					throw validation("texte", "longueur_invalide");
 				}
-				membre(cercleId, moi.id());
+				if ("decision".equals(type) && !moi.id().equals(chefDeProjet(cercle))) {
+					throw new ErreurCercle(HttpStatus.FORBIDDEN, "pas_chef_de_projet", "Les décisions du tour sont consignées par son chef de projet");
+				}
 				attendre(moi.id(), maintenant);
 				message = switch (type) {
-					case "texte" -> salon.ecrire(cercleId, moi.id(), texte, maintenant);
-					case "decision" -> salon.decision(cercleId, moi.id(), texte, maintenant);
-					default -> salon.coupDeMain(cercleId, moi.id(), texte, maintenant);
+					case "texte" -> salon.ecrire(cercleId, moi.id(), texte, pieces, maintenant);
+					case "decision" -> salon.decision(cercleId, moi.id(), texte, pieces, maintenant);
+					default -> salon.coupDeMain(cercleId, moi.id(), texte, pieces, maintenant);
 				};
 			}
 			case "point" -> {
@@ -206,6 +218,11 @@ class SalonCercleController {
 		return ResponseEntity.noContent().build();
 	}
 
+	@ExceptionHandler(ErreurFichier.class)
+	ResponseEntity<ProblemDetail> erreurFichier(ErreurFichier e) {
+		return FichiersController.probleme(e);
+	}
+
 	@ExceptionHandler(ErreurCercle.class)
 	ResponseEntity<ProblemDetail> erreur(ErreurCercle e) {
 		return CerclesController.probleme(e);
@@ -220,6 +237,13 @@ class SalonCercleController {
 			throw new ErreurCercle(HttpStatus.FORBIDDEN, "pas_membre", "Le salon est réservé aux membres du cercle");
 		}
 		return vue;
+	}
+
+	/** Le chef de projet : le membre dont c'est le tour ; avant le tirage (ou après le dernier tour), le créateur. */
+	static UUID chefDeProjet(GestionCercles.Vue vue) {
+		Integer tour = vue.cercle().tourEnCours();
+		return vue.membres().stream().filter(m -> tour != null && tour.equals(m.rang())).map(GestionCercles.Membre::utilisateurId)
+			.findFirst().orElse(vue.cercle().createurId());
 	}
 
 	private void attendre(UUID moi, Instant maintenant) {
@@ -248,7 +272,7 @@ class SalonCercleController {
 				"point".equals(m.type()) ? new Point(m.fait(), m.prevu(), m.bloque()) : null,
 				"evenement".equals(m.type()) ? new Evenement(m.evenement(), m.tour(), personne(m.personneId(), comptes)) : null,
 				"coup_de_main".equals(m.type()) ? new CoupDeMain(m.resoluLe(), personne(m.resoluPar(), comptes)) : null,
-				m.appelId() == null ? null : new AppelDuMessage(m.appelId(), m.appelEnCours()), m.envoyeLe());
+				m.appelId() == null ? null : new AppelDuMessage(m.appelId(), m.appelEnCours()), m.envoyeLe(), fichiers.decrire(m.pieces()));
 	}
 
 	private AppelCercle vue(SalonCercle.Appel a, Map<UUID, Compte> comptes) {

@@ -30,7 +30,7 @@ class GestionCommunautes {
 	}
 
 	record Resume(UUID id, String communaute, String type, String titre, UUID auteurId, int nombreReponses,
-			Instant accepteeLe, Instant creeLe, String contenu, String propositionIa) {
+			Instant accepteeLe, Instant creeLe, String contenu, String propositionIa, List<UUID> pieces) {
 	}
 
 	record Detail(Resume resume, UUID communauteId, String contenu, UUID projetId, UUID reponseAccepteeId,
@@ -154,14 +154,14 @@ class GestionCommunautes {
 
 	@Transactional
 	UUID publier(UUID communaute, UUID auteur, String type, String titre, String contenu, UUID projetId,
-			String propositionIa, Instant maintenant) {
+			String propositionIa, List<UUID> pieces, Instant maintenant) {
 		UUID id = UUID.randomUUID();
 		base.sql("""
-				INSERT INTO publication (id, communaute_id, auteur_id, type, titre, contenu, projet_id, proposition_ia, cree_le)
-				VALUES (:id, :c, :auteur, :type, :titre, :contenu, :projet, :ia, :t)
+				INSERT INTO publication (id, communaute_id, auteur_id, type, titre, contenu, projet_id, proposition_ia, cree_le, pieces)
+				VALUES (:id, :c, :auteur, :type, :titre, :contenu, :projet, :ia, :t, CAST(:pieces AS UUID[]))
 				""").param("id", id).param("c", communaute).param("auteur", auteur).param("type", type)
 			.param("titre", titre).param("contenu", contenu).param("projet", projetId).param("ia", propositionIa)
-			.param("t", Timestamp.from(maintenant)).update();
+			.param("t", Timestamp.from(maintenant)).param("pieces", dev.jamii.api.fichiers.Fichiers.tableau(pieces)).update();
 		return id;
 	}
 
@@ -192,7 +192,7 @@ class GestionCommunautes {
 	}
 
 	private static final String RESUME = """
-			SELECT p.id, c.slug, p.type, p.titre, p.auteur_id, p.acceptee_le, p.cree_le, p.contenu, p.proposition_ia,
+			SELECT p.id, c.slug, p.type, p.titre, p.auteur_id, p.acceptee_le, p.cree_le, p.contenu, p.proposition_ia, p.pieces,
 			       (SELECT count(*) FROM reponse r WHERE r.publication_id = p.id) AS nombre_reponses
 			FROM publication p JOIN communaute c ON c.id = p.communaute_id
 			""";
@@ -202,7 +202,7 @@ class GestionCommunautes {
 		return new Resume(rs.getObject("id", UUID.class), rs.getString("slug"), rs.getString("type"), rs.getString("titre"),
 				rs.getObject("auteur_id", UUID.class), rs.getInt("nombre_reponses"),
 				acceptee == null ? null : acceptee.toInstant(), rs.getTimestamp("cree_le").toInstant(), rs.getString("contenu"),
-				rs.getString("proposition_ia"));
+				rs.getString("proposition_ia"), dev.jamii.api.fichiers.Fichiers.lireTableau(rs, "pieces"));
 	}
 
 	private static Fiche fiche(ResultSet rs, int n) throws SQLException {

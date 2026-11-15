@@ -567,13 +567,14 @@ components:
       properties:
         type: { $ref: '#/components/schemas/TypePublication' }
         titre: { type: string, minLength: 10, maxLength: 150 }
-        contenu: { type: string, minLength: 20, maxLength: 10000, description: Texte brut. }
+        contenu: { type: string, minLength: 0, maxLength: 10000, description: 'Texte mis en forme (petit Markdown), 20 caractères au moins sans pièce jointe.' }
         projetId: { type: string, format: uuid, description: 'Obligatoire pour `montre_ton_projet`, interdit sinon.' }
+        pieces: { $ref: './fichiers.yaml#/components/schemas/Pieces' }
 
     PublicationResume:
       type: object
       description: 'Dans un fil, une publication se lit en entier (v0.6) : son texte et l''état de la réponse de l''IA.'
-      required: [id, communaute, type, titre, auteur, nombreReponses, accepteeLe, creeLe, contenu, propositionIa]
+      required: [id, communaute, type, titre, auteur, nombreReponses, accepteeLe, creeLe, contenu, propositionIa, piecesJointes]
       properties:
         id: { type: string, format: uuid }
         communaute: { type: string, description: Slug de la communauté. }
@@ -589,6 +590,7 @@ components:
         propositionIa:
           oneOf: [{ $ref: '#/components/schemas/PropositionIa' }, { type: 'null' }]
           description: 'Pour une question seulement.'
+        piecesJointes: { type: array, maxItems: 6, items: { $ref: './fichiers.yaml#/components/schemas/PieceJointe' } }
 
     PagePublications:
       allOf:
@@ -713,12 +715,12 @@ components:
 
     MessageSalon:
       type: object
-      required: [id, numero, auteur, texte, envoyeLe, appel]
+      required: [id, numero, auteur, texte, envoyeLe, appel, piecesJointes]
       properties:
         id: { type: string, format: uuid }
         numero: { type: integer, format: int64, description: 'Croissant : sert de curseur à `apres`.' }
         auteur: { $ref: './projets.yaml#/components/schemas/PersonneResume' }
-        texte: { type: string, maxLength: 2000, description: Texte brut, affiché échappé. }
+        texte: { type: string, maxLength: 2000, description: 'Texte mis en forme (petit Markdown), affiché échappé.' }
         envoyeLe: { type: string, format: date-time }
         appel:
           type: ['object', 'null']
@@ -727,13 +729,15 @@ components:
           properties:
             id: { type: string, format: uuid }
             enCours: { type: boolean }
+        piecesJointes: { type: array, maxItems: 6, items: { $ref: './fichiers.yaml#/components/schemas/PieceJointe' } }
 
     NouveauMessageSalon:
       type: object
       required: [texte]
       additionalProperties: false
       properties:
-        texte: { type: string, minLength: 1, maxLength: 2000, description: Texte brut. }
+        texte: { type: string, maxLength: 2000, description: 'Texte mis en forme (petit Markdown). Vide seulement avec des pièces jointes.' }
+        pieces: { $ref: './fichiers.yaml#/components/schemas/Pieces' }
 
     NouveauSignalement:
       type: object
