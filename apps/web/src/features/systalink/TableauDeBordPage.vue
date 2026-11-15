@@ -4,12 +4,12 @@ import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { api } from '../../api/client'
-import { PERIODES, lignesPays, lirePeriode, momentsTries, pourcentage, type Periode, type TableauDeBord } from './calculs'
+import { PERIODES, libelleService, lignesPays, lirePeriode, momentsTries, pourcentage, type Periode, type TableauDeBord } from './calculs'
 import ListePays from './ListePays.vue'
 import ClientsSuivis from './ClientsSuivis.vue'
 import TendancesMarche from './TendancesMarche.vue'
 
-const { t, locale, d } = useI18n()
+const { t, te, locale, d } = useI18n()
 const route = useRoute()
 const router = useRouter()
 
@@ -102,6 +102,7 @@ const paysCercles = computed(() =>
           <div>
             <dt>{{ t('systalink.projetsEnLigne') }}</dt>
             <dd class="tuiles__nombre">{{ tableau.projets.enLigne }}</dd>
+            <dd class="tuiles__evolution tuiles__evolution--preuve">{{ t('systalink.dontDatacloud', { n: tableau.projets.surDatacloud }) }}</dd>
           </div>
         </dl>
       </div>
@@ -133,8 +134,8 @@ const paysCercles = computed(() =>
         </div>
       </section>
 
-      <TendancesMarche :periode="periode" />
-      <ClientsSuivis />
+      <TendancesMarche class="espace" :periode="periode" />
+      <ClientsSuivis class="espace" />
 
       <div class="details">
         <section class="carte bloc" aria-labelledby="moments">
@@ -151,7 +152,7 @@ const paysCercles = computed(() =>
             </thead>
             <tbody>
               <tr v-for="m in moments" :key="m.service">
-                <th scope="row">{{ t(`systalink.services.${m.service}`) }}</th>
+                <th scope="row">{{ libelleService(m.service, { t, te }) }}</th>
                 <td class="nombre">{{ m.proposes }}</td>
                 <td class="nombre">{{ m.acceptes }}</td>
                 <td class="avec-jauge">
@@ -194,11 +195,14 @@ const paysCercles = computed(() =>
 .principal .jauge { margin-top: var(--space-3); max-width: 22rem; }
 
 .tuiles { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); margin: 0; }
-.tuiles > div { display: flex; flex-direction: column; justify-content: space-between; gap: var(--space-1); padding: var(--space-6); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--ombre-carte); }
+.tuiles > div { display: flex; flex-direction: column; justify-content: center; gap: var(--space-2); padding: var(--space-6); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--ombre-carte); }
 .tuiles dt { color: var(--ink-muted); font-size: var(--type-body-sm-size); font-weight: 600; }
 .tuiles dd { margin: 0; }
 .tuiles__nombre { font-family: var(--font-display); font-size: 2.25rem; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .tuiles__evolution { color: var(--action-ink); font-size: var(--type-body-sm-size); font-weight: 600; }
+.tuiles__evolution--preuve { color: var(--proof-ink); }
+/* Chaque grand bloc respire de la même façon. */
+.espace { margin-top: var(--space-6); }
 
 .details { display: grid; gap: var(--space-4); grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); align-items: start; margin-top: var(--space-6); }
 @media (max-width: 860px) { .details { grid-template-columns: 1fr; } }

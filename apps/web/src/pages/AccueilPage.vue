@@ -21,6 +21,14 @@ const ETAPES = [
   { cle: 'enLigne', illustration: 'en-ligne', lien: '/vitrine' },
 ] as const
 
+/** Le reste de Jamii, en une ligne : de quoi comprendre chaque module sans avoir à l'ouvrir. */
+const MODULES = [
+  { cle: 'cercles', lien: '/cercles' },
+  { cle: 'besoin', lien: '/besoin' },
+  { cle: 'missions', lien: '/missions' },
+  { cle: 'hackathons', lien: '/hackathons' },
+] as const
+
 // Le projet de la scène est un vrai projet en ligne, lu dans la vitrine. Si elle ne répond pas, une maquette le remplace.
 const projet = ref<ProjetEnVitrine | null>(null)
 void (async () => {
@@ -98,6 +106,19 @@ void (async () => {
           <RouterLink :to="e.lien" class="etape__lien">{{ t(`accueil.pilier.${e.cle}.lien`) }}</RouterLink>
         </li>
       </ol>
+    </section>
+
+    <section class="aussi" aria-labelledby="aussi-titre" data-test="aussi">
+      <h2 id="aussi-titre">{{ t('accueil.aussi.titre') }}</h2>
+      <ul class="modules">
+        <li v-for="m in MODULES" :key="m.cle">
+          <RouterLink :to="m.lien" class="carte module" :data-test="`module-${m.cle}`">
+            <strong class="module__titre">{{ t(`accueil.aussi.${m.cle}.titre`) }}</strong>
+            <span class="module__texte">{{ t(`accueil.aussi.${m.cle}.texte`) }}</span>
+            <span class="module__lien" aria-hidden="true">{{ t(`accueil.aussi.${m.cle}.lien`) }} →</span>
+          </RouterLink>
+        </li>
+      </ul>
     </section>
   </div>
 </template>
@@ -256,6 +277,22 @@ void (async () => {
 .etape p { margin: 0; color: var(--ink-muted); }
 .etape__lien { font-weight: 600; margin-top: var(--space-1); }
 @media (max-width: 760px) { .etapes { grid-template-columns: 1fr; } .etape__illustration { max-width: 10rem; } }
+
+/* Le reste de Jamii : des cartes sobres qui se soulèvent au survol, sans soulignement. */
+.aussi h2 { margin-bottom: var(--space-6); }
+.modules { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-4); grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.module {
+  display: grid; gap: var(--space-2); align-content: start; height: 100%; padding: var(--space-6);
+  color: var(--ink); text-decoration: none; border: 1px solid var(--line);
+  transition: transform var(--motion-fast) var(--ease-out), border-color var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out);
+}
+.module:hover { transform: translateY(-2px); border-color: var(--action); box-shadow: 0 10px 24px color-mix(in srgb, var(--ink) 10%, transparent); }
+.module__titre { font-family: var(--font-display); font-size: 1.125rem; }
+.module__texte { color: var(--ink-muted); line-height: 1.5; }
+.module__lien { margin-top: var(--space-1); color: var(--action-ink); font-weight: 600; font-size: var(--type-body-sm-size); }
+@media (max-width: 1000px) { .modules { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .modules { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .module { transition: none; } .module:hover { transform: none; } }
 
 @keyframes monte { from { opacity: 0; transform: translateY(14px); filter: blur(4px); } }
 </style>

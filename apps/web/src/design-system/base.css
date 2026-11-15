@@ -180,3 +180,5 @@ body::before {
 .etat-vide::after { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; border-radius: inherit; background-color: var(--action-ink); opacity: 0.08;
   -webkit-mask: url('../../../../docs/design/motifs/ondes.svg') repeat 0 0 / 64px 28px; mask: url('../../../../docs/design/motifs/ondes.svg') repeat 0 0 / 64px 28px; }
 .page-tete.motif { padding: var(--space-6); margin-inline: calc(-1 * var(--space-6)); border-radius: var(--radius-lg); }
+/* Sur téléphone, la page n'a que 16 px de marge (App.vue) : le motif déborde d'autant, pas plus. */
+@media (max-width: 720px) { .page-tete.motif { margin-inline: calc(-1 * var(--space-4)); padding-inline: var(--space-4); } }

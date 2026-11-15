@@ -80,7 +80,30 @@
       "apercuEnLigne": "Online and verified",
       "apercuProfil": "Proven profile"
     },
-    "decrireBesoin": "I have a need for my business"
+    "decrireBesoin": "I have a need for my business",
+    "aussi": {
+      "titre": "Also on Jamii",
+      "cercles": {
+        "titre": "Circles",
+        "texte": "4 to 6 developers take turns building each member’s project. Systalink backs the circle.",
+        "lien": "See circles"
+      },
+      "besoin": {
+        "titre": "Have a need?",
+        "texte": "Shop, firm, association: describe it in your own words. Ayo tells you what already exists, and who can build the rest.",
+        "lien": "Describe my need"
+      },
+      "missions": {
+        "titre": "Missions",
+        "texte": "Clients are looking for a developer. Apply, send your quote and deliver step by step.",
+        "lien": "See missions"
+      },
+      "hackathons": {
+        "titre": "Hackathons",
+        "texte": "Challenges open to all: form a team, build a project and have it judged by a jury.",
+        "lien": "See hackathons"
+      }
+    }
   },
   "profil": {
     "titre": "Profile",
@@ -270,7 +293,7 @@
       "mois": "Last 30 days",
       "tout": "Since the start"
     },
-    "surDatacloud": "projects online on DataCloud",
+    "surDatacloud": "Projects online on DataCloud",
     "partDatacloud": "{part}% of online projects are hosted on DataCloud",
     "inscrits": "Members",
     "projetsCrees": "Projects created",
@@ -306,7 +329,14 @@
       "systaone": "SystaONE",
       "hebergement": "Hosting and online shop",
       "email": "Professional e-mail",
-      "domaines": "Domain names"
+      "domaines": "Domain names",
+      "boutique-en-ligne": "Online shop",
+      "email-professionnel": "Business email",
+      "nom-de-domaine": "Domain name",
+      "datacloud-application": "DataCloud · app",
+      "datacloud-base-de-donnees": "DataCloud · database",
+      "datacloud-stockage": "DataCloud · storage",
+      "datacloud-serveur": "DataCloud · server"
     },
     "tendances": {
       "titre": "Market trends",
@@ -321,7 +351,8 @@
       "competence": "Skill",
       "demandes": "Needs",
       "profils": "Profiles",
-      "autres": "Others"
+      "autres": "Others",
+      "legende": "In red: fewer profiles than needs."
     },
     "clients": {
       "titre": "Clients who want to be followed",
@@ -344,7 +375,8 @@
     "reserve": {
       "titre": "For the Systalink team only",
       "texte": "This space shows Systalink what Jamii brings them. If you are on the Systalink team, ask the Jamii team to add your account."
-    }
+    },
+    "dontDatacloud": "{n} on DataCloud"
   },
   "vitrine": {
     "titre": "Showcase",
@@ -785,7 +817,10 @@
       "education": "Education",
       "agriculture": "Agriculture",
       "association": "Non-profit",
-      "autre": "Other"
+      "autre": "Other",
+      "transport": "Transport",
+      "finance": "Finance",
+      "administration": "Public sector"
     },
     "offres": {
       "libelle": "Receive Systalink offers tailored to my project",
