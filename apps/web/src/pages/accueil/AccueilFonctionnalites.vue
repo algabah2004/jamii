@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
+import { vApparait } from './apparait'
 
 const { t, tm, rt } = useI18n()
 const cle = 'accueil.fonctionnalites'
@@ -24,14 +25,14 @@ const points = (f: string) => (tm(`${cle}.${f}.points`) as string[]).map((p) => 
 
 <template>
   <section class="fonctions" aria-labelledby="fonctions-titre" data-test="fonctionnalites">
-    <header class="fonctions__entete">
+    <header v-apparait class="fonctions__entete">
       <p class="fonctions__surtitre">{{ t(`${cle}.surtitre`) }}</p>
       <h2 id="fonctions-titre">{{ t(`${cle}.titre`) }}</h2>
       <p class="fonctions__intro">{{ t(`${cle}.intro`) }}</p>
     </header>
 
     <ul class="grille">
-      <li v-for="f in FONCTIONNALITES" :key="f.cle" :class="['case', `case--${f.taille}`]">
+      <li v-for="(f, i) in FONCTIONNALITES" :key="f.cle" v-apparait="(i % 2) * 120" :class="['case', `case--${f.taille}`]">
         <RouterLink :to="f.lien" :class="['fonction', `fonction--${f.teinte}`]" :data-test="`fonction-${f.cle}`">
           <!-- Un bout d'interface abstrait par fonctionnalité : décoratif, caché aux lecteurs d'écran. -->
           <span class="fonction__apercu" aria-hidden="true">
@@ -155,7 +156,7 @@ const points = (f: string) => (tm(`${cle}.${f}.points`) as string[]).map((p) => 
   transform: rotate(calc(var(--i) * 72deg)) translateY(-4.5rem) rotate(calc(var(--i) * -72deg));
   box-shadow: 0 4px 10px color-mix(in srgb, var(--ink) 14%, transparent);
 }
-.rond--tour { background: var(--teinte); color: var(--midnight); }
+.rond--tour { background: var(--teinte); color: var(--midnight); animation: halo 2.4s var(--ease-out) infinite; }
 
 /* L'assistant : un texte libre à gauche, un plan coché à droite. */
 .mini--plan { grid-template-columns: 1fr auto 1fr; align-items: center; gap: var(--space-3); padding: var(--space-4); border-radius: var(--radius-md); background: var(--surface); box-shadow: 0 8px 20px color-mix(in srgb, var(--ink) 12%, transparent); }
@@ -169,7 +170,7 @@ const points = (f: string) => (tm(`${cle}.${f}.points`) as string[]).map((p) => 
 .mini--fenetre { padding: var(--space-3) var(--space-4) var(--space-4); border-radius: var(--radius-md); background: var(--surface); box-shadow: 0 8px 20px color-mix(in srgb, var(--ink) 12%, transparent); gap: var(--space-3); }
 .barre { display: flex; align-items: center; gap: 5px; }
 .barre > i { width: 8px; height: 8px; border-radius: 50%; background: color-mix(in srgb, var(--ink) 20%, transparent); }
-.barre .puce { margin-inline-start: auto; }
+.barre .puce { margin-inline-start: auto; animation: halo 2.4s var(--ease-out) infinite; }
 
 .mini--profil { padding: var(--space-3); border-radius: var(--radius-md); background: var(--surface); box-shadow: 0 8px 20px color-mix(in srgb, var(--ink) 12%, transparent); }
 .mini--profil .bulle { padding: 0; box-shadow: none; }
@@ -196,7 +197,17 @@ const points = (f: string) => (tm(`${cle}.${f}.points`) as string[]).map((p) => 
   .case--grande, .case--petite, .case--moyenne { grid-column: span 12; }
   .fonction__apercu { min-height: 10rem; }
 }
+/* Un halo qui s'élargit puis s'efface, pour dire « c'est vivant » sans distraire. */
+@keyframes halo {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--teinte) 55%, transparent); }
+  70%, 100% { box-shadow: 0 0 0 10px transparent; }
+}
+@keyframes flotte { 50% { transform: translateY(-5px); } }
+.message--moi { animation: flotte 4s ease-in-out infinite; }
+.cloche { animation: halo 2.4s var(--ease-out) infinite; }
+
 @media (prefers-reduced-motion: reduce) {
+  .rond--tour, .barre .puce, .message--moi, .cloche { animation: none; }
   .fonction, .mini { transition: none; }
   .fonction:hover, .fonction:hover .mini { transform: none; }
 }

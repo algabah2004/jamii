@@ -2,6 +2,7 @@
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 import { useSession } from '../../session'
+import { vApparait } from './apparait'
 
 const { t } = useI18n()
 const { etat } = useSession()
@@ -12,9 +13,9 @@ const cle = 'accueil.appel'
   <!-- La fin de la page : deux portes, selon qui lit. Un visiteur qui a tout lu a toujours quelque chose à faire. -->
   <section class="appel" aria-labelledby="appel-titre" data-test="appel">
     <div class="appel__lumiere" aria-hidden="true" />
-    <h2 id="appel-titre">{{ t(`${cle}.titre`) }}</h2>
+    <h2 id="appel-titre" v-apparait>{{ t(`${cle}.titre`) }}</h2>
     <ul class="portes">
-      <li>
+      <li v-apparait>
         <RouterLink
           :to="etat === 'connecte' ? '/profil' : '/connexion'"
           class="porte porte--dev"
@@ -26,7 +27,7 @@ const cle = 'accueil.appel'
           <span class="porte__action">{{ etat === 'connecte' ? t(`${cle}.dev.actionConnecte`) : t(`${cle}.dev.action`) }} →</span>
         </RouterLink>
       </li>
-      <li>
+      <li v-apparait="140">
         <RouterLink to="/besoin" class="porte porte--besoin" data-test="appel-besoin">
           <span class="porte__qui">{{ t(`${cle}.besoin.qui`) }}</span>
           <strong class="porte__titre">{{ t(`${cle}.besoin.titre`) }}</strong>

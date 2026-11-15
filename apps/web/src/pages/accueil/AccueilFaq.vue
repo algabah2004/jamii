@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
+import { vApparait } from './apparait'
 
 const { t } = useI18n()
 const cle = 'accueil.faq'
@@ -10,14 +11,14 @@ const QUESTIONS = ['quoi', 'connexion', 'pasDev', 'cercle', 'paiement', 'hackath
 
 <template>
   <section class="faq" aria-labelledby="faq-titre" data-test="faq">
-    <div class="faq__entete">
+    <div v-apparait class="faq__entete">
       <p class="faq__surtitre">{{ t(`${cle}.surtitre`) }}</p>
       <h2 id="faq-titre">{{ t(`${cle}.titre`) }}</h2>
       <p class="faq__intro">{{ t(`${cle}.intro`) }}</p>
     </div>
     <!-- Des <details> natifs : ouverts au clavier comme à la souris, lus correctement par les lecteurs d'écran, sans script. -->
     <div class="faq__liste">
-      <details v-for="q in QUESTIONS" :key="q" class="question" :data-test="`faq-${q}`">
+      <details v-for="(q, i) in QUESTIONS" :key="q" v-apparait="i * 50" class="question" :data-test="`faq-${q}`">
         <summary>
           <span>{{ t(`${cle}.questions.${q}.q`) }}</span>
           <span class="question__signe" aria-hidden="true" />
@@ -61,6 +62,8 @@ const QUESTIONS = ['quoi', 'connexion', 'pasDev', 'cercle', 'paiement', 'hackath
 }
 .question__signe::after { transform: translate(-50%, -50%) rotate(90deg); }
 .question[open] .question__signe::after { transform: translate(-50%, -50%) rotate(0deg); }
+@keyframes ouvre { from { opacity: 0; transform: translateY(-6px); } }
+.question[open] p { animation: ouvre var(--motion-base) var(--ease-out); }
 .question p { margin: 0; padding: 0 var(--space-6) var(--space-6); color: var(--ink-muted); line-height: 1.65; }
 
 @media (max-width: 860px) {
