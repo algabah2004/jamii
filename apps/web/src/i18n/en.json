@@ -97,16 +97,116 @@
         "titre": "Have a need?",
         "texte": "Shop, firm, association: describe it in your own words. Ayo tells you what already exists, and who can build the rest.",
         "lien": "Describe my need"
+      }
+    },
+    "sectionMissions": {
+      "surtitre": "Freelance",
+      "titre": "Missions: hire a developer, milestone by milestone",
+      "intro": "A small business, a shop or an association has a specific need. It posts it as a mission, developers from across the continent offer their services, and the work is split into milestones, each with its own amount and timeframe.",
+      "titreEtapes": "How it works",
+      "etapes": {
+        "1": {
+          "titre": "Post the mission",
+          "texte": "Describe the need, the budget and the skills. The mission is public, or visible only to the developers you invite."
+        },
+        "2": {
+          "titre": "Receive proposals",
+          "texte": "Developers offer their services. You talk with them, pick one, then they send you a quote split into milestones."
+        },
+        "3": {
+          "titre": "Move forward milestone by milestone",
+          "texte": "The developer delivers each milestone. You accept it or ask for a revision. Everyone always sees the next step."
+        },
+        "4": {
+          "titre": "Pay and leave a review",
+          "texte": "The client declares the payment, the developer confirms receiving it. At the end, each leaves a review for the other."
+        }
       },
-      "missions": {
-        "titre": "Missions",
-        "texte": "Clients are looking for a developer. Apply, send your quote and deliver step by step.",
-        "lien": "See missions"
+      "cotes": {
+        "client": {
+          "titre": "You have a need",
+          "points": [
+            "Start from your need, or from the plan prepared with Ayo.",
+            "Compare proposals and profiles before choosing.",
+            "Pay milestone by milestone, never all at once."
+          ],
+          "lien": "Post a mission"
+        },
+        "developpeur": {
+          "titre": "You are a developer",
+          "points": [
+            "Find missions that need your skills.",
+            "Send a clear quote: milestones, amounts, timeframes.",
+            "Ask for an extension if needed, and a moderator settles any disagreement."
+          ],
+          "lien": "See missions"
+        }
       },
-      "hackathons": {
-        "titre": "Hackathons",
-        "texte": "Challenges open to all: form a team, build a project and have it judged by a jury.",
-        "lien": "See hackathons"
+      "argent": {
+        "titre": "What about money?",
+        "texte": "Jamii does not collect the payment: the client pays the developer directly, then each declares it in the mission (“paid”, then “received”). Everyone sees where each milestone stands."
+      },
+      "apercu": {
+        "devis": "Quote",
+        "paye": "Paid",
+        "recu": "Received",
+        "livre": "Delivered",
+        "aFaire": "To do",
+        "propositions": "Proposals received"
+      },
+      "voir": "See missions",
+      "publier": "Post a mission"
+    },
+    "sectionHackathons": {
+      "surtitre": "Hackathons, challenges and innovation contests",
+      "titre": "Run a challenge, from the first sign-up to the winners",
+      "intro": "A school, a company, a community or a city launches a challenge. Jamii handles sign-ups, teams, hand-ins and jury scoring, online, on site or both.",
+      "titreEtapes": "How it works",
+      "etapes": {
+        "1": {
+          "titre": "Create and publish",
+          "texte": "The organizer sets the calendar, the team size, the scored criteria and their weight, the prizes and the code of conduct."
+        },
+        "2": {
+          "titre": "Sign up and form teams",
+          "texte": "Open sign-up or by application. People on their own find each other on the “Looking for a team” board."
+        },
+        "3": {
+          "titre": "Hand in the project",
+          "texte": "Each team hands in its product link and answers the questions. The hand-in can be edited until the deadline."
+        },
+        "4": {
+          "titre": "Score and publish results",
+          "texte": "The jury scores each criterion from 1 to 5, never its own team's project. The organizer confirms the winners."
+        }
+      },
+      "formats": {
+        "titre": "Three formats",
+        "hackathon": {
+          "signe": "48 h",
+          "titre": "Hackathon",
+          "texte": "A short, intense event, online, on site or hybrid. Teams build a product that works."
+        },
+        "challenge": {
+          "signe": "4 wk",
+          "titre": "Challenge",
+          "texte": "A challenge over several weeks, to go further: teams hand in a finished project before the deadline."
+        },
+        "concours": {
+          "signe": "★",
+          "titre": "Innovation contest",
+          "texte": "A company or a school sets a real problem and rewards the best ideas, with prizes in money or in services."
+        }
+      },
+      "apercu": {
+        "equipe": "Team",
+        "jury": "Jury"
+      },
+      "voir": "See hackathons",
+      "organiser": "Organize a hackathon",
+      "prix": {
+        "titre": "Prizes.",
+        "texte": "Each prize can have an amount, or none at all: visibility or hosting, for example."
       }
     }
   },
