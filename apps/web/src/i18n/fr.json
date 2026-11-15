@@ -581,6 +581,16 @@
       "pagePublication": "Ouvrir la publication seule",
       "questionIa": "Question (l'IA propose une réponse)",
       "encore": "Encore {n} caractère | Encore {n} caractères"
+    },
+    "appels": {
+      "lancer": "Lancer un appel",
+      "rejoindre": "Rejoindre",
+      "terminer": "Terminer l'appel",
+      "enCours": "Appel lancé par {nom}, {quand}",
+      "annonce": "a lancé un appel",
+      "termine": "Appel terminé",
+      "enDirect": "{nom} est en appel dans #{salon}, rejoindre",
+      "trop": "Tu as lancé beaucoup d'appels : réessaie dans un moment."
     }
   },
   "question": {

@@ -104,7 +104,7 @@ async function creer() {
           <span class="apercu__signe" aria-hidden="true">#</span>
           <strong data-test="apercu-salon">{{ court || t('communautes.nouveauSalon.exemple') }}</strong>
           <p>{{ sujet.trim() || t('communautes.nouveauSalon.sujetExemple') }}</p>
-          <span class="apercu__appel">📞 {{ t('communautes.salons.appel') }}</span>
+          <span class="apercu__appel">📞 {{ t('communautes.appels.lancer') }}</span>
         </div>
       </aside>
     </section>

@@ -174,6 +174,34 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/communautes/{slug}/salons/{salon}/appel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Nom court de la communauté dans l'adresse (`flutter`, `fintech`, `antenne-dakar`). */
+                slug: components["parameters"]["Slug"];
+                /** @description Nom court du salon (`general`, `entraide`, `projets`). */
+                salon: components["parameters"]["SalonSlug"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Lancer un appel dans le salon, ou rejoindre celui qui est en cours (membres, v0.7)
+         * @description S'il n'y a pas d'appel en cours, en crée un, avec une salle neuve, et poste dans le salon un message qui l'annonce
+         *     (`201`). S'il y en a un, le renvoie (`200`) : un seul appel à la fois par salon. Un appel se termine tout seul
+         *     une heure après son lancement. Limité à 10 appels lancés par heure et par personne.
+         */
+        post: operations["lancerAppel"];
+        /** Terminer l'appel en cours (celui qui l'a lancé, ou un modérateur) */
+        delete: operations["terminerAppel"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/communautes/{slug}/salons/{salon}/messages": {
         parameters: {
             query?: never;
@@ -439,6 +467,22 @@ export interface components {
             /** @description Pour une antenne locale. */
             pays?: components["schemas"]["Pays"] | null;
         };
+        /**
+         * @description Un appel lancé dans un salon. « En cours » veut dire lancé il y a moins d'une heure et pas terminé : le service
+         *     d'appel ne prévient pas Jamii quand les gens partent, on ne dit donc pas combien de personnes sont dedans.
+         */
+        AppelSalon: {
+            /** Format: uuid */
+            id: string;
+            lancePar: components["schemas"]["PersonneResume"] | null;
+            /** Format: date-time */
+            lanceLe: string;
+            /**
+             * Format: uri
+             * @description La salle de cet appel (une adresse neuve à chaque appel). `null` si je ne suis pas membre.
+             */
+            url: string | null;
+        };
         NouveauSalon: {
             /** @description Sans le « # ». Par exemple « offres-emploi ». */
             nom: string;
@@ -465,11 +509,8 @@ export interface components {
             /** @description Affiché « # » devant : « #entraide ». */
             nom: string;
             sujet: string;
-            /**
-             * Format: uri
-             * @description La salle d'appel vocal et vidéo du salon. `null` si je ne suis pas membre de la communauté.
-             */
-            appelUrl: string | null;
+            /** @description L'appel en cours dans le salon (v0.7), ou `null` s'il n'y en a pas. */
+            appel: components["schemas"]["AppelSalon"] | null;
         };
         MessageSalon: {
             /** Format: uuid */
@@ -484,6 +525,12 @@ export interface components {
             texte: string;
             /** Format: date-time */
             envoyeLe: string;
+            /** @description Si le message annonce un appel lancé (v0.7) : cet appel, et s'il est encore en cours. */
+            appel: {
+                /** Format: uuid */
+                id: string;
+                enCours: boolean;
+            } | null;
         };
         NouveauMessageSalon: {
             /** @description Texte brut. */
@@ -937,6 +984,70 @@ export interface operations {
             403: components["responses"]["Interdit"];
             404: components["responses"]["Introuvable"];
             409: components["responses"]["Conflit"];
+        };
+    };
+    lancerAppel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Nom court de la communauté dans l'adresse (`flutter`, `fintech`, `antenne-dakar`). */
+                slug: components["parameters"]["Slug"];
+                /** @description Nom court du salon (`general`, `entraide`, `projets`). */
+                salon: components["parameters"]["SalonSlug"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description L'appel déjà en cours. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppelSalon"];
+                };
+            };
+            /** @description Appel lancé. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppelSalon"];
+                };
+            };
+            401: components["responses"]["NonConnecte"];
+            403: components["responses"]["Interdit"];
+            404: components["responses"]["Introuvable"];
+            429: components["responses"]["TropDeRequetes"];
+        };
+    };
+    terminerAppel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Nom court de la communauté dans l'adresse (`flutter`, `fintech`, `antenne-dakar`). */
+                slug: components["parameters"]["Slug"];
+                /** @description Nom court du salon (`general`, `entraide`, `projets`). */
+                salon: components["parameters"]["SalonSlug"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Terminé. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["NonConnecte"];
+            403: components["responses"]["Interdit"];
+            404: components["responses"]["Introuvable"];
         };
     };
     lireMessagesSalon: {
