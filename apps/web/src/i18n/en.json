@@ -715,7 +715,33 @@
       "questionReussite": "How will you know it worked?",
       "libelleQui": "Who will use it:",
       "libelleProbleme": "What isn't working today:",
-      "libelleReussite": "It will be a success when:"
+      "libelleReussite": "It will be a success when:",
+      "etape": "Step {n} of {total}",
+      "suivant": "Continue",
+      "passer": "Skip",
+      "retour": "Back",
+      "entree": "Enter ↵ to continue",
+      "q": {
+        "besoin": "What do you need?",
+        "details": "Tell us a bit more",
+        "questions": "So we understand you well",
+        "precisions": "A few details",
+        "envoi": "Shall we look at your need?"
+      },
+      "encore": "{n} more characters, in your own words.",
+      "assez": "That's enough to start. You can say more.",
+      "precisionsAide": "All optional. It helps find developers near you and estimate the plan.",
+      "recap": "Your need",
+      "titreAVenir": "Your need in one sentence",
+      "descriptionAVenir": "What you write will appear here.",
+      "precisionsDonnees": "{n} detail | {n} details",
+      "etapes": {
+        "besoin": "Your need",
+        "details": "The details",
+        "questions": "Three questions",
+        "precisions": "Extra details",
+        "envoi": "The analysis"
+      }
     },
     "publication": {
       "titre": "Publish my request",

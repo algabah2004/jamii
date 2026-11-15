@@ -715,7 +715,33 @@
       "questionReussite": "À quoi verras-tu que c'est réussi ?",
       "libelleQui": "Qui va s'en servir :",
       "libelleProbleme": "Ce qui ne va pas aujourd'hui :",
-      "libelleReussite": "Ce sera réussi quand :"
+      "libelleReussite": "Ce sera réussi quand :",
+      "etape": "Étape {n} sur {total}",
+      "suivant": "Continuer",
+      "passer": "Passer",
+      "retour": "Retour",
+      "entree": "Entrée ↵ pour continuer",
+      "q": {
+        "besoin": "De quoi as-tu besoin ?",
+        "details": "Raconte-nous un peu plus",
+        "questions": "Pour qu'on te comprenne bien",
+        "precisions": "Quelques précisions",
+        "envoi": "On regarde ton besoin ?"
+      },
+      "encore": "Encore {n} caractères, avec tes mots.",
+      "assez": "C'est assez pour commencer. Tu peux en dire plus.",
+      "precisionsAide": "Tout est facultatif. Ça aide à trouver des développeurs proches de toi et à estimer le plan.",
+      "recap": "Ton besoin",
+      "titreAVenir": "Ton besoin en une phrase",
+      "descriptionAVenir": "Ce que tu racontes apparaîtra ici.",
+      "precisionsDonnees": "{n} précision | {n} précisions",
+      "etapes": {
+        "besoin": "Ton besoin",
+        "details": "Les détails",
+        "questions": "Trois questions",
+        "precisions": "Les précisions",
+        "envoi": "L'analyse"
+      }
     },
     "publication": {
       "titre": "Publier ma demande",

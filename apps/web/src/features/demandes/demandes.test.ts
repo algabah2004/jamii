@@ -20,6 +20,18 @@ async function ouvrir(adresse: string) {
   return { page, routeur }
 }
 
+/** Avance dans « Décris ton besoin » : un clic sur « Continuer » par étape, en attendant que chacune arrive. */
+async function suivre(page: Awaited<ReturnType<typeof ouvrir>>['page'], etapes: string[]) {
+  const reperes: Record<string, string> = {
+    details: '[data-test="champ-description"]', questions: '[data-test="questions"]',
+    precisions: '[data-test="secteur"]', envoi: '[data-test="offres"]',
+  }
+  for (const e of etapes) {
+    await page.get('[data-test="suivant"]').trigger('click')
+    await vi.waitFor(() => expect(page.find(reperes[e]!).exists()).toBe(true))
+  }
+}
+
 describe('le plan proposé', () => {
   it('range les fonctionnalités par priorité, sans groupe vide', () => {
     const plan = planDemo()
@@ -47,8 +59,12 @@ describe('le plan proposé', () => {
 describe('Une PME décrit son besoin', () => {
   it('reprend un exemple, obtient un plan, puis lance le projet', async () => {
     const { page, routeur } = await ouvrir('/demandes/nouvelle')
-    expect(page.get('[data-test="envoyer"]').attributes('disabled')).toBeDefined()
+    // Une question à la fois : on ne passe pas la première sans dire son besoin.
+    expect(page.get('[data-test="suivant"]').attributes('disabled')).toBeDefined()
     await page.get('[data-test="exemple"]').trigger('click')
+    await suivre(page, ['details', 'questions', 'precisions', 'envoi'])
+    expect(page.get('[data-test="envoyer"]').attributes('disabled')).toBeUndefined()
+    await page.get('[data-test="envoyer"]').trigger('click')
     await page.get('[data-test="demande"]').trigger('submit')
     await vi.waitFor(() => expect(routeur.currentRoute.value.name).toBe('demande'))
     await vi.waitFor(() => expect(page.find('[data-test="plan-propose"]').exists()).toBe(true), { timeout: 4000 })
@@ -102,6 +118,45 @@ describe('Une PME décrit son besoin', () => {
 const ID = '0b9e8d7c-6a5f-4e3d-8c2b-1a0f9e8d7c6b'
 const base = { id: ID, titre: 'Nos dossiers', description: 'Le cabinet perd ses dossiers entre associés.', dureeSemaines: null, creeLe: '2026-11-14T10:00:00Z' }
 
+describe('Décris ton besoin, pas à pas', () => {
+  it('compose le besoin avec les réponses guidées, et le récapitulatif suit chaque frappe', async () => {
+    let corps: Record<string, unknown> = {}
+    serveur.use(
+      http.post('/api/demandes', async ({ request }) => {
+        corps = (await request.json()) as Record<string, unknown>
+        return HttpResponse.json({ ...base, plan: { statut: 'en_attente' } }, { status: 201 })
+      }),
+    )
+    const { page } = await ouvrir('/demandes/nouvelle')
+    await page.get('[data-test="champ-titre"]').setValue('Nos dossiers')
+    await page.get('[data-test="champ-titre"]').trigger('keydown', { key: 'Enter' })
+    await vi.waitFor(() => expect(page.find('[data-test="champ-description"]').exists()).toBe(true))
+    await page.get('[data-test="champ-description"]').setValue('court')
+    expect(page.get('[data-test="suivant"]').attributes('disabled')).toBeDefined()
+    expect(page.text()).toContain('Encore')
+    await page.get('[data-test="champ-description"]').setValue('Le cabinet perd ses dossiers entre associés.')
+    expect(page.get('.vivant').text()).toContain('Nos dossiers')
+    await suivre(page, ['questions'])
+    expect(page.get('[data-test="suivant"]').text()).toContain('Passer')
+    await page.get('[data-test="question-qui"]').setValue('Les quatre associés')
+    expect(page.get('[data-test="suivant"]').text()).toContain('Continuer')
+    await suivre(page, ['precisions', 'envoi'])
+    await page.get('[data-test="envoyer"]').trigger('click')
+    await page.get('[data-test="demande"]').trigger('submit')
+    await vi.waitFor(() => expect(corps.titre).toBe('Nos dossiers'))
+    expect(String(corps.description)).toContain("Qui va s'en servir : Les quatre associés")
+  })
+
+  it('revient en arrière sans perdre ce qui est écrit', async () => {
+    const { page } = await ouvrir('/demandes/nouvelle')
+    await page.get('[data-test="champ-titre"]').setValue('Une boutique')
+    await suivre(page, ['details'])
+    await page.get('[data-test="precedent"]').trigger('click')
+    await vi.waitFor(() => expect(page.find('[data-test="champ-titre"]').exists()).toBe(true))
+    expect((page.get('[data-test="champ-titre"]').element as HTMLInputElement).value).toBe('Une boutique')
+  })
+})
+
 describe('l’orientation d’un besoin', () => {
   it('est prête même sans plan, quand Systalink suffit', () => {
     const sansDev = { ...orientationDemo(), developpeursNecessaires: false, competences: [], plan: null }
@@ -121,10 +176,13 @@ describe('l’orientation d’un besoin', () => {
     )
     const { page, routeur } = await ouvrir('/besoin')
     expect(routeur.currentRoute.value.name).toBe('nouvelle-demande')
-    expect(page.find('[data-test="prudence"]').exists()).toBe(true)
-    expect((page.get('[data-test="offres"] input').element as HTMLInputElement).checked).toBe(false)
     await page.get('[data-test="exemple"]').trigger('click')
+    await suivre(page, ['details'])
+    expect(page.find('[data-test="prudence"]').exists()).toBe(true)
+    await suivre(page, ['questions', 'precisions'])
     await page.get('[data-test="secteur"][value="juridique"]').setValue(true)
+    await suivre(page, ['envoi'])
+    expect((page.get('[data-test="offres"] input').element as HTMLInputElement).checked).toBe(false)
     await page.get('[data-test="demande"]').trigger('submit')
     await vi.waitFor(() => expect(corps.titre).toBeTruthy())
     expect(corps).toMatchObject({ secteur: 'juridique', offresSystalink: false })
