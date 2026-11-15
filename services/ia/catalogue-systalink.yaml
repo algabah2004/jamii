@@ -10,6 +10,7 @@
 # Sources : pages publiques systalink.com/fr lues le 15/11/2026 (orion, hebergement-web, hebergement-cms,
 # email-professionnel, nom-de-domaine, server-cloud, stockage-objets, base-de-donnees, tarifications) et la console
 # DataCloud vue le 10/11/2026 (docs/systalink-services.md). SystaONE a été retiré : introuvable sur le site le 15/11.
+# Yokk : lien « Découvrir Yokk » du site (vers yokk.ai, « Agent Builder ») et brief CADEV (docs/cadev.md), lus le 15/11.
 
 services:
   - id: orion
@@ -62,6 +63,20 @@ services:
       Inutile tant qu'il n'y a ni site ni e-mail professionnel à y relier.
     prixIndicatif: Dès 8 503 FCFA (.africa), 10 351 FCFA (.com), 19 600 FCFA (.sn)
     lien: https://systalink.com/fr/nom-de-domaine
+
+  - id: yokk
+    nom: Yokk, créer un assistant IA (agent)
+    pourQuoi: >-
+      Le constructeur d'agents IA de l'écosystème Systalink (lien « Découvrir Yokk » du site, rubrique « IA &
+      automatisation ») : créer un assistant qui répond aux questions, par exemple celles des clients.
+    limites: >-
+      Les pages publiques ne disent encore ni le prix, ni les canaux (site, WhatsApp…), ni s'il faut savoir coder :
+      ne promets rien de tout cela, invite à vérifier sur yokk.ai. Il ne gère ni boutique, ni paiement.
+    pasPourToi: >-
+      Si la personne reçoit peu de messages, ou veut surtout vendre en ligne, un assistant IA n'est pas la priorité :
+      conseille d'abord une boutique ou un site.
+    prixIndicatif: null
+    lien: https://yokk.ai
 
   - id: datacloud-application
     nom: DataCloud, mise en ligne d'une application
