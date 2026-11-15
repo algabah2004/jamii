@@ -6,6 +6,7 @@ import { JBouton } from '../../design-system'
 import { nomPays } from '../systalink/calculs'
 import { monogramme } from './communautes'
 import { etiquettesDe, teinteDe } from './identite'
+import TextureCommunaute from './TextureCommunaute.vue'
 
 type Communaute = components['schemas']['Communaute']
 
@@ -31,6 +32,7 @@ const POSES = [
 <template>
   <header class="banniere" :style="{ '--fond': teinte.fond, '--accent': teinte.accent, '--encre': teinte.encre }" data-test="banniere">
     <div class="banniere__scene" aria-hidden="true">
+      <TextureCommunaute :slug="communaute.slug" />
       <svg class="banniere__rubans" viewBox="0 0 800 220" preserveAspectRatio="none">
         <path d="M-20 190 C 160 40, 300 260, 470 90 S 760 10, 840 120" fill="none" stroke="var(--accent)" stroke-width="38" stroke-linecap="round" opacity="0.9" />
         <path d="M-40 40 C 120 120, 260 -30, 420 60 S 700 230, 860 170" fill="none" stroke="var(--encre)" stroke-width="14" stroke-linecap="round" opacity="0.22" />
