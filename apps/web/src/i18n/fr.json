@@ -1283,7 +1283,10 @@
         "etat_invalide": "On ne peut plus ajouter de juré à ce hackathon.",
         "validation": "Ce profil n'existe pas, ou c'est le tien : l'organisateur ne fait pas partie du jury.",
         "autre": "L'invitation n'a pas abouti. Réessaie dans un instant."
-      }
+      },
+      "parmiContacts": "Choisir parmi mes contacts",
+      "choisirContact": "Choisis une personne",
+      "ouProfil": "Ou colle le lien de son profil, si ce n'est pas encore un contact."
     },
     "notation": {
       "titre": "Noter les projets",

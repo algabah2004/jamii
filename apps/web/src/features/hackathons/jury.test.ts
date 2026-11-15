@@ -82,6 +82,27 @@ describe('le jury, côté organisateur', () => {
     expect(page.find('[data-test="classement"]').exists()).toBe(false)
   })
 
+  it('invite un juré choisi parmi ses contacts, sans copier d’adresse', async () => {
+    serveur.use(
+      http.get('/api/me/contacts', () =>
+        HttpResponse.json({
+          elements: [{ personne: { id: FATOU, nom: 'Fatou Ndiaye', avatarUrl: null }, statut: 'accepte', depuis: '2026-11-01T10:00:00Z', competences: ['vue'] }],
+          curseurSuivant: null,
+        }),
+      ),
+    )
+    role('en_cours', { role: 'organisateur', actions: ['inviter_jure'] })
+    const page = await monter()
+    await attendre(page, '[data-test="jure-contact"]')
+    expect(page.get('[data-test="inviter-jure"]').attributes('disabled')).toBeDefined()
+    await page.get('[data-test="jure-contact"]').setValue(FATOU)
+    await page.get('[data-test="form-jure"]').trigger('submit')
+    await attendre(page, '[data-test="jure"]')
+    expect(page.get('[data-test="jure"]').text()).toContain('Fatou Ndiaye')
+    // Déjà jurée : elle sort de la liste des contacts à inviter.
+    await vi.waitFor(() => expect(page.find('[data-test="jure-contact"]').exists()).toBe(false))
+  })
+
   it('pendant l’évaluation, lit le classement proposé et exporte les notes', async () => {
     role('evaluation', { role: 'organisateur', actions: [] })
     await fetch(`/api/hackathons/${ID}/rendus/r1000000-0000-4000-8000-000000000001/notes`, json({ notes: [{ critereId: UTILITE, valeur: 3 }, { critereId: TECHNIQUE, valeur: 3 }, { critereId: DATACLOUD, valeur: 3 }] }))

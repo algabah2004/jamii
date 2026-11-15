@@ -1283,7 +1283,10 @@
         "etat_invalide": "Jurors can no longer be added to this hackathon.",
         "validation": "This profile does not exist, or it is yours: the organiser is not part of the jury.",
         "autre": "The invitation did not go through. Try again in a moment."
-      }
+      },
+      "parmiContacts": "Pick from my contacts",
+      "choisirContact": "Choose someone",
+      "ouProfil": "Or paste their profile link, if they aren't a contact yet."
     },
     "notation": {
       "titre": "Score the projects",
