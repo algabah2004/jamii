@@ -380,7 +380,7 @@ export const handlersMissions = [
     if (mission.statut !== 'publiee' || choisie.statut !== 'envoyee') return erreur(409, 'etat_invalide')
     for (const p of liste) if (p.statut === 'retenue') p.statut = 'envoyee'
     choisie.statut = 'retenue'
-    mission.version += 1
+    // Comme l'API : retenir change la proposition, pas la mission (sa version reste la même).
     return HttpResponse.json(mission)
   }),
 
