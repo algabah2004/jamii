@@ -105,7 +105,7 @@ describe('la page du cercle', () => {
     expect(page.find('[data-test="commits"]').exists()).toBe(false)
   })
 
-  it("cache les idées et les boutons du créateur à qui n'est pas membre", async () => {
+  it("cache les idées et le bouton du tirage à qui n'est pas membre", async () => {
     const { page } = await ouvrir(`/cercles/${ID_ABIDJAN}`)
     await vi.waitFor(() => expect(page.find('[data-test="attente-tirage"]').exists()).toBe(true))
     expect(page.find('[data-test="attente-tirage"]').text()).toContain('Il manque 2 membres')
@@ -189,7 +189,7 @@ describe('du cercle vide au tirage', () => {
     expect((page.get('[data-test="champ-nom"]').element as HTMLInputElement).value).toBe('Cercle Ubuntu')
   })
 
-  it('rejoint un cercle ouvert : on voit alors les idées, mais pas le bouton du créateur', async () => {
+  it('rejoint un cercle ouvert : on voit alors les idées, et le bouton du tirage, grisé tant que le cercle n’est pas prêt', async () => {
     const { page } = await ouvrir(`/cercles/${ID_ABIDJAN}`)
     await vi.waitFor(() => expect(page.find('[data-test="rejoindre"]').exists()).toBe(true))
     await page.find('[data-test="rejoindre"]').trigger('click')
@@ -197,7 +197,9 @@ describe('du cercle vide au tirage', () => {
     expect(page.find('[data-test="rejoindre"]').exists()).toBe(false)
     expect(page.find('[data-test="ordre"]').text()).toContain('Boutique en ligne')
     expect(page.find('[data-test="ouvrir-idee"]').exists()).toBe(true)
-    expect(page.find('[data-test="tirer"]').exists()).toBe(false)
+    // N'importe quel membre peut lancer le tirage (#157) ; ici le cercle n'est pas complet : bouton grisé.
+    expect(page.find('[data-test="tirer"]').exists()).toBe(true)
+    expect(page.find('[data-test="tirer"]').attributes('disabled')).toBeDefined()
   })
 
   it("explique un refus de l'API au lieu d'échouer en silence", async () => {
@@ -231,5 +233,35 @@ describe('livrer un tour', () => {
     const { page } = await ouvrir(`/cercles/${ID_DAKAR}`)
     await vi.waitFor(() => expect(page.find('[data-test="tour"]').exists()).toBe(true))
     expect(page.find('[data-test="livrer"]').exists()).toBe(false)
+  })
+})
+
+describe('les tâches du tour', () => {
+  it('ajoute une tâche, la prend, la coche livrée, et la barre du tour suit', async () => {
+    const { page } = await ouvrir(`/cercles/${ID_DAKAR}`)
+    await vi.waitFor(() => expect(page.find('[data-test="taches-du-tour"] [data-test="ajouter-tache"]').exists()).toBe(true))
+    const avant = page.findAll('[data-test="tache"]').length
+    const faitesAvant = page.findAll('[data-test="cocher"]').filter((c) => (c.element as HTMLInputElement).checked).length
+
+    await page.find('#nouvelle-tache').setValue('Écran de connexion')
+    await page.find('[data-test="ajouter-tache"]').trigger('submit')
+    await vi.waitFor(() => expect(page.findAll('[data-test="tache"]')).toHaveLength(avant + 1))
+    expect(page.find('[data-test="avancement"]').text()).toContain(`${faitesAvant} tâches sur ${avant + 1}`)
+
+    const nouvelle = () => page.findAll('[data-test="tache"]').find((li) => li.text().includes('Écran de connexion'))!
+    await nouvelle().find('[data-test="prendre"]').trigger('click')
+    await vi.waitFor(() => expect(nouvelle().find('[data-test="lacher"]').exists()).toBe(true))
+
+    await nouvelle().find('[data-test="cocher"]').trigger('change')
+    await vi.waitFor(() => expect(nouvelle().classes()).toContain('tache--livree'))
+    expect(page.find('[data-test="avancement"]').text()).toContain(`${faitesAvant + 1} tâches sur ${avant + 1}`)
+  })
+
+  it("dit quand quelqu'un a changé la tâche entre-temps", async () => {
+    serveur.use(http.patch('/api/projets/:p/taches/:t', () => HttpResponse.json({ code: 'modification_concurrente' }, { status: 409 })))
+    const { page } = await ouvrir(`/cercles/${ID_DAKAR}`)
+    await vi.waitFor(() => expect(page.find('[data-test="cocher"]').exists()).toBe(true))
+    await page.find('[data-test="cocher"]').trigger('change')
+    await vi.waitFor(() => expect(page.find('[data-test="taches-du-tour"] [role="alert"]').text()).toContain('entre-temps'))
   })
 })
