@@ -6,50 +6,64 @@
 
 Projet présenté à la **Coupe d'Afrique des Développeurs (CADEV 2026)**, organisée par [Systalink](https://systalink.com), sur le thème : *construire la plateforme d'échange africaine, pour les devs, par les devs*.
 
-## Avant tout, un lieu d'échange
+## La démo en ligne
 
-Les talents tech du continent sont nombreux, mais **dispersés** : chacun dans son pays, son groupe WhatsApp, son école. Jamii les **rassemble en un seul endroit** :
+**https://87-58-156-18.sslip.io**
 
-- **Se rencontrer** : découvrir des développeurs de Dakar, Abidjan, Lagos, Nairobi ou Douala, voir ce qu'ils savent faire, entrer en contact.
-- **Échanger** : des communautés par thème (Flutter, Fintech, IA…), des discussions, et « Montre ton projet ».
-- **S'entraider** : poser une question, recevoir des réponses de la communauté. L'IA propose une première réponse, les pairs la valident.
-- **Se connecter avec ceux qui ont de vrais besoins** : des PME, des associations et des non-développeurs y décrivent leur problème, et des devs y répondent.
+Hébergée sur un serveur cloud **DataCloud de Systalink**, en HTTPS. Chaque fusion dans `main` construit les images Docker (`ghcr.io`), et le serveur se met à jour tout seul ([docs/deploiement-datacloud.md](docs/deploiement-datacloud.md)).
 
-Ouvert à tous, gratuitement, sans compte Systalink : connexion GitHub pour les devs, par e-mail pour les autres.
+On se connecte avec **GitHub** ou **Google** (développeurs), ou par un **lien reçu par e-mail**, sans mot de passe (PME, associations, particuliers). Aucun compte Systalink n'est demandé.
 
-## Et de l'échange naissent des projets
+## L'idée en une phrase
 
-Jamii ne s'arrête pas à la discussion. Quand une rencontre donne une idée, la plateforme l'emmène **jusqu'au bout** :
+Jamii **comprend un besoin et le relie à la bonne réponse** : un service Systalink s'il suffit, sinon les bons développeurs, qui forment un **cercle** (la Tech Tontine) pour le construire, le mettre en ligne et le montrer.
 
-> **Trouve ton équipe. Construis un vrai projet. Mets-le en ligne sur Systalink. Et prouve-le.**
+## Ce qu'on peut y faire
 
-| Besoin | Ce que Jamii apporte |
+| Pour | Ce que Jamii apporte |
 |---|---|
-| **Échanger, s'entraider** | **Communautés et questions-réponses**, et la **vitrine** des projets nés sur Jamii |
-| **Trouver des coéquipiers** | La **recherche par compétence, pays et disponibilité**, et des **projets d'équipe** qui publient les rôles recherchés : on candidate, l'équipe se forme |
-| **Répondre à un vrai besoin** | Une PME décrit son besoin, il devient un projet que des devs rejoignent |
-| **Avancer sans abandonner** | L'**assistant de projet (IA)** : plan, coéquipiers suggérés, résumé de la semaine, alerte quand ça décroche. L'IA propose, l'équipe décide |
-| **Mettre en ligne** | La **mise en ligne sur DataCloud** (Systalink) en quelques clics. Un projet hébergé ailleurs est aussi accepté |
-| **Être reconnu** | Le **profil prouvé** : généré depuis GitHub, avec mes projets réellement en ligne, mes contributions et l'aide apportée aux autres |
-| *Pour Systalink* | Un **tableau de bord** (projets déployés sur DataCloud…) et une **page de statut** publique |
+| **Se rencontrer et échanger** | Des **communautés** par thème avec leurs salons en direct, une **messagerie** avec contacts et appels, et des notifications |
+| **Être reconnu** | Le **profil prouvé** : construit depuis GitHub, avec une **carte de compétences** proposée par Ayo à partir des dépôts publics, que la personne valide avant publication |
+| **Construire en équipe** | Les **cercles (Tech Tontine)** : 4 à 6 développeurs, un ordre de passage **tiré au sort par le serveur**, et à chaque tour le projet d'un membre construit par tous. Tâches, salon privé, point du jour, et **Ayo qui propose qui prend quelle tâche** selon les compétences et la charge de chacun |
+| **Répondre à un vrai besoin** | Une PME **décrit son besoin avec ses mots**. **Ayo**, le conseiller de Jamii, lui dit honnêtement ce qui suffit (un service Systalink, ou ce qu'elle a déjà), et s'il faut des développeurs : lesquels, avec un plan que l'équipe reprend. Il répond dans la langue de la personne |
+| **Travailler en freelance** | Les **missions** (propositions, devis, suivi par jalons, avis) et les **hackathons** (inscription, équipes, rendu, jury, résultats), avec des questionnaires personnalisés |
+| **Montrer ce qui est en ligne** | La **vitrine** des projets nés sur Jamii, avec le label « Né dans une Tech Tontine Systalink » |
+| *Pour Systalink* | Un **espace réservé à son équipe** : projets en ligne sur DataCloud, cercles actifs, **tendances du marché** (anonymes), services proposés et suivis, et les **clients qui ont demandé à être suivis** (case non cochée par défaut, export CSV, webhook signé) |
 
-Le détail est dans [docs/concept.md](docs/concept.md). Des mots simples, sans jargon : voir [docs/vocabulaire.md](docs/vocabulaire.md).
+## L'IA : seulement là où elle sert
+
+**L'IA pour comprendre, des règles pour décider.**
+- **Avec l'IA** : la carte de compétences (lire des dépôts GitHub) et l'orientation d'un besoin (comprendre un texte libre). L'IA ne peut proposer **que** des services du catalogue Systalink (`services/ia/catalogue-systalink.yaml`), et l'humain décide toujours.
+- **Sans IA** (calculé, gratuit, explicable, testé) : la recommandation de développeurs, la répartition des tâches d'un cercle, les chiffres de l'espace Systalink. Le tirage au sort d'un cercle reste du hasard, jamais un choix de l'IA.
+- **Garde-fous** : un budget par jour, un cache, les e-mails et téléphones retirés avant l'envoi, la réponse vérifiée contre un schéma, un quota par personne, et le site continue sans l'IA si elle tombe.
+- **Fournisseur au choix par la configuration** : un adaptateur pour toutes les API au format OpenAI. En production : DeepSeek. Yokk (Systalink) se branche avec un seul fichier.
+
+## Technique
+
+- **Front** : Vue 3, TypeScript, Vite, design system maison, thème clair et sombre, français et anglais.
+- **API** : Java 21, Spring Boot, PostgreSQL, Flyway. **Service IA** : Python, FastAPI.
+- **Contrats OpenAPI** entre les modules ([contracts/](contracts/README.md)), types du front générés à partir d'eux.
+- **CI** à chaque PR : tests (API, IA, front, accessibilité), aucun secret dans le code, titres conventionnels, licences autorisées.
+- Architecture et choix : [docs/architecture.md](docs/architecture.md). Lancer en local : [docs/installation.md](docs/installation.md).
+
+## Licences
+
+Jamii est sous licence **Apache 2.0** ([LICENSE](LICENSE)). Toutes les dépendances sont sous licence permissive (MIT, Apache 2.0, BSD…) : le job CI **« Licences autorisées »** bloque toute licence GPL, AGPL ou LGPL, et son résumé liste chaque composant avec sa licence.
+
+## Usage de l'IA pour construire Jamii
+
+Déclaré dans [docs/cadev.md](docs/cadev.md#ce-quon-déclare-usage-de-lia) : les outils utilisés par chaque membre et les parties concernées. Tout a été relu par un humain avant fusion.
 
 ## Documentation
 
-- [docs/cadev.md](docs/cadev.md) : **la compétition, Systalink, le problème à résoudre et les cas d'usage. À lire en premier.**
-- [docs/integration-systalink.md](docs/integration-systalink.md) : **comment Jamii se branche sur l'écosystème Systalink (notre point fort)**.
-- [docs/idees-sources.md](docs/idees-sources.md) : les pistes de départ (Tech Tontine, Mbokk, présentation de Boubacar) et les idées fortes à décider.
-- [docs/concept.md](docs/concept.md) : la vision complète du produit.
-- [docs/vocabulaire.md](docs/vocabulaire.md) : les mots à utiliser dans l'interface.
-- [docs/systalink-services.md](docs/systalink-services.md) : les services Systalink testés, ce qui est gratuit et ce qui ne l'est pas.
-- [docs/architecture.md](docs/architecture.md) : l'architecture technique et ses justifications.
-- [docs/equipe.md](docs/equipe.md) : **les blocs de chacun et les règles du travail en parallèle**.
-- [contracts/](contracts/README.md) : les contrats d'API entre les blocs.
-- [docs/propositions/](docs/propositions/README.md) : **propose et améliore les idées** (Discussions, ou proposition écrite).
-- [AGENTS.md](AGENTS.md) : les consignes de réflexion pour les agents IA (Claude, Codex, Cursor…), à lire aussi par les humains.
-- [CONTRIBUTING.md](CONTRIBUTING.md) : **à lire avant de coder.** On y explique comment prendre une tâche, créer une branche et ouvrir une PR.
+- [docs/cadev.md](docs/cadev.md) : **la compétition, Systalink, le problème à résoudre et les cas d'usage.**
+- [docs/integration-systalink.md](docs/integration-systalink.md) : **comment Jamii se branche sur l'écosystème Systalink.**
+- [docs/concept.md](docs/concept.md) : la vision du produit. [docs/vocabulaire.md](docs/vocabulaire.md) : les mots de l'interface.
+- [docs/systalink-services.md](docs/systalink-services.md) : les services Systalink testés.
+- [docs/equipe.md](docs/equipe.md) et [CONTRIBUTING.md](CONTRIBUTING.md) : comment l'équipe travaille.
+- [docs/propositions/](docs/propositions/README.md) : les propositions et les décisions prises.
+- [AGENTS.md](AGENTS.md) : les consignes pour les agents IA, à lire aussi par les humains.
 
 ## Équipe
 
-5 personnes. Le chef de projet attribue les tâches et relit les PR. Chacun fusionne la sienne quand les contrôles automatiques sont verts. Détails dans [docs/equipe.md](docs/equipe.md).
+5 personnes, un module chacun : voir [docs/equipe.md](docs/equipe.md).
