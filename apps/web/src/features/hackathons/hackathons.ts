@@ -277,7 +277,9 @@ export type Espace = { nom: string; nombreMembres: number; questionsOuvertes: nu
 export async function lireEspace(slug: string): Promise<Espace | null> {
   const chemin = { params: { path: { slug } } }
   const [c, s] = await Promise.all([api.GET('/api/communautes/{slug}', chemin), api.GET('/api/communautes/{slug}/salons', chemin)])
-  if (!c.data) return null
+  // `null` : la communauté liée n'existe pas (ou plus). Toute autre panne est une erreur, pour ne pas la confondre avec ça.
+  if (c.response.status === 404) return null
+  if (!c.data) throw new Error('espace indisponible')
   const { nom, nombreMembres, questionsOuvertes, membre } = c.data
   return { nom, nombreMembres, questionsOuvertes, membre, salons: (s.data?.elements ?? []).slice(0, 4).map(({ slug, nom }) => ({ slug, nom })) }
 }

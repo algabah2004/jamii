@@ -41,6 +41,11 @@ export const api = createClient<paths>({
 api.use(csrf)
 
 /** Adresse de connexion GitHub. `retour` doit être un chemin relatif (contrat : CheminRetour). */
+/** Se connecter avec Google (#260) : la même règle de retour que GitHub. */
+export function adresseConnexionGoogle(retour = '/'): string {
+  return adresseConnexionGithub(retour).replace('/api/auth/github?', '/api/auth/google?')
+}
+
 export function adresseConnexionGithub(retour = '/'): string {
   const sur = retour.startsWith('/') && !retour.startsWith('//') ? retour : '/'
   return `/api/auth/github?retour=${encodeURIComponent(sur)}`

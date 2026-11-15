@@ -20,7 +20,7 @@
     "githubTexte": "Sign in with GitHub. Your skills map is built from your public repositories.",
     "ou": "or",
     "emailTitre": "You have a need, without a GitHub account",
-    "emailTexte": "Small business, association or individual: get a sign-in link by email. No password.",
+    "emailTexte": "Business, association or individual: no GitHub account and no password needed.",
     "email": "Your email address",
     "emailInvalide": "This email address is not valid.",
     "recevoirLien": "Get a sign-in link",
@@ -37,9 +37,14 @@
     "erreurs": {
       "refus_github": "You declined access on GitHub: nothing was shared. You can try again, or get a link by email.",
       "requete_invalide": "The GitHub sign-in expired. Try again.",
-      "github_indisponible": "GitHub is not responding right now. Try again in a moment, or get a link by email."
+      "github_indisponible": "GitHub is not responding right now. Try again in a moment, or get a link by email.",
+      "refus_google": "You declined access on Google: nothing was shared. Try again, or get a link by email.",
+      "google_indisponible": "Google is not responding right now. Try again in a moment, or get a link by email.",
+      "email_non_verifie": "Google has not confirmed your email address. Get a sign-in link by email instead."
     },
-    "seConnecter": "Sign in"
+    "seConnecter": "Sign in",
+    "google": "Continue with Google",
+    "googleOu": "Or get a sign-in link by email:"
   },
   "accueil": {
     "titre": "Find your team, build your project, put it online.",
@@ -80,7 +85,30 @@
       "apercuEnLigne": "Online and verified",
       "apercuProfil": "Proven profile"
     },
-    "decrireBesoin": "I have a need for my business"
+    "decrireBesoin": "I have a need for my business",
+    "aussi": {
+      "titre": "Also on Jamii",
+      "cercles": {
+        "titre": "Circles",
+        "texte": "4 to 6 developers take turns building each member’s project. Systalink backs the circle.",
+        "lien": "See circles"
+      },
+      "besoin": {
+        "titre": "Have a need?",
+        "texte": "Shop, firm, association: describe it in your own words. Ayo tells you what already exists, and who can build the rest.",
+        "lien": "Describe my need"
+      },
+      "missions": {
+        "titre": "Missions",
+        "texte": "Clients are looking for a developer. Apply, send your quote and deliver step by step.",
+        "lien": "See missions"
+      },
+      "hackathons": {
+        "titre": "Hackathons",
+        "texte": "Challenges open to all: form a team, build a project and have it judged by a jury.",
+        "lien": "See hackathons"
+      }
+    }
   },
   "profil": {
     "titre": "Profile",
@@ -92,7 +120,7 @@
       "regenerer": "Update from GitHub",
       "enCours": "Reading your GitHub repositories…",
       "prive": "Your profile stays private until you publish it.",
-      "sansGithub": "Your account is not linked to GitHub. Sign in with GitHub to generate your profile.",
+      "sansGithub": "Your account is not linked to GitHub yet. Link it to generate your skills card from your public repositories.",
       "tropSouvent": "You have already updated your profile several times this hour. Try again a little later.",
       "erreurs": {
         "github_indisponible": "GitHub is not responding right now. Your previous profile is kept: try again in a few minutes.",
@@ -103,6 +131,15 @@
         "sujets": "The topics of your repositories",
         "etoiles": "The stars of your repositories",
         "jamais": "Never your private repositories"
+      },
+      "relier": "Link my GitHub",
+      "relie": "Your GitHub is linked. You can generate your skills card.",
+      "erreursLien": {
+        "github_deja_utilise": "This GitHub is already linked to another Jamii account. Sign in with GitHub to find that account.",
+        "compte_deja_relie": "Your account is already linked to another GitHub.",
+        "refus_github": "You declined access on GitHub: nothing was linked.",
+        "requete_invalide": "Linking with GitHub expired. Try again.",
+        "github_indisponible": "GitHub is not responding right now. Try again in a moment."
       }
     },
     "disponibilite": {
@@ -270,7 +307,7 @@
       "mois": "Last 30 days",
       "tout": "Since the start"
     },
-    "surDatacloud": "projects online on DataCloud",
+    "surDatacloud": "Projects online on DataCloud",
     "partDatacloud": "{part}% of online projects are hosted on DataCloud",
     "inscrits": "Members",
     "projetsCrees": "Projects created",
@@ -306,7 +343,14 @@
       "systaone": "SystaONE",
       "hebergement": "Hosting and online shop",
       "email": "Professional e-mail",
-      "domaines": "Domain names"
+      "domaines": "Domain names",
+      "boutique-en-ligne": "Online shop",
+      "email-professionnel": "Business email",
+      "nom-de-domaine": "Domain name",
+      "datacloud-application": "DataCloud · app",
+      "datacloud-base-de-donnees": "DataCloud · database",
+      "datacloud-stockage": "DataCloud · storage",
+      "datacloud-serveur": "DataCloud · server"
     },
     "tendances": {
       "titre": "Market trends",
@@ -321,7 +365,8 @@
       "competence": "Skill",
       "demandes": "Needs",
       "profils": "Profiles",
-      "autres": "Others"
+      "autres": "Others",
+      "legende": "In red: fewer profiles than needs."
     },
     "clients": {
       "titre": "Clients who want to be followed",
@@ -344,7 +389,8 @@
     "reserve": {
       "titre": "For the Systalink team only",
       "texte": "This space shows Systalink what Jamii brings them. If you are on the Systalink team, ask the Jamii team to add your account."
-    }
+    },
+    "dontDatacloud": "{n} on DataCloud"
   },
   "vitrine": {
     "titre": "Showcase",
@@ -785,7 +831,10 @@
       "education": "Education",
       "agriculture": "Agriculture",
       "association": "Non-profit",
-      "autre": "Other"
+      "autre": "Other",
+      "transport": "Transport",
+      "finance": "Finance",
+      "administration": "Public sector"
     },
     "offres": {
       "libelle": "Receive Systalink offers tailored to my project",
@@ -1624,7 +1673,8 @@
       "aucuneQuestion": "No questions waiting. Ask the first one!",
       "salonsTitre": "Channels",
       "rejoindre": "Join the community",
-      "voir": "See the community"
+      "voir": "See the community",
+      "espaceDisparu": "This community is no longer available. The organisers can open another one."
     },
     "onglets": {
       "titre": "Hackathon sections",

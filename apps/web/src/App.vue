@@ -24,8 +24,8 @@ watch(etat, (e) => (e === 'connecte' ? suivreActivite() : arreterActivite()), { 
     <div class="entete__interieur verre">
       <RouterLink to="/" class="marque">Jamii<span class="marque__point" aria-hidden="true" /></RouterLink>
       <nav :aria-label="t('menu.principal')">
-        <RouterLink v-if="etat === 'connecte'" to="/cercles">{{ t('menu.cercles') }}</RouterLink>
         <RouterLink v-if="etat === 'connecte'" to="/communautes">{{ t('menu.communautes') }}</RouterLink>
+        <RouterLink v-if="etat === 'connecte'" to="/cercles">{{ t('menu.cercles') }}</RouterLink>
         <RouterLink v-if="etat === 'connecte'" to="/demandes" :class="{ 'router-link-active': $route.path.startsWith('/demandes') }">{{ t('menu.demandes') }}</RouterLink>
         <RouterLink to="/missions">{{ t('menu.missions') }}</RouterLink>
         <RouterLink to="/hackathons">{{ t('menu.hackathons') }}</RouterLink>
@@ -118,7 +118,9 @@ main.main--pleine { max-width: none; padding-inline: var(--space-4); }
   padding-inline: var(--space-6) var(--space-2);
   border-radius: var(--radius-pill);
 }
-.entete nav { flex: 1; display: flex; align-items: center; gap: var(--space-1); white-space: nowrap; overflow-x: auto; }
+.entete nav { flex: 1; display: flex; align-items: center; gap: var(--space-1); white-space: nowrap; overflow-x: auto; scrollbar-width: none; }
+/* Pas de barre de défilement dans le menu : il se resserre avant de déborder (voir les paliers plus bas). */
+.entete nav::-webkit-scrollbar { display: none; }
 
 /* Les liens sont des capsules ; la page active est une goutte de verre teintée. */
 .entete nav a {
@@ -159,6 +161,14 @@ main.main--pleine { max-width: none; padding-inline: var(--space-4); }
    quelle que soit la largeur (la capsule de l'en-tête ne dépasse jamais 70rem). */
 .entete--connecte .reglages--entete { display: none; }
 .pied--reglages .reglages--pied { display: flex; }
+/* Portable (jusqu'à 1600 px de large, soit la plupart des portables à 100 % ou 125 %) : le menu se resserre et
+   « Espace Systalink » devient « Systalink », pour que tout tienne sans barre de défilement. */
+@media (max-width: 1600px) {
+  .entete__interieur { column-gap: var(--space-4); }
+  .entete nav a { padding: 0 var(--space-3); }
+  .lien-long { display: none; }
+  .lien-court { display: inline; }
+}
 /* Entre tablette et grand écran, « Espace Systalink » se raccourcit et les réglages passent aussi en bas. */
 @media (max-width: 1180px) {
   .entete nav a { padding: 0 var(--space-3); }
@@ -183,6 +193,10 @@ main.main--pleine { max-width: none; padding-inline: var(--space-4); }
 }
 /* Téléphone : les 6 entrées du menu passent sur deux lignes plutôt que d'en cacher une hors de l'écran. */
 @media (max-width: 480px) {
+  /* La marque et les boutons tiennent sur une seule ligne : l'en-tête mange moins l'écran. */
+  .entete__interieur { column-gap: var(--space-2); padding-inline: var(--space-3) var(--space-1); }
+  .actions { gap: 2px; }
+  .deconnexion { padding: var(--space-1); }
   .entete nav { flex-wrap: wrap; justify-content: center; row-gap: 2px; padding-block: 2px; }
   .entete nav a { min-height: 36px; }
 }

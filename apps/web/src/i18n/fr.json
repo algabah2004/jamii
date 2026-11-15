@@ -20,7 +20,7 @@
     "githubTexte": "Connecte-toi avec GitHub. Ta carte de compétences se construit à partir de tes dépôts publics.",
     "ou": "ou",
     "emailTitre": "Tu as un besoin, sans compte GitHub",
-    "emailTexte": "PME, association ou particulier : reçois un lien de connexion par e-mail. Pas de mot de passe.",
+    "emailTexte": "PME, association ou particulier : pas besoin de GitHub, ni de mot de passe.",
     "email": "Ton adresse e-mail",
     "emailInvalide": "Cette adresse e-mail n'est pas valide.",
     "recevoirLien": "Recevoir un lien de connexion",
@@ -37,9 +37,14 @@
     "erreurs": {
       "refus_github": "Tu as refusé l'accès sur GitHub : rien n'a été partagé. Tu peux réessayer, ou recevoir un lien par e-mail.",
       "requete_invalide": "La connexion avec GitHub a expiré. Réessaie.",
-      "github_indisponible": "GitHub ne répond pas pour le moment. Réessaie dans un instant, ou reçois un lien par e-mail."
+      "github_indisponible": "GitHub ne répond pas pour le moment. Réessaie dans un instant, ou reçois un lien par e-mail.",
+      "refus_google": "Tu as refusé l'accès sur Google : rien n'a été partagé. Tu peux réessayer, ou recevoir un lien par e-mail.",
+      "google_indisponible": "Google ne répond pas pour le moment. Réessaie dans un instant, ou reçois un lien par e-mail.",
+      "email_non_verifie": "Google n'a pas confirmé ton adresse e-mail. Reçois plutôt un lien de connexion par e-mail."
     },
-    "seConnecter": "Se connecter"
+    "seConnecter": "Se connecter",
+    "google": "Continuer avec Google",
+    "googleOu": "Ou reçois un lien de connexion par e-mail :"
   },
   "accueil": {
     "titre": "Trouve ton équipe, construis ton projet, mets-le en ligne.",
@@ -80,7 +85,30 @@
       "apercuEnLigne": "En ligne et vérifié",
       "apercuProfil": "Profil prouvé"
     },
-    "decrireBesoin": "J’ai un besoin pour mon entreprise"
+    "decrireBesoin": "J’ai un besoin pour mon entreprise",
+    "aussi": {
+      "titre": "Et aussi sur Jamii",
+      "cercles": {
+        "titre": "Les cercles",
+        "texte": "4 à 6 développeurs construisent, à tour de rôle, le projet de chacun. Systalink en est le garant.",
+        "lien": "Voir les cercles"
+      },
+      "besoin": {
+        "titre": "Tu as un besoin ?",
+        "texte": "Commerçant, cabinet, association : décris-le avec tes mots. Ayo te dit ce qui existe déjà, et qui peut faire le reste.",
+        "lien": "Décrire mon besoin"
+      },
+      "missions": {
+        "titre": "Les missions",
+        "texte": "Des clients cherchent un développeur. Propose-toi, envoie ton devis et livre étape par étape.",
+        "lien": "Voir les missions"
+      },
+      "hackathons": {
+        "titre": "Les hackathons",
+        "texte": "Des défis ouverts à tous : forme une équipe, construis un projet et fais-le noter par un jury.",
+        "lien": "Voir les hackathons"
+      }
+    }
   },
   "profil": {
     "titre": "Profil",
@@ -92,7 +120,7 @@
       "regenerer": "Mettre à jour depuis GitHub",
       "enCours": "Lecture de tes dépôts GitHub…",
       "prive": "Ton profil reste privé jusqu'à ce que tu le publies.",
-      "sansGithub": "Ton compte n'est pas relié à GitHub. Connecte-toi avec GitHub pour générer ton profil.",
+      "sansGithub": "Ton compte n'est pas encore relié à GitHub. Relie-le pour générer ta carte de compétences à partir de tes dépôts publics.",
       "tropSouvent": "Tu as déjà mis ton profil à jour plusieurs fois cette heure-ci. Réessaie un peu plus tard.",
       "erreurs": {
         "github_indisponible": "GitHub ne répond pas pour le moment. Ton profil précédent est conservé : réessaie dans quelques minutes.",
@@ -103,6 +131,15 @@
         "sujets": "Les sujets de tes dépôts",
         "etoiles": "Les étoiles de tes dépôts",
         "jamais": "Jamais tes dépôts privés"
+      },
+      "relier": "Relier mon GitHub",
+      "relie": "Ton GitHub est relié. Tu peux générer ta carte de compétences.",
+      "erreursLien": {
+        "github_deja_utilise": "Ce GitHub est déjà relié à un autre compte Jamii. Connecte-toi avec GitHub pour retrouver ce compte.",
+        "compte_deja_relie": "Ton compte est déjà relié à un autre GitHub.",
+        "refus_github": "Tu as refusé l'accès sur GitHub : rien n'a été relié.",
+        "requete_invalide": "La liaison avec GitHub a expiré. Réessaie.",
+        "github_indisponible": "GitHub ne répond pas pour le moment. Réessaie dans un instant."
       }
     },
     "disponibilite": {
@@ -270,7 +307,7 @@
       "mois": "30 derniers jours",
       "tout": "Depuis le début"
     },
-    "surDatacloud": "projets en ligne sur DataCloud",
+    "surDatacloud": "Projets en ligne sur DataCloud",
     "partDatacloud": "{part} % des projets en ligne sont hébergés sur DataCloud",
     "inscrits": "Inscrits",
     "projetsCrees": "Projets créés",
@@ -306,7 +343,14 @@
       "systaone": "SystaONE",
       "hebergement": "Hébergement et boutique en ligne",
       "email": "E-mail professionnel",
-      "domaines": "Noms de domaine"
+      "domaines": "Noms de domaine",
+      "boutique-en-ligne": "Boutique en ligne",
+      "email-professionnel": "E-mail professionnel",
+      "nom-de-domaine": "Nom de domaine",
+      "datacloud-application": "DataCloud · application",
+      "datacloud-base-de-donnees": "DataCloud · base de données",
+      "datacloud-stockage": "DataCloud · stockage",
+      "datacloud-serveur": "DataCloud · serveur"
     },
     "tendances": {
       "titre": "Tendances du marché",
@@ -321,7 +365,8 @@
       "competence": "Compétence",
       "demandes": "Besoins",
       "profils": "Profils",
-      "autres": "Autres"
+      "autres": "Autres",
+      "legende": "En rouge : moins de profils que de besoins."
     },
     "clients": {
       "titre": "Clients qui veulent être suivis",
@@ -344,7 +389,8 @@
     "reserve": {
       "titre": "Réservé à l’équipe Systalink",
       "texte": "Cet espace montre à Systalink ce que Jamii lui apporte. Si tu fais partie de l’équipe Systalink, demande à l’équipe Jamii d’ajouter ton compte."
-    }
+    },
+    "dontDatacloud": "dont {n} sur DataCloud"
   },
   "vitrine": {
     "titre": "Vitrine",
@@ -785,7 +831,10 @@
       "education": "Éducation",
       "agriculture": "Agriculture",
       "association": "Association",
-      "autre": "Autre"
+      "autre": "Autre",
+      "transport": "Transport",
+      "finance": "Finance",
+      "administration": "Administration"
     },
     "offres": {
       "libelle": "Recevoir les offres Systalink adaptées à mon projet",
@@ -1624,7 +1673,8 @@
       "aucuneQuestion": "Aucune question en attente. Posez la première !",
       "salonsTitre": "Salons",
       "rejoindre": "Rejoindre la communauté",
-      "voir": "Voir la communauté"
+      "voir": "Voir la communauté",
+      "espaceDisparu": "Cette communauté n'est plus disponible. L'organisation peut en ouvrir une autre."
     },
     "onglets": {
       "titre": "Sections du hackathon",
