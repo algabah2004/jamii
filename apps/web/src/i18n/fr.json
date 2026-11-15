@@ -1117,6 +1117,20 @@
         "envoyee": "Demande envoyée",
         "accepte": "Dans tes contacts"
       }
+    },
+    "discussion": {
+      "aujourdhui": "Aujourd'hui",
+      "hier": "Hier",
+      "appeler": "Appeler {nom}",
+      "appelImpossible": "L'appel n'a pas pu être lancé. Réessaie.",
+      "tuAppelles": "Tu as lancé un appel",
+      "tAppelle": "{nom} t'appelle",
+      "enCours": "En cours",
+      "termine": "Appel terminé",
+      "rejoindre": "Rejoindre",
+      "lu": "Lu",
+      "envoye": "Envoyé",
+      "aideClavier": "Entrée pour envoyer, Maj + Entrée pour aller à la ligne."
     }
   },
   "hackathons": {

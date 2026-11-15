@@ -1117,6 +1117,20 @@
         "envoyee": "Request sent",
         "accepte": "In your contacts"
       }
+    },
+    "discussion": {
+      "aujourdhui": "Today",
+      "hier": "Yesterday",
+      "appeler": "Call {nom}",
+      "appelImpossible": "The call could not be started. Try again.",
+      "tuAppelles": "You started a call",
+      "tAppelle": "{nom} is calling you",
+      "enCours": "Ongoing",
+      "termine": "Call ended",
+      "rejoindre": "Join",
+      "lu": "Read",
+      "envoye": "Sent",
+      "aideClavier": "Enter to send, Shift + Enter for a new line."
     }
   },
   "hackathons": {

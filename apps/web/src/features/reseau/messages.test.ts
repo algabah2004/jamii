@@ -90,6 +90,35 @@ describe('les messages', () => {
     expect(page.findAll('[data-test="fil"] li').at(-1)!.classes()).toContain('bulle--moi')
   })
 
+  it('Entrée envoie le message, Maj + Entrée va à la ligne', async () => {
+    const { page } = await ouvrir(`/messages/${AMINA}`)
+    await vi.waitFor(() => expect(page.find('[data-test="form-message"]').exists()).toBe(true))
+    const zone = page.get('[data-test="form-message"] textarea')
+    await zone.setValue('Ligne une')
+    await zone.trigger('keydown', { key: 'Enter', shiftKey: true })
+    expect(page.findAll('[data-test="fil"] li').at(-1)!.text()).not.toContain('Ligne une')
+    await zone.trigger('keydown', { key: 'Enter' })
+    await vi.waitFor(() => expect(page.findAll('[data-test="fil"] li').at(-1)!.text()).toContain('Ligne une'))
+    // Le fil est groupé par jour, et mon message dit qu'il est envoyé.
+    expect(page.find('.jour').text()).not.toBe('')
+    expect(page.findAll('[data-test="fil"] li').at(-1)!.find('.bulle__lu').exists()).toBe(true)
+  })
+
+  it('appelle la personne : la salle s’ouvre dans un nouvel onglet et l’appel est annoncé dans la conversation', async () => {
+    const onglet = { opener: {} as unknown, location: { href: '' }, close: vi.fn() }
+    const ouvrirFenetre = vi.spyOn(window, 'open').mockReturnValue(onglet as unknown as Window)
+    const { page } = await ouvrir(`/messages/${AMINA}`)
+    await vi.waitFor(() => expect(page.find('[data-test="appeler"]').exists()).toBe(true))
+    await page.get('[data-test="appeler"]').trigger('click')
+    await vi.waitFor(() => expect(page.find('[data-test="appel"]').exists()).toBe(true))
+    expect(ouvrirFenetre).toHaveBeenCalledWith('', '_blank')
+    expect(onglet.location.href).toMatch(/^https:\/\/meet\.jit\.si\/jamii-prive-/)
+    expect(onglet.opener).toBeNull()
+    const rejoindre = page.get('[data-test="rejoindre-appel"]')
+    expect(rejoindre.attributes()).toMatchObject({ href: onglet.location.href, target: '_blank', rel: 'noopener noreferrer' })
+    ouvrirFenetre.mockRestore()
+  })
+
   it("explique un refus de l'API plutôt que d'échouer en silence", async () => {
     serveur.use(http.post('/api/conversations/:id/messages', () => HttpResponse.json({ code: 'trop_de_requetes' }, { status: 429 })))
     const { page } = await ouvrir(`/messages/${AMINA}`)

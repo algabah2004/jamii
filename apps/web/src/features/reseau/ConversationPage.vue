@@ -1,13 +1,28 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
-import { JAvatar, JBouton, JChamp, JSquelette } from '../../design-system'
+import { JAvatar, JBouton, JSquelette } from '../../design-system'
 import { rejoindreCercle } from '../cercles/cercles'
 import { rafraichirActivite } from './activite'
-import { ajouterContact, envoyerMessage, LONGUEUR_MESSAGE, lireConversation, lireLien, prenom, quand, type Message, type Personne, type StatutLien } from './reseau'
+import {
+  ajouterContact,
+  envoyerMessage,
+  lancerAppel,
+  LONGUEUR_MESSAGE,
+  lireConversation,
+  lireLien,
+  prenom,
+  type Message,
+  type Personne,
+  type StatutLien,
+} from './reseau'
 
-/* La conversation avec une personne : les messages, l'invitation à un cercle et la réponse. */
+/*
+ * La conversation avec une personne, comme une messagerie : l'en-tête avec l'appel, le fil groupé par jour, et la
+ * zone de saisie collée en bas (Entrée envoie, Maj + Entrée va à la ligne). Le fil se relit toutes les 5 secondes
+ * tant que l'onglet est visible : pas de WebSocket, comme les salons. Les textes restent du texte brut (jamais v-html).
+ */
 const { t, locale } = useI18n()
 const route = useRoute()
 const routeur = useRouter()
@@ -38,10 +53,53 @@ async function charger() {
 }
 watch(() => route.params.personneId, charger, { immediate: true })
 
+/** Relire en silence : les nouveaux messages arrivent sans recharger l'écran. */
+async function relire() {
+  if (etat.value !== 'pret' || (typeof document !== 'undefined' && document.visibilityState === 'hidden')) return
+  try {
+    const r = await lireConversation(String(route.params.personneId))
+    if (!r) return
+    const dernier = messages.value.at(-1)?.id
+    const enBas = !fil.value || fil.value.scrollHeight - fil.value.scrollTop - fil.value.clientHeight < 80
+    messages.value = r.messages
+    if (r.messages.at(-1)?.id !== dernier) {
+      void rafraichirActivite()
+      if (enBas) await descendre()
+    }
+  } catch {
+    // La prochaine relecture réessaiera.
+  }
+}
+const minuterie = setInterval(() => void relire(), 5000)
+onBeforeUnmount(() => clearInterval(minuterie))
+
 async function descendre() {
   await nextTick()
-  fil.value?.lastElementChild?.scrollIntoView?.({ block: 'end' })
+  if (fil.value) fil.value.scrollTop = fil.value.scrollHeight
 }
+
+/** Le fil groupé par jour : « Aujourd'hui », « Hier », puis la date. */
+const jours = computed(() => {
+  const groupes: { cle: string; titre: string; messages: Message[] }[] = []
+  for (const m of messages.value) {
+    const cle = new Date(m.envoyeLe).toDateString()
+    if (groupes.at(-1)?.cle !== cle) groupes.push({ cle, titre: titreJour(m.envoyeLe), messages: [] })
+    groupes.at(-1)!.messages.push(m)
+  }
+  return groupes
+})
+function titreJour(iso: string) {
+  const date = new Date(iso)
+  const aujourdhui = new Date()
+  const hier = new Date(aujourdhui)
+  hier.setDate(aujourdhui.getDate() - 1)
+  if (date.toDateString() === aujourdhui.toDateString()) return t('reseau.discussion.aujourdhui')
+  if (date.toDateString() === hier.toDateString()) return t('reseau.discussion.hier')
+  return new Intl.DateTimeFormat(locale.value, { weekday: 'long', day: 'numeric', month: 'long' }).format(date)
+}
+const heure = (iso: string) => new Intl.DateTimeFormat(locale.value, { hour: '2-digit', minute: '2-digit' }).format(new Date(iso))
+/** Deux bulles de suite de la même personne se collent : l'avatar n'est montré qu'une fois. */
+const suite = (liste: Message[], i: number) => i > 0 && liste[i - 1]!.deMoi === liste[i]!.deMoi
 
 // Le lien de contact : un seul bouton, qui dit ce qu'il fera (demander, accepter) ou l'état (demande envoyée, contact).
 const lien = ref<StatutLien | null>(null)
@@ -57,13 +115,31 @@ async function ajouter() {
   }
 }
 
+// ---------------------------------------------------------------- écrire
 const texte = ref('')
 const envoi = ref(false)
 const erreur = ref<string | null>(null)
 const valide = computed(() => texte.value.trim().length > 0 && texte.value.length <= LONGUEUR_MESSAGE)
+const zone = ref<HTMLTextAreaElement | null>(null)
+
+/** La zone grandit avec le texte, jusqu'à six lignes environ. */
+function ajuster() {
+  const z = zone.value
+  if (!z) return
+  z.style.height = 'auto'
+  z.style.height = `${Math.min(z.scrollHeight, 160)}px`
+}
+watch(texte, () => nextTick(ajuster))
+
+function touche(e: KeyboardEvent) {
+  if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+    e.preventDefault()
+    void envoyer()
+  }
+}
 
 async function envoyer() {
-  if (!valide.value || !personne.value) return
+  if (!valide.value || !personne.value || envoi.value) return
   envoi.value = true
   erreur.value = null
   try {
@@ -72,11 +148,45 @@ async function envoyer() {
       messages.value.push(r.message)
       texte.value = ''
       await descendre()
+      zone.value?.focus()
     } else erreur.value = t(`reseau.erreurs.${r.code ?? 'autre'}`, t('reseau.erreurs.autreMessage'))
   } catch {
     erreur.value = t('etat.indisponible')
   } finally {
     envoi.value = false
+  }
+}
+
+// ---------------------------------------------------------------- appeler (#157)
+const appel = ref<'repos' | 'envoi' | 'erreur'>('repos')
+/**
+ * L'onglet de l'appel s'ouvre pendant le clic (sinon le navigateur le bloque), puis reçoit l'adresse de la salle quand
+ * l'API a répondu. L'appel est annoncé dans la conversation : l'autre personne le rejoint d'un clic.
+ */
+async function appeler() {
+  if (!personne.value || appel.value === 'envoi') return
+  appel.value = 'envoi'
+  erreur.value = null
+  const fenetre = typeof window.open === 'function' ? window.open('', '_blank') : null
+  try {
+    const r = await lancerAppel(personne.value.id)
+    if (!r.ok || !r.message.appel) {
+      fenetre?.close()
+      appel.value = 'erreur'
+      erreur.value = t(`reseau.erreurs.${r.ok ? 'autre' : (r.code ?? 'autre')}`, t('reseau.discussion.appelImpossible'))
+      return
+    }
+    if (fenetre) {
+      fenetre.opener = null
+      fenetre.location.href = r.message.appel.url
+    }
+    messages.value.push(r.message)
+    appel.value = 'repos'
+    await descendre()
+  } catch {
+    fenetre?.close()
+    appel.value = 'erreur'
+    erreur.value = t('reseau.discussion.appelImpossible')
   }
 }
 
@@ -102,80 +212,205 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
 </script>
 
 <template>
-  <section class="conversation">
-    <p class="retour"><RouterLink to="/messages">{{ t('reseau.messages.tous') }}</RouterLink></p>
-
+  <section class="discussion" :aria-busy="etat === 'chargement'">
     <JSquelette v-if="etat === 'chargement'" :nombre="3" />
     <div v-else-if="etat === 'introuvable'" class="etat-vide">
       <h1>{{ t('introuvable.titre') }}</h1>
+      <RouterLink to="/messages">{{ t('reseau.messages.tous') }}</RouterLink>
     </div>
     <div v-else-if="etat === 'indisponible'" role="alert" class="etat-vide">
       <p>{{ t('etat.indisponible') }}</p>
       <JBouton variante="secondaire" @click="charger()">{{ t('etat.reessayer') }}</JBouton>
     </div>
 
-    <template v-else-if="personne">
+    <div v-else-if="personne" class="cadre">
       <header class="tete">
-        <JAvatar :nom="personne.nom" :url="personne.avatarUrl" :taille="48" />
+        <RouterLink to="/messages" class="tete__retour" :aria-label="t('reseau.messages.tous')">
+          <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M12.5 4.5 7 10l5.5 5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        </RouterLink>
+        <JAvatar :nom="personne.nom" :url="personne.avatarUrl" :taille="44" />
         <div class="tete__qui">
           <h1>{{ personne.nom }}</h1>
-          <p v-if="personne.ville" class="texte-discret">{{ personne.ville }}</p>
+          <p>
+            <span v-if="personne.ville">{{ personne.ville }}</span>
+            <span v-if="lien && lien !== 'aucun' && lien !== 'recue'" class="tete__lien" data-test="lien-contact">{{ t(`reseau.contacts.statut.${lien}`) }}</span>
+          </p>
         </div>
-        <JBouton v-if="lien === 'aucun' || lien === 'recue'" :variante="lien === 'recue' ? 'principal' : 'secondaire'" :occupe="ajout" data-test="ajouter-contact" @click="ajouter">
-          {{ lien === 'recue' ? t('reseau.contacts.accepter') : t('reseau.contacts.ajouter') }}
-        </JBouton>
-        <span v-else-if="lien" class="etiquette lien-contact" data-test="lien-contact">{{ t(`reseau.contacts.statut.${lien}`) }}</span>
+        <div class="tete__actions">
+          <JBouton v-if="lien === 'aucun' || lien === 'recue'" :variante="lien === 'recue' ? 'principal' : 'secondaire'" :occupe="ajout" data-test="ajouter-contact" @click="ajouter">
+            {{ lien === 'recue' ? t('reseau.contacts.accepter') : t('reseau.contacts.ajouter') }}
+          </JBouton>
+          <button type="button" class="rond rond--appel" :disabled="appel === 'envoi'" :aria-label="t('reseau.discussion.appeler', { nom: prenom(personne.nom) })" :title="t('reseau.discussion.appeler', { nom: prenom(personne.nom) })" data-test="appeler" @click="appeler">
+            <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M6.6 3.5 8.4 7a1 1 0 0 1-.2 1.1L7 9.3a10 10 0 0 0 3.7 3.7l1.2-1.2a1 1 0 0 1 1.1-.2l3.5 1.8a1 1 0 0 1 .5 1.2l-.6 1.9a2 2 0 0 1-2.2 1.4C8.9 17.2 2.8 11.1 2.1 5.8A2 2 0 0 1 3.5 3.6l1.9-.6a1 1 0 0 1 1.2.5Z" fill="currentColor" /></svg>
+          </button>
+        </div>
       </header>
 
-      <div class="carte fil-carte">
-        <p v-if="!messages.length" class="texte-discret" data-test="conversation-vide">{{ t('reseau.messages.premier', { nom: prenom(personne.nom) }) }}</p>
-        <ol ref="fil" class="fil" data-test="fil" aria-live="polite">
-          <li v-for="m in messages" :key="m.id" class="bulle" :class="m.deMoi ? 'bulle--moi' : 'bulle--autre'">
-            <p class="bulle__texte">{{ m.texte }}</p>
-            <!-- L'invitation : le cercle tel qu'il est maintenant, et le bouton pour le rejoindre s'il reste de la place. -->
-            <div v-if="m.invitation" class="invitation" data-test="invitation">
-              <span class="invitation__titre">{{ t('reseau.messages.invitation') }}</span>
-              <RouterLink :to="`/cercles/${m.invitation.cercle.id}`" class="invitation__cercle">{{ m.invitation.cercle.nom }}</RouterLink>
-              <span class="texte-discret">{{ m.invitation.cercle.ville }} · {{ t('cercles.membres', { n: m.invitation.cercle.nombreMembres, taille: m.invitation.cercle.taille }) }}</span>
-              <template v-if="!m.deMoi">
-                <JBouton v-if="placeLibre(m)" :occupe="rejoint === m.invitation.cercle.id" data-test="rejoindre-invitation" @click="rejoindre(m.invitation.cercle.id)">{{ t('cercles.rejoindre') }}</JBouton>
-                <span v-else class="texte-discret">{{ t('reseau.messages.cercleFerme') }}</span>
-              </template>
-            </div>
-            <time class="bulle__heure" :datetime="m.envoyeLe">{{ quand(m.envoyeLe, locale) }}</time>
-          </li>
+      <div ref="fil" class="fil" data-test="fil-defilant">
+        <div v-if="!messages.length" class="accueil" data-test="conversation-vide">
+          <JAvatar :nom="personne.nom" :url="personne.avatarUrl" :taille="72" />
+          <strong>{{ personne.nom }}</strong>
+          <p>{{ t('reseau.messages.premier', { nom: prenom(personne.nom) }) }}</p>
+        </div>
+
+        <ol class="jours" data-test="fil" aria-live="polite">
+          <template v-for="j in jours" :key="j.cle">
+            <li class="jour" aria-hidden="true"><span>{{ j.titre }}</span></li>
+            <li
+              v-for="(m, i) in j.messages"
+              :key="m.id"
+              class="ligne"
+              :class="[m.deMoi ? 'bulle--moi' : 'bulle--autre', { 'ligne--suite': suite(j.messages, i) }]"
+            >
+              <span class="ligne__avatar" aria-hidden="true">
+                <JAvatar v-if="!m.deMoi && !suite(j.messages, i)" :nom="personne.nom" :url="personne.avatarUrl" :taille="28" />
+              </span>
+
+              <!-- L'annonce d'un appel : une carte, avec « Rejoindre » tant qu'il est en cours. -->
+              <div v-if="m.appel" class="appel-carte" :class="{ 'appel-carte--fini': !m.appel.enCours }" data-test="appel">
+                <span class="appel-carte__icone" aria-hidden="true">
+                  <svg viewBox="0 0 20 20" width="18" height="18"><path d="M6.6 3.5 8.4 7a1 1 0 0 1-.2 1.1L7 9.3a10 10 0 0 0 3.7 3.7l1.2-1.2a1 1 0 0 1 1.1-.2l3.5 1.8a1 1 0 0 1 .5 1.2l-.6 1.9a2 2 0 0 1-2.2 1.4C8.9 17.2 2.8 11.1 2.1 5.8A2 2 0 0 1 3.5 3.6l1.9-.6a1 1 0 0 1 1.2.5Z" fill="currentColor" /></svg>
+                </span>
+                <span class="appel-carte__texte">
+                  <strong>{{ m.deMoi ? t('reseau.discussion.tuAppelles') : t('reseau.discussion.tAppelle', { nom: prenom(personne.nom) }) }}</strong>
+                  <span>{{ m.appel.enCours ? t('reseau.discussion.enCours') : t('reseau.discussion.termine') }} · {{ heure(m.envoyeLe) }}</span>
+                </span>
+                <a v-if="m.appel.enCours" :href="m.appel.url" target="_blank" rel="noopener noreferrer" class="appel-carte__rejoindre" data-test="rejoindre-appel">
+                  {{ t('reseau.discussion.rejoindre') }}<span class="visuellement-cache"> {{ t('communautes.salons.nouvelOnglet') }}</span>
+                </a>
+              </div>
+
+              <div v-else class="bulle">
+                <p class="bulle__texte">{{ m.texte }}</p>
+                <!-- L'invitation : le cercle tel qu'il est maintenant, et le bouton pour le rejoindre s'il reste de la place. -->
+                <div v-if="m.invitation" class="invitation" data-test="invitation">
+                  <span class="invitation__titre">{{ t('reseau.messages.invitation') }}</span>
+                  <RouterLink :to="`/cercles/${m.invitation.cercle.id}`" class="invitation__cercle">{{ m.invitation.cercle.nom }}</RouterLink>
+                  <span class="invitation__infos">{{ m.invitation.cercle.ville ? `${m.invitation.cercle.ville} · ` : '' }}{{ t('cercles.membres', { n: m.invitation.cercle.nombreMembres, taille: m.invitation.cercle.taille }) }}</span>
+                  <template v-if="!m.deMoi">
+                    <JBouton v-if="placeLibre(m)" :occupe="rejoint === m.invitation.cercle.id" data-test="rejoindre-invitation" @click="rejoindre(m.invitation.cercle.id)">{{ t('cercles.rejoindre') }}</JBouton>
+                    <span v-else class="invitation__infos">{{ t('reseau.messages.cercleFerme') }}</span>
+                  </template>
+                </div>
+                <span class="bulle__meta">
+                  <time :datetime="m.envoyeLe">{{ heure(m.envoyeLe) }}</time>
+                  <span v-if="m.deMoi" class="bulle__lu" :class="{ 'bulle__lu--oui': m.luLe }" :title="m.luLe ? t('reseau.discussion.lu') : t('reseau.discussion.envoye')">
+                    {{ m.luLe ? '✓✓' : '✓' }}<span class="visuellement-cache">{{ m.luLe ? t('reseau.discussion.lu') : t('reseau.discussion.envoye') }}</span>
+                  </span>
+                </span>
+              </div>
+            </li>
+          </template>
         </ol>
         <p v-if="erreurInvitation" role="alert" class="erreur">{{ erreurInvitation }}</p>
       </div>
 
-      <form class="reponse" data-test="form-message" @submit.prevent="envoyer">
-        <JChamp v-model="texte" :libelle="t('reseau.messages.ecrire', { nom: prenom(personne.nom) })" multiligne :lignes="2" :maxlength="LONGUEUR_MESSAGE" requis />
-        <JBouton type="submit" :desactive="!valide" :occupe="envoi">{{ t('reseau.messages.envoyer') }}</JBouton>
-        <p v-if="erreur" role="alert" class="erreur">{{ erreur }}</p>
+      <form class="saisie" data-test="form-message" @submit.prevent="envoyer">
+        <p v-if="erreur" role="alert" class="erreur saisie__erreur">{{ erreur }}</p>
+        <label for="message" class="visuellement-cache">{{ t('reseau.messages.ecrire', { nom: prenom(personne.nom) }) }}</label>
+        <textarea
+          id="message"
+          ref="zone"
+          v-model="texte"
+          rows="1"
+          :maxlength="LONGUEUR_MESSAGE"
+          :placeholder="t('reseau.messages.ecrire', { nom: prenom(personne.nom) })"
+          @keydown="touche"
+        />
+        <button type="submit" class="rond rond--envoyer" :disabled="!valide || envoi" :aria-label="t('reseau.messages.envoyer')" data-test="envoyer-message">
+          <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M3.4 16.6 17 10 3.4 3.4l1.9 5.4L12 10l-6.7 1.2-1.9 5.4Z" fill="currentColor" /></svg>
+        </button>
       </form>
-    </template>
+      <p class="aide texte-discret">{{ t('reseau.discussion.aideClavier') }}</p>
+    </div>
   </section>
 </template>
 
 <style scoped>
-.conversation { display: grid; gap: var(--space-4); max-width: 44rem; }
-.retour { margin: 0; font-size: var(--type-body-sm-size); }
-.tete { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
-.tete__qui { flex: 1; min-width: 10rem; }
-.lien-contact { background: var(--action-soft); color: var(--action-ink); font-weight: 600; }
-.tete h1 { margin: 0; font-size: 1.75rem; }
-.tete p { margin: 0; }
-.fil-carte { padding: var(--space-4); display: grid; gap: var(--space-3); }
-.fil { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); max-height: 60vh; overflow-y: auto; }
-.bulle { display: grid; gap: var(--space-2); max-width: 80%; padding: var(--space-3) var(--space-4); border-radius: var(--radius-lg); }
-.bulle--autre { justify-self: start; background: color-mix(in srgb, var(--ink) 6%, transparent); border-bottom-left-radius: var(--radius-sm, 4px); }
-.bulle--moi { justify-self: end; background: var(--action-soft); color: var(--ink); border-bottom-right-radius: var(--radius-sm, 4px); }
-.bulle__texte { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
-.bulle__heure { color: var(--ink-muted); font-size: 0.75rem; justify-self: end; }
-.invitation { display: grid; gap: var(--space-1); justify-items: start; padding: var(--space-3); border-radius: var(--radius-md); background: var(--surface); border: 1px solid var(--line); }
-.invitation__titre { font-size: var(--type-body-sm-size); color: var(--ink-muted); }
+.discussion { max-width: 52rem; margin-inline: auto; }
+.cadre {
+  display: grid; grid-template-rows: auto 1fr auto auto;
+  height: min(calc(100dvh - 9rem), 54rem); min-height: 28rem;
+  border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); overflow: hidden;
+}
+
+.tete { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--line); background: var(--surface-raised, var(--surface)); }
+.tete__retour { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; color: var(--ink); }
+.tete__retour:hover { background: color-mix(in srgb, var(--ink) 8%, transparent); }
+.tete__qui { flex: 1; min-width: 0; }
+.tete__qui h1 { margin: 0; font-size: 1.0625rem; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tete__qui p { margin: 0; display: flex; gap: var(--space-2); align-items: center; color: var(--ink-muted); font-size: var(--type-body-sm-size); }
+.tete__lien { padding: 0 8px; border-radius: var(--radius-pill); background: var(--action-soft); color: var(--action-ink); font-weight: 600; font-size: 0.75rem; }
+.tete__actions { display: flex; align-items: center; gap: var(--space-2); }
+
+.rond { display: grid; place-items: center; flex: none; width: 44px; height: 44px; border-radius: 50%; border: 0; cursor: pointer; transition: transform var(--motion-fast, 120ms) ease, background var(--motion-fast, 120ms) ease; }
+.rond:disabled { opacity: 0.45; cursor: default; }
+.rond:not(:disabled):hover { transform: scale(1.06); }
+.rond:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.rond--appel { background: var(--action-soft); color: var(--action-ink); }
+.rond--envoyer { background: var(--action); color: var(--on-action); }
+
+.fil {
+  overflow-y: auto; padding: var(--space-4) var(--space-4) var(--space-2); overscroll-behavior: contain;
+  background:
+    radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--ink) 6%, transparent) 1px, transparent 0) 0 0 / 22px 22px,
+    var(--bg);
+}
+.accueil { display: grid; justify-items: center; gap: var(--space-2); padding: var(--space-8, 3rem) var(--space-4); text-align: center; color: var(--ink-muted); }
+.accueil strong { color: var(--ink); font-size: 1.125rem; }
+.accueil p { margin: 0; }
+
+.jours { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.jour { display: flex; justify-content: center; margin: var(--space-4) 0 var(--space-2); }
+.jour span { padding: 2px 12px; border-radius: var(--radius-pill); background: var(--surface); border: 1px solid var(--line); color: var(--ink-muted); font-size: 0.75rem; font-weight: 600; text-transform: capitalize; }
+
+.ligne { display: flex; align-items: flex-end; gap: var(--space-2); margin-top: var(--space-2); animation: arrive 180ms ease-out; }
+.ligne--suite { margin-top: 0; }
+.ligne__avatar { flex: none; width: 28px; }
+.bulle--moi { flex-direction: row-reverse; }
+.bulle--moi .ligne__avatar { display: none; }
+
+.bulle { display: grid; gap: var(--space-1); max-width: min(75%, 34rem); padding: var(--space-2) var(--space-3); border-radius: 18px; box-shadow: 0 1px 1px color-mix(in srgb, var(--ink) 8%, transparent); }
+.bulle--autre .bulle { background: var(--surface); color: var(--ink); border-bottom-left-radius: 6px; }
+.bulle--moi .bulle { background: var(--action); color: var(--on-action); border-bottom-right-radius: 6px; }
+.ligne--suite.bulle--autre .bulle { border-top-left-radius: 6px; }
+.ligne--suite.bulle--moi .bulle { border-top-right-radius: 6px; }
+.bulle__texte { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.45; }
+.bulle__meta { display: inline-flex; justify-self: end; gap: 4px; align-items: center; font-size: 0.6875rem; opacity: 0.75; }
+.bulle__lu { letter-spacing: -2px; }
+.bulle__lu--oui { font-weight: 800; }
+
+.invitation { display: grid; gap: var(--space-1); justify-items: start; margin-top: var(--space-1); padding: var(--space-3); border-radius: 12px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); }
+.invitation__titre { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-muted); }
 .invitation__cercle { font-weight: 700; color: var(--ink); }
-.reponse { display: grid; gap: var(--space-2); justify-items: start; }
-.reponse :deep(.j-champ), .reponse > :first-child { width: 100%; }
+.invitation__infos { color: var(--ink-muted); font-size: var(--type-body-sm-size); }
+
+.appel-carte { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-radius: 16px; background: var(--surface); border: 1px solid var(--line); max-width: min(85%, 26rem); }
+.appel-carte__icone { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--success, #1f9d55); color: #fff; flex: none; }
+.appel-carte--fini .appel-carte__icone { background: var(--line-strong); color: var(--ink-muted); }
+.appel-carte__texte { display: grid; flex: 1; line-height: 1.3; }
+.appel-carte__texte span { color: var(--ink-muted); font-size: 0.8125rem; }
+.appel-carte__rejoindre { padding: 6px 14px; border-radius: var(--radius-pill); background: var(--success, #1f9d55); color: #fff; font-weight: 700; text-decoration: none; white-space: nowrap; }
+.appel-carte__rejoindre:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+.saisie { display: flex; align-items: flex-end; flex-wrap: wrap; gap: var(--space-2); padding: var(--space-3) var(--space-4); border-top: 1px solid var(--line); background: var(--surface); }
+.saisie textarea {
+  flex: 1; min-width: 0; min-height: 44px; max-height: 160px; padding: 11px var(--space-4); resize: none;
+  border: 1px solid var(--line-strong); border-radius: 22px; background: var(--bg); color: var(--ink); font: inherit; line-height: 1.4;
+}
+.saisie textarea:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+.saisie__erreur { flex-basis: 100%; }
+.aide { margin: 0; padding: 0 var(--space-4) var(--space-2); font-size: 0.75rem; background: var(--surface); }
 .erreur { margin: 0; color: var(--danger); font-weight: 600; }
+
+@keyframes arrive { from { opacity: 0; transform: translateY(6px); } }
+@media (prefers-reduced-motion: reduce) {
+  .ligne { animation: none; }
+  .rond { transition: none; }
+}
+@media (max-width: 40rem) {
+  .cadre { height: calc(100dvh - 7rem); border-radius: 0; border-inline: 0; }
+  .aide { display: none; }
+  .bulle { max-width: 85%; }
+}
 </style>
