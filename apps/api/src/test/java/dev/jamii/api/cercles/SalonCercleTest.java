@@ -204,4 +204,15 @@ class SalonCercleTest {
 		assertThat(reponse).bodyJson().extractingPath("$.elements[-1].evenement.tour").isEqualTo(2);
 	}
 
+	@Test
+	void une_decision_est_consignee_et_relue_a_part() {
+		Cercle c = cercleTire();
+		assertThat(envoyer("POST", salon(c) + "/messages", c.membres().get(1), "{\"type\":\"decision\",\"texte\":\"On part sur Flutter\"}"))
+			.hasStatus(HttpStatus.CREATED).bodyJson().extractingPath("$.type").isEqualTo("decision");
+		envoyer("POST", salon(c) + "/messages", c.membres().get(2), "{\"type\":\"decision\",\"texte\":\"La démo est vendredi\"}");
+		var lu = lire(salon(c), c.createur());
+		assertThat(lu).bodyJson().extractingPath("$.decisions[*].texte").asArray().containsExactly("La démo est vendredi", "On part sur Flutter");
+		assertThat(lu).bodyJson().extractingPath("$.decisions[0].auteur.nom").isEqualTo("Fatou");
+	}
+
 }

@@ -370,6 +370,11 @@ const contexte = computed(() => {
                   <p v-if="l.message.coupDeMain?.resoluLe" class="demande__statut">✓ {{ l.message.coupDeMain.resoluPar ? t('cercles.salon.regleePar', { nom: prenom(l.message.coupDeMain.resoluPar.nom) }) : t('cercles.salon.reglee') }}</p>
                 </div>
 
+                <div v-else-if="l.message.type === 'decision'" class="decision-fil" data-test="decision-fil">
+                  <p class="decision-fil__titre">📌 {{ t('cercles.qg.decisionPrise') }}</p>
+                  <p class="message__texte">{{ l.message.texte }}</p>
+                </div>
+
                 <div v-else-if="l.message.type === 'appel'" class="annonce-appel">
                   <span>{{ t('cercles.salon.aLanceAppel') }}</span>
                   <a v-if="l.message.appel?.enCours && appel && appel.id === l.message.appel.id" :href="appel.url" target="_blank" rel="noopener noreferrer" class="pilule">{{ t('cercles.salon.rejoindre') }}</a>
@@ -519,6 +524,8 @@ const contexte = computed(() => {
 .demande--reglee .demande__titre { color: var(--ink-muted); }
 .demande__statut { margin: 0; color: var(--ink-muted); font-size: var(--type-body-sm-size); font-weight: 600; }
 
+.decision-fil { padding: var(--space-3) var(--space-4); border: 1px solid var(--line); border-left: 4px solid var(--proof); border-radius: var(--radius-md); background: var(--surface); max-width: 38rem; display: grid; gap: var(--space-1); }
+.decision-fil__titre { margin: 0; color: var(--proof-ink); font-size: 0.8125rem; font-weight: 700; }
 .annonce-appel { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); padding: var(--space-2) var(--space-3); border-radius: var(--radius-md); background: var(--action-soft); color: var(--action-ink); font-weight: 600; max-width: 38rem; }
 
 .nouveaux { position: absolute; left: 50%; bottom: var(--space-3); translate: -50% 0; padding: var(--space-2) var(--space-4); border: 0; border-radius: var(--radius-pill); background: var(--action); color: var(--on-action); font: inherit; font-weight: 600; cursor: pointer; box-shadow: 0 6px 20px rgb(2 7 10 / 0.25); }

@@ -69,7 +69,7 @@ describe('les règles du cercle', () => {
 
 describe('la page du cercle', () => {
   it("montre l'anneau, le tour en cours avec son avancement et son dépôt, et le point du tour", async () => {
-    const { page } = await ouvrir(`/cercles/${ID_DAKAR}`)
+    const { page } = await ouvrir(`/cercles/${ID_DAKAR}?outil=cercle`)
     await vi.waitFor(() => expect(page.find('[data-test="avancement"]').exists()).toBe(true))
     expect(page.findAll('.anneau__membre')).toHaveLength(6)
     expect(page.find('.anneau__membre--tour .anneau__nom').text()).toBe('Awa')
@@ -81,7 +81,7 @@ describe('la page du cercle', () => {
   })
 
   it('montre le code du tour dans Jamii : commande pour cloner, derniers commits et demandes de fusion', async () => {
-    const { page } = await ouvrir(`/cercles/${ID_DAKAR}`)
+    const { page } = await ouvrir(`/cercles/${ID_DAKAR}?outil=cercle`)
     await vi.waitFor(() => expect(page.find('[data-test="commits"]').exists()).toBe(true))
     const code = page.get('[data-test="code-du-tour"]')
     expect(code.get('[data-test="clone"]').text()).toMatch(/^git clone https:\/\//)
@@ -101,7 +101,7 @@ describe('la page du cercle', () => {
         }),
       ),
     )
-    const { page } = await ouvrir(`/cercles/${ID_DAKAR}`)
+    const { page } = await ouvrir(`/cercles/${ID_DAKAR}?outil=cercle`)
     await vi.waitFor(() => expect(page.find('[data-test="indisponible"]').exists()).toBe(true))
     expect(page.get('[data-test="code-du-tour"]').text()).toContain('Ouvrir sur GitHub')
     expect(page.find('[data-test="commits"]').exists()).toBe(false)
@@ -121,7 +121,7 @@ describe('la page du cercle', () => {
     await vi.waitFor(() => expect(page.text()).toContain("Cette page n'existe pas."))
 
     serveur.use(http.get('/api/cercles/:id', () => HttpResponse.json({}, { status: 503 })))
-    const autre = await ouvrir(`/cercles/${ID_DAKAR}`)
+    const autre = await ouvrir(`/cercles/${ID_DAKAR}?outil=cercle`)
     await vi.waitFor(() => expect(autre.page.find('[role="alert"]').exists()).toBe(true))
   })
 
@@ -237,6 +237,9 @@ describe('du cercle vide au tirage', () => {
     await vi.waitFor(() => expect(page.find('[data-test="mon-idee"]').text()).toContain('Appli de covoiturage étudiant'))
 
     await page.find('[data-test="tirer"]').trigger('click')
+    // Une fois l'ordre tiré, on arrive au QG du cercle ; « Le cercle » montre l'ordre de passage.
+    await vi.waitFor(() => expect(page.find('[data-test="qg"]').exists()).toBe(true))
+    await page.get('[data-test="onglet-cercle"]').trigger('click')
     await vi.waitFor(() => expect(page.find('[data-test="tour"]').exists()).toBe(true))
     expect(page.findAll('[data-test="ordre"] li .ordre__numero').map((n) => n.text())).toEqual(['1', '2', '3', '4'])
   })
@@ -276,7 +279,7 @@ describe('du cercle vide au tirage', () => {
 
 describe('livrer un tour', () => {
   it('demande confirmation, livre le tour et ouvre celui du membre suivant', async () => {
-    const { page } = await ouvrir(`/cercles/${ID_DAKAR}`)
+    const { page } = await ouvrir(`/cercles/${ID_DAKAR}?outil=cercle`)
     await vi.waitFor(() => expect(page.find('[data-test="livrer"]').exists()).toBe(true))
     await page.find('[data-test="livrer"]').trigger('click')
     expect(page.find('[data-test="confirmer-livraison"]').text()).toContain('le tour de Kofi commence')
@@ -293,7 +296,7 @@ describe('livrer un tour', () => {
         HttpResponse.json({ ...original, moi: { estCreateur: false, estMembre: true }, tours: original.tours.map((x: { numero: number; beneficiaire: unknown }, i: number) => (i === 0 ? { ...x, beneficiaire: original.membres[1].personne } : x)) }),
       ),
     )
-    const { page } = await ouvrir(`/cercles/${ID_DAKAR}`)
+    const { page } = await ouvrir(`/cercles/${ID_DAKAR}?outil=cercle`)
     await vi.waitFor(() => expect(page.find('[data-test="tour"]').exists()).toBe(true))
     expect(page.find('[data-test="livrer"]').exists()).toBe(false)
   })
@@ -301,7 +304,7 @@ describe('livrer un tour', () => {
 
 describe('les tâches du tour', () => {
   it('ajoute une tâche, la prend, la coche livrée, et la barre du tour suit', async () => {
-    const { page } = await ouvrir(`/cercles/${ID_DAKAR}`)
+    const { page } = await ouvrir(`/cercles/${ID_DAKAR}?outil=cercle`)
     await vi.waitFor(() => expect(page.find('[data-test="taches-du-tour"] [data-test="ajouter-tache"]').exists()).toBe(true))
     const avant = page.findAll('[data-test="tache"]').length
     const faitesAvant = page.findAll('[data-test="cocher"]').filter((c) => (c.element as HTMLInputElement).checked).length
@@ -322,7 +325,7 @@ describe('les tâches du tour', () => {
 
   it("dit quand quelqu'un a changé la tâche entre-temps", async () => {
     serveur.use(http.patch('/api/projets/:p/taches/:t', () => HttpResponse.json({ code: 'modification_concurrente' }, { status: 409 })))
-    const { page } = await ouvrir(`/cercles/${ID_DAKAR}`)
+    const { page } = await ouvrir(`/cercles/${ID_DAKAR}?outil=cercle`)
     await vi.waitFor(() => expect(page.find('[data-test="cocher"]').exists()).toBe(true))
     await page.find('[data-test="cocher"]').trigger('change')
     await vi.waitFor(() => expect(page.find('[data-test="taches-du-tour"] [role="alert"]').text()).toContain('entre-temps'))
@@ -331,7 +334,7 @@ describe('les tâches du tour', () => {
 
 describe('les personnes du cercle', () => {
   it('mènent à leur profil, dans l’anneau comme dans l’ordre de passage', async () => {
-    const { page } = await ouvrir(`/cercles/${ID_DAKAR}`)
+    const { page } = await ouvrir(`/cercles/${ID_DAKAR}?outil=cercle`)
     await vi.waitFor(() => expect(page.find('[data-test="ordre"]').exists()).toBe(true))
     const liens = page.findAll('[data-test="lien-personne"]').map((l) => l.attributes('href'))
     expect(liens).toContain('/p/6f1c2a4e-8b7d-4c3e-9a10-2b5d7e9f0a11')
@@ -346,7 +349,7 @@ describe('le salon du cercle', () => {
     expect(dehors.find('[data-test="salon-cercle"]').exists()).toBe(false)
     dehors.unmount()
 
-    const { page } = await ouvrir(`/cercles/${ID_DAKAR}`)
+    const { page } = await ouvrir(`/cercles/${ID_DAKAR}?outil=cercle`)
     await vi.waitFor(() => expect(page.find('[data-test="onglet-salon"]').exists()).toBe(true))
     await page.get('[data-test="onglet-salon"]').trigger('click')
     await vi.waitFor(() => expect(page.find('[data-test="salon-cercle"]').exists()).toBe(true))
@@ -457,6 +460,55 @@ describe('le tableau de bord du salon', () => {
     const liens = page.findAll('[data-test="ecrire-membre"]').map((l) => l.attributes('href'))
     expect(liens).toHaveLength(5)
     expect(liens[0]).toMatch(/^\/messages\//)
+    page.unmount()
+  })
+})
+
+describe('le QG du cercle (refonte inspirée de Basecamp)', () => {
+  it('un membre arrive au QG : le tour en bandeau et un aperçu de chaque outil', async () => {
+    const { page } = await ouvrir(`/cercles/${ID_DAKAR}`)
+    await vi.waitFor(() => expect(page.find('[data-test="qg"]').exists()).toBe(true))
+    for (const o of ['salon', 'taches', 'points', 'decisions', 'calendrier', 'cercle']) expect(page.find(`[data-test="outil-${o}"]`).exists()).toBe(true)
+    await vi.waitFor(() => expect(page.get('[data-test="outil-decisions"]').text()).toContain('On garde Flutter'))
+    expect(page.get('[data-test="outil-salon"]').text()).toContain('Android 8')
+    expect(page.find('[data-test="colline"]').exists()).toBe(true)
+    page.unmount()
+  })
+
+  it('le point du soir : je réponds à la question du jour, ma réponse se range sous « aujourd’hui »', async () => {
+    const { page } = await ouvrir(`/cercles/${ID_DAKAR}?outil=points`)
+    await vi.waitFor(() => expect(page.find('[data-test="repondre-point"]').exists()).toBe(true))
+    expect(page.text()).toContain('Sur quoi as-tu travaillé aujourd’hui\u202f?')
+    await page.get('#op-fait').setValue('Le tableau des pesées')
+    await page.get('#op-prevu').setValue('Les tests hors ligne')
+    await page.get('[data-test="repondre-point"]').trigger('submit')
+    await vi.waitFor(() => expect(page.find('[data-test="point-fait"]').exists()).toBe(true))
+    expect(page.findAll('[data-test="jour-de-points"]')[0]!.text()).toContain('Le tableau des pesées')
+    page.unmount()
+  })
+
+  it('les décisions : on en consigne une, elle passe en tête', async () => {
+    const { page } = await ouvrir(`/cercles/${ID_DAKAR}?outil=decisions`)
+    await vi.waitFor(() => expect(page.findAll('[data-test="decision"]')).toHaveLength(1))
+    await page.get('#decision-texte').setValue('La démo est jeudi à 19 h')
+    await page.get('[data-test="nouvelle-decision"]').trigger('submit')
+    await vi.waitFor(() => expect(page.findAll('[data-test="decision"]')).toHaveLength(2))
+    expect(page.findAll('[data-test="decision"]')[0]!.text()).toContain('La démo est jeudi à 19 h')
+    page.unmount()
+  })
+
+  it('le calendrier : 14 jours, aujourd’hui marqué, et le planning des tours', async () => {
+    const { page } = await ouvrir(`/cercles/${ID_DAKAR}?outil=calendrier`)
+    await vi.waitFor(() => expect(page.find('[data-test="jours-du-tour"]').exists()).toBe(true))
+    expect(page.findAll('[data-test="jours-du-tour"] li')).toHaveLength(14)
+    expect(page.findAll('[data-test="jours-du-tour"] [aria-current="date"]')).toHaveLength(1)
+    expect(page.findAll('[data-test="planning"] li')).toHaveLength(6)
+    page.unmount()
+  })
+
+  it('un ancien lien « ?onglet=salon » mène toujours au salon', async () => {
+    const { page } = await ouvrir(`/cercles/${ID_DAKAR}?onglet=salon`)
+    await vi.waitFor(() => expect(page.find('[data-test="salon-cercle"]').exists()).toBe(true))
     page.unmount()
   })
 })

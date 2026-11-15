@@ -67,7 +67,7 @@ export type Envoi = { ok: true; message: MessageCercle } | { ok: false; code: st
 
 export async function envoyer(
   cercleId: string,
-  corps: { type: 'texte' | 'coup_de_main'; texte: string } | { type: 'point'; point: PointDuJour },
+  corps: { type: 'texte' | 'coup_de_main' | 'decision'; texte: string } | { type: 'point'; point: PointDuJour },
 ): Promise<Envoi> {
   const { data, error, response } = await api.POST('/api/cercles/{cercleId}/salon/messages', { params: { path: { cercleId } }, body: corps })
   return data ? { ok: true, message: data } : { ok: false, code: code(error), statut: response.status }

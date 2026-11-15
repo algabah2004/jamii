@@ -87,6 +87,15 @@ class SalonCercle {
 			.query(SalonCercle::message).list();
 	}
 
+	/** Les dernières décisions du cercle, de la plus récente à la plus ancienne. */
+	List<Message> decisions(UUID cercle, Instant maintenant) {
+		return base.sql("SELECT " + COLONNES + """
+				 FROM message_cercle m LEFT JOIN appel_cercle a ON a.id = m.appel_id
+				WHERE m.cercle_id = :c AND m.type = 'decision' ORDER BY m.numero DESC LIMIT 30
+				""").param("c", cercle).param("limiteAppel", Timestamp.from(maintenant.minus(DUREE_APPEL)))
+			.query(SalonCercle::message).list();
+	}
+
 	/** Qui a déjà fait son point aujourd'hui (jour UTC, l'heure de Dakar et d'Abidjan). */
 	List<UUID> pointsDuJour(UUID cercle, Instant maintenant) {
 		return base.sql("""
@@ -108,6 +117,10 @@ class SalonCercle {
 
 	Message point(UUID cercle, UUID auteur, String fait, String prevu, String bloque, Instant maintenant) {
 		return inserer(cercle, auteur, "point", null, fait, prevu, bloque, null, null, null, null, maintenant);
+	}
+
+	Message decision(UUID cercle, UUID auteur, String texte, Instant maintenant) {
+		return inserer(cercle, auteur, "decision", texte, null, null, null, null, null, null, null, maintenant);
 	}
 
 	Message coupDeMain(UUID cercle, UUID auteur, String texte, Instant maintenant) {

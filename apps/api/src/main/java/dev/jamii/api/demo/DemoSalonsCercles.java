@@ -85,6 +85,8 @@ final class DemoSalonsCercles {
 				"Je n'ai pas les vrais formats de bordereau : Kofi, tu peux en demander un ?", heures(3));
 		coupDeMain(DAKAR, 8, MOUSSA, "L'APK ne s'installe pas sur les vieux Android 8. Une idée ?", heures(1), null, null);
 		texte(DAKAR, 9, AWA, "Appel demain 19 h pour la démo du tableau ? 🙌", Duration.ofMinutes(40));
+		inserer(DAKAR, 10, KOFI, "decision", "On garde Flutter pour l'appli des pesées : tout le cercle le connaît.", null, null, null, heures(68), null, null);
+		inserer(DAKAR, 11, AWA, "decision", "Démo intermédiaire jeudi à 19 h, livraison du tour le mardi suivant.", null, null, null, heures(20), null, null);
 	}
 
 	private void abidjan() {
