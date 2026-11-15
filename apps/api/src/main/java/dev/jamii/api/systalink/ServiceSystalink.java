@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 /** Les services Systalink que Jamii propose (énumération ServiceSystalink de contracts/systalink.yaml). */
 public enum ServiceSystalink {
 
-	DATACLOUD, ORION, YOKK, SYSTATALK, SYSTAFORMS, DOMAINES, SYSTAONE;
+	DATACLOUD, ORION, YOKK, SYSTATALK, SYSTAFORMS, DOMAINES, SYSTAONE, HEBERGEMENT, EMAIL;
 
 	/**
 	 * Le service d'une entrée du catalogue de l'orientation (services/ia/catalogue-systalink.yaml) : les trois offres
@@ -25,6 +25,8 @@ public enum ServiceSystalink {
 			case "orion" -> Optional.of(ORION);
 			case "nom-de-domaine" -> Optional.of(DOMAINES);
 			case "systaone" -> Optional.of(SYSTAONE);
+			case "boutique-en-ligne" -> Optional.of(HEBERGEMENT);
+			case "email-professionnel" -> Optional.of(EMAIL);
 			default -> Optional.empty();
 		};
 	}

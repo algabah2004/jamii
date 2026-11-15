@@ -27,7 +27,7 @@ const router = useRouter()
 
 const demande = ref<NouvelleDemande>({ titre: '', description: '', secteur: '', ville: '', offresSystalink: false })
 const duree = ref<number | 'inconnue'>('inconnue')
-const envoi = ref<'repos' | 'envoi' | 'erreur'>('repos')
+const envoi = ref<'repos' | 'envoi' | 'erreur' | 'quota'>('repos')
 const reponses = ref<Reponses>({})
 const NOMS: Record<Question, { question: string; libelle: string }> = {
   qui: { question: 'questionQui', libelle: 'libelleQui' },
@@ -61,6 +61,7 @@ async function envoyer() {
       description: composee.value,
       dureeSemaines: duree.value === 'inconnue' ? undefined : duree.value,
     })
+    if (creee === 'quota') return void (envoi.value = 'quota')
     if (!creee) return void (envoi.value = 'erreur')
     await router.push(`/demandes/${creee.id}`)
   } catch {
@@ -134,6 +135,7 @@ async function envoyer() {
           </span>
         </label>
         <p v-if="envoi === 'erreur'" role="alert" class="erreur">{{ t('demandes.nouvelle.erreur') }}</p>
+        <p v-else-if="envoi === 'quota'" role="alert" class="erreur" data-test="quota">{{ t('demandes.quota') }}</p>
         <div class="commandes">
           <JBouton type="submit" :desactive="!valide" :occupe="envoi === 'envoi'" data-test="envoyer">{{ t('demandes.nouvelle.envoyer') }}</JBouton>
           <span class="texte-discret">{{ t('demandes.nouvelle.rassurance') }}</span>

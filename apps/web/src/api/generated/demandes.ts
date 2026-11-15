@@ -46,6 +46,8 @@ export interface paths {
          * @description « Ce n'est pas tout à fait ça » : la personne écrit ce qui ne lui convient pas. L'analyse repart avec le besoin
          *     de départ **et** toutes les précisions (l'orientation repasse à `en_attente`). **5 précisions au plus** par
          *     demande (`409 trop_de_precisions` ensuite : décrire un nouveau besoin). Pour un autre utilisateur, `404`.
+         *     Une précision compte comme un conseil : au-delà de 6 conseils sur 24 heures (demandes et précisions), `429` avec
+         *     le code `quota_du_jour` (la limite de l'heure garde le code `trop_de_requetes`).
          */
         post: operations["preciserDemande"];
         delete?: never;
@@ -179,6 +181,8 @@ export interface components {
              *     l'orientation n'est pas terminée, ou si `developpeursNecessaires` vaut `false`. Seuls les profils publiés.
              */
             recommandations?: components["schemas"]["Recommandation"][];
+            /** @description Les conseils d'Ayo qu'il reste à l'auteur sur 24 heures glissantes (une nouvelle demande ou une précision chacun). À 0, `429 quota_du_jour`. */
+            conseilsRestants?: number;
             /** @description Ce que la personne a ajouté après avoir lu la réponse, dans l'ordre. Texte brut. */
             precisions?: {
                 texte: string;
@@ -367,6 +371,14 @@ export interface components {
              * @example agriculture
              */
             secteur: string;
+            /** @description Les prochaines étapes concrètes pour la personne, dans l'ordre (« Note tes 10 produits les plus vendus »). Vide dans le repli sans IA et hors sujet. */
+            etapes?: string[];
+            /** @description La question d'Ayo quand une information changerait son conseil, avec des réponses toutes prêtes. Absente si le besoin est clair ou déjà précisé ; la réponse part comme une précision de la demande. */
+            question?: null | {
+                texte: string;
+                suggestions: string[];
+            };
+            /** @description Le premier est le conseil principal d'Ayo. */
             services: components["schemas"]["ServiceSystalink"][];
             developpeursNecessaires: boolean;
             /** @description Les compétences à trouver chez les développeurs. Vide si `developpeursNecessaires` vaut `false`. */
@@ -513,6 +525,7 @@ export interface operations {
             401: components["responses"]["NonConnecte"];
             404: components["responses"]["Introuvable"];
             409: components["responses"]["Conflit"];
+            429: components["responses"]["TropDeRequetes"];
         };
     };
     choisirOffresSystalink: {

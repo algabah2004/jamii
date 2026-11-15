@@ -117,9 +117,14 @@ _INDICES = [
         "Stocker les documents en sécurité et les retrouver facilement.",
     ),
     (
-        ("équipe", "equipe", "messagerie", "e-mail", "email", "partage"),
-        "systaone",
-        "Partager les documents et communiquer au sein de l'équipe.",
+        ("boutique", "vendre en ligne", "panier", "e-commerce"),
+        "boutique-en-ligne",
+        "Tes clients choisissent et commandent eux-mêmes, même la nuit.",
+    ),
+    (
+        ("e-mail", "email", "adresse professionnelle", "messagerie"),
+        "email-professionnel",
+        "Une adresse à ton nom qui rassure tes clients.",
     ),
 ]
 _APPLICATION = (

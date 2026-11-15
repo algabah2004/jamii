@@ -118,8 +118,11 @@ async function envoyer(chemin: string, corps: unknown, methode: 'POST' | 'PUT' =
   return globalThis.fetch(adresse(chemin), { method: methode, credentials: 'same-origin', headers: entetes, body: JSON.stringify(corps) })
 }
 
-/** POST /api/demandes : 201 avec la demande, son plan en préparation. */
-export async function creerDemande(d: NouvelleDemande): Promise<Demande | null> {
+/**
+ * POST /api/demandes : 201 avec la demande, son plan en préparation. `quota` : les conseils du jour d'Ayo sont épuisés
+ * (429 `quota_du_jour`) ou trop de demandes dans l'heure (429 `trop_de_requetes`).
+ */
+export async function creerDemande(d: NouvelleDemande): Promise<Demande | 'quota' | null> {
   const secteur = d.secteur?.trim()
   const ville = d.ville?.trim()
   const reponse = await envoyer('/api/demandes', {
@@ -130,6 +133,7 @@ export async function creerDemande(d: NouvelleDemande): Promise<Demande | null> 
     ...(ville ? { ville } : {}),
     offresSystalink: d.offresSystalink === true,
   })
+  if (reponse.status === 429) return 'quota'
   return reponse.ok ? ((await reponse.json()) as Demande) : null
 }
 
@@ -196,8 +200,9 @@ export async function listerDemandes(): Promise<DemandeResumee[]> {
  * POST /api/demandes/{id}/precisions : « ce n'est pas tout à fait ça ». L'analyse repart avec le besoin complet.
  * `limite` : déjà 5 précisions, il faut décrire un nouveau besoin.
  */
-export async function preciserDemande(id: string, texte: string): Promise<Demande | 'limite' | null> {
+export async function preciserDemande(id: string, texte: string): Promise<Demande | 'limite' | 'quota' | null> {
   const reponse = await envoyer(`/api/demandes/${encodeURIComponent(id)}/precisions`, { texte: texte.trim() })
   if (reponse.status === 409) return 'limite'
+  if (reponse.status === 429) return 'quota'
   return reponse.ok ? ((await reponse.json()) as Demande) : null
 }

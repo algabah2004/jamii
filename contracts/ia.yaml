@@ -424,9 +424,24 @@ components:
           maxLength: 900
           description: 'Ce que l''assistant dit d''abord à la personne : il montre qu''il a compris sa situation et explique simplement ce qui peut l''arranger, avant les options. Absent dans le repli sans IA.'
         secteur: { type: string, maxLength: 60, examples: [juridique, commerce, sante, education, agriculture] }
+        etapes:
+          type: array
+          maxItems: 3
+          description: Les prochaines étapes concrètes pour la personne, dans l'ordre (« Note tes 10 produits les plus vendus »). Vide dans le repli sans IA et hors sujet.
+          items: { type: string, maxLength: 140 }
+        question:
+          description: La question d'Ayo quand une information changerait son conseil, avec des réponses toutes prêtes. Absente si le besoin est clair ou déjà précisé ; la réponse part comme une précision de la demande.
+          oneOf:
+            - type: 'null'
+            - type: object
+              required: [texte, suggestions]
+              properties:
+                texte: { type: string, maxLength: 200 }
+                suggestions: { type: array, maxItems: 3, items: { type: string, maxLength: 60 } }
         services:
           type: array
           maxItems: 4
+          description: Le premier est le conseil principal d'Ayo.
           items: { $ref: '#/components/schemas/ServiceSystalink' }
         developpeursNecessaires: { type: boolean }
         competences:
