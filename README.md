@@ -8,7 +8,9 @@ Projet présenté à la **Coupe d'Afrique des Développeurs (CADEV 2026)**, orga
 
 ## La démo en ligne
 
-**https://87-58-156-18.sslip.io**
+**https://jamii.dev**
+
+(adresse de secours : https://87-58-156-18.sslip.io)
 
 Hébergée sur un serveur cloud **DataCloud de Systalink**, en HTTPS. Chaque fusion dans `main` construit les images Docker (`ghcr.io`), et le serveur se met à jour tout seul ([docs/deploiement-datacloud.md](docs/deploiement-datacloud.md)).
 
