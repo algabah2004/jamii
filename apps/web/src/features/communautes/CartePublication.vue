@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import BoutonSignaler from './BoutonSignaler.vue'
 import PiecesJointes from '../../components/texte/PiecesJointes.vue'
 import TexteRiche from '../../components/texte/TexteRiche.vue'
 import LienPersonne from '../../components/LienPersonne.vue'
@@ -151,6 +152,7 @@ async function copierLien() {
           <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M8.5 11.5a3 3 0 0 0 4.2 0l2.8-2.8a3 3 0 0 0-4.2-4.2l-.9.9M11.5 8.5a3 3 0 0 0-4.2 0L4.5 11.3a3 3 0 0 0 4.2 4.2l.9-.9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
           <span role="status">{{ copie ? t('communautes.fil.lienCopie') : t('communautes.fil.copierLien') }}</span>
         </button>
+        <BoutonSignaler cible-type="publication" :cible-id="p.id" integre />
       </footer>
 
       <section v-if="ouvert" class="fil" :aria-label="t('communautes.reponses', { n: p.nombreReponses }, p.nombreReponses)" :data-test="`fil-${p.id}`">
@@ -170,9 +172,10 @@ async function copierLien() {
               </p>
               <TexteRiche class="reponse__texte" :texte="r.contenu" />
               <p v-if="r.valideePar" class="texte-discret reponse__validee">{{ t('communautes.fil.valideePar', { nom: r.valideePar.nom }) }}</p>
-              <div v-if="peutValider(r) || peutAccepter(r)" class="reponse__commandes">
+              <div v-if="peutValider(r) || peutAccepter(r) || !r.proposeeParIa" class="reponse__commandes">
                 <button v-if="peutValider(r)" type="button" class="petit" :data-test="`valider-${r.id}`" @click="agir('valider', r.id)">{{ t('communautes.fil.valider') }}</button>
                 <button v-if="peutAccepter(r)" type="button" class="petit" :data-test="`accepter-${r.id}`" @click="agir('accepter', r.id)">{{ t('communautes.fil.accepter') }}</button>
+                <BoutonSignaler v-if="!r.proposeeParIa" cible-type="reponse" :cible-id="r.id" integre />
               </div>
             </div>
           </li>
@@ -238,7 +241,7 @@ async function copierLien() {
 .pastille { padding: 1px 8px; border-radius: var(--radius-pill); font-size: 0.6875rem; font-weight: 700; }
 .pastille--acceptee { background: color-mix(in srgb, #23a55a 16%, transparent); color: #1a7f45; }
 .pastille--ia { background: var(--surface-raised); color: var(--ink-muted); }
-.reponse__commandes { display: flex; gap: var(--space-2); margin-top: 2px; }
+.reponse__commandes { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin-top: 2px; }
 .petit { min-height: 30px; padding: 0 var(--space-3); border-radius: var(--radius-pill); border: 1px solid var(--line-strong); background: transparent; color: var(--ink); font: inherit; font-size: 0.8125rem; font-weight: 600; cursor: pointer; }
 .petit:hover { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 .message { margin: 0; color: var(--action-ink); font-weight: 600; font-size: var(--type-body-sm-size); }
