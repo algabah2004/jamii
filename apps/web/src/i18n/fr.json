@@ -86,19 +86,6 @@
       "apercuProfil": "Profil prouvé"
     },
     "decrireBesoin": "J’ai un besoin pour mon entreprise",
-    "aussi": {
-      "titre": "Et aussi sur Jamii",
-      "cercles": {
-        "titre": "Les cercles",
-        "texte": "4 à 6 développeurs construisent, à tour de rôle, le projet de chacun. Systalink en est le garant.",
-        "lien": "Voir les cercles"
-      },
-      "besoin": {
-        "titre": "Tu as un besoin ?",
-        "texte": "Commerçant, cabinet, association : décris-le avec tes mots. Ayo te dit ce qui existe déjà, et qui peut faire le reste.",
-        "lien": "Décrire mon besoin"
-      }
-    },
     "sectionMissions": {
       "surtitre": "Freelance",
       "titre": "Les missions : embaucher un développeur, jalon par jalon",
@@ -209,33 +196,9 @@
         "texte": "Chaque prix peut avoir un montant, ou n'en avoir aucun : de la visibilité ou de l'hébergement, par exemple."
       }
     },
-    "sectionSystalink": {
-      "surtitre": "Le cloud Systalink",
-      "titre": "Jamii tourne sur Systalink, à Dakar",
-      "intro": "Jamii est hébergé sur DataCloud, le cloud de Systalink, dans sa région de Dakar. Et quand ton projet en a besoin, Jamii te propose le bon service Systalink, au bon moment.",
-      "moments": {
-        "enLigne": {
-          "titre": "Mettre un projet en ligne",
-          "texte": "Quand ton projet est prêt, Jamii te propose DataCloud pour le mettre en ligne. Une fois en ligne, il porte le badge « Hébergé sur Systalink » dans la vitrine."
-        },
-        "site": {
-          "titre": "Un site simple pour une PME",
-          "texte": "Si le besoin d'un commerçant tient dans un site simple, Jamii lui propose Orion, qui le génère avec l'IA, avant de chercher un développeur."
-        },
-        "outils": {
-          "titre": "Les outils du quotidien",
-          "texte": "Un nom de domaine, un e-mail professionnel, une salle de visio pour l'équipe : Jamii propose le service Systalink qui convient."
-        }
-      },
-      "promesse": {
-        "titre": "Recommandé, jamais imposé.",
-        "texte": "Tu n'as besoin d'aucun compte Systalink pour utiliser Jamii, et un projet hébergé ailleurs a aussi sa place dans la vitrine."
-      },
-      "voir": "Voir les projets hébergés sur Systalink"
-    },
     "faq": {
       "surtitre": "Questions fréquentes",
-      "titre": "Tout ce que tu peux faire sur Jamii",
+      "titre": "Les questions qu'on nous pose",
       "intro": "Les réponses aux questions qu'on nous pose le plus, sur chaque fonctionnalité.",
       "questions": {
         "quoi": {
@@ -290,6 +253,70 @@
         "titre": "J'ai un besoin",
         "texte": "Décris-le avec tes mots. L'assistant en fait un plan, et des développeurs peuvent y répondre.",
         "action": "Décrire mon besoin"
+      }
+    },
+    "fonctionnalites": {
+      "surtitre": "Fonctionnalités",
+      "titre": "Tout ce qu'il faut pour construire à plusieurs",
+      "intro": "Chaque partie de Jamii répond à un moment de la vie d'un projet : se présenter, trouver de l'aide, former une équipe, et montrer le résultat.",
+      "communautes": {
+        "titre": "Des communautés où l'on s'entraide",
+        "texte": "Rejoins une communauté ou crée la tienne. Pose ta question dans un salon, et marque la réponse qui t'a aidé pour qu'elle serve aux suivants.",
+        "points": [
+          "Salons de discussion",
+          "Questions et réponses",
+          "Réponse acceptée"
+        ],
+        "lien": "Voir les communautés"
+      },
+      "cercles": {
+        "titre": "Les cercles",
+        "texte": "4 à 6 développeurs construisent, à tour de rôle, le projet de chacun. À chaque tour, tout le cercle aide un membre à avancer.",
+        "points": [
+          "4 à 6 membres",
+          "Un tour par projet"
+        ],
+        "lien": "Voir les cercles"
+      },
+      "assistant": {
+        "titre": "Un assistant pour ton besoin",
+        "texte": "Décris ton besoin avec tes mots. L'assistant en fait un cahier des charges, des jalons et des tâches, et dit quels rôles il reste à trouver.",
+        "points": [
+          "Cahier des charges",
+          "Jalons et tâches",
+          "Rôles à trouver"
+        ],
+        "lien": "Décrire mon besoin"
+      },
+      "vitrine": {
+        "titre": "La vitrine des projets en ligne",
+        "texte": "Les projets que la communauté a mis en ligne, avec leur équipe. Jamii vérifie que chaque lien répond avant de le montrer.",
+        "points": [
+          "Lien vérifié",
+          "L'équipe et ses pays"
+        ],
+        "lien": "Voir la vitrine",
+        "enLigne": "En ligne"
+      },
+      "profil": {
+        "titre": "Un profil qui prouve",
+        "texte": "Pas de CV : ton profil montre tes dépôts, tes projets en ligne et l'avis de tes coéquipiers, sur une carte de compétences.",
+        "points": [
+          "Carte de compétences",
+          "Dépôts GitHub",
+          "Avis des coéquipiers"
+        ],
+        "lien": "Voir mon profil"
+      },
+      "messages": {
+        "titre": "Messages et notifications",
+        "texte": "Écris à un coéquipier, garde tes contacts, et sois prévenu de ce qui te concerne : une proposition, une invitation, une candidature.",
+        "points": [
+          "Messages",
+          "Contacts",
+          "Notifications"
+        ],
+        "lien": "Ouvrir mes messages"
       }
     }
   },

@@ -6,7 +6,7 @@ import { i18n } from '../../i18n'
 import { creerRouteur } from '../../router'
 import AccueilAppel from './AccueilAppel.vue'
 import AccueilFaq from './AccueilFaq.vue'
-import AccueilSystalink from './AccueilSystalink.vue'
+import AccueilFonctionnalites from './AccueilFonctionnalites.vue'
 
 async function monter(composant: Component, langue: 'fr' | 'en' = 'fr'): Promise<VueWrapper> {
   ;(i18n.global.locale as unknown as { value: string }).value = langue
@@ -14,18 +14,6 @@ async function monter(composant: Component, langue: 'fr' | 'en' = 'fr'): Promise
   await routeur.push('/')
   return mount(composant, { global: { plugins: [i18n, routeur] } })
 }
-
-describe('la section Systalink, sur l’accueil', () => {
-  it('montre les trois moments où Jamii propose un service, et dit que rien n’est imposé', async () => {
-    const s = await monter(AccueilSystalink)
-    expect(s.get('#section-systalink-titre').text()).toBe('Jamii tourne sur Systalink, à Dakar')
-    for (const [cle, service] of [['enLigne', 'DataCloud'], ['site', 'Orion'], ['outils', 'SystaTalk']] as const) {
-      expect(s.get(`[data-test="systalink-${cle}"]`).text()).toContain(service)
-    }
-    expect(s.get('[data-test="systalink-promesse"]').text()).toContain("Tu n'as besoin d'aucun compte Systalink")
-    expect(s.get('[data-test="systalink-vitrine"]').attributes('href')).toBe('/vitrine?hebergeur=datacloud')
-  })
-})
 
 describe('la foire aux questions', () => {
   it('pose neuf questions sur les fonctionnalités, fermées au départ', async () => {
@@ -45,7 +33,7 @@ describe('la foire aux questions', () => {
 
   it('existe aussi en anglais', async () => {
     const s = await monter(AccueilFaq, 'en')
-    expect(s.get('#faq-titre').text()).toBe('Everything you can do on Jamii')
+    expect(s.get('#faq-titre').text()).toBe('The questions we hear most')
   })
 })
 
@@ -56,5 +44,29 @@ describe('l’appel de fin de page', () => {
     expect(s.get('[data-test="appel-dev"]').text()).toContain('Se connecter')
     expect(s.get('[data-test="appel-besoin"]').attributes('href')).toBe('/besoin')
     expect(s.get('[data-test="appel-besoin"]').text()).toContain('Décrire mon besoin')
+  })
+})
+
+describe('la grille des fonctionnalités', () => {
+  it('présente six fonctionnalités, chacune avec ses points et son lien', async () => {
+    const s = await monter(AccueilFonctionnalites)
+    const liens = [
+      ['communautes', '/communautes'], ['cercles', '/cercles'], ['assistant', '/besoin'],
+      ['vitrine', '/vitrine'], ['profil', '/profil'], ['messages', '/messages'],
+    ] as const
+    for (const [cle, lien] of liens) {
+      const carte = s.get(`[data-test="fonction-${cle}"]`)
+      expect(carte.attributes('href')).toBe(lien)
+      expect(carte.findAll('.point').length).toBeGreaterThanOrEqual(2)
+      expect(carte.get('.fonction__apercu').attributes('aria-hidden')).toBe('true')
+    }
+    expect(s.get('[data-test="fonction-communautes"]').text()).toContain('Réponse acceptée')
+    expect(s.get('[data-test="fonction-assistant"]').text()).toContain('Cahier des charges')
+  })
+
+  it('ne parle pas de Systalink, et existe en anglais', async () => {
+    const s = await monter(AccueilFonctionnalites, 'en')
+    expect(s.text()).not.toContain('Systalink')
+    expect(s.get('#fonctions-titre').text()).toBe('Everything you need to build together')
   })
 })

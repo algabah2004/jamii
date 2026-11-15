@@ -86,19 +86,6 @@
       "apercuProfil": "Proven profile"
     },
     "decrireBesoin": "I have a need for my business",
-    "aussi": {
-      "titre": "Also on Jamii",
-      "cercles": {
-        "titre": "Circles",
-        "texte": "4 to 6 developers take turns building each member’s project. Systalink backs the circle.",
-        "lien": "See circles"
-      },
-      "besoin": {
-        "titre": "Have a need?",
-        "texte": "Shop, firm, association: describe it in your own words. Ayo tells you what already exists, and who can build the rest.",
-        "lien": "Describe my need"
-      }
-    },
     "sectionMissions": {
       "surtitre": "Freelance",
       "titre": "Missions: hire a developer, milestone by milestone",
@@ -209,33 +196,9 @@
         "texte": "Each prize can have an amount, or none at all: visibility or hosting, for example."
       }
     },
-    "sectionSystalink": {
-      "surtitre": "The Systalink cloud",
-      "titre": "Jamii runs on Systalink, in Dakar",
-      "intro": "Jamii is hosted on DataCloud, the Systalink cloud, in its Dakar region. And when your project needs it, Jamii suggests the right Systalink service at the right time.",
-      "moments": {
-        "enLigne": {
-          "titre": "Put a project online",
-          "texte": "When your project is ready, Jamii suggests DataCloud to put it online. Once online, it carries the “Hosted on Systalink” badge in the showcase."
-        },
-        "site": {
-          "titre": "A simple site for a small business",
-          "texte": "If a shop's need fits in a simple site, Jamii suggests Orion, which generates it with AI, before looking for a developer."
-        },
-        "outils": {
-          "titre": "Everyday tools",
-          "texte": "A domain name, a professional e-mail, a video room for the team: Jamii suggests the Systalink service that fits."
-        }
-      },
-      "promesse": {
-        "titre": "Recommended, never required.",
-        "texte": "You don't need a Systalink account to use Jamii, and a project hosted elsewhere also has its place in the showcase."
-      },
-      "voir": "See projects hosted on Systalink"
-    },
     "faq": {
       "surtitre": "Frequently asked questions",
-      "titre": "Everything you can do on Jamii",
+      "titre": "The questions we hear most",
       "intro": "Answers to the questions we hear most, feature by feature.",
       "questions": {
         "quoi": {
@@ -290,6 +253,70 @@
         "titre": "I have a need",
         "texte": "Describe it in your own words. The assistant turns it into a plan, and developers can answer it.",
         "action": "Describe my need"
+      }
+    },
+    "fonctionnalites": {
+      "surtitre": "Features",
+      "titre": "Everything you need to build together",
+      "intro": "Each part of Jamii answers a moment in a project's life: introduce yourself, find help, form a team, and show the result.",
+      "communautes": {
+        "titre": "Communities that help each other",
+        "texte": "Join a community or create your own. Ask your question in a room, and mark the answer that helped you so it serves the next person.",
+        "points": [
+          "Discussion rooms",
+          "Questions and answers",
+          "Accepted answer"
+        ],
+        "lien": "See communities"
+      },
+      "cercles": {
+        "titre": "Circles",
+        "texte": "4 to 6 developers take turns building each member's project. At each turn, the whole circle helps one member move forward.",
+        "points": [
+          "4 to 6 members",
+          "One turn per project"
+        ],
+        "lien": "See circles"
+      },
+      "assistant": {
+        "titre": "An assistant for your need",
+        "texte": "Describe your need in your own words. The assistant turns it into a specification, milestones and tasks, and says which roles are still missing.",
+        "points": [
+          "Specification",
+          "Milestones and tasks",
+          "Roles to find"
+        ],
+        "lien": "Describe my need"
+      },
+      "vitrine": {
+        "titre": "The showcase of live projects",
+        "texte": "The projects the community has put online, with their team. Jamii checks that each link responds before showing it.",
+        "points": [
+          "Verified link",
+          "The team and its countries"
+        ],
+        "lien": "See the showcase",
+        "enLigne": "Online"
+      },
+      "profil": {
+        "titre": "A profile that proves",
+        "texte": "No CV: your profile shows your repositories, your live projects and your teammates' reviews, on a skills map.",
+        "points": [
+          "Skills map",
+          "GitHub repositories",
+          "Teammates' reviews"
+        ],
+        "lien": "See my profile"
+      },
+      "messages": {
+        "titre": "Messages and notifications",
+        "texte": "Write to a teammate, keep your contacts, and get notified of what concerns you: a proposal, an invitation, an application.",
+        "points": [
+          "Messages",
+          "Contacts",
+          "Notifications"
+        ],
+        "lien": "Open my messages"
       }
     }
   },
