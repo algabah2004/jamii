@@ -17,6 +17,11 @@ const { envoi, message, agir } = useAction((m) => emit('maj', m))
 
 const peut = (nom: string) => (props.mission.moi.actions as string[]).includes(nom)
 const statut = computed(() => props.jalon.statut)
+/** L'acceptation automatique n'est annoncée que si elle est encore à venir, et hors désaccord. */
+const acceptationAVenir = computed(() => {
+  const le = props.jalon.acceptationAutomatiqueLe
+  return statut.value === 'livre' && Boolean(le) && !props.mission.travail?.desaccord && Date.parse(le!) > Date.now()
+})
 const retouchesRestantes = computed(() => props.mission.travail?.retouchesRestantes ?? 0)
 
 const peutLivrer = computed(() => peut('livrer') && statut.value === 'en_cours')
@@ -65,7 +70,7 @@ async function retoucher() {
     </dl>
     <p v-if="jalon.description" class="description">{{ jalon.description }}</p>
 
-    <p v-if="statut === 'livre' && jalon.acceptationAutomatiqueLe" class="note" data-test="acceptation-automatique">
+    <p v-if="acceptationAVenir" class="note" data-test="acceptation-automatique">
       {{ t('missions.suivi.acceptationAutomatique', { date: date(jalon.acceptationAutomatiqueLe) }) }}
     </p>
     <p v-if="statut === 'accepte' && jalon.accepteLe" class="texte-discret" data-test="accepte-le">

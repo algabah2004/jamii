@@ -62,7 +62,7 @@ const score = (n: number) => new Intl.NumberFormat(locale.value, { minimumFracti
           </p>
           <a :href="l.rendu.lienProduit" target="_blank" rel="noopener noreferrer nofollow">{{ t('hackathons.resultats.voir', { titre: l.rendu.titre }) }}</a>
           <details v-if="l.retourDuJury.length" class="retours">
-            <summary>{{ t('hackathons.resultats.retours') }} ({{ l.retourDuJury.length }})</summary>
+            <summary>{{ t('hackathons.resultats.retours', { n: l.retourDuJury.length }) }}</summary>
             <!-- Texte libre des jurés : affiché échappé, avec ses retours à la ligne. -->
             <ul>
               <li v-for="(r, i) in l.retourDuJury" :key="i" class="texte">{{ r }}</li>

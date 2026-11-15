@@ -1413,7 +1413,7 @@
       "classement": "Le classement",
       "rang": "{rang}er | {rang}e",
       "voir": "Voir {titre}",
-      "retours": "Les retours du jury :",
+      "retours": "Les retours du jury ({n})",
       "exAequo": "ex aequo",
       "score": "{score} / 5"
     },
@@ -1517,7 +1517,7 @@
     "aucuneMiennes": "Tu n'as encore aucune mission.",
     "budgetADiscuter": "Budget à discuter",
     "par": "Par {nom}",
-    "propositions": "{n} proposition | {n} propositions",
+    "propositions": "{n} proposition | {n} proposition | {n} propositions",
     "aDistance": "À distance",
     "indisponible": "Les missions ne sont pas disponibles pour le moment. Réessaie dans un instant.",
     "plus": "Voir plus de missions",
@@ -1811,12 +1811,13 @@
       "ecrire": "Écrire à {nom}",
       "envoyer": "Envoyer",
       "ecrireClient": "Écrire au client",
-      "prudence": "Gardez vos échanges et vos paiements sur Jamii : en cas de désaccord, c'est ce qui compte.",
+      "prudence": "Gardez vos échanges sur Jamii, et déclarez-y vos paiements : en cas de désaccord, c'est ce qui compte.",
       "erreurs": {
         "trop": "Trop de messages d'un coup. Réessaie dans un moment.",
         "autre": "Le message n'est pas parti. Réessaie."
       },
-      "fermer": "Fermer les échanges"
+      "fermer": "Fermer les échanges",
+      "vide": "Pas encore de message avec {nom}."
     }
   },
   "themes": {
