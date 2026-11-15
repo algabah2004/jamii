@@ -86,7 +86,7 @@ class CreationCommunautesTest {
 		JsonNode salons = corps(mvc.get().uri("/api/communautes/{s}/salons", slug).with(oauth2Login().oauth2User(awa)).exchange())
 			.get("elements");
 		assertThat(salons).hasSize(3);
-		assertThat(salons.get(0).get("appelUrl").asString()).startsWith("https://appels.example/jamii-" + slug + "-general-");
+		assertThat(salons.get(0).get("appel").isNull()).as("pas d'appel tant que personne n'en lance").isTrue();
 	}
 
 	@Test
@@ -136,7 +136,7 @@ class CreationCommunautesTest {
 		MvcTestResult cree = post(awa, "/api/communautes/{s}/salons", "{\"nom\":\"# Offres d'emploi\",\"sujet\":\"Les offres d'emploi de la région.\"}", slug);
 		assertThat(cree).hasStatus(HttpStatus.CREATED);
 		assertThat(corps(cree).get("slug").asString()).isEqualTo("offres-d-emploi");
-		assertThat(corps(cree).get("appelUrl").asString()).startsWith("https://appels.example/jamii-" + slug + "-offres-d-emploi-");
+		assertThat(corps(cree).get("appel").isNull()).isTrue();
 
 		MvcTestResult double_ = post(awa, "/api/communautes/{s}/salons", "{\"nom\":\"Offres d emploi\",\"sujet\":\"Encore les offres.\"}", slug);
 		assertThat(double_).hasStatus(HttpStatus.CONFLICT);
@@ -145,6 +145,39 @@ class CreationCommunautesTest {
 		JsonNode salons = corps(mvc.get().uri("/api/communautes/{s}/salons", slug).with(oauth2Login().oauth2User(kofi)).exchange()).get("elements");
 		assertThat(salons).hasSize(4);
 		assertThat(salons.get(3).get("slug").asString()).as("le nouveau salon vient après les autres").isEqualTo("offres-d-emploi");
+	}
+
+	@Test
+	void un_moderateur_supprime_un_salon_et_ses_messages_mais_jamais_general() throws Exception {
+		UtilisateurConnecte awa = utilisateur("Awa");
+		UtilisateurConnecte kofi = utilisateur("Kofi");
+		String slug = corps(creer(awa, unique("Suppression"))).get("slug").asString();
+		mvc.post().uri("/api/communautes/{s}/adhesion", slug).with(csrf()).with(oauth2Login().oauth2User(kofi)).exchange();
+		post(awa, "/api/communautes/{s}/salons/projets/messages", "{\"texte\":\"Un message\"}", slug);
+
+		MvcTestResult refuse = mvc.delete().uri("/api/communautes/{s}/salons/projets", slug).with(csrf())
+			.with(oauth2Login().oauth2User(kofi)).exchange();
+		assertThat(refuse).hasStatus(HttpStatus.FORBIDDEN);
+		assertThat(corps(refuse).get("code").asString()).isEqualTo("pas_moderateur");
+
+		MvcTestResult general = mvc.delete().uri("/api/communautes/{s}/salons/general", slug).with(csrf())
+			.with(oauth2Login().oauth2User(awa)).exchange();
+		assertThat(general).hasStatus(HttpStatus.CONFLICT);
+		assertThat(corps(general).get("code").asString()).isEqualTo("salon_protege");
+
+		assertThat(mvc.delete().uri("/api/communautes/{s}/salons/projets", slug).with(oauth2Login().oauth2User(awa)).exchange())
+			.as("sans jeton CSRF").hasStatus(HttpStatus.FORBIDDEN);
+		assertThat(mvc.delete().uri("/api/communautes/{s}/salons/projets", slug).with(csrf()).with(oauth2Login().oauth2User(awa)).exchange())
+			.hasStatus(HttpStatus.NO_CONTENT);
+		assertThat(mvc.delete().uri("/api/communautes/{s}/salons/projets", slug).with(csrf()).with(oauth2Login().oauth2User(awa)).exchange())
+			.as("déjà supprimé").hasStatus(HttpStatus.NOT_FOUND);
+
+		JsonNode salons = corps(mvc.get().uri("/api/communautes/{s}/salons", slug).with(oauth2Login().oauth2User(kofi)).exchange()).get("elements");
+		assertThat(salons).hasSize(2);
+		assertThat(base.sql("""
+				SELECT count(*) FROM message_salon m JOIN salon s ON s.id = m.salon_id JOIN communaute c ON c.id = s.communaute_id
+				WHERE c.slug = :s
+				""").param("s", slug).query(Long.class).single()).as("les messages partent avec le salon").isZero();
 	}
 
 	@Test

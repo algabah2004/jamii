@@ -56,7 +56,8 @@ const minuterie = setInterval(() => {
 }, 20_000)
 onBeforeUnmount(() => clearInterval(minuterie))
 
-const appel = computed(() => salons.value.find((s) => s.appelUrl))
+/** Un appel en cours dans un salon de la communauté (v0.7) : on le montre, avec « Rejoindre » pour un membre. */
+const appel = computed(() => salons.value.find((s) => s.appel))
 </script>
 
 <template>
@@ -74,9 +75,9 @@ const appel = computed(() => salons.value.find((s) => s.appelUrl))
         </RouterLink>
       </li>
     </ul>
-    <a v-if="appel?.appelUrl" :href="appel.appelUrl" target="_blank" rel="noopener noreferrer" class="appel">
+    <a v-if="appel?.appel?.url" :href="appel.appel.url" target="_blank" rel="noopener noreferrer" class="appel" data-test="appel-en-direct">
       <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M6.6 3.5 8.4 7a1 1 0 0 1-.2 1.1L7 9.3a10 10 0 0 0 3.7 3.7l1.2-1.2a1 1 0 0 1 1.1-.2l3.5 1.8a1 1 0 0 1 .5 1.2l-.6 1.9a2 2 0 0 1-2.2 1.4C8.9 17.2 2.8 11.1 2.1 5.8A2 2 0 0 1 3.5 3.6l1.9-.6a1 1 0 0 1 1.2.5Z" fill="currentColor" /></svg>
-      {{ t('communautes.direct.appel', { salon: appel.nom }) }}<span class="visuellement-cache"> {{ t('communautes.salons.nouvelOnglet') }}</span>
+      {{ t('communautes.appels.enDirect', { salon: appel.nom, nom: appel.appel.lancePar?.nom.split(' ')[0] ?? '…' }) }}<span class="visuellement-cache"> {{ t('communautes.salons.nouvelOnglet') }}</span>
     </a>
   </section>
 

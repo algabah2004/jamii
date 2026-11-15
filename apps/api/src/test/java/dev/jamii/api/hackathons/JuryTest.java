@@ -168,6 +168,23 @@ class JuryTest {
 	}
 
 	@Test
+	void un_jure_retrouve_ses_notes_et_lui_seul() throws Exception {
+		Scene s = scene();
+		evaluation(s);
+		assertThat(corpsDe(lire("/api/hackathons/" + s.hackathon() + "/mes-notes", s.jo())).size()).isZero();
+		assertThat(noter(s, s.renduMoussa(), s.jo(), 5, 3, 1, "Très utile")).hasStatus(HttpStatus.OK);
+		assertThat(noter(s, s.renduMoussa(), s.ami(), 1, 1, 1, null)).hasStatus(HttpStatus.OK);
+
+		JsonNode miennes = corpsDe(lire("/api/hackathons/" + s.hackathon() + "/mes-notes", s.jo()));
+		assertThat(miennes.size()).isEqualTo(1);
+		assertThat(miennes.at("/0/renduId").asString()).isEqualTo(s.renduMoussa());
+		assertThat(miennes.at("/0/notes").size()).isEqualTo(3);
+		assertThat(miennes.at("/0/commentaire").asString()).isEqualTo("Très utile");
+		assertThat(miennes.at("/0/scorePondere").decimalValue()).isEqualByComparingTo("3.60");
+		assertThat(lire("/api/hackathons/" + s.hackathon() + "/mes-notes", s.awa())).hasStatus(HttpStatus.FORBIDDEN);
+	}
+
+	@Test
 	void un_jure_ne_note_pas_son_equipe_et_ne_voit_pas_son_rendu() throws Exception {
 		Scene s = scene();
 		evaluation(s);

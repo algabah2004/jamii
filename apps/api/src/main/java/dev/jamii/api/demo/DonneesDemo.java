@@ -105,6 +105,7 @@ class DonneesDemo implements ApplicationRunner {
 		});
 		// Les communautés se complètent à chaque démarrage (ON CONFLICT DO NOTHING) : une base déjà chargée reçoit ce qui manque.
 		transaction.executeWithoutResult(statut -> new DemoCommunautes(base, maintenant).charger());
+		transaction.executeWithoutResult(statut -> new DemoAnnonces(base, maintenant).completer());
 		journal.info(Boolean.TRUE.equals(charge) ? "Données de démo chargées (profil demo)" : "Données de démo déjà présentes");
 		return Boolean.TRUE.equals(charge);
 	}

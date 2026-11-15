@@ -127,6 +127,7 @@ class DonneesDemoTest {
 		long taches = compter("SELECT count(*) FROM tache");
 		long messages = compter("SELECT count(*) FROM message_salon");
 		long publications = compter("SELECT count(*) FROM publication");
+		long propositions = compter("SELECT count(*) FROM proposition");
 
 		assertThat(demo.charger(Instant.now())).isFalse();
 
@@ -135,6 +136,7 @@ class DonneesDemoTest {
 		assertThat(compter("SELECT count(*) FROM tache")).isEqualTo(taches);
 		assertThat(compter("SELECT count(*) FROM message_salon")).as("les communautés se complètent sans doublon").isEqualTo(messages);
 		assertThat(compter("SELECT count(*) FROM publication")).isEqualTo(publications);
+		assertThat(compter("SELECT count(*) FROM proposition")).as("les annonces se complètent sans doublon").isEqualTo(propositions);
 	}
 
 	@Test
@@ -194,6 +196,20 @@ class DonneesDemoTest {
 		assertThat(reponse).bodyJson().extractingPath("$.travail.devis.jalons[0].statut").isEqualTo("accepte");
 		assertThat(reponse).bodyJson().extractingPath("$.travail.devis.jalons[1].statut").isEqualTo("livre");
 		assertThat(reponse).bodyJson().extractingPath("$.travail.devis.jalons[2].statut").isEqualTo("en_cours");
+	}
+
+	@Test
+	void les_listes_publiques_montrent_des_missions_ouvertes_et_un_hackathon_ou_s_inscrire() {
+		var missions = mvc.get().uri("/api/missions");
+		assertThat(missions).hasStatusOk();
+		assertThat(missions).bodyJson().extractingPath("$.elements.length()").asNumber()
+			.satisfies(n -> assertThat(n.intValue()).isGreaterThanOrEqualTo(3));
+		assertThat(compter("SELECT count(*) FROM proposition WHERE mission_id = '" + DonneesDemo.id("mission:rendez-vous-sante") + "'"))
+			.as("des propositions à comparer").isEqualTo(2);
+
+		var hackathon = mvc.get().uri("/api/hackathons/" + DemoAnnonces.HACKATHON_OUVERT);
+		assertThat(hackathon).hasStatusOk();
+		assertThat(hackathon).bodyJson().extractingPath("$.statut").isEqualTo("publie");
 	}
 
 	@Test

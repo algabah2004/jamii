@@ -469,7 +469,7 @@
       "projets": "Projets"
     },
     "chercher": "Chercher dans le fil",
-    "quoiDeNeuf": "Quoi de neuf, {prenom} ? Une question, une idée…",
+    "quoiDeNeuf": "Quoi de neuf, {prenom} ?",
     "rienTrouve": "Rien ne correspond à ta recherche.",
     "ouvrir": "Ouvrir",
     "liste": {
@@ -508,7 +508,38 @@
       "creer": "Créer la communauté",
       "apercu": "Aperçu",
       "nomExemple": "Ta communauté",
-      "descriptionExemple": "Sa description apparaîtra ici."
+      "descriptionExemple": "Sa description apparaîtra ici.",
+      "etape": "Étape {n} sur {total}",
+      "q": {
+        "nom": "Comment s'appelle ta communauté ?",
+        "nomAide": "Un nom court et parlant. Il donne aussi son adresse et ses couleurs.",
+        "theme": "De quoi va-t-elle parler ?",
+        "themeAide": "Choisis le sujet principal. Il décide des étiquettes de sa bannière.",
+        "description": "À quoi sert {nom} ?",
+        "descriptionAide": "En une ou deux phrases : pour qui, et pour faire quoi. C'est ce que liront celles et ceux qui hésitent à la rejoindre.",
+        "apercu": "Tout est prêt. On la lance ?"
+      },
+      "adresse": "Son adresse :",
+      "inspirations": "Pour t'inspirer :",
+      "commencer": "Pour commencer :",
+      "debuts": {
+        "debut1": "Un espace pour s'entraider entre développeurs qui ",
+        "debut2": "Ici, on partage nos projets et on cherche des coéquipiers pour ",
+        "debut3": "Pour celles et ceux qui veulent apprendre ensemble à "
+      },
+      "succes": "{nom} est en ligne !",
+      "succesAide": "Tu en es le modérateur. Ses trois salons t'attendent, invite tes premiers membres.",
+      "entrer": "Entrer dans #général",
+      "retour": "Retour",
+      "suivant": "Continuer",
+      "entree": "Entrée pour continuer",
+      "themeAVenir": "Thème à choisir",
+      "etapes": {
+        "nom": "Le nom",
+        "theme": "Le thème",
+        "description": "À quoi elle sert",
+        "apercu": "L'aperçu"
+      }
     },
     "nouveauSalon": {
       "titre": "Créer un salon",
@@ -525,6 +556,43 @@
       "creer": "Créer le salon",
       "exemple": "nouveau-salon",
       "sujetExemple": "Le sujet du salon apparaîtra ici."
+    },
+    "supprimerSalon": {
+      "bouton": "Supprimer le salon",
+      "titre": "Supprimer #{salon} ?",
+      "texte": "Le salon est vide : il sera supprimé pour tout le monde. C'est définitif. | Le salon et son message seront supprimés pour tout le monde. C'est définitif. | Le salon et ses {n} messages seront supprimés pour tout le monde. C'est définitif.",
+      "confirmer": "Supprimer le salon"
+    },
+    "fil": {
+      "voirPlus": "Voir plus",
+      "voirMoins": "Voir moins",
+      "iaPrepare": "L'IA prépare une réponse…",
+      "iaPropose": "L'IA a proposé une réponse, à vérifier par un membre.",
+      "repondre": "Répondre",
+      "copierLien": "Copier le lien",
+      "lienCopie": "Lien copié",
+      "ia": "Proposition de l'IA",
+      "acceptee": "Réponse acceptée",
+      "aVerifier": "À vérifier",
+      "valideePar": "Validée par {nom}",
+      "valider": "Je confirme cette réponse",
+      "accepter": "Accepter cette réponse",
+      "tonRepondre": "Écris ta réponse…",
+      "raccourci": "Ctrl + Entrée pour envoyer",
+      "minimum": "10 caractères au moins",
+      "pagePublication": "Ouvrir la publication seule",
+      "questionIa": "Question (l'IA propose une réponse)",
+      "encore": "Encore {n} caractère | Encore {n} caractères"
+    },
+    "appels": {
+      "lancer": "Lancer un appel",
+      "rejoindre": "Rejoindre",
+      "terminer": "Terminer l'appel",
+      "enCours": "Appel lancé par {nom}, {quand}",
+      "annonce": "a lancé un appel",
+      "termine": "Appel terminé",
+      "enDirect": "{nom} est en appel dans #{salon}, rejoindre",
+      "trop": "Tu as lancé beaucoup d'appels : réessaie dans un moment."
     }
   },
   "question": {
@@ -1027,7 +1095,8 @@
       "publie": "À venir",
       "en_cours": "En cours",
       "evaluation": "En évaluation",
-      "resultats": "Résultats"
+      "resultats": "Résultats",
+      "miens": "Les miens"
     },
     "aucun": "Aucun hackathon pour le moment.",
     "indisponible": "Les hackathons ne sont pas disponibles pour le moment. Réessaie dans un instant.",
@@ -1090,7 +1159,6 @@
       "devise": "Devise",
       "ajouterPrix": "Ajouter un prix",
       "enregistrer": "Enregistrer le brouillon",
-      "provisoire": "Écran provisoire : son design sera repris avec le design system.",
       "invalide": {
         "titre": "Le nom doit faire entre 3 et 120 caractères.",
         "theme": "Le thème doit faire entre 2 et 120 caractères.",
@@ -1126,7 +1194,14 @@
       "confirmerAnnulation": "Confirmer l'annulation",
       "brouillon": "Brouillon : personne d'autre ne voit ce hackathon pour le moment.",
       "introuvable": "Ce hackathon n'existe pas, ou tu n'as pas le droit de le voir.",
-      "provisoire": "Écran provisoire : son design sera repris avec le design system.",
+      "defi": "Le défi",
+      "part": "{n} % de la note",
+      "resume": "En bref",
+      "prochaine": "Prochaine étape",
+      "participer": "Participer",
+      "seConnecter": "Se connecter pour participer",
+      "inscrit": "Tu participes à ce hackathon.",
+      "inscritsTitre": "Inscrits",
       "erreurs": {
         "modification_concurrente": "Le hackathon a changé entre-temps. Recharge la page.",
         "etat_invalide": "Cette action n'est plus possible pour ce hackathon.",
@@ -1232,7 +1307,10 @@
         "etat_invalide": "On ne peut plus ajouter de juré à ce hackathon.",
         "validation": "Ce profil n'existe pas, ou c'est le tien : l'organisateur ne fait pas partie du jury.",
         "autre": "L'invitation n'a pas abouti. Réessaie dans un instant."
-      }
+      },
+      "parmiContacts": "Choisir parmi mes contacts",
+      "choisirContact": "Choisis une personne",
+      "ouProfil": "Ou colle le lien de son profil, si ce n'est pas encore un contact."
     },
     "notation": {
       "titre": "Noter les projets",
@@ -1255,7 +1333,10 @@
         "conflit_interets": "Tu ne peux pas noter le projet de ta propre équipe.",
         "validation": "Chaque critère doit avoir une note de 1 à 5.",
         "autre": "Les notes n'ont pas pu être enregistrées. Réessaie dans un instant."
-      }
+      },
+      "progression": "{n} projet noté sur {total} | {n} projet noté sur {total} | {n} projets notés sur {total}",
+      "avant": "Tu peux noter et modifier tes notes jusqu'aux résultats, le {date}.",
+      "note": "Noté"
     },
     "confirmation": {
       "titre": "Confirmer les gagnants",
@@ -1285,7 +1366,9 @@
       "classement": "Le classement",
       "rang": "{rang}er | {rang}e",
       "voir": "Voir {titre}",
-      "retours": "Les retours du jury :"
+      "retours": "Les retours du jury :",
+      "exAequo": "ex aequo",
+      "score": "{score} / 5"
     },
     "tri": {
       "titre": "Les candidatures",
@@ -1307,6 +1390,50 @@
       "erreurs": {
         "etat_invalide": "Les candidatures ne peuvent plus changer pour ce hackathon.",
         "autre": "La réponse n'a pas été enregistrée. Réessaie dans un instant."
+      }
+    },
+    "aucunMiens": "Tu n'organises aucun hackathon, et tu n'es ni inscrit ni juré pour le moment.",
+    "pilotage": {
+      "titre": "Ton tableau de bord",
+      "equipes": "Équipes",
+      "seuls": "Sans équipe",
+      "jures": "Jurés",
+      "notation": "Notes données",
+      "rienAFaire": "Rien ne t'attend pour le moment.",
+      "alertes": {
+        "aucunJure": "Aucun juré : invite ton jury avant la fin des rendus.",
+        "candidatures": "Aucune candidature n'attend ta réponse. | Une candidature attend ta réponse. | {n} candidatures attendent ta réponse.",
+        "seuls": "Personne ne cherche d'équipe. | Une personne cherche encore une équipe. | {n} personnes cherchent encore une équipe.",
+        "notation": "Toutes les notes sont données. | Il manque une note du jury. | Il manque {n} notes du jury."
+      }
+    },
+    "discussion": {
+      "titre": "Annonces et échanges",
+      "aller": "Annonces et questions",
+      "indisponible": "La discussion ne répond pas pour le moment.",
+      "annonces": "Annonces de l'organisation",
+      "nouvelle": "Nouvelle annonce à tous les participants",
+      "exemple": "Ex. : le dépôt des rendus ouvre demain à 9 h. Pensez à vérifier que votre lien répond.",
+      "aideAnnonce": "Visible par tous, même sans compte.",
+      "publier": "Publier l'annonce",
+      "retirer": "Retirer",
+      "aucuneAnnonce": "Aucune annonce pour le moment.",
+      "toutes": "Voir les {n} annonces",
+      "moins": "Voir moins",
+      "espace": "Questions et échanges",
+      "aideEspace": "Pose ta question à l'organisation et aux autres participants, ou discute dans les salons. La meilleure réponse est mise en avant.",
+      "questionsOuvertes": "Questions qui attendent une réponse",
+      "reponses": "aucune réponse | une réponse | {n} réponses",
+      "poser": "Poser une question",
+      "salons": "Ouvrir les salons",
+      "connexion": "Il faut un compte Jamii pour poser une question ou écrire dans un salon.",
+      "aideOuvrir": "Ouvre un espace d'échange : une communauté dédiée au hackathon, avec des salons et des questions-réponses. Tu en es modératrice ou modérateur.",
+      "ouvrir": "Ouvrir l'espace d'échange",
+      "pasEncore": "L'organisation n'a pas encore ouvert d'espace d'échange.",
+      "erreurs": {
+        "etat_invalide": "Ce hackathon est annulé : on ne publie plus d'annonce.",
+        "trop_de_requetes": "Trop d'envois d'un coup. Réessaie dans un moment.",
+        "autre": "Ça n'a pas marché. Réessaie dans un moment."
       }
     }
   },
@@ -1354,7 +1481,6 @@
       "invitation": "Seulement les développeurs que j'invite",
       "ville": "Ta ville (facultatif)",
       "creer": "Enregistrer le brouillon",
-      "provisoire": "Écran provisoire : son design sera repris avec le design system.",
       "invalide": {
         "titre": "Le titre doit faire entre 3 et 120 caractères.",
         "besoin": "La description doit faire au moins 20 caractères.",
@@ -1380,14 +1506,27 @@
       "fermerAide": "Plus personne ne pourra proposer ses services.",
       "invite": "Tu es invité à proposer tes services pour cette mission.",
       "brouillon": "Brouillon : personne d'autre ne voit cette mission pour le moment.",
-      "provisoire": "Écran provisoire : son design sera repris avec le design system.",
+      "resume": "En bref",
+      "proposer": "Proposer mes services",
+      "seConnecter": "Se connecter pour proposer mes services",
+      "propositionsTitre": "Propositions reçues",
+      "etapes": "Où en est la mission",
+      "etape": {
+        "publiee": "Publiée",
+        "attribuee": "Développeur choisi",
+        "en_cours": "En cours",
+        "terminee": "Terminée"
+      },
       "introuvable": "Cette mission n'existe pas, ou tu n'as pas le droit de la voir.",
       "erreurs": {
         "modification_concurrente": "La mission a changé entre-temps. Recharge la page.",
         "etat_invalide": "Cette action n'est plus possible pour cette mission.",
         "limite_atteinte": "Tu as déjà publié 5 missions aujourd'hui. Réessaie demain.",
         "autre": "L'action n'a pas abouti. Réessaie dans un instant."
-      }
+      },
+      "candidatEnAttente": "Tu as proposé tes services : le client n'a pas encore choisi.",
+      "candidatRetenu": "Ta proposition est retenue : envoie ton devis au client.",
+      "voirMaProposition": "Voir ma proposition"
     },
     "suivi": {
       "titre": "Le travail",
@@ -1548,7 +1687,15 @@
         "validation": "Un champ n'est pas valide. Vérifie ce que tu as écrit.",
         "modification_concurrente": "La mission a changé entre-temps. Recharge la page.",
         "autre": "L'action n'a pas abouti. Réessaie dans un instant."
-      }
+      },
+      "trier": "Trier les propositions",
+      "tris": {
+        "recentes": "Les plus récentes",
+        "prix": "Prix le plus bas",
+        "delai": "Délai le plus court"
+      },
+      "auDessus": "Au-dessus du budget",
+      "ecrire": "Écrire"
     },
     "devis": {
       "titre": "Envoyer mon devis",
@@ -1580,6 +1727,29 @@
         "interdit": "Tu n'as pas le droit de faire cette action.",
         "autre": "L'action n'a pas abouti. Réessaie dans un instant."
       }
+    },
+    "aFaire": "À toi de jouer",
+    "echanges": {
+      "titre": "Échanges",
+      "titreAvec": "Échanges avec {nom}",
+      "toutVoir": "Toute la conversation dans Messages",
+      "choisir": "Pour échanger avec un développeur, clique sur « Écrire » dans sa proposition.",
+      "indisponible": "Les messages ne répondent pas pour le moment.",
+      "videClient": "Pas encore de message avec {nom}. Pose tes questions avant de choisir : délais, étapes, ce qui est compris.",
+      "videDeveloppeur": "Une question sur la mission ? Écris au client, avant ou après avoir proposé tes services.",
+      "fil": "Messages échangés",
+      "ecrire": "Écrire à {nom}",
+      "envoyer": "Envoyer",
+      "ecrireClient": "Écrire au client",
+      "prudence": "Gardez vos échanges et vos paiements sur Jamii : en cas de désaccord, c'est ce qui compte.",
+      "erreurs": {
+        "trop": "Trop de messages d'un coup. Réessaie dans un moment.",
+        "autre": "Le message n'est pas parti. Réessaie."
+      }
     }
+  },
+  "themes": {
+    "passerClair": "Passer au thème clair",
+    "passerSombre": "Passer au thème sombre"
   }
 }

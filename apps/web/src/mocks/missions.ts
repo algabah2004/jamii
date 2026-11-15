@@ -174,8 +174,14 @@ export function modifierMission(id: string, changer: (m: Mission) => void) {
   if (mission) changer(mission)
 }
 
-function resume({ id, titre, statut, competences, budget, ville, pays, aDistance, client, nombrePropositions, publieeLe }: Mission): MissionResume {
-  return { id, titre, statut, competences, budget, ville, pays, aDistance, client, nombrePropositions, publieeLe }
+const URGENTES = ['retenir', 'accepter_devis', 'demarrer', 'accepter_jalon', 'declarer_paye', 'envoyer_devis', 'livrer', 'declarer_recu', 'trancher', 'donner_avis']
+
+function resume(
+  { id, titre, statut, competences, budget, ville, pays, aDistance, client, nombrePropositions, publieeLe, moi }: Mission,
+  miennes = false,
+): MissionResume {
+  const aFaire = miennes && moi.actions.some((a) => URGENTES.includes(a))
+  return { id, titre, statut, competences, budget, ville, pays, aDistance, client, nombrePropositions, publieeLe, aFaire }
 }
 
 export const handlersMissions = [
@@ -184,7 +190,7 @@ export const handlersMissions = [
     const liste = [...missions.values()].filter((m) =>
       vue === 'miennes' ? m.client.id === AWA.id : m.visibilite === 'publique' && m.statut === 'publiee',
     )
-    return HttpResponse.json({ elements: liste.map(resume), curseurSuivant: null })
+    return HttpResponse.json({ elements: liste.map((m) => resume(m, vue === 'miennes')), curseurSuivant: null })
   }),
 
   http.post('/api/missions', async ({ request }) => {
@@ -380,7 +386,7 @@ export const handlersMissions = [
     if (mission.statut !== 'publiee' || choisie.statut !== 'envoyee') return erreur(409, 'etat_invalide')
     for (const p of liste) if (p.statut === 'retenue') p.statut = 'envoyee'
     choisie.statut = 'retenue'
-    mission.version += 1
+    // Comme l'API : retenir change la proposition, pas la mission (sa version reste la même).
     return HttpResponse.json(mission)
   }),
 

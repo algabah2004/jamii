@@ -10,12 +10,27 @@ import { formaterMontant, listerPropositions, retenirProposition, retirerProposi
  * retient une ; la sienne seulement pour un développeur, qui peut la retirer tant que la mission n'est pas attribuée.
  */
 const props = defineProps<{ mission: Mission }>()
-const emit = defineEmits<{ maj: [mission: Mission]; recharger: [] }>()
+const emit = defineEmits<{ maj: [mission: Mission]; recharger: []; ecrire: [personne: Proposition['developpeur']] }>()
 const { t, locale } = useI18n()
 
 const propositions = ref<Proposition[]>([])
 const etat = ref<'chargement' | 'pret' | 'indisponible'>('chargement')
 const envoi = ref<string | null>(null)
+const tri = ref<'recentes' | 'prix' | 'delai'>('recentes')
+const TRIS = ['recentes', 'prix', 'delai'] as const
+
+/** Le client compare : par prix ou par délai ; les propositions retirées ou écartées passent après. */
+const triees = computed(() => {
+  const actives = (p: Proposition) => (p.statut === 'retiree' || p.statut === 'non_retenue' ? 1 : 0)
+  const cle = (p: Proposition) => (tri.value === 'prix' ? p.prix.centimes : tri.value === 'delai' ? p.delaiJours : -Date.parse(p.envoyeeLe))
+  return [...propositions.value].sort((a, b) => actives(a) - actives(b) || cle(a) - cle(b))
+})
+
+/** Au-dessus du budget annoncé (même devise seulement) : un repère pour le client, pas un refus. */
+function auDessus(p: Proposition) {
+  const b = props.mission.budget
+  return estClient.value && b !== null && b.devise === p.prix.devise && p.prix.centimes > b.centimes
+}
 const code = ref<string | null>(null)
 
 const estClient = computed(() => props.mission.moi.role === 'client')
@@ -45,8 +60,11 @@ async function agir(p: Proposition, retenir: boolean) {
   try {
     if (retenir) {
       const r = await retenirProposition(props.mission.id, p.id, props.mission.version)
-      if (r.ok) emit('maj', r.valeur)
-      else code.value = r.code ?? 'autre'
+      // L'API ne change pas la version de la mission en retenant une proposition : on relit la liste nous-mêmes.
+      if (r.ok) {
+        emit('maj', r.valeur)
+        await charger()
+      } else code.value = r.code ?? 'autre'
     } else {
       const r = await retirerProposition(props.mission.id, p.id)
       if (r.ok) emit('recharger')
@@ -66,20 +84,33 @@ async function agir(p: Proposition, retenir: boolean) {
     <JSquelette v-if="etat === 'chargement'" :nombre="2" />
     <p v-else-if="etat === 'indisponible'" role="alert" class="texte-discret">{{ t('missions.proposition.indisponible') }}</p>
     <p v-else-if="!propositions.length" class="texte-discret" data-test="aucune-proposition">{{ t('missions.proposition.aucune') }}</p>
-    <ul v-else class="liste">
-      <li v-for="p in propositions" :key="p.id" :data-statut="p.statut" data-test="proposition">
+    <div v-if="estClient && propositions.length > 1" class="tris" role="group" :aria-label="t('missions.proposition.trier')">
+      <button v-for="x in TRIS" :key="x" type="button" class="tri" :aria-pressed="tri === x" :data-test="`tri-${x}`" @click="tri = x">
+        {{ t(`missions.proposition.tris.${x}`) }}
+      </button>
+    </div>
+    <ul v-if="etat === 'pret' && propositions.length" class="liste">
+      <li v-for="p in triees" :key="p.id" :data-statut="p.statut" data-test="proposition">
         <header class="tete">
-          <span class="personne"><JAvatar :nom="p.developpeur.nom" :url="p.developpeur.avatarUrl" :taille="28" /> {{ p.developpeur.nom }}</span>
+          <span class="personne">
+            <JAvatar :nom="p.developpeur.nom" :url="p.developpeur.avatarUrl" :taille="28" />
+            <RouterLink v-if="estClient" :to="`/p/${p.developpeur.id}`" data-test="profil-developpeur">{{ p.developpeur.nom }}</RouterLink>
+            <template v-else>{{ p.developpeur.nom }}</template>
+          </span>
           <span class="etiquette" data-test="statut-proposition">{{ t(`missions.proposition.statuts.${p.statut}`) }}</span>
         </header>
         <p class="faits">
-          <strong>{{ formaterMontant(p.prix, locale) }}</strong> ·
+          <strong>{{ formaterMontant(p.prix, locale) }}</strong>
+          <span v-if="auDessus(p)" class="au-dessus" data-test="au-dessus">{{ t('missions.proposition.auDessus') }}</span> ·
           {{ t('missions.proposition.delai', { n: p.delaiJours }, p.delaiJours) }} ·
           <span class="texte-discret">{{ t('missions.proposition.envoyeeLe', { date: formaterDate(p.envoyeeLe, locale) }) }}</span>
         </p>
         <!-- Texte libre du développeur : affiché échappé, avec ses retours à la ligne. -->
         <p class="message">{{ p.message }}</p>
         <div class="actions">
+          <JBouton v-if="estClient" variante="discret" data-test="ecrire-developpeur" @click="emit('ecrire', p.developpeur)">
+            {{ t('missions.proposition.ecrire', { nom: p.developpeur.nom }) }}
+          </JBouton>
           <JBouton v-if="peutRetenir && p.statut === 'envoyee'" variante="secondaire" :occupe="envoi === p.id" data-test="retenir" @click="agir(p, true)">
             {{ t('missions.proposition.retenir') }}
           </JBouton>
@@ -115,6 +146,11 @@ async function agir(p: Proposition, retenir: boolean) {
 .etiquette { margin: 0; }
 .liste p { margin: 0; }
 .message { white-space: pre-line; }
+.tris { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.tri { min-height: 36px; padding: 0 var(--space-3); border: 1px solid var(--line-strong); border-radius: var(--radius-pill); background: var(--surface); font-weight: 600; cursor: pointer; }
+.tri[aria-pressed='true'] { background: var(--action); border-color: var(--action); color: var(--on-action); }
+.tri:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.au-dessus { margin-inline-start: var(--space-2); padding: 0 var(--space-2); border-radius: var(--radius-pill); border: 1px solid var(--cantaloupe); font-size: var(--type-body-sm-size); font-weight: 700; }
 .actions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
 .texte-discret { margin: 0; }
 .erreur { margin: 0; color: var(--danger); font-weight: 600; }

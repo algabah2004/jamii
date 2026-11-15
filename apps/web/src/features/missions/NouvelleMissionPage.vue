@@ -115,7 +115,6 @@ async function creer() {
       <div>
         <JBouton type="submit" :desactive="!valide" :occupe="envoi === 'envoi'" data-test="creer">{{ t('missions.nouvelle.creer') }}</JBouton>
       </div>
-      <p class="texte-discret provisoire" data-test="provisoire">{{ t('missions.nouvelle.provisoire') }}</p>
     </form>
   </section>
 </template>
@@ -131,5 +130,4 @@ async function creer() {
 .devise select, .date input { min-height: 44px; padding: 0 var(--space-3); border: 1px solid var(--line-strong); border-radius: var(--radius-md); background: var(--surface); color: inherit; font: inherit; }
 .choix label { display: flex; gap: var(--space-3); align-items: center; font-weight: 400; }
 .erreur { margin: 0; color: var(--danger); font-weight: 600; }
-.provisoire { margin: 0; font-size: var(--type-body-sm-size); }
 </style>

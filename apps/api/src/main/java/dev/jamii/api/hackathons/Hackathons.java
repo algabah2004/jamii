@@ -185,6 +185,35 @@ class Hackathons {
 	}
 
 	/**
+	 * Les hackathons d'une personne : ceux qu'elle organise (brouillons et annulés compris), ceux dont elle est jurée et
+	 * ceux où elle est inscrite. Le plus récent d'abord, pour retrouver vite celui qu'on vient de créer.
+	 */
+	@Transactional(readOnly = true)
+	Page listerMiens(UUID moi, int limite, String curseur) {
+		var requete = new StringBuilder("SELECT " + COLONNES + " FROM hackathon WHERE " + """
+				(organisateur_id = :moi
+					OR (statut_base <> 'brouillon' AND (
+						EXISTS (SELECT 1 FROM jure j WHERE j.hackathon_id = hackathon.id AND j.utilisateur_id = :moi)
+						OR EXISTS (SELECT 1 FROM inscription i WHERE i.hackathon_id = hackathon.id AND i.utilisateur_id = :moi))))""");
+		Curseur c = curseur == null ? null : Curseur.lire(curseur);
+		if (c != null) {
+			requete.append(" AND (debut_le, id) < (:t, :cid)");
+		}
+		requete.append(" ORDER BY debut_le DESC, id DESC LIMIT :n");
+		var q = base.sql(requete.toString()).param("n", limite + 1).param("moi", moi);
+		if (c != null) {
+			q = q.param("t", Timestamp.from(c.debutLe())).param("cid", c.id());
+		}
+		List<Hackathon> lus = new ArrayList<>(q.query(Hackathons::hackathon).list());
+		String suivant = null;
+		if (lus.size() > limite) {
+			lus = new ArrayList<>(lus.subList(0, limite));
+			suivant = new Curseur(lus.getLast().calendrier().debutLe(), lus.getLast().id()).texte();
+		}
+		return new Page(lus, suivant);
+	}
+
+	/**
 	 * Modifier le hackathon (merge-patch), tant qu'il est en brouillon ou publié et pas commencé. Une fois publié, les
 	 * critères ne changent plus : des équipes peuvent déjà s'y être inscrites.
 	 */

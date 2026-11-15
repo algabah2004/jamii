@@ -178,6 +178,40 @@ class Jury {
 		return new NotesDuJure(renduId, notes, commentaire, score(notes, poids));
 	}
 
+	/**
+	 * Les notes déjà données par ce juré, rendu par rendu : il retrouve ses notes et voit ce qu'il lui reste à noter
+	 * après avoir quitté la page. Réservé aux jurés de ce hackathon.
+	 */
+	@Transactional(readOnly = true)
+	List<NotesDuJure> mesNotes(UUID hackathonId, UUID moi) {
+		Hackathons.Hackathon h = hackathons.charger(hackathonId, false);
+		Hackathons.Lecture l = hackathons.role(h, moi).orElseThrow(ErreurHackathons::introuvable);
+		if (!"jure".equals(l.role())) {
+			throw ErreurHackathons.interdit();
+		}
+		Map<UUID, List<Note>> parRendu = new LinkedHashMap<>();
+		base.sql("""
+				SELECT n.rendu_id, n.critere_id, n.valeur FROM note n JOIN rendu r ON r.id = n.rendu_id
+				WHERE r.hackathon_id = :h AND n.utilisateur_id = :u ORDER BY n.rendu_id
+				""")
+			.param("h", hackathonId).param("u", moi)
+			.query((rs, i) -> parRendu.computeIfAbsent(rs.getObject("rendu_id", UUID.class), k -> new ArrayList<>())
+				.add(new Note(rs.getObject("critere_id", UUID.class), rs.getInt("valeur"))))
+			.list();
+		Map<UUID, String> commentaires = new HashMap<>();
+		base.sql("""
+				SELECT a.rendu_id, a.commentaire FROM appreciation a JOIN rendu r ON r.id = a.rendu_id
+				WHERE r.hackathon_id = :h AND a.utilisateur_id = :u
+				""")
+			.param("h", hackathonId).param("u", moi)
+			.query((rs, i) -> commentaires.put(rs.getObject("rendu_id", UUID.class), rs.getString("commentaire")))
+			.list();
+		Map<UUID, Integer> poids = poids(h);
+		return parRendu.entrySet().stream()
+			.map(e -> new NotesDuJure(e.getKey(), e.getValue(), commentaires.get(e.getKey()), score(e.getValue(), poids)))
+			.toList();
+	}
+
 	// ---------------------------------------------------------------- score et classement
 
 	/** Le score d'un juré : Σ(valeur × poids) / Σ poids, à deux décimales. */

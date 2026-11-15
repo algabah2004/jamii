@@ -106,6 +106,48 @@ class HackathonsTest {
 		return corpsDe(r);
 	}
 
+	// ---------------------------------------------------------------- la discussion
+
+	@Test
+	void l_organisateur_annonce_et_lie_une_communaute_que_tous_voient() throws Exception {
+		UtilisateurConnecte awa = utilisateur("awa");
+		UtilisateurConnecte kofi = utilisateur("kofi");
+		JsonNode brouillon = brouillon(awa, 10);
+		String b = brouillon.get("id").asString();
+		// Un brouillon reste caché, discussion comprise.
+		assertThat(lire("/api/hackathons/" + b + "/discussion", kofi)).hasStatus(HttpStatus.NOT_FOUND);
+
+		String id = publie(awa, 10).get("id").asString();
+		String annonces = "/api/hackathons/" + id + "/annonces";
+		assertThat(action(annonces, "{\"texte\":\"Je veux annoncer\"}", kofi)).hasStatus(HttpStatus.FORBIDDEN);
+		assertThat(action(annonces, "{\"texte\":\"   \"}", awa)).hasStatus(HttpStatus.BAD_REQUEST);
+		MvcTestResult cree = action(annonces, "{\"texte\":\"Le dépôt des rendus ouvre demain à 9 h.\"}", awa);
+		assertThat(cree).hasStatus(HttpStatus.CREATED);
+		assertThat(corpsDe(cree).at("/auteur/nom").asString()).isEqualTo("awa");
+
+		MvcTestResult lien = mvc.put().uri("/api/hackathons/" + id + "/communaute").contentType(MediaType.APPLICATION_JSON)
+			.content("{\"communaute\":\"dakar-cloud-hack\"}").with(csrf()).with(oauth2Login().oauth2User(awa)).exchange();
+		assertThat(lien).hasStatus(HttpStatus.NO_CONTENT);
+		MvcTestResult mauvais = mvc.put().uri("/api/hackathons/" + id + "/communaute").contentType(MediaType.APPLICATION_JSON)
+			.content("{\"communaute\":\"../admin\"}").with(csrf()).with(oauth2Login().oauth2User(awa)).exchange();
+		assertThat(mauvais).hasStatus(HttpStatus.BAD_REQUEST);
+		MvcTestResult intrus = mvc.put().uri("/api/hackathons/" + id + "/communaute").contentType(MediaType.APPLICATION_JSON)
+			.content("{\"communaute\":\"autre\"}").with(csrf()).with(oauth2Login().oauth2User(kofi)).exchange();
+		assertThat(intrus).hasStatus(HttpStatus.FORBIDDEN);
+
+		// Un visiteur sans connexion lit les annonces et le lien de la communauté.
+		JsonNode vue = corpsDe(lire("/api/hackathons/" + id + "/discussion", null));
+		assertThat(vue.get("communaute").asString()).isEqualTo("dakar-cloud-hack");
+		assertThat(vue.get("annonces")).hasSize(1);
+		assertThat(vue.at("/annonces/0/texte").asString()).isEqualTo("Le dépôt des rendus ouvre demain à 9 h.");
+		assertThat(vue.toString()).doesNotContain("@secret.example");
+
+		String annonce = corpsDe(cree).get("id").asString();
+		MvcTestResult retiree = mvc.delete().uri(annonces + "/" + annonce).with(csrf()).with(oauth2Login().oauth2User(awa)).exchange();
+		assertThat(retiree).hasStatus(HttpStatus.NO_CONTENT);
+		assertThat(corpsDe(lire("/api/hackathons/" + id + "/discussion", kofi)).get("annonces")).isEmpty();
+	}
+
 	// ---------------------------------------------------------------- créer et publier
 
 	@Test
@@ -337,6 +379,23 @@ class HackathonsTest {
 		String elements = corpsDe(lire("/api/hackathons?limite=100", null)).get("elements").toString();
 		assertThat(elements).contains(ouvert).doesNotContain(brouillon);
 		assertThat(elements).doesNotContain(aAnnuler.get("id").asString());
+	}
+
+	@Test
+	void les_miens_montrent_ce_que_j_organise_brouillons_compris_et_ce_ou_je_suis_inscrit() throws Exception {
+		UtilisateurConnecte awa = utilisateur("awa");
+		UtilisateurConnecte kofi = utilisateur("kofi");
+		String ouvert = publie(awa, 10).get("id").asString();
+		String brouillon = brouillon(awa, 10).get("id").asString();
+		String autre = publie(utilisateur("yann"), 10).get("id").asString();
+		assertThat(action("/api/hackathons/" + ouvert + "/inscriptions", "{}", kofi)).hasStatus(HttpStatus.CREATED);
+
+		assertThat(corpsDe(lire("/api/hackathons?vue=miens", awa)).get("elements").toString())
+			.contains(ouvert, brouillon).doesNotContain(autre);
+		assertThat(corpsDe(lire("/api/hackathons?vue=miens", kofi)).get("elements").toString())
+			.contains(ouvert).doesNotContain(brouillon).doesNotContain(autre);
+		assertThat(lire("/api/hackathons?vue=miens", null)).hasStatus(HttpStatus.UNAUTHORIZED);
+		assertThat(lire("/api/hackathons?vue=autre", awa)).hasStatus(HttpStatus.BAD_REQUEST);
 	}
 
 	@Test

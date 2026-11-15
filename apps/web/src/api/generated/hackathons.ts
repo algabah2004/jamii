@@ -14,6 +14,7 @@ export interface paths {
         /**
          * Les hackathons publiés, le plus proche d'abord
          * @description `statut` filtre sur le statut calculé (`publie`, `en_cours`, `evaluation`, `resultats`). Les brouillons et les hackathons annulés n'y sont jamais.
+         *     `vue=miens` (connexion requise, `statut` ignoré) : ceux que j'organise, brouillons et annulés compris, et, hors brouillon, ceux dont je suis juré ou où je suis inscrit. Le plus récent d'abord.
          */
         get: operations["listerHackathons"];
         put?: never;
@@ -266,6 +267,114 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hackathons/{hackathonId}/discussion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                hackathonId: components["parameters"]["HackathonId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Les annonces du hackathon (50 dernières) et la communauté liée
+         * @description Public comme le hackathon (`404` pour un brouillon qui n'est pas le mien).
+         */
+        get: operations["lireDiscussion"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hackathons/{hackathonId}/annonces": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                hackathonId: components["parameters"]["HackathonId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Publier une annonce à tous (organisateur)
+         * @description Pas sur un hackathon annulé (`409` `etat_invalide`). Au plus 10 annonces par heure (`429`).
+         */
+        post: operations["annoncer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hackathons/{hackathonId}/annonces/{annonceId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                hackathonId: components["parameters"]["HackathonId"];
+                annonceId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Retirer une annonce (organisateur). Idempotent. */
+        delete: operations["retirerAnnonce"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hackathons/{hackathonId}/communaute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                hackathonId: components["parameters"]["HackathonId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Lier une communauté au hackathon, ou la délier avec `null` (organisateur)
+         * @description Le front crée d'abord la communauté (`POST /api/communautes`, l'organisateur en devient modérateur), puis la lie. On peut aussi lier une communauté existante. Seul le format du nom court est vérifié (`400` `format`).
+         */
+        put: operations["lierCommunaute"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hackathons/{hackathonId}/mes-notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                hackathonId: components["parameters"]["HackathonId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Les notes que j'ai déjà données (juré), rendu par rendu
+         * @description Pour retrouver ses notes et voir ce qu'il reste à noter après avoir quitté la page. Réservé aux jurés (`403`).
+         */
+        get: operations["lireMesNotes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hackathons/{hackathonId}/rendus/{renduId}/notes": {
         parameters: {
             query?: never;
@@ -362,6 +471,20 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        Annonce: {
+            /** Format: uuid */
+            id: string;
+            auteur: components["schemas"]["PersonneResume"];
+            texte: string;
+            /** Format: date-time */
+            publieeLe: string;
+        };
+        Discussion: {
+            /** @description Nom court de la communauté liée */
+            communaute: string | null;
+            /** @description La plus récente d'abord. */
+            annonces: components["schemas"]["Annonce"][];
+        };
         Montant: {
             /**
              * Format: int64
@@ -619,7 +742,10 @@ export interface components {
                 equipe: components["schemas"]["Equipe"];
             }[];
             classement: {
+                /** @description Deux rendus au même score ont le même rang (ex aequo). */
                 rang: number;
+                /** @description Sur 5 : la moyenne des scores pondérés de ses jurés, à deux décimales. */
+                scorePondere: number;
                 equipe: components["schemas"]["Equipe"];
                 rendu: components["schemas"]["Rendu"];
                 /** @description Les commentaires des jurés, sans leur nom. */
@@ -733,6 +859,16 @@ export interface components {
                 "application/problem+json": components["schemas"]["Erreur"];
             };
         };
+        /** @description Limite atteinte (`code` = `trop_de_requetes`). */
+        TropDeRequetes: {
+            headers: {
+                "Retry-After": components["headers"]["RetryAfter"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Erreur"];
+            };
+        };
     };
     parameters: {
         HackathonId: string;
@@ -751,7 +887,10 @@ export interface components {
             };
         };
     };
-    headers: never;
+    headers: {
+        /** @description Nombre de secondes à attendre avant de réessayer. */
+        RetryAfter: number;
+    };
     pathItems: never;
 }
 export type $defs = Record<string, never>;
@@ -759,6 +898,7 @@ export interface operations {
     listerHackathons: {
         parameters: {
             query?: {
+                vue?: "miens";
                 /** @description Valeur opaque reçue dans `curseurSuivant`. Absent pour la première page. */
                 curseur?: components["parameters"]["Curseur"];
                 limite?: components["parameters"]["Limite"];
@@ -780,6 +920,7 @@ export interface operations {
                 };
             };
             400: components["responses"]["Invalide"];
+            401: components["responses"]["NonConnecte"];
         };
     };
     creerHackathon: {
@@ -1291,6 +1432,143 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PageRendus"];
+                };
+            };
+            401: components["responses"]["NonConnecte"];
+            403: components["responses"]["Interdit"];
+            404: components["responses"]["Introuvable"];
+        };
+    };
+    lireDiscussion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                hackathonId: components["parameters"]["HackathonId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description La discussion. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Discussion"];
+                };
+            };
+            404: components["responses"]["Introuvable"];
+        };
+    };
+    annoncer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                hackathonId: components["parameters"]["HackathonId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description Texte brut */
+                    texte: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Publiée. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Annonce"];
+                };
+            };
+            400: components["responses"]["Invalide"];
+            401: components["responses"]["NonConnecte"];
+            403: components["responses"]["Interdit"];
+            404: components["responses"]["Introuvable"];
+            409: components["responses"]["Conflit"];
+            429: components["responses"]["TropDeRequetes"];
+        };
+    };
+    retirerAnnonce: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                hackathonId: components["parameters"]["HackathonId"];
+                annonceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Retirée. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["NonConnecte"];
+            403: components["responses"]["Interdit"];
+            404: components["responses"]["Introuvable"];
+        };
+    };
+    lierCommunaute: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                hackathonId: components["parameters"]["HackathonId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    communaute: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Liée (ou déliée). */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Invalide"];
+            401: components["responses"]["NonConnecte"];
+            403: components["responses"]["Interdit"];
+            404: components["responses"]["Introuvable"];
+        };
+    };
+    lireMesNotes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                hackathonId: components["parameters"]["HackathonId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Une entrée par rendu déjà noté. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotesDuJure"][];
                 };
             };
             401: components["responses"]["NonConnecte"];

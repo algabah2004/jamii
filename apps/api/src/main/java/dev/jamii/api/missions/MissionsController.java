@@ -68,7 +68,8 @@ class MissionsController {
 		Map<UUID, Compte> clients = vues.comptes(page.elements().stream().map(Missions.Mission::clientId).distinct().toList());
 		Map<UUID, Integer> nombres = missions.nombresDePropositions(page.elements().stream().map(Missions.Mission::id).toList());
 		return new PageMissions(page.elements().stream()
-			.map(m -> vues.resume(m, clients.get(m.clientId()), nombres.getOrDefault(m.id(), 0))).toList(), page.curseurSuivant());
+			.map(m -> vues.resume(m, clients.get(m.clientId()), nombres.getOrDefault(m.id(), 0), miennes && vues.aFaire(m.id(), moi.id())))
+			.toList(), page.curseurSuivant());
 	}
 
 	@PostMapping

@@ -91,7 +91,7 @@ final class DemoCommunautes {
 				new Message(YANN, "Merci Kofi, je regarde ça ce soir.", 25 * 60 + 45),
 				new Message(FATOU, "Petit rappel : l'atelier Flutter de l'antenne de Dakar a lieu samedi à 10 h.", 95),
 				new Message(NIA, "Je le suivrai à distance depuis Nairobi si quelqu'un lance l'appel du salon.", 80),
-				new Message(FATOU, "Oui, je l'ouvre ici même, bouton « Rejoindre l'appel » en haut.", 78),
+				new Message(FATOU, "Oui, je lancerai l'appel ici à 10 h : vous le verrez en haut du salon.", 78),
 				new Message(AWA, "Je serai là aussi. On montre la carte de compétences à la fin ?", 20)));
 		salon("flutter", "entraide", List.of(
 				new Message(NIA, "Quelqu'un a déjà gardé des commandes hors ligne avec Flutter ? Mes clients à Nakuru perdent le réseau.", 42),

@@ -70,15 +70,23 @@ class HackathonsController {
 	}
 
 	@GetMapping
-	PageHackathons lister(@RequestParam(required = false) String statut, @RequestParam(defaultValue = "20") int limite,
+	PageHackathons lister(@AuthenticationPrincipal UtilisateurConnecte moi, @RequestParam(required = false) String vue,
+			@RequestParam(required = false) String statut, @RequestParam(defaultValue = "20") int limite,
 			@RequestParam(required = false) String curseur) {
+		boolean miens = "miens".equals(vue);
+		if (vue != null && !miens) {
+			throw ErreurHackathons.validation("vue", "valeur_inconnue");
+		}
+		if (miens && moi == null) {
+			throw ErreurHackathons.nonConnecte();
+		}
 		if (statut != null && !STATUTS.contains(statut)) {
 			throw ErreurHackathons.validation("statut", "valeur_inconnue");
 		}
 		if (limite < 1 || limite > 100) {
 			throw ErreurHackathons.validation("limite", "hors_limites");
 		}
-		Hackathons.Page page = hackathons.lister(statut, limite, curseur);
+		Hackathons.Page page = miens ? hackathons.listerMiens(moi.id(), limite, curseur) : hackathons.lister(statut, limite, curseur);
 		Map<UUID, Compte> organisateurs = annuaire.lire(page.elements().stream().map(Hackathons.Hackathon::organisateurId).distinct().toList());
 		Instant maintenant = hackathons.maintenant();
 		Map<UUID, Integer> nombres = hackathons.nombresInscrits(page.elements().stream().map(Hackathons.Hackathon::id).toList());

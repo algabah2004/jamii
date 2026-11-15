@@ -1,5 +1,6 @@
 package dev.jamii.api.hackathons;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +31,8 @@ class ResultatsController {
 	record GagnantVue(Hackathons.Prix prix, InscriptionsController.EquipeVue equipe) {
 	}
 
-	record LigneVue(int rang, InscriptionsController.EquipeVue equipe, RendusController.RenduVue rendu, List<String> retourDuJury) {
+	record LigneVue(int rang, InscriptionsController.EquipeVue equipe, RendusController.RenduVue rendu, BigDecimal scorePondere,
+			List<String> retourDuJury) {
 	}
 
 	record ResultatsVue(Instant publieLe, List<GagnantVue> gagnants, List<LigneVue> classement) {
@@ -89,7 +91,8 @@ class ResultatsController {
 		return new ResultatsVue(p.publieLe(),
 				p.gagnants().stream().map(g -> new GagnantVue(prix.get(g.prixId()), equipes.get(g.equipeId()))).toList(),
 				p.classement().stream()
-					.map(l -> new LigneVue(l.rang(), equipes.get(l.equipeId()), RendusController.vue(parRendu.get(l.renduId())), l.retourDuJury()))
+					.map(l -> new LigneVue(l.rang(), equipes.get(l.equipeId()), RendusController.vue(parRendu.get(l.renduId())), l.scorePondere(),
+							l.retourDuJury()))
 					.toList());
 	}
 

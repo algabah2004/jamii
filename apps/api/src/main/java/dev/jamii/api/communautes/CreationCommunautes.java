@@ -20,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -157,7 +158,31 @@ class CreationCommunautes {
 			.query(Integer.class).single();
 		Salons.Salon salon = ajouterSalon(c, slug, court, nom.toLowerCase(Locale.ROOT), sujet, ordre);
 		return ResponseEntity.status(HttpStatus.CREATED)
-			.body(new SalonsController.Salon(salon.id(), salon.slug(), salon.nom(), salon.sujet(), appels + "/" + salon.salleAppel()));
+			.body(new SalonsController.Salon(salon.id(), salon.slug(), salon.nom(), salon.sujet(), null));
+	}
+
+	/** Supprimer un salon : modérateurs seulement, et jamais # général. Ses messages partent avec lui (ON DELETE CASCADE). */
+	@DeleteMapping("/api/communautes/{slug}/salons/{salon}")
+	@Transactional
+	ResponseEntity<?> supprimerSalon(@PathVariable String slug, @PathVariable String salon,
+			@AuthenticationPrincipal UtilisateurConnecte moi) {
+		var fiche = communautes.lire(slug, moi.id(), Instant.now());
+		if (fiche.isEmpty()) {
+			return Problemes.introuvable();
+		}
+		boolean existe = base.sql("SELECT EXISTS (SELECT 1 FROM salon WHERE communaute_id = :c AND slug = :s)")
+			.param("c", fiche.get().id()).param("s", salon).query(Boolean.class).single();
+		if (!existe) {
+			return Problemes.introuvable();
+		}
+		if (!fiche.get().moderateur()) {
+			return Problemes.interdit("pas_moderateur", "Seuls les modérateurs suppriment des salons");
+		}
+		if ("general".equals(salon)) {
+			return Problemes.conflit("salon_protege", "# général ne se supprime pas : c'est là qu'on arrive dans la communauté");
+		}
+		base.sql("DELETE FROM salon WHERE communaute_id = :c AND slug = :s").param("c", fiche.get().id()).param("s", salon).update();
+		return ResponseEntity.noContent().build();
 	}
 
 	private Salons.Salon ajouterSalon(UUID communaute, String communauteSlug, String slug, String nom, String sujet, int ordre) {
@@ -167,7 +192,7 @@ class CreationCommunautes {
 				INSERT INTO salon (id, communaute_id, slug, nom, sujet, ordre, salle_appel) VALUES (:id, :c, :slug, :nom, :sujet, :o, :salle)
 				""").param("id", id).param("c", communaute).param("slug", slug).param("nom", nom).param("sujet", sujet)
 			.param("o", ordre).param("salle", salle).update();
-		return new Salons.Salon(id, slug, nom, sujet, salle);
+		return new Salons.Salon(id, slug, nom, sujet);
 	}
 
 	/** « Devs du Sahel ! » → « devs-du-sahel » : sans accents, minuscules, des tirets, au plus `max` caractères. */

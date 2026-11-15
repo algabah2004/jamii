@@ -44,9 +44,9 @@ describe('Communautés', () => {
 
   it('le filtre « questions sans réponse acceptée » reste dans l’adresse', async () => {
     const { page, routeur } = await ouvrir('/communautes/flutter')
-    await vi.waitFor(() => expect(page.findAll('[data-test="publications"] > li')).toHaveLength(4))
+    await vi.waitFor(() => expect(page.findAll('[data-test="publication"]')).toHaveLength(4))
     await page.get('[data-test="onglet-ouvertes"]').trigger('click')
-    await vi.waitFor(() => expect(page.findAll('[data-test="publications"] > li')).toHaveLength(2))
+    await vi.waitFor(() => expect(page.findAll('[data-test="publication"]')).toHaveLength(2))
     expect(routeur.currentRoute.value.query).toEqual({ onglet: 'ouvertes' })
     expect(page.get('[data-test="onglet-ouvertes"]').attributes('aria-pressed')).toBe('true')
   })
@@ -57,17 +57,42 @@ describe('Communautés', () => {
     expect(page.text()).toContain('Toutes les communautés')
   })
 
-  it('poser une question mène à la question, où l’IA prépare une réponse', async () => {
+  it('publier dans le fil ne change pas de page : la question arrive en haut, et l’IA prépare une réponse', async () => {
+    let recu: { type?: string; titre?: string; contenu?: string } = {}
+    serveur.use(
+      http.post('/api/communautes/:slug/publications', async ({ request }) => {
+        recu = (await request.json()) as typeof recu
+        return HttpResponse.json({
+          id: 'nouvelle', communaute: 'flutter', type: recu.type, titre: recu.titre, contenu: recu.contenu, auteur: { id: 'a', nom: 'Awa Diop', avatarUrl: null },
+          nombreReponses: 0, accepteeLe: null, creeLe: new Date().toISOString(), projetId: null, reponseAccepteeId: null,
+          propositionIa: { statut: 'en_attente' }, reponses: [], moi: { estAuteur: true, estMembre: true },
+        }, { status: 201 })
+      }),
+    )
     const { page, routeur } = await ouvrir('/communautes/flutter')
-    await vi.waitFor(() => expect(page.find('[data-test="ouvrir-formulaire"]').exists()).toBe(true))
-    expect(page.find('[data-test="publier"]').exists()).toBe(false)
-    await page.get('[data-test="ouvrir-formulaire"]').trigger('click')
-    await page.get('[data-test="publier"] input').setValue('Comment tester un provider Riverpod ?')
-    await page.get('[data-test="publier"] textarea').setValue('Je ne sais pas comment simuler le réseau dans mes tests.')
+    await vi.waitFor(() => expect(page.findAll('[data-test="publication"]')).toHaveLength(4))
+    await page.get('[data-test="genre-question"]').trigger('click')
+    await page.get('[data-test="zone-publier"]').setValue('Comment tester un provider Riverpod ?\nJe ne sais pas comment simuler le réseau.')
     await page.get('[data-test="publier"]').trigger('submit')
-    await vi.waitFor(() => expect(routeur.currentRoute.value.name).toBe('publication'))
-    await vi.waitFor(() => expect(page.find('[data-test="ia-attente"]').exists()).toBe(true))
-    expect(page.get('[data-test="ia-attente"]').text()).toContain("L'IA prépare une réponse")
+    await vi.waitFor(() => expect(page.findAll('[data-test="publication"]')).toHaveLength(5))
+    expect(routeur.currentRoute.value.path).toBe('/communautes/flutter')
+    // Le titre, c'est la première ligne ; le texte, tout ce qu'on a écrit.
+    expect(recu).toEqual({ type: 'question', titre: 'Comment tester un provider Riverpod ?', contenu: 'Comment tester un provider Riverpod ?\nJe ne sais pas comment simuler le réseau.' })
+    expect(page.findAll('[data-test="publication"]')[0]!.text()).toContain("L'IA prépare une réponse")
+    expect((page.get('[data-test="zone-publier"]').element as HTMLTextAreaElement).value).toBe('')
+  })
+
+  it('les réponses s’ouvrent sous la publication, et on y répond sans quitter le fil', async () => {
+    const { page, routeur } = await ouvrir('/communautes/flutter')
+    await vi.waitFor(() => expect(page.findAll('[data-test="publication"]')).toHaveLength(4))
+    const premiere = page.findAll('[data-test="publication"]')[0]!
+    await premiere.get('[data-test^="reponses-"]').trigger('click')
+    await vi.waitFor(() => expect(premiere.findAll('[data-test="reponse"]').length).toBeGreaterThan(0))
+    const avant = premiere.findAll('[data-test="reponse"]').length
+    await premiere.get('form textarea').setValue('Merci, je teste Hive de mon côté.')
+    await premiere.get('form').trigger('submit')
+    await vi.waitFor(() => expect(premiere.findAll('[data-test="reponse"]')).toHaveLength(avant + 1))
+    expect(routeur.currentRoute.value.path).toBe('/communautes/flutter')
   })
 })
 

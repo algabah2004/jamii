@@ -96,7 +96,7 @@ const SALONS = [
 ]
 let numeroSalon = 0
 const message = (auteur: Personne, texte: string, minutes: number): MessageSalon => ({
-  id: crypto.randomUUID(), numero: ++numeroSalon, auteur, texte, envoyeLe: new Date(Date.now() - minutes * 60_000).toISOString(),
+  id: crypto.randomUUID(), numero: ++numeroSalon, auteur, texte, envoyeLe: new Date(Date.now() - minutes * 60_000).toISOString(), appel: null,
 })
 function messagesInitiaux(): Map<string, MessageSalon[]> {
   numeroSalon = 0
@@ -112,7 +112,7 @@ function messagesInitiaux(): Map<string, MessageSalon[]> {
       message(AYA, 'Merci Koffi, je regarde ça ce soir.', 25 * 60 + 45),
       message(FATOU, "Petit rappel : l'atelier Flutter de l'antenne de Dakar a lieu samedi à 10 h (lieu dans #général).", 95),
       message(WANJIRU, "Je le suivrai à distance depuis Nairobi si quelqu'un lance l'appel du salon.", 80),
-      message(FATOU, "Oui, je l'ouvre ici même, bouton « Rejoindre l'appel » en haut.", 78),
+      message(FATOU, "Oui, je lancerai l'appel ici à 10 h : vous le verrez en haut du salon.", 78),
       message(CHIDI, 'Top. Quelqu’un a déjà essayé Flutter 4 en production ?', 12),
     ]],
     ['flutter/projets', [
@@ -136,7 +136,14 @@ function messagesInitiaux(): Map<string, MessageSalon[]> {
 let messagesSalons = messagesInitiaux()
 /** Les salons créés pendant la visite (v0.4), en plus des trois de départ. */
 let salonsCrees = new Map<string, { slug: string; nom: string; sujet: string }[]>()
-const salonsDe = (slug: string) => [...SALONS, ...(salonsCrees.get(slug) ?? [])]
+/** L'appel en cours de chaque salon (v0.7), par « communauté/salon ». */
+let appels = new Map<string, { id: string; lancePar: Personne; lanceLe: string; url: string }>()
+/** L'état d'un message qui annonce un appel : en cours tant que c'est l'appel du salon. */
+const avecAppel = (cle: string, m: MessageSalon): MessageSalon => (m.appel ? { ...m, appel: { id: m.appel.id, enCours: appels.get(cle)?.id === m.appel.id } } : m)
+
+/** Les salons supprimés pendant la visite (v0.5). */
+let salonsSupprimes = new Set<string>()
+const salonsDe = (slug: string) => [...SALONS, ...(salonsCrees.get(slug) ?? [])].filter((s) => !salonsSupprimes.has(`${slug}/${s.slug}`))
 const nomCourt = (nom: string) => nom.replace(/^#\s*/, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
 
 /** Pour les tests : repart des données de démo. */
@@ -144,6 +151,8 @@ export function reinitialiserCommunautes() {
   etat = etatInitial()
   messagesSalons = messagesInitiaux()
   salonsCrees = new Map()
+  salonsSupprimes = new Set()
+  appels = new Map()
 }
 
 function questionsOuvertes(slug: string) {
@@ -208,8 +217,11 @@ export const handlersCommunautes = [
     const elements = etat.publications
       .filter((p) => p.communaute === params.slug && (!ouvertes || (p.type === 'question' && !p.reponseAccepteeId)))
       .sort((a, b) => b.creeLe.localeCompare(a.creeLe))
-      .map(({ id, communaute, type, titre, auteur, nombreReponses, accepteeLe, creeLe }) =>
-        ({ id, communaute, type, titre, auteur, nombreReponses, accepteeLe, creeLe }))
+      .map((p) => {
+        avancerIa(p)
+        const { id, communaute, type, titre, auteur, nombreReponses, accepteeLe, creeLe, contenu, propositionIa } = p
+        return { id, communaute, type, titre, auteur, nombreReponses, accepteeLe, creeLe, contenu, propositionIa }
+      })
     return HttpResponse.json({ elements, curseurSuivant: null })
   }),
 
@@ -268,7 +280,38 @@ export const handlersCommunautes = [
     if (salonsDe(c.slug).some((s) => s.slug === slug)) return erreur(409, 'salon_existe')
     const salon = { slug, nom: corps.nom!.replace(/^#\s*/, '').trim().toLowerCase(), sujet: corps.sujet!.trim() }
     salonsCrees.set(c.slug, [...(salonsCrees.get(c.slug) ?? []), salon])
-    return HttpResponse.json({ id: crypto.randomUUID(), ...salon, appelUrl: `https://meet.jit.si/jamii-${c.slug}-${slug}-demo` }, { status: 201 })
+    return HttpResponse.json({ id: crypto.randomUUID(), ...salon, appel: null }, { status: 201 })
+  }),
+
+  http.post('/api/communautes/:slug/salons/:salon/appel', ({ params }) => {
+    const c = etat.communautes.find((x) => x.slug === params.slug)
+    if (!c || !salonsDe(c.slug).some((s) => s.slug === params.salon)) return erreur(404, 'introuvable')
+    if (!c.membre) return erreur(403, 'pas_membre')
+    const cle = `${c.slug}/${params.salon}`
+    const enCours = appels.get(cle)
+    if (enCours) return HttpResponse.json(enCours)
+    const appel = { id: crypto.randomUUID(), lancePar: AWA, lanceLe: new Date().toISOString(), url: `https://meet.jit.si/jamii-${cle.replace('/', '-')}-${crypto.randomUUID().slice(0, 8)}` }
+    appels.set(cle, appel)
+    const annonce = { ...message(AWA, 'a lancé un appel', 0), appel: { id: appel.id, enCours: true } }
+    messagesSalons.set(cle, [...(messagesSalons.get(cle) ?? []), annonce])
+    return HttpResponse.json(appel, { status: 201 })
+  }),
+
+  http.delete('/api/communautes/:slug/salons/:salon/appel', ({ params }) => {
+    const cle = `${params.slug}/${params.salon}`
+    if (!appels.has(cle)) return erreur(404, 'introuvable')
+    appels.delete(cle)
+    return new HttpResponse(null, { status: 204 })
+  }),
+
+  http.delete('/api/communautes/:slug/salons/:salon', ({ params }) => {
+    const c = etat.communautes.find((x) => x.slug === params.slug)
+    if (!c || !salonsDe(c.slug).some((s) => s.slug === params.salon)) return erreur(404, 'introuvable')
+    if (!c.moderateur) return erreur(403, 'pas_moderateur')
+    if (params.salon === 'general') return erreur(409, 'salon_protege')
+    salonsSupprimes.add(`${c.slug}/${params.salon}`)
+    messagesSalons.delete(`${c.slug}/${params.salon}`)
+    return new HttpResponse(null, { status: 204 })
   }),
 
   http.get('/api/communautes/:slug/salons', ({ params }) => {
@@ -276,7 +319,9 @@ export const handlersCommunautes = [
     if (!c) return erreur(404, 'introuvable')
     const elements = salonsDe(c.slug).map((s, i) => ({
       id: `5a1005${String(i).padStart(2, '0')}-0000-4000-8000-${c.id.slice(-12)}`, ...s,
-      appelUrl: c.membre ? `https://meet.jit.si/jamii-${c.slug}-${s.slug}-demo` : null,
+      appel: appels.has(`${c.slug}/${s.slug}`)
+        ? { ...appels.get(`${c.slug}/${s.slug}`)!, url: c.membre ? appels.get(`${c.slug}/${s.slug}`)!.url : null }
+        : null,
     }))
     return HttpResponse.json({ elements })
   }),
@@ -284,7 +329,8 @@ export const handlersCommunautes = [
   http.get('/api/communautes/:slug/salons/:salon/messages', ({ params, request }) => {
     if (!etat.communautes.some((x) => x.slug === params.slug) || !salonsDe(String(params.slug)).some((s) => s.slug === params.salon)) return erreur(404, 'introuvable')
     const apres = Number(new URL(request.url).searchParams.get('apres') ?? -1)
-    const tous = messagesSalons.get(`${params.slug}/${params.salon}`) ?? []
+    const cle = `${params.slug}/${params.salon}`
+    const tous = (messagesSalons.get(cle) ?? []).map((m) => avecAppel(cle, m))
     return HttpResponse.json({ elements: apres >= 0 ? tous.filter((m) => m.numero > apres) : tous.slice(-50) })
   }),
 

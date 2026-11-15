@@ -77,8 +77,14 @@ const jures = new Map<string, Jure[]>()
 const scores = new Map<string, number>()
 /** Les commentaires des jurés, rendu par rendu, et les résultats publiés, hackathon par hackathon. */
 const retours = new Map<string, string>()
+const mesNotes = new Map<string, { renduId: string; notes: { critereId: string; valeur: number }[]; commentaire: string | null; scorePondere: number }>()
 const resultats = new Map<string, Resultats>()
 const PERSONNES = [AWA, KOFI, FATOU, MOUSSA]
+
+/** La discussion de chaque hackathon : ses annonces (la plus récente d'abord) et la communauté liée. */
+type AnnonceMaquette = { id: string; auteur: typeof AWA; texte: string; publieeLe: string }
+const discussions = new Map<string, { communaute: string | null; annonces: AnnonceMaquette[] }>()
+const discussionDe = (id: string) => discussions.get(id) ?? discussions.set(id, { communaute: null, annonces: [] }).get(id)!
 
 /** Pour un test : déposer le rendu d'une équipe, comme si elle l'avait rendu pendant le hackathon. */
 export function deposerRendu(rendu: Rendu) {
@@ -98,6 +104,8 @@ export function reinitialiserHackathons() {
   jures.clear()
   scores.clear()
   retours.clear()
+  mesNotes.clear()
+  discussions.clear()
   resultats.clear()
   const h = hackathonDemo()
   hackathons.set(h.id, h)
@@ -292,6 +300,29 @@ export const handlersHackathons = [
     return HttpResponse.json(jure, { status: 201 })
   }),
 
+  http.get('/api/hackathons/:id/discussion', ({ params }) => {
+    if (!hackathons.get(String(params.id))) return erreur(404, 'introuvable')
+    return HttpResponse.json(discussionDe(String(params.id)))
+  }),
+  http.post('/api/hackathons/:id/annonces', async ({ params, request }) => {
+    const { texte } = (await request.json()) as { texte: string }
+    if (!texte?.trim()) return HttpResponse.json({ code: 'validation', erreurs: [{ champ: 'texte', code: 'obligatoire' }] }, { status: 400 })
+    const annonce = { id: crypto.randomUUID(), auteur: AWA, texte: texte.trim(), publieeLe: new Date().toISOString() }
+    discussionDe(String(params.id)).annonces.unshift(annonce)
+    return HttpResponse.json(annonce, { status: 201 })
+  }),
+  http.delete('/api/hackathons/:id/annonces/:annonceId', ({ params }) => {
+    const d = discussionDe(String(params.id))
+    d.annonces = d.annonces.filter((a) => a.id !== params.annonceId)
+    return new HttpResponse(null, { status: 204 })
+  }),
+  http.put('/api/hackathons/:id/communaute', async ({ params, request }) => {
+    discussionDe(String(params.id)).communaute = ((await request.json()) as { communaute: string | null }).communaute
+    return new HttpResponse(null, { status: 204 })
+  }),
+
+  http.get('/api/hackathons/:id/mes-notes', () => HttpResponse.json([...mesNotes.values()])),
+
   http.get('/api/hackathons/:id/rendus', () => HttpResponse.json({ elements: [...rendus.values()], curseurSuivant: null })),
 
   http.put('/api/hackathons/:id/rendus/:renduId/notes', async ({ params, request }) => {
@@ -304,6 +335,7 @@ export const handlersHackathons = [
     const total = h.criteres.reduce((somme, c) => somme + c.poids * corps.notes.find((n) => n.critereId === c.id)!.valeur, 0)
     const scorePondere = Math.round((total / poids) * 100) / 100
     scores.set(String(params.renduId), scorePondere)
+    mesNotes.set(String(params.renduId), { renduId: String(params.renduId), notes: corps.notes, commentaire: corps.commentaire, scorePondere })
     if (corps.commentaire) retours.set(String(params.renduId), corps.commentaire)
     else retours.delete(String(params.renduId))
     return HttpResponse.json({ renduId: String(params.renduId), notes: corps.notes, commentaire: corps.commentaire, scorePondere })
@@ -333,7 +365,7 @@ export const handlersHackathons = [
       gagnants: h.prix.map((p) => ({ prix: p, equipe: equipeDe(corps.gagnants.find((g) => g.prixId === p.id)!.equipeId) })),
       classement: classer().map((l) => {
         const rendu = [...rendus.values()].find((r) => r.id === l.renduId)!
-        return { rang: l.rang, equipe: equipeDe(rendu.equipeId), rendu, retourDuJury: retours.has(rendu.id) ? [retours.get(rendu.id)!] : [] }
+        return { rang: l.rang, equipe: equipeDe(rendu.equipeId), rendu, scorePondere: l.scorePondere, retourDuJury: retours.has(rendu.id) ? [retours.get(rendu.id)!] : [] }
       }),
     }
     resultats.set(h.id, publies)

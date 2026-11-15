@@ -91,17 +91,95 @@ class SalonsTest {
 		assertThat(salons.get(2).get("slug").asString()).isEqualTo("projets");
 	}
 
+	private MvcTestResult lancer(UtilisateurConnecte qui, String slug, String salon) {
+		return mvc.post().uri("/api/communautes/{s}/salons/{salon}/appel", slug, salon).with(csrf()).with(oauth2Login().oauth2User(qui)).exchange();
+	}
+
+	private MvcTestResult terminer(UtilisateurConnecte qui, String slug, String salon) {
+		return mvc.delete().uri("/api/communautes/{s}/salons/{salon}/appel", slug, salon).with(csrf()).with(oauth2Login().oauth2User(qui)).exchange();
+	}
+
 	@Test
-	void l_adresse_de_l_appel_n_est_donnee_qu_aux_membres() throws Exception {
+	void sans_appel_lance_aucun_salon_n_a_d_appel_et_les_salons_restent_dans_l_ordre() throws Exception {
 		String slug = communaute();
 		UtilisateurConnecte awa = utilisateur("Awa");
-
-		assertThat(corps(get(awa, "/api/communautes/{s}/salons", slug)).get("elements").get(0).get("appelUrl").isNull()).isTrue();
-
 		rejoindre(awa, slug);
-		JsonNode general = corps(get(awa, "/api/communautes/{s}/salons", slug)).get("elements").get(0);
-		assertThat(general.get("slug").asString()).as("dans l'ordre des salons").isEqualTo("general");
-		assertThat(general.get("appelUrl").asString()).isEqualTo("https://appels.example/jamii-" + slug + "-x-g");
+		JsonNode salons = corps(get(awa, "/api/communautes/{s}/salons", slug)).get("elements");
+		assertThat(salons.get(0).get("slug").asString()).as("dans l'ordre des salons").isEqualTo("general");
+		assertThat(salons.get(0).get("appel").isNull()).isTrue();
+	}
+
+	@Test
+	void lancer_un_appel_cree_une_salle_neuve_l_annonce_dans_le_salon_et_un_second_lancement_le_rejoint() throws Exception {
+		String slug = communaute();
+		UtilisateurConnecte awa = utilisateur("Awa Diop");
+		UtilisateurConnecte kofi = utilisateur("Kofi");
+		rejoindre(awa, slug);
+		rejoindre(kofi, slug);
+
+		MvcTestResult lance = lancer(awa, slug, "entraide");
+		assertThat(lance).hasStatus(HttpStatus.CREATED);
+		JsonNode appel = corps(lance);
+		assertThat(appel.get("url").asString()).startsWith("https://appels.example/jamii-" + slug + "-entraide-");
+		assertThat(appel.get("lancePar").get("nom").asString()).isEqualTo("Awa Diop");
+
+		// Un seul appel à la fois : Kofi rejoint celui d'Awa.
+		MvcTestResult rejoint = lancer(kofi, slug, "entraide");
+		assertThat(rejoint).hasStatus(HttpStatus.OK);
+		assertThat(corps(rejoint).get("id").asString()).isEqualTo(appel.get("id").asString());
+
+		JsonNode entraide = corps(get(kofi, "/api/communautes/{s}/salons", slug)).get("elements").get(1);
+		assertThat(entraide.get("appel").get("id").asString()).isEqualTo(appel.get("id").asString());
+		JsonNode messages = corps(get(kofi, "/api/communautes/{s}/salons/entraide/messages", slug)).get("elements");
+		assertThat(messages).hasSize(1);
+		assertThat(messages.get(0).get("appel").get("enCours").asBoolean()).isTrue();
+		assertThat(messages.get(0).get("auteur").get("nom").asString()).isEqualTo("Awa Diop");
+	}
+
+	@Test
+	void seuls_le_lanceur_et_les_moderateurs_terminent_un_appel_et_la_salle_suivante_est_neuve() throws Exception {
+		String slug = communaute();
+		UtilisateurConnecte awa = utilisateur("Awa");
+		UtilisateurConnecte kofi = utilisateur("Kofi");
+		rejoindre(awa, slug);
+		rejoindre(kofi, slug);
+		String premiere = corps(lancer(awa, slug, "general")).get("url").asString();
+
+		MvcTestResult refuse = terminer(kofi, slug, "general");
+		assertThat(refuse).hasStatus(HttpStatus.FORBIDDEN);
+		assertThat(corps(refuse).get("code").asString()).isEqualTo("pas_lanceur");
+
+		assertThat(terminer(awa, slug, "general")).hasStatus(HttpStatus.NO_CONTENT);
+		assertThat(terminer(awa, slug, "general")).as("plus d'appel en cours").hasStatus(HttpStatus.NOT_FOUND);
+		assertThat(corps(get(kofi, "/api/communautes/{s}/salons", slug)).get("elements").get(0).get("appel").isNull()).isTrue();
+		assertThat(corps(get(kofi, "/api/communautes/{s}/salons/general/messages", slug)).get("elements").get(0).get("appel").get("enCours").asBoolean())
+			.as("l'annonce dit que l'appel est terminé").isFalse();
+
+		// Kofi en lance un autre, dans une salle neuve ; un modérateur peut le terminer.
+		String seconde = corps(lancer(kofi, slug, "general")).get("url").asString();
+		assertThat(seconde).isNotEqualTo(premiere);
+		base.sql("UPDATE adhesion SET role = 'moderateur' WHERE utilisateur_id = :u").param("u", awa.id()).update();
+		assertThat(terminer(awa, slug, "general")).hasStatus(HttpStatus.NO_CONTENT);
+	}
+
+	@Test
+	void un_appel_se_termine_tout_seul_apres_une_heure_et_un_non_membre_ne_peut_ni_lancer_ni_voir_la_salle() throws Exception {
+		String slug = communaute();
+		UtilisateurConnecte awa = utilisateur("Awa");
+		UtilisateurConnecte passant = utilisateur("Passant");
+		rejoindre(awa, slug);
+		lancer(awa, slug, "general");
+
+		JsonNode vu = corps(get(passant, "/api/communautes/{s}/salons", slug)).get("elements").get(0).get("appel");
+		assertThat(vu.get("url").isNull()).as("pas d'adresse pour un non-membre").isTrue();
+		MvcTestResult refuse = lancer(passant, slug, "general");
+		assertThat(refuse).hasStatus(HttpStatus.FORBIDDEN);
+		assertThat(corps(refuse).get("code").asString()).isEqualTo("pas_membre");
+
+		base.sql("UPDATE appel_salon SET lance_le = lance_le - interval '61 minutes'").update();
+		assertThat(corps(get(awa, "/api/communautes/{s}/salons", slug)).get("elements").get(0).get("appel").isNull()).isTrue();
+		assertThat(lancer(awa, slug, "general")).as("un nouvel appel peut partir").hasStatus(HttpStatus.CREATED);
+		assertThat(lancer(awa, slug, "inconnu")).hasStatus(HttpStatus.NOT_FOUND);
 	}
 
 	@Test
