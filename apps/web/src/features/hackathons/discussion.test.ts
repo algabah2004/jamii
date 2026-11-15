@@ -49,7 +49,12 @@ describe('la discussion d’un hackathon', () => {
     expect(page.get('[data-test="annonce-nouvelle"]').text()).toBe('Nouveau')
     expect(page.get('[data-test="nouvelles-annonces"]').text()).toContain('1')
 
+    // Retirer ne s'annule pas : on demande confirmation, et « Garder » ne retire rien.
     await page.get('[data-test="retirer-annonce"]').trigger('click')
+    await page.get('[data-test="garder-annonce"]').trigger('click')
+    expect(page.findAll('[data-test="annonce"]')).toHaveLength(1)
+    await page.get('[data-test="retirer-annonce"]').trigger('click')
+    await page.get('[data-test="confirmer-retrait"]').trigger('click')
     await attendre(page, '[data-test="aucune-annonce"]')
 
     await page.get('[data-test="ouvrir-espace"]').trigger('click')
@@ -75,7 +80,8 @@ describe('la discussion d’un hackathon', () => {
     expect(page.get('[data-test="annonce"]').text()).toContain('Bienvenue')
     expect(page.find('[data-test="form-annonce"]').exists()).toBe(false)
     expect(page.find('[data-test="retirer-annonce"]').exists()).toBe(false)
-    expect(page.get('[data-test="questions"]').text()).toContain('Peut-on utiliser une API externe ? · 2 réponses')
+    expect(page.get('[data-test="questions"]').text()).toContain('Peut-on utiliser une API externe ?')
+    expect(page.get('[data-test="questions"]').text()).toContain('2 réponses')
     expect(page.get('[data-test="salons"]').attributes('href')).toBe('/communautes/dakar-cloud-hack?salon=general')
     expect(page.get('[data-test="aller-discussion"]').attributes('href')).toBe('#discussion')
   })

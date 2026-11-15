@@ -1413,7 +1413,17 @@
       },
       "nouvelleCourt": "+ New announcement",
       "annuler": "Cancel",
-      "nouveau": "New"
+      "nouveau": "New",
+      "chapeau": "News from the organisers, and a space to ask your questions.",
+      "organisation": "Organisers",
+      "confirmerRetrait": "Remove this announcement for everyone?",
+      "garder": "Keep",
+      "communaute": "Hackathon community",
+      "membres": "no members | one member | {n} members",
+      "aucuneQuestion": "No questions waiting. Ask the first one!",
+      "salonsTitre": "Channels",
+      "rejoindre": "Join the community",
+      "voir": "See the community"
     },
     "onglets": {
       "titre": "Hackathon sections",

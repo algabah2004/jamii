@@ -1413,7 +1413,17 @@
       },
       "nouvelleCourt": "+ Nouvelle annonce",
       "annuler": "Annuler",
-      "nouveau": "Nouveau"
+      "nouveau": "Nouveau",
+      "chapeau": "Les nouvelles de l’organisation, et un espace pour poser vos questions.",
+      "organisation": "Organisation",
+      "confirmerRetrait": "Retirer cette annonce pour tout le monde ?",
+      "garder": "Garder",
+      "communaute": "Communauté du hackathon",
+      "membres": "aucun membre | un membre | {n} membres",
+      "aucuneQuestion": "Aucune question en attente. Posez la première !",
+      "salonsTitre": "Salons",
+      "rejoindre": "Rejoindre la communauté",
+      "voir": "Voir la communauté"
     },
     "onglets": {
       "titre": "Sections du hackathon",
