@@ -1,0 +1,5 @@
+# HTTPS automatique (Let's Encrypt) sur <ip>.sslip.io, puis relais vers le site, qui relaie /api vers l'API.
+{$DOMAINE} {
+	encode zstd gzip
+	reverse_proxy web:8080
+}

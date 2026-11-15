@@ -1,5 +1,7 @@
 # Mettre Jamii en ligne sur DataCloud
 
+> ✅ **En ligne depuis le 15/11/2026 : https://87-58-156-18.sslip.io**, sur un serveur cloud Systalink avec Docker Compose, mis à jour automatiquement après chaque CI verte sur `main`. Voir [`deploiement/README.md`](../deploiement/README.md). Le plan ci-dessous (applications web DataCloud) reste l'alternative.
+
 > Repris par le chef de projet le 13 novembre 2026 (échéance de 18 h dépassée, voir `docs/priorites.md`).
 > Ce qui est **vérifié** l'a été en local, avec les trois images ci-dessous lancées ensemble. Ce qui touche à la console DataCloud est **supposé** d'après le formulaire vu le 10/11 (`docs/systalink-services.md`) : à cocher en le faisant.
 

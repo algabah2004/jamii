@@ -1,0 +1,49 @@
+# Mise en ligne automatique (#156) : quand la CI de `main` est verte, construit les trois images et les publie sur
+# ghcr.io. Le serveur Systalink les récupère tout seul (docs/deploiement-datacloud.md, « Mise à jour automatique »).
+# Seul du code dont la CI est verte part en ligne. Aucun secret : le jeton fourni par GitHub suffit pour publier.
+name: Images
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: images
+  cancel-in-progress: true
+
+jobs:
+  publier:
+    name: Publier ${{ matrix.image }}
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { image: jamii-api, contexte: apps/api, dockerfile: apps/api/Dockerfile }
+          - { image: jamii-ia, contexte: services/ia, dockerfile: services/ia/Dockerfile }
+          - { image: jamii-web, contexte: ., dockerfile: apps/web/Dockerfile }
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Exactement le commit que la CI a validé, pas un commit arrivé entre-temps.
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - name: Construire et publier
+        env:
+          JETON: ${{ secrets.GITHUB_TOKEN }}
+          IMAGE: ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}
+          SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          echo "$JETON" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker build -t "$IMAGE:main" -t "$IMAGE:$SHA" -f "${{ matrix.dockerfile }}" \
+            --label org.opencontainers.image.source="https://github.com/${{ github.repository }}" \
+            --label org.opencontainers.image.revision="$SHA" "${{ matrix.contexte }}"
+          docker push "$IMAGE:$SHA"
+          docker push "$IMAGE:main"

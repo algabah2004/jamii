@@ -1,0 +1,8 @@
+[Unit]
+Description=Jamii : récupérer les nouvelles images et redémarrer ce qui a changé
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/jamii/mettre-a-jour.sh
