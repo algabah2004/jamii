@@ -318,6 +318,57 @@
         ],
         "lien": "Ouvrir mes messages"
       }
+    },
+    "sectionCercles": {
+      "surtitre": "Tech Tontine",
+      "titre": "Les cercles : une tradition africaine, adaptée au développement",
+      "intro": "Construisez à tour de rôle le projet de chaque membre. 4 à 6 développeurs s'engagent ensemble : à chaque tour, tout le cercle construit le projet de l'un d'eux.",
+      "histoire": {
+        "accroche": "Une tontine, ce n'est pas qu'une affaire d'argent.",
+        "tradition": "La tontine est connue partout sur le continent. Un groupe met de l'argent en commun et, à chaque tour, l'un de ses membres reçoit l'ensemble.",
+        "esprit": "Mais regarde de plus près : ce qui fait tenir une tontine, c'est le rendez-vous. Des voisines, des collègues, des amis se retrouvent, discutent, partagent leurs nouvelles et se soutiennent. L'argent donne le rythme ; la communauté est le vrai but.",
+        "jamii": "Jamii veut réunir les développeurs africains : il était naturel de partir de cet esprit de partage. Dans un cercle, on ne met pas de l'argent en commun, mais du travail."
+      },
+      "paralleles": {
+        "tontine": "Dans une tontine",
+        "cercle": "Dans un cercle",
+        "part": {
+          "titre": "Chacun apporte sa part",
+          "tontine": "Chaque membre donne de l'argent, à date fixe.",
+          "cercle": "Chaque membre donne de son temps et de ses compétences."
+        },
+        "tour": {
+          "titre": "Chacun son tour",
+          "tontine": "À chaque tour, un membre reçoit ce que le groupe a réuni.",
+          "cercle": "À chaque tour, tout le cercle construit le projet d'un membre."
+        },
+        "ensemble": {
+          "titre": "On avance ensemble",
+          "tontine": "On se retrouve, on discute, on s'entraide.",
+          "cercle": "On apprend les uns des autres, tour après tour."
+        }
+      },
+      "titreEtapes": "Comment marche un cercle",
+      "etapes": {
+        "1": {
+          "titre": "Former un cercle",
+          "texte": "Crée un cercle ou rejoins-en un. Il réunit 4 à 6 développeurs qui s'engagent ensemble."
+        },
+        "2": {
+          "titre": "Déposer son idée",
+          "texte": "Chaque membre dépose l'idée du projet qu'il veut voir construit pendant son tour."
+        },
+        "3": {
+          "titre": "Tirer l'ordre au sort",
+          "texte": "L'ordre de passage est tiré au sort par Jamii : personne ne choisit qui passe en premier."
+        },
+        "4": {
+          "titre": "Construire, tour après tour",
+          "texte": "Tout le cercle construit le projet du tour, puis le livre. Le Griot, l'assistant qui planifie et résume le tour, aide à avancer."
+        }
+      },
+      "voir": "Voir les cercles",
+      "creer": "Créer un cercle"
     }
   },
   "profil": {
