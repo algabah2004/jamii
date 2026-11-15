@@ -506,7 +506,38 @@
       "creer": "Créer la communauté",
       "apercu": "Aperçu",
       "nomExemple": "Ta communauté",
-      "descriptionExemple": "Sa description apparaîtra ici."
+      "descriptionExemple": "Sa description apparaîtra ici.",
+      "etape": "Étape {n} sur {total}",
+      "q": {
+        "nom": "Comment s'appelle ta communauté ?",
+        "nomAide": "Un nom court et parlant. Il donne aussi son adresse et ses couleurs.",
+        "theme": "De quoi va-t-elle parler ?",
+        "themeAide": "Choisis le sujet principal. Il décide des étiquettes de sa bannière.",
+        "description": "À quoi sert {nom} ?",
+        "descriptionAide": "En une ou deux phrases : pour qui, et pour faire quoi. C'est ce que liront celles et ceux qui hésitent à la rejoindre.",
+        "apercu": "Tout est prêt. On la lance ?"
+      },
+      "adresse": "Son adresse :",
+      "inspirations": "Pour t'inspirer :",
+      "commencer": "Pour commencer :",
+      "debuts": {
+        "debut1": "Un espace pour s'entraider entre développeurs qui ",
+        "debut2": "Ici, on partage nos projets et on cherche des coéquipiers pour ",
+        "debut3": "Pour celles et ceux qui veulent apprendre ensemble à "
+      },
+      "succes": "{nom} est en ligne !",
+      "succesAide": "Tu en es le modérateur. Ses trois salons t'attendent, invite tes premiers membres.",
+      "entrer": "Entrer dans #général",
+      "retour": "Retour",
+      "suivant": "Continuer",
+      "entree": "Entrée pour continuer",
+      "themeAVenir": "Thème à choisir",
+      "etapes": {
+        "nom": "Le nom",
+        "theme": "Le thème",
+        "description": "À quoi elle sert",
+        "apercu": "L'aperçu"
+      }
     },
     "nouveauSalon": {
       "titre": "Créer un salon",
