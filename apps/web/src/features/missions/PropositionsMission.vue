@@ -45,8 +45,11 @@ async function agir(p: Proposition, retenir: boolean) {
   try {
     if (retenir) {
       const r = await retenirProposition(props.mission.id, p.id, props.mission.version)
-      if (r.ok) emit('maj', r.valeur)
-      else code.value = r.code ?? 'autre'
+      // L'API ne change pas la version de la mission en retenant une proposition : on relit la liste nous-mêmes.
+      if (r.ok) {
+        emit('maj', r.valeur)
+        await charger()
+      } else code.value = r.code ?? 'autre'
     } else {
       const r = await retirerProposition(props.mission.id, p.id)
       if (r.ok) emit('recharger')
