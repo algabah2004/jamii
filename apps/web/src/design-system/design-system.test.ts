@@ -144,6 +144,26 @@ describe('JAvatar et JIllustration', () => {
     expect(avatar.attributes('aria-hidden')).toBe('true')
   })
 
+  it('sans photo, chacun a sa couleur, toujours la même, et le texte reste lisible dessus', () => {
+    const style = (nom: string) => (mount(JAvatar, { props: { nom } }).element as HTMLElement).style
+    expect(style('Kwame Asante').background).toBe(style('Kwame Asante').background)
+    const noms = ['Awa Diop', 'Kofi Mensah', 'Tendai Moyo', 'Mariam Ngo Biyong', 'Ibrahima Fall', 'Nia Wanjiru', 'Yann Kouassi', 'Fatou Ndiaye']
+    expect(new Set(noms.map((n) => style(n).background)).size).toBeGreaterThanOrEqual(5)
+    // Contraste WCAG entre le fond et le texte, pour chaque couleur rencontrée.
+    const lum = (rgb: string) => {
+      const [r, g, b] = rgb.match(/\d+/g)!.slice(0, 3).map((v) => {
+        const c = Number(v) / 255
+        return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+      })
+      return 0.2126 * r! + 0.7152 * g! + 0.0722 * b!
+    }
+    for (const n of [...noms, 'Chidi Okafor', 'Zawadi Otieno', 'Samira Ben Salah', 'Thabo Nkosi', 'Joseph Habimana', 'Aïcha Keïta']) {
+      const s = style(n)
+      const [a, b] = [lum(s.backgroundColor || s.background), lum(s.color)]
+      expect((Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05)).toBeGreaterThanOrEqual(4.5)
+    }
+  })
+
   it('l’illustration suit le thème et reste décorative par défaut', () => {
     const html = mount(JIllustration, { props: { nom: 'equipe' } }).html()
     expect(html).toContain('var(--action-soft)')
