@@ -12,7 +12,19 @@ import { modifierMission, reinitialiserMissions } from '../../mocks/missions'
 import HackathonPage from '../hackathons/HackathonPage.vue'
 import MissionPage from '../missions/MissionPage.vue'
 import EditeurQuestionnaire from './EditeurQuestionnaire.vue'
-import { erreursParQuestion, identifiantLibre, manquantes, nettoyer, problemes, versReponses, type Question } from './questionnaire'
+import RemplirQuestionnaire from './RemplirQuestionnaire.vue'
+import {
+  erreursParQuestion,
+  erreursRestantes,
+  identifiantLibre,
+  manquantes,
+  nettoyer,
+  problemes,
+  resumeErreurs,
+  versReponses,
+  type Question,
+  type Valeurs,
+} from './questionnaire'
 
 const QUESTIONS: Question[] = [
   { id: 'q1', intitule: 'Ton lien GitHub ou ton portfolio', type: 'texte_court', obligatoire: true },
@@ -40,6 +52,15 @@ describe('les transformations du questionnaire', () => {
     expect(nettoyer(brouillon)[1]!.choix).toEqual(['A', 'A'])
     expect(problemes(brouillon)).toEqual({ q2: 'doublon', q3: 'intitule' })
     expect(identifiantLibre(brouillon)).toBe('q4')
+  })
+
+  it('ne garde que les erreurs encore valables une fois les réponses données', () => {
+    const erreurs = { q1: 'obligatoire', q2: 'obligatoire', q3: 'valeur_inconnue' }
+    const restantes = erreursRestantes(QUESTIONS, { q1: 'https://github.com/kofi', q3: ['Soir'] }, erreurs)
+    // q1 a maintenant une réponse ; une valeur refusée par l'API (q3) reste à corriger.
+    expect(restantes).toEqual({ q2: 'obligatoire', q3: 'valeur_inconnue' })
+    expect(resumeErreurs(restantes)).toEqual({ manquantes: 1 })
+    expect(resumeErreurs(erreursRestantes(QUESTIONS, { q1: 'x', q2: 'Expert' }, { q1: 'obligatoire', q2: 'obligatoire' }))).toBeNull()
   })
 
   it('ramène les erreurs de l’API à leur question', () => {
@@ -95,6 +116,27 @@ describe('composer vite', () => {
     await nextTick()
     expect(questions.value.map((q) => q.id)).toEqual(['q1', 'q2'])
   })
+
+  it('deux réponses données dans le même instant sont gardées toutes les deux', async () => {
+    ;(i18n.global.locale as unknown as { value: string }).value = 'fr'
+    const valeurs = ref<Valeurs>({})
+    const formulaire = mount(RemplirQuestionnaire, {
+      props: { questions: QUESTIONS, modelValue: valeurs.value, 'onUpdate:modelValue': (v: Valeurs) => (valeurs.value = v) },
+      global: { plugins: [i18n] },
+    })
+    void formulaire.findAll('[data-test="question-q2"] input[type="radio"]')[1]!.setValue(true)
+    void formulaire.findAll('[data-test="question-q3"] input[type="checkbox"]')[1]!.setValue(true)
+    await nextTick()
+    expect(valeurs.value).toEqual({ q2: 'Expert', q3: ['Week-end'] })
+  })
+
+  it('l’exemple de précision suit le type de la question', () => {
+    ;(i18n.global.locale as unknown as { value: string }).value = 'fr'
+    const questions: Question[] = [QUESTIONS[0]!, { id: 'q4', intitule: 'Déjà livré ?', type: 'oui_non', obligatoire: false }]
+    const editeur = mount(EditeurQuestionnaire, { props: { modelValue: questions, contexte: 'hackathon' }, global: { plugins: [i18n] } })
+    const exemples = editeur.findAll('[data-test="question-editee"]').map((q) => q.get('input[maxlength="300"]').attributes('placeholder'))
+    expect(exemples).toEqual(["Ex. : un lien public, que l'on peut ouvrir sans compte", "Ex. : réponds pour aujourd'hui, pas pour plus tard"])
+  })
 })
 
 describe('l’éditeur passe AXE', () => {
@@ -146,8 +188,18 @@ describe('répondre au questionnaire d’un hackathon', () => {
     expect(page.findAll('[data-test="erreur-question"]')).toHaveLength(2)
     expect(page.get('[data-test="question-q1"] input').attributes('aria-invalid')).toBe('true')
 
+    // Le focus va à la première question sans réponse.
+    expect(document.activeElement).toBe(page.get('[data-test="question-q1"] input').element)
+
+    // Une question remplie perd son erreur tout de suite, sans attendre le prochain envoi.
     await page.get('[data-test="question-q1"] input').setValue('https://github.com/kofi')
+    expect(page.find('[data-test="question-q1"] [data-test="erreur-question"]').exists()).toBe(false)
+    expect(page.get('[data-test="question-q1"] input').attributes('aria-invalid')).toBeUndefined()
+    expect(page.findAll('[data-test="erreur-question"]')).toHaveLength(1)
+    // Le message du bas suit : il n'en manque plus qu'une, puis plus aucune.
+    expect(page.get('[data-test="erreur-inscription"]').text()).toBe('Il manque une réponse obligatoire.')
     await page.findAll('[data-test="question-q2"] input[type="radio"]')[1]!.setValue(true)
+    expect(page.find('[data-test="erreur-inscription"]').exists()).toBe(false)
     await page.findAll('[data-test="question-q3"] input[type="checkbox"]')[0]!.setValue(true)
     await page.get('[data-test="sinscrire"]').trigger('click')
     await vi.waitFor(() => expect(page.find('[data-test="inscription-seul"]').exists()).toBe(false), { timeout: 4000 })
@@ -187,7 +239,7 @@ describe('répondre au questionnaire d’une mission', () => {
     const routeur = createRouter({ history: createMemoryHistory(), routes })
     await routeur.push(`/missions/${ID}`)
     await routeur.isReady()
-    const page = mount(RouterView, { global: { plugins: [i18n, routeur] } })
+    const page = mount(RouterView, { global: { plugins: [i18n, routeur] }, attachTo: document.body })
     await vi.waitFor(() => expect(page.find('[data-test="questions-mission"]').exists()).toBe(true), { timeout: 4000 })
     const champs = page.findAll('[data-test="form-proposer"] input')
     await page.get('[data-test="form-proposer"] textarea').setValue('Je fais ce genre de boutique depuis deux ans, avec Wave.')
@@ -197,10 +249,13 @@ describe('répondre au questionnaire d’une mission', () => {
     await page.get('[data-test="form-proposer"]').trigger('submit')
     expect(envoye).toBeNull()
     expect(page.get('[data-test="erreur-proposer"]').text()).toBe('Il manque une réponse obligatoire.')
+    // Comme à l'inscription d'un hackathon : le focus va à la question sans réponse.
+    expect(document.activeElement).toBe(page.findAll('[data-test="question-q1"] input[type="radio"]')[0]!.element)
 
     await page.findAll('[data-test="question-q1"] input[type="radio"]')[0]!.setValue(true)
     await page.get('[data-test="form-proposer"]').trigger('submit')
     await vi.waitFor(() => expect(envoye).not.toBeNull(), { timeout: 4000 })
     expect(envoye!.reponses).toEqual([{ questionId: 'q1', valeur: 'oui' }])
+    page.unmount()
   })
 })

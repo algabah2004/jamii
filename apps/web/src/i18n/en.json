@@ -1854,7 +1854,13 @@
       "type": "Answer type",
       "obligatoire": "Required answer",
       "aideQuestion": "Hint (optional)",
-      "aidePlaceholder": "E.g. a public link that opens without an account",
+      "aidePlaceholder": {
+        "texte_court": "E.g. a public link that opens without an account",
+        "texte_long": "E.g. a few sentences are enough",
+        "choix_unique": "E.g. pick the one closest to you",
+        "choix_multiples": "E.g. tick everything that applies",
+        "oui_non": "E.g. answer for today, not for later"
+      },
       "choix": "Possible choices ({min} to {max})",
       "choixN": "Choice {n}",
       "ajouterChoix": "+ Add a choice",
