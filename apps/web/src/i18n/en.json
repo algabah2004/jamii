@@ -20,7 +20,7 @@
     "githubTexte": "Sign in with GitHub. Your skills map is built from your public repositories.",
     "ou": "or",
     "emailTitre": "You have a need, without a GitHub account",
-    "emailTexte": "Small business, association or individual: get a sign-in link by email. No password.",
+    "emailTexte": "Business, association or individual: no GitHub account and no password needed.",
     "email": "Your email address",
     "emailInvalide": "This email address is not valid.",
     "recevoirLien": "Get a sign-in link",
@@ -37,9 +37,14 @@
     "erreurs": {
       "refus_github": "You declined access on GitHub: nothing was shared. You can try again, or get a link by email.",
       "requete_invalide": "The GitHub sign-in expired. Try again.",
-      "github_indisponible": "GitHub is not responding right now. Try again in a moment, or get a link by email."
+      "github_indisponible": "GitHub is not responding right now. Try again in a moment, or get a link by email.",
+      "refus_google": "You declined access on Google: nothing was shared. Try again, or get a link by email.",
+      "google_indisponible": "Google is not responding right now. Try again in a moment, or get a link by email.",
+      "email_non_verifie": "Google has not confirmed your email address. Get a sign-in link by email instead."
     },
-    "seConnecter": "Sign in"
+    "seConnecter": "Sign in",
+    "google": "Continue with Google",
+    "googleOu": "Or get a sign-in link by email:"
   },
   "accueil": {
     "titre": "Find your team, build your project, put it online.",

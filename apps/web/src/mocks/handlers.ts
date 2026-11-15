@@ -128,6 +128,7 @@ export const handlers = [
   http.post('/api/systalink/moments/:momentId/accepter', () => new HttpResponse(null, { status: 204 })),
   // Connexion par lien e-mail : 202 dans tous les cas (on ne révèle pas qui est inscrit). En mode factice, tout jeton
   // de 32 caractères ou plus connecte, sauf ceux qui commencent par « perime ».
+  http.get('/api/auth/fournisseurs', () => HttpResponse.json({ github: true, google: true, email: true })),
   http.post('/api/auth/lien-email', () => new HttpResponse(null, { status: 202 })),
   http.post('/api/auth/lien-email/confirmation', async ({ request }) => {
     const { jeton } = (await request.json()) as { jeton: string }

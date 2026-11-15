@@ -20,7 +20,7 @@
     "githubTexte": "Connecte-toi avec GitHub. Ta carte de compétences se construit à partir de tes dépôts publics.",
     "ou": "ou",
     "emailTitre": "Tu as un besoin, sans compte GitHub",
-    "emailTexte": "PME, association ou particulier : reçois un lien de connexion par e-mail. Pas de mot de passe.",
+    "emailTexte": "PME, association ou particulier : pas besoin de GitHub, ni de mot de passe.",
     "email": "Ton adresse e-mail",
     "emailInvalide": "Cette adresse e-mail n'est pas valide.",
     "recevoirLien": "Recevoir un lien de connexion",
@@ -37,9 +37,14 @@
     "erreurs": {
       "refus_github": "Tu as refusé l'accès sur GitHub : rien n'a été partagé. Tu peux réessayer, ou recevoir un lien par e-mail.",
       "requete_invalide": "La connexion avec GitHub a expiré. Réessaie.",
-      "github_indisponible": "GitHub ne répond pas pour le moment. Réessaie dans un instant, ou reçois un lien par e-mail."
+      "github_indisponible": "GitHub ne répond pas pour le moment. Réessaie dans un instant, ou reçois un lien par e-mail.",
+      "refus_google": "Tu as refusé l'accès sur Google : rien n'a été partagé. Tu peux réessayer, ou recevoir un lien par e-mail.",
+      "google_indisponible": "Google ne répond pas pour le moment. Réessaie dans un instant, ou reçois un lien par e-mail.",
+      "email_non_verifie": "Google n'a pas confirmé ton adresse e-mail. Reçois plutôt un lien de connexion par e-mail."
     },
-    "seConnecter": "Se connecter"
+    "seConnecter": "Se connecter",
+    "google": "Continuer avec Google",
+    "googleOu": "Ou reçois un lien de connexion par e-mail :"
   },
   "accueil": {
     "titre": "Trouve ton équipe, construis ton projet, mets-le en ligne.",

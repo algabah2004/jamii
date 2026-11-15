@@ -97,6 +97,28 @@ describe('se connecter', () => {
     await vi.waitFor(() => expect(page.text()).toContain('Réessaie dans 5 minutes'))
   })
 
+  it('propose « Continuer avec Google » quand le serveur le permet, avec le chemin de retour', async () => {
+    nonConnecte()
+    const { page } = await ouvrir('/connexion?retour=/demandes')
+    await vi.waitFor(() => expect(page.find('[data-test="connexion-google"]').exists()).toBe(true))
+    expect(page.get('[data-test="connexion-google"]').attributes('href')).toBe('/api/auth/google?retour=%2Fdemandes')
+  })
+
+  it('sans Google configuré, ne montre pas le bouton', async () => {
+    nonConnecte()
+    serveur.use(http.get('/api/auth/fournisseurs', () => HttpResponse.json({ github: true, google: false, email: true })))
+    const { page } = await ouvrir('/connexion')
+    await vi.waitFor(() => expect(page.find('[data-test="formulaire-email"]').exists()).toBe(true))
+    await new Promise((r) => setTimeout(r, 50))
+    expect(page.find('[data-test="connexion-google"]').exists()).toBe(false)
+  })
+
+  it("explique l'échec de la connexion Google", async () => {
+    nonConnecte()
+    const { page } = await ouvrir('/connexion?erreur=email_non_verifie')
+    expect(page.find('[data-test="erreur-github"]').text()).toContain('Google')
+  })
+
   it("explique l'échec de la connexion GitHub renvoyé par l'API", async () => {
     nonConnecte()
     const { page } = await ouvrir('/connexion?erreur=refus_github')

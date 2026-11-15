@@ -26,6 +26,12 @@ class SecuriteConfig {
 
 	static final String CONNEXION_GITHUB = "/api/auth/github";
 
+	/** Se connecter avec Google (#260), seulement si l'application Google est configurée. */
+	static final String CONNEXION_GOOGLE = "/api/auth/google";
+
+	/** La valeur par défaut d'un identifiant d'application dans application.yaml : pas configuré. */
+	static final String NON_CONFIGURE = "a-configurer";
+
 	private static final String ATTRIBUT_RETOUR = "jamii.retour";
 
 	@Bean
@@ -53,7 +59,7 @@ class SecuriteConfig {
 				.userInfoEndpoint(profil -> profil.userService(connexionGithub))
 				.successHandler((requete, reponse, auth) -> reponse.sendRedirect(webUrl + retirerRetour(requete)))
 				.failureHandler((requete, reponse, echec) -> reponse
-					.sendRedirect(webUrl + "/connexion?erreur=" + codeEchec(echec))))
+					.sendRedirect(webUrl + "/connexion?erreur=" + codeEchec(echec, requete.getRequestURI()))))
 			.logout(sortie -> sortie.logoutUrl("/api/auth/deconnexion")
 				.logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT))
 				.deleteCookies("JAMII_SESSION"))
@@ -70,8 +76,8 @@ class SecuriteConfig {
 	}
 
 	/**
-	 * Ne démarre la connexion que sur /api/auth/github (les autres routes /api/auth/… ne sont pas des fournisseurs),
-	 * et retient en session le chemin « retour » s'il est sûr.
+	 * Ne démarre la connexion que sur /api/auth/github, et sur /api/auth/google si Google est configuré (les autres
+	 * routes /api/auth/… ne sont pas des fournisseurs), et retient en session le chemin « retour » s'il est sûr.
 	 */
 	static OAuth2AuthorizationRequestResolver resolveurAvecRetour(ClientRegistrationRepository clients) {
 		var parDefaut = new DefaultOAuth2AuthorizationRequestResolver(clients, "/api/auth");
@@ -80,7 +86,8 @@ class SecuriteConfig {
 			@Override
 			public OAuth2AuthorizationRequest resolve(HttpServletRequest requete) {
 				String chemin = requete.getRequestURI().substring(requete.getContextPath().length());
-				if (!CONNEXION_GITHUB.equals(chemin)) {
+				boolean google = CONNEXION_GOOGLE.equals(chemin) && googleConfigure(clients);
+				if (!CONNEXION_GITHUB.equals(chemin) && !google) {
 					return null;
 				}
 				requete.getSession().setAttribute(ATTRIBUT_RETOUR, CheminRetour.valider(requete.getParameter("retour")));
@@ -102,6 +109,25 @@ class SecuriteConfig {
 		}
 		session.removeAttribute(ATTRIBUT_RETOUR);
 		return CheminRetour.valider(retour);
+	}
+
+	static boolean googleConfigure(ClientRegistrationRepository clients) {
+		var google = clients.findByRegistrationId("google");
+		return google != null && FournisseursController.configure(google.getClientId());
+	}
+
+	/** Pour un retour de Google, les codes du contrat : refus_google, google_indisponible, email_non_verifie. */
+	static String codeEchec(Exception echec, String chemin) {
+		if (chemin == null || !chemin.startsWith(CONNEXION_GOOGLE + "/")) {
+			return codeEchec(echec);
+		}
+		String code = echec instanceof OAuth2AuthenticationException oauth ? oauth.getError().getErrorCode() : "";
+		return switch (code) {
+			case "access_denied" -> "refus_google";
+			case "email_non_verifie" -> "email_non_verifie";
+			case "invalid_state_parameter", "authorization_request_not_found", "invalid_request" -> "requete_invalide";
+			default -> "google_indisponible";
+		};
 	}
 
 	/** Codes du contrat : refus_github, github_indisponible, requete_invalide. */

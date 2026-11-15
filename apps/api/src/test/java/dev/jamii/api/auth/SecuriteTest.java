@@ -98,6 +98,13 @@ class SecuriteTest {
 	}
 
 	@Test
+	void sans_application_google_le_bouton_n_est_pas_propose_et_rien_ne_demarre() {
+		assertThat(mvc.get().uri("/api/auth/fournisseurs")).hasStatusOk().bodyJson().extractingPath("$.google").isEqualTo(false);
+		assertThat(SecuriteConfig.resolveurAvecRetour(clients).resolve(new MockHttpServletRequest("GET", "/api/auth/google"))).isNull();
+		assertThat(mvc.get().uri("/api/auth/google")).hasStatus(HttpStatus.NOT_FOUND);
+	}
+
+	@Test
 	void seule_api_auth_github_demarre_une_connexion() {
 		var autre = new MockHttpServletRequest("POST", "/api/auth/lien-email");
 		assertThat(SecuriteConfig.resolveurAvecRetour(clients).resolve(autre)).isNull();
