@@ -14,6 +14,11 @@ spring:
       ddl-auto: validate
     # Pas de requête SQL cachée pendant le rendu de la réponse.
     open-in-view: false
+  # Cinq personnes ajoutent des migrations en parallèle, datées à l'heure où elles les écrivent : une PR fusionnée
+  # après une autre peut apporter une migration plus ancienne que la dernière appliquée. Sans ceci, Flyway refuse de
+  # démarrer (panne du 15/11, 10 h 26 GMT). Les migrations restent indépendantes les unes des autres.
+  flyway:
+    out-of-order: ${SPRING_FLYWAY_OUT_OF_ORDER:true}
   # Le schéma des sessions est créé par Flyway (V2), comme le reste.
   session:
     jdbc:
