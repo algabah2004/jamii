@@ -235,3 +235,33 @@ describe('livrer un tour', () => {
     expect(page.find('[data-test="livrer"]').exists()).toBe(false)
   })
 })
+
+describe('les tâches du tour', () => {
+  it('ajoute une tâche, la prend, la coche livrée, et la barre du tour suit', async () => {
+    const { page } = await ouvrir(`/cercles/${ID_DAKAR}`)
+    await vi.waitFor(() => expect(page.find('[data-test="taches-du-tour"] [data-test="ajouter-tache"]').exists()).toBe(true))
+    const avant = page.findAll('[data-test="tache"]').length
+    const faitesAvant = page.findAll('[data-test="cocher"]').filter((c) => (c.element as HTMLInputElement).checked).length
+
+    await page.find('#nouvelle-tache').setValue('Écran de connexion')
+    await page.find('[data-test="ajouter-tache"]').trigger('submit')
+    await vi.waitFor(() => expect(page.findAll('[data-test="tache"]')).toHaveLength(avant + 1))
+    expect(page.find('[data-test="avancement"]').text()).toContain(`${faitesAvant} tâches sur ${avant + 1}`)
+
+    const nouvelle = () => page.findAll('[data-test="tache"]').find((li) => li.text().includes('Écran de connexion'))!
+    await nouvelle().find('[data-test="prendre"]').trigger('click')
+    await vi.waitFor(() => expect(nouvelle().find('[data-test="lacher"]').exists()).toBe(true))
+
+    await nouvelle().find('[data-test="cocher"]').trigger('change')
+    await vi.waitFor(() => expect(nouvelle().classes()).toContain('tache--livree'))
+    expect(page.find('[data-test="avancement"]').text()).toContain(`${faitesAvant + 1} tâches sur ${avant + 1}`)
+  })
+
+  it("dit quand quelqu'un a changé la tâche entre-temps", async () => {
+    serveur.use(http.patch('/api/projets/:p/taches/:t', () => HttpResponse.json({ code: 'modification_concurrente' }, { status: 409 })))
+    const { page } = await ouvrir(`/cercles/${ID_DAKAR}`)
+    await vi.waitFor(() => expect(page.find('[data-test="cocher"]').exists()).toBe(true))
+    await page.find('[data-test="cocher"]').trigger('change')
+    await vi.waitFor(() => expect(page.find('[data-test="taches-du-tour"] [role="alert"]').text()).toContain('entre-temps'))
+  })
+})
