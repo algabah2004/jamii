@@ -10,6 +10,12 @@ import PartagerCercle from './PartagerCercle.vue'
 import CodeDuTour from './CodeDuTour.vue'
 import TachesDuTour from './TachesDuTour.vue'
 import SalonDuCercle from './SalonDuCercle.vue'
+import QgDuCercle from './QgDuCercle.vue'
+import OutilTaches from './OutilTaches.vue'
+import OutilPoints from './OutilPoints.vue'
+import OutilDecisions from './OutilDecisions.vue'
+import OutilCalendrier from './OutilCalendrier.vue'
+import { outilDepuis, OUTILS } from './qg'
 import { avancement, avantTirage, deposerIdee, LIMITES, lireAvancement, lireCercle, livrerTour, ordreDePassage, positionsAnneau, pourcentage, rejoindreCercle, tirerAuSort, titreDuTour, tourEnCours, type Avancement, type Cercle, type Resultat, type Tache } from './cercles'
 
 /*
@@ -63,9 +69,10 @@ const placesLibres = computed(() => places.value.slice(ordre.value.length))
 const tourDe = (personneId: string) => cercle.value?.tours.find((x) => x.beneficiaire.id === personneId) ?? null
 
 const membre = computed(() => !!cercle.value?.moi.estMembre)
-// Deux onglets pour les membres : le cercle (l'anneau, le tour, l'ordre) et son salon privé. Dans l'adresse (`?onglet=`),
-// pour qu'un lien mène droit au salon.
-const onglet = computed(() => (membre.value && route.query.onglet === 'salon' ? 'salon' : 'cercle'))
+// Le QG du cercle, à la façon d'un projet Basecamp : des outils (salon, tâches, point du soir, décisions, calendrier,
+// le cercle), chacun à son adresse (`?outil=`) pour qu'un lien mène droit à l'un d'eux. Les autres voient le cercle.
+const outil = computed(() => outilDepuis(route.query, membre.value, !!cercle.value?.tirage))
+const ICONES_OUTILS: Record<string, string> = { qg: '🏠', salon: '💬', taches: '✅', points: '🌙', decisions: '📌', calendrier: '📅', cercle: '⭕' }
 const createur = computed(() => !!cercle.value?.moi.estCreateur)
 const preparation = computed(() => (cercle.value ? avantTirage(cercle.value) : null))
 const monIdee = computed(() => cercle.value?.membres.find((m) => m.personne.id === moi.value?.id)?.idee ?? null)
@@ -135,13 +142,29 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
           <h1>{{ cercle.nom }}</h1>
           <p>{{ cercle.ville ? t('cercles.sousTitre', { n: cercle.membres.length, ville: cercle.ville }) : t('cercles.sousTitreSansVille', { n: cercle.membres.length }) }}</p>
         </div>
-        <nav v-if="membre" class="onglets" :aria-label="t('cercles.onglets.aria')">
-          <RouterLink :to="{ query: {} }" class="onglet" :class="{ actif: onglet === 'cercle' }" :aria-current="onglet === 'cercle' ? 'page' : undefined" data-test="onglet-cercle">{{ t('cercles.onglets.cercle') }}</RouterLink>
-          <RouterLink :to="{ query: { onglet: 'salon' } }" class="onglet" :class="{ actif: onglet === 'salon' }" :aria-current="onglet === 'salon' ? 'page' : undefined" data-test="onglet-salon">{{ t('cercles.onglets.salon') }}</RouterLink>
-        </nav>
+        <div v-if="membre" class="equipe-tete" :aria-label="t('cercles.membresTitre')">
+          <LienPersonne v-for="m in cercle.membres" :key="m.personne.id" :id="m.personne.id" :nom="m.personne.nom"><JAvatar :nom="m.personne.nom" :url="m.personne.avatarUrl" :taille="34" /></LienPersonne>
+        </div>
       </header>
 
-      <SalonDuCercle v-if="onglet === 'salon'" :key="cercle.id" :cercle="cercle" :suivi="suivi" :titre-tour="titreTour" />
+      <nav v-if="membre" class="outils-nav" :aria-label="t('cercles.onglets.aria')">
+        <RouterLink
+          v-for="o in OUTILS"
+          :key="o"
+          :to="{ query: { outil: o } }"
+          class="outil-lien"
+          :class="{ actif: outil === o }"
+          :aria-current="outil === o ? 'page' : undefined"
+          :data-test="o === 'cercle' ? 'onglet-cercle' : o === 'salon' ? 'onglet-salon' : `onglet-${o}`"
+        ><span aria-hidden="true">{{ ICONES_OUTILS[o] }}</span> {{ t(`cercles.qg.outils.${o}`) }}</RouterLink>
+      </nav>
+
+      <QgDuCercle v-if="outil === 'qg'" :key="`qg-${cercle.id}`" :cercle="cercle" :suivi="suivi" :titre-tour="titreTour" />
+      <SalonDuCercle v-else-if="outil === 'salon'" :key="cercle.id" :cercle="cercle" :suivi="suivi" :titre-tour="titreTour" />
+      <OutilTaches v-else-if="outil === 'taches'" :cercle="cercle" :moi-id="moi?.id ?? null" @maj="majTaches" />
+      <OutilPoints v-else-if="outil === 'points'" :cercle="cercle" />
+      <OutilDecisions v-else-if="outil === 'decisions'" :cercle="cercle" />
+      <OutilCalendrier v-else-if="outil === 'calendrier'" :cercle="cercle" :suivi="suivi" />
 
       <template v-else>
       <div class="mise-en-page">
@@ -276,11 +299,18 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
 
 <style scoped>
 .cercle-page { display: grid; gap: var(--space-6); }
-.onglets { display: flex; gap: var(--space-1); padding: 4px; border-radius: var(--radius-pill); background: color-mix(in srgb, var(--surface) 70%, transparent); border: 1px solid var(--line); width: fit-content; }
-.onglet { min-height: 40px; display: inline-flex; align-items: center; padding: 0 var(--space-4); border-radius: var(--radius-pill); color: var(--ink-muted); font-weight: 600; text-decoration: none; }
-.onglet:hover { color: var(--ink); }
-.onglet.actif { background: var(--surface); color: var(--ink); box-shadow: 0 1px 4px rgb(2 7 10 / 0.18); }
-.onglet:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.equipe-tete { display: flex; align-items: center; }
+.equipe-tete > * { margin-inline-start: -8px; }
+.equipe-tete :deep(.j-avatar) { box-shadow: 0 0 0 2px var(--surface); }
+/* La barre d'outils du QG : défilable sur mobile, jamais coupée. */
+.outils-nav {
+  display: flex; gap: var(--space-1); padding: 4px; margin-top: calc(-1 * var(--space-8)); overflow-x: auto; scrollbar-width: none;
+  border-radius: var(--radius-pill); background: var(--surface); border: 1px solid var(--line); width: fit-content; max-width: 100%;
+}
+.outil-lien { flex: none; min-height: 40px; display: inline-flex; align-items: center; gap: 6px; padding: 0 var(--space-4); border-radius: var(--radius-pill); color: var(--ink-muted); font-weight: 600; text-decoration: none; white-space: nowrap; }
+.outil-lien:hover { color: var(--ink); background: var(--surface-raised); }
+.outil-lien.actif { background: var(--ink); color: var(--surface); }
+.outil-lien:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
 .retour { margin: 0; font-size: var(--type-body-sm-size); }
 .mise-en-page { display: grid; gap: var(--space-6); grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); align-items: start; }
 @media (max-width: 860px) { .mise-en-page { grid-template-columns: 1fr; } }

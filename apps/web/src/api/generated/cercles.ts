@@ -423,12 +423,14 @@ export interface components {
             elements: components["schemas"]["MessageCercle"][];
             /** @description Les coups de main pas encore résolus, du plus ancien au plus récent. */
             coupsDeMain: components["schemas"]["MessageCercle"][];
+            /** @description Les dernières décisions, de la plus récente à la plus ancienne (v0.3). */
+            decisions: components["schemas"]["MessageCercle"][];
             /** @description Les membres qui ont fait leur point aujourd'hui (jour UTC). */
             pointsDuJour: string[];
             appel: components["schemas"]["AppelCercle"] | null;
         };
         /** @enum {string} */
-        TypeMessageCercle: "texte" | "point" | "coup_de_main" | "evenement" | "appel";
+        TypeMessageCercle: "texte" | "point" | "coup_de_main" | "evenement" | "appel" | "decision";
         /** @description Les champs propres à un type (`point`, `evenement`, `coupDeMain`, `appel`) valent `null` pour les autres. */
         MessageCercle: {
             /** Format: uuid */
@@ -477,8 +479,8 @@ export interface components {
         };
         NouveauMessageCercle: {
             /** @enum {string} */
-            type: "texte" | "point" | "coup_de_main";
-            /** @description Pour `texte` et `coup_de_main`. */
+            type: "texte" | "point" | "coup_de_main" | "decision";
+            /** @description Pour `texte`, `coup_de_main` et `decision`. */
             texte?: string;
             point?: components["schemas"]["PointDuJour"];
         };

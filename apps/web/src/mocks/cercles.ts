@@ -143,6 +143,7 @@ function salonDakar() {
   ev('tour_ouvert', 60 * 24 * 3, personneDe(1), 2)
   poster(ID_DAKAR, { type: 'texte', auteur: personneDe(1), texte: 'J’ai découpé le projet en 12 tâches, prenez celles qui vous parlent.', envoyeLe: ilYaMinutes(60 * 24 * 3 - 10) })
   poster(ID_DAKAR, { type: 'point', auteur: personneDe(1), point: { fait: 'La connexion par numéro de téléphone.', prevu: 'Le tableau des pesées du jour.', bloque: null }, envoyeLe: ilYaMinutes(90) })
+  poster(ID_DAKAR, { type: 'decision', auteur: personneDe(1), texte: 'On garde Flutter pour l’appli des pesées.', envoyeLe: ilYaMinutes(60 * 24 * 3 - 20) })
   poster(ID_DAKAR, { type: 'coup_de_main', auteur: personneDe(3), texte: 'L’APK ne s’installe pas sur les vieux Android 8. Une idée ?', coupDeMain: { resoluLe: null, resoluPar: null }, envoyeLe: ilYaMinutes(45) })
 }
 /** Remet les cercles de démo à leur état de départ (entre deux tests). */
@@ -191,6 +192,7 @@ export const handlersCercles = [
     return HttpResponse.json({
       elements,
       coupsDeMain: s.messages.filter((m) => m.type === 'coup_de_main' && !m.coupDeMain?.resoluLe),
+      decisions: s.messages.filter((m) => m.type === 'decision').reverse().slice(0, 30),
       pointsDuJour: [...new Set(s.messages.filter((m) => m.type === 'point' && m.envoyeLe.slice(0, 10) === debutDuJour()).map((m) => m.auteur!.id))],
       appel: appels.get(s.cercle.id) ?? null,
     })
@@ -206,8 +208,8 @@ export const handlersCercles = [
       if (s.messages.some((m) => m.type === 'point' && m.auteur?.id === moi.id && m.envoyeLe.slice(0, 10) === debutDuJour())) return erreur('point_deja_fait')
       return HttpResponse.json(poster(s.cercle.id, { type: 'point', auteur: moi, point: { fait: corps.point.fait, prevu: corps.point.prevu, bloque: corps.point.bloque ?? null }, envoyeLe: maintenant }), { status: 201 })
     }
-    if (!corps.texte?.trim() || !['texte', 'coup_de_main'].includes(corps.type)) return erreur('validation', 400)
-    const type = corps.type as 'texte' | 'coup_de_main'
+    if (!corps.texte?.trim() || !['texte', 'coup_de_main', 'decision'].includes(corps.type)) return erreur('validation', 400)
+    const type = corps.type as 'texte' | 'coup_de_main' | 'decision'
     return HttpResponse.json(poster(s.cercle.id, { type, auteur: moi, texte: corps.texte.trim(), coupDeMain: type === 'coup_de_main' ? { resoluLe: null, resoluPar: null } : null, envoyeLe: maintenant }), { status: 201 })
   }),
   http.post('/api/cercles/:id/salon/messages/:messageId/resolu', ({ params }) => {

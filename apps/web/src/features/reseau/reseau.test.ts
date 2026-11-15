@@ -106,7 +106,7 @@ describe('les profils qui manquent au cercle', () => {
     const abidjan = await ouvrir(`/cercles/${ID_ABIDJAN}`)
     await vi.waitFor(() => expect(abidjan.page.find('[data-test="rejoindre"]').exists()).toBe(true))
     expect(abidjan.page.find('[data-test="profils-recommandes"]').exists()).toBe(false)
-    const dakar = await ouvrir(`/cercles/${ID_DAKAR}`)
+    const dakar = await ouvrir(`/cercles/${ID_DAKAR}?outil=cercle`)
     await vi.waitFor(() => expect(dakar.page.find('[data-test="tour"]').exists()).toBe(true))
     expect(dakar.page.find('[data-test="profils-recommandes"]').exists()).toBe(false)
   })

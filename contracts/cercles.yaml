@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Jamii · Cercles (Tech Tontine)
-  version: 0.2.0
+  version: 0.3.0
   summary: Un cercle de 4 à 6 développeurs construit, à tour de rôle, le projet de chacun.
   description: |
     Responsable : @sowibrr (bloc #17). Règles communes : docs/api-conventions.md. Plan : docs/priorites.md, demande #98.
@@ -36,7 +36,8 @@ info:
     **Le salon du cercle** (v0.2, #157) : un fil privé aux membres (`403 pas_membre` pour les autres). On y écrit
     (`texte`), on y fait son **point du jour** (`point` : fait, prévu, bloqué ; un par jour UTC), on y demande un
     **coup de main** (`coup_de_main`, qui reste en haut tant qu'il n'est pas résolu) et on y lance un **appel**. Jamii
-    y écrit seul les étapes du cercle (`evenement` : création, arrivée d'un membre, tirage, tour ouvert ou livré, fin).
+    y écrit seul les étapes du cercle (v0.3 : et on y consigne les **décisions** de l'équipe, `decision`, relues à part).
+    Jamii (`evenement` : création, arrivée d'un membre, tirage, tour ouvert ou livré, fin).
 
     **Dépôt de code** : chaque tour peut avoir un dépôt Git (`depot`), sur le Gitea de Jamii ou sur GitHub selon la
     configuration du serveur (`DEPOT_CODE`). `depot` vaut `null` tant qu'il n'existe pas : le front n'affiche alors rien.
@@ -588,16 +589,17 @@ components:
 
     SalonCercle:
       type: object
-      required: [elements, coupsDeMain, pointsDuJour, appel]
+      required: [elements, coupsDeMain, decisions, pointsDuJour, appel]
       properties:
         elements: { type: array, items: { $ref: '#/components/schemas/MessageCercle' } }
         coupsDeMain: { type: array, maxItems: 10, description: 'Les coups de main pas encore résolus, du plus ancien au plus récent.', items: { $ref: '#/components/schemas/MessageCercle' } }
+        decisions: { type: array, maxItems: 30, description: 'Les dernières décisions, de la plus récente à la plus ancienne (v0.3).', items: { $ref: '#/components/schemas/MessageCercle' } }
         pointsDuJour: { type: array, description: 'Les membres qui ont fait leur point aujourd''hui (jour UTC).', items: { type: string, format: uuid } }
         appel: { oneOf: [{ $ref: '#/components/schemas/AppelCercle' }, { type: 'null' }] }
 
     TypeMessageCercle:
       type: string
-      enum: [texte, point, coup_de_main, evenement, appel]
+      enum: [texte, point, coup_de_main, evenement, appel, decision]
 
     MessageCercle:
       type: object
@@ -655,8 +657,8 @@ components:
       additionalProperties: false
       required: [type]
       properties:
-        type: { type: string, enum: [texte, point, coup_de_main] }
-        texte: { type: string, minLength: 1, maxLength: 2000, description: 'Pour `texte` et `coup_de_main`.' }
+        type: { type: string, enum: [texte, point, coup_de_main, decision] }
+        texte: { type: string, minLength: 1, maxLength: 2000, description: 'Pour `texte`, `coup_de_main` et `decision`.' }
         point: { $ref: '#/components/schemas/PointDuJour' }
 
     AppelCercle:

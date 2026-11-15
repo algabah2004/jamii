@@ -54,7 +54,8 @@ class SalonCercleController {
 	record AppelCercle(UUID id, PersonneResume lancePar, Instant lanceLe, String url) {
 	}
 
-	record Salon(List<MessageCercle> elements, List<MessageCercle> coupsDeMain, List<UUID> pointsDuJour, AppelCercle appel) {
+	record Salon(List<MessageCercle> elements, List<MessageCercle> coupsDeMain, List<MessageCercle> decisions, List<UUID> pointsDuJour,
+			AppelCercle appel) {
 	}
 
 	record NouveauMessage(String type, String texte, Point point) {
@@ -93,19 +94,21 @@ class SalonCercleController {
 		Instant maintenant = Instant.now();
 		var messages = salon.messages(cercleId, apres, limite, maintenant);
 		var coups = salon.coupsDeMainOuverts(cercleId, maintenant);
+		var decisions = salon.decisions(cercleId, maintenant);
 		var appel = salon.appelEnCours(cercleId, maintenant);
 		Set<UUID> ids = new HashSet<>();
 		for (var m : messages) {
 			personnes(m, ids);
 		}
 		coups.forEach(m -> personnes(m, ids));
+		decisions.forEach(m -> personnes(m, ids));
 		appel.map(SalonCercle.Appel::lancePar).ifPresent(ids::add);
 		ids.remove(null);
 		Map<UUID, Compte> comptes = annuaire.lire(ids);
 		return ResponseEntity.ok()
 			.cacheControl(CacheControl.noStore())
 			.body(new Salon(messages.stream().map(m -> vue(m, comptes)).toList(), coups.stream().map(m -> vue(m, comptes)).toList(),
-					salon.pointsDuJour(cercleId, maintenant), appel.map(a -> vue(a, comptes)).orElse(null)));
+					decisions.stream().map(m -> vue(m, comptes)).toList(), salon.pointsDuJour(cercleId, maintenant), appel.map(a -> vue(a, comptes)).orElse(null)));
 	}
 
 	@PostMapping("/api/cercles/{cercleId}/salon/messages")
@@ -115,15 +118,18 @@ class SalonCercleController {
 		Instant maintenant = Instant.now();
 		SalonCercle.Message message;
 		switch (type) {
-			case "texte", "coup_de_main" -> {
+			case "texte", "coup_de_main", "decision" -> {
 				String texte = propre(demande.texte());
 				if (texte == null || texte.length() > TEXTE_MAX) {
 					throw validation("texte", "longueur_invalide");
 				}
 				membre(cercleId, moi.id());
 				attendre(moi.id(), maintenant);
-				message = "texte".equals(type) ? salon.ecrire(cercleId, moi.id(), texte, maintenant)
-						: salon.coupDeMain(cercleId, moi.id(), texte, maintenant);
+				message = switch (type) {
+					case "texte" -> salon.ecrire(cercleId, moi.id(), texte, maintenant);
+					case "decision" -> salon.decision(cercleId, moi.id(), texte, maintenant);
+					default -> salon.coupDeMain(cercleId, moi.id(), texte, maintenant);
+				};
 			}
 			case "point" -> {
 				Point p = demande.point();
