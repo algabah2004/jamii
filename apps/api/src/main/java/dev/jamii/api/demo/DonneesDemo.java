@@ -108,6 +108,7 @@ class DonneesDemo implements ApplicationRunner {
 		transaction.executeWithoutResult(statut -> new DemoAnnonces(base, maintenant).completer());
 		// Les nouveaux cercles se complètent aussi sur la base distante déjà chargée, sans réinitialisation.
 		transaction.executeWithoutResult(statut -> new DemoDecouverteCercles(base, maintenant).charger());
+		transaction.executeWithoutResult(statut -> new DemoDecouverteHackathons(base, maintenant).charger());
 		// Après les communautés : leurs personnes existent alors toutes. Un profil publié pour chacune.
 		transaction.executeWithoutResult(statut -> new DemoProfils(base, maintenant).charger());
 		transaction.executeWithoutResult(statut -> new DemoSalonsCercles(base, maintenant).charger());
