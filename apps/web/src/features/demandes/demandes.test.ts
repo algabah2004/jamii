@@ -106,7 +106,6 @@ describe('Une PME décrit son besoin', () => {
   it('propose de publier le plan comme mission, à côté du lancement du projet', async () => {
     const { page, routeur } = await ouvrir('/demandes/nouvelle')
     await page.get('[data-test="exemple"]').trigger('click')
-    await jusquApercu(page)
     await page.get('[data-test="demande"]').trigger('submit')
     await vi.waitFor(() => expect(page.find('[data-test="publier-mission"]').exists()).toBe(true), { timeout: 4000 })
     const id = String(routeur.currentRoute.value.params.id)
