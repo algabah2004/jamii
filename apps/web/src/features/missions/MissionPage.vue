@@ -74,6 +74,13 @@ const echanges = computed<{ visible: boolean; avec: Interlocuteur | null }>(() =
   return { visible: false, avec: null }
 })
 
+/** La barre du bas (mobile) : seulement s'il y a une action à y mettre, et jamais pour le client (ses actions sont dans le résumé). */
+const barreMobile = computed(() => {
+  const m = mission.value
+  if (!m || m.moi.role === 'client') return false
+  return peut('proposer') || invitationConnexion.value || echanges.value.visible
+})
+
 const etapeActuelle = computed(() => ETAPES.indexOf(mission.value?.statut as (typeof ETAPES)[number]))
 const invitationConnexion = computed(() => session.etat.value === 'non_connecte' && mission.value?.statut === 'publiee')
 /** Un candidat retenu peut envoyer son devis, ou en a déjà un sous les yeux du client. */
@@ -106,7 +113,7 @@ async function agir(appel: (id: string, version: number) => Promise<Resultat<Mis
 </script>
 
 <template>
-  <section class="mission">
+  <section class="mission" :class="{ 'avec-barre': barreMobile }">
     <p class="retour"><RouterLink to="/missions">{{ t('missions.detail.retour') }}</RouterLink></p>
 
     <JSquelette v-if="etat === 'chargement'" :nombre="3" />
@@ -216,12 +223,35 @@ async function agir(appel: (id: string, version: number) => Promise<Resultat<Mis
           <p v-if="message" role="alert" class="erreur" data-test="erreur">{{ message }}</p>
         </aside>
       </div>
+
+      <div v-if="barreMobile" class="barre-mobile" data-test="barre-mobile">
+        <p><span class="texte-discret">{{ t('missions.detail.budget') }}</span><strong>{{ budget }}</strong></p>
+        <a v-if="peut('proposer')" href="#proposer" class="j-bouton j-bouton--principal">{{ t('missions.detail.proposer') }}</a>
+        <RouterLink v-else-if="invitationConnexion" :to="{ name: 'connexion', query: { retour: route.fullPath } }" class="j-bouton j-bouton--principal">
+          {{ t('missions.detail.seConnecter') }}
+        </RouterLink>
+        <a v-else href="#echanges" class="j-bouton j-bouton--principal">{{ t('missions.echanges.ecrireClient') }}</a>
+      </div>
     </template>
   </section>
 </template>
 
 <style scoped>
 .mission { display: grid; gap: var(--space-6); }
+/* Sur mobile, le résumé passe sous tout le reste : l'action principale reste sous le pouce, dans une barre en bas. */
+.barre-mobile {
+  position: fixed; inset-inline: 0; inset-block-end: 0; z-index: 20;
+  display: flex; gap: var(--space-3); align-items: center; justify-content: space-between;
+  padding: var(--space-3) var(--space-4) calc(var(--space-3) + env(safe-area-inset-bottom));
+  background: var(--surface); border-block-start: 1px solid var(--line-strong);
+  box-shadow: 0 -8px 24px color-mix(in srgb, #000 18%, transparent);
+}
+.barre-mobile p { margin: 0; display: grid; line-height: 1.2; min-width: 0; }
+.barre-mobile strong { font-size: 1.0625rem; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.barre-mobile .j-bouton { flex: 0 0 auto; }
+@media (max-width: 959px) { .avec-barre { padding-block-end: 5.5rem; } }
+@media (min-width: 960px) { .barre-mobile { display: none; } }
+
 .retour { margin: 0; font-size: var(--type-body-sm-size); }
 .message { margin: 0; padding: var(--space-6); }
 .lieu { margin: 0; font-size: 1.125rem; }

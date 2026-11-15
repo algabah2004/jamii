@@ -110,6 +110,9 @@ const criteres = computed(() => {
 })
 const participe = computed(() => peut('sinscrire') || peut('creer_equipe'))
 
+/** La barre du bas (mobile) : participer, se connecter, ou rejoindre les annonces et échanges. */
+const barreMobile = computed(() => Boolean(hackathon.value && hackathon.value.statut !== 'brouillon' && hackathon.value.moi.role !== 'organisateur'))
+
 // ---------------------------------------------------------------- les onglets
 
 type Onglet = 'presentation' | 'discussion' | 'equipes' | 'gestion'
@@ -127,14 +130,16 @@ const onglet = computed<Onglet>(() => onglets.value.find((o) => o === route.quer
 const ONGLET_DE: Record<string, Onglet> = {
   participer: 'presentation', candidatures: 'gestion', jury: 'gestion', equipes: 'equipes', discussion: 'discussion',
 }
-function choisirOnglet(o: Onglet, ancre?: string) {
-  void routeur.replace({ query: { ...route.query, onglet: o === 'presentation' ? undefined : o }, hash: ancre ? `#${ancre}` : '' })
-  if (ancre) void nextTick(() => document.getElementById(ancre)?.scrollIntoView({ block: 'start' }))
+async function choisirOnglet(o: Onglet, ancre?: string) {
+  await routeur.replace({ query: { ...route.query, onglet: o === 'presentation' ? undefined : o }, hash: ancre ? `#${ancre}` : '' })
+  // Le panneau n'est visible qu'une fois la route changée : on défile après, pas avant.
+  await nextTick()
+  if (ancre) document.getElementById(ancre)?.scrollIntoView({ block: 'start' })
 }
 function suivreAncre() {
   const ancre = window.location.hash.slice(1)
   const cible = ONGLET_DE[ancre]
-  if (cible && onglets.value.includes(cible)) choisirOnglet(cible, ancre)
+  if (cible && onglets.value.includes(cible)) void choisirOnglet(cible, ancre)
 }
 onMounted(() => window.addEventListener('hashchange', suivreAncre))
 onBeforeUnmount(() => window.removeEventListener('hashchange', suivreAncre))
@@ -155,8 +160,7 @@ function clavierOnglets(e: KeyboardEvent) {
   const cible = cibles[e.key]
   if (!cible) return
   e.preventDefault()
-  choisirOnglet(cible)
-  void nextTick(() => document.getElementById(`onglet-${cible}`)?.focus())
+  void choisirOnglet(cible).then(() => document.getElementById(`onglet-${cible}`)?.focus())
 }
 const invitationConnexion = computed(() => session.etat.value === 'non_connecte' && hackathon.value?.statut === 'publie')
 const raisonValide = computed(() => raison.value.trim().length >= LIMITES.raisonMin)
@@ -188,7 +192,7 @@ const annuler = () => (raisonValide.value ? agir(() => annulerHackathon(hackatho
 
 
 <template>
-  <section class="hackathon">
+  <section class="hackathon" :class="{ 'avec-barre': barreMobile }">
     <p class="retour"><RouterLink to="/hackathons">{{ t('hackathons.detail.retour') }}</RouterLink></p>
 
     <JSquelette v-if="etat === 'chargement'" :nombre="3" />
@@ -219,7 +223,7 @@ const annuler = () => (raisonValide.value ? agir(() => annulerHackathon(hackatho
               :aria-controls="`panneau-${o}`"
               :tabindex="onglet === o ? 0 : -1"
               :data-test="`onglet-${o}`"
-              @click="choisirOnglet(o)"
+              @click="void choisirOnglet(o)"
             >
               {{ t(`hackathons.onglets.${o}`) }}
               <span v-if="o === 'discussion' && nouvellesAnnonces" class="onglet__pastille" data-test="nouvelles-annonces">
@@ -362,12 +366,36 @@ const annuler = () => (raisonValide.value ? agir(() => annulerHackathon(hackatho
           <p v-if="message" role="alert" class="erreur" data-test="erreur">{{ message }}</p>
         </aside>
       </div>
+
+      <div v-if="barreMobile" class="barre-mobile" data-test="barre-mobile">
+        <p v-if="prochaine"><span class="texte-discret">{{ t(`hackathons.calendrier.${prochaine.cle}`) }}</span><strong>{{ prochaine.jour }}</strong></p>
+        <p v-else><strong>{{ hackathon.titre }}</strong></p>
+        <a v-if="participe" href="#participer" class="j-bouton j-bouton--principal">{{ t('hackathons.detail.participer') }}</a>
+        <RouterLink v-else-if="invitationConnexion" :to="{ name: 'connexion', query: { retour: route.fullPath } }" class="j-bouton j-bouton--principal">
+          {{ t('hackathons.detail.seConnecter') }}
+        </RouterLink>
+        <a v-else href="#discussion" class="j-bouton j-bouton--principal">{{ t('hackathons.discussion.aller') }}</a>
+      </div>
     </template>
   </section>
 </template>
 
 <style scoped>
 .hackathon { display: grid; gap: var(--space-6); }
+/* Sur mobile, le résumé passe sous tout le reste : l'action principale reste sous le pouce, dans une barre en bas. */
+.barre-mobile {
+  position: fixed; inset-inline: 0; inset-block-end: 0; z-index: 20;
+  display: flex; gap: var(--space-3); align-items: center; justify-content: space-between;
+  padding: var(--space-3) var(--space-4) calc(var(--space-3) + env(safe-area-inset-bottom));
+  background: var(--surface); border-block-start: 1px solid var(--line-strong);
+  box-shadow: 0 -8px 24px color-mix(in srgb, #000 18%, transparent);
+}
+.barre-mobile p { margin: 0; display: grid; line-height: 1.2; min-width: 0; }
+.barre-mobile strong { font-size: 1.0625rem; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.barre-mobile .j-bouton { flex: 0 0 auto; }
+@media (max-width: 959px) { .avec-barre { padding-block-end: 5.5rem; } }
+@media (min-width: 960px) { .barre-mobile { display: none; } }
+
 .retour { margin: 0; font-size: var(--type-body-sm-size); }
 .message { margin: 0; padding: var(--space-6); }
 .theme { margin: 0; font-size: 1.125rem; }

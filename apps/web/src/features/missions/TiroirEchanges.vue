@@ -65,10 +65,13 @@ function fermer() {
 }
 .tiroir[open] { animation: glisse 220ms ease-out; }
 .tiroir::backdrop { background: rgb(2 7 10 / 0.45); backdrop-filter: blur(2px); }
-.tiroir__corps { position: relative; display: grid; align-content: start; block-size: 100%; overflow-y: auto; padding: var(--space-4); }
+.tiroir__corps { position: relative; display: grid; block-size: 100%; overflow-y: auto; padding: var(--space-4); }
 .tiroir__corps :deep(.echanges) { box-shadow: none; }
 .tiroir__corps :deep(.tete) { padding-inline-end: 3.5rem; }
-.tiroir__corps :deep(.fil) { max-block-size: calc(100dvh - 18rem); }
+/* Comme une messagerie : le fil prend la hauteur, la saisie reste en bas. */
+.tiroir__corps :deep(.echanges) { display: flex; flex-direction: column; min-block-size: 100%; }
+.tiroir__corps :deep(.fil) { flex: 1 1 auto; min-block-size: 0; max-block-size: none; align-content: end; }
+.tiroir__corps :deep(.saisie) { margin-block-start: auto; }
 .tiroir__fermer {
   position: absolute; inset-block-start: var(--space-6); inset-inline-end: var(--space-6); z-index: 1;
   display: grid; place-items: center; inline-size: 40px; block-size: 40px; border: 1px solid var(--line-strong); border-radius: 50%;
