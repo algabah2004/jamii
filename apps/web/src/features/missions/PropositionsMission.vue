@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { JAvatar, JBouton, JSquelette } from '../../design-system'
 import { formaterDate } from './action'
+import { lireConversations } from '../reseau/reseau'
 import { formaterMontant, listerPropositions, retenirProposition, retirerProposition, type Mission, type Proposition } from './missions'
 
 /*
@@ -18,6 +19,14 @@ const etat = ref<'chargement' | 'pret' | 'indisponible'>('chargement')
 const envoi = ref<string | null>(null)
 const tri = ref<'recentes' | 'prix' | 'delai'>('recentes')
 const TRIS = ['recentes', 'prix', 'delai'] as const
+/** Les messages non lus de chaque développeur, pour le compteur du bouton « Écrire » (client seulement). */
+const nonLus = ref<Record<string, number>>({})
+async function chargerNonLus() {
+  if (props.mission.moi.role !== 'client') return
+  const conversations = await lireConversations().catch(() => [])
+  nonLus.value = Object.fromEntries(conversations.map((c) => [c.personne.id, c.nonLus]))
+}
+void chargerNonLus()
 
 /** Le client compare : par prix ou par délai ; les propositions retirées ou écartées passent après. */
 const triees = computed(() => {
@@ -52,6 +61,11 @@ async function charger() {
 }
 // La mission change après chaque action (version, statut) : la liste suit.
 watch(() => props.mission.version, () => void charger(), { immediate: true })
+
+function ecrire(p: Proposition) {
+  nonLus.value = { ...nonLus.value, [p.developpeur.id]: 0 }
+  emit('ecrire', p.developpeur)
+}
 
 async function agir(p: Proposition, retenir: boolean) {
   if (envoi.value) return
@@ -108,8 +122,12 @@ async function agir(p: Proposition, retenir: boolean) {
         <!-- Texte libre du développeur : affiché échappé, avec ses retours à la ligne. -->
         <p class="message">{{ p.message }}</p>
         <div class="actions">
-          <JBouton v-if="estClient" variante="discret" data-test="ecrire-developpeur" @click="emit('ecrire', p.developpeur)">
-            {{ t('missions.proposition.ecrire', { nom: p.developpeur.nom }) }}
+          <JBouton v-if="estClient" variante="secondaire" data-test="ecrire-developpeur" @click="ecrire(p)">
+            <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M4 4.5h12a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H9l-3.5 3v-3H4a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" /></svg>
+            {{ t('missions.proposition.ecrire') }}<span class="visuellement-cache">&nbsp;{{ t('missions.proposition.ecrireA', { nom: p.developpeur.nom }) }}</span>
+            <span v-if="nonLus[p.developpeur.id]" class="non-lus" data-test="non-lus">
+              {{ nonLus[p.developpeur.id] }}<span class="visuellement-cache"> {{ t('missions.proposition.nonLus', nonLus[p.developpeur.id] ?? 0) }}</span>
+            </span>
           </JBouton>
           <JBouton v-if="peutRetenir && p.statut === 'envoyee'" variante="secondaire" :occupe="envoi === p.id" data-test="retenir" @click="agir(p, true)">
             {{ t('missions.proposition.retenir') }}
@@ -146,6 +164,10 @@ async function agir(p: Proposition, retenir: boolean) {
 .etiquette { margin: 0; }
 .liste p { margin: 0; }
 .message { white-space: pre-line; }
+.non-lus {
+  min-inline-size: 1.25rem; padding: 0 6px; border-radius: var(--radius-pill); background: var(--cantaloupe); color: var(--midnight);
+  font-size: 0.75rem; font-weight: 800; text-align: center;
+}
 .tris { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .tri { min-height: 36px; padding: 0 var(--space-3); border: 1px solid var(--line-strong); border-radius: var(--radius-pill); background: var(--surface); font-weight: 600; cursor: pointer; }
 .tri[aria-pressed='true'] { background: var(--action); border-color: var(--action); color: var(--on-action); }

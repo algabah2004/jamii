@@ -1682,7 +1682,9 @@
         "delai": "Délai le plus court"
       },
       "auDessus": "Au-dessus du budget",
-      "ecrire": "Écrire"
+      "ecrire": "Écrire",
+      "ecrireA": "à {nom}",
+      "nonLus": "message non lu | messages non lus"
     },
     "devis": {
       "titre": "Envoyer mon devis",
@@ -1732,7 +1734,8 @@
       "erreurs": {
         "trop": "Trop de messages d'un coup. Réessaie dans un moment.",
         "autre": "Le message n'est pas parti. Réessaie."
-      }
+      },
+      "fermer": "Fermer les échanges"
     }
   },
   "themes": {

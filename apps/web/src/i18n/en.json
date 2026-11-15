@@ -1682,7 +1682,9 @@
         "delai": "Shortest time"
       },
       "auDessus": "Above budget",
-      "ecrire": "Write"
+      "ecrire": "Write",
+      "ecrireA": "to {nom}",
+      "nonLus": "unread message | unread messages"
     },
     "devis": {
       "titre": "Send my quote",
@@ -1732,7 +1734,8 @@
       "erreurs": {
         "trop": "Too many messages at once. Try again in a moment.",
         "autre": "The message wasn't sent. Try again."
-      }
+      },
+      "fermer": "Close messages"
     }
   },
   "themes": {

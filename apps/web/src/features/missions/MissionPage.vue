@@ -6,6 +6,7 @@ import { JAvatar, JBouton, JSquelette } from '../../design-system'
 import { fermerMission, formaterMontant, lireMission, publierMission, type Mission, type Resultat } from './missions'
 import DevisPropose from './DevisPropose.vue'
 import EchangesMission from './EchangesMission.vue'
+import TiroirEchanges from './TiroirEchanges.vue'
 import EnvoyerDevis from './EnvoyerDevis.vue'
 import PropositionsMission from './PropositionsMission.vue'
 import ProposerMission from './ProposerMission.vue'
@@ -59,18 +60,15 @@ const voitPropositions = computed(() => {
   return m.moi.role === 'candidat' || (m.moi.role === 'client' && ['publiee', 'fermee'].includes(m.statut))
 })
 
-/** Avec qui le client échange : la personne choisie depuis une proposition, sinon le développeur retenu. */
+/** Le client écrit à un candidat dans un panneau latéral ; une fois la mission attribuée, au développeur retenu, sur la page. */
 type Interlocuteur = { id: string; nom: string; avatarUrl?: string | null }
 const choisi = ref<Interlocuteur | null>(null)
-function ecrireA(p: Interlocuteur) {
-  choisi.value = p
-  document.getElementById('echanges')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-}
+const ecrireA = (p: Interlocuteur) => (choisi.value = p)
 /** Les échanges : le client avec un développeur ; un développeur connecté (candidat, retenu, invité) avec le client. */
 const echanges = computed<{ visible: boolean; avec: Interlocuteur | null }>(() => {
   const m = mission.value
   if (!m || m.statut === 'brouillon' || !session.moi.value) return { visible: false, avec: null }
-  if (m.moi.role === 'client') return { visible: true, avec: choisi.value ?? m.travail?.developpeur ?? null }
+  if (m.moi.role === 'client') return { visible: Boolean(m.travail), avec: m.travail?.developpeur ?? null }
   const parties = ['candidat', 'developpeur_retenu', 'invite']
   if (parties.includes(m.moi.role) || (m.moi.role === 'visiteur' && m.statut === 'publiee')) return { visible: true, avec: m.client }
   return { visible: false, avec: null }
@@ -165,6 +163,7 @@ async function agir(appel: (id: string, version: number) => Promise<Resultat<Mis
           <EnvoyerDevis v-if="peut('envoyer_devis')" id="envoyer-devis" :mission="mission" :remplace="Boolean(mission.travail)" @envoye="rafraichir" />
           <SuiviMission v-if="mission.travail && devisAccepte" :mission="mission" :travail="mission.travail" @maj="mission = $event" />
           <div v-if="echanges.visible" id="echanges"><EchangesMission :mission="mission" :avec="echanges.avec" /></div>
+          <TiroirEchanges v-if="mission.moi.role === 'client'" :mission="mission" :avec="choisi" @fermer="choisi = null" />
         </div>
 
         <aside class="carte resume" :aria-label="t('missions.detail.resume')" data-test="resume">
