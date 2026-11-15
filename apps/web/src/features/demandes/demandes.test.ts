@@ -138,7 +138,7 @@ describe('l’orientation d’un besoin', () => {
     await vi.waitFor(() => expect(page.find('[data-test="services-systalink"]').exists()).toBe(true), { timeout: 4000 })
     const services = page.findAll('[data-test="service"]')
     expect(services).toHaveLength(2)
-    expect(services[0]!.get('a').attributes()).toMatchObject({ href: 'https://systalink.com', rel: 'noopener noreferrer' })
+    expect(services[0]!.get('a').attributes()).toMatchObject({ href: 'https://systalink.com/fr/stockage-objets', rel: 'noopener noreferrer' })
     // Le clic sur « Voir le service » est compté pour le tableau de bord Systalink (#65).
     const clics: string[] = []
     serveur.use(http.post('/api/systalink/moments/:momentId/accepter', ({ params }) => {
@@ -172,6 +172,46 @@ describe('l’orientation d’un besoin', () => {
     expect((caseOffres.element as HTMLInputElement).checked).toBe(false)
     await caseOffres.setValue(true)
     await vi.waitFor(() => expect((caseOffres.element as HTMLInputElement).checked).toBe(true))
+  })
+
+  it('Ayo pose sa question d’abord : une réponse d’un clic part comme une précision, ou on passe à son conseil', async () => {
+    const avecQuestion = { ...orientationDemo(), question: { texte: 'Combien de personnes travaillent au cabinet ?', suggestions: ['Moins de 5', 'Plus de 5'] } }
+    serveur.use(
+      http.get('/api/demandes/:id', () =>
+        HttpResponse.json({ ...base, conseilsRestants: 4, plan: { statut: 'terminee', origine: 'ia', resultat: planDemo() }, orientation: { statut: 'terminee', origine: 'ia', resultat: avecQuestion }, recommandations: RECOMMANDES }),
+      ),
+    )
+    const { page } = await ouvrir(`/demandes/${ID}`)
+    await vi.waitFor(() => expect(page.find('[data-test="question-ayo"]').exists()).toBe(true))
+    // Tant que la question est ouverte, le conseil attend derrière.
+    expect(page.find('[data-test="services-systalink"]').exists()).toBe(false)
+    await page.get('[data-test="passer"]').trigger('click')
+    await vi.waitFor(() => expect(page.find('[data-test="services-systalink"]').exists()).toBe(true))
+    expect(page.get('[data-test="etapes-ayo"]').findAll('li')).toHaveLength(3)
+    expect(page.get('[data-test="conseils-restants"]').text()).toContain('Il te reste 4 conseils')
+    expect(page.find('[data-test="libre"]').exists()).toBe(true)
+    // « Ce n'est pas tout à fait ça ? » prépare une raison que la personne peut compléter.
+    await page.get('[data-test="pas-ca-cher"]').trigger('click')
+    expect((page.get('#precision').element as HTMLTextAreaElement).value).toBe('C’est trop cher pour moi.')
+  })
+
+  it('une suggestion de la question d’Ayo part comme une précision', async () => {
+    const avecQuestion = { ...orientationDemo(), question: { texte: 'Combien de personnes travaillent au cabinet ?', suggestions: ['Moins de 5', 'Plus de 5'] } }
+    const envoyees: string[] = []
+    serveur.use(
+      http.get('/api/demandes/:id', () =>
+        HttpResponse.json({ ...base, plan: { statut: 'terminee', origine: 'ia', resultat: planDemo() }, orientation: { statut: 'terminee', origine: 'ia', resultat: avecQuestion }, recommandations: [] }),
+      ),
+      http.post('/api/demandes/:id/precisions', async ({ request }) => {
+        envoyees.push(((await request.json()) as { texte: string }).texte)
+        return HttpResponse.json({ ...base, precisions: [{ texte: envoyees.at(-1), creeLe: '2026-11-15T10:00:00Z' }], plan: { statut: 'en_attente' }, orientation: { statut: 'en_attente' } })
+      }),
+    )
+    const { page } = await ouvrir(`/demandes/${ID}`)
+    await vi.waitFor(() => expect(page.find('[data-test="suggestion"]').exists()).toBe(true))
+    await page.findAll('[data-test="suggestion"]')[0]!.trigger('click')
+    await vi.waitFor(() => expect(envoyees).toEqual(['Moins de 5']))
+    await vi.waitFor(() => expect(page.find('[data-test="question-ayo"]').exists()).toBe(false))
   })
 
   it('n’affiche ni développeurs ni plan quand Systalink suffit, et dit quand l’IA était absente', async () => {

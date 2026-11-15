@@ -782,7 +782,28 @@
       "envoyer": "Envoyer",
       "limite": "Tu as déjà précisé 5 fois ce besoin. Décris un nouveau besoin pour repartir de zéro."
     },
-    "quota": "Tu as utilisé tous tes conseils d'aujourd'hui. Ayo te retrouve demain, et tes demandes restent dans « Tes demandes »."
+    "quota": "Tu as utilisé tous tes conseils d'aujourd'hui. Ayo te retrouve demain, et tes demandes restent dans « Tes demandes ».",
+    "ayo": {
+      "nom": "Ayo",
+      "role": "ton conseiller Jamii",
+      "reflechit": "Ayo réfléchit à ton besoin…",
+      "conseil": "Mon conseil",
+      "maintenant": "Et maintenant ?",
+      "autres": "Voir les autres possibilités ({n}) | Voir l’autre possibilité | Voir les autres possibilités ({n})",
+      "libre": "Tu n’es obligé de rien : prends le temps de comparer, et reviens quand tu veux.",
+      "question": {
+        "repondre": "Répondre",
+        "libre": "Ou réponds avec tes mots…",
+        "passer": "Passer, donne-moi ton conseil"
+      },
+      "pasCa": {
+        "titre": "Ce n’est pas tout à fait ça ?",
+        "cher": "C’est trop cher pour moi",
+        "complique": "C’est trop compliqué pour moi",
+        "autre": "Je cherche autre chose"
+      },
+      "restants": "Plus de conseil aujourd’hui | Il te reste 1 conseil aujourd’hui | Il te reste {n} conseils aujourd’hui"
+    }
   },
   "cercles": {
     "titre": "Cercles",

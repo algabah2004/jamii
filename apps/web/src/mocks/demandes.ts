@@ -62,21 +62,27 @@ export function orientationDemo(dureeSemaines = 8): Orientation {
     resume:
       "Le cabinet veut retrouver ses dossiers en quelques secondes, les partager entre associés sans clé USB, et donner aux clients un espace pour suivre l'avancement de leur affaire.",
     secteur: 'juridique',
+    etapes: [
+      'Fais la liste des dossiers que tes associés ouvrent le plus souvent.',
+      'Note ce que tes clients te demandent le plus au téléphone sur leur affaire.',
+      'Écris à un des développeurs proposés plus bas pour en parler.',
+    ],
+    question: null,
     services: [
-      {
-        id: 'systaone',
-        nom: 'SystaONE (SystaDrive, SystaMail, SystaTalk, SystaForms)',
-        pourCeBesoin: 'Ranger et partager les dossiers entre associés dès demain, avec une messagerie professionnelle au nom du cabinet.',
-        prixIndicatif: 'Essai de 14 jours, puis 2 000 à 12 000 FCFA par utilisateur et par mois',
-        lien: 'https://systalink.com',
-        momentId: 'b0a10000-0000-4000-8000-000000000001',
-      },
       {
         id: 'datacloud-stockage',
         nom: 'DataCloud, stockage de fichiers',
-        pourCeBesoin: 'Garder les PDF et les pièces scannées à Dakar, en sécurité, pour l’espace client.',
-        prixIndicatif: null,
-        lien: 'https://platform.systalink.com',
+        pourCeBesoin: 'Garder les PDF et les pièces scannées du cabinet en sécurité, avec l’historique des versions, pour l’espace client que les développeurs construiront.',
+        prixIndicatif: 'Dès 3 280 FCFA par mois (250 Go)',
+        lien: 'https://systalink.com/fr/stockage-objets',
+        momentId: 'b0a10000-0000-4000-8000-000000000001',
+      },
+      {
+        id: 'email-professionnel',
+        nom: 'Adresse e-mail professionnelle',
+        pourCeBesoin: 'Écrire aux clients depuis une adresse au nom du cabinet, qui inspire confiance.',
+        prixIndicatif: 'Dès 499 FCFA par mois et par adresse',
+        lien: 'https://systalink.com/fr/email-professionnel',
         momentId: 'b0a10000-0000-4000-8000-000000000002',
       },
     ],
