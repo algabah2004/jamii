@@ -97,6 +97,8 @@ const etapes = computed(() => {
     cle,
     jour: new Intl.DateTimeFormat(locale.value, { dateStyle: 'long' }).format(new Date(instant)),
     heure: new Intl.DateTimeFormat(locale.value, { timeStyle: 'short' }).format(new Date(instant)),
+    // Pour la barre mobile, où la place manque : « 16 nov. 2026 ».
+    jourCourt: new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium' }).format(new Date(instant)),
     etat: i < franchies - 1 ? 'passee' : i === franchies - 1 ? 'actuelle' : 'avenir',
   }))
 })
@@ -109,6 +111,14 @@ const criteres = computed(() => {
   return liste.map((c) => ({ ...c, part: Math.round((c.poids / total) * 100) }))
 })
 const participe = computed(() => peut('sinscrire') || peut('creer_equipe'))
+/** Le juré, pendant l'évaluation : combien de projets il lui reste à noter (donné par `NotationHackathon`). */
+const notation = ref<{ notes: number; total: number } | null>(null)
+const texteNotation = computed(() => {
+  const n = notation.value
+  if (!n || !n.total) return ''
+  const reste = n.total - n.notes
+  return reste ? t('hackathons.detail.aNoter', { n: reste }, reste) : t('hackathons.detail.toutNote')
+})
 
 /** La barre du bas (mobile) : participer, se connecter, ou rejoindre les annonces et échanges. */
 const barreMobile = computed(() => Boolean(hackathon.value && hackathon.value.statut !== 'brouillon' && hackathon.value.moi.role !== 'organisateur'))
@@ -128,7 +138,7 @@ const onglets = computed<Onglet[]>(() => {
 const onglet = computed<Onglet>(() => onglets.value.find((o) => o === route.query.onglet) ?? 'presentation')
 /** Les liens internes (#jury, #equipes…) ouvrent l'onglet qui contient leur section. */
 const ONGLET_DE: Record<string, Onglet> = {
-  participer: 'presentation', candidatures: 'gestion', jury: 'gestion', equipes: 'equipes', discussion: 'discussion',
+  participer: 'presentation', noter: 'presentation', candidatures: 'gestion', jury: 'gestion', equipes: 'equipes', discussion: 'discussion',
 }
 async function choisirOnglet(o: Onglet, ancre?: string) {
   await routeur.replace({ query: { ...route.query, onglet: o === 'presentation' ? undefined : o }, hash: ancre ? `#${ancre}` : '' })
@@ -290,7 +300,7 @@ const annuler = () => (raisonValide.value ? agir(() => annulerHackathon(hackatho
               </section>
             </article>
             <div v-if="participe" id="participer"><InscriptionHackathon :hackathon="hackathon" @inscrit="rafraichir" /></div>
-            <NotationHackathon v-if="peut('noter')" :hackathon="hackathon" />
+            <div v-if="peut('noter')" id="noter" class="ancre"><NotationHackathon :hackathon="hackathon" @progression="notation = $event" /></div>
             <RenduEquipe v-if="monEquipe" :hackathon="hackathon" :equipe-id="monEquipe" />
           </div>
 
@@ -316,6 +326,10 @@ const annuler = () => (raisonValide.value ? agir(() => annulerHackathon(hackatho
             <p>{{ prochaine.jour }} <span class="texte-discret">· {{ prochaine.heure }}</span></p>
           </div>
 
+          <div v-if="peut('noter')" class="resume__noter" data-test="a-noter">
+            <p v-if="texteNotation" class="resume__etape">{{ texteNotation }}</p>
+            <a href="#noter" class="j-bouton j-bouton--principal" data-test="aller-noter">{{ t('hackathons.detail.noter') }}</a>
+          </div>
           <a v-if="participe" href="#participer" class="j-bouton j-bouton--principal" data-test="aller-participer">{{ t('hackathons.detail.participer') }}</a>
           <RouterLink
             v-else-if="invitationConnexion"
@@ -368,9 +382,11 @@ const annuler = () => (raisonValide.value ? agir(() => annulerHackathon(hackatho
       </div>
 
       <div v-if="barreMobile" class="barre-mobile" data-test="barre-mobile">
-        <p v-if="prochaine"><span class="texte-discret">{{ t(`hackathons.calendrier.${prochaine.cle}`) }}</span><strong>{{ prochaine.jour }}</strong></p>
+        <p v-if="peut('noter') && texteNotation"><span class="texte-discret">{{ t('hackathons.detail.prochaine') }}</span><strong>{{ texteNotation }}</strong></p>
+        <p v-else-if="prochaine"><span class="texte-discret">{{ t(`hackathons.calendrier.${prochaine.cle}`) }}</span><strong>{{ prochaine.jourCourt }}</strong></p>
         <p v-else><strong>{{ hackathon.titre }}</strong></p>
-        <a v-if="participe" href="#participer" class="j-bouton j-bouton--principal">{{ t('hackathons.detail.participer') }}</a>
+        <a v-if="peut('noter')" href="#noter" class="j-bouton j-bouton--principal">{{ t('hackathons.detail.noterCourt') }}</a>
+        <a v-else-if="participe" href="#participer" class="j-bouton j-bouton--principal">{{ t('hackathons.detail.participer') }}</a>
         <RouterLink v-else-if="invitationConnexion" :to="{ name: 'connexion', query: { retour: route.fullPath } }" class="j-bouton j-bouton--principal">
           {{ t('hackathons.detail.seConnecter') }}
         </RouterLink>
@@ -459,6 +475,7 @@ const annuler = () => (raisonValide.value ? agir(() => annulerHackathon(hackatho
 /* Le résumé, à droite sur grand écran. */
 .resume { display: grid; gap: var(--space-4); padding: var(--space-6); }
 .resume p { margin: 0; }
+.resume__noter { display: grid; gap: var(--space-3); }
 .resume__prochaine { display: grid; gap: var(--space-2); padding-block-end: var(--space-4); border-block-end: 1px solid var(--line-strong); }
 .resume__etape { font-weight: 700; font-size: 1.125rem; }
 .resume__inscrit { font-weight: 700; }

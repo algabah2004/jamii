@@ -1266,7 +1266,11 @@
         "limite_atteinte": "Tu as déjà publié 3 hackathons aujourd'hui. Réessaie demain.",
         "validation": "Il manque quelque chose : vérifie le code de conduite et les dates.",
         "autre": "L'action n'a pas abouti. Réessaie dans un instant."
-      }
+      },
+      "aNoter": "Il te reste {n} projet à noter | Il te reste {n} projets à noter",
+      "toutNote": "Tous les projets sont notés",
+      "noter": "Noter les projets",
+      "noterCourt": "Noter"
     },
     "inscription": {
       "titre": "Participer",
@@ -1605,7 +1609,15 @@
       },
       "candidatEnAttente": "Tu as proposé tes services : le client n'a pas encore choisi.",
       "candidatRetenu": "Ta proposition est retenue : envoie ton devis au client.",
-      "voirMaProposition": "Voir ma proposition"
+      "voirMaProposition": "Voir ma proposition",
+      "prochaine": "Prochaine étape",
+      "etapeSuivante": {
+        "verifier": "Vérifier le jalon {n}",
+        "payer": "Payer le jalon {n}",
+        "livrer": "Livrer le jalon {n}",
+        "recevoir": "Confirmer le paiement du jalon {n}"
+      },
+      "voirJalon": "Voir le jalon"
     },
     "suivi": {
       "titre": "Le travail",
@@ -1673,7 +1685,8 @@
         "validation": "Un champ n'est pas valide. Vérifie ce que tu as écrit.",
         "interdit": "Tu n'as pas le droit de faire cette action.",
         "autre": "L'action n'a pas abouti. Réessaie dans un instant."
-      }
+      },
+      "enRetard": "En retard"
     },
     "fin": {
       "annulation": {

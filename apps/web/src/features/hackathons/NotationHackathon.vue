@@ -11,6 +11,8 @@ import { LIMITES_JURY, lireMesNotes, listerRendus, noter, type Hackathon, type R
  * Les notes déjà données sont relues (`lireMesNotes`) : le juré retrouve où il en est en revenant sur la page.
  */
 const props = defineProps<{ hackathon: Hackathon }>()
+/** Où en est le juré : la page l'annonce dans son résumé et sa barre mobile. */
+const emit = defineEmits<{ progression: [etat: { notes: number; total: number }] }>()
 const { t, locale } = useI18n()
 
 type Saisie = { valeurs: Record<string, number | null>; commentaire: string; score: number | null; envoi: boolean; code: string | null }
@@ -45,6 +47,9 @@ async function charger() {
   }
 }
 watch(() => props.hackathon.id, () => void charger(), { immediate: true })
+watch([etat, notes, () => rendus.value.length], () => {
+  if (etat.value === 'pret') emit('progression', { notes: notes.value, total: rendus.value.length })
+})
 
 async function envoyer(rendu: Rendu) {
   const s = saisies[rendu.id]

@@ -1266,7 +1266,11 @@
         "limite_atteinte": "You have already published 3 hackathons today. Try again tomorrow.",
         "validation": "Something is missing: check the code of conduct and the dates.",
         "autre": "The action did not go through. Try again in a moment."
-      }
+      },
+      "aNoter": "{n} project left to score | {n} projects left to score",
+      "toutNote": "All projects are scored",
+      "noter": "Score the projects",
+      "noterCourt": "Score"
     },
     "inscription": {
       "titre": "Take part",
@@ -1605,7 +1609,15 @@
       },
       "candidatEnAttente": "You offered your services: the client hasn't chosen yet.",
       "candidatRetenu": "Your proposal was selected: send your quote to the client.",
-      "voirMaProposition": "See my proposal"
+      "voirMaProposition": "See my proposal",
+      "prochaine": "Next step",
+      "etapeSuivante": {
+        "verifier": "Review milestone {n}",
+        "payer": "Pay milestone {n}",
+        "livrer": "Deliver milestone {n}",
+        "recevoir": "Confirm payment for milestone {n}"
+      },
+      "voirJalon": "See the milestone"
     },
     "suivi": {
       "titre": "The work",
@@ -1673,7 +1685,8 @@
         "validation": "A field is not valid. Check what you wrote.",
         "interdit": "You are not allowed to do this.",
         "autre": "The action did not go through. Try again in a moment."
-      }
+      },
+      "enRetard": "Late"
     },
     "fin": {
       "annulation": {

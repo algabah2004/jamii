@@ -11,6 +11,7 @@ import EnvoyerDevis from './EnvoyerDevis.vue'
 import PropositionsMission from './PropositionsMission.vue'
 import ProposerMission from './ProposerMission.vue'
 import SuiviMission from './SuiviMission.vue'
+import { prochaineEtape } from './prochaineEtape'
 import { useSession } from '../../session'
 
 /*
@@ -74,10 +75,18 @@ const echanges = computed<{ visible: boolean; avec: Interlocuteur | null }>(() =
   return { visible: false, avec: null }
 })
 
-/** La barre du bas (mobile) : seulement s'il y a une action à y mettre, et jamais pour le client (ses actions sont dans le résumé). */
+/** Mission en cours : ce que la personne doit faire maintenant, et sur quel jalon (en haut du résumé et dans la barre mobile). */
+const etape = computed(() => (mission.value ? prochaineEtape(mission.value) : null))
+const etapeTexte = computed(() => (etape.value ? t(`missions.detail.etapeSuivante.${etape.value.cle}`, { n: etape.value.jalon.ordre }) : ''))
+/** Le nombre de propositions n'intéresse plus personne une fois le développeur choisi. */
+const montrePropositions = computed(() => ['brouillon', 'publiee', 'fermee'].includes(mission.value?.statut ?? ''))
+
+/** La barre du bas (mobile) : seulement s'il y a une action à y mettre. Le client n'y a que sa prochaine étape (le reste est dans le résumé). */
 const barreMobile = computed(() => {
   const m = mission.value
-  if (!m || m.moi.role === 'client') return false
+  if (!m) return false
+  if (etape.value) return true
+  if (m.moi.role === 'client') return false
   return peut('proposer') || invitationConnexion.value || echanges.value.visible
 })
 
@@ -174,6 +183,13 @@ async function agir(appel: (id: string, version: number) => Promise<Resultat<Mis
         </div>
 
         <aside class="carte resume" :aria-label="t('missions.detail.resume')" data-test="resume">
+          <div v-if="etape" class="resume__prochaine" data-test="prochaine-etape">
+            <p class="texte-discret">{{ t('missions.detail.prochaine') }}</p>
+            <p class="resume__etape">{{ etapeTexte }}</p>
+            <p>{{ etape.jalon.titre }}</p>
+            <a :href="`#jalon-${etape.jalon.id}`" class="j-bouton j-bouton--principal" data-test="aller-jalon">{{ t('missions.detail.voirJalon') }}</a>
+          </div>
+
           <div class="resume__budget">
             <p class="texte-discret">{{ t('missions.detail.budget') }}</p>
             <p class="resume__montant" data-test="budget">{{ budget }}</p>
@@ -200,7 +216,7 @@ async function agir(appel: (id: string, version: number) => Promise<Resultat<Mis
               <dt>{{ t('missions.detail.date') }}</dt>
               <dd>{{ dateSouhaitee }}</dd>
             </div>
-            <div>
+            <div v-if="montrePropositions">
               <dt>{{ t('missions.detail.propositionsTitre') }}</dt>
               <dd data-test="nombre-propositions">{{ mission.nombrePropositions }}</dd>
             </div>
@@ -225,8 +241,10 @@ async function agir(appel: (id: string, version: number) => Promise<Resultat<Mis
       </div>
 
       <div v-if="barreMobile" class="barre-mobile" data-test="barre-mobile">
-        <p><span class="texte-discret">{{ t('missions.detail.budget') }}</span><strong>{{ budget }}</strong></p>
-        <a v-if="peut('proposer')" href="#proposer" class="j-bouton j-bouton--principal">{{ t('missions.detail.proposer') }}</a>
+        <p v-if="etape"><span class="texte-discret">{{ t('missions.detail.prochaine') }}</span><strong>{{ etapeTexte }}</strong></p>
+        <p v-else><span class="texte-discret">{{ t('missions.detail.budget') }}</span><strong>{{ budget }}</strong></p>
+        <a v-if="etape" :href="`#jalon-${etape.jalon.id}`" class="j-bouton j-bouton--principal">{{ t('missions.detail.voirJalon') }}</a>
+        <a v-else-if="peut('proposer')" href="#proposer" class="j-bouton j-bouton--principal">{{ t('missions.detail.proposer') }}</a>
         <RouterLink v-else-if="invitationConnexion" :to="{ name: 'connexion', query: { retour: route.fullPath } }" class="j-bouton j-bouton--principal">
           {{ t('missions.detail.seConnecter') }}
         </RouterLink>
@@ -283,6 +301,8 @@ async function agir(appel: (id: string, version: number) => Promise<Resultat<Mis
 
 .resume { display: grid; gap: var(--space-4); padding: var(--space-6); }
 .resume p { margin: 0; }
+.resume__prochaine { display: grid; gap: var(--space-2); padding-block-end: var(--space-4); border-block-end: 1px solid var(--line-strong); }
+.resume__etape { font-weight: 800; font-size: 1.125rem; }
 .resume__budget { display: grid; gap: var(--space-1); padding-block-end: var(--space-4); border-block-end: 1px solid var(--line-strong); }
 .resume__montant { font-weight: 800; font-size: 1.5rem; font-variant-numeric: tabular-nums; }
 .resume .j-bouton { justify-content: center; text-align: center; }
