@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LienPersonne from '../../components/LienPersonne.vue'
 import { computed, nextTick, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
@@ -115,10 +116,10 @@ async function copierLien() {
 
 <template>
   <article class="publication" :aria-labelledby="`auteur-${p.id}`" data-test="publication">
-    <JAvatar :nom="p.auteur?.nom ?? '?'" :url="p.auteur?.avatarUrl" :taille="44" class="publication__avatar" />
+    <LienPersonne :id="p.auteur?.id" doublon class="publication__avatar"><JAvatar :nom="p.auteur?.nom ?? '?'" :url="p.auteur?.avatarUrl" :taille="44" /></LienPersonne>
     <div class="publication__corps">
       <header class="tete">
-        <strong :id="`auteur-${p.id}`">{{ p.auteur?.nom ?? t('communautes.compteSupprime') }}</strong>
+        <strong :id="`auteur-${p.id}`"><LienPersonne :id="p.auteur?.id">{{ p.auteur?.nom ?? t('communautes.compteSupprime') }}</LienPersonne></strong>
         <span class="tete__quand">· {{ ilYa(p.creeLe, locale) }}</span>
         <span class="type" :class="`type--${p.type}`">{{ t(`communautes.types.${p.type}`) }}</span>
       </header>
@@ -152,10 +153,11 @@ async function copierLien() {
         <ol v-if="detail?.reponses.length" class="reponses">
           <li v-for="r in detail.reponses" :key="r.id" class="reponse" :class="{ 'reponse--acceptee': r.acceptee, 'reponse--ia': r.proposeeParIa }" data-test="reponse">
             <span v-if="r.proposeeParIa" class="reponse__ia" aria-hidden="true">IA</span>
-            <JAvatar v-else :nom="r.auteur?.nom ?? '?'" :url="r.auteur?.avatarUrl" :taille="32" />
+            <LienPersonne v-else :id="r.auteur?.id" doublon><JAvatar :nom="r.auteur?.nom ?? '?'" :url="r.auteur?.avatarUrl" :taille="32" /></LienPersonne>
             <div class="reponse__corps">
               <p class="reponse__tete">
-                <strong>{{ r.proposeeParIa ? t('communautes.fil.ia') : (r.auteur?.nom ?? t('communautes.compteSupprime')) }}</strong>
+                <strong v-if="r.proposeeParIa">{{ t('communautes.fil.ia') }}</strong>
+                <strong v-else><LienPersonne :id="r.auteur?.id">{{ r.auteur?.nom ?? t('communautes.compteSupprime') }}</LienPersonne></strong>
                 <span class="tete__quand">· {{ ilYa(r.creeLe, locale) }}</span>
                 <span v-if="r.acceptee" class="pastille pastille--acceptee">✓ {{ t('communautes.fil.acceptee') }}</span>
                 <span v-else-if="r.proposeeParIa" class="pastille pastille--ia">{{ t('communautes.fil.aVerifier') }}</span>

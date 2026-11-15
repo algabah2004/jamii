@@ -269,7 +269,8 @@
       "decouvrir": "Découvrir Jamii",
       "invitationTitre": "Toi aussi, montre ce que tu sais faire.",
       "invitationTexte": "Sur Jamii, tes projets mis en ligne avec une équipe deviennent des preuves.",
-      "rejoindre": "Créer mon profil"
+      "rejoindre": "Créer mon profil",
+      "nonPublie": "{nom} n’a pas encore publié son profil. Vous pouvez déjà lui écrire."
     }
   },
   "etat": {
@@ -1069,7 +1070,87 @@
         "fermee": "Fermée"
       }
     },
-    "sousTitreSansVille": "{n} membres"
+    "sousTitreSansVille": "{n} membres",
+    "onglets": {
+      "aria": "Le cercle et son salon",
+      "cercle": "Le cercle",
+      "salon": "Salon"
+    },
+    "salon": {
+      "titre": "Le salon du cercle",
+      "contexteAvant": "Avant le tirage · {n} membres sur {taille}. Faites connaissance et affinez vos idées.",
+      "contexteTour": "Tour {n} · {titre}",
+      "contexteJour": "jour {jour} sur 14 · {faites}/{total} tâches",
+      "contexteTermine": "Le cercle est terminé. Bravo à toutes et à tous !",
+      "pointsAria": "Les membres, et qui a fait son point du jour",
+      "pointsCompte": "{n} sur {total} ont fait leur point aujourd’hui",
+      "aFaitSonPoint": "{nom} a fait son point aujourd’hui",
+      "lancerAppel": "Lancer un appel du cercle",
+      "appelEnCours": "Appel en cours · lancé par {nom} {quand}",
+      "rejoindre": "Rejoindre",
+      "terminer": "Terminer",
+      "aLanceAppel": "a lancé un appel du cercle",
+      "appelTermine": "Appel terminé",
+      "coupsTitre": "Un membre a besoin d’un coup de main | {n} membres ont besoin d’un coup de main",
+      "aider": "Je peux aider",
+      "regle": "C’est réglé",
+      "fil": "Les messages du cercle",
+      "vide": "Rien encore. Lance la conversation !",
+      "aujourdhui": "aujourd’hui",
+      "hier": "hier",
+      "quelquun": "Quelqu’un",
+      "evenements": {
+        "cercle_cree": "{nom} a créé le cercle",
+        "membre_rejoint": "{nom} a rejoint le cercle",
+        "tirage": "{nom} a lancé le tirage : l’ordre de passage est fixé",
+        "tour_ouvert": "Le tour {n} commence : place au projet de {nom}",
+        "tour_livre": "Le tour {n} est livré : bravo pour le projet de {nom}",
+        "cercle_termine": "Tous les tours sont livrés : le cercle est terminé"
+      },
+      "sonPoint": "Point du jour",
+      "fait": "Fait",
+      "prevu": "Prévu",
+      "bloque": "Bloqué",
+      "bloqueFacultatif": "Bloqué (facultatif)",
+      "faitAide": "Ce que tu as fait depuis ton dernier point",
+      "prevuAide": "Ce que tu fais ensuite",
+      "bloqueAide": "Ce qui te bloque, s’il y a quelque chose",
+      "demandeTitre": "A besoin d’un coup de main",
+      "reglee": "Réglé",
+      "regleePar": "Réglé grâce à {nom}",
+      "nouveaux": "1 nouveau message | {n} nouveaux messages",
+      "coupe": "Connexion perdue, on réessaie…",
+      "modes": "Ce que tu veux dire au cercle",
+      "modeTexte": "Message",
+      "modePoint": "Mon point du jour",
+      "modeBloque": "Je bloque",
+      "pointFaitAujourdhui": "Tu as déjà fait ton point aujourd’hui. À demain !",
+      "placeholder": "Écris au cercle…",
+      "bloquePlaceholder": "Sur quoi tu bloques ? Sois précis : le cercle t’aidera plus vite.",
+      "aideEntree": "Entrée pour envoyer, Maj + Entrée pour aller à la ligne",
+      "envoyer": "Envoyer",
+      "envoyerPoint": "Partager mon point",
+      "envoyerBloque": "Demander un coup de main",
+      "erreurs": {
+        "envoi": "Le message n’est pas parti. Réessaie.",
+        "pointDejaFait": "Tu as déjà fait ton point aujourd’hui.",
+        "trop": "Trop de messages d’un coup. Attends un instant.",
+        "tropAppels": "Trop d’appels lancés en une heure. Réessaie plus tard."
+      }
+    },
+    "tableau": {
+      "aria": "Tableau de bord du tour",
+      "pasDeTour": "Le tableau de bord s’ouvrira avec le premier tour, après le tirage.",
+      "avancement": "Avancement du tour",
+      "miennes": "Mes tâches",
+      "aucuneMienne": "Tu n’as pas encore pris de tâche. Choisis-en une parmi les tâches libres.",
+      "libres": "Tâches libres",
+      "etAutres": "et {n} autres dans l’onglet « Le cercle »",
+      "equipe": "L’équipe",
+      "livrees": "{n}/{total} tâches livrées",
+      "pointFait": "point fait",
+      "ecrire": "Écrire"
+    }
   },
   "reseau": {
     "competences": "Compétences",
@@ -1177,6 +1258,17 @@
       "lu": "Lu",
       "envoye": "Envoyé",
       "aideClavier": "Entrée pour envoyer, Maj + Entrée pour aller à la ligne."
+    },
+    "profil": {
+      "ecrire": "Écrire à {nom}",
+      "enContact": "En contact",
+      "contact": {
+        "aucun": "Ajouter aux contacts",
+        "envoyee": "Demande envoyée · annuler",
+        "recue": "Accepter sa demande",
+        "accepte": "En contact"
+      },
+      "voir": "Voir le profil de {nom}"
     }
   },
   "hackathons": {
@@ -1305,7 +1397,12 @@
       "aNoter": "Il te reste {n} projet à noter | Il te reste {n} projets à noter",
       "toutNote": "Tous les projets sont notés",
       "noter": "Noter les projets",
-      "noterCourt": "Noter"
+      "noterCourt": "Noter",
+      "candidature": {
+        "en_attente": "Ta candidature attend la réponse de l'organisateur.",
+        "attente": "Tu es sur la liste d'attente."
+      },
+      "voirCandidature": "Voir"
     },
     "inscription": {
       "titre": "Participer",
@@ -1325,6 +1422,16 @@
         "etat_invalide": "Ce hackathon n'accepte pas d'inscriptions pour le moment.",
         "validation": "Le nom de l'équipe doit faire entre 2 et 60 caractères.",
         "autre": "L'inscription n'a pas abouti. Réessaie dans un instant."
+      },
+      "candidature": {
+        "en_attente": {
+          "titre": "Candidature envoyée",
+          "aide": "L'organisateur choisit les participants. Reviens ici pour voir sa réponse."
+        },
+        "attente": {
+          "titre": "Tu es sur la liste d'attente",
+          "aide": "L'organisateur a gardé ta candidature sans la refuser. Reviens ici pour voir sa réponse."
+        }
       }
     },
     "equipes": {

@@ -211,7 +211,7 @@ export const handlersHackathons = [
     liste.push(inscription)
     inscriptions.set(h.id, liste)
     h.nombreInscrits += 1
-    h.moi = { role: 'participant', equipeId: null, actions: ['creer_equipe'] }
+    h.moi = { role: 'participant', equipeId: null, inscription: h.modeInscription === 'ouvert' ? 'acceptee' : 'en_attente', actions: ['creer_equipe'] }
     return HttpResponse.json(inscription, { status: 201 })
   }),
 
@@ -243,7 +243,7 @@ export const handlersHackathons = [
     const equipe: Equipe = { id: crypto.randomUUID(), nom: nom.trim(), chef: KOFI, membres: [KOFI], tailleMax: h.tailleEquipe.max, complete: false, creeLe: new Date().toISOString() }
     equipes.get(h.id)?.push(equipe)
     if (h.moi.role === 'visiteur') h.nombreInscrits += 1
-    h.moi = { role: 'participant', equipeId: equipe.id, actions: ['inviter'] }
+    h.moi = { role: 'participant', equipeId: equipe.id, inscription: h.modeInscription === 'ouvert' ? 'acceptee' : 'en_attente', actions: ['inviter'] }
     return HttpResponse.json(equipe, { status: 201 })
   }),
 
