@@ -31,7 +31,18 @@ const ETIQUETTES: Record<string, string[]> = {
   web: ['Sites rapides', 'API', '3G', 'Accessibilité'],
   cloud: ['Systalink', 'Docker', 'Mise en ligne', 'Sauvegardes'],
   antenne: ['Rencontres', 'Entraide', 'Projets locaux', 'Ateliers'],
+  design: ['Interfaces simples', 'Tests utilisateurs', 'Icônes', 'Accessibilité'],
+  data: ['Données ouvertes', 'Cartes', 'Nettoyage', 'Visualisation'],
+  jeux: ['Godot', 'Contes', 'Game jam', 'Téléphones légers'],
+  securite: ['Mots de passe', 'Arnaques', 'Sauvegardes', 'Bonnes pratiques'],
 }
+
+/** Les thèmes qu'on peut choisir en créant une communauté (contracts/communautes.yaml, NouvelleCommunaute). */
+export const THEMES = ['web', 'flutter', 'fintech', 'ia', 'data', 'cloud', 'design', 'jeux', 'securite', 'antenne', 'autre'] as const
+export type Theme = (typeof THEMES)[number]
+
+/** Les pays proposés pour une antenne locale ; la liste s'allongera avec les antennes. */
+export const PAYS_ANTENNES = ['SN', 'CI', 'ML', 'BF', 'GN', 'CM', 'NG', 'GH', 'KE', 'RW', 'TZ', 'ZA', 'MA', 'TN', 'BJ', 'TG', 'NE'] as const
 
 export function etiquettesDe(theme: string): string[] {
   return ETIQUETTES[theme] ?? ['Entraide', 'Projets', 'Questions', 'Partage']

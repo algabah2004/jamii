@@ -39,7 +39,7 @@ class CommunautesController {
 	}
 
 	record Communaute(UUID id, String slug, String nom, String description, String theme, String pays,
-			int nombreMembres, int questionsOuvertes, boolean membre) {
+			int nombreMembres, int questionsOuvertes, boolean membre, boolean moderateur) {
 	}
 
 	record PublicationResume(UUID id, String communaute, String type, String titre, PersonneResume auteur,
@@ -191,11 +191,13 @@ class CommunautesController {
 		boolean question = "question".equals(demande.type());
 		UUID id = gestion.publier(fiche.get().id(), moi.id(), demande.type(), titre, contenu, demande.projetId(),
 				question ? ia.statutInitial() : null, maintenant);
+		// La réponse est lue avant de lancer l'IA : sinon une IA rapide pouvait répondre avant, et la création annonçait
+		// « prete » au lieu de « en_attente » (contrat). La question est visible tout de suite, la réponse de l'IA suit.
+		var publication = vues.publication(id, moi.id());
 		if (question) {
-			// Après l'enregistrement : la question est visible tout de suite, la réponse de l'IA suit (contrat).
 			ia.demander(id, new ReponsesIa.Question(titre, contenu, fiche.get().theme()));
 		}
-		return ResponseEntity.created(URI.create("/api/publications/" + id)).body(vues.publication(id, moi.id()));
+		return ResponseEntity.created(URI.create("/api/publications/" + id)).body(publication);
 	}
 
 	@GetMapping("/api/publications/{publicationId}")
@@ -206,9 +208,9 @@ class CommunautesController {
 		return ResponseEntity.ok(vues.publication(publicationId, moi.id()));
 	}
 
-	private static Communaute communaute(GestionCommunautes.Fiche f) {
+	static Communaute communaute(GestionCommunautes.Fiche f) {
 		return new Communaute(f.id(), f.slug(), f.nom(), f.description(), f.theme(), f.pays(), f.nombreMembres(),
-				f.questionsOuvertes(), f.membre());
+				f.questionsOuvertes(), f.membre(), f.moderateur());
 	}
 
 	private static boolean curseurDatee(GestionCommunautes.Curseur c) {

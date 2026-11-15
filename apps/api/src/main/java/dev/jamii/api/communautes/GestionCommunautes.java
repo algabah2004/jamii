@@ -26,7 +26,7 @@ class GestionCommunautes {
 	static final int PUBLICATIONS_PAR_HEURE = 10;
 
 	record Fiche(UUID id, String slug, String nom, String description, String theme, String pays, int nombreMembres,
-			int questionsOuvertes, boolean membre, int activite) {
+			int questionsOuvertes, boolean membre, boolean moderateur, int activite) {
 	}
 
 	record Resume(UUID id, String communaute, String type, String titre, UUID auteurId, int nombreReponses,
@@ -66,6 +66,8 @@ class GestionCommunautes {
 			       (SELECT count(*) FROM publication p WHERE p.communaute_id = c.id
 			          AND p.type = 'question' AND p.reponse_acceptee_id IS NULL) AS questions_ouvertes,
 			       EXISTS (SELECT 1 FROM adhesion a WHERE a.communaute_id = c.id AND a.utilisateur_id = :moi) AS membre,
+			       EXISTS (SELECT 1 FROM adhesion a WHERE a.communaute_id = c.id AND a.utilisateur_id = :moi
+			                 AND a.role = 'moderateur') AS moderateur,
 			       (SELECT count(*) FROM publication p WHERE p.communaute_id = c.id AND p.cree_le >= :semaine) AS activite
 			FROM communaute c
 			""";
@@ -205,7 +207,7 @@ class GestionCommunautes {
 	private static Fiche fiche(ResultSet rs, int n) throws SQLException {
 		return new Fiche(rs.getObject("id", UUID.class), rs.getString("slug"), rs.getString("nom"),
 				rs.getString("description"), rs.getString("theme"), rs.getString("pays"), rs.getInt("nombre_membres"),
-				rs.getInt("questions_ouvertes"), rs.getBoolean("membre"), rs.getInt("activite"));
+				rs.getInt("questions_ouvertes"), rs.getBoolean("membre"), rs.getBoolean("moderateur"), rs.getInt("activite"));
 	}
 
 }

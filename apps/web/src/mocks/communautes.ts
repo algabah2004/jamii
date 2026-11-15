@@ -31,7 +31,7 @@ function reponse(r: Partial<Reponse> & Pick<Reponse, 'id' | 'contenu'>): Reponse
 
 function etatInitial(): Etat {
   const communaute = (slug: string, nom: string, description: string, theme: string, pays: string | null, nombreMembres: number, membre: boolean) =>
-    ({ id: crypto.randomUUID(), slug, nom, description, theme, pays, nombreMembres, questionsOuvertes: 0, membre }) as Communaute
+    ({ id: crypto.randomUUID(), slug, nom, description, theme, pays, nombreMembres, questionsOuvertes: 0, membre, moderateur: slug === 'flutter' }) as Communaute
   return {
     communautes: [
       communaute('flutter', 'Flutter et Dart', 'Applications mobiles qui marchent aussi avec peu de réseau.', 'flutter', null, 214, true),
@@ -134,11 +134,16 @@ function messagesInitiaux(): Map<string, MessageSalon[]> {
   ])
 }
 let messagesSalons = messagesInitiaux()
+/** Les salons créés pendant la visite (v0.4), en plus des trois de départ. */
+let salonsCrees = new Map<string, { slug: string; nom: string; sujet: string }[]>()
+const salonsDe = (slug: string) => [...SALONS, ...(salonsCrees.get(slug) ?? [])]
+const nomCourt = (nom: string) => nom.replace(/^#\s*/, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
 
 /** Pour les tests : repart des données de démo. */
 export function reinitialiserCommunautes() {
   etat = etatInitial()
   messagesSalons = messagesInitiaux()
+  salonsCrees = new Map()
 }
 
 function questionsOuvertes(slug: string) {
@@ -239,10 +244,37 @@ export const handlersCommunautes = [
     return HttpResponse.json({ elements, total: c.nombreMembres })
   }),
 
+  http.post('/api/communautes', async ({ request }) => {
+    const corps = (await request.json()) as { nom?: string; description?: string; theme?: string; pays?: string | null }
+    const nom = corps.nom?.trim() ?? ''
+    if (nom.length < 3 || (corps.description?.trim().length ?? 0) < 10 || !corps.theme) return erreur(400, 'validation')
+    let slug = nomCourt(nom)
+    for (let i = 2; etat.communautes.some((c) => c.slug === slug); i++) slug = `${nomCourt(nom)}-${i}`
+    const c = {
+      id: crypto.randomUUID(), slug, nom, description: corps.description!.trim(), theme: corps.theme, pays: corps.pays ?? null,
+      nombreMembres: 1, questionsOuvertes: 0, membre: true, moderateur: true,
+    } as Communaute
+    etat.communautes.unshift(c)
+    return HttpResponse.json(c, { status: 201, headers: { Location: `/api/communautes/${slug}` } })
+  }),
+
+  http.post('/api/communautes/:slug/salons', async ({ params, request }) => {
+    const c = etat.communautes.find((x) => x.slug === params.slug)
+    if (!c) return erreur(404, 'introuvable')
+    if (!c.moderateur) return erreur(403, 'pas_moderateur')
+    const corps = (await request.json()) as { nom?: string; sujet?: string }
+    const slug = nomCourt(corps.nom ?? '')
+    if (slug.length < 2 || (corps.sujet?.trim().length ?? 0) < 5) return erreur(400, 'validation')
+    if (salonsDe(c.slug).some((s) => s.slug === slug)) return erreur(409, 'salon_existe')
+    const salon = { slug, nom: corps.nom!.replace(/^#\s*/, '').trim().toLowerCase(), sujet: corps.sujet!.trim() }
+    salonsCrees.set(c.slug, [...(salonsCrees.get(c.slug) ?? []), salon])
+    return HttpResponse.json({ id: crypto.randomUUID(), ...salon, appelUrl: `https://meet.jit.si/jamii-${c.slug}-${slug}-demo` }, { status: 201 })
+  }),
+
   http.get('/api/communautes/:slug/salons', ({ params }) => {
     const c = etat.communautes.find((x) => x.slug === params.slug)
     if (!c) return erreur(404, 'introuvable')
-    const elements = SALONS.map((s, i) => ({
+    const elements = salonsDe(c.slug).map((s, i) => ({
       id: `5a1005${String(i).padStart(2, '0')}-0000-4000-8000-${c.id.slice(-12)}`, ...s,
       appelUrl: c.membre ? `https://meet.jit.si/jamii-${c.slug}-${s.slug}-demo` : null,
     }))
@@ -250,7 +282,7 @@ export const handlersCommunautes = [
   }),
 
   http.get('/api/communautes/:slug/salons/:salon/messages', ({ params, request }) => {
-    if (!etat.communautes.some((x) => x.slug === params.slug) || !SALONS.some((s) => s.slug === params.salon)) return erreur(404, 'introuvable')
+    if (!etat.communautes.some((x) => x.slug === params.slug) || !salonsDe(String(params.slug)).some((s) => s.slug === params.salon)) return erreur(404, 'introuvable')
     const apres = Number(new URL(request.url).searchParams.get('apres') ?? -1)
     const tous = messagesSalons.get(`${params.slug}/${params.salon}`) ?? []
     return HttpResponse.json({ elements: apres >= 0 ? tous.filter((m) => m.numero > apres) : tous.slice(-50) })
@@ -258,7 +290,7 @@ export const handlersCommunautes = [
 
   http.post('/api/communautes/:slug/salons/:salon/messages', async ({ params, request }) => {
     const c = etat.communautes.find((x) => x.slug === params.slug)
-    if (!c || !SALONS.some((s) => s.slug === params.salon)) return erreur(404, 'introuvable')
+    if (!c || !salonsDe(String(params.slug)).some((s) => s.slug === params.salon)) return erreur(404, 'introuvable')
     if (!c.membre) return erreur(403, 'pas_membre')
     const texte = ((await request.json()) as { texte?: string }).texte?.trim() ?? ''
     if (!texte || texte.length > 2000) return erreur(400, 'validation')

@@ -79,6 +79,7 @@ final class DemoCommunautes {
 		antennes();
 		questions();
 		encore();
+		creeesParLesMembres();
 	}
 
 	// ---------------------------------------------------------------- les salons
@@ -437,6 +438,101 @@ final class DemoCommunautes {
 				"Un mot sur vous et vos projets, pour qu'on sache qui chercher à la rencontre.", null, 3, null);
 		publication("accra-lagos", communaute("antenne-lagos"), KWAME, "discussion", "Une rencontre en ligne Accra et Lagos ?",
 				"Beaucoup de projets en commun entre nos deux villes. Qui serait partant pour un appel le mois prochain ?", null, 45, null);
+	}
+
+	// ---------------------------------------------------------------- des communautés créées par des membres
+
+	/** Une communauté créée par un membre (v0.4) : pas une ville, un sujet ou un groupe d'affinité. */
+	private record Creee(String slug, String nom, String description, String theme, Personne createur, List<Personne> membres,
+			List<Message> general, List<Message> entraide, List<Message> projets) {
+	}
+
+	private void creeesParLesMembres() {
+		List<Creee> creees = List.of(
+				new Creee("devs-du-sahel", "Devs du Sahel", "Des développeurs de Niamey à Nouakchott, qui construisent malgré la chaleur et les coupures.",
+						"web", AICHA, List.of(IBRAHIMA, MOUSSA, AWA, FATOU),
+						List.of(new Message(AICHA, "Bienvenue dans Devs du Sahel ! Présentez-vous : ville, langage préféré, projet du moment.", 300),
+								new Message(IBRAHIMA, "Ibrahima, Saint-Louis, Vue et Python, une appli pour les pêcheurs.", 280),
+								new Message(MOUSSA, "Moussa, Thiès, je fais de l'API Java et des alertes par SMS.", 260)),
+						List.of(new Message(AWA, "Comment vous gardez vos serveurs au frais pendant les coupures ? On a tout perdu une fois.", 900),
+								new Message(AICHA, "On a tout mis sur DataCloud, plus de machine à la maison.", 880)),
+						List.of(new Message(IBRAHIMA, "Je cherche deux personnes pour l'appli des pêcheurs de Saint-Louis.", 1500))),
+				new Creee("mobile-money-builders", "Mobile Money Builders", "Ceux qui branchent Wave, Orange Money, MTN MoMo et M-Pesa, et qui partagent leurs pièges.",
+						"fintech", YANN, List.of(KWAME, FATIMA, AMINA, THABO, MOUSSA),
+						List.of(new Message(YANN, "Ici on parle intégrations de paiement, sans vendre de produit. Bienvenue !", 600),
+								new Message(KWAME, "MoMo au Ghana, prêt à partager ce que j'ai appris.", 580),
+								new Message(FATIMA, "Paiement par QR au Maroc, je vous montre notre prototype bientôt.", 560)),
+						List.of(new Message(AMINA, "Les délais de confirmation d'Orange Money varient de 2 s à 2 min. Vous affichez quoi à l'utilisateur ?", 120),
+								new Message(YANN, "Un écran « paiement en cours » avec une relecture toutes les 5 s, et un SMS de confirmation.", 100)),
+						List.of(new Message(THABO, "On ouvre une bibliothèque qui unifie les webhooks de quatre opérateurs. Contributeurs bienvenus.", 2000))),
+				new Creee("open-data-afrique", "Open Data Afrique", "Trouver, nettoyer et publier des données ouvertes sur le continent.",
+						"data", JOSEPH, List.of(NIA, ZAWADI, SAMIRA, FATOU),
+						List.of(new Message(JOSEPH, "Partagez ici les jeux de données que vous trouvez, avec leur licence.", 400),
+								new Message(NIA, "Les horaires des matatus de Nairobi, en GTFS, sous licence ouverte.", 380)),
+						List.of(new Message(SAMIRA, "Comment vous nettoyez des fichiers Excel avec des cellules fusionnées partout ?", 700),
+								new Message(ZAWADI, "Python et pandas, en lisant les en-têtes sur deux lignes.", 680)),
+						List.of(new Message(FATOU, "Carte des points d'eau de la région de Thiès : il manque des données pour 3 communes.", 1300))),
+				new Creee("design-et-produit", "Design & Produit", "Interfaces simples pour des utilisateurs qui n'ont jamais vu un écran d'ordinateur.",
+						"design", MARIAM, List.of(AWA, TENDAI, SAMIRA),
+						List.of(new Message(MARIAM, "Montrez vos écrans, même pas finis. On s'aide à simplifier.", 500),
+								new Message(TENDAI, "Je teste mes écrans avec ma grand-mère : si elle comprend, c'est gagné.", 470)),
+						List.of(new Message(AWA, "Icônes ou mots pour un public qui lit peu ? On hésite.", 160),
+								new Message(MARIAM, "Les deux : une icône claire avec un mot court en dessous. Et un message vocal pour l'aide.", 150)),
+						List.of(new Message(SAMIRA, "Je refais l'écran d'inscription de notre appli de santé, retours bienvenus.", 1100))),
+				new Creee("gaming-lab-africa", "Gaming Lab Africa", "Créer des jeux qui parlent de chez nous : contes, villes, musiques.",
+						"jeux", CHIDI, List.of(KWAME, TENDAI, JOSEPH),
+						List.of(new Message(CHIDI, "Qui fait du Godot ? C'est libre et léger, parfait pour nos téléphones.", 720),
+								new Message(KWAME, "Moi ! Je fais un jeu de course dans les rues d'Accra.", 700),
+								new Message(TENDAI, "Un jeu de mémoire sur les proverbes shona, en cours.", 680)),
+						List.of(new Message(JOSEPH, "Mon jeu rame sur les téléphones à 1 Go de RAM. Des astuces ?", 240),
+								new Message(CHIDI, "Textures plus petites, et pas plus de 30 images par seconde.", 220)),
+						List.of(new Message(KWAME, "Game jam en ligne le mois prochain, thème « le marché ». Qui est partant ?", 1400))),
+				new Creee("securite-afrique-ouest", "Sécurité en Afrique de l'Ouest", "Protéger nos applis et nos utilisateurs : arnaques, fuites, mots de passe.",
+						"securite", THABO, List.of(MOUSSA, YANN, IBRAHIMA),
+						List.of(new Message(THABO, "Règle d'or ici : jamais de vraie donnée personnelle dans les messages.", 360),
+								new Message(MOUSSA, "Noté. Je partage nos retours sur une tentative d'arnaque au faux paiement.", 340)),
+						List.of(new Message(YANN, "Comment stocker un mot de passe en 2026 ? Toujours bcrypt ?", 90),
+								new Message(THABO, "Argon2id si ta plateforme le permet, sinon bcrypt avec un coût élevé.", 80)),
+						List.of(new Message(IBRAHIMA, "On fait un petit guide de sécurité pour les PME, en français simple. Qui relit ?", 1700))));
+
+		int rang = 0;
+		for (Creee c : creees) {
+			UUID id = id("communaute:" + c.slug());
+			base.sql("""
+					INSERT INTO communaute (id, slug, nom, description, theme, pays, createur_id, cree_le)
+					VALUES (:id, :slug, :nom, :description, :theme, NULL, :u, :t)
+					ON CONFLICT DO NOTHING
+					""").param("id", id).param("slug", c.slug()).param("nom", c.nom()).param("description", c.description())
+				.param("theme", c.theme()).param("u", c.createur().id()).param("t", ilYA(Duration.ofDays(15 - rang++))).update();
+			int ordre = 1;
+			for (String[] s : List.of(new String[] { "general", "général", "Se présenter et parler de tout." },
+					new String[] { "entraide", "entraide", "Une question rapide, un blocage : quelqu'un t'aide." },
+					new String[] { "projets", "projets", "Montrer ce qu'on construit et trouver des coéquipiers." })) {
+				UUID sid = id("salon:" + c.slug() + "/" + s[0]);
+				base.sql("""
+						INSERT INTO salon (id, communaute_id, slug, nom, sujet, ordre, salle_appel)
+						VALUES (:id, :c, :slug, :nom, :sujet, :o, :salle)
+						ON CONFLICT DO NOTHING
+						""").param("id", sid).param("c", id).param("slug", s[0]).param("nom", s[1]).param("sujet", s[2]).param("o", ordre++)
+					.param("salle", "jamii-" + c.slug() + "-" + s[0] + "-" + sid.toString().replace("-", "").substring(0, 12)).update();
+			}
+			adhesions(c.slug(), c.createur());
+			membres(c.slug(), c.membres().toArray(Personne[]::new));
+			salon(c.slug(), "general", c.general());
+			salon(c.slug(), "entraide", c.entraide());
+			salon(c.slug(), "projets", c.projets());
+		}
+
+		publication("godot", communaute("gaming-lab-africa"), CHIDI, "question", "Godot ou Unity pour un jeu sur téléphone d'entrée de gamme ?",
+				"Je veux un jeu léger, qui tourne sur 1 Go de RAM, et dont le moteur est libre. Vos retours ?", "prete", 7, null);
+		publication("guide-securite", communaute("securite-afrique-ouest"), IBRAHIMA, "discussion", "Un guide de sécurité pour les PME, en français simple",
+				"Mots de passe, sauvegardes, faux paiements : on écrit 10 règles. Ajoutez les vôtres en réponse.", null, 28, null);
+		publication("icones-mots", communaute("design-et-produit"), AWA, "question", "Icônes ou mots pour un public qui lit peu ?",
+				"Notre appli s'adresse à des commerçantes qui lisent peu. On met des icônes, des mots, ou les deux ?", "indisponible", 3, null);
+		publication("delais-orange", communaute("mobile-money-builders"), AMINA, "question", "Que montrer pendant une confirmation de paiement qui traîne ?",
+				"Les délais d'Orange Money vont de 2 secondes à 2 minutes. Comment éviter que l'utilisateur paie deux fois ?", "prete", 2, null);
+		publication("gtfs-nairobi", communaute("open-data-afrique"), NIA, "discussion", "Les horaires des matatus de Nairobi en données ouvertes",
+				"Un jeu de données GTFS sous licence ouverte. Quelqu'un veut en faire une appli ?", null, 6, null);
 	}
 
 	// ---------------------------------------------------------------- écriture, sans doublon
