@@ -11,7 +11,7 @@ import { LIMITES, publierDemande, resumeValide, type Demande } from './demandes'
  */
 const props = defineProps<{ demande: Demande; resumePropose?: string }>()
 const emit = defineEmits<{ publiee: [demande: Demande] }>()
-const { t, locale } = useI18n()
+const { t, te, locale } = useI18n()
 
 const resume = ref((props.resumePropose ?? '').slice(0, LIMITES.resumeMax))
 const etat = ref<'repos' | 'envoi' | 'erreur' | 'pas_prete' | 'deja_publiee'>('repos')
@@ -62,6 +62,21 @@ const message = computed(() => {
         :maxlength="LIMITES.resumeMax"
         requis
       />
+      <!-- Ce que la communauté verra, au fil de la frappe : le titre, le résumé et le contexte. Rien d'autre. -->
+      <figure class="apercu" data-test="apercu-publication">
+        <figcaption class="texte-discret">{{ t('demandes.publication.apercu') }}</figcaption>
+        <div class="apercu__carte">
+          <span class="apercu__badge">{{ t('demandes.publication.badge') }}</span>
+          <strong>{{ demande.titre }}</strong>
+          <p :class="{ vide: !resume.trim() }">{{ resume.trim() || t('demandes.publication.apercuVide') }}</p>
+          <ul v-if="demande.secteur || demande.ville || demande.dureeSemaines" class="apercu__etiquettes">
+            <li v-if="demande.secteur">{{ te(`demandes.secteurs.${demande.secteur}`) ? t(`demandes.secteurs.${demande.secteur}`) : demande.secteur }}</li>
+            <li v-if="demande.ville">{{ demande.ville }}</li>
+            <li v-if="demande.dureeSemaines">{{ t('demandes.nouvelle.semaines', { n: demande.dureeSemaines }, demande.dureeSemaines) }}</li>
+          </ul>
+        </div>
+        <p class="texte-discret apercu__note">{{ t('demandes.publication.jamais') }}</p>
+      </figure>
       <p v-if="message" role="alert" class="publication__erreur" data-test="publication-erreur">{{ message }}</p>
       <div>
         <JBouton type="submit" :desactive="!valide" :occupe="etat === 'envoi'" data-test="publier">{{ t('demandes.publication.bouton') }}</JBouton>
@@ -82,4 +97,16 @@ const message = computed(() => {
   white-space: pre-line;
 }
 .publication__erreur { color: var(--danger); font-weight: 600; }
+.apercu { margin: 0; display: grid; gap: var(--space-2); }
+.apercu figcaption { font-size: var(--type-body-sm-size); font-weight: 600; }
+.apercu__carte {
+  display: grid; gap: var(--space-2); padding: var(--space-4); border-radius: var(--radius-md);
+  border: 1px solid var(--line); border-top: 4px solid var(--cantaloupe); background: var(--surface);
+}
+.apercu__carte p { white-space: pre-line; color: var(--ink-muted); font-size: var(--type-body-sm-size); }
+.apercu__carte .vide { font-style: italic; color: color-mix(in srgb, var(--ink) 35%, transparent); }
+.apercu__badge { justify-self: start; padding: 2px 10px; border-radius: var(--radius-pill); background: var(--proof-soft); color: var(--proof-ink); font-size: 0.75rem; font-weight: 700; }
+.apercu__etiquettes { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-1); }
+.apercu__etiquettes li { padding: 2px 10px; border-radius: var(--radius-pill); background: var(--surface-raised); font-size: 0.75rem; font-weight: 600; }
+.apercu__note { font-size: 0.8125rem; }
 </style>

@@ -32,9 +32,10 @@ info:
     n'est pas dans ce contrat : elle demande une décision (voir la PR).
 
     **Le plan vient du service IA, jamais du navigateur.** L'API relit l'état de la tâche à chaque `GET` : il n'y a pas de
-    copie du plan en base. Si le service IA ne répond pas, la demande reste visible avec `plan.statut` = `echouee`
-    (`delai_depasse`) : on ne perd jamais le texte de la PME. Un plan calculé sans IA (`origine: repli`) est signalé à la
-    PME.
+    copie du plan en base. Si le service IA ne répond pas, la demande reste `en_attente` 20 secondes, puis l'API donne
+    une **orientation de secours** calculée sans IA (`origine: repli`, signalée à la PME). Elle n'est pas enregistrée :
+    dès que l'IA revient, la lecture suivante lui redonne la main. On ne perd jamais le texte de la PME. Une orientation
+    de secours **ne se publie pas** (`409 plan_non_pret`).
 
     **Texte de la PME** : `titre` et `description` sont du texte brut, affiché échappé. Ils sont envoyés au service IA comme
     des **données**, jamais comme des consignes.

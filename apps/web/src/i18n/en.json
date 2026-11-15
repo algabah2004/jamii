@@ -1038,7 +1038,33 @@
       "questionReussite": "How will you know it worked?",
       "libelleQui": "Who will use it:",
       "libelleProbleme": "What isn't working today:",
-      "libelleReussite": "It will be a success when:"
+      "libelleReussite": "It will be a success when:",
+      "etape": "Step {n} of {total}",
+      "suivant": "Continue",
+      "passer": "Skip",
+      "retour": "Back",
+      "entree": "Enter ↵ to continue",
+      "q": {
+        "besoin": "What do you need?",
+        "details": "Tell us a bit more",
+        "questions": "So we understand you well",
+        "precisions": "A few details",
+        "envoi": "Shall we look at your need?"
+      },
+      "encore": "{n} more characters, in your own words.",
+      "assez": "That's enough to start. You can say more.",
+      "precisionsAide": "All optional. It helps find developers near you and estimate the plan.",
+      "recap": "Your need",
+      "titreAVenir": "Your need in one sentence",
+      "descriptionAVenir": "What you write will appear here.",
+      "precisionsDonnees": "{n} detail | {n} details",
+      "etapes": {
+        "besoin": "Your need",
+        "details": "The details",
+        "questions": "Three questions",
+        "precisions": "Extra details",
+        "envoi": "The analysis"
+      }
     },
     "publication": {
       "titre": "Publish my request",
@@ -1049,9 +1075,13 @@
       "faite": "Your request has been published since {date}. The community can see it.",
       "resumePublie": "What the community sees:",
       "invalide": "The summary must be between {min} and {max} characters.",
-      "pasPrete": "The specification is not ready yet. Try again in a moment.",
+      "pasPrete": "Jamii is still waiting for the AI analysis of your need. You can publish it as soon as it is done.",
       "dejaPubliee": "This request is already published.",
-      "erreur": "Your request could not be published. Try again in a moment."
+      "erreur": "Your request could not be published. Try again in a moment.",
+      "apercu": "What the community will see",
+      "badge": "Published need",
+      "apercuVide": "Your summary will appear here.",
+      "jamais": "Neither your original text, your clients' names nor your contact details are published."
     },
     "exemples": [
       {
@@ -1094,6 +1124,7 @@
         "chercher": "Looking for what already exists",
         "preparer": "Preparing your options"
       },
+      "sansAttendre": "Form a circle without waiting",
       "publierMission": "Publish as a mission"
     },
     "priorites": {
@@ -1172,7 +1203,20 @@
       "precisions": "{n} detail | {n} details",
       "ouvrir": "Open",
       "autres": "Your other requests",
-      "toutes": "See all your requests"
+      "toutes": "See all your requests",
+      "filtrer": "Filter your requests",
+      "parcours": "Where this request stands",
+      "etats": {
+        "toutes": "All",
+        "preparation": "In progress",
+        "prete": "Answer ready",
+        "publiee": "Published"
+      },
+      "jalons": {
+        "preparation": "Described",
+        "prete": "Analysed",
+        "publiee": "Published"
+      }
     },
     "discuter": {
       "titre": "Something doesn’t suit you?",
@@ -1202,6 +1246,18 @@
         "autre": "I’m looking for something else"
       },
       "restants": "No advice left today | 1 piece of advice left today | {n} pieces of advice left today"
+    },
+    "reponse": {
+      "relire": "Reread what I wrote",
+      "conseils": "What Ayo suggests",
+      "suite": "Next",
+      "onglets": {
+        "developpeurs": "Developers",
+        "projet": "The project",
+        "publier": "Publish"
+      },
+      "seul": "Prefer to follow this plan on your own, without forming a circle?",
+      "preciser": "Clarify"
     }
   },
   "cercles": {

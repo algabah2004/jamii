@@ -174,6 +174,23 @@ class PublicationDemandesTest {
 	}
 
 	@Test
+	void l_orientation_de_secours_se_lit_mais_ne_se_publie_pas() throws Exception {
+		UtilisateurConnecte awa = utilisateur("Awa");
+		String id = demande(awa, false);
+		DemandesTest.IA.enPanne = true;
+		// En panne depuis plus de 20 secondes : la lecture donne le secours, la publication reste refusée.
+		base.sql("UPDATE demande SET cree_le = :t WHERE id = :i")
+			.param("t", Timestamp.from(Instant.now().minusSeconds(180))).param("i", UUID.fromString(id)).update();
+		JsonNode vue = corps(mvc.get().uri("/api/demandes/{id}", id).with(oauth2Login().oauth2User(awa)).exchange());
+		assertThat(vue.at("/orientation/origine").asString()).isEqualTo("repli");
+
+		MvcTestResult r = publier(awa, id, resume(RESUME));
+		assertThat(r).hasStatus(HttpStatus.CONFLICT);
+		assertThat(corps(r).get("code").asString()).isEqualTo("plan_non_pret");
+		assertThat(publiees(id)).isEmpty();
+	}
+
+	@Test
 	void publier_deux_fois_est_refuse_et_l_evenement_n_part_qu_une_fois() throws Exception {
 		UtilisateurConnecte awa = utilisateur("Awa");
 		String id = demande(awa, true);

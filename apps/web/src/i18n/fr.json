@@ -1038,7 +1038,33 @@
       "questionReussite": "À quoi verras-tu que c'est réussi ?",
       "libelleQui": "Qui va s'en servir :",
       "libelleProbleme": "Ce qui ne va pas aujourd'hui :",
-      "libelleReussite": "Ce sera réussi quand :"
+      "libelleReussite": "Ce sera réussi quand :",
+      "etape": "Étape {n} sur {total}",
+      "suivant": "Continuer",
+      "passer": "Passer",
+      "retour": "Retour",
+      "entree": "Entrée ↵ pour continuer",
+      "q": {
+        "besoin": "De quoi as-tu besoin ?",
+        "details": "Raconte-nous un peu plus",
+        "questions": "Pour qu'on te comprenne bien",
+        "precisions": "Quelques précisions",
+        "envoi": "On regarde ton besoin ?"
+      },
+      "encore": "Encore {n} caractères, avec tes mots.",
+      "assez": "C'est assez pour commencer. Tu peux en dire plus.",
+      "precisionsAide": "Tout est facultatif. Ça aide à trouver des développeurs proches de toi et à estimer le plan.",
+      "recap": "Ton besoin",
+      "titreAVenir": "Ton besoin en une phrase",
+      "descriptionAVenir": "Ce que tu racontes apparaîtra ici.",
+      "precisionsDonnees": "{n} précision | {n} précisions",
+      "etapes": {
+        "besoin": "Ton besoin",
+        "details": "Les détails",
+        "questions": "Trois questions",
+        "precisions": "Les précisions",
+        "envoi": "L'analyse"
+      }
     },
     "publication": {
       "titre": "Publier ma demande",
@@ -1049,9 +1075,13 @@
       "faite": "Ta demande est publiée depuis le {date}. La communauté peut la voir.",
       "resumePublie": "Ce que la communauté voit :",
       "invalide": "Le résumé doit faire entre {min} et {max} caractères.",
-      "pasPrete": "Le cahier des charges n'est pas encore prêt. Réessaie dans un instant.",
+      "pasPrete": "Jamii attend encore l'analyse de l'IA pour ton besoin. Tu pourras le publier dès qu'elle sera terminée.",
       "dejaPubliee": "Cette demande est déjà publiée.",
-      "erreur": "Ta demande n'a pas pu être publiée. Réessaie dans un instant."
+      "erreur": "Ta demande n'a pas pu être publiée. Réessaie dans un instant.",
+      "apercu": "Ce que la communauté verra",
+      "badge": "Besoin publié",
+      "apercuVide": "Ton résumé apparaîtra ici.",
+      "jamais": "Ni ton texte d'origine, ni le nom de tes clients, ni ton contact ne sont publiés."
     },
     "exemples": [
       {
@@ -1094,6 +1124,7 @@
         "chercher": "Je cherche ce qui existe déjà",
         "preparer": "Je prépare tes options"
       },
+      "sansAttendre": "Former un cercle sans attendre",
       "publierMission": "Publier comme mission"
     },
     "priorites": {
@@ -1172,7 +1203,20 @@
       "precisions": "{n} précision | {n} précisions",
       "ouvrir": "Ouvrir",
       "autres": "Tes autres demandes",
-      "toutes": "Voir toutes tes demandes"
+      "toutes": "Voir toutes tes demandes",
+      "filtrer": "Filtrer tes demandes",
+      "parcours": "Où en est cette demande",
+      "etats": {
+        "toutes": "Toutes",
+        "preparation": "En préparation",
+        "prete": "Réponse prête",
+        "publiee": "Publiée"
+      },
+      "jalons": {
+        "preparation": "Décrite",
+        "prete": "Analysée",
+        "publiee": "Publiée"
+      }
     },
     "discuter": {
       "titre": "Quelque chose ne te convient pas ?",
@@ -1202,6 +1246,18 @@
         "autre": "Je cherche autre chose"
       },
       "restants": "Plus de conseil aujourd’hui | Il te reste 1 conseil aujourd’hui | Il te reste {n} conseils aujourd’hui"
+    },
+    "reponse": {
+      "relire": "Relire ce que j'ai écrit",
+      "conseils": "Ce qu'Ayo te conseille",
+      "suite": "La suite",
+      "onglets": {
+        "developpeurs": "Développeurs",
+        "projet": "Le projet",
+        "publier": "Publier"
+      },
+      "seul": "Tu préfères suivre ce plan seul, sans former de cercle ?",
+      "preciser": "Préciser"
     }
   },
   "cercles": {
