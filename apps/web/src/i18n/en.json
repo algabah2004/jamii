@@ -1165,6 +1165,16 @@
       "livrees": "{n}/{total} tasks delivered",
       "pointFait": "checked in",
       "ecrire": "Message"
+    },
+    "repartition": {
+      "intro": "Ayo can suggest who takes what, based on everyone’s skills and current workload.",
+      "demander": "Ayo, suggest a split",
+      "parCompetences": "For their skills: {competences}",
+      "parCharge": "No task in progress: the work gets shared | {n} task in progress, the least busy | {n} tasks in progress, the least busy",
+      "confier": "Assign",
+      "toutConfier": "Assign all as suggested",
+      "rien": "Every task already has someone.",
+      "note": "A suggestion computed from profiles: nothing is assigned without your click. This round's beneficiary is never picked."
     }
   },
   "reseau": {
