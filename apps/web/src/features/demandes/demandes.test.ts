@@ -88,6 +88,18 @@ describe('Une PME décrit son besoin', () => {
     expect(page.text()).toContain('<img src=x onerror="alert(1)">')
   })
 
+  it('propose de publier le plan comme mission, à côté du lancement du projet', async () => {
+    const { page, routeur } = await ouvrir('/demandes/nouvelle')
+    await page.get('[data-test="exemple"]').trigger('click')
+    await page.get('[data-test="demande"]').trigger('submit')
+    await vi.waitFor(() => expect(page.find('[data-test="publier-mission"]').exists()).toBe(true), { timeout: 4000 })
+    const id = String(routeur.currentRoute.value.params.id)
+    const lien = page.get('[data-test="publier-mission"]')
+    expect(lien.text()).toBe('Publier comme mission')
+    expect(lien.attributes('href')).toBe(`/missions/nouvelle?demande=${id}`)
+    expect(page.find('[data-test="lancer"]').exists()).toBe(true)
+  })
+
   it('signale qu’une autre équipe a déjà pris la demande', async () => {
     serveur.use(http.post('/api/projets', () => HttpResponse.json({ code: 'demande_deja_prise' }, { status: 409 })))
     const { page } = await ouvrir('/demandes/nouvelle')

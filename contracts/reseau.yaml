@@ -438,7 +438,7 @@ components:
 
     TypeNotification:
       type: string
-      enum: [message_recu, invitation_cercle, demande_contact, contact_accepte, membre_rejoint, tirage_effectue, tour_livre, cercle_recommande]
+      enum: [message_recu, invitation_cercle, demande_contact, contact_accepte, membre_rejoint, tirage_effectue, tour_livre, cercle_recommande, proposition_recue, devis_recu, mission_attribuee, candidature_recue, candidature_acceptee, candidature_refusee, candidature_attente, invitation_equipe]
 
     Notification:
       type: object
