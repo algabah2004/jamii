@@ -520,7 +520,12 @@ const messageErreur = computed(() =>
           <template v-else>
             <p class="decision__texte">{{ t('demandes.plan.decision') }}</p>
             <p v-if="lancement.etat === 'erreur'" role="alert" class="erreur">{{ messageErreur }}</p>
-            <JBouton :occupe="lancement.etat === 'envoi'" data-test="lancer" @click="lancer">{{ t('demandes.plan.lancer') }}</JBouton>
+            <div class="decision__actions">
+              <JBouton :occupe="lancement.etat === 'envoi'" data-test="lancer" @click="lancer">{{ t('demandes.plan.lancer') }}</JBouton>
+              <RouterLink :to="{ name: 'nouvelle-mission', query: { demande: demande.id } }" class="j-bouton j-bouton--secondaire" data-test="publier-mission">
+                {{ t('demandes.plan.publierMission') }}
+              </RouterLink>
+            </div>
           </template>
         </div>
       </template>
@@ -661,6 +666,7 @@ const messageErreur = computed(() =>
   padding: var(--space-4) var(--space-4) var(--space-4) var(--space-8); border-radius: var(--radius-pill);
 }
 .decision__texte { margin: 0; font-weight: 600; }
+.decision__actions { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
 .decision__fait { margin: 0; font-weight: 700; color: var(--ink); }
 .erreur { margin: 0; color: var(--danger); font-weight: 600; }
 

@@ -803,7 +803,8 @@
         "lire": "Reading what you wrote",
         "chercher": "Looking for what already exists",
         "preparer": "Preparing your options"
-      }
+      },
+      "publierMission": "Publish as a mission"
     },
     "priorites": {
       "indispensable": "Must have",
@@ -1716,7 +1717,14 @@
         "visibilite": "Choose who can see the mission.",
         "autre": "This field is not valid."
       },
-      "erreur": "The mission could not be saved. Try again in a moment."
+      "erreur": "The mission could not be saved. Try again in a moment.",
+      "depuisDemande": {
+        "note": "Prefilled from your request \"{titre}\". Review it and fix what needs fixing: nobody sees it until you publish it.",
+        "objectifs": "Goals",
+        "indispensables": "Must-have features",
+        "utiles": "Useful features",
+        "horsPerimetre": "Out of scope"
+      }
     },
     "detail": {
       "retour": "All missions",
