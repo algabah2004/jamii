@@ -6,6 +6,7 @@ import { JBouton } from '../../design-system'
 import { nomPays } from '../systalink/calculs'
 import { monogramme } from './communautes'
 import { etiquettesDe, teinteDe } from './identite'
+import MotifCommunaute from './MotifCommunaute.vue'
 
 type Communaute = components['schemas']['Communaute']
 
@@ -31,10 +32,7 @@ const POSES = [
 <template>
   <header class="banniere" :style="{ '--fond': teinte.fond, '--accent': teinte.accent, '--encre': teinte.encre }" data-test="banniere">
     <div class="banniere__scene" aria-hidden="true">
-      <svg class="banniere__rubans" viewBox="0 0 800 220" preserveAspectRatio="none">
-        <path d="M-20 190 C 160 40, 300 260, 470 90 S 760 10, 840 120" fill="none" stroke="var(--accent)" stroke-width="38" stroke-linecap="round" opacity="0.9" />
-        <path d="M-40 40 C 120 120, 260 -30, 420 60 S 700 230, 860 170" fill="none" stroke="var(--encre)" stroke-width="14" stroke-linecap="round" opacity="0.22" />
-      </svg>
+      <MotifCommunaute :slug="communaute.slug" />
       <span class="banniere__geant">{{ monogramme(communaute.nom) }}</span>
       <span
         v-for="(e, i) in etiquettes"
@@ -72,19 +70,16 @@ const POSES = [
 .banniere { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--ombre-carte); overflow: hidden; }
 .banniere__scene {
   position: relative; height: clamp(150px, 18vw, 220px); overflow: hidden;
-  background:
-    radial-gradient(circle at 18% 120%, color-mix(in srgb, var(--accent) 45%, transparent), transparent 55%),
-    var(--fond);
 }
-.banniere__rubans { position: absolute; inset: 0; width: 100%; height: 100%; }
 .banniere__geant {
   position: absolute; left: 4%; bottom: -0.18em;
   font-family: var(--font-display); font-weight: 700; font-style: italic; letter-spacing: -0.04em;
   font-size: clamp(5.5rem, 13vw, 10rem); line-height: 1; color: var(--encre);
-  text-shadow: 6px 6px 0 color-mix(in srgb, var(--accent) 80%, transparent);
+  /* Un contour de la couleur de fond détache les lettres des traits du motif. */
+  -webkit-text-stroke: 10px var(--fond); paint-order: stroke fill;
 }
 .autocollant {
-  position: absolute; padding: 6px 14px; border-radius: 12px; white-space: nowrap;
+  z-index: 1; position: absolute; padding: 6px 14px; border-radius: 12px; white-space: nowrap;
   font-family: var(--font-display); font-weight: 700; font-size: clamp(0.8rem, 1.2vw, 1rem);
   box-shadow: 0 6px 14px rgb(2 7 10 / 0.18);
   transition: transform var(--motion-base) var(--ease-pop);

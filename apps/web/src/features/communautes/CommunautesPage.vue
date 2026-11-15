@@ -8,6 +8,7 @@ import type { components } from '../../api/generated/communautes'
 import { nomPays } from '../systalink/calculs'
 import { monogramme } from './communautes'
 import { THEMES, etiquettesDe, teinteDe } from './identite'
+import MotifCommunaute from './MotifCommunaute.vue'
 
 type Communaute = components['schemas']['Communaute']
 
@@ -116,6 +117,7 @@ async function rejoindre(c: Communaute) {
         <ul class="grille" data-test="communautes">
           <li v-for="c in g.liste" :key="c.id" class="carte" :style="{ '--fond': teinteDe(c.slug).fond, '--accent': teinteDe(c.slug).accent, '--encre': teinteDe(c.slug).encre }">
             <div class="carte__bandeau" aria-hidden="true">
+              <MotifCommunaute :slug="c.slug" />
               <span class="carte__etiquette">{{ etiquettesDe(c.theme)[0] }}</span>
             </div>
             <div class="carte__corps">
@@ -190,17 +192,14 @@ async function rejoindre(c: Communaute) {
 .carte:hover { transform: translateY(-3px); border-color: var(--line-strong); }
 .carte:has(.carte__lien:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { .carte:hover { transform: none; } }
-.carte__bandeau {
-  position: relative; height: 72px;
-  background: radial-gradient(circle at 80% 130%, color-mix(in srgb, var(--accent) 80%, transparent), transparent 60%), var(--fond);
-}
+.carte__bandeau { position: relative; height: 84px; overflow: hidden; }
 .carte__etiquette {
-  position: absolute; top: 14px; right: 14px; padding: 3px 10px; border-radius: 10px; transform: rotate(-4deg);
+  z-index: 1; position: absolute; top: 14px; right: 14px; padding: 3px 10px; border-radius: 10px; transform: rotate(-4deg);
   background: #fff; color: #02070A; font-family: var(--font-display); font-weight: 700; font-size: 0.75rem;
 }
 .carte__corps { display: flex; flex-direction: column; gap: var(--space-2); flex: 1; padding: 0 var(--space-4) var(--space-4); }
 .carte__monogramme {
-  margin-top: -26px; display: grid; place-items: center; width: 52px; height: 52px; border-radius: 14px; border: 3px solid var(--surface);
+  position: relative; z-index: 1; margin-top: -26px; display: grid; place-items: center; width: 52px; height: 52px; border-radius: 14px; border: 3px solid var(--surface);
   background: var(--fond); color: var(--encre); font-family: var(--font-display); font-weight: 700; font-size: 1.0625rem; transform: rotate(-4deg);
 }
 .carte h3 { margin: 0; font-size: 1.125rem; line-height: 1.25; }

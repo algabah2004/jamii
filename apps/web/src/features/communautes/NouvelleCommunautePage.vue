@@ -7,6 +7,7 @@ import type { components } from '../../api/generated/communautes'
 import { JBouton } from '../../design-system'
 import { nomPays } from '../systalink/calculs'
 import BanniereCommunaute from './BanniereCommunaute.vue'
+import MotifCommunaute from './MotifCommunaute.vue'
 import { monogramme } from './communautes'
 import { PAYS_ANTENNES, THEMES, etiquettesDe, teinteDe, type Theme } from './identite'
 
@@ -257,6 +258,7 @@ function touche(e: KeyboardEvent) {
       <aside v-if="!creee && etape !== 'apercu'" class="vivant" :aria-label="t('communautes.nouvelle.apercu')">
         <div class="vivant__carte" :style="{ '--fond': teinte.fond, '--accent': teinte.accent, '--encre': teinte.encre }">
           <div class="vivant__bandeau">
+            <MotifCommunaute :key="apercu.slug" :slug="apercu.slug" />
             <span v-if="theme" class="vivant__etiquette">{{ etiquettesDe(theme)[0] }}</span>
           </div>
           <div class="vivant__corps">
@@ -358,11 +360,11 @@ function touche(e: KeyboardEvent) {
 
 .vivant { position: sticky; top: calc(64px + var(--space-6)); display: grid; gap: var(--space-4); }
 .vivant__carte { overflow: hidden; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--ombre-carte); }
-.vivant__bandeau { position: relative; height: 84px; background: radial-gradient(circle at 80% 130%, color-mix(in srgb, var(--accent) 80%, transparent), transparent 60%), var(--fond); transition: background 400ms var(--ease-out); }
-.vivant__etiquette { position: absolute; top: 14px; right: 14px; padding: 3px 10px; border-radius: 10px; transform: rotate(-4deg); background: #fff; color: #02070A; font-family: var(--font-display); font-weight: 700; font-size: 0.75rem; }
+.vivant__bandeau { position: relative; height: 96px; overflow: hidden; }
+.vivant__etiquette { z-index: 1; position: absolute; top: 14px; right: 14px; padding: 3px 10px; border-radius: 10px; transform: rotate(-4deg); background: #fff; color: #02070A; font-family: var(--font-display); font-weight: 700; font-size: 0.75rem; }
 .vivant__corps { display: grid; gap: 4px; padding: 0 var(--space-4) var(--space-4); }
 .vivant__monogramme {
-  margin-top: -26px; display: grid; place-items: center; width: 52px; height: 52px; border-radius: 14px; border: 3px solid var(--surface);
+  position: relative; z-index: 1; margin-top: -26px; display: grid; place-items: center; width: 52px; height: 52px; border-radius: 14px; border: 3px solid var(--surface);
   background: var(--fond); color: var(--encre); font-family: var(--font-display); font-weight: 700; transform: rotate(-4deg); transition: background 400ms var(--ease-out);
 }
 .vivant__corps strong { font-size: 1.125rem; overflow-wrap: anywhere; }
