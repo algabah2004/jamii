@@ -1410,7 +1410,18 @@
         "etat_invalide": "This hackathon is cancelled: no more announcements.",
         "trop_de_requetes": "Too many posts at once. Try again in a moment.",
         "autre": "That didn't work. Try again in a moment."
-      }
+      },
+      "nouvelleCourt": "+ New announcement",
+      "annuler": "Cancel",
+      "nouveau": "New"
+    },
+    "onglets": {
+      "titre": "Hackathon sections",
+      "presentation": "Overview",
+      "discussion": "Announcements and discussion",
+      "equipes": "Teams",
+      "gestion": "Manage",
+      "nouvelles": "new announcement | new announcements"
     }
   },
   "missions": {

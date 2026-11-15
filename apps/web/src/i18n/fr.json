@@ -1410,7 +1410,18 @@
         "etat_invalide": "Ce hackathon est annulé : on ne publie plus d'annonce.",
         "trop_de_requetes": "Trop d'envois d'un coup. Réessaie dans un moment.",
         "autre": "Ça n'a pas marché. Réessaie dans un moment."
-      }
+      },
+      "nouvelleCourt": "+ Nouvelle annonce",
+      "annuler": "Annuler",
+      "nouveau": "Nouveau"
+    },
+    "onglets": {
+      "titre": "Sections du hackathon",
+      "presentation": "Présentation",
+      "discussion": "Annonces et échanges",
+      "equipes": "Équipes",
+      "gestion": "Gestion",
+      "nouvelles": "nouvelle annonce | nouvelles annonces"
     }
   },
   "missions": {

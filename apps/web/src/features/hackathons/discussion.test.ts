@@ -34,6 +34,8 @@ describe('la discussion d’un hackathon', () => {
   it('l’organisatrice publie une annonce, la retire, et ouvre l’espace d’échange', async () => {
     role('en_cours', { role: 'organisateur', actions: [] })
     const page = await monter()
+    await attendre(page, '[data-test="nouvelle-annonce"]')
+    await page.get('[data-test="nouvelle-annonce"]').trigger('click')
     await attendre(page, '[data-test="form-annonce"]')
     expect(page.find('[data-test="aucune-annonce"]').exists()).toBe(true)
     expect(page.get('[data-test="publier-annonce"]').attributes('disabled')).toBeDefined()
@@ -42,7 +44,10 @@ describe('la discussion d’un hackathon', () => {
     await page.get('[data-test="form-annonce"]').trigger('submit')
     await attendre(page, '[data-test="annonce"]')
     expect(page.get('[data-test="annonce"]').text()).toContain('Le dépôt des rendus ouvre demain à 9 h.')
-    expect(page.get<HTMLTextAreaElement>('#annonce-texte').element.value).toBe('')
+    // Publiée : le formulaire se replie.
+    expect(page.find('[data-test="form-annonce"]').exists()).toBe(false)
+    expect(page.get('[data-test="annonce-nouvelle"]').text()).toBe('Nouveau')
+    expect(page.get('[data-test="nouvelles-annonces"]').text()).toContain('1')
 
     await page.get('[data-test="retirer-annonce"]').trigger('click')
     await attendre(page, '[data-test="aucune-annonce"]')
@@ -73,6 +78,21 @@ describe('la discussion d’un hackathon', () => {
     expect(page.get('[data-test="questions"]').text()).toContain('Peut-on utiliser une API externe ? · 2 réponses')
     expect(page.get('[data-test="salons"]').attributes('href')).toBe('/communautes/dakar-cloud-hack?salon=general')
     expect(page.get('[data-test="aller-discussion"]').attributes('href')).toBe('#discussion')
+  })
+
+  it('range la page en onglets, au clic comme au clavier', async () => {
+    role('en_cours', { role: 'participant', actions: [] })
+    const page = await monter()
+    await attendre(page, '[data-test="onglet-discussion"]')
+    const choisi = (o: string) => page.get(`[data-test="onglet-${o}"]`).attributes('aria-selected')
+    expect(choisi('presentation')).toBe('true')
+    expect(page.find('[data-test="onglet-gestion"]').exists()).toBe(false)
+    await page.get('[data-test="onglet-discussion"]').trigger('click')
+    await vi.waitFor(() => expect(choisi('discussion')).toBe('true'))
+    expect(page.get('#panneau-discussion').attributes('style') ?? '').not.toContain('display: none')
+    expect(page.get('#panneau-presentation').attributes('style')).toContain('display: none')
+    await page.get('[role="tablist"]').trigger('keydown', { key: 'ArrowRight' })
+    await vi.waitFor(() => expect(choisi('equipes')).toBe('true'))
   })
 
   it('dit quand l’organisation n’a pas encore ouvert d’espace', async () => {

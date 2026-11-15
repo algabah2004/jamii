@@ -23,6 +23,7 @@ import {
  *   et discutent dans des salons. On réutilise les communautés au lieu de refaire un forum : modération, salons, appels.
  */
 const props = defineProps<{ hackathon: Hackathon }>()
+const emit = defineEmits<{ nouvelles: [nombre: number] }>()
 const { t, locale } = useI18n()
 const { moi } = useSession()
 
@@ -36,6 +37,12 @@ const envoi = ref(false)
 const ouverture = ref(false)
 const erreur = ref<string | null>(null)
 const toutes = ref(false)
+const redaction = ref(false)
+
+/** Une annonce de moins de 48 h est « nouvelle » : mise en avant ici, comptée sur l'onglet. */
+const RECENTE_MS = 48 * 3600 * 1000
+const estRecente = (a: Annonce) => Date.now() - Date.parse(a.publieeLe) < RECENTE_MS
+watch(annonces, (liste) => emit('nouvelles', liste.filter(estRecente).length), { immediate: true })
 
 const organisateur = computed(() => props.hackathon.moi.role === 'organisateur')
 const connecte = computed(() => Boolean(moi.value))
@@ -72,6 +79,7 @@ async function publier() {
     if (r.ok) {
       annonces.value = [r.valeur, ...annonces.value]
       texte.value = ''
+      redaction.value = false
     } else erreur.value = message(r.code)
   } catch {
     erreur.value = message(null)
@@ -108,23 +116,34 @@ async function ouvrir() {
     <p v-if="etat === 'indisponible'" role="alert" class="texte-discret">{{ t('hackathons.discussion.indisponible') }}</p>
     <template v-else-if="etat === 'pret'">
       <div class="bloc">
-        <h3>{{ t('hackathons.discussion.annonces') }}</h3>
-        <form v-if="peutAnnoncer" class="formulaire" data-test="form-annonce" @submit.prevent="publier">
+        <div class="bloc__tete">
+          <h3>{{ t('hackathons.discussion.annonces') }}</h3>
+          <JBouton v-if="peutAnnoncer && !redaction" variante="secondaire" data-test="nouvelle-annonce" @click="redaction = true">
+            {{ t('hackathons.discussion.nouvelleCourt') }}
+          </JBouton>
+        </div>
+        <form v-if="peutAnnoncer && redaction" class="formulaire" data-test="form-annonce" @submit.prevent="publier">
           <label for="annonce-texte" class="libelle">{{ t('hackathons.discussion.nouvelle') }}</label>
           <textarea id="annonce-texte" v-model="texte" rows="3" :maxlength="TEXTE_MAX" :placeholder="t('hackathons.discussion.exemple')" />
           <div class="ligne">
             <span class="texte-discret">{{ t('hackathons.discussion.aideAnnonce') }}</span>
-            <JBouton type="submit" variante="secondaire" :occupe="envoi" :desactive="!texte.trim()" data-test="publier-annonce">
+            <span class="boutons">
+              <JBouton variante="discret" data-test="annuler-annonce" @click="redaction = false">{{ t('hackathons.discussion.annuler') }}</JBouton>
+              <JBouton type="submit" :occupe="envoi" :desactive="!texte.trim()" data-test="publier-annonce">
               {{ t('hackathons.discussion.publier') }}
-            </JBouton>
+              </JBouton>
+            </span>
           </div>
         </form>
         <p v-if="!annonces.length" class="texte-discret" data-test="aucune-annonce">{{ t('hackathons.discussion.aucuneAnnonce') }}</p>
         <ol v-else class="annonces">
-          <li v-for="a in visibles" :key="a.id" data-test="annonce">
+          <li v-for="(a, i) in visibles" :key="a.id" :class="{ recente: i === 0 && estRecente(a) }" data-test="annonce">
             <p class="annonce__tete">
               <span class="personne"><JAvatar :nom="a.auteur.nom" :url="a.auteur.avatarUrl" :taille="24" /> {{ a.auteur.nom }}</span>
-              <span class="texte-discret">{{ formaterDate(a.publieeLe, locale) }}</span>
+              <span class="annonce__quand">
+                <span v-if="i === 0 && estRecente(a)" class="nouveau" data-test="annonce-nouvelle">{{ t('hackathons.discussion.nouveau') }}</span>
+                <span class="texte-discret">{{ formaterDate(a.publieeLe, locale) }}</span>
+              </span>
             </p>
             <!-- Texte libre : affiché échappé, avec ses retours à la ligne. -->
             <p class="annonce__texte">{{ a.texte }}</p>
@@ -173,11 +192,18 @@ async function ouvrir() {
 .discussion { display: grid; gap: var(--space-6); padding: var(--space-8); }
 .discussion h2, .discussion h3, .discussion p { margin: 0; }
 .discussion h2 { font-size: 1.25rem; }
-.discussion h3 { font-size: 1.0625rem; }
+.discussion h3 { font-size: 1.125rem; font-weight: 700; }
+.bloc__tete { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; justify-content: space-between; }
+.boutons { display: inline-flex; gap: var(--space-2); }
+.annonce__quand { display: inline-flex; gap: var(--space-2); align-items: center; }
+.nouveau {
+  padding: 0 var(--space-2); border-radius: var(--radius-pill); background: var(--cantaloupe); color: var(--midnight);
+  font-size: 0.75rem; font-weight: 800;
+}
 .bloc { display: grid; gap: var(--space-3); }
 .espace { padding-block-start: var(--space-6); border-block-start: 1px solid var(--line-strong); }
 .formulaire { display: grid; gap: var(--space-2); }
-.libelle { font-weight: 600; }
+.libelle { font-size: var(--type-body-sm-size); color: var(--ink-muted); }
 textarea {
   inline-size: 100%; padding: var(--space-3); border: 1px solid var(--line-strong); border-radius: var(--radius-md);
   background: var(--surface); color: var(--ink); font: inherit; resize: vertical;
@@ -187,8 +213,10 @@ textarea:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .annonces { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--space-3); }
 .annonces li {
   display: grid; gap: var(--space-2); justify-items: start; padding: var(--space-4); border-radius: var(--radius-md);
-  border-inline-start: 3px solid var(--action); background: color-mix(in srgb, var(--action) 6%, transparent);
+  border: 1px solid var(--line-strong);
 }
+.annonces li.recente { border-color: var(--action); border-inline-start-width: 4px; background: color-mix(in srgb, var(--action) 8%, transparent); }
+.annonces li.recente .annonce__texte { font-size: 1.0625rem; }
 .annonce__tete { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; justify-content: space-between; inline-size: 100%; }
 .annonce__texte { white-space: pre-line; }
 .personne { display: inline-flex; gap: var(--space-2); align-items: center; font-weight: 600; }
