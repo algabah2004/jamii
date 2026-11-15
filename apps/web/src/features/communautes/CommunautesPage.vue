@@ -8,6 +8,7 @@ import type { components } from '../../api/generated/communautes'
 import { nomPays } from '../systalink/calculs'
 import { monogramme } from './communautes'
 import { THEMES, etiquettesDe, teinteDe } from './identite'
+import TextureCommunaute from './TextureCommunaute.vue'
 
 type Communaute = components['schemas']['Communaute']
 
@@ -116,6 +117,7 @@ async function rejoindre(c: Communaute) {
         <ul class="grille" data-test="communautes">
           <li v-for="c in g.liste" :key="c.id" class="carte" :style="{ '--fond': teinteDe(c.slug).fond, '--accent': teinteDe(c.slug).accent, '--encre': teinteDe(c.slug).encre }">
             <div class="carte__bandeau" aria-hidden="true">
+              <TextureCommunaute :slug="c.slug" />
               <span class="carte__etiquette">{{ etiquettesDe(c.theme)[0] }}</span>
             </div>
             <div class="carte__corps">
@@ -191,7 +193,7 @@ async function rejoindre(c: Communaute) {
 .carte:has(.carte__lien:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { .carte:hover { transform: none; } }
 .carte__bandeau {
-  position: relative; height: 72px;
+  position: relative; height: 72px; overflow: hidden;
   background: radial-gradient(circle at 80% 130%, color-mix(in srgb, var(--accent) 80%, transparent), transparent 60%), var(--fond);
 }
 .carte__etiquette {
