@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LienPersonne from '../../components/LienPersonne.vue'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute } from 'vue-router'
@@ -8,6 +9,7 @@ import ProfilsRecommandes from '../reseau/ProfilsRecommandes.vue'
 import PartagerCercle from './PartagerCercle.vue'
 import CodeDuTour from './CodeDuTour.vue'
 import TachesDuTour from './TachesDuTour.vue'
+import SalonDuCercle from './SalonDuCercle.vue'
 import { avancement, avantTirage, deposerIdee, LIMITES, lireAvancement, lireCercle, livrerTour, ordreDePassage, positionsAnneau, pourcentage, rejoindreCercle, tirerAuSort, titreDuTour, tourEnCours, type Avancement, type Cercle, type Resultat, type Tache } from './cercles'
 
 /*
@@ -61,6 +63,9 @@ const placesLibres = computed(() => places.value.slice(ordre.value.length))
 const tourDe = (personneId: string) => cercle.value?.tours.find((x) => x.beneficiaire.id === personneId) ?? null
 
 const membre = computed(() => !!cercle.value?.moi.estMembre)
+// Deux onglets pour les membres : le cercle (l'anneau, le tour, l'ordre) et son salon privé. Dans l'adresse (`?onglet=`),
+// pour qu'un lien mène droit au salon.
+const onglet = computed(() => (membre.value && route.query.onglet === 'salon' ? 'salon' : 'cercle'))
 const createur = computed(() => !!cercle.value?.moi.estCreateur)
 const preparation = computed(() => (cercle.value ? avantTirage(cercle.value) : null))
 const monIdee = computed(() => cercle.value?.membres.find((m) => m.personne.id === moi.value?.id)?.idee ?? null)
@@ -130,8 +135,15 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
           <h1>{{ cercle.nom }}</h1>
           <p>{{ cercle.ville ? t('cercles.sousTitre', { n: cercle.membres.length, ville: cercle.ville }) : t('cercles.sousTitreSansVille', { n: cercle.membres.length }) }}</p>
         </div>
+        <nav v-if="membre" class="onglets" :aria-label="t('cercles.onglets.aria')">
+          <RouterLink :to="{ query: {} }" class="onglet" :class="{ actif: onglet === 'cercle' }" :aria-current="onglet === 'cercle' ? 'page' : undefined" data-test="onglet-cercle">{{ t('cercles.onglets.cercle') }}</RouterLink>
+          <RouterLink :to="{ query: { onglet: 'salon' } }" class="onglet" :class="{ actif: onglet === 'salon' }" :aria-current="onglet === 'salon' ? 'page' : undefined" data-test="onglet-salon">{{ t('cercles.onglets.salon') }}</RouterLink>
+        </nav>
       </header>
 
+      <SalonDuCercle v-if="onglet === 'salon'" :key="cercle.id" :cercle="cercle" :suivi="suivi" :titre-tour="titreTour" />
+
+      <template v-else>
       <div class="mise-en-page">
         <!-- L'anneau : les membres dans l'ordre de passage, le bénéficiaire du tour mis en avant. -->
         <figure class="anneau carte" data-test="anneau">
@@ -151,8 +163,10 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
               :class="{ 'anneau__membre--tour': m.personne.id === tour?.beneficiaire.id, 'anneau__membre--livre': tourDe(m.personne.id)?.statut === 'livre' }"
               :style="{ left: `${places[i]!.x}%`, top: `${places[i]!.y}%`, '--i': i }"
             >
-              <JAvatar :nom="m.personne.nom" :url="m.personne.avatarUrl" :taille="52" />
-              <span class="anneau__nom">{{ prenom(m.personne.nom) }}</span>
+              <LienPersonne :id="m.personne.id" class="anneau__lien">
+                <JAvatar :nom="m.personne.nom" :url="m.personne.avatarUrl" :taille="52" />
+                <span class="anneau__nom">{{ prenom(m.personne.nom) }}</span>
+              </LienPersonne>
             </div>
           </div>
           <figcaption class="visuellement-cache">{{ t('cercles.anneauDescription', { ordre: ordre.map((m) => m.personne.nom).join(', ') }) }}</figcaption>
@@ -249,9 +263,9 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
         <ol class="ordre__liste" data-test="ordre">
           <li v-for="m in ordre" :key="m.personne.id" class="carte ordre__ligne" :class="`ordre__ligne--${tourDe(m.personne.id)?.statut ?? 'a_venir'}`">
             <span v-if="cercle.tirage" class="ordre__numero">{{ m.rang }}</span>
-            <JAvatar :nom="m.personne.nom" :url="m.personne.avatarUrl" :taille="40" />
+            <LienPersonne :id="m.personne.id" doublon><JAvatar :nom="m.personne.nom" :url="m.personne.avatarUrl" :taille="40" /></LienPersonne>
             <span class="ordre__qui">
-              <strong>{{ m.personne.nom }}</strong>
+              <strong><LienPersonne :id="m.personne.id">{{ m.personne.nom }}</LienPersonne></strong>
               <!-- Les idées ne sont visibles que des membres : les autres voient seulement si elle est déposée. -->
               <span>{{ m.idee?.titre ?? (m.aDeposeIdee ? t('cercles.ideeDeposee') : t('cercles.pasDIdee')) }}</span>
             </span>
@@ -259,12 +273,18 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
           </li>
         </ol>
       </section>
+      </template>
     </template>
   </section>
 </template>
 
 <style scoped>
 .cercle-page { display: grid; gap: var(--space-6); }
+.onglets { display: flex; gap: var(--space-1); padding: 4px; border-radius: var(--radius-pill); background: color-mix(in srgb, var(--surface) 70%, transparent); border: 1px solid var(--line); width: fit-content; }
+.onglet { min-height: 40px; display: inline-flex; align-items: center; padding: 0 var(--space-4); border-radius: var(--radius-pill); color: var(--ink-muted); font-weight: 600; text-decoration: none; }
+.onglet:hover { color: var(--ink); }
+.onglet.actif { background: var(--surface); color: var(--ink); box-shadow: 0 1px 4px rgb(2 7 10 / 0.18); }
+.onglet:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .retour { margin: 0; font-size: var(--type-body-sm-size); }
 .mise-en-page { display: grid; gap: var(--space-6); grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); align-items: start; }
 @media (max-width: 860px) { .mise-en-page { grid-template-columns: 1fr; } }
@@ -289,7 +309,10 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
   display: grid; justify-items: center; gap: var(--space-1);
   animation: apparait var(--motion-celebrate) var(--ease-pop) both; animation-delay: calc(var(--i) * 70ms);
 }
-.anneau__membre :deep(.j-avatar) { box-shadow: 0 0 0 3px var(--surface); }
+.anneau__membre :deep(.j-avatar) { box-shadow: 0 0 0 3px var(--surface); transition: transform var(--motion-fast) var(--ease-out); }
+.anneau__lien { display: grid; justify-items: center; gap: var(--space-1); }
+.anneau__lien:hover :deep(.j-avatar) { transform: scale(1.06); }
+@media (prefers-reduced-motion: reduce) { .anneau__lien:hover :deep(.j-avatar) { transform: none; } }
 .anneau__nom { padding: 0 var(--space-2); border-radius: var(--radius-pill); background: var(--surface); font-size: var(--type-body-sm-size); font-weight: 600; }
 /* Le bénéficiaire du tour : un halo orange, la couleur de la preuve. */
 .anneau__membre--tour :deep(.j-avatar) { box-shadow: 0 0 0 3px var(--surface), 0 0 0 7px var(--proof), 0 0 26px color-mix(in srgb, var(--proof) 55%, transparent); }

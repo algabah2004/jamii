@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { JBouton, JChamp } from '../../design-system'
 import { creerEquipe, LIMITES_EQUIPE, sInscrire, type Hackathon, type Resultat } from './hackathons'
 import RemplirQuestionnaire from '../questionnaires/RemplirQuestionnaire.vue'
-import { erreursParQuestion, manquantes, versReponses, type Valeurs } from '../questionnaires/questionnaire'
+import { erreursParQuestion, erreursRestantes, focaliserQuestion, manquantes, resumeErreurs, versReponses, type Valeurs } from '../questionnaires/questionnaire'
 
 /*
  * Participer à un hackathon (contracts/hackathons.yaml, `sInscrire` et `creerEquipe`) : s'inscrire seul, en se
@@ -14,6 +14,11 @@ import { erreursParQuestion, manquantes, versReponses, type Valeurs } from '../q
 const props = defineProps<{ hackathon: Hackathon }>()
 const emit = defineEmits<{ inscrit: [] }>()
 const { t } = useI18n()
+/** Sa candidature, si elle n'est pas encore acceptée : l'organisateur n'a pas répondu, ou l'a mise en liste d'attente. */
+const candidature = computed(() => {
+  const s = props.hackathon.moi.inscription
+  return s === 'en_attente' || s === 'attente' ? s : null
+})
 
 const chercheEquipe = ref(true)
 const nom = ref('')
@@ -24,14 +29,17 @@ const erreursQuestions = ref<Record<string, string>>({})
 
 /** Les questions ne se posent qu'à qui n'est pas encore inscrit (un inscrit peut encore créer son équipe). */
 const questions = computed(() => (peut('sinscrire') ? props.hackathon.questionnaire : []))
-const nbManquantes = computed(() => Object.values(erreursQuestions.value).filter((c) => c === 'obligatoire').length)
+const resteAFaire = computed(() => resumeErreurs(erreursRestantes(questions.value, valeurs.value, erreursQuestions.value)))
 
 const peut = (action: string) => (props.hackathon.moi.actions as string[]).includes(action)
 const nomValide = computed(() => nom.value.trim().length >= LIMITES_EQUIPE.nomMin)
 const message = computed(() => {
   if (!code.value) return ''
   if (code.value === 'validation' && Object.keys(erreursQuestions.value).length) {
-    return t('questionnaire.remplir.manquantes', { n: nbManquantes.value }, Math.max(nbManquantes.value, 1))
+    // Tout est corrigé depuis le refus : plus rien à dire, le bouton suffit.
+    if (!resteAFaire.value) return ''
+    const n = resteAFaire.value.manquantes
+    if (n) return t('questionnaire.remplir.manquantes', { n }, n)
   }
   const connus = ['deja_inscrit', 'delai_depasse', 'equipes_verrouillees', 'etat_invalide', 'validation']
   return t(`hackathons.inscription.erreurs.${connus.includes(code.value) ? code.value : 'autre'}`)
@@ -44,7 +52,7 @@ async function agir(appel: () => Promise<Resultat<unknown>>) {
   erreursQuestions.value = Object.fromEntries(vides.map((id) => [id, 'obligatoire']))
   if (vides.length) {
     code.value = 'validation'
-    document.querySelector<HTMLElement>(`[data-test="question-${vides[0]}"] input, [data-test="question-${vides[0]}"] textarea`)?.focus()
+    focaliserQuestion(vides[0]!)
     return
   }
   envoi.value = true
@@ -73,7 +81,11 @@ function creer() {
 <template>
   <section class="carte participer" aria-labelledby="participer-titre" data-test="participer">
     <h2 id="participer-titre">{{ t('hackathons.inscription.titre') }}</h2>
-    <p class="texte-discret">
+    <div v-if="candidature" class="statut" data-test="statut-candidature" :data-statut="candidature">
+      <p class="statut__titre">{{ t(`hackathons.inscription.candidature.${candidature}.titre`) }}</p>
+      <p class="texte-discret">{{ t(`hackathons.inscription.candidature.${candidature}.aide`) }}</p>
+    </div>
+    <p v-else class="texte-discret">
       {{ hackathon.modeInscription === 'candidature' ? t('hackathons.inscription.introCandidature') : t('hackathons.inscription.intro') }}
     </p>
 
@@ -118,4 +130,8 @@ function creer() {
 .case { display: flex; gap: var(--space-2); align-items: center; min-height: 44px; }
 .erreur { margin: 0; color: var(--danger); font-weight: 600; }
 .questions { display: grid; gap: var(--space-3); }
+/* Le statut de la candidature : un encart, avec le texte pour le dire (la couleur ne fait que le souligner). */
+.statut { display: grid; gap: var(--space-1); padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); border-inline-start: 3px solid var(--cantaloupe); background: color-mix(in srgb, var(--cantaloupe) 10%, transparent); }
+.statut p { margin: 0; }
+.statut__titre { font-weight: 700; }
 </style>

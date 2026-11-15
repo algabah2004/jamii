@@ -427,5 +427,10 @@ def test_ayo_connait_les_limites_de_chaque_service_et_reste_honnete():
     assert "boutique" in fiches["orion"]["limites"]
     assert "pasPourToi" in fiches["boutique-en-ligne"]
     assert "systaone" not in fiches
+    # Yokk est connu, sans rien promettre que ses pages ne disent pas (prix, canaux).
+    assert (CATALOGUE.completer("yokk", "Répondre aux clientes.") or {}).get(
+        "lien"
+    ) == "https://yokk.ai"
+    assert "ne promets rien" in fiches["yokk"]["limites"]
     for regle in ("Hors sujet", "Ne fais jamais la publicité", "Jamais « tu dois »", "pasPourToi"):
         assert regle in orientation.CONSIGNE

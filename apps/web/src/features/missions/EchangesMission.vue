@@ -24,6 +24,8 @@ const erreur = ref<string | null>(null)
 const fil = ref<HTMLElement | null>(null)
 
 const estClient = computed(() => props.mission.moi.role === 'client')
+/** Avant le choix du développeur, on invite à poser ses questions ; ensuite, une phrase neutre. */
+const avantChoix = computed(() => ['publiee', 'fermee'].includes(props.mission.statut))
 /** Les 30 derniers : au-delà, la conversation complète est dans « Messages ». */
 const recents = computed(() => messages.value.slice(-30))
 
@@ -82,7 +84,7 @@ async function envoyer() {
     <p v-else-if="etat === 'indisponible'" role="alert" class="texte-discret">{{ t('missions.echanges.indisponible') }}</p>
     <template v-else-if="etat === 'pret'">
       <p v-if="!messages.length" class="texte-discret" data-test="aucun-message">
-        {{ estClient ? t('missions.echanges.videClient', { nom: avec.nom }) : t('missions.echanges.videDeveloppeur') }}
+        {{ !avantChoix ? t('missions.echanges.vide', { nom: avec.nom }) : estClient ? t('missions.echanges.videClient', { nom: avec.nom }) : t('missions.echanges.videDeveloppeur') }}
       </p>
       <!-- Une zone qui défile doit pouvoir prendre le focus (AXE : scrollable-region-focusable). -->
       <ol v-else ref="fil" class="fil" tabindex="0" :aria-label="t('missions.echanges.fil')" data-test="fil">

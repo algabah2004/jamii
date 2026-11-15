@@ -123,7 +123,7 @@ function retirerChoix(i: number, k: number) {
 
         <label class="reglage">
           <span>{{ t('questionnaire.editeur.aideQuestion') }}</span>
-          <input :value="q.aide ?? ''" :maxlength="LIMITES.aideMax" :placeholder="t('questionnaire.editeur.aidePlaceholder')" @input="modifier(i, { aide: ($event.target as HTMLInputElement).value })" />
+          <input :value="q.aide ?? ''" :maxlength="LIMITES.aideMax" :placeholder="t(`questionnaire.editeur.aidePlaceholder.${q.type}`)" @input="modifier(i, { aide: ($event.target as HTMLInputElement).value })" />
         </label>
 
         <fieldset v-if="aDesChoix(q.type)" class="choix" data-test="choix">

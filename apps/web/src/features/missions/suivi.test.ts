@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { http, HttpResponse } from 'msw'
 import { createMemoryHistory, createRouter, RouterView } from 'vue-router'
@@ -9,7 +9,13 @@ import { MISSION_EN_COURS, reinitialiserMissions, type Mission } from '../../moc
 import MissionPage from './MissionPage.vue'
 import { lireLiens } from './missions'
 
-beforeEach(() => reinitialiserMissions())
+beforeEach(() => {
+  reinitialiserMissions()
+  // Le jour de la lecture compte (acceptation automatique à venir) : on le fixe pour que les tests ne vieillissent pas.
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(new Date('2026-11-14T12:00:00Z'))
+})
+afterEach(() => vi.useRealTimers())
 
 async function monter(id = MISSION_EN_COURS) {
   ;(i18n.global.locale as unknown as { value: string }).value = 'fr'
@@ -57,6 +63,21 @@ describe('le suivi d’une mission', () => {
     expect(enCours!.get('[data-test="statut-jalon"]').text()).toBe('En cours')
     expect(enCours!.find('[data-test="accepter"]').exists()).toBe(false)
     expect(page.get('[data-test="informations-depart"]').text()).toContain('dossier partagé')
+  })
+
+  it('n’annonce pas une acceptation automatique déjà passée, ni pendant un désaccord', async () => {
+    vi.setSystemTime(new Date('2026-11-20T12:00:00Z'))
+    let page = await monter()
+    await attendre(page, '[data-test="jalon"]')
+    expect(page.find('[data-test="acceptation-automatique"]').exists()).toBe(false)
+
+    vi.setSystemTime(new Date('2026-11-14T12:00:00Z'))
+    await variante((m) => {
+      m.travail!.desaccord = { ouvertPar: 'client', raison: 'Le jalon ne correspond pas au devis.', ouvertLe: '2026-11-14T10:00:00Z', issue: null, explication: null, trancheLe: null }
+    })
+    page = await monter()
+    await attendre(page, '[data-test="jalon"]')
+    expect(page.find('[data-test="acceptation-automatique"]').exists()).toBe(false)
   })
 
   it('la cliente accepte un jalon livré, puis peut déclarer l’avoir payé', async () => {

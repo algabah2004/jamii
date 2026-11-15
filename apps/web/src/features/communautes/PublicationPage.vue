@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LienPersonne from '../../components/LienPersonne.vue'
 import { JAvatar, JBadgePreuve, JBouton, JChamp, JIllustration, JSquelette } from '../../design-system'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -141,9 +142,9 @@ async function repondre() {
       <!-- Le message d'origine. -->
       <article class="message-origine" aria-labelledby="titre-fil">
         <header class="auteur">
-          <JAvatar :nom="publication.auteur?.nom ?? '?'" :url="publication.auteur?.avatarUrl" :taille="44" />
+          <LienPersonne :id="publication.auteur?.id" doublon><JAvatar :nom="publication.auteur?.nom ?? '?'" :url="publication.auteur?.avatarUrl" :taille="44" /></LienPersonne>
           <div class="auteur__texte">
-            <strong>{{ publication.auteur?.nom ?? t('communautes.compteSupprime') }}</strong>
+            <strong><LienPersonne :id="publication.auteur?.id">{{ publication.auteur?.nom ?? t('communautes.compteSupprime') }}</LienPersonne></strong>
             <span>{{ ilYa(publication.creeLe, locale) }}</span>
           </div>
           <span class="etiquette">{{ t(`communautes.types.${publication.type}`) }}</span>
@@ -176,7 +177,7 @@ async function repondre() {
       <TransitionGroup tag="ol" name="reponse" class="fil" data-test="reponses">
         <li v-for="r in reponses" :key="r.id" class="reponse" :class="{ acceptee: r.acceptee, ia: r.proposeeParIa }">
           <span v-if="r.proposeeParIa" class="avatar-ia" aria-hidden="true">✨</span>
-          <JAvatar v-else :nom="r.auteur?.nom ?? '?'" :url="r.auteur?.avatarUrl" :taille="40" />
+          <LienPersonne v-else :id="r.auteur?.id" doublon><JAvatar :nom="r.auteur?.nom ?? '?'" :url="r.auteur?.avatarUrl" :taille="40" /></LienPersonne>
           <div class="bulle">
             <div class="bulle__tete">
               <p v-if="r.proposeeParIa" class="etiquette-ia" data-test="etiquette-ia">{{ t(r.valideePar ? 'question.proposeeParIaVerifiee' : 'question.proposeeParIa') }}</p>

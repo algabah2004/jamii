@@ -246,7 +246,8 @@
       "decouvrir": "Discover Jamii",
       "invitationTitre": "Show what you can do, too.",
       "invitationTexte": "On Jamii, projects you launch with a team become proof.",
-      "rejoindre": "Create my profile"
+      "rejoindre": "Create my profile",
+      "nonPublie": "{nom} hasn't published their profile yet. You can already message them."
     }
   },
   "etat": {
@@ -1090,7 +1091,87 @@
         "fermee": "Closed"
       }
     },
-    "sousTitreSansVille": "{n} members"
+    "sousTitreSansVille": "{n} members",
+    "onglets": {
+      "aria": "The circle and its room",
+      "cercle": "The circle",
+      "salon": "Room"
+    },
+    "salon": {
+      "titre": "The circle's room",
+      "contexteAvant": "Before the draw · {n} of {taille} members. Get to know each other and sharpen your ideas.",
+      "contexteTour": "Turn {n} · {titre}",
+      "contexteJour": "day {jour} of 14 · {faites}/{total} tasks",
+      "contexteTermine": "The circle is complete. Well done, everyone!",
+      "pointsAria": "Members, and who posted their daily check-in",
+      "pointsCompte": "{n} of {total} posted their check-in today",
+      "aFaitSonPoint": "{nom} posted their check-in today",
+      "lancerAppel": "Start a circle call",
+      "appelEnCours": "Call in progress · started by {nom} {quand}",
+      "rejoindre": "Join",
+      "terminer": "End",
+      "aLanceAppel": "started a circle call",
+      "appelTermine": "Call ended",
+      "coupsTitre": "A member needs a hand | {n} members need a hand",
+      "aider": "I can help",
+      "regle": "It's sorted",
+      "fil": "The circle's messages",
+      "vide": "Nothing yet. Start the conversation!",
+      "aujourdhui": "today",
+      "hier": "yesterday",
+      "quelquun": "Someone",
+      "evenements": {
+        "cercle_cree": "{nom} created the circle",
+        "membre_rejoint": "{nom} joined the circle",
+        "tirage": "{nom} ran the draw: the turn order is set",
+        "tour_ouvert": "Turn {n} begins: over to {nom}'s project",
+        "tour_livre": "Turn {n} is delivered: well done on {nom}'s project",
+        "cercle_termine": "Every turn is delivered: the circle is complete"
+      },
+      "sonPoint": "Daily check-in",
+      "fait": "Done",
+      "prevu": "Next",
+      "bloque": "Blocked",
+      "bloqueFacultatif": "Blocked (optional)",
+      "faitAide": "What you did since your last check-in",
+      "prevuAide": "What you're doing next",
+      "bloqueAide": "What's blocking you, if anything",
+      "demandeTitre": "Needs a hand",
+      "reglee": "Sorted",
+      "regleePar": "Sorted thanks to {nom}",
+      "nouveaux": "1 new message | {n} new messages",
+      "coupe": "Connection lost, retrying…",
+      "modes": "What you want to tell the circle",
+      "modeTexte": "Message",
+      "modePoint": "My check-in",
+      "modeBloque": "I'm stuck",
+      "pointFaitAujourdhui": "You've already posted your check-in today. See you tomorrow!",
+      "placeholder": "Write to the circle…",
+      "bloquePlaceholder": "What are you stuck on? Be specific: the circle will help you faster.",
+      "aideEntree": "Enter to send, Shift + Enter for a new line",
+      "envoyer": "Send",
+      "envoyerPoint": "Share my check-in",
+      "envoyerBloque": "Ask for a hand",
+      "erreurs": {
+        "envoi": "The message didn't go through. Try again.",
+        "pointDejaFait": "You've already posted your check-in today.",
+        "trop": "Too many messages at once. Wait a moment.",
+        "tropAppels": "Too many calls started in an hour. Try again later."
+      }
+    },
+    "tableau": {
+      "aria": "Turn dashboard",
+      "pasDeTour": "The dashboard opens with the first turn, after the draw.",
+      "avancement": "Turn progress",
+      "miennes": "My tasks",
+      "aucuneMienne": "You haven't taken a task yet. Pick one from the open tasks.",
+      "libres": "Open tasks",
+      "etAutres": "and {n} more in the “The circle” tab",
+      "equipe": "The team",
+      "livrees": "{n}/{total} tasks delivered",
+      "pointFait": "checked in",
+      "ecrire": "Message"
+    }
   },
   "reseau": {
     "competences": "Skills",
@@ -1198,6 +1279,17 @@
       "lu": "Read",
       "envoye": "Sent",
       "aideClavier": "Enter to send, Shift + Enter for a new line."
+    },
+    "profil": {
+      "ecrire": "Message {nom}",
+      "enContact": "Connected",
+      "contact": {
+        "aucun": "Add to contacts",
+        "envoyee": "Request sent · cancel",
+        "recue": "Accept their request",
+        "accepte": "Connected"
+      },
+      "voir": "View {nom}'s profile"
     }
   },
   "hackathons": {
@@ -1322,7 +1414,16 @@
         "limite_atteinte": "You have already published 3 hackathons today. Try again tomorrow.",
         "validation": "Something is missing: check the code of conduct and the dates.",
         "autre": "The action did not go through. Try again in a moment."
-      }
+      },
+      "aNoter": "{n} project left to score | {n} projects left to score",
+      "toutNote": "All projects are scored",
+      "noter": "Score the projects",
+      "noterCourt": "Score",
+      "candidature": {
+        "en_attente": "Your application is waiting for the organiser.",
+        "attente": "You're on the waiting list."
+      },
+      "voirCandidature": "See"
     },
     "inscription": {
       "titre": "Take part",
@@ -1342,6 +1443,16 @@
         "etat_invalide": "This hackathon is not accepting registrations right now.",
         "validation": "The team name must be between 2 and 60 characters.",
         "autre": "Registration did not go through. Try again in a moment."
+      },
+      "candidature": {
+        "en_attente": {
+          "titre": "Application sent",
+          "aide": "The organiser picks the participants. Come back here to see the answer."
+        },
+        "attente": {
+          "titre": "You're on the waiting list",
+          "aide": "The organiser kept your application without declining it. Come back here to see the answer."
+        }
       }
     },
     "equipes": {
@@ -1480,7 +1591,7 @@
       "classement": "Ranking",
       "rang": "#{rang} | #{rang}",
       "voir": "See {titre}",
-      "retours": "Jury feedback:",
+      "retours": "Jury feedback ({n})",
       "exAequo": "tied",
       "score": "{score} / 5"
     },
@@ -1661,7 +1772,15 @@
       },
       "candidatEnAttente": "You offered your services: the client hasn't chosen yet.",
       "candidatRetenu": "Your proposal was selected: send your quote to the client.",
-      "voirMaProposition": "See my proposal"
+      "voirMaProposition": "See my proposal",
+      "prochaine": "Next step",
+      "etapeSuivante": {
+        "verifier": "Review milestone {n}",
+        "payer": "Pay milestone {n}",
+        "livrer": "Deliver milestone {n}",
+        "recevoir": "Confirm payment for milestone {n}"
+      },
+      "voirJalon": "See the milestone"
     },
     "suivi": {
       "titre": "The work",
@@ -1729,7 +1848,8 @@
         "validation": "A field is not valid. Check what you wrote.",
         "interdit": "You are not allowed to do this.",
         "autre": "The action did not go through. Try again in a moment."
-      }
+      },
+      "enRetard": "Late"
     },
     "fin": {
       "annulation": {
@@ -1878,12 +1998,13 @@
       "ecrire": "Write to {nom}",
       "envoyer": "Send",
       "ecrireClient": "Write to the client",
-      "prudence": "Keep your messages and payments on Jamii: if there's a disagreement, that's what counts.",
+      "prudence": "Keep your messages on Jamii, and record your payments here: if there's a disagreement, that's what counts.",
       "erreurs": {
         "trop": "Too many messages at once. Try again in a moment.",
         "autre": "The message wasn't sent. Try again."
       },
-      "fermer": "Close messages"
+      "fermer": "Close messages",
+      "vide": "No messages with {nom} yet."
     }
   },
   "themes": {
@@ -1910,7 +2031,13 @@
       "type": "Answer type",
       "obligatoire": "Required answer",
       "aideQuestion": "Hint (optional)",
-      "aidePlaceholder": "E.g. a public link that opens without an account",
+      "aidePlaceholder": {
+        "texte_court": "E.g. a public link that opens without an account",
+        "texte_long": "E.g. a few sentences are enough",
+        "choix_unique": "E.g. pick the one closest to you",
+        "choix_multiples": "E.g. tick everything that applies",
+        "oui_non": "E.g. answer for today, not for later"
+      },
       "choix": "Possible choices ({min} to {max})",
       "choixN": "Choice {n}",
       "ajouterChoix": "+ Add a choice",

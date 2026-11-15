@@ -246,7 +246,8 @@
       "decouvrir": "Découvrir Jamii",
       "invitationTitre": "Toi aussi, montre ce que tu sais faire.",
       "invitationTexte": "Sur Jamii, tes projets mis en ligne avec une équipe deviennent des preuves.",
-      "rejoindre": "Créer mon profil"
+      "rejoindre": "Créer mon profil",
+      "nonPublie": "{nom} n’a pas encore publié son profil. Vous pouvez déjà lui écrire."
     }
   },
   "etat": {
@@ -1090,7 +1091,87 @@
         "fermee": "Fermée"
       }
     },
-    "sousTitreSansVille": "{n} membres"
+    "sousTitreSansVille": "{n} membres",
+    "onglets": {
+      "aria": "Le cercle et son salon",
+      "cercle": "Le cercle",
+      "salon": "Salon"
+    },
+    "salon": {
+      "titre": "Le salon du cercle",
+      "contexteAvant": "Avant le tirage · {n} membres sur {taille}. Faites connaissance et affinez vos idées.",
+      "contexteTour": "Tour {n} · {titre}",
+      "contexteJour": "jour {jour} sur 14 · {faites}/{total} tâches",
+      "contexteTermine": "Le cercle est terminé. Bravo à toutes et à tous !",
+      "pointsAria": "Les membres, et qui a fait son point du jour",
+      "pointsCompte": "{n} sur {total} ont fait leur point aujourd’hui",
+      "aFaitSonPoint": "{nom} a fait son point aujourd’hui",
+      "lancerAppel": "Lancer un appel du cercle",
+      "appelEnCours": "Appel en cours · lancé par {nom} {quand}",
+      "rejoindre": "Rejoindre",
+      "terminer": "Terminer",
+      "aLanceAppel": "a lancé un appel du cercle",
+      "appelTermine": "Appel terminé",
+      "coupsTitre": "Un membre a besoin d’un coup de main | {n} membres ont besoin d’un coup de main",
+      "aider": "Je peux aider",
+      "regle": "C’est réglé",
+      "fil": "Les messages du cercle",
+      "vide": "Rien encore. Lance la conversation !",
+      "aujourdhui": "aujourd’hui",
+      "hier": "hier",
+      "quelquun": "Quelqu’un",
+      "evenements": {
+        "cercle_cree": "{nom} a créé le cercle",
+        "membre_rejoint": "{nom} a rejoint le cercle",
+        "tirage": "{nom} a lancé le tirage : l’ordre de passage est fixé",
+        "tour_ouvert": "Le tour {n} commence : place au projet de {nom}",
+        "tour_livre": "Le tour {n} est livré : bravo pour le projet de {nom}",
+        "cercle_termine": "Tous les tours sont livrés : le cercle est terminé"
+      },
+      "sonPoint": "Point du jour",
+      "fait": "Fait",
+      "prevu": "Prévu",
+      "bloque": "Bloqué",
+      "bloqueFacultatif": "Bloqué (facultatif)",
+      "faitAide": "Ce que tu as fait depuis ton dernier point",
+      "prevuAide": "Ce que tu fais ensuite",
+      "bloqueAide": "Ce qui te bloque, s’il y a quelque chose",
+      "demandeTitre": "A besoin d’un coup de main",
+      "reglee": "Réglé",
+      "regleePar": "Réglé grâce à {nom}",
+      "nouveaux": "1 nouveau message | {n} nouveaux messages",
+      "coupe": "Connexion perdue, on réessaie…",
+      "modes": "Ce que tu veux dire au cercle",
+      "modeTexte": "Message",
+      "modePoint": "Mon point du jour",
+      "modeBloque": "Je bloque",
+      "pointFaitAujourdhui": "Tu as déjà fait ton point aujourd’hui. À demain !",
+      "placeholder": "Écris au cercle…",
+      "bloquePlaceholder": "Sur quoi tu bloques ? Sois précis : le cercle t’aidera plus vite.",
+      "aideEntree": "Entrée pour envoyer, Maj + Entrée pour aller à la ligne",
+      "envoyer": "Envoyer",
+      "envoyerPoint": "Partager mon point",
+      "envoyerBloque": "Demander un coup de main",
+      "erreurs": {
+        "envoi": "Le message n’est pas parti. Réessaie.",
+        "pointDejaFait": "Tu as déjà fait ton point aujourd’hui.",
+        "trop": "Trop de messages d’un coup. Attends un instant.",
+        "tropAppels": "Trop d’appels lancés en une heure. Réessaie plus tard."
+      }
+    },
+    "tableau": {
+      "aria": "Tableau de bord du tour",
+      "pasDeTour": "Le tableau de bord s’ouvrira avec le premier tour, après le tirage.",
+      "avancement": "Avancement du tour",
+      "miennes": "Mes tâches",
+      "aucuneMienne": "Tu n’as pas encore pris de tâche. Choisis-en une parmi les tâches libres.",
+      "libres": "Tâches libres",
+      "etAutres": "et {n} autres dans l’onglet « Le cercle »",
+      "equipe": "L’équipe",
+      "livrees": "{n}/{total} tâches livrées",
+      "pointFait": "point fait",
+      "ecrire": "Écrire"
+    }
   },
   "reseau": {
     "competences": "Compétences",
@@ -1198,6 +1279,17 @@
       "lu": "Lu",
       "envoye": "Envoyé",
       "aideClavier": "Entrée pour envoyer, Maj + Entrée pour aller à la ligne."
+    },
+    "profil": {
+      "ecrire": "Écrire à {nom}",
+      "enContact": "En contact",
+      "contact": {
+        "aucun": "Ajouter aux contacts",
+        "envoyee": "Demande envoyée · annuler",
+        "recue": "Accepter sa demande",
+        "accepte": "En contact"
+      },
+      "voir": "Voir le profil de {nom}"
     }
   },
   "hackathons": {
@@ -1322,7 +1414,16 @@
         "limite_atteinte": "Tu as déjà publié 3 hackathons aujourd'hui. Réessaie demain.",
         "validation": "Il manque quelque chose : vérifie le code de conduite et les dates.",
         "autre": "L'action n'a pas abouti. Réessaie dans un instant."
-      }
+      },
+      "aNoter": "Il te reste {n} projet à noter | Il te reste {n} projets à noter",
+      "toutNote": "Tous les projets sont notés",
+      "noter": "Noter les projets",
+      "noterCourt": "Noter",
+      "candidature": {
+        "en_attente": "Ta candidature attend la réponse de l'organisateur.",
+        "attente": "Tu es sur la liste d'attente."
+      },
+      "voirCandidature": "Voir"
     },
     "inscription": {
       "titre": "Participer",
@@ -1342,6 +1443,16 @@
         "etat_invalide": "Ce hackathon n'accepte pas d'inscriptions pour le moment.",
         "validation": "Le nom de l'équipe doit faire entre 2 et 60 caractères.",
         "autre": "L'inscription n'a pas abouti. Réessaie dans un instant."
+      },
+      "candidature": {
+        "en_attente": {
+          "titre": "Candidature envoyée",
+          "aide": "L'organisateur choisit les participants. Reviens ici pour voir sa réponse."
+        },
+        "attente": {
+          "titre": "Tu es sur la liste d'attente",
+          "aide": "L'organisateur a gardé ta candidature sans la refuser. Reviens ici pour voir sa réponse."
+        }
       }
     },
     "equipes": {
@@ -1480,7 +1591,7 @@
       "classement": "Le classement",
       "rang": "{rang}er | {rang}e",
       "voir": "Voir {titre}",
-      "retours": "Les retours du jury :",
+      "retours": "Les retours du jury ({n})",
       "exAequo": "ex aequo",
       "score": "{score} / 5"
     },
@@ -1584,7 +1695,7 @@
     "aucuneMiennes": "Tu n'as encore aucune mission.",
     "budgetADiscuter": "Budget à discuter",
     "par": "Par {nom}",
-    "propositions": "{n} proposition | {n} propositions",
+    "propositions": "{n} proposition | {n} proposition | {n} propositions",
     "aDistance": "À distance",
     "indisponible": "Les missions ne sont pas disponibles pour le moment. Réessaie dans un instant.",
     "plus": "Voir plus de missions",
@@ -1661,7 +1772,15 @@
       },
       "candidatEnAttente": "Tu as proposé tes services : le client n'a pas encore choisi.",
       "candidatRetenu": "Ta proposition est retenue : envoie ton devis au client.",
-      "voirMaProposition": "Voir ma proposition"
+      "voirMaProposition": "Voir ma proposition",
+      "prochaine": "Prochaine étape",
+      "etapeSuivante": {
+        "verifier": "Vérifier le jalon {n}",
+        "payer": "Payer le jalon {n}",
+        "livrer": "Livrer le jalon {n}",
+        "recevoir": "Confirmer le paiement du jalon {n}"
+      },
+      "voirJalon": "Voir le jalon"
     },
     "suivi": {
       "titre": "Le travail",
@@ -1729,7 +1848,8 @@
         "validation": "Un champ n'est pas valide. Vérifie ce que tu as écrit.",
         "interdit": "Tu n'as pas le droit de faire cette action.",
         "autre": "L'action n'a pas abouti. Réessaie dans un instant."
-      }
+      },
+      "enRetard": "En retard"
     },
     "fin": {
       "annulation": {
@@ -1878,12 +1998,13 @@
       "ecrire": "Écrire à {nom}",
       "envoyer": "Envoyer",
       "ecrireClient": "Écrire au client",
-      "prudence": "Gardez vos échanges et vos paiements sur Jamii : en cas de désaccord, c'est ce qui compte.",
+      "prudence": "Gardez vos échanges sur Jamii, et déclarez-y vos paiements : en cas de désaccord, c'est ce qui compte.",
       "erreurs": {
         "trop": "Trop de messages d'un coup. Réessaie dans un moment.",
         "autre": "Le message n'est pas parti. Réessaie."
       },
-      "fermer": "Fermer les échanges"
+      "fermer": "Fermer les échanges",
+      "vide": "Pas encore de message avec {nom}."
     }
   },
   "themes": {
@@ -1910,7 +2031,13 @@
       "type": "Type de réponse",
       "obligatoire": "Réponse obligatoire",
       "aideQuestion": "Précision (facultatif)",
-      "aidePlaceholder": "Ex. : un lien public, que l'on peut ouvrir sans compte",
+      "aidePlaceholder": {
+        "texte_court": "Ex. : un lien public, que l'on peut ouvrir sans compte",
+        "texte_long": "Ex. : quelques phrases suffisent",
+        "choix_unique": "Ex. : choisis ce qui te ressemble le plus",
+        "choix_multiples": "Ex. : coche tout ce qui convient",
+        "oui_non": "Ex. : réponds pour aujourd'hui, pas pour plus tard"
+      },
       "choix": "Les choix possibles ({min} à {max})",
       "choixN": "Choix {n}",
       "ajouterChoix": "+ Ajouter un choix",
