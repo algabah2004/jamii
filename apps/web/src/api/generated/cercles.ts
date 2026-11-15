@@ -103,10 +103,11 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Tirer l'ordre de passage au sort (le créateur, une seule fois)
+         * Tirer l'ordre de passage au sort (n'importe quel membre, une seule fois)
          * @description Sans corps. Le serveur mélange les membres avec `SecureRandom`, enregistre l'ordre et le moment du tirage, puis
          *     crée le projet du tour 1. Conditions, dans cet ordre :
-         *     - `403` si tu n'es pas le créateur ;
+         *     - `403` si tu n'es pas membre du cercle (#157 : n'importe quel membre peut lancer le tirage, puisque c'est le
+         *       serveur qui tire au hasard ; `tirage.parId` dit qui l'a lancé) ;
          *     - `409 tirage_deja_fait` si l'ordre est déjà tiré (rien ne change) ;
          *     - `409 cercle_incomplet` s'il manque des membres (`taille` n'est pas atteinte) ;
          *     - `409 idees_manquantes` si un membre n'a pas déposé d'idée.
@@ -320,7 +321,7 @@ export interface components {
             effectueLe: string;
             /**
              * Format: uuid
-             * @description Le créateur du cercle.
+             * @description Le membre qui a lancé le tirage (le créateur, pour les cercles tirés avant #157).
              */
             parId: string;
         };

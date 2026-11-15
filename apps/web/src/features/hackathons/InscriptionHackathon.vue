@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { JBouton, JChamp } from '../../design-system'
 import { creerEquipe, LIMITES_EQUIPE, sInscrire, type Hackathon, type Resultat } from './hackathons'
 import RemplirQuestionnaire from '../questionnaires/RemplirQuestionnaire.vue'
-import { erreursParQuestion, manquantes, versReponses, type Valeurs } from '../questionnaires/questionnaire'
+import { erreursParQuestion, erreursRestantes, focaliserQuestion, manquantes, resumeErreurs, versReponses, type Valeurs } from '../questionnaires/questionnaire'
 
 /*
  * Participer à un hackathon (contracts/hackathons.yaml, `sInscrire` et `creerEquipe`) : s'inscrire seul, en se
@@ -24,14 +24,17 @@ const erreursQuestions = ref<Record<string, string>>({})
 
 /** Les questions ne se posent qu'à qui n'est pas encore inscrit (un inscrit peut encore créer son équipe). */
 const questions = computed(() => (peut('sinscrire') ? props.hackathon.questionnaire : []))
-const nbManquantes = computed(() => Object.values(erreursQuestions.value).filter((c) => c === 'obligatoire').length)
+const resteAFaire = computed(() => resumeErreurs(erreursRestantes(questions.value, valeurs.value, erreursQuestions.value)))
 
 const peut = (action: string) => (props.hackathon.moi.actions as string[]).includes(action)
 const nomValide = computed(() => nom.value.trim().length >= LIMITES_EQUIPE.nomMin)
 const message = computed(() => {
   if (!code.value) return ''
   if (code.value === 'validation' && Object.keys(erreursQuestions.value).length) {
-    return t('questionnaire.remplir.manquantes', { n: nbManquantes.value }, Math.max(nbManquantes.value, 1))
+    // Tout est corrigé depuis le refus : plus rien à dire, le bouton suffit.
+    if (!resteAFaire.value) return ''
+    const n = resteAFaire.value.manquantes
+    if (n) return t('questionnaire.remplir.manquantes', { n }, n)
   }
   const connus = ['deja_inscrit', 'delai_depasse', 'equipes_verrouillees', 'etat_invalide', 'validation']
   return t(`hackathons.inscription.erreurs.${connus.includes(code.value) ? code.value : 'autre'}`)
@@ -44,7 +47,7 @@ async function agir(appel: () => Promise<Resultat<unknown>>) {
   erreursQuestions.value = Object.fromEntries(vides.map((id) => [id, 'obligatoire']))
   if (vides.length) {
     code.value = 'validation'
-    document.querySelector<HTMLElement>(`[data-test="question-${vides[0]}"] input, [data-test="question-${vides[0]}"] textarea`)?.focus()
+    focaliserQuestion(vides[0]!)
     return
   }
   envoi.value = true

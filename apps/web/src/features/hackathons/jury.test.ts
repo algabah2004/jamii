@@ -140,6 +140,20 @@ describe('noter, côté juré', () => {
     expect(premier.get('[data-test="noter"]').text()).toBe('Modifier mes notes')
   })
 
+  it('le résumé dit combien de projets restent à noter, et y mène', async () => {
+    const page = await monter()
+    await attendre(page, '[data-test="a-noter"] .resume__etape')
+    expect(page.get('[data-test="a-noter"]').text()).toContain('Il te reste 2 projets à noter')
+    expect(page.get('[data-test="aller-noter"]').attributes('href')).toBe('#noter')
+    expect(page.find('#noter [data-test="notation"]').exists()).toBe(true)
+    expect(page.get('[data-test="barre-mobile"]').text()).toContain('Il te reste 2 projets à noter')
+
+    const premier = page.findAll('[data-test="form-notes"]')[0]!
+    for (const c of premier.findAll('[data-test="critere"]')) await c.get('input[value="4"]').setValue(true)
+    await premier.trigger('submit')
+    await vi.waitFor(() => expect(page.get('[data-test="a-noter"]').text()).toContain('Il te reste 1 projet à noter'))
+  })
+
   it('dit quand on ne peut plus noter', async () => {
     serveur.use(http.put('/api/hackathons/:id/rendus/:renduId/notes', () => HttpResponse.json({ code: 'etat_invalide' }, { status: 409 })))
     const page = await monter()

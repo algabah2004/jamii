@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { JBouton, JChamp, JDeplier } from '../../design-system'
 import { formaterDate, useAction } from './action'
 import LivrerJalon from './LivrerJalon.vue'
+import { enRetard } from './prochaineEtape'
 import { accepterJalon, declarerPaiement, demanderRetouche, formaterMontant, LIMITES_SUIVI, type Jalon, type Mission } from './missions'
 
 /*
@@ -17,6 +18,9 @@ const { envoi, message, agir } = useAction((m) => emit('maj', m))
 
 const peut = (nom: string) => (props.mission.moi.actions as string[]).includes(nom)
 const statut = computed(() => props.jalon.statut)
+/** L'heure de la lecture de la page : un jalon pas livré dont la date est passée est en retard. */
+const maintenant = Date.now()
+const retard = computed(() => enRetard(props.jalon, maintenant))
 const retouchesRestantes = computed(() => props.mission.travail?.retouchesRestantes ?? 0)
 
 const peutLivrer = computed(() => peut('livrer') && statut.value === 'en_cours')
@@ -48,10 +52,13 @@ async function retoucher() {
 </script>
 
 <template>
-  <li class="jalon" :data-statut="statut" data-test="jalon">
+  <li :id="`jalon-${jalon.id}`" class="jalon" :data-statut="statut" data-test="jalon">
     <header class="tete">
       <h3>{{ t('missions.suivi.jalon', { n: jalon.ordre }) }} · {{ jalon.titre }}</h3>
-      <p class="etiquette" data-test="statut-jalon">{{ t(`missions.suivi.statuts.${statut}`) }}</p>
+      <p class="etiquettes">
+        <span v-if="retard" class="etiquette etiquette--retard" data-test="en-retard">{{ t('missions.suivi.enRetard') }}</span>
+        <span class="etiquette" data-test="statut-jalon">{{ t(`missions.suivi.statuts.${statut}`) }}</span>
+      </p>
     </header>
 
     <dl class="faits">
@@ -128,7 +135,11 @@ async function retoucher() {
 .jalon[data-statut='accepte'] { border-color: var(--action); }
 .tete { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: baseline; justify-content: space-between; }
 .tete h3 { margin: 0; font-size: 1rem; }
+.jalon { scroll-margin-block-start: 6rem; }
+.etiquettes { margin: 0; display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .etiquette { margin: 0; }
+/* « En retard » : le mot le dit, la couleur ne fait que le souligner. */
+.etiquette--retard { border: 1px solid var(--danger); color: var(--danger); font-weight: 700; }
 .faits { margin: 0; display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); }
 .faits dt { font-size: var(--type-body-sm-size); color: var(--ink-muted); }
 .faits dd { margin: 0; font-weight: 600; }
