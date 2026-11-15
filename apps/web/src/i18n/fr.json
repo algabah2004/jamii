@@ -919,6 +919,18 @@
         "autre": "Je cherche autre chose"
       },
       "restants": "Plus de conseil aujourd’hui | Il te reste 1 conseil aujourd’hui | Il te reste {n} conseils aujourd’hui"
+    },
+    "reponse": {
+      "relire": "Relire ce que j'ai écrit",
+      "conseils": "Ce qu'Ayo te conseille",
+      "suite": "La suite",
+      "onglets": {
+        "developpeurs": "Développeurs",
+        "projet": "Le projet",
+        "publier": "Publier"
+      },
+      "seul": "Tu préfères suivre ce plan seul, sans former de cercle ?",
+      "preciser": "Préciser"
     }
   },
   "cercles": {

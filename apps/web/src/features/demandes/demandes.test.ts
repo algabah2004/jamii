@@ -270,6 +270,26 @@ describe('l’orientation d’un besoin', () => {
     await vi.waitFor(() => expect(page.find('[data-test="question-ayo"]').exists()).toBe(false))
   })
 
+  it('range la suite en onglets : les développeurs d’abord, puis le projet et la publication', async () => {
+    serveur.use(
+      http.get('/api/demandes/:id', () =>
+        HttpResponse.json({ ...base, plan: { statut: 'terminee', origine: 'ia', resultat: planDemo() }, orientation: { statut: 'terminee', origine: 'ia', resultat: orientationDemo() }, recommandations: RECOMMANDES }),
+      ),
+    )
+    const { page } = await ouvrir(`/demandes/${ID}`)
+    await vi.waitFor(() => expect(page.find('[data-test="onglet-developpeurs"]').exists()).toBe(true))
+    expect(page.get('[data-test="onglet-developpeurs"]').attributes('aria-selected')).toBe('true')
+    expect(page.get('[data-test="developpeurs"]').isVisible()).toBe(true)
+    // Une seule façon de lancer le projet avec d'autres : former un cercle. La barre collée en bas a disparu.
+    expect(page.findAll('[data-test="former-cercle"]')).toHaveLength(1)
+    await page.get('[data-test="onglet-publier"]').trigger('click')
+    await vi.waitFor(() => expect(page.get('[data-test="onglet-publier"]').attributes('aria-selected')).toBe('true'))
+    expect(page.get('[data-test="developpeurs"]').attributes('style')).toContain('display: none')
+    expect(page.find('[data-test="publication-formulaire"]').exists()).toBe(true)
+    // « Ce n'est pas tout à fait ça ? » reste replié jusqu'au clic.
+    expect(page.get('#preciser-corps').attributes('style')).toContain('display: none')
+  })
+
   it('n’affiche ni développeurs ni plan quand Systalink suffit, et dit quand l’IA était absente', async () => {
     const sansDev = { ...orientationDemo(), developpeursNecessaires: false, competences: [], plan: null }
     serveur.use(

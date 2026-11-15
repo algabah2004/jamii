@@ -919,6 +919,18 @@
         "autre": "I’m looking for something else"
       },
       "restants": "No advice left today | 1 piece of advice left today | {n} pieces of advice left today"
+    },
+    "reponse": {
+      "relire": "Reread what I wrote",
+      "conseils": "What Ayo suggests",
+      "suite": "Next",
+      "onglets": {
+        "developpeurs": "Developers",
+        "projet": "The project",
+        "publier": "Publish"
+      },
+      "seul": "Prefer to follow this plan on your own, without forming a circle?",
+      "preciser": "Clarify"
     }
   },
   "cercles": {
