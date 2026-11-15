@@ -86,27 +86,237 @@
       "apercuProfil": "Proven profile"
     },
     "decrireBesoin": "I have a need for my business",
-    "aussi": {
-      "titre": "Also on Jamii",
-      "cercles": {
-        "titre": "Circles",
-        "texte": "4 to 6 developers take turns building each member’s project. Systalink backs the circle.",
-        "lien": "See circles"
+    "sectionMissions": {
+      "surtitre": "Freelance",
+      "titre": "Missions: hire a developer, milestone by milestone",
+      "intro": "A small business, a shop or an association has a specific need. It posts it as a mission, developers from across the continent offer their services, and the work is split into milestones, each with its own amount and timeframe.",
+      "titreEtapes": "How it works",
+      "etapes": {
+        "1": {
+          "titre": "Post the mission",
+          "texte": "Describe the need, the budget and the skills. The mission is public, or visible only to the developers you invite."
+        },
+        "2": {
+          "titre": "Receive proposals",
+          "texte": "Developers offer their services. You talk with them, pick one, then they send you a quote split into milestones."
+        },
+        "3": {
+          "titre": "Move forward milestone by milestone",
+          "texte": "The developer delivers each milestone. You accept it or ask for a revision. Everyone always sees the next step."
+        },
+        "4": {
+          "titre": "Pay and leave a review",
+          "texte": "The client declares the payment, the developer confirms receiving it. At the end, each leaves a review for the other."
+        }
+      },
+      "cotes": {
+        "client": {
+          "titre": "You have a need",
+          "points": [
+            "Start from your need, or from the plan prepared with Ayo.",
+            "Compare proposals and profiles before choosing.",
+            "Pay milestone by milestone, never all at once."
+          ],
+          "lien": "Post a mission"
+        },
+        "developpeur": {
+          "titre": "You are a developer",
+          "points": [
+            "Find missions that need your skills.",
+            "Send a clear quote: milestones, amounts, timeframes.",
+            "Ask for an extension if needed, and a moderator settles any disagreement."
+          ],
+          "lien": "See missions"
+        }
+      },
+      "argent": {
+        "titre": "What about money?",
+        "texte": "Jamii does not collect the payment: the client pays the developer directly, then each declares it in the mission (“paid”, then “received”). Everyone sees where each milestone stands."
+      },
+      "apercu": {
+        "devis": "Quote",
+        "paye": "Paid",
+        "recu": "Received",
+        "livre": "Delivered",
+        "aFaire": "To do",
+        "propositions": "Proposals received"
+      },
+      "voir": "See missions",
+      "publier": "Post a mission"
+    },
+    "sectionHackathons": {
+      "surtitre": "Hackathons, challenges and innovation contests",
+      "titre": "Run a challenge, from the first sign-up to the winners",
+      "intro": "A school, a company, a community or a city launches a challenge. Jamii handles sign-ups, teams, hand-ins and jury scoring, online, on site or both.",
+      "titreEtapes": "How it works",
+      "etapes": {
+        "1": {
+          "titre": "Create and publish",
+          "texte": "The organizer sets the calendar, the team size, the scored criteria and their weight, the prizes and the code of conduct."
+        },
+        "2": {
+          "titre": "Sign up and form teams",
+          "texte": "Open sign-up or by application. People on their own find each other on the “Looking for a team” board."
+        },
+        "3": {
+          "titre": "Hand in the project",
+          "texte": "Each team hands in its product link and answers the questions. The hand-in can be edited until the deadline."
+        },
+        "4": {
+          "titre": "Score and publish results",
+          "texte": "The jury scores each criterion from 1 to 5, never its own team's project. The organizer confirms the winners."
+        }
+      },
+      "formats": {
+        "titre": "Three formats",
+        "hackathon": {
+          "signe": "48 h",
+          "titre": "Hackathon",
+          "texte": "A short, intense event, online, on site or hybrid. Teams build a product that works."
+        },
+        "challenge": {
+          "signe": "4 wk",
+          "titre": "Challenge",
+          "texte": "A challenge over several weeks, to go further: teams hand in a finished project before the deadline."
+        },
+        "concours": {
+          "signe": "★",
+          "titre": "Innovation contest",
+          "texte": "A company or a school sets a real problem and rewards the best ideas, with prizes in money or in services."
+        }
+      },
+      "apercu": {
+        "equipe": "Team",
+        "jury": "Jury"
+      },
+      "voir": "See hackathons",
+      "organiser": "Organize a hackathon",
+      "prix": {
+        "titre": "Prizes.",
+        "texte": "Each prize can have an amount, or none at all: visibility or hosting, for example."
+      }
+    },
+    "faq": {
+      "surtitre": "Frequently asked questions",
+      "titre": "The questions we hear most",
+      "intro": "Answers to the questions we hear most, feature by feature.",
+      "questions": {
+        "quoi": {
+          "q": "What is Jamii?",
+          "r": "The exchange platform for African developers. Find teammates, talk in communities, answer small businesses' needs, and keep your projects alive all the way to going online."
+        },
+        "connexion": {
+          "q": "How do I sign in?",
+          "r": "With GitHub if you're a developer, with Google, or with your e-mail address: we send you a sign-in link, no password to remember."
+        },
+        "pasDev": {
+          "q": "I'm not a developer. Is Jamii for me?",
+          "r": "Yes. A shop, an association or a small business describes its need in its own words. Jamii's assistant turns it into a clear plan, says what already exists, and who can build the rest."
+        },
+        "cercle": {
+          "q": "What is a circle?",
+          "r": "A group of 4 to 6 developers who take turns building each member's project. At each turn, the whole circle helps one member move forward."
+        },
+        "paiement": {
+          "q": "How is a mission paid?",
+          "r": "The work is split into milestones, each with its amount. The client pays the developer directly, then each declares it in the mission: “paid”, then “received”. Jamii does not collect the money."
+        },
+        "hackathon": {
+          "q": "Who can organize a hackathon?",
+          "r": "Anyone signed in: a school, a company, a community. The hackathon stays a draft, visible only to you, until you publish it. It has its own discussion space, criteria and jury."
+        },
+        "vitrine": {
+          "q": "How does a project get into the showcase?",
+          "r": "When a project is online, Jamii checks that it responds, then shows it in the showcase with its team. A link that no longer responds does not appear."
+        },
+        "langues": {
+          "q": "Which languages is Jamii in?",
+          "r": "French and English. The assistant answers in the language of the person writing to it."
+        },
+        "donnees": {
+          "q": "What happens to my data?",
+          "r": "We collect the minimum. From your profile, you can export all your data or delete your account, at any time."
+        }
+      }
+    },
+    "appel": {
+      "titre": "Where do you want to start?",
+      "dev": {
+        "qui": "Developer",
+        "titre": "I build",
+        "texte": "Create your profile from your repositories, find a team and put your projects online.",
+        "action": "Sign in",
+        "actionConnecte": "See my profile"
       },
       "besoin": {
-        "titre": "Have a need?",
-        "texte": "Shop, firm, association: describe it in your own words. Ayo tells you what already exists, and who can build the rest.",
+        "qui": "Small business, association, shop",
+        "titre": "I have a need",
+        "texte": "Describe it in your own words. The assistant turns it into a plan, and developers can answer it.",
+        "action": "Describe my need"
+      }
+    },
+    "fonctionnalites": {
+      "surtitre": "Features",
+      "titre": "Everything you need to build together",
+      "intro": "Each part of Jamii answers a moment in a project's life: introduce yourself, find help, form a team, and show the result.",
+      "communautes": {
+        "titre": "Communities that help each other",
+        "texte": "Join a community or create your own. Ask your question in a room, and mark the answer that helped you so it serves the next person.",
+        "points": [
+          "Discussion rooms",
+          "Questions and answers",
+          "Accepted answer"
+        ],
+        "lien": "See communities"
+      },
+      "cercles": {
+        "titre": "Circles",
+        "texte": "4 to 6 developers take turns building each member's project. At each turn, the whole circle helps one member move forward.",
+        "points": [
+          "4 to 6 members",
+          "One turn per project"
+        ],
+        "lien": "See circles"
+      },
+      "assistant": {
+        "titre": "An assistant for your need",
+        "texte": "Describe your need in your own words. The assistant turns it into a specification, milestones and tasks, and says which roles are still missing.",
+        "points": [
+          "Specification",
+          "Milestones and tasks",
+          "Roles to find"
+        ],
         "lien": "Describe my need"
       },
-      "missions": {
-        "titre": "Missions",
-        "texte": "Clients are looking for a developer. Apply, send your quote and deliver step by step.",
-        "lien": "See missions"
+      "vitrine": {
+        "titre": "The showcase of live projects",
+        "texte": "The projects the community has put online, with their team. Jamii checks that each link responds before showing it.",
+        "points": [
+          "Verified link",
+          "The team and its countries"
+        ],
+        "lien": "See the showcase",
+        "enLigne": "Online"
       },
-      "hackathons": {
-        "titre": "Hackathons",
-        "texte": "Challenges open to all: form a team, build a project and have it judged by a jury.",
-        "lien": "See hackathons"
+      "profil": {
+        "titre": "A profile that proves",
+        "texte": "No CV: your profile shows your repositories, your live projects and your teammates' reviews, on a skills map.",
+        "points": [
+          "Skills map",
+          "GitHub repositories",
+          "Teammates' reviews"
+        ],
+        "lien": "See my profile"
+      },
+      "messages": {
+        "titre": "Messages and notifications",
+        "texte": "Write to a teammate, keep your contacts, and get notified of what concerns you: a proposal, an invitation, an application.",
+        "points": [
+          "Messages",
+          "Contacts",
+          "Notifications"
+        ],
+        "lien": "Open my messages"
       }
     }
   },
