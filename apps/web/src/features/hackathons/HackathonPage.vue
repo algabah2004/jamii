@@ -292,7 +292,8 @@ const annuler = () => (raisonValide.value ? agir(() => annulerHackathon(hackatho
 .principal { display: grid; gap: var(--space-6); min-width: 0; }
 @media (min-width: 960px) {
   .disposition { grid-template-columns: minmax(0, 1fr) 20rem; }
-  .resume { position: sticky; top: 6rem; }
+  /* Collant, mais jamais plus haut que l'écran : sinon le bas (tableau de bord, actions) resterait hors de portée. */
+  .resume { position: sticky; top: 6rem; max-block-size: calc(100vh - 7rem); overflow-y: auto; overscroll-behavior: contain; }
 }
 
 .contenu { display: grid; gap: var(--space-8); padding: var(--space-8); }
