@@ -68,7 +68,12 @@ class ReseauController {
 	record Invitation(CercleResume cercle) {
 	}
 
-	record Message(UUID id, boolean deMoi, String texte, Invitation invitation, Instant envoyeLe, Instant luLe) {
+	/** Un appel vocal et vidéo annoncé par le message (#157) : sa salle, et s'il est encore en cours. */
+	record Appel(String url, boolean enCours) {
+	}
+
+	record Message(UUID id, boolean deMoi, String texte, Invitation invitation, Instant envoyeLe, Instant luLe,
+			Appel appel) {
 	}
 
 	record Conversation(Personne personne, Message dernierMessage, int nonLus) {
@@ -107,8 +112,13 @@ class ReseauController {
 
 	private final Notifications notifications;
 
+	/** Le serveur d'appels, le même que celui des salons (Jitsi pour la CADEV). */
+	private final String appels;
+
 	ReseauController(ProfilsPublies profils, LectureCercles cercles, Messagerie messagerie, Annuaire annuaire,
-			Contacts contacts, Notifications notifications) {
+			Contacts contacts, Notifications notifications,
+			@org.springframework.beans.factory.annotation.Value("${jamii.appels.url:https://meet.jit.si}") String appels) {
+		this.appels = appels.replaceAll("/+$", "");
 		this.profils = profils;
 		this.cercles = cercles;
 		this.messagerie = messagerie;
@@ -199,6 +209,12 @@ class ReseauController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(message(ligne, moi.id(), invitations(List.of(ligne))));
 	}
 
+	@PostMapping("/api/conversations/{personneId}/appel")
+	ResponseEntity<Message> appeler(@AuthenticationPrincipal UtilisateurConnecte moi, @PathVariable String personneId) {
+		var ligne = messagerie.appeler(moi.id(), personne(personneId));
+		return ResponseEntity.status(HttpStatus.CREATED).body(message(ligne, moi.id(), Map.of()));
+	}
+
 	@GetMapping("/api/me/activite")
 	Activite activite(@AuthenticationPrincipal UtilisateurConnecte moi) {
 		return new Activite(notifications.nonLues(moi.id()), messagerie.nonLus(moi.id()), contacts.demandesRecues(moi.id()));
@@ -282,10 +298,12 @@ class ReseauController {
 	}
 
 	/** Un cercle supprimé depuis l'invitation : le message reste, sans la carte. */
-	private static Message message(Messagerie.Ligne l, UUID moi, Map<UUID, CercleResume> invitations) {
+	private Message message(Messagerie.Ligne l, UUID moi, Map<UUID, CercleResume> invitations) {
 		CercleResume cercle = l.cercleId() == null ? null : invitations.get(l.cercleId());
+		Appel appel = l.salleAppel() == null ? null : new Appel(appels + "/" + l.salleAppel(),
+				l.envoyeLe().isAfter(Instant.now().minus(Messagerie.DUREE_APPEL)));
 		return new Message(l.id(), l.expediteurId().equals(moi), l.texte(), cercle == null ? null : new Invitation(cercle),
-				l.envoyeLe(), l.luLe());
+				l.envoyeLe(), l.luLe(), appel);
 	}
 
 	private static CercleResume resume(LectureCercles.CercleLu c, Map<UUID, Compte> comptes) {

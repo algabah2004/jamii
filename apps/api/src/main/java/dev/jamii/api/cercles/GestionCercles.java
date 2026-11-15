@@ -34,7 +34,7 @@ class GestionCercles {
 	private static final SecureRandom HASARD = new SecureRandom();
 
 	record Fiche(UUID id, String nom, String ville, int taille, UUID createurId, String statut, Integer tourEnCours,
-			Instant tirageLe, Instant creeLe, int nombreMembres) {
+			Instant tirageLe, Instant creeLe, int nombreMembres, UUID tireParId) {
 	}
 
 	record Membre(UUID utilisateurId, Instant rejointLe, String ideeTitre, String ideeDescription, Integer rang,
@@ -87,7 +87,7 @@ class GestionCercles {
 				: "c.statut = 'ouvert' AND (SELECT count(*) FROM cercle_membre m WHERE m.cercle_id = c.id) < c.taille";
 		String apres = avant == null ? "" : "AND (c.cree_le, c.id) < (:avant, :avantId)";
 		var requete = base.sql("""
-				SELECT c.id, c.nom, c.ville, c.taille, c.createur_id, c.statut, c.tour_en_cours, c.tirage_le, c.cree_le,
+				SELECT c.id, c.nom, c.ville, c.taille, c.createur_id, c.statut, c.tour_en_cours, c.tirage_le, c.cree_le, c.tire_par,
 				       (SELECT count(*) FROM cercle_membre m WHERE m.cercle_id = c.id) AS nombre_membres
 				FROM cercle c
 				WHERE %s %s
@@ -174,7 +174,10 @@ class GestionCercles {
 	@Transactional
 	int tirer(UUID cercleId, UUID moi, Instant maintenant) {
 		Fiche cercle = fiche(cercleId, true).orElseThrow(ErreurCercle::introuvable);
-		if (!cercle.createurId().equals(moi)) {
+		// N'importe quel membre peut lancer le tirage (#157) : c'est le serveur qui tire au hasard, personne ne choisit.
+		boolean membre = base.sql("SELECT EXISTS (SELECT 1 FROM cercle_membre WHERE cercle_id = :c AND utilisateur_id = :u)")
+			.param("c", cercleId).param("u", moi).query(Boolean.class).single();
+		if (!membre) {
 			throw ErreurCercle.interdit();
 		}
 		if (!"ouvert".equals(cercle.statut())) {
@@ -193,8 +196,8 @@ class GestionCercles {
 			base.sql("UPDATE cercle_membre SET rang = :rang WHERE cercle_id = :c AND utilisateur_id = :u")
 				.param("rang", i + 1).param("c", cercleId).param("u", membres.get(i).utilisateurId()).update();
 		}
-		base.sql("UPDATE cercle SET statut = 'en_cours', tour_en_cours = 1, tirage_le = :t, version = version + 1 WHERE id = :id")
-			.param("t", Timestamp.from(maintenant)).param("id", cercleId).update();
+		base.sql("UPDATE cercle SET statut = 'en_cours', tour_en_cours = 1, tirage_le = :t, tire_par = :u, version = version + 1 WHERE id = :id")
+			.param("t", Timestamp.from(maintenant)).param("u", moi).param("id", cercleId).update();
 		ouvrirTour(cercleId, 1, maintenant);
 		return 1;
 	}
@@ -291,7 +294,7 @@ class GestionCercles {
 			return Optional.empty();
 		}
 		return base.sql("""
-				SELECT c.id, c.nom, c.ville, c.taille, c.createur_id, c.statut, c.tour_en_cours, c.tirage_le, c.cree_le,
+				SELECT c.id, c.nom, c.ville, c.taille, c.createur_id, c.statut, c.tour_en_cours, c.tirage_le, c.cree_le, c.tire_par,
 				       (SELECT count(*) FROM cercle_membre m WHERE m.cercle_id = c.id) AS nombre_membres
 				FROM cercle c WHERE c.id = :id
 				""")
@@ -324,7 +327,7 @@ class GestionCercles {
 		return new Fiche(rs.getObject("id", UUID.class), rs.getString("nom"), rs.getString("ville"), rs.getInt("taille"),
 				rs.getObject("createur_id", UUID.class), rs.getString("statut"), entier(rs, "tour_en_cours"),
 				rs.getTimestamp("tirage_le") == null ? null : rs.getTimestamp("tirage_le").toInstant(),
-				rs.getTimestamp("cree_le").toInstant(), rs.getInt("nombre_membres"));
+				rs.getTimestamp("cree_le").toInstant(), rs.getInt("nombre_membres"), rs.getObject("tire_par", UUID.class));
 	}
 
 }

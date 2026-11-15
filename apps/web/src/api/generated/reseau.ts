@@ -82,6 +82,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/conversations/{personneId}/appel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description L'identifiant de l'autre personne. */
+                personneId: components["parameters"]["PersonneId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Lancer un appel vocal et vidéo avec une personne (#157)
+         * @description Crée une salle neuve (le même serveur d'appels que les salons, Jitsi pour la CADEV) et l'annonce dans la conversation par un message qui porte `appel`. Seules les deux personnes lisent ce message, donc la salle. Mêmes règles qu'un message : pas à soi-même, et la même limite anti-spam. Le destinataire reçoit une notification.
+         */
+        post: operations["appeler"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/me/contacts": {
         parameters: {
             query?: never;
@@ -232,6 +255,12 @@ export interface components {
              * @description Quand le destinataire l'a lu.
              */
             luLe?: string | null;
+            /** @description Si le message annonce un appel vocal et vidéo (#157) : sa salle, et s'il est encore en cours (lancé il y a moins d'une heure). */
+            appel?: {
+                /** Format: uri */
+                url: string;
+                enCours: boolean;
+            } | null;
         };
         /** @description Le cercle tel qu'il est maintenant, pour savoir s'il reste de la place. */
         InvitationCercle: {
@@ -588,6 +617,33 @@ export interface operations {
                 };
             };
             400: components["responses"]["Invalide"];
+            401: components["responses"]["NonConnecte"];
+            404: components["responses"]["Introuvable"];
+            409: components["responses"]["Conflit"];
+            429: components["responses"]["TropDeRequetes"];
+        };
+    };
+    appeler: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description L'identifiant de l'autre personne. */
+                personneId: components["parameters"]["PersonneId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description L'appel lancé, sous la forme du message qui l'annonce. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
             401: components["responses"]["NonConnecte"];
             404: components["responses"]["Introuvable"];
             409: components["responses"]["Conflit"];
