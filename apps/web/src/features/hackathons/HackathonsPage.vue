@@ -118,7 +118,8 @@ const periode = (debut: string, fin: string) =>
 </template>
 
 <style scoped>
-.hackathons { display: grid; gap: var(--space-6); }
+.hackathons { display: grid; gap: var(--space-6); min-width: 0; }
+.page-tete.motif { margin-inline: 0; }
 .page-tete a.creer {
   align-self: center; display: inline-flex; align-items: center; min-height: 44px; padding: 0 var(--space-6);
   border-radius: var(--radius-pill); background: var(--action); color: var(--on-action); font-weight: 700; text-decoration: none;

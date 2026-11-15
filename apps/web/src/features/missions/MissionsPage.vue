@@ -93,7 +93,8 @@ const budget = (m: MissionResume) => (m.budget ? formaterMontant(m.budget, local
 </template>
 
 <style scoped>
-.missions { display: grid; gap: var(--space-6); }
+.missions { display: grid; gap: var(--space-6); min-width: 0; }
+.page-tete.motif { margin-inline: 0; }
 .page-tete a.publier {
   align-self: center; display: inline-flex; align-items: center; min-height: 44px; padding: 0 var(--space-6);
   border-radius: var(--radius-pill); background: var(--action); color: var(--on-action); font-weight: 700; text-decoration: none;

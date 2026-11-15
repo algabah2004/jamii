@@ -100,7 +100,7 @@ export const routes: RouteRecordRaw[] = [
     path: '/demandes',
     name: 'mes-demandes',
     component: () => import('./features/demandes/MesDemandesPage.vue'),
-    meta: { connexionRequise: true },
+    meta: { connexionRequise: true, pleineLargeur: true },
   },
   {
     path: '/demandes/nouvelle',
@@ -116,7 +116,7 @@ export const routes: RouteRecordRaw[] = [
   },
   // Missions et hackathons (#166, #191) : la liste et le détail sont publics (le serveur décide de ce que chacun
   // voit) ; publier une mission ou créer un hackathon demande une connexion. `nouvelle`/`nouveau` avant `:id`.
-  { path: '/missions', name: 'missions', component: () => import('./features/missions/MissionsPage.vue') },
+  { path: '/missions', name: 'missions', component: () => import('./features/missions/MissionsPage.vue'), meta: { pleineLargeur: true } },
   {
     path: '/missions/nouvelle',
     name: 'nouvelle-mission',
@@ -124,7 +124,7 @@ export const routes: RouteRecordRaw[] = [
     meta: { connexionRequise: true, pleineLargeur: true },
   },
   { path: '/missions/:id', name: 'mission', component: () => import('./features/missions/MissionPage.vue') },
-  { path: '/hackathons', name: 'hackathons', component: () => import('./features/hackathons/HackathonsPage.vue') },
+  { path: '/hackathons', name: 'hackathons', component: () => import('./features/hackathons/HackathonsPage.vue'), meta: { pleineLargeur: true } },
   {
     path: '/hackathons/nouveau',
     name: 'nouveau-hackathon',
