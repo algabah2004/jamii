@@ -9,6 +9,7 @@ import ProfilsRecommandes from '../reseau/ProfilsRecommandes.vue'
 import PartagerCercle from './PartagerCercle.vue'
 import CodeDuTour from './CodeDuTour.vue'
 import TachesDuTour from './TachesDuTour.vue'
+import SalonDuCercle from './SalonDuCercle.vue'
 import { avancement, avantTirage, deposerIdee, LIMITES, lireAvancement, lireCercle, livrerTour, ordreDePassage, positionsAnneau, pourcentage, rejoindreCercle, tirerAuSort, titreDuTour, tourEnCours, type Avancement, type Cercle, type Resultat, type Tache } from './cercles'
 
 /*
@@ -62,6 +63,9 @@ const placesLibres = computed(() => places.value.slice(ordre.value.length))
 const tourDe = (personneId: string) => cercle.value?.tours.find((x) => x.beneficiaire.id === personneId) ?? null
 
 const membre = computed(() => !!cercle.value?.moi.estMembre)
+// Deux onglets pour les membres : le cercle (l'anneau, le tour, l'ordre) et son salon privé. Dans l'adresse (`?onglet=`),
+// pour qu'un lien mène droit au salon.
+const onglet = computed(() => (membre.value && route.query.onglet === 'salon' ? 'salon' : 'cercle'))
 const createur = computed(() => !!cercle.value?.moi.estCreateur)
 const preparation = computed(() => (cercle.value ? avantTirage(cercle.value) : null))
 const monIdee = computed(() => cercle.value?.membres.find((m) => m.personne.id === moi.value?.id)?.idee ?? null)
@@ -131,8 +135,15 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
           <h1>{{ cercle.nom }}</h1>
           <p>{{ cercle.ville ? t('cercles.sousTitre', { n: cercle.membres.length, ville: cercle.ville }) : t('cercles.sousTitreSansVille', { n: cercle.membres.length }) }}</p>
         </div>
+        <nav v-if="membre" class="onglets" :aria-label="t('cercles.onglets.aria')">
+          <RouterLink :to="{ query: {} }" class="onglet" :class="{ actif: onglet === 'cercle' }" :aria-current="onglet === 'cercle' ? 'page' : undefined" data-test="onglet-cercle">{{ t('cercles.onglets.cercle') }}</RouterLink>
+          <RouterLink :to="{ query: { onglet: 'salon' } }" class="onglet" :class="{ actif: onglet === 'salon' }" :aria-current="onglet === 'salon' ? 'page' : undefined" data-test="onglet-salon">{{ t('cercles.onglets.salon') }}</RouterLink>
+        </nav>
       </header>
 
+      <SalonDuCercle v-if="onglet === 'salon'" :key="cercle.id" :cercle="cercle" :suivi="suivi" :titre-tour="titreTour" />
+
+      <template v-else>
       <div class="mise-en-page">
         <!-- L'anneau : les membres dans l'ordre de passage, le bénéficiaire du tour mis en avant. -->
         <figure class="anneau carte" data-test="anneau">
@@ -262,12 +273,18 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
           </li>
         </ol>
       </section>
+      </template>
     </template>
   </section>
 </template>
 
 <style scoped>
 .cercle-page { display: grid; gap: var(--space-6); }
+.onglets { display: flex; gap: var(--space-1); padding: 4px; border-radius: var(--radius-pill); background: color-mix(in srgb, var(--surface) 70%, transparent); border: 1px solid var(--line); width: fit-content; }
+.onglet { min-height: 40px; display: inline-flex; align-items: center; padding: 0 var(--space-4); border-radius: var(--radius-pill); color: var(--ink-muted); font-weight: 600; text-decoration: none; }
+.onglet:hover { color: var(--ink); }
+.onglet.actif { background: var(--surface); color: var(--ink); box-shadow: 0 1px 4px rgb(2 7 10 / 0.18); }
+.onglet:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .retour { margin: 0; font-size: var(--type-body-sm-size); }
 .mise-en-page { display: grid; gap: var(--space-6); grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); align-items: start; }
 @media (max-width: 860px) { .mise-en-page { grid-template-columns: 1fr; } }
