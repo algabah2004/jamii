@@ -292,7 +292,7 @@
       "mois": "30 derniers jours",
       "tout": "Depuis le début"
     },
-    "surDatacloud": "projets en ligne sur DataCloud",
+    "surDatacloud": "Projets en ligne sur DataCloud",
     "partDatacloud": "{part} % des projets en ligne sont hébergés sur DataCloud",
     "inscrits": "Inscrits",
     "projetsCrees": "Projets créés",
@@ -328,7 +328,14 @@
       "systaone": "SystaONE",
       "hebergement": "Hébergement et boutique en ligne",
       "email": "E-mail professionnel",
-      "domaines": "Noms de domaine"
+      "domaines": "Noms de domaine",
+      "boutique-en-ligne": "Boutique en ligne",
+      "email-professionnel": "E-mail professionnel",
+      "nom-de-domaine": "Nom de domaine",
+      "datacloud-application": "DataCloud · application",
+      "datacloud-base-de-donnees": "DataCloud · base de données",
+      "datacloud-stockage": "DataCloud · stockage",
+      "datacloud-serveur": "DataCloud · serveur"
     },
     "tendances": {
       "titre": "Tendances du marché",
@@ -343,7 +350,8 @@
       "competence": "Compétence",
       "demandes": "Besoins",
       "profils": "Profils",
-      "autres": "Autres"
+      "autres": "Autres",
+      "legende": "En rouge : moins de profils que de besoins."
     },
     "clients": {
       "titre": "Clients qui veulent être suivis",
@@ -366,7 +374,8 @@
     "reserve": {
       "titre": "Réservé à l’équipe Systalink",
       "texte": "Cet espace montre à Systalink ce que Jamii lui apporte. Si tu fais partie de l’équipe Systalink, demande à l’équipe Jamii d’ajouter ton compte."
-    }
+    },
+    "dontDatacloud": "dont {n} sur DataCloud"
   },
   "vitrine": {
     "titre": "Vitrine",
@@ -807,7 +816,10 @@
       "education": "Éducation",
       "agriculture": "Agriculture",
       "association": "Association",
-      "autre": "Autre"
+      "autre": "Autre",
+      "transport": "Transport",
+      "finance": "Finance",
+      "administration": "Administration"
     },
     "offres": {
       "libelle": "Recevoir les offres Systalink adaptées à mon projet",

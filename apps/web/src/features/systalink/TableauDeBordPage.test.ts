@@ -114,8 +114,11 @@ describe('Tendances et clients suivis', () => {
     await vi.waitFor(() => expect(page.find('[data-test="tendances-services"]').exists()).toBe(true))
     expect(page.get('[data-test="tendances"]').text()).toContain('47')
     const manque = page.findAll('[data-test="competences-manquantes"] tbody tr.manque').map((l) => l.text())
-    expect(manque.some((l) => l.includes('paiement-mobile'))).toBe(true)
+    expect(manque.some((l) => l.includes('paiement mobile'))).toBe(true)
     expect(manque.some((l) => l.includes('postgresql'))).toBe(false)
+    // Les services s'affichent par leur nom, jamais par leur identifiant technique.
+    expect(page.get('[data-test="tendances-services"]').text()).toContain('DataCloud · application')
+    expect(page.get('[data-test="tendances-services"]').text()).not.toContain('datacloud-application')
   })
 
   it('liste les clients qui ont donné leur accord, et enregistre leur statut', async () => {
