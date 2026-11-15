@@ -17,7 +17,7 @@ export function limiteDe(fichier: File) {
 
 export type ResultatEnvoi = { ok: true; piece: PieceJointe } | { ok: false; code: 'trop_gros' | 'type_refuse' | 'trop_de_requetes' | 'erreur' }
 
-export async function envoyerFichier(fichier: File, destinataireId?: string): Promise<ResultatEnvoi> {
+export async function envoyerFichier(fichier: File, destinataireId?: string, cercleId?: string): Promise<ResultatEnvoi> {
   if (fichier.size > limiteDe(fichier)) return { ok: false, code: 'trop_gros' }
   try {
     const { data, error, response } = await api.POST('/api/fichiers', {
@@ -26,6 +26,7 @@ export async function envoyerFichier(fichier: File, destinataireId?: string): Pr
         const form = new FormData()
         form.append('fichier', (corps as { fichier: File }).fichier)
         if (destinataireId) form.append('destinataireId', destinataireId)
+        if (cercleId) form.append('cercleId', cercleId)
         return form
       },
     })

@@ -57,7 +57,10 @@ class GestionCercles {
 	/** Le salon du cercle raconte ce qui s'y passe : chaque étape y écrit un événement, dans la même transaction. */
 	private final SalonCercle salon;
 
-	GestionCercles(JdbcClient base, Projets projets, Annuaire annuaire, SalonCercle salon) {
+	private final DossiersIdees dossiers;
+
+	GestionCercles(JdbcClient base, Projets projets, Annuaire annuaire, SalonCercle salon, DossiersIdees dossiers) {
+		this.dossiers = dossiers;
 		this.base = base;
 		this.projets = projets;
 		this.annuaire = annuaire;
@@ -165,6 +168,11 @@ class GestionCercles {
 
 	@Transactional
 	void deposerIdee(UUID cercleId, UUID moi, String titre, String description) {
+		deposerIdee(cercleId, moi, titre, description, null, List.of());
+	}
+
+	@Transactional
+	void deposerIdee(UUID cercleId, UUID moi, String titre, String description, UUID document, List<Projets.TachePrevue> backlog) {
 		Fiche cercle = fiche(cercleId, true).orElseThrow(ErreurCercle::introuvable);
 		if (!estMembre(cercleId, moi)) {
 			throw ErreurCercle.interdit();
@@ -172,6 +180,7 @@ class GestionCercles {
 		if (!"ouvert".equals(cercle.statut())) {
 			throw ErreurCercle.conflit("tirage_deja_fait", "L'ordre est déjà tiré : l'idée ne change plus");
 		}
+		dossiers.enregistrer(cercleId, moi, document, backlog);
 		base.sql("UPDATE cercle_membre SET idee_titre = :titre, idee_description = :description WHERE cercle_id = :c AND utilisateur_id = :u")
 			.param("titre", titre).param("description", description).param("c", cercleId).param("u", moi).update();
 	}
@@ -280,6 +289,7 @@ class GestionCercles {
 		Membre beneficiaire = membres.stream().filter(m -> m.rang() != null && m.rang() == numero).findFirst().orElseThrow();
 		UUID projet = projets.creerPourCercle(beneficiaire.utilisateurId(), membres.stream().map(Membre::utilisateurId).toList(),
 				beneficiaire.ideeTitre(), beneficiaire.ideeDescription(), maintenant);
+		dossiers.creerTaches(cercleId, beneficiaire.utilisateurId(), projet, maintenant);
 		base.sql("UPDATE cercle_membre SET projet_id = :p WHERE cercle_id = :c AND rang = :n")
 			.param("p", projet).param("c", cercleId).param("n", numero).update();
 		salon.evenement(cercleId, "tour_ouvert", numero, beneficiaire.utilisateurId(), maintenant);
