@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { api } from '../../api/client'
 import type { components } from '../../api/generated/systalink'
 import { JBouton } from '../../design-system'
-import { nomPays } from './calculs'
+import { libelleSecteur, libelleService, nomPays } from './calculs'
 
 /*
  * Les clients qui ont demandé à être suivis (contracts/systalink.yaml) : seulement les personnes qui ont coché
@@ -15,7 +15,7 @@ type ClientSuivi = components['schemas']['ClientSuivi']
 type StatutClient = components['schemas']['StatutClient']
 
 const STATUTS: StatutClient[] = ['nouveau', 'contacte', 'client', 'sans_suite']
-const { t, locale } = useI18n()
+const { t, te, locale } = useI18n()
 
 const filtre = ref<StatutClient | ''>('')
 const clients = ref<ClientSuivi[]>([])
@@ -110,10 +110,10 @@ const vide = computed(() => etat.value === 'pret' && clients.value.length === 0)
         <div class="client__texte">
           <p class="client__resume">{{ c.resume }}</p>
           <p class="texte-discret">
-            <template v-if="c.secteur">{{ c.secteur }} · </template><template v-if="lieu(c)">{{ lieu(c) }} · </template>{{ date(c.creeLe) }}
+            <template v-if="c.secteur">{{ libelleSecteur(c.secteur, { t, te }, c.secteur) }} · </template><template v-if="lieu(c)">{{ lieu(c) }} · </template>{{ date(c.creeLe) }}
           </p>
           <p class="client__services">
-            <span v-for="s in c.services" :key="s" class="etiquette">{{ s }}</span>
+            <span v-for="s in c.services" :key="s" class="etiquette">{{ libelleService(s, { t, te }) }}</span>
             <span v-if="c.developpeursNecessaires" class="etiquette etiquette--dev">{{ t('systalink.clients.avecDeveloppeurs') }}</span>
           </p>
         </div>
@@ -143,7 +143,7 @@ const vide = computed(() => etat.value === 'pret' && clients.value.length === 0)
 <style scoped>
 .clients { display: grid; gap: var(--space-4); }
 .tete { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: var(--space-4); }
-.tete h2 { margin: 0; }
+.tete h2 { margin: 0; font-size: var(--type-h3-size); line-height: var(--type-h3-line); }
 .tete p { margin: var(--space-1) 0 0; }
 .actions { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
 select {
@@ -157,7 +157,8 @@ select {
 .client__texte { display: grid; gap: var(--space-1); }
 .client__resume { font-weight: 600; }
 .client__services { display: flex; flex-wrap: wrap; gap: var(--space-1); margin-top: var(--space-1) !important; }
-.etiquette--dev { border-style: dashed; }
+/* « Avec des développeurs » : une autre couleur, pour le repérer d'un coup d'œil parmi les services. */
+.etiquette--dev { background: var(--action-soft); color: var(--action-ink); font-weight: 600; }
 .client__contact { display: grid; gap: var(--space-1); align-content: start; font-size: var(--type-body-sm-size); overflow-wrap: anywhere; }
 .erreur { color: var(--danger); font-weight: 600; }
 </style>

@@ -85,7 +85,30 @@
       "apercuEnLigne": "En ligne et vérifié",
       "apercuProfil": "Profil prouvé"
     },
-    "decrireBesoin": "J’ai un besoin pour mon entreprise"
+    "decrireBesoin": "J’ai un besoin pour mon entreprise",
+    "aussi": {
+      "titre": "Et aussi sur Jamii",
+      "cercles": {
+        "titre": "Les cercles",
+        "texte": "4 à 6 développeurs construisent, à tour de rôle, le projet de chacun. Systalink en est le garant.",
+        "lien": "Voir les cercles"
+      },
+      "besoin": {
+        "titre": "Tu as un besoin ?",
+        "texte": "Commerçant, cabinet, association : décris-le avec tes mots. Ayo te dit ce qui existe déjà, et qui peut faire le reste.",
+        "lien": "Décrire mon besoin"
+      },
+      "missions": {
+        "titre": "Les missions",
+        "texte": "Des clients cherchent un développeur. Propose-toi, envoie ton devis et livre étape par étape.",
+        "lien": "Voir les missions"
+      },
+      "hackathons": {
+        "titre": "Les hackathons",
+        "texte": "Des défis ouverts à tous : forme une équipe, construis un projet et fais-le noter par un jury.",
+        "lien": "Voir les hackathons"
+      }
+    }
   },
   "profil": {
     "titre": "Profil",
@@ -284,7 +307,7 @@
       "mois": "30 derniers jours",
       "tout": "Depuis le début"
     },
-    "surDatacloud": "projets en ligne sur DataCloud",
+    "surDatacloud": "Projets en ligne sur DataCloud",
     "partDatacloud": "{part} % des projets en ligne sont hébergés sur DataCloud",
     "inscrits": "Inscrits",
     "projetsCrees": "Projets créés",
@@ -320,7 +343,14 @@
       "systaone": "SystaONE",
       "hebergement": "Hébergement et boutique en ligne",
       "email": "E-mail professionnel",
-      "domaines": "Noms de domaine"
+      "domaines": "Noms de domaine",
+      "boutique-en-ligne": "Boutique en ligne",
+      "email-professionnel": "E-mail professionnel",
+      "nom-de-domaine": "Nom de domaine",
+      "datacloud-application": "DataCloud · application",
+      "datacloud-base-de-donnees": "DataCloud · base de données",
+      "datacloud-stockage": "DataCloud · stockage",
+      "datacloud-serveur": "DataCloud · serveur"
     },
     "tendances": {
       "titre": "Tendances du marché",
@@ -335,7 +365,8 @@
       "competence": "Compétence",
       "demandes": "Besoins",
       "profils": "Profils",
-      "autres": "Autres"
+      "autres": "Autres",
+      "legende": "En rouge : moins de profils que de besoins."
     },
     "clients": {
       "titre": "Clients qui veulent être suivis",
@@ -358,7 +389,8 @@
     "reserve": {
       "titre": "Réservé à l’équipe Systalink",
       "texte": "Cet espace montre à Systalink ce que Jamii lui apporte. Si tu fais partie de l’équipe Systalink, demande à l’équipe Jamii d’ajouter ton compte."
-    }
+    },
+    "dontDatacloud": "dont {n} sur DataCloud"
   },
   "vitrine": {
     "titre": "Vitrine",
@@ -799,7 +831,10 @@
       "education": "Éducation",
       "agriculture": "Agriculture",
       "association": "Association",
-      "autre": "Autre"
+      "autre": "Autre",
+      "transport": "Transport",
+      "finance": "Finance",
+      "administration": "Administration"
     },
     "offres": {
       "libelle": "Recevoir les offres Systalink adaptées à mon projet",

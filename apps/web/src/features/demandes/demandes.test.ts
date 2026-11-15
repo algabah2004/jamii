@@ -8,7 +8,7 @@ import { creerRouteur } from '../../router'
 import { chargerSession } from '../../session'
 import App from '../../App.vue'
 import { orientationDemo, planDemo, RECOMMANDES } from '../../mocks/demandes'
-import { demandeValide, etatAnalyse, fonctionnalitesParPriorite, jalonsAvecTaches, type Demande } from './demandes'
+import { dateCourte, demandeValide, etatAnalyse, fonctionnalitesParPriorite, jalonsAvecTaches, type Demande } from './demandes'
 
 async function ouvrir(adresse: string) {
   ;(i18n.global.locale as unknown as { value: string }).value = 'fr'
@@ -283,5 +283,12 @@ describe('du besoin au cercle', () => {
     expect(page.find('[data-test="nouveau-cercle"]').text()).not.toContain('Ville')
     // Les développeurs recommandés suivent : ils seront invités en un clic une fois le cercle créé.
     expect(page.find('[data-test="du-besoin"]').text()).toContain('inviter Kwame, Ibrahima et Amina en un clic')
+  })
+})
+
+describe('dateCourte', () => {
+  it('suit la langue de Jamii, pas celle du navigateur', () => {
+    expect(dateCourte('2026-11-15T10:00:00Z', 'fr')).toBe('15 nov.')
+    expect(dateCourte('2026-11-15T10:00:00Z', 'en')).toBe('Nov 15')
   })
 })

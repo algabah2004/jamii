@@ -47,3 +47,23 @@ export function nomPays(code: string, langue: string): string {
     return code
   }
 }
+
+type Traduire = { t: (cle: string) => string; te: (cle: string) => boolean }
+
+/**
+ * Le nom lisible d'un service : l'IA et l'API donnent un identifiant (`datacloud-stockage`), le jury lit « DataCloud ·
+ * stockage ». Un identifiant inconnu reste lisible (tirets remplacés), jamais une clé de traduction brute.
+ */
+export function libelleService(id: string, { t, te }: Traduire): string {
+  const cle = `systalink.services.${id}`
+  if (te(cle)) return t(cle)
+  const texte = id.replaceAll('-', ' ')
+  return texte.charAt(0).toUpperCase() + texte.slice(1)
+}
+
+/** Le secteur avec ses accents (« Santé », pas « Sante ») ; « autres » regroupe les petits secteurs. */
+export function libelleSecteur(secteur: string, { t, te }: Traduire, libelleAutres: string): string {
+  if (secteur === 'autres') return libelleAutres
+  const cle = `demandes.secteurs.${secteur}`
+  return te(cle) ? t(cle) : secteur.charAt(0).toUpperCase() + secteur.slice(1)
+}
