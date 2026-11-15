@@ -418,9 +418,6 @@
       "envoyer": "Send",
       "trop": "You are writing very fast: wait a minute before the next message.",
       "rejoindre": "Join the community to write here and join the call.",
-      "questions": "questions",
-      "questionsSujet": "Ask your question: the AI suggests an answer, a member checks it.",
-      "entraide": "Help",
       "nouveaux": "New messages",
       "enLigne": "Online",
       "aujourdhui": "Today",
@@ -429,7 +426,50 @@
       "debut": "This is the start of the #{salon} channel.",
       "nouveauxMessages": "{n} new message | {n} new messages",
       "aideClavier": "Enter to send, Shift + Enter for a new line"
-    }
+    },
+    "barre": {
+      "fil": "Feed",
+      "membres": "Members",
+      "raccourcis": "Shortcuts",
+      "debut": "Getting started",
+      "progression": "{n} step of {total} | {n} steps of {total}",
+      "etapes": {
+        "rejoindre": "Join the community",
+        "presenter": "Introduce yourself in #général",
+        "publier": "Ask your first question"
+      }
+    },
+    "banniere": {
+      "actifs": "active this week | active this week",
+      "membre": "Member ✓"
+    },
+    "membresPage": {
+      "total": "{n} member | {n} members",
+      "chercher": "Search members",
+      "aucun": "Nobody matches.",
+      "actif": "Active this week",
+      "moderation": "Moderator",
+      "depuis": "Member since {date}",
+      "ecrire": "Message",
+      "toi": "That's you"
+    },
+    "direct": {
+      "titre": "Live",
+      "calme": "Quiet for now. Start the conversation.",
+      "appel": "Join the #{salon} call",
+      "actifs": "Active this week",
+      "tousLesMembres": "All members"
+    },
+    "onglets": {
+      "recents": "Latest",
+      "ouvertes": "Open questions",
+      "resolues": "Solved",
+      "projets": "Projects"
+    },
+    "chercher": "Search the feed",
+    "quoiDeNeuf": "What's new, {prenom}? A question, an idea…",
+    "rienTrouve": "Nothing matches your search.",
+    "ouvrir": "Open"
   },
   "question": {
     "retourCommunaute": "← Back to the community",

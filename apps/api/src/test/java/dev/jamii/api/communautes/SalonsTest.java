@@ -172,6 +172,34 @@ class SalonsTest {
 	}
 
 	@Test
+	void les_membres_moderateurs_puis_actifs_puis_les_autres_sans_email() throws Exception {
+		String slug = communaute();
+		UtilisateurConnecte awa = utilisateur("Awa");
+		UtilisateurConnecte kofi = utilisateur("Kofi");
+		UtilisateurConnecte nia = utilisateur("Nia");
+		rejoindre(awa, slug);
+		rejoindre(kofi, slug);
+		rejoindre(nia, slug);
+		base.sql("UPDATE adhesion SET role = 'moderateur' WHERE utilisateur_id = :u").param("u", nia.id()).update();
+		ecrire(awa, slug, "Bonjour");
+
+		MvcTestResult reponse = get(kofi, "/api/communautes/{s}/membres", slug);
+		assertThat(reponse).hasStatusOk();
+		JsonNode corps = corps(reponse);
+		assertThat(corps.get("total").asLong()).isEqualTo(3);
+		JsonNode membres = corps.get("elements");
+		assertThat(membres.get(0).get("personne").get("nom").asString()).isEqualTo("Nia");
+		assertThat(membres.get(0).get("role").asString()).isEqualTo("moderateur");
+		assertThat(membres.get(1).get("personne").get("nom").asString()).isEqualTo("Awa");
+		assertThat(membres.get(1).get("actif").asBoolean()).isTrue();
+		assertThat(membres.get(2).get("actif").asBoolean()).isFalse();
+		assertThat(reponse.getResponse().getContentAsString()).doesNotContain("@example.org");
+
+		assertThat(get(kofi, "/api/communautes/{s}/membres?limite=0", slug)).hasStatus(HttpStatus.BAD_REQUEST);
+		assertThat(get(kofi, "/api/communautes/inconnue/membres")).hasStatus(HttpStatus.NOT_FOUND);
+	}
+
+	@Test
 	void les_messages_partent_avec_le_compte_et_sont_dans_son_export() throws Exception {
 		String slug = communaute();
 		UtilisateurConnecte awa = utilisateur("Awa");

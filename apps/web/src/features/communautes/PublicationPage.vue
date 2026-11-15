@@ -121,7 +121,7 @@ async function repondre() {
 </script>
 
 <template>
-  <EspaceCommunautes :actuelle="publication?.communaute" actif="questions">
+  <EspaceCommunautes :actuelle="publication?.communaute" actif="fil">
     <div class="dans-espace">
     <JSquelette v-if="etat === 'chargement' && !publication" :nombre="3" />
     <div v-else-if="etat === 'introuvable'" class="etat-vide">
@@ -134,7 +134,7 @@ async function repondre() {
     </div>
 
     <template v-else-if="publication">
-      <p class="retour"><RouterLink :to="{ path: `/communautes/${publication.communaute}`, query: { voir: 'questions' } }">{{ t('question.retourCommunaute') }}</RouterLink></p>
+      <p class="retour"><RouterLink :to="{ path: `/communautes/${publication.communaute}`, query: {} }">{{ t('question.retourCommunaute') }}</RouterLink></p>
 
       <!-- Toute la discussion dans un seul panneau : le message, les réponses, puis la zone de réponse. -->
       <section class="discussion" :class="{ 'discussion--resolue': dejaAcceptee }">
@@ -235,7 +235,7 @@ async function repondre() {
 
 <style scoped>
 /* Dans le cadre de l'espace : la discussion respire, et défile dans la zone centrale. */
-.dans-espace { display: grid; gap: var(--space-4); padding: var(--space-4); }
+.dans-espace { display: grid; gap: var(--space-4); }
 .discussion { display: grid; gap: var(--space-4); padding-bottom: var(--space-4); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--ombre-carte); overflow: hidden; }
 .discussion > .annonce, .discussion > .separateur, .discussion > .fil { margin-inline: var(--space-6); }
 .retour { margin: 0; font-size: var(--type-body-sm-size); }

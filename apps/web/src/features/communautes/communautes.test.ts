@@ -33,22 +33,22 @@ describe('Communautés', () => {
     expect(cartes[0]!.find('[data-test="deja-membre"]').exists()).toBe(true)
   })
 
-  it('rejoindre une communauté en un clic ouvre le formulaire de question', async () => {
-    const { page, routeur } = await ouvrir('/communautes/fintech?voir=questions')
+  it('rejoindre une communauté depuis sa bannière ouvre « Quoi de neuf ? »', async () => {
+    const { page } = await ouvrir('/communautes/fintech')
     await vi.waitFor(() => expect(page.find('[data-test="adhesion"]').exists()).toBe(true))
     expect(page.find('[data-test="publier"]').exists()).toBe(false)
     await page.get('[data-test="adhesion"]').trigger('click')
-    await vi.waitFor(() => expect(page.get('[data-test="adhesion"]').text()).toBe('Quitter'))
-    expect(routeur.currentRoute.value.query.voir).toBe('questions')
-    expect(page.find('[data-test="publier"]').exists()).toBe(true)
+    await vi.waitFor(() => expect(page.get('[data-test="adhesion"]').text()).toBe('Membre ✓'))
+    await vi.waitFor(() => expect(page.find('[data-test="publier"]').exists()).toBe(true))
   })
 
   it('le filtre « questions sans réponse acceptée » reste dans l’adresse', async () => {
-    const { page, routeur } = await ouvrir('/communautes/flutter?voir=questions')
+    const { page, routeur } = await ouvrir('/communautes/flutter')
     await vi.waitFor(() => expect(page.findAll('[data-test="publications"] > li')).toHaveLength(4))
-    await page.findAll('.flux__onglets button')[1]!.trigger('click')
+    await page.get('[data-test="onglet-ouvertes"]').trigger('click')
     await vi.waitFor(() => expect(page.findAll('[data-test="publications"] > li')).toHaveLength(2))
-    expect(routeur.currentRoute.value.query).toEqual({ voir: 'questions', filtre: 'ouvertes' })
+    expect(routeur.currentRoute.value.query).toEqual({ onglet: 'ouvertes' })
+    expect(page.get('[data-test="onglet-ouvertes"]').attributes('aria-pressed')).toBe('true')
   })
 
   it('une communauté inconnue affiche « introuvable »', async () => {
@@ -58,7 +58,7 @@ describe('Communautés', () => {
   })
 
   it('poser une question mène à la question, où l’IA prépare une réponse', async () => {
-    const { page, routeur } = await ouvrir('/communautes/flutter?voir=questions')
+    const { page, routeur } = await ouvrir('/communautes/flutter')
     await vi.waitFor(() => expect(page.find('[data-test="ouvrir-formulaire"]').exists()).toBe(true))
     expect(page.find('[data-test="publier"]').exists()).toBe(false)
     await page.get('[data-test="ouvrir-formulaire"]').trigger('click')

@@ -26,13 +26,14 @@ export const routes: RouteRecordRaw[] = [
     path: '/communautes/:slug',
     name: 'communaute',
     component: () => import('./features/communautes/CommunautePage.vue'),
-    meta: { connexionRequise: true },
+    // L'espace d'une communauté remplit l'écran (#155).
+    meta: { connexionRequise: true, pleineLargeur: true },
   },
   {
     path: '/publications/:id',
     name: 'publication',
     component: () => import('./features/communautes/PublicationPage.vue'),
-    meta: { connexionRequise: true },
+    meta: { connexionRequise: true, pleineLargeur: true },
   },
   // La Tech Tontine (docs/priorites.md) : les cercles et leurs tours. Connexion requise.
   {

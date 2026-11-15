@@ -24,7 +24,7 @@ afterEach(() => {
 
 describe('les salons en direct', () => {
   it("ouvrent # général par défaut, puis un autre salon depuis la barre, avec l'appel pour un membre", async () => {
-    const { page, routeur } = await ouvrir('/communautes/flutter')
+    const { page, routeur } = await ouvrir('/communautes/flutter?salon=general')
     await vi.waitFor(() => expect(page.find('[data-test="salons"] h1').exists()).toBe(true))
     expect(page.find('[data-test="salons"] h1').text()).toBe('# général')
     expect(page.find('[data-test="barre-salon-general"]').attributes('aria-current')).toBe('page')
@@ -44,17 +44,36 @@ describe('les salons en direct', () => {
     const { page } = await ouvrir('/communautes/flutter?salon=general')
     await vi.waitFor(() => expect(page.findAll('[data-test="message"]')).toHaveLength(7))
     // Aya écrit deux fois à quelques minutes d'écart, avec Koffi entre les deux : pas de groupe. Fatou puis Wanjiru puis Fatou non plus.
-    expect(page.findAll('.jour').map((j) => j.text())).toEqual(['Hier', "Aujourd'hui"])
+    // Les messages de démo s'étalent sur plus d'un jour : au moins deux séparateurs, et le dernier est « Aujourd'hui »
+    // (le libellé des jours précédents dépend de l'heure à laquelle le test tourne).
+    const jours = page.findAll('.jour').map((j) => j.text())
+    expect(jours.length).toBeGreaterThanOrEqual(2)
+    expect(jours.at(-1)).toBe("Aujourd'hui")
     expect(page.findAll('.message--suite')).toHaveLength(0)
     page.unmount()
   })
 
-  it('le forum des questions est dans la barre, avec le nombre de questions ouvertes', async () => {
+  it('on arrive sur le fil : la bannière, « En direct », et la recherche filtre les publications', async () => {
+    const { page } = await ouvrir('/communautes/flutter')
+    await vi.waitFor(() => expect(page.findAll('[data-test="publications"] > li')).toHaveLength(4))
+    expect(page.find('[data-test="banniere"]').text()).toContain('Flutter et Dart')
+    expect(page.find('[data-test="barre-fil"]').attributes('aria-current')).toBe('page')
+    await vi.waitFor(() => expect(page.find('[data-test="en-direct"]').text()).toContain('# entraide'))
+    await page.get('[data-test="recherche"]').setValue('apk')
+    expect(page.findAll('[data-test="publications"] > li')).toHaveLength(1)
+    await page.get('[data-test="recherche"]').setValue('rien de tel ici')
+    expect(page.find('[data-test="vide"]').text()).toBe('Rien ne correspond à ta recherche.')
+    page.unmount()
+  })
+
+  it('les membres : la modération d’abord, et « Écrire » mène à la conversation', async () => {
     const { page, routeur } = await ouvrir('/communautes/flutter')
-    await vi.waitFor(() => expect(page.find('[data-test="barre-questions"]').exists()).toBe(true))
-    await page.find('[data-test="barre-questions"]').trigger('click')
-    await vi.waitFor(() => expect(page.findAll('[data-test="publications"] > li').length).toBeGreaterThan(0))
-    expect(routeur.currentRoute.value.query.voir).toBe('questions')
+    await vi.waitFor(() => expect(page.find('[data-test="barre-membres"]').exists()).toBe(true))
+    await page.get('[data-test="barre-membres"]').trigger('click')
+    await vi.waitFor(() => expect(page.findAll('[data-test="membre"]').length).toBeGreaterThan(2))
+    expect(routeur.currentRoute.value.query.voir).toBe('membres')
+    expect(page.findAll('[data-test="membre"]')[0]!.text()).toContain('Modération')
+    expect(page.find('[data-test="membre"] a').attributes('href')).toMatch(/^\/messages\//)
     page.unmount()
   })
 
@@ -74,11 +93,11 @@ describe('les salons en direct', () => {
     vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] })
     const lectures: (string | null)[] = []
     serveur.use(
-      http.get('/api/communautes/:slug/salons/:salon/messages', ({ request }) => {
+      http.get('/api/communautes/:slug/salons/:salon/messages', ({ params, request }) => {
         const adresse = new URL(request.url)
         const apres = adresse.searchParams.get('apres')
-        // La barre lit aussi le dernier message de chaque salon (limite=1) : on ne compte que la conversation.
-        if (adresse.searchParams.get('limite') !== '1') lectures.push(apres)
+        // La barre et « En direct » lisent aussi les autres salons : on ne compte que la conversation de # entraide.
+        if (params.salon === 'entraide' && adresse.searchParams.get('limite') !== '1') lectures.push(apres)
         const elements = apres === null
           ? [{ id: 'm1', numero: 7, auteur: { id: 'k', nom: 'Koffi Yao', avatarUrl: null }, texte: 'Premier', envoyeLe: new Date().toISOString() }]
           : [{ id: 'm2', numero: 8, auteur: { id: 'w', nom: 'Wanjiru Kamau', avatarUrl: null }, texte: 'Arrivé en direct', envoyeLe: new Date().toISOString() }]

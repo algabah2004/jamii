@@ -418,9 +418,6 @@
       "envoyer": "Envoyer",
       "trop": "Tu écris très vite : attends une minute avant le prochain message.",
       "rejoindre": "Rejoins la communauté pour écrire ici et rejoindre l'appel.",
-      "questions": "questions",
-      "questionsSujet": "Pose ta question : l'IA propose une réponse, un membre la vérifie.",
-      "entraide": "Entraide",
       "nouveaux": "Nouveaux messages",
       "enLigne": "En ligne",
       "aujourdhui": "Aujourd'hui",
@@ -429,7 +426,50 @@
       "debut": "C'est le début du salon #{salon}.",
       "nouveauxMessages": "{n} nouveau message | {n} nouveaux messages",
       "aideClavier": "Entrée pour envoyer, Maj + Entrée pour aller à la ligne"
-    }
+    },
+    "barre": {
+      "fil": "Le fil",
+      "membres": "Membres",
+      "raccourcis": "Raccourcis",
+      "debut": "Bien démarrer",
+      "progression": "{n} étape sur {total} | {n} étapes sur {total}",
+      "etapes": {
+        "rejoindre": "Rejoindre la communauté",
+        "presenter": "Te présenter dans #général",
+        "publier": "Poser ta première question"
+      }
+    },
+    "banniere": {
+      "actifs": "actif cette semaine | actifs cette semaine",
+      "membre": "Membre ✓"
+    },
+    "membresPage": {
+      "total": "{n} membre | {n} membres",
+      "chercher": "Chercher un membre",
+      "aucun": "Personne ne correspond.",
+      "actif": "Actif cette semaine",
+      "moderation": "Modération",
+      "depuis": "Membre depuis {date}",
+      "ecrire": "Écrire",
+      "toi": "C'est toi"
+    },
+    "direct": {
+      "titre": "En direct",
+      "calme": "Calme pour l'instant. Lance la conversation.",
+      "appel": "Rejoindre l'appel de #{salon}",
+      "actifs": "Actifs cette semaine",
+      "tousLesMembres": "Tous les membres"
+    },
+    "onglets": {
+      "recents": "Récents",
+      "ouvertes": "Questions ouvertes",
+      "resolues": "Résolues",
+      "projets": "Projets"
+    },
+    "chercher": "Chercher dans le fil",
+    "quoiDeNeuf": "Quoi de neuf, {prenom} ? Une question, une idée…",
+    "rienTrouve": "Rien ne correspond à ta recherche.",
+    "ouvrir": "Ouvrir"
   },
   "question": {
     "retourCommunaute": "← Retour à la communauté",
