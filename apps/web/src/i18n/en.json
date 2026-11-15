@@ -754,7 +754,11 @@
       "invalide": "The summary must be between {min} and {max} characters.",
       "pasPrete": "The specification is not ready yet. Try again in a moment.",
       "dejaPubliee": "This request is already published.",
-      "erreur": "Your request could not be published. Try again in a moment."
+      "erreur": "Your request could not be published. Try again in a moment.",
+      "apercu": "What the community will see",
+      "badge": "Published need",
+      "apercuVide": "Your summary will appear here.",
+      "jamais": "Neither your original text, your clients' names nor your contact details are published."
     },
     "exemples": [
       {
@@ -796,7 +800,8 @@
         "lire": "Reading what you wrote",
         "chercher": "Looking for what already exists",
         "preparer": "Preparing your options"
-      }
+      },
+      "sansAttendre": "Form a circle without waiting"
     },
     "priorites": {
       "indispensable": "Must have",
@@ -871,7 +876,20 @@
       "precisions": "{n} detail | {n} details",
       "ouvrir": "Open",
       "autres": "Your other requests",
-      "toutes": "See all your requests"
+      "toutes": "See all your requests",
+      "filtrer": "Filter your requests",
+      "parcours": "Where this request stands",
+      "etats": {
+        "toutes": "All",
+        "preparation": "In progress",
+        "prete": "Answer ready",
+        "publiee": "Published"
+      },
+      "jalons": {
+        "preparation": "Described",
+        "prete": "Analysed",
+        "publiee": "Published"
+      }
     },
     "discuter": {
       "titre": "Something doesn’t suit you?",

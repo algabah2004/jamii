@@ -29,7 +29,7 @@ import PublierDemande from './PublierDemande.vue'
  * tout est une proposition, et seul un clic humain en fait un projet ou un cercle.
  * Les textes générés sont affichés comme du texte brut, jamais interprétés.
  */
-const { t } = useI18n()
+const { t, te } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const id = computed(() => String(route.params.id))
@@ -64,6 +64,12 @@ function surveiller() {
   minuterie = setTimeout(() => void charger(true), INTERVALLE_PLAN_MS)
 }
 onBeforeUnmount(() => clearTimeout(minuterie))
+/** « Réessayer » : on relit et on recommence à surveiller, une minute de plus au plus. */
+function relancer() {
+  debut = 0
+  tropLong.value = false
+  void charger()
+}
 watch(id, () => {
   debut = 0
   tropLong.value = false
@@ -87,6 +93,10 @@ const pret = computed(() => analyse.value === 'pret')
 const enPreparation = computed(() => analyse.value === 'attente' && !tropLong.value)
 const repli = computed(() => (demande.value ? estRepli(demande.value) : false))
 const recommandes = computed(() => demande.value?.recommandations ?? [])
+
+/** Où en est le besoin : décrit, analysé (la réponse est prête), publié. */
+const PARCOURS = ['preparation', 'prete', 'publiee'] as const
+const rangParcours = computed(() => (demande.value?.publication ? 2 : pret.value ? 1 : 0))
 
 /** Pendant l'analyse, on montre ce que fait l'assistant : l'attente se comprend. */
 const ETAPES = ['lire', 'chercher', 'preparer'] as const
@@ -246,7 +256,18 @@ const messageErreur = computed(() =>
 
     <template v-else-if="demande">
       <header class="tete motif motif--croix">
+        <ol class="parcours" :aria-label="t('demandes.mesDemandes.parcours')" data-test="parcours">
+          <li v-for="(e, i) in PARCOURS" :key="e" :class="{ fait: i < rangParcours, actuel: i === rangParcours }">
+            <span aria-hidden="true">{{ i < rangParcours ? '✓' : i + 1 }}</span>{{ t(`demandes.mesDemandes.jalons.${e}`) }}
+          </li>
+        </ol>
         <h1>{{ demande.titre }}</h1>
+        <ul class="contexte" data-test="contexte">
+          <li v-if="demande.secteur">{{ te(`demandes.secteurs.${demande.secteur}`) ? t(`demandes.secteurs.${demande.secteur}`) : demande.secteur }}</li>
+          <li v-if="demande.ville">{{ demande.ville }}</li>
+          <li v-if="demande.dureeSemaines">{{ t('demandes.nouvelle.semaines', { n: demande.dureeSemaines }, demande.dureeSemaines) }}</li>
+          <li class="texte-discret">{{ dateCourte(demande.creeLe) }}</li>
+        </ul>
         <!-- Texte brut, affiché échappé : les mots de la personne, jamais interprétés. -->
         <div class="fil" data-test="fil">
           <p class="bulle bulle--moi">{{ demande.description }}</p>
@@ -266,16 +287,20 @@ const messageErreur = computed(() =>
         </div>
       </div>
       <div v-else-if="!pret" role="alert" class="carte attente attente--echec" data-test="plan-echec">
+        <span class="attente__icone" aria-hidden="true">!</span>
         <div>
           <strong>{{ t('demandes.plan.echec') }}</strong>
           <p>{{ t('demandes.plan.echecAide') }}</p>
         </div>
-        <JBouton variante="secondaire" @click="charger()">{{ t('etat.reessayer') }}</JBouton>
+        <div class="attente__actions">
+          <JBouton variante="secondaire" @click="relancer()">{{ t('etat.reessayer') }}</JBouton>
+          <RouterLink to="/cercles/nouveau" class="bouton-lien bouton-lien--discret">{{ t('demandes.plan.sansAttendre') }}</RouterLink>
+        </div>
       </div>
 
       <template v-if="pret">
         <p class="proposition" data-test="plan-propose">✨ {{ t('demandes.plan.propose') }}</p>
-        <p v-if="repli" class="carte repli" role="status" data-test="plan-repli">{{ t(orientation ? 'demandes.orientation.repli' : 'demandes.plan.repli') }}</p>
+        <p v-if="repli" class="carte repli" role="status" data-test="plan-repli"><span aria-hidden="true">ⓘ</span> {{ t(orientation ? 'demandes.orientation.repli' : 'demandes.plan.repli') }}</p>
 
         <!-- Ayo parle d'abord : il a compris, il explique simplement ce qui peut aider. -->
         <section v-if="orientation" class="assistant" aria-labelledby="compris" data-test="compris">
@@ -614,7 +639,21 @@ const messageErreur = computed(() =>
 .attente { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-4); padding: var(--space-6); }
 .attente strong { display: block; }
 .attente p { margin: var(--space-1) 0 0; color: var(--ink-muted); font-size: var(--type-body-sm-size); }
-.attente--echec { justify-content: space-between; }
+.attente--echec { justify-content: space-between; border-inline-start: 4px solid var(--danger); }
+.attente--echec > div:nth-child(2) { flex: 1 1 16rem; }
+.attente__icone { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: color-mix(in srgb, var(--danger) 14%, transparent); color: var(--danger); font-weight: 800; }
+.attente__actions { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
+.bouton-lien--discret { background: transparent; color: var(--action-ink); border: 1px solid var(--line-strong); }
+.parcours { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); font-size: var(--type-body-sm-size); color: var(--ink-muted); }
+.parcours li { display: inline-flex; align-items: center; gap: var(--space-2); }
+.parcours li span { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--line-strong); font-size: 0.75rem; font-weight: 700; }
+.parcours li.fait { color: var(--ink); font-weight: 600; }
+.parcours li.fait span { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+.parcours li.actuel { color: var(--ink); font-weight: 700; }
+.parcours li.actuel span { background: var(--cantaloupe); border-color: var(--cantaloupe); color: #02070A; }
+.contexte { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.contexte li { padding: 2px 12px; border-radius: var(--radius-pill); background: var(--surface); border: 1px solid var(--line); font-size: var(--type-body-sm-size); font-weight: 600; }
+.repli { border-inline-start: 4px solid var(--electric-blue); }
 @media (prefers-reduced-motion: reduce) { .points i { animation: none; } }
 
 /* Charte : une proposition de l'IA n'est pas une preuve, d'où le pointillé et pas d'orange. */

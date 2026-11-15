@@ -64,9 +64,8 @@ describe('Une PME décrit son besoin', () => {
     await page.get('[data-test="exemple"]').trigger('click')
     await suivre(page, ['details', 'questions', 'precisions', 'envoi'])
     expect(page.get('[data-test="envoyer"]').attributes('disabled')).toBeUndefined()
-    await page.get('[data-test="envoyer"]').trigger('click')
     await page.get('[data-test="demande"]').trigger('submit')
-    await vi.waitFor(() => expect(routeur.currentRoute.value.name).toBe('demande'))
+    await vi.waitFor(() => expect(routeur.currentRoute.value.name).toBe('demande'), { timeout: 4000 })
     await vi.waitFor(() => expect(page.find('[data-test="plan-propose"]').exists()).toBe(true), { timeout: 4000 })
     expect(page.findAll('[data-test="priorite"]')).toHaveLength(3)
     expect(page.findAll('[data-test="jalons"] > li')).toHaveLength(3)
@@ -141,9 +140,8 @@ describe('Décris ton besoin, pas à pas', () => {
     await page.get('[data-test="question-qui"]').setValue('Les quatre associés')
     expect(page.get('[data-test="suivant"]').text()).toContain('Continuer')
     await suivre(page, ['precisions', 'envoi'])
-    await page.get('[data-test="envoyer"]').trigger('click')
     await page.get('[data-test="demande"]').trigger('submit')
-    await vi.waitFor(() => expect(corps.titre).toBe('Nos dossiers'))
+    await vi.waitFor(() => expect(corps.titre).toBe('Nos dossiers'), { timeout: 4000 })
     expect(String(corps.description)).toContain("Qui va s'en servir : Les quatre associés")
   })
 
@@ -305,6 +303,19 @@ describe('Tes demandes (#199)', () => {
     expect(cartes[0]!.text()).toContain('2 précisions')
     expect(cartes[1]!.text()).toContain('Réponse en préparation')
     expect(page.get('[data-test="nouvelle"]').attributes('href')).toBe('/demandes/nouvelle')
+  })
+
+  it('filtre les demandes par état : en préparation, réponse prête, publiée', async () => {
+    serveur.use(http.get('/api/demandes', () => HttpResponse.json(resumees)))
+    const { page } = await ouvrir('/demandes')
+    await vi.waitFor(() => expect(page.find('[data-test="liste-demandes"]').exists()).toBe(true))
+    expect(page.get('[data-test="filtre-prete"]').attributes('disabled')).toBeDefined()
+    await page.get('[data-test="filtre-preparation"]').trigger('click')
+    const cartes = page.findAll('[data-test="demande-resumee"]')
+    expect(cartes).toHaveLength(1)
+    expect(cartes[0]!.text()).toContain('Cabinet sans clé USB')
+    await page.get('[data-test="filtre-toutes"]').trigger('click')
+    expect(page.findAll('[data-test="demande-resumee"]')).toHaveLength(2)
   })
 
   it('sans demande, invite à décrire un premier besoin', async () => {

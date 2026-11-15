@@ -754,7 +754,11 @@
       "invalide": "Le résumé doit faire entre {min} et {max} caractères.",
       "pasPrete": "Le cahier des charges n'est pas encore prêt. Réessaie dans un instant.",
       "dejaPubliee": "Cette demande est déjà publiée.",
-      "erreur": "Ta demande n'a pas pu être publiée. Réessaie dans un instant."
+      "erreur": "Ta demande n'a pas pu être publiée. Réessaie dans un instant.",
+      "apercu": "Ce que la communauté verra",
+      "badge": "Besoin publié",
+      "apercuVide": "Ton résumé apparaîtra ici.",
+      "jamais": "Ni ton texte d'origine, ni le nom de tes clients, ni ton contact ne sont publiés."
     },
     "exemples": [
       {
@@ -796,7 +800,8 @@
         "lire": "Je lis ce que tu as écrit",
         "chercher": "Je cherche ce qui existe déjà",
         "preparer": "Je prépare tes options"
-      }
+      },
+      "sansAttendre": "Former un cercle sans attendre"
     },
     "priorites": {
       "indispensable": "Indispensable",
@@ -871,7 +876,20 @@
       "precisions": "{n} précision | {n} précisions",
       "ouvrir": "Ouvrir",
       "autres": "Tes autres demandes",
-      "toutes": "Voir toutes tes demandes"
+      "toutes": "Voir toutes tes demandes",
+      "filtrer": "Filtrer tes demandes",
+      "parcours": "Où en est cette demande",
+      "etats": {
+        "toutes": "Toutes",
+        "preparation": "En préparation",
+        "prete": "Réponse prête",
+        "publiee": "Publiée"
+      },
+      "jalons": {
+        "preparation": "Décrite",
+        "prete": "Analysée",
+        "publiee": "Publiée"
+      }
     },
     "discuter": {
       "titre": "Quelque chose ne te convient pas ?",

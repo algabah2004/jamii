@@ -382,7 +382,7 @@ class DemandesTest {
 	}
 
 	@Test
-	void ia_toujours_en_panne_apres_deux_minutes_le_plan_echoue_mais_le_texte_reste() {
+	void ia_en_panne_plus_de_20_secondes_une_orientation_de_secours_annoncee_prend_le_relais() {
 		UtilisateurConnecte pme = utilisateur("Awa");
 		IA.enPanne = true;
 		String id = idCree(creer(pme, BESOIN));
@@ -392,20 +392,20 @@ class DemandesTest {
 		MvcTestResult reponse = lire(pme, id);
 
 		assertThat(reponse).hasStatusOk();
-		assertThat(reponse).bodyJson().extractingPath("$.plan.statut").isEqualTo("echouee");
-		assertThat(reponse).bodyJson().extractingPath("$.plan.erreurCode").isEqualTo("delai_depasse");
+		assertThat(reponse).bodyJson().extractingPath("$.plan.statut").isEqualTo("terminee");
+		assertThat(reponse).bodyJson().extractingPath("$.plan.origine").isEqualTo("repli");
 		assertThat(reponse).bodyJson().extractingPath("$.description").isEqualTo(
 				"Je vends mes créations et je veux que les clients commandent sans passer par WhatsApp.");
 	}
 
 	@Test
-	void reessayer_apres_une_panne_de_plus_de_deux_minutes_relance_l_analyse() {
+	void quand_l_ia_revient_apres_une_panne_elle_reprend_la_main_sur_le_secours() {
 		UtilisateurConnecte pme = utilisateur("Awa");
 		IA.enPanne = true;
 		String id = idCree(creer(pme, BESOIN));
 		base.sql("UPDATE demande SET cree_le = :t WHERE id = :i")
 			.param("t", Timestamp.from(Instant.now().minus(3, ChronoUnit.MINUTES))).param("i", UUID.fromString(id)).update();
-		assertThat(lire(pme, id)).bodyJson().extractingPath("$.plan.statut").isEqualTo("echouee");
+		assertThat(lire(pme, id)).bodyJson().extractingPath("$.plan.origine").isEqualTo("repli");
 
 		IA.enPanne = false;
 		MvcTestResult relue = lire(pme, id);

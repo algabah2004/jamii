@@ -30,7 +30,11 @@ class GestionDemandes {
 	static final int PLANS_PAR_HEURE = 4;
 
 	/** Au-delà, un service IA qui ne répond toujours pas fait passer l'orientation à « échouée ». */
-	static final Duration DELAI_PLAN = Duration.ofMinutes(2);
+	/**
+	 * Au-delà, un service IA qui ne répond pas cède la place à une orientation de secours calculée ici, sans IA
+	 * (`origine: repli`, annoncée comme telle) : la personne n'attend jamais devant un échec (docs/priorites.md).
+	 */
+	static final Duration SECOURS_APRES = Duration.ofSeconds(20);
 
 	static final int PRECISIONS_MAX = 5;
 
@@ -119,10 +123,14 @@ class GestionDemandes {
 
 	private final JsonMapper json;
 
+	/** L'orientation de secours, sans IA ni réseau : la même que celle du fournisseur simulé, sans attente. */
+	private final PlansIaSimules secours;
+
 	GestionDemandes(JdbcClient base, PlansIa ia, JsonMapper json) {
 		this.base = base;
 		this.ia = ia;
 		this.json = json;
+		this.secours = new PlansIaSimules(Duration.ZERO, java.time.Clock.systemUTC(), json);
 	}
 
 	/** Enregistre la demande si l'auteur n'a pas dépassé sa limite. Une demande refusée n'est pas enregistrée. */
@@ -183,17 +191,18 @@ class GestionDemandes {
 
 	/**
 	 * L'état de l'orientation. Sans transaction : on n'attend jamais le service IA en tenant une connexion à la base.
-	 * Service injoignable : `en_attente` pendant deux minutes (on réessaie à chaque lecture), puis `echouee`. Même après,
-	 * chaque lecture (« Réessayer ») retente le dépôt : une demande créée pendant une panne repart dès que l'IA revient.
+	 * Service injoignable : `en_attente` pendant 20 secondes (on réessaie à chaque lecture), puis une orientation de
+	 * secours sans IA (`repli`). Chaque lecture retente quand même le service : dès que l'IA revient, elle reprend la main.
 	 */
 	Etat orientation(Fiche demande, Instant maintenant) {
-		boolean tropVieux = Duration.between(demande.analyseDepuis(), maintenant).compareTo(DELAI_PLAN) > 0;
+		Duration attente = Duration.between(demande.analyseDepuis(), maintenant);
+		PlansIa.Entree entree = new PlansIa.Entree(demande.titre(), sansCoordonnees(demande.besoinComplet()),
+				demande.dureeSemaines(), demande.secteur(), demande.pays());
 		try {
 			UUID tache = demande.tacheIaId();
 			if (tache == null) {
 				// La même clé d'idempotence : si un dépôt précédent est arrivé sans qu'on le sache, c'est la même tâche.
-				tache = ia.deposer(demande.cleIa(), new PlansIa.Entree(demande.titre(), sansCoordonnees(demande.besoinComplet()),
-						demande.dureeSemaines(), demande.secteur(), demande.pays()));
+				tache = ia.deposer(demande.cleIa(), entree);
 				retenirTache(demande.id(), tache);
 			}
 			PlansIa.Etat etat = ia.lire(tache);
@@ -205,7 +214,12 @@ class GestionDemandes {
 		catch (RuntimeException e) {
 			// Ni le texte de l'auteur ni le jeton dans les journaux : seulement le type de l'erreur.
 			journal.warn("Service IA injoignable pour une demande : {}", e.getClass().getSimpleName());
-			return tropVieux ? new Etat("echouee", null, null, "delai_depasse") : new Etat("en_attente", null, null, null);
+			if (attente.compareTo(SECOURS_APRES) < 0) {
+				return new Etat("en_attente", null, null, null);
+			}
+			// Le secours n'est pas enregistré : dès que l'IA revient, la lecture suivante lui redonne la main.
+			PlansIa.Etat repli = secours.lire(secours.deposer(demande.cleIa(), entree));
+			return new Etat(repli.statut(), "repli", repli.resultat(), null);
 		}
 	}
 
