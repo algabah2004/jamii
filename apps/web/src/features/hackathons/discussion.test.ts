@@ -70,6 +70,9 @@ describe('la discussion d’un hackathon', () => {
           annonces: [{ id: 'a1', auteur: { id: 'o1', nom: 'Awa Diop', avatarUrl: null }, texte: 'Bienvenue à toutes et à tous !', publieeLe: '2026-11-15T08:00:00Z' }],
         }),
       ),
+      http.get('/api/communautes/:slug', ({ params }) =>
+        HttpResponse.json({ slug: params.slug, nom: 'Dakar Cloud Hack', nombreMembres: 12, questionsOuvertes: 1, membre: true }),
+      ),
       http.get('/api/communautes/:slug/publications', () =>
         HttpResponse.json({ elements: [{ id: 'q1', titre: 'Peut-on utiliser une API externe ?', nombreReponses: 2 }], curseurSuivant: null }),
       ),
@@ -84,6 +87,25 @@ describe('la discussion d’un hackathon', () => {
     expect(page.get('[data-test="questions"]').text()).toContain('2 réponses')
     expect(page.get('[data-test="salons"]').attributes('href')).toBe('/communautes/dakar-cloud-hack?salon=general')
     expect(page.get('[data-test="aller-discussion"]').attributes('href')).toBe('#discussion')
+  })
+
+  it('dit quand la communauté liée n’existe plus, mais pas quand elle est seulement en panne', async () => {
+    const lier = () =>
+      http.get('/api/hackathons/:id/discussion', () => HttpResponse.json({ communaute: 'communaute-fantome', annonces: [] }))
+    role('en_cours', { role: 'participant', actions: [] })
+
+    serveur.use(lier(), http.get('/api/communautes/:slug', () => HttpResponse.json({ code: 'introuvable' }, { status: 404 })))
+    let page = await monter()
+    await attendre(page, '[data-test="espace-disparu"]')
+    expect(page.get('[data-test="espace-disparu"]').text()).toContain('plus disponible')
+    expect(page.find('[data-test="poser-question"]').exists()).toBe(false)
+    expect(page.find('[data-test="voir-communaute"]').exists()).toBe(false)
+
+    serveur.use(lier(), http.get('/api/communautes/:slug', () => HttpResponse.json({ code: 'panne' }, { status: 500 })))
+    page = await monter()
+    await attendre(page, '[data-test="carte-espace"]')
+    expect(page.find('[data-test="espace-disparu"]').exists()).toBe(false)
+    expect(page.find('[data-test="poser-question"]').exists()).toBe(true)
   })
 
   it('range la page en onglets, au clic comme au clavier', async () => {
