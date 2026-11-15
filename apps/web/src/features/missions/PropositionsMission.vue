@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { JAvatar, JBouton, JSquelette } from '../../design-system'
 import { formaterDate } from './action'
 import { formaterMontant, listerPropositions, retenirProposition, retirerProposition, type Mission, type Proposition } from './missions'
+import ReponsesQuestionnaire from '../questionnaires/ReponsesQuestionnaire.vue'
 
 /*
  * Les propositions d'une mission (contracts/missions.yaml, tag « propositions ») : toutes pour le client, qui en
@@ -107,6 +108,7 @@ async function agir(p: Proposition, retenir: boolean) {
         </p>
         <!-- Texte libre du développeur : affiché échappé, avec ses retours à la ligne. -->
         <p class="message">{{ p.message }}</p>
+        <ReponsesQuestionnaire :questions="mission.questionnaire" :reponses="p.reponses ?? []" />
         <div class="actions">
           <JBouton v-if="estClient" variante="discret" data-test="ecrire-developpeur" @click="emit('ecrire', p.developpeur)">
             {{ t('missions.proposition.ecrire', { nom: p.developpeur.nom }) }}

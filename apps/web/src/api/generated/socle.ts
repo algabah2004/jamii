@@ -217,6 +217,34 @@ export interface components {
             code: string;
         };
         /**
+         * @description Une question d'un questionnaire personnalisé (#257) : posée par l'organisateur d'un hackathon à l'inscription
+         *     (`hackathons.yaml`), ou par le client d'une mission dans une proposition (`missions.yaml`). Dix au plus par
+         *     questionnaire. `choix` (de 2 à 8, sans doublon) seulement pour `choix_unique` et `choix_multiples`.
+         */
+        Question: {
+            /** @description Choisi par le front (`q1`, `q2`…), unique dans le questionnaire : les réponses s'y rattachent. */
+            id: string;
+            intitule: string;
+            /** @description Une précision sous la question. */
+            aide?: string | null;
+            /** @enum {string} */
+            type: "texte_court" | "texte_long" | "choix_unique" | "choix_multiples" | "oui_non";
+            /** @default false */
+            obligatoire: boolean;
+            choix?: string[];
+        };
+        Questionnaire: components["schemas"]["Question"][];
+        /**
+         * @description La réponse à une question. `valeur` : un texte (200 caractères au plus pour `texte_court`, 2 000 pour `texte_long`),
+         *     l'un des `choix` pour `choix_unique`, `oui` ou `non` pour `oui_non`, une liste de `choix` pour `choix_multiples`.
+         *     Une réponse vide compte comme absente. En cas d'erreur, le 400 la signale sous `reponses.<id de la question>`
+         *     (`obligatoire`, `valeur_inconnue`, `trop_long`, `type_invalide`).
+         */
+        Reponse: {
+            questionId: string;
+            valeur: string | string[];
+        };
+        /**
          * @description Base de toute liste paginée. Un contrat l'étend ainsi :
          *     `allOf: [{ $ref: './socle.yaml#/components/schemas/Page' }, { properties: { elements: { items: { $ref: … } } } }]`
          */

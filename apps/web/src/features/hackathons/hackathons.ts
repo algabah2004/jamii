@@ -5,6 +5,7 @@
  */
 import { api } from '../../api/client'
 import type { components } from '../../api/generated/hackathons'
+import type { Reponse } from '../questionnaires/questionnaire'
 
 type Schemas = components['schemas']
 export type Hackathon = Schemas['Hackathon']
@@ -164,11 +165,12 @@ export const LIMITES_EQUIPE = { nomMin: 2, nomMax: 60 } as const
 
 const chemin = (hackathonId: string) => ({ params: { path: { hackathonId } } })
 
-export const sInscrire = (id: string, chercheEquipe: boolean) =>
-  resultat<Inscription>(api.POST('/api/hackathons/{hackathonId}/inscriptions', { ...chemin(id), body: { chercheEquipe } }))
+export const sInscrire = (id: string, chercheEquipe: boolean, reponses: Reponse[] = []) =>
+  resultat<Inscription>(api.POST('/api/hackathons/{hackathonId}/inscriptions', { ...chemin(id), body: { chercheEquipe, ...(reponses.length ? { reponses } : {}) } }))
 
-export const creerEquipe = (id: string, nom: string) =>
-  resultat<Equipe>(api.POST('/api/hackathons/{hackathonId}/equipes', { ...chemin(id), body: { nom } }))
+/** Les réponses ne servent que si je ne suis pas encore inscrit : l'inscription naît avec l'équipe. */
+export const creerEquipe = (id: string, nom: string, reponses: Reponse[] = []) =>
+  resultat<Equipe>(api.POST('/api/hackathons/{hackathonId}/equipes', { ...chemin(id), body: { nom, ...(reponses.length ? { reponses } : {}) } }))
 
 export const inviterMembre = (id: string, equipeId: string, utilisateurId: string) =>
   resultat<Equipe>(

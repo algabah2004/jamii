@@ -1751,5 +1751,92 @@
   "themes": {
     "passerClair": "Passer au thème clair",
     "passerSombre": "Passer au thème sombre"
+  },
+  "questionnaire": {
+    "types": {
+      "texte_court": "Réponse courte",
+      "texte_long": "Paragraphe",
+      "choix_unique": "Un seul choix",
+      "choix_multiples": "Plusieurs choix",
+      "oui_non": "Oui ou non"
+    },
+    "editeur": {
+      "titre": "Vos questions",
+      "aide": {
+        "hackathon": "Posées à chaque personne qui s'inscrit. Vous lisez les réponses dans « Gestion » pour trier les candidatures.",
+        "mission": "Posées à chaque développeur qui propose ses services. Vous lisez les réponses sur chaque proposition."
+      },
+      "fige": "Des personnes ont déjà répondu : les questions ne changent plus, pour que leurs réponses gardent leur sens.",
+      "intitule": "Question {n}",
+      "intitulePlaceholder": "Écrivez votre question",
+      "type": "Type de réponse",
+      "obligatoire": "Réponse obligatoire",
+      "aideQuestion": "Précision (facultatif)",
+      "aidePlaceholder": "Ex. : un lien public, que l'on peut ouvrir sans compte",
+      "choix": "Les choix possibles ({min} à {max})",
+      "choixN": "Choix {n}",
+      "ajouterChoix": "+ Ajouter un choix",
+      "retirerChoix": "Retirer le choix {n}",
+      "monter": "Monter la question {n}",
+      "descendre": "Descendre la question {n}",
+      "retirer": "Retirer",
+      "vide": "Aucune question pour le moment. Ajoutez-en une, ou partez d'un modèle.",
+      "modeles": "Partir d'un modèle :",
+      "ajouter": "+ Question vide",
+      "plein": "{max} questions au plus : retirez-en une pour en ajouter une autre."
+    },
+    "modeles": {
+      "lien": {
+        "court": "Lien GitHub ou portfolio",
+        "intitule": "Ton lien GitHub ou ton portfolio"
+      },
+      "niveau": {
+        "court": "Niveau",
+        "intitule": "Ton niveau dans la technologie du défi",
+        "choix": "Débutant;À l'aise;Expert"
+      },
+      "disponibilites": {
+        "court": "Disponibilités",
+        "intitule": "Quand es-tu disponible ?",
+        "choix": "En semaine, le soir;Le week-end;En journée"
+      },
+      "motivation": {
+        "court": "Motivation",
+        "intitule": "Pourquoi veux-tu participer ?"
+      },
+      "experience": {
+        "court": "Expérience",
+        "intitule": "As-tu déjà livré un projet de ce type ?"
+      },
+      "deplacement": {
+        "court": "Déplacement",
+        "intitule": "Peux-tu te déplacer chez nous si besoin ?"
+      }
+    },
+    "erreurs": {
+      "intitule": "Écrivez la question (3 caractères au moins).",
+      "choix": "Donnez au moins deux choix.",
+      "doublon": "Deux choix sont identiques."
+    },
+    "remplir": {
+      "titre": "Les questions de l'organisation",
+      "titreMission": "Les questions du client",
+      "obligatoire": "obligatoire",
+      "oui": "Oui",
+      "non": "Non",
+      "manquantes": "Il manque une réponse obligatoire. | Il manque {n} réponses obligatoires.",
+      "erreurs": {
+        "obligatoire": "Cette réponse est obligatoire.",
+        "trop_long": "Cette réponse est trop longue.",
+        "valeur_inconnue": "Ce choix n'existe pas : rechargez la page.",
+        "autre": "Cette réponse n'est pas valide."
+      }
+    },
+    "reponses": {
+      "titre": "Réponses aux questions",
+      "aucune": "Sans réponse",
+      "voir": "Voir les réponses",
+      "masquer": "Masquer les réponses"
+    }
   }
 }

@@ -88,6 +88,19 @@ describe('AXE, hackathons', () => {
     expect(await violations(`/hackathons/${HACKATHON}`, '[data-test="titre"]')).toEqual([])
   })
 
+  it('s’inscrire en répondant au questionnaire, avec chaque type de question (#257)', async () => {
+    modifierHackathon(HACKATHON, (h) => {
+      h.questionnaire = [
+        { id: 'q1', intitule: 'Ton lien GitHub', type: 'texte_court', obligatoire: true, aide: 'Un lien public' },
+        { id: 'q2', intitule: 'Pourquoi participer ?', type: 'texte_long', obligatoire: false },
+        { id: 'q3', intitule: 'Ton niveau', type: 'choix_unique', obligatoire: true, choix: ['Débutant', 'Expert'] },
+        { id: 'q4', intitule: 'Tes disponibilités', type: 'choix_multiples', obligatoire: false, choix: ['Soir', 'Week-end'] },
+        { id: 'q5', intitule: 'Déjà livré une application ?', type: 'oui_non', obligatoire: false },
+      ]
+    })
+    expect(await violations(`/hackathons/${HACKATHON}`, '[data-test="questions-inscription"]')).toEqual([])
+  })
+
   it('le jury et la confirmation des gagnants, vus par l’organisateur', async () => {
     deposerRendu(renduDemo(1, 'Carnet de caisse'))
     deposerRendu(renduDemo(2, 'Stock au marché'))
