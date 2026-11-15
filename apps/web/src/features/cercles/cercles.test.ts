@@ -274,3 +274,113 @@ describe('les personnes du cercle', () => {
     expect(liens).toContain('/p/6f1c2a4e-8b7d-4c3e-9a10-2b5d7e9f0a11')
   })
 })
+
+describe('le salon du cercle', () => {
+  it("n'apparaît qu'aux membres, dans son propre onglet", async () => {
+    const { page: dehors } = await ouvrir(`/cercles/${ID_ABIDJAN}?onglet=salon`)
+    await vi.waitFor(() => expect(dehors.find('[data-test="anneau"]').exists()).toBe(true))
+    expect(dehors.find('[data-test="onglet-salon"]').exists()).toBe(false)
+    expect(dehors.find('[data-test="salon-cercle"]').exists()).toBe(false)
+    dehors.unmount()
+
+    const { page } = await ouvrir(`/cercles/${ID_DAKAR}`)
+    await vi.waitFor(() => expect(page.find('[data-test="onglet-salon"]').exists()).toBe(true))
+    await page.get('[data-test="onglet-salon"]').trigger('click')
+    await vi.waitFor(() => expect(page.find('[data-test="salon-cercle"]').exists()).toBe(true))
+    expect(page.find('[data-test="anneau"]').exists()).toBe(false)
+    page.unmount()
+  })
+
+  it("raconte les étapes, montre les points du jour et épingle les coups de main", async () => {
+    const { page } = await ouvrir(`/cercles/${ID_DAKAR}?onglet=salon`)
+    await vi.waitFor(() => expect(page.findAll('[data-test="evenement"]').length).toBeGreaterThan(3))
+    expect(page.text()).toContain('Le tour 2 commence : place au projet de Kofi')
+    expect(page.get('[data-test="point-du-jour"]').text()).toContain('Le tableau des pesées du jour.')
+    expect(page.get('[data-test="points-du-jour"]').text()).toContain('1 sur 6 ont fait leur point aujourd’hui')
+    expect(page.get('[data-test="coups-de-main"]').text()).toContain('Android 8')
+    expect(page.get('[data-test="contexte"]').text()).toContain('Tour 1')
+    page.unmount()
+  })
+
+  it('envoie un message avec Entrée et le montre tout de suite', async () => {
+    const { page } = await ouvrir(`/cercles/${ID_DAKAR}?onglet=salon`)
+    await vi.waitFor(() => expect(page.find('#salon-texte').exists()).toBe(true))
+    await page.get('#salon-texte').setValue('On fait la démo à 19 h ?')
+    await page.get('#salon-texte').trigger('keydown', { key: 'Enter' })
+    await vi.waitFor(() => expect(page.findAll('[data-test="message"]').at(-1)!.text()).toContain('On fait la démo à 19 h ?'))
+    expect((page.get('#salon-texte').element as HTMLTextAreaElement).value).toBe('')
+    page.unmount()
+  })
+
+  it('partage mon point du jour, une seule fois par jour', async () => {
+    const { page } = await ouvrir(`/cercles/${ID_DAKAR}?onglet=salon`)
+    await vi.waitFor(() => expect(page.find('[data-test="mode-point"]').exists()).toBe(true))
+    await page.get('[data-test="mode-point"]').trigger('click')
+    expect(page.get('[data-test="envoyer"]').attributes('disabled')).toBeDefined()
+    await page.get('#point-fait').setValue('Les écrans de la caisse')
+    await page.get('#point-prevu').setValue('Les tests hors ligne')
+    await page.get('[data-test="saisie"]').trigger('submit')
+    await vi.waitFor(() => expect(page.findAll('[data-test="point-du-jour"]').at(-1)!.text()).toContain('Les écrans de la caisse'))
+    expect(page.get('[data-test="points-du-jour"]').text()).toContain('2 sur 6')
+    await page.get('[data-test="mode-point"]').trigger('click')
+    expect(page.find('[data-test="point-deja-fait"]').exists()).toBe(true)
+    page.unmount()
+  })
+
+  it('« Je peux aider » répond à la personne, « C’est réglé » retire le coup de main', async () => {
+    const { page } = await ouvrir(`/cercles/${ID_DAKAR}?onglet=salon`)
+    await vi.waitFor(() => expect(page.find('[data-test="coup-de-main"]').exists()).toBe(true))
+    await page.get('[data-test="aider"]').trigger('click')
+    expect((page.get('#salon-texte').element as HTMLTextAreaElement).value).toBe('@Moussa ')
+    await page.get('[data-test="regler"]').trigger('click')
+    await vi.waitFor(() => expect(page.find('[data-test="coups-de-main"]').exists()).toBe(false))
+    expect(page.text()).toContain('Réglé grâce à Awa')
+    page.unmount()
+  })
+
+  it('demander un coup de main l’épingle en haut du salon', async () => {
+    const { page } = await ouvrir(`/cercles/${ID_DAKAR}?onglet=salon`)
+    await vi.waitFor(() => expect(page.find('[data-test="mode-bloque"]').exists()).toBe(true))
+    await page.get('[data-test="mode-bloque"]').trigger('click')
+    await page.get('#salon-texte').setValue('Le webhook Wave ne répond pas en test')
+    await page.get('[data-test="saisie"]').trigger('submit')
+    await vi.waitFor(() => expect(page.findAll('[data-test="coup-de-main"]')).toHaveLength(2))
+    page.unmount()
+  })
+
+  it("lance l'appel du cercle et propose de le rejoindre ou de le terminer", async () => {
+    const ouverture = vi.spyOn(window, 'open').mockReturnValue(null)
+    const { page } = await ouvrir(`/cercles/${ID_DAKAR}?onglet=salon`)
+    await vi.waitFor(() => expect(page.find('[data-test="lancer-appel"]').exists()).toBe(true))
+    await page.get('[data-test="lancer-appel"]').trigger('click')
+    await vi.waitFor(() => expect(page.find('[data-test="rejoindre-appel"]').exists()).toBe(true))
+    expect(page.get('[data-test="rejoindre-appel"]').attributes('href')).toContain('jamii-cercle')
+    await page.get('[data-test="terminer-appel"]').trigger('click')
+    await vi.waitFor(() => expect(page.find('[data-test="lancer-appel"]').exists()).toBe(true))
+    ouverture.mockRestore()
+    page.unmount()
+  })
+})
+
+describe('le tableau de bord du salon', () => {
+  it('je prends une tâche libre, elle passe dans « Mes tâches », je la coche finie', async () => {
+    const { page } = await ouvrir(`/cercles/${ID_DAKAR}?onglet=salon`)
+    await vi.waitFor(() => expect(page.find('[data-test="prendre-libre"]').exists()).toBe(true))
+    expect(page.get('[data-test="mes-taches"]').findAll('li')).toHaveLength(0)
+    await page.get('[data-test="prendre-libre"]').trigger('click')
+    await vi.waitFor(() => expect(page.get('[data-test="mes-taches"]').findAll('li')).toHaveLength(1))
+    await page.get('[data-test="cocher-mienne"]').trigger('change')
+    await vi.waitFor(() => expect(page.get('[data-test="mes-taches"] li').classes()).toContain('tache--livree'))
+    expect(page.findAll('[data-test="membre-equipe"]')[0]!.text()).toContain('1/1 tâches livrées')
+    page.unmount()
+  })
+
+  it('chaque membre a son bouton « Écrire » vers la messagerie, sauf moi', async () => {
+    const { page } = await ouvrir(`/cercles/${ID_DAKAR}?onglet=salon`)
+    await vi.waitFor(() => expect(page.findAll('[data-test="membre-equipe"]')).toHaveLength(6))
+    const liens = page.findAll('[data-test="ecrire-membre"]').map((l) => l.attributes('href'))
+    expect(liens).toHaveLength(5)
+    expect(liens[0]).toMatch(/^\/messages\//)
+    page.unmount()
+  })
+})

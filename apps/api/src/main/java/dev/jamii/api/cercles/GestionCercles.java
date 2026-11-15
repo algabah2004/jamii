@@ -54,10 +54,14 @@ class GestionCercles {
 
 	private final Annuaire annuaire;
 
-	GestionCercles(JdbcClient base, Projets projets, Annuaire annuaire) {
+	/** Le salon du cercle raconte ce qui s'y passe : chaque étape y écrit un événement, dans la même transaction. */
+	private final SalonCercle salon;
+
+	GestionCercles(JdbcClient base, Projets projets, Annuaire annuaire, SalonCercle salon) {
 		this.base = base;
 		this.projets = projets;
 		this.annuaire = annuaire;
+		this.salon = salon;
 	}
 
 	// ---------------------------------------------------------------- lecture
@@ -134,6 +138,7 @@ class GestionCercles {
 			.param("id", id).param("nom", nom).param("ville", ville).param("taille", taille).param("moi", moi)
 			.param("t", t).update();
 		ajouterMembre(id, moi, t);
+		salon.evenement(id, "cercle_cree", null, moi, maintenant);
 		return id;
 	}
 
@@ -155,6 +160,7 @@ class GestionCercles {
 		catch (DuplicateKeyException dejaMembre) {
 			throw ErreurCercle.conflit("deja_membre", "Tu es déjà membre de ce cercle");
 		}
+		salon.evenement(cercleId, "membre_rejoint", null, moi, maintenant);
 	}
 
 	@Transactional
@@ -198,6 +204,7 @@ class GestionCercles {
 		}
 		base.sql("UPDATE cercle SET statut = 'en_cours', tour_en_cours = 1, tirage_le = :t, tire_par = :u, version = version + 1 WHERE id = :id")
 			.param("t", Timestamp.from(maintenant)).param("u", moi).param("id", cercleId).update();
+		salon.evenement(cercleId, "tirage", null, moi, maintenant);
 		ouvrirTour(cercleId, 1, maintenant);
 		return 1;
 	}
@@ -225,9 +232,11 @@ class GestionCercles {
 		base.sql("UPDATE cercle_membre SET livre_le = :t WHERE cercle_id = :c AND rang = :n")
 			.param("t", t).param("c", cercleId).param("n", numero).update();
 		proprietaire.map(Membre::projetId).ifPresent(projet -> projets.marquerLivre(projet, maintenant));
+		salon.evenement(cercleId, "tour_livre", numero, proprietaire.map(Membre::utilisateurId).orElse(null), maintenant);
 		if (numero == cercle.taille()) {
 			base.sql("UPDATE cercle SET statut = 'termine', tour_en_cours = NULL, version = version + 1 WHERE id = :id")
 				.param("id", cercleId).update();
+			salon.evenement(cercleId, "cercle_termine", null, null, maintenant);
 			return 0;
 		}
 		base.sql("UPDATE cercle SET tour_en_cours = :n, version = version + 1 WHERE id = :id")
@@ -273,6 +282,7 @@ class GestionCercles {
 				beneficiaire.ideeTitre(), beneficiaire.ideeDescription(), maintenant);
 		base.sql("UPDATE cercle_membre SET projet_id = :p WHERE cercle_id = :c AND rang = :n")
 			.param("p", projet).param("c", cercleId).param("n", numero).update();
+		salon.evenement(cercleId, "tour_ouvert", numero, beneficiaire.utilisateurId(), maintenant);
 	}
 
 	private void ajouterMembre(UUID cercleId, UUID utilisateurId, Timestamp quand) {

@@ -108,6 +108,7 @@ class DonneesDemo implements ApplicationRunner {
 		transaction.executeWithoutResult(statut -> new DemoAnnonces(base, maintenant).completer());
 		// Après les communautés : leurs personnes existent alors toutes. Un profil publié pour chacune.
 		transaction.executeWithoutResult(statut -> new DemoProfils(base, maintenant).charger());
+		transaction.executeWithoutResult(statut -> new DemoSalonsCercles(base, maintenant).charger());
 		journal.info(Boolean.TRUE.equals(charge) ? "Données de démo chargées (profil demo)" : "Données de démo déjà présentes");
 		return Boolean.TRUE.equals(charge);
 	}
