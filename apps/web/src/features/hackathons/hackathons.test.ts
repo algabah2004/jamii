@@ -9,7 +9,7 @@ import { reinitialiserHackathons } from '../../mocks/hackathons'
 import HackathonPage from './HackathonPage.vue'
 import HackathonsPage from './HackathonsPage.vue'
 import NouveauHackathonPage from './NouveauHackathonPage.vue'
-import { formaterMontant, lireCalendrier, lireQuestions, sommePoids, versInstant, versMontant } from './hackathons'
+import { formaterMontant, lireCalendrier, lireHackathon, lireQuestions, sommePoids, versInstant, versMontant } from './hackathons'
 
 import { continuer, jusquApercu, revenir } from '../../test/creationGuidee'
 beforeEach(() => reinitialiserHackathons())
@@ -111,6 +111,24 @@ describe('la liste des hackathons', () => {
     await page.get('[data-test="sans-resultat"] button').trigger('click')
     expect(page.findAll('[data-test="hackathon"]')).toHaveLength(1)
     expect(page.get('[data-test="filtre-publie"]').attributes('aria-pressed')).toBe('true')
+  })
+
+  it('combine le format et la durée, trie par inscrits et permet de tout effacer', async () => {
+    const base = await lireHackathon('d7a1e2c4-3b5f-4a6d-8e90-1f2a3b4c5d6e')
+    serveur.use(http.get('/api/hackathons', () => HttpResponse.json({ elements: [
+      { ...base, id: 'a', titre: 'Défi en ligne', lieu: 'en_ligne', nombreInscrits: 2, debutLe: '2026-12-01T09:00:00Z', finRendusLe: '2026-12-03T09:00:00Z' },
+      { ...base, id: 'b', titre: 'Défi à Dakar', lieu: 'sur_place', nombreInscrits: 20, debutLe: '2026-12-02T09:00:00Z', finRendusLe: '2026-12-07T09:00:00Z' },
+    ], curseurSuivant: null })))
+    const { page } = await monter('/hackathons')
+    await attendre(page, '[data-test="liste"]')
+    await page.get('[data-test="tri-hackathons"]').setValue('participants')
+    expect(page.findAll('[data-test="hackathon"]')[0]!.text()).toContain('Défi à Dakar')
+    await page.get('[data-test="lieu-en_ligne"]').setValue(true)
+    expect(page.findAll('[data-test="hackathon"]')).toHaveLength(1)
+    await page.get('[data-test="filtre-duree"]').setValue('semaine')
+    expect(page.find('[data-test="sans-resultat"]').exists()).toBe(true)
+    await page.get('[data-test="reinitialiser-filtres"]').trigger('click')
+    expect(page.findAll('[data-test="hackathon"]')).toHaveLength(2)
   })
 })
 

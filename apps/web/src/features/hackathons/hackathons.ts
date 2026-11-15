@@ -311,9 +311,18 @@ export const inviterJure = (id: string, utilisateurId: string, groupe: string | 
 
 /** Les rendus à noter (juré) ou tous les rendus (organisateur). */
 export async function listerRendus(id: string): Promise<Rendu[]> {
-  const { data, error } = await api.GET('/api/hackathons/{hackathonId}/rendus', { params: { path: { hackathonId: id }, query: { limite: 100 } } })
-  if (error || !data) throw new Error('rendus indisponibles')
-  return (data.elements ?? []) as Rendu[]
+  const rendus: Rendu[] = []
+  const lus = new Set<string>()
+  let curseur: string | undefined
+  do {
+    const { data, error } = await api.GET('/api/hackathons/{hackathonId}/rendus', { params: { path: { hackathonId: id }, query: { limite: 100, curseur } } })
+    if (error || !data) throw new Error('rendus indisponibles')
+    rendus.push(...((data.elements ?? []) as Rendu[]))
+    curseur = data.curseurSuivant ?? undefined
+    if (curseur && lus.has(curseur)) throw new Error('curseur de rendus répété')
+    if (curseur) lus.add(curseur)
+  } while (curseur)
+  return rendus
 }
 
 export const noter = (id: string, renduId: string, notes: { critereId: string; valeur: number }[], commentaire: string | null) =>

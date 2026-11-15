@@ -131,7 +131,7 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('./features/hackathons/NouveauHackathonPage.vue'),
     meta: { connexionRequise: true, pleineLargeur: true },
   },
-  { path: '/hackathons/:id', name: 'hackathon', component: () => import('./features/hackathons/HackathonPage.vue') },
+  { path: '/hackathons/:id', name: 'hackathon', component: () => import('./features/hackathons/HackathonPage.vue'), meta: { pleineLargeur: true } },
   {
     // Public : seulement ce que chaque projet montre déjà à tous (contracts/vitrine.yaml).
     path: '/vitrine',

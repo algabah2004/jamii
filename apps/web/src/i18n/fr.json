@@ -2096,7 +2096,57 @@
       "discussion": "Annonces et échanges",
       "equipes": "Équipes",
       "gestion": "Gestion",
-      "nouvelles": "nouvelle annonce | nouvelles annonces"
+      "nouvelles": "nouvelle annonce | nouvelles annonces",
+      "projets": "Projets",
+      "calendrier": "Calendrier",
+      "reglement": "Règlement et prix",
+      "resultats": "Résultats"
+    },
+    "decouverte": {
+      "filtres": "Filtres",
+      "effacer": "Tout effacer",
+      "statut": "État du hackathon",
+      "duree": "Durée de construction",
+      "durees": {
+        "tous": "Toutes les durées",
+        "court": "1 à 3 jours",
+        "semaine": "4 à 7 jours",
+        "long": "Plus d’une semaine"
+      },
+      "trier": "Trier par",
+      "tris": {
+        "debut": "Date de début",
+        "participants": "Nombre d’inscrits",
+        "titre": "Nom du hackathon"
+      }
+    },
+    "evenement": {
+      "surtitre": "Un défi, une équipe, un projet à montrer",
+      "preparer": "Repère les dates et prépare ta participation.",
+      "construire": "Rencontre les équipes et trouve ta place.",
+      "partager": "Retrouve ton rendu et les réalisations.",
+      "nombrePrix": "{n} prix proposé | {n} prix proposés",
+      "voirPrix": "Découvrir les prix et les critères",
+      "affiche": "ON CONSTRUIT.\nENSEMBLE."
+    },
+    "galerie": {
+      "surtitre": "Construit pendant le hackathon",
+      "titre": "La galerie des projets",
+      "equipe": "Équipe participante",
+      "nombre": "Aucun projet | {n} projet | {n} projets",
+      "attenteTitre": "Les réalisations arrivent bientôt.",
+      "attente": "Les projets sont dévoilés au public avec les résultats. En attendant, consulte le calendrier et découvre les équipes participantes.",
+      "resultatsLe": "Résultats prévus le {date}.",
+      "indisponible": "Les projets ne sont pas disponibles pour le moment.",
+      "porteePublique": "Les réalisations du classement publié par l’organisateur.",
+      "porteeJury": "Cet espace présente les rendus qui te sont attribués pour l’évaluation.",
+      "porteeOrganisateur": "Les rendus reçus sont visibles ici pour préparer l’évaluation. Ils restent privés jusqu’à la publication des résultats.",
+      "recherche": "Chercher un projet ou une équipe…",
+      "aucun": "Aucun projet n’a encore été rendu.",
+      "details": "Lire la présentation",
+      "code": "Voir le code source",
+      "video": "Voir la vidéo de démonstration",
+      "voir": "Découvrir le projet"
     }
   },
   "missions": {

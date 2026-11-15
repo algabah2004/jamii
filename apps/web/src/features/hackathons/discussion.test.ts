@@ -120,7 +120,9 @@ describe('la discussion d’un hackathon', () => {
     expect(page.get('#panneau-discussion').attributes('style') ?? '').not.toContain('display: none')
     expect(page.get('#panneau-presentation').attributes('style')).toContain('display: none')
     await page.get('[role="tablist"]').trigger('keydown', { key: 'ArrowRight' })
-    await vi.waitFor(() => expect(choisi('equipes')).toBe('true'))
+    await vi.waitFor(() => expect(choisi('presentation')).toBe('true'))
+    await page.get('[role="tablist"]').trigger('keydown', { key: 'ArrowRight' })
+    await vi.waitFor(() => expect(choisi('projets')).toBe('true'))
   })
 
   it('dit quand l’organisation n’a pas encore ouvert d’espace', async () => {

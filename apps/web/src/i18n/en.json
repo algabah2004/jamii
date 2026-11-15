@@ -2096,7 +2096,57 @@
       "discussion": "Announcements and discussion",
       "equipes": "Teams",
       "gestion": "Manage",
-      "nouvelles": "new announcement | new announcements"
+      "nouvelles": "new announcement | new announcements",
+      "projets": "Projects",
+      "calendrier": "Schedule",
+      "reglement": "Rules & prizes",
+      "resultats": "Results"
+    },
+    "decouverte": {
+      "filtres": "Filters",
+      "effacer": "Clear all",
+      "statut": "Hackathon status",
+      "duree": "Build duration",
+      "durees": {
+        "tous": "Any duration",
+        "court": "1–3 days",
+        "semaine": "4–7 days",
+        "long": "More than a week"
+      },
+      "trier": "Sort by",
+      "tris": {
+        "debut": "Start date",
+        "participants": "Participants",
+        "titre": "Hackathon name"
+      }
+    },
+    "evenement": {
+      "surtitre": "One challenge, one team, something to show",
+      "preparer": "Check the dates and prepare to take part.",
+      "construire": "Meet the teams and find your place.",
+      "partager": "Find your submission and the projects built.",
+      "nombrePrix": "{n} prize offered | {n} prizes offered",
+      "voirPrix": "Explore prizes and judging criteria",
+      "affiche": "BUILD\nTOGETHER."
+    },
+    "galerie": {
+      "surtitre": "Built during the hackathon",
+      "titre": "The project gallery",
+      "equipe": "Participating team",
+      "nombre": "No projects | {n} project | {n} projects",
+      "attenteTitre": "Projects are on their way.",
+      "attente": "Projects become public when results are published. Meanwhile, explore the schedule and meet the participating teams.",
+      "resultatsLe": "Results expected on {date}.",
+      "indisponible": "Projects are unavailable at the moment.",
+      "porteePublique": "Projects from the results published by the organizer.",
+      "porteeJury": "This space shows the submissions assigned to you for judging.",
+      "porteeOrganisateur": "Submitted projects appear here to prepare judging. They remain private until results are published.",
+      "recherche": "Search for a project or a team…",
+      "aucun": "No projects have been submitted yet.",
+      "details": "Read the presentation",
+      "code": "View source code",
+      "video": "Watch the demo video",
+      "voir": "Explore the project"
     }
   },
   "missions": {
