@@ -1557,5 +1557,9 @@
         "autre": "The action did not go through. Try again in a moment."
       }
     }
+  },
+  "themes": {
+    "passerClair": "Switch to light theme",
+    "passerSombre": "Switch to dark theme"
   }
 }

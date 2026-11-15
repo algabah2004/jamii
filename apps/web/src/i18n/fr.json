@@ -1557,5 +1557,9 @@
         "autre": "L'action n'a pas abouti. Réessaie dans un instant."
       }
     }
+  },
+  "themes": {
+    "passerClair": "Passer au thème clair",
+    "passerSombre": "Passer au thème sombre"
   }
 }
