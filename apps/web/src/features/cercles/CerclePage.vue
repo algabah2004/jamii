@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LienPersonne from '../../components/LienPersonne.vue'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute } from 'vue-router'
@@ -151,8 +152,10 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
               :class="{ 'anneau__membre--tour': m.personne.id === tour?.beneficiaire.id, 'anneau__membre--livre': tourDe(m.personne.id)?.statut === 'livre' }"
               :style="{ left: `${places[i]!.x}%`, top: `${places[i]!.y}%`, '--i': i }"
             >
-              <JAvatar :nom="m.personne.nom" :url="m.personne.avatarUrl" :taille="52" />
-              <span class="anneau__nom">{{ prenom(m.personne.nom) }}</span>
+              <LienPersonne :id="m.personne.id" class="anneau__lien">
+                <JAvatar :nom="m.personne.nom" :url="m.personne.avatarUrl" :taille="52" />
+                <span class="anneau__nom">{{ prenom(m.personne.nom) }}</span>
+              </LienPersonne>
             </div>
           </div>
           <figcaption class="visuellement-cache">{{ t('cercles.anneauDescription', { ordre: ordre.map((m) => m.personne.nom).join(', ') }) }}</figcaption>
@@ -249,9 +252,9 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
         <ol class="ordre__liste" data-test="ordre">
           <li v-for="m in ordre" :key="m.personne.id" class="carte ordre__ligne" :class="`ordre__ligne--${tourDe(m.personne.id)?.statut ?? 'a_venir'}`">
             <span v-if="cercle.tirage" class="ordre__numero">{{ m.rang }}</span>
-            <JAvatar :nom="m.personne.nom" :url="m.personne.avatarUrl" :taille="40" />
+            <LienPersonne :id="m.personne.id" doublon><JAvatar :nom="m.personne.nom" :url="m.personne.avatarUrl" :taille="40" /></LienPersonne>
             <span class="ordre__qui">
-              <strong>{{ m.personne.nom }}</strong>
+              <strong><LienPersonne :id="m.personne.id">{{ m.personne.nom }}</LienPersonne></strong>
               <!-- Les idées ne sont visibles que des membres : les autres voient seulement si elle est déposée. -->
               <span>{{ m.idee?.titre ?? (m.aDeposeIdee ? t('cercles.ideeDeposee') : t('cercles.pasDIdee')) }}</span>
             </span>
@@ -289,7 +292,10 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
   display: grid; justify-items: center; gap: var(--space-1);
   animation: apparait var(--motion-celebrate) var(--ease-pop) both; animation-delay: calc(var(--i) * 70ms);
 }
-.anneau__membre :deep(.j-avatar) { box-shadow: 0 0 0 3px var(--surface); }
+.anneau__membre :deep(.j-avatar) { box-shadow: 0 0 0 3px var(--surface); transition: transform var(--motion-fast) var(--ease-out); }
+.anneau__lien { display: grid; justify-items: center; gap: var(--space-1); }
+.anneau__lien:hover :deep(.j-avatar) { transform: scale(1.06); }
+@media (prefers-reduced-motion: reduce) { .anneau__lien:hover :deep(.j-avatar) { transform: none; } }
 .anneau__nom { padding: 0 var(--space-2); border-radius: var(--radius-pill); background: var(--surface); font-size: var(--type-body-sm-size); font-weight: 600; }
 /* Le bénéficiaire du tour : un halo orange, la couleur de la preuve. */
 .anneau__membre--tour :deep(.j-avatar) { box-shadow: 0 0 0 3px var(--surface), 0 0 0 7px var(--proof), 0 0 26px color-mix(in srgb, var(--proof) 55%, transparent); }

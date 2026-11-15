@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LienPersonne from '../../components/LienPersonne.vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { api } from '../../api/client'
@@ -327,11 +328,11 @@ function teinte(id: string) {
           <template v-for="l in lignes" :key="l.cle">
             <li v-if="l.type === 'jour'" class="jour" role="separator"><span>{{ l.libelle }}</span></li>
             <li v-else class="message" :class="{ 'message--suite': l.suite }" data-test="message">
-              <span v-if="!l.suite" class="message__avatar"><JAvatar :nom="l.message.auteur.nom" :url="l.message.auteur.avatarUrl" :taille="40" /></span>
+              <span v-if="!l.suite" class="message__avatar"><LienPersonne :id="l.message.auteur.id" doublon><JAvatar :nom="l.message.auteur.nom" :url="l.message.auteur.avatarUrl" :taille="40" /></LienPersonne></span>
               <time v-else class="message__heure-survol" :datetime="l.message.envoyeLe">{{ heure(l.message.envoyeLe) }}</time>
               <div class="message__corps">
                 <p v-if="!l.suite" class="message__meta">
-                  <strong :style="{ color: teinte(l.message.auteur.id) }">{{ l.message.auteur.nom }}</strong>
+                  <strong :style="{ color: teinte(l.message.auteur.id) }"><LienPersonne :id="l.message.auteur.id">{{ l.message.auteur.nom }}</LienPersonne></strong>
                   <time :datetime="l.message.envoyeLe">{{ heure(l.message.envoyeLe) }}</time>
                 </p>
                 <div v-if="l.message.appel" class="annonce" :class="{ 'annonce--finie': !l.message.appel.enCours }" data-test="annonce-appel">

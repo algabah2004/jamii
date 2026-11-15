@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LienPersonne from '../../components/LienPersonne.vue'
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { JAvatar, JSquelette } from '../../design-system'
@@ -90,7 +91,7 @@ const aMoi = (tache: Tache) => !!props.moiId && tache.assignee?.id === props.moi
           <label :for="`tache-${tache.id}`" class="tache__titre">{{ tache.titre }}</label>
           <span class="tache__qui">
             <template v-if="tache.assignee">
-              <JAvatar :nom="tache.assignee.nom" :url="tache.assignee.avatarUrl" :taille="24" />
+              <LienPersonne :id="tache.assignee.id" :nom="tache.assignee.nom"><JAvatar :nom="tache.assignee.nom" :url="tache.assignee.avatarUrl" :taille="24" /></LienPersonne>
               <span class="visuellement-cache">{{ t('cercles.tachesTour.prisePar', { nom: tache.assignee.nom }) }}</span>
               <button v-if="aMoi(tache) && tache.statut !== 'livree'" type="button" class="lien" :disabled="enCours === tache.id" data-test="lacher" @click="lacher(tache)">
                 {{ t('cercles.tachesTour.lacher') }}

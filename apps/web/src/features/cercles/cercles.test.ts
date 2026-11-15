@@ -265,3 +265,12 @@ describe('les tâches du tour', () => {
     await vi.waitFor(() => expect(page.find('[data-test="taches-du-tour"] [role="alert"]').text()).toContain('entre-temps'))
   })
 })
+
+describe('les personnes du cercle', () => {
+  it('mènent à leur profil, dans l’anneau comme dans l’ordre de passage', async () => {
+    const { page } = await ouvrir(`/cercles/${ID_DAKAR}`)
+    await vi.waitFor(() => expect(page.find('[data-test="ordre"]').exists()).toBe(true))
+    const liens = page.findAll('[data-test="lien-personne"]').map((l) => l.attributes('href'))
+    expect(liens).toContain('/p/6f1c2a4e-8b7d-4c3e-9a10-2b5d7e9f0a11')
+  })
+})
