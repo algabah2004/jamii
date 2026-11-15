@@ -324,10 +324,23 @@
       "titre": "Circles: an African tradition, adapted to software",
       "intro": "Take turns building each member's project. 4 to 6 developers commit together: at each turn, the whole circle builds one member's project.",
       "histoire": {
+        "surtitre": "Where the idea comes from",
         "accroche": "A tontine is not only about money.",
-        "tradition": "The tontine is known all over the continent. A group pools money and, at each turn, one of its members receives the whole amount.",
-        "esprit": "But look closer: what holds a tontine together is the gathering. Neighbours, colleagues and friends meet, talk, share their news and support each other. Money sets the rhythm; the community is the real goal.",
-        "jamii": "Jamii wants to bring African developers together, so it was natural to start from this spirit of sharing. In a circle, we don't pool money, we pool work."
+        "chapitres": {
+          "tradition": {
+            "titre": "The tradition",
+            "texte": "The tontine is known all over the continent. A group pools money and, at each turn, one of its members receives the whole amount."
+          },
+          "esprit": {
+            "titre": "What it really carries",
+            "texte": "What holds a tontine together is the gathering. Neighbours, colleagues and friends meet, talk, share their news and support each other."
+          },
+          "jamii": {
+            "titre": "What Jamii keeps",
+            "texte": "Jamii wants to bring African developers together, so it was natural to start from this spirit of sharing. In a circle, we don't pool money, we pool work."
+          }
+        },
+        "citation": "Money sets the rhythm. The community is the real goal."
       },
       "paralleles": {
         "tontine": "In a tontine",
@@ -346,7 +359,9 @@
           "titre": "We move forward together",
           "tontine": "People meet, talk and help each other.",
           "cercle": "We learn from each other, turn after turn."
-        }
+        },
+        "titre": "From the tontine to the circle",
+        "idee": "The idea"
       },
       "titreEtapes": "How a circle works",
       "etapes": {

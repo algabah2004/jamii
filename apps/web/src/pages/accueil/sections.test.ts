@@ -72,7 +72,13 @@ describe('la section des cercles, sur l’accueil', () => {
     const histoire = s.get('[data-test="section-cercles-histoire"]').text()
     expect(histoire).toContain("ce n'est pas qu'une affaire d'argent")
     expect(histoire).toContain('mais du travail')
+    expect(s.findAll('.chapitre')).toHaveLength(3)
+    expect(s.get('[data-test="section-cercles-citation"]').text()).toBe("L'argent donne le rythme. La communauté est le vrai but.")
     expect(s.findAll('[data-test^="parallele-"]')).toHaveLength(3)
+    // Chaque ligne de la comparaison dit les deux côtés.
+    const tour = s.get('[data-test="parallele-tour"]')
+    expect(tour.get('.ligne__tontine').text()).toContain('un membre reçoit')
+    expect(tour.get('.ligne__cercle').text()).toContain("tout le cercle construit le projet d'un membre")
     expect(s.findAll('[data-test="section-cercles-etapes"] > li')).toHaveLength(4)
     expect(s.text()).toContain("Le Griot, l'assistant qui planifie et résume le tour")
     expect(s.get('[data-test="section-cercles-voir"]').attributes('href')).toBe('/cercles')
