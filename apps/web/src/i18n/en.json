@@ -506,7 +506,38 @@
       "creer": "Create the community",
       "apercu": "Preview",
       "nomExemple": "Your community",
-      "descriptionExemple": "Its description will appear here."
+      "descriptionExemple": "Its description will appear here.",
+      "etape": "Step {n} of {total}",
+      "q": {
+        "nom": "What is your community called?",
+        "nomAide": "A short, telling name. It also sets its address and its colours.",
+        "theme": "What will it be about?",
+        "themeAide": "Pick the main topic. It decides the stickers on its banner.",
+        "description": "What is {nom} for?",
+        "descriptionAide": "In one or two sentences: for whom, and to do what. This is what people read before joining.",
+        "apercu": "All set. Shall we launch it?"
+      },
+      "adresse": "Its address:",
+      "inspirations": "Need inspiration?",
+      "commencer": "To get started:",
+      "debuts": {
+        "debut1": "A space for developers to help each other who ",
+        "debut2": "Here we share our projects and look for teammates to ",
+        "debut3": "For everyone who wants to learn together how to "
+      },
+      "succes": "{nom} is live!",
+      "succesAide": "You are its moderator. Its three channels are waiting, invite your first members.",
+      "entrer": "Enter #général",
+      "retour": "Back",
+      "suivant": "Continue",
+      "entree": "Enter to continue",
+      "themeAVenir": "Topic to choose",
+      "etapes": {
+        "nom": "The name",
+        "theme": "The topic",
+        "description": "What it is for",
+        "apercu": "The preview"
+      }
     },
     "nouveauSalon": {
       "titre": "Create a channel",

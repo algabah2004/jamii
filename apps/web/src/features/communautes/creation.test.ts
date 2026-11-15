@@ -37,8 +37,8 @@ describe('toutes les communautés', () => {
   })
 })
 
-describe('créer une communauté', () => {
-  it('envoie le nom, la description et le thème, puis ouvre # général de la nouvelle communauté', async () => {
+describe('créer une communauté, une étape à la fois', () => {
+  it('le nom, le thème (qui fait avancer), la description, l’aperçu, puis on la salue et on entre dans # général', async () => {
     let recu: unknown = null
     serveur.use(
       http.post('/api/communautes', async ({ request }) => {
@@ -50,28 +50,57 @@ describe('créer une communauté', () => {
       }),
     )
     const { page, routeur } = await ouvrir('/communautes/nouvelle')
-    await vi.waitFor(() => expect(page.find('[data-test="nouvelle-communaute"]').exists()).toBe(true))
-    const champs = page.findAll('[data-test="nouvelle-communaute"] input:not([type="radio"]), [data-test="nouvelle-communaute"] textarea')
-    await champs[0]!.setValue('  Devs du Sahel ')
-    await champs[1]!.setValue('Des développeurs de Niamey à Nouakchott.')
-    // L'aperçu de la bannière suit la saisie.
-    expect(page.find('[data-test="banniere"]').text()).toContain('Devs du Sahel')
-    await page.get('[data-test="nouvelle-communaute"]').trigger('submit')
-    await vi.waitFor(() => expect(routeur.currentRoute.value.fullPath).toBe('/communautes/devs-du-sahel?salon=general'))
+    await vi.waitFor(() => expect(page.find('[data-test="champ-nom"]').exists()).toBe(true))
+    expect(page.text()).toContain('Étape 1 sur 4')
+    expect(page.get('[data-test="suivant"]').attributes('disabled')).toBeDefined()
+
+    await page.get('[data-test="champ-nom"]').setValue('  Devs du Sahel ')
+    expect(page.text()).toContain('jamii/communautes/devs-du-sahel')
+    await page.get('[data-test="champ-nom"]').trigger('keydown', { key: 'Enter' })
+    await vi.waitFor(() => expect(page.find('[data-test="theme-web"]').exists()).toBe(true))
+    expect(page.text()).toContain('Étape 2 sur 4')
+
+    // Choisir un thème fait avancer tout seul.
+    await page.get('[data-test="theme-web"]').trigger('change')
+    await vi.waitFor(() => expect(page.find('[data-test="champ-description"]').exists()).toBe(true), { timeout: 3000 })
+    expect(page.text()).toContain('À quoi sert Devs du Sahel')
+    await page.get('[data-test="champ-description"]').setValue('Des développeurs de Niamey à Nouakchott.')
+    await page.get('[data-test="suivant"]').trigger('click')
+
+    await vi.waitFor(() => expect(page.find('[data-test="banniere"]').exists()).toBe(true))
+    expect(page.get('[data-test="banniere"]').text()).toContain('Devs du Sahel')
+    await page.get('[data-test="suivant"]').trigger('click')
+
+    await vi.waitFor(() => expect(page.find('[data-test="succes"]').exists()).toBe(true))
+    expect(page.get('[data-test="succes"]').text()).toContain('Devs du Sahel est en ligne')
     expect(recu).toEqual({ nom: 'Devs du Sahel', description: 'Des développeurs de Niamey à Nouakchott.', theme: 'web' })
+    await page.get('[data-test="entrer"]').trigger('click')
+    await vi.waitFor(() => expect(routeur.currentRoute.value.fullPath).toBe('/communautes/devs-du-sahel?salon=general'))
   })
 
-  it('une antenne demande son pays ; au-delà de trois par jour, on le dit', async () => {
+  it('on peut revenir en arrière ; une antenne demande son pays ; au-delà de trois par jour, on le dit', async () => {
     serveur.use(http.post('/api/communautes', () => HttpResponse.json({ code: 'trop_de_requetes' }, { status: 429, headers: { 'Retry-After': '3600' } })))
     const { page } = await ouvrir('/communautes/nouvelle')
-    await vi.waitFor(() => expect(page.find('[data-test="nouvelle-communaute"]').exists()).toBe(true))
-    expect(page.find('[data-test="pays"]').exists()).toBe(false)
-    await page.get('input[type="radio"][value="antenne"]').setValue(true)
-    expect(page.find('[data-test="pays"]').exists()).toBe(true)
-    const champs = page.findAll('[data-test="nouvelle-communaute"] input:not([type="radio"]), [data-test="nouvelle-communaute"] textarea')
-    await champs[0]!.setValue('Antenne Bamako')
-    await champs[1]!.setValue('Les devs de Bamako se retrouvent ici.')
-    await page.get('[data-test="nouvelle-communaute"]').trigger('submit')
+    await vi.waitFor(() => expect(page.find('[data-test="champ-nom"]').exists()).toBe(true))
+    await page.get('[data-test="champ-nom"]').setValue('Antenne Bamako')
+    await page.get('[data-test="suivant"]').trigger('click')
+    await vi.waitFor(() => expect(page.find('[data-test="theme-antenne"]').exists()).toBe(true))
+
+    await page.get('[data-test="precedent"]').trigger('click')
+    await vi.waitFor(() => expect(page.find('[data-test="champ-nom"]').exists()).toBe(true))
+    expect((page.get('[data-test="champ-nom"]').element as HTMLInputElement).value).toBe('Antenne Bamako')
+    await page.get('[data-test="suivant"]').trigger('click')
+    await vi.waitFor(() => expect(page.find('[data-test="theme-antenne"]').exists()).toBe(true))
+
+    // Une antenne n'avance pas toute seule : elle demande d'abord son pays.
+    await page.get('[data-test="theme-antenne"]').trigger('change')
+    await vi.waitFor(() => expect(page.find('[data-test="pays"]').exists()).toBe(true))
+    await page.get('[data-test="suivant"]').trigger('click')
+    await vi.waitFor(() => expect(page.find('[data-test="champ-description"]').exists()).toBe(true))
+    await page.get('[data-test="champ-description"]').setValue('Les devs de Bamako se retrouvent ici.')
+    await page.get('[data-test="suivant"]').trigger('click')
+    await vi.waitFor(() => expect(page.find('[data-test="banniere"]').exists()).toBe(true))
+    await page.get('[data-test="suivant"]').trigger('click')
     await vi.waitFor(() => expect(page.text()).toContain("Tu as déjà créé trois communautés aujourd'hui"))
   })
 })
