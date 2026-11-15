@@ -426,6 +426,19 @@ describe('le salon du cercle', () => {
 })
 
 describe('le tableau de bord du salon', () => {
+  it('montre comment créer la première tâche et affiche son responsable', async () => {
+    serveur.use(http.get('/api/projets/:projetId/taches', () => HttpResponse.json({ elements: [], curseurSuivant: null })))
+    const { page } = await ouvrir(`/cercles/${ID_DAKAR}?onglet=salon`)
+    await vi.waitFor(() => expect(page.find('[data-test="nouvelle-tache-salon"]').exists()).toBe(true))
+    expect(page.get('[data-test="toutes-les-taches"]').text()).toContain('Ajoute la première')
+    await page.get('#titre-tache-salon').setValue('Préparer le parcours mobile')
+    await page.get('#assignee-tache-salon').setValue('6f1c2a4e-8b7d-4c3e-9a10-2b5d7e9f0a11')
+    await page.get('[data-test="nouvelle-tache-salon"]').trigger('submit')
+    await vi.waitFor(() => expect(page.get('[data-test="toutes-les-taches"]').text()).toContain('Préparer le parcours mobile'))
+    expect(page.get('[data-test="toutes-les-taches"]').text()).toContain('Awa Diop')
+    page.unmount()
+  })
+
   it('je prends une tâche libre, elle passe dans « Mes tâches », je la coche finie', async () => {
     const { page } = await ouvrir(`/cercles/${ID_DAKAR}?onglet=salon`)
     await vi.waitFor(() => expect(page.find('[data-test="prendre-libre"]').exists()).toBe(true))

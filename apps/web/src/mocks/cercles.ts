@@ -354,9 +354,14 @@ export const handlersCercles = [
   http.post('/api/projets/:projetId/taches', async ({ params, request }) => {
     const pr = projets.get(String(params.projetId))
     if (!pr) return erreur('introuvable', 404)
-    const { titre } = (await request.json()) as { titre?: string }
+    const { titre, assigneeId } = (await request.json()) as { titre?: string; assigneeId?: string }
     if (!titre || titre.trim().length < 3) return erreur('invalide', 400)
     const tache = nouvelleTache(titre.trim(), 'a_faire', new Date().toISOString())
+    if (assigneeId) {
+      const personne = PERSONNES.find((x) => x.personne.id === assigneeId)?.personne
+      if (!personne) return erreur('pas_membre', 409)
+      tache.assignee = personne
+    }
     pr.taches.push(tache)
     return HttpResponse.json(tache, { status: 201 })
   }),

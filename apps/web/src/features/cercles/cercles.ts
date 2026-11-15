@@ -137,9 +137,9 @@ export async function lireTaches(projetId: string): Promise<Tache[] | null> {
 
 export type ResultatTache = { ok: true; tache: Tache } | { ok: false; code: string | null }
 
-export async function ajouterTache(projetId: string, titre: string): Promise<ResultatTache> {
+export async function ajouterTache(projetId: string, titre: string, assigneeId?: string | null): Promise<ResultatTache> {
   try {
-    const { data, error } = await api.POST('/api/projets/{projetId}/taches', { params: { path: { projetId } }, body: { titre } })
+    const { data, error } = await api.POST('/api/projets/{projetId}/taches', { params: { path: { projetId } }, body: { titre, ...(assigneeId ? { assigneeId } : {}) } })
     return data ? { ok: true, tache: data } : { ok: false, code: code(error) }
   } catch {
     return { ok: false, code: null }
