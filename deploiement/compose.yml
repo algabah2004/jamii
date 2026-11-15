@@ -1,0 +1,49 @@
+# Jamii sur le serveur cloud Systalink (DataCloud, Madrid). Une seule entrée publique : Caddy (80/443, HTTPS).
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    env_file: postgres.env
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jamii -d jamii"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  ia:
+    image: ghcr.io/algabah2004/jamii-ia:main
+    restart: unless-stopped
+    env_file: ia.env
+    depends_on: { postgres: { condition: service_healthy } }
+
+  api:
+    image: ghcr.io/algabah2004/jamii-api:main
+    restart: unless-stopped
+    env_file: api.env
+    environment:
+      JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=35 -XX:+UseSerialGC
+    depends_on: { postgres: { condition: service_healthy } }
+
+  web:
+    image: ghcr.io/algabah2004/jamii-web:main
+    restart: unless-stopped
+    environment:
+      PORT: "8080"
+      API_URL: http://api:8080
+    depends_on: [api]
+
+  entree:
+    image: caddy:2.8.4-alpine
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    environment:
+      DOMAINE: ${DOMAINE}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+    depends_on: [web]
+
+volumes:
+  pgdata:
+  caddy_data:
