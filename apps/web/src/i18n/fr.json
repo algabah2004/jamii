@@ -2920,5 +2920,58 @@
       "erreur": "« {nom} » n’a pas pu être envoyé. Réessaie.",
       "tropDePieces": "{n} pièces jointes au plus."
     }
+  },
+  "appels": {
+    "titre": "Appel avec {nom}",
+    "appelVideo": "Appel vidéo avec {nom}",
+    "entrant": "{nom} t'appelle",
+    "entrantVocal": "Appel vocal entrant…",
+    "entrantVideo": "Appel vidéo entrant…",
+    "decrocher": "Décrocher",
+    "decrocherVocal": "Décrocher sans caméra",
+    "refuser": "Refuser",
+    "preparation": "Accès au micro…",
+    "sonne": "Ça sonne chez {nom}…",
+    "connexion": "Connexion…",
+    "commandes": "Commandes de l'appel",
+    "couperMicro": "Couper le micro",
+    "activerMicro": "Réactiver le micro",
+    "eteindreCamera": "Éteindre la caméra",
+    "allumerCamera": "Allumer la caméra",
+    "partagerEcran": "Partager mon écran",
+    "arreterEcran": "Arrêter le partage d'écran",
+    "reagir": "Réagir",
+    "envoyerReaction": "Envoyer {emoji}",
+    "tuReagis": "Tu réagis :",
+    "reagit": "{nom} réagit :",
+    "microCoupeDe": "micro de {nom} coupé",
+    "reduire": "Réduire l'appel",
+    "agrandir": "Agrandir l'appel",
+    "raccrocher": "Raccrocher",
+    "fermer": "Fermer",
+    "rappeler": "Rappeler",
+    "fin": {
+      "termine": "Appel terminé",
+      "refuse": "{nom} n'est pas disponible",
+      "manque": "Pas de réponse",
+      "annule": "Appel annulé",
+      "micro_refuse": "Jamii n'a pas accès à ton micro. Autorise-le dans ton navigateur, puis réessaie.",
+      "echec": "La connexion a été perdue.",
+      "impossible": "L'appel n'a pas pu partir. Réessaie.",
+      "trop_de_requetes": "Trop d'appels et de messages en peu de temps. Réessaie dans un moment."
+    },
+    "carte": {
+      "tuAppellesVideo": "Tu as lancé un appel vidéo",
+      "tAppelleVideo": "{nom} t'a appelé en vidéo",
+      "duree": "Durée : {duree}",
+      "secondes": "{n} s",
+      "minutes": "{n} min",
+      "heures": "{h} h {m} min",
+      "sansReponse": "Sans réponse",
+      "manque": "Appel manqué",
+      "refuse": "{nom} n'a pas répondu",
+      "tuAsRefuse": "Tu as refusé",
+      "annule": "Annulé"
+    }
   }
 }

@@ -28,7 +28,7 @@ class Messagerie {
 
 	static final int PREMIERS_CONTACTS_PAR_JOUR = 10;
 
-	/** `salleAppel` : le message annonce un appel vocal et vidéo dans cette salle (#157). */
+	/** `salleAppel` : un ancien appel par Jitsi, avant les appels WebRTC (#157). Ces messages restent lisibles. */
 	record Ligne(UUID id, UUID expediteurId, UUID destinataireId, String texte, UUID cercleId, Instant envoyeLe,
 			Instant luLe, String salleAppel, List<UUID> pieces) {
 	}
@@ -36,10 +36,10 @@ class Messagerie {
 	/** Un appel est « en cours » pendant une heure après son lancement, comme dans les salons. */
 	static final Duration DUREE_APPEL = Duration.ofHours(1);
 
-	/** Le texte du message qui annonce un appel, pour l'export et les anciens écrans. */
+	/** Le texte des messages qui annoncent un appel, pour l'export et les écrans qui ne connaissent pas les appels. */
 	static final String ANNONCE_APPEL = "📞 Appel vocal";
 
-	private static final java.security.SecureRandom HASARD = new java.security.SecureRandom();
+	static final String ANNONCE_APPEL_VIDEO = "📹 Appel vidéo";
 
 	/** La dernière ligne de chaque conversation, l'autre personne et ses messages non lus. */
 	record Fil(UUID autre, Ligne dernier, int nonLus) {
@@ -107,23 +107,19 @@ class Messagerie {
 	}
 
 	/**
-	 * Lance un appel vocal et vidéo avec une personne (#157) : une salle neuve, annoncée dans la conversation. Mêmes
-	 * règles qu'un message (pas à soi-même, limite anti-spam), puisque c'en est un.
+	 * Le message qui garde la trace d'un appel WebRTC dans la conversation (#157, {@link Appels}). Mêmes règles qu'un
+	 * message (pas à soi-même, limite anti-spam), puisque c'en est un. La personne appelée en est notifiée.
 	 */
 	@Transactional
-	Ligne appeler(UUID moi, UUID destinataire) {
+	Ligne annoncerAppel(UUID moi, UUID destinataire, boolean video, Instant maintenant) {
 		if (moi.equals(destinataire)) {
 			throw ErreurReseau.conflit("soi_meme", "On ne s'appelle pas soi-même");
 		}
 		if (annuaire.lire(destinataire).isEmpty()) {
 			throw ErreurReseau.introuvable();
 		}
-		Instant maintenant = horloge.instant();
 		limiter(moi, destinataire, maintenant);
-		byte[] octets = new byte[8];
-		HASARD.nextBytes(octets);
-		return ecrire(moi, destinataire, ANNONCE_APPEL, null, maintenant,
-				"jamii-prive-" + java.util.HexFormat.of().formatHex(octets), List.of());
+		return ecrire(moi, destinataire, video ? ANNONCE_APPEL_VIDEO : ANNONCE_APPEL, null, maintenant, null, List.of());
 	}
 
 	private Ligne ecrire(UUID moi, UUID destinataire, String texte, UUID cercleId, Instant maintenant, String salle,

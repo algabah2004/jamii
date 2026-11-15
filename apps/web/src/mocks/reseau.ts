@@ -36,6 +36,8 @@ const personne = (id: string) => personnes().find((p) => p.id === id)
 
 const invitations = new Map<string, Set<string>>()
 /** Par personne, les messages échangés avec Awa, les plus récents d'abord. */
+type AppelDemo = components['schemas']['Appel'] & { message: Message }
+const appels = new Map<string, AppelDemo>()
 const messages = new Map<string, Message[]>()
 /** Le lien de contact entre Awa et chaque personne (absent : aucun). */
 const contacts = new Map<string, { statut: Exclude<StatutLien, 'aucun'>; depuis: string }>()
@@ -131,14 +133,38 @@ export const handlersReseau = [
     return HttpResponse.json(message, { status: 201 })
   }),
 
-  http.post('/api/conversations/:personneId/appel', ({ params }) => {
+  // Les appels WebRTC (#157). En démo sans API, personne ne décroche : l'appel sonne, puis on raccroche.
+  http.get('/api/appels/ice', () => HttpResponse.json({ iceServers: [{ urls: ['stun:stun.l.google.com:19302'] }], relais: false })),
+
+  http.get('/api/appels/entrant', () => new HttpResponse(null, { status: 204 })),
+
+  http.post('/api/conversations/:personneId/appels', async ({ params, request }) => {
     const personneId = String(params.personneId)
     if (personneId === AWA) return erreur('soi_meme')
-    if (!personne(personneId)) return erreur('introuvable', 404)
-    const salle = `jamii-prive-${Math.random().toString(16).slice(2, 14)}`
-    const message: Message = { id: nouvelId(), deMoi: true, texte: '📞 Appel vocal', invitation: null, envoyeLe: new Date().toISOString(), luLe: null, appel: { url: `https://meet.jit.si/${salle}`, enCours: true }, piecesJointes: [] }
+    const p = personne(personneId)
+    if (!p) return erreur('introuvable', 404)
+    const corps = (await request.json().catch(() => null)) as { offre?: string; video?: boolean } | null
+    if (!corps?.offre?.startsWith('v=0')) return erreur('validation', 400)
+    const id = nouvelId()
+    const video = corps.video === true
+    const message: Message = { id: nouvelId(), deMoi: true, texte: video ? '📹 Appel vidéo' : '📞 Appel vocal', invitation: null, envoyeLe: new Date().toISOString(), luLe: null, appel: { id, enCours: true, statut: 'sonne', video }, piecesJointes: [] }
     messages.set(personneId, [message, ...(messages.get(personneId) ?? [])])
-    return HttpResponse.json(message, { status: 201 })
+    appels.set(id, { id, statut: 'sonne', video, deMoi: true, personne: p, creeLe: message.envoyeLe, message })
+    return HttpResponse.json(appels.get(id), { status: 201 })
+  }),
+
+  http.get('/api/appels/:id', ({ params }) => {
+    const a = appels.get(String(params.id))
+    return a ? HttpResponse.json(a) : erreur('introuvable', 404)
+  }),
+
+  http.post('/api/appels/:id/fin', ({ params }) => {
+    const a = appels.get(String(params.id))
+    if (!a) return erreur('introuvable', 404)
+    if (a.statut === 'sonne') a.statut = 'annule'
+    else if (a.statut === 'en_cours') a.statut = 'termine'
+    a.message.appel = { ...a.message.appel!, statut: a.statut, enCours: false }
+    return HttpResponse.json(a)
   }),
 
   http.get('/api/conversations', () => {

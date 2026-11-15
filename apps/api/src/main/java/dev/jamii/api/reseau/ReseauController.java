@@ -69,7 +69,11 @@ class ReseauController {
 	}
 
 	/** Un appel vocal et vidéo annoncé par le message (#157) : sa salle, et s'il est encore en cours. */
-	record Appel(String url, boolean enCours) {
+	/**
+	 * L'appel annoncé par un message (#157). Un appel WebRTC a son `id`, son `statut` et sa durée ; un ancien appel
+	 * Jitsi n'a que son `url`.
+	 */
+	record Appel(UUID id, String url, boolean enCours, String statut, boolean video, Long dureeSecondes) {
 	}
 
 	record Message(UUID id, boolean deMoi, String texte, Invitation invitation, Instant envoyeLe, Instant luLe,
@@ -112,8 +116,16 @@ class ReseauController {
 
 	private final Notifications notifications;
 
-	/** Le serveur d'appels, le même que celui des salons (Jitsi pour la CADEV). */
+	/** Le serveur Jitsi des anciens appels privés : leurs messages gardent leur lien. */
 	private final String appels;
+
+	private Appels appelsWebrtc;
+
+	/** Les appels WebRTC (#157), pour les cartes de la conversation. */
+	@org.springframework.beans.factory.annotation.Autowired
+	void appelsWebrtc(Appels appelsWebrtc) {
+		this.appelsWebrtc = appelsWebrtc;
+	}
 
 	private final dev.jamii.api.fichiers.Fichiers fichiers;
 
@@ -186,7 +198,7 @@ class ReseauController {
 		return new Page<>(page.elements()
 			.stream()
 			.filter(f -> comptes.containsKey(f.autre()))
-			.map(f -> new Conversation(personne(comptes.get(f.autre())), message(f.dernier(), moi.id(), invitations),
+			.map(f -> new Conversation(personne(comptes.get(f.autre())), message(f.dernier(), moi.id(), invitations, appelsDe(page.elements().stream().map(Messagerie.Fil::dernier).toList())),
 					f.nonLus()))
 			.toList(), page.curseurSuivant());
 	}
@@ -198,7 +210,8 @@ class ReseauController {
 		Compte compte = annuaire.lire(autre).orElseThrow(ErreurReseau::introuvable);
 		var page = messagerie.lire(moi.id(), autre, limite(limite, 100), curseur);
 		var invitations = invitations(page.elements());
-		return new Fil(personne(compte), page.elements().stream().map(m -> message(m, moi.id(), invitations)).toList(),
+		var appelsDuFil = appelsDe(page.elements());
+		return new Fil(personne(compte), page.elements().stream().map(m -> message(m, moi.id(), invitations, appelsDuFil)).toList(),
 				page.curseurSuivant());
 	}
 
@@ -211,13 +224,7 @@ class ReseauController {
 		var destinataire = personne(personneId);
 		var pieces = fichiers.verifierPiecesPrivees(corps.pieces(), moi.id(), destinataire);
 		var ligne = messagerie.envoyer(moi.id(), destinataire, corps.texte(), corps.cercleId(), pieces);
-		return ResponseEntity.status(HttpStatus.CREATED).body(message(ligne, moi.id(), invitations(List.of(ligne))));
-	}
-
-	@PostMapping("/api/conversations/{personneId}/appel")
-	ResponseEntity<Message> appeler(@AuthenticationPrincipal UtilisateurConnecte moi, @PathVariable String personneId) {
-		var ligne = messagerie.appeler(moi.id(), personne(personneId));
-		return ResponseEntity.status(HttpStatus.CREATED).body(message(ligne, moi.id(), Map.of()));
+		return ResponseEntity.status(HttpStatus.CREATED).body(message(ligne, moi.id(), invitations(List.of(ligne)), Map.of()));
 	}
 
 	@GetMapping("/api/me/activite")
@@ -303,10 +310,24 @@ class ReseauController {
 	}
 
 	/** Un cercle supprimé depuis l'invitation : le message reste, sans la carte. */
-	private Message message(Messagerie.Ligne l, UUID moi, Map<UUID, CercleResume> invitations) {
+	private Map<UUID, Appels.Appel> appelsDe(Collection<Messagerie.Ligne> lignes) {
+		return appelsWebrtc.parMessage(lignes.stream().map(Messagerie.Ligne::id).toList());
+	}
+
+	private Message message(Messagerie.Ligne l, UUID moi, Map<UUID, CercleResume> invitations,
+			Map<UUID, Appels.Appel> appelsParMessage) {
 		CercleResume cercle = l.cercleId() == null ? null : invitations.get(l.cercleId());
-		Appel appel = l.salleAppel() == null ? null : new Appel(appels + "/" + l.salleAppel(),
-				l.envoyeLe().isAfter(Instant.now().minus(Messagerie.DUREE_APPEL)));
+		Appels.Appel webrtc = appelsParMessage.get(l.id());
+		Appel appel = null;
+		if (webrtc != null) {
+			Long duree = webrtc.reponduLe() == null || webrtc.termineLe() == null ? null
+					: java.time.Duration.between(webrtc.reponduLe(), webrtc.termineLe()).toSeconds();
+			appel = new Appel(webrtc.id(), null, webrtc.enCours(), webrtc.statut(), webrtc.video(), duree);
+		}
+		else if (l.salleAppel() != null) {
+			appel = new Appel(null, appels + "/" + l.salleAppel(),
+					l.envoyeLe().isAfter(Instant.now().minus(Messagerie.DUREE_APPEL)), null, true, null);
+		}
 		return new Message(l.id(), l.expediteurId().equals(moi), l.texte(), cercle == null ? null : new Invitation(cercle),
 				l.envoyeLe(), l.luLe(), appel, fichiers.decrire(l.pieces()));
 	}
@@ -373,6 +394,10 @@ class ReseauController {
 
 	@ExceptionHandler(ErreurReseau.class)
 	ResponseEntity<ProblemDetail> erreur(ErreurReseau e) {
+		return probleme(e);
+	}
+
+	static ResponseEntity<ProblemDetail> probleme(ErreurReseau e) {
 		ProblemDetail probleme = ProblemDetail.forStatus(e.statut);
 		probleme.setType(URI.create("urn:jamii:erreur:" + e.code));
 		probleme.setTitle(e.getMessage());

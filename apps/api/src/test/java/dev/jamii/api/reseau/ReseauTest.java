@@ -191,28 +191,6 @@ class ReseauTest {
 	}
 
 	@Test
-	void appeler_quelqu_un_annonce_une_salle_neuve_dans_la_conversation_pour_les_deux() throws Exception {
-		UtilisateurConnecte awa = utilisateur("Awa");
-		UtilisateurConnecte kofi = utilisateur("Kofi");
-		MvcTestResult r = poster("/api/conversations/" + kofi.id() + "/appel", awa, null);
-		assertThat(r).hasStatus(HttpStatus.CREATED);
-		assertThat(r).bodyJson().extractingPath("$.appel.enCours").isEqualTo(true);
-		String url = com.jayway.jsonpath.JsonPath.read(r.getResponse().getContentAsString(), "$.appel.url");
-		assertThat(url).startsWith("https://meet.jit.si/jamii-prive-");
-		// Kofi voit la même salle ; un nouvel appel ouvre une autre salle.
-		assertThat(lire("/api/conversations/" + awa.id() + "/messages", kofi)).bodyJson()
-			.extractingPath("$.elements[0].appel.url").isEqualTo(url);
-		String autre = com.jayway.jsonpath.JsonPath.read(
-				poster("/api/conversations/" + kofi.id() + "/appel", awa, null).getResponse().getContentAsString(), "$.appel.url");
-		assertThat(autre).isNotEqualTo(url);
-		// Un message ordinaire n'a pas d'appel ; on ne s'appelle pas soi-même, ni une personne inconnue.
-		assertThat(poster("/api/conversations/" + kofi.id() + "/messages", awa, message("Tu m entends ?", null))).bodyJson()
-			.extractingPath("$.appel").isNull();
-		assertThat(poster("/api/conversations/" + awa.id() + "/appel", awa, null)).hasStatus(HttpStatus.CONFLICT);
-		assertThat(poster("/api/conversations/" + UUID.randomUUID() + "/appel", awa, null)).hasStatus(HttpStatus.NOT_FOUND);
-	}
-
-	@Test
 	void personne_ne_lit_la_conversation_des_autres() {
 		UtilisateurConnecte awa = utilisateur("Awa");
 		UtilisateurConnecte kofi = utilisateur("Kofi");

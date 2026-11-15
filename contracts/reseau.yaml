@@ -45,6 +45,7 @@ tags:
   - { name: messages, description: 'Écrire à quelqu''un, inviter dans un cercle.' }
   - { name: contacts, description: 'Ajouter quelqu''un à ses contacts.' }
   - { name: notifications, description: 'Ce qui s''est passé depuis ma dernière visite.' }
+  - { name: appels, description: 'Les appels audio et vidéo en tête-à-tête, en WebRTC (#157).' }
 
 paths:
   /api/recommandations/cercles:
@@ -162,30 +163,204 @@ paths:
         '409': { $ref: './socle.yaml#/components/responses/Conflit' }
         '429': { $ref: './socle.yaml#/components/responses/TropDeRequetes' }
 
-  /api/conversations/{personneId}/appel:
+  /api/appels/ice:
+    get:
+      tags: [appels]
+      operationId: serveursIce
+      summary: Les serveurs STUN et TURN pour un appel (#157)
+      description: >-
+        À passer tels quels à `new RTCPeerConnection({ iceServers })`. Le relais TURN (notre coturn) a des identifiants
+        temporaires (4 h), signés par l'API avec un secret partagé avec coturn (`use-auth-secret`) : aucun mot de passe
+        fixe n'arrive au navigateur. `relais` est faux quand aucun TURN n'est configuré : STUN seulement. Jamais en cache.
+      security:
+        - session: []
+      responses:
+        '200':
+          description: Les serveurs ICE.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [iceServers, relais]
+                properties:
+                  iceServers:
+                    type: array
+                    items:
+                      type: object
+                      required: [urls]
+                      properties:
+                        urls: { type: array, items: { type: string } }
+                        username: { type: [string, 'null'] }
+                        credential: { type: [string, 'null'] }
+                  relais: { type: boolean }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+
+  /api/conversations/{personneId}/appels:
     parameters:
       - $ref: '#/components/parameters/PersonneId'
     post:
-      tags: [messages]
+      tags: [appels]
       operationId: appeler
-      summary: Lancer un appel vocal et vidéo avec une personne (#157)
+      summary: Appeler une personne, en audio ou en vidéo, dans Jamii (#157)
       description: >-
-        Crée une salle neuve (le même serveur d'appels que les salons, Jitsi pour la CADEV) et l'annonce dans la
-        conversation par un message qui porte `appel`. Seules les deux personnes lisent ce message, donc la salle. Mêmes
-        règles qu'un message : pas à soi-même, et la même limite anti-spam. Le destinataire reçoit une notification.
+        WebRTC en tête-à-tête : le son et l'image passent directement entre les deux navigateurs (ou par notre relais
+        TURN), jamais par l'API. L'API transmet seulement l'offre SDP complète (candidats ICE inclus) à la personne
+        appelée, qui la lit avec `GET /api/appels/entrant`. Un message de la conversation garde la trace de l'appel.
+        Mêmes règles qu'un message : pas à soi-même, même limite anti-spam. Un appel qui sonnait déjà entre ces deux
+        personnes est annulé. Après 45 secondes sans réponse, l'appel est manqué.
       security:
         - session: []
           csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [offre]
+              properties:
+                offre: { type: string, maxLength: 30000, description: 'La description SDP de l''offre, qui commence par `v=0`.' }
+                video: { type: boolean, default: false, description: 'Vrai : appel vidéo. Faux : appel vocal (la caméra peut s''allumer ensuite).' }
       responses:
         '201':
-          description: L'appel lancé, sous la forme du message qui l'annonce.
+          description: L'appel, qui sonne.
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Message' }
+              schema: { $ref: '#/components/schemas/Appel' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
         '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
         '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
         '409': { $ref: './socle.yaml#/components/responses/Conflit' }
         '429': { $ref: './socle.yaml#/components/responses/TropDeRequetes' }
+
+  /api/appels/entrant:
+    get:
+      tags: [appels]
+      operationId: appelEntrant
+      summary: L'appel qui sonne pour moi en ce moment
+      description: >-
+        Lu toutes les 2 secondes par le front tant qu'on est connecté et que l'onglet est visible (pas de WebSocket).
+        Porte l'`offre` à passer à `setRemoteDescription`.
+      security:
+        - session: []
+      responses:
+        '200':
+          description: Un appel sonne.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Appel' }
+        '204':
+          description: Personne n'appelle.
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+
+  /api/appels/{appelId}:
+    parameters:
+      - name: appelId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [appels]
+      operationId: lireAppel
+      summary: Où en est un appel
+      description: >-
+        Pour les deux personnes seulement (sinon 404). L'appelant le lit toutes les secondes tant que ça sonne : il y
+        trouve la `reponse` quand l'autre décroche, ou le refus.
+      security:
+        - session: []
+      responses:
+        '200':
+          description: L'appel.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Appel' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+
+  /api/appels/{appelId}/reponse:
+    parameters:
+      - name: appelId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      tags: [appels]
+      operationId: decrocher
+      summary: Décrocher
+      description: >-
+        Seule la personne appelée, tant que ça sonne. Sa réponse SDP (candidats ICE inclus) part chez l'appelant.
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reponse]
+              properties:
+                reponse: { type: string, maxLength: 30000 }
+      responses:
+        '200':
+          description: L'appel après l'action.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Appel' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/appels/{appelId}/refus:
+    parameters:
+      - name: appelId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      tags: [appels]
+      operationId: refuserAppel
+      summary: Refuser un appel qui sonne
+      description: >-
+        Seule la personne appelée.
+      security:
+        - session: []
+          csrf: []
+      responses:
+        '200':
+          description: L'appel après l'action.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Appel' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/appels/{appelId}/fin:
+    parameters:
+      - name: appelId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      tags: [appels]
+      operationId: raccrocher
+      summary: Raccrocher
+      description: >-
+        Pour l'une ou l'autre personne : un appel qui sonne est annulé, un appel en cours est terminé. Sans effet sur un appel déjà fini. Les SDP (adresses réseau) sont effacées.
+      security:
+        - session: []
+          csrf: []
+      responses:
+        '200':
+          description: L'appel après l'action.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Appel' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
 
   /api/me/contacts:
     get:
@@ -381,14 +556,38 @@ components:
         envoyeLe: { type: string, format: date-time }
         luLe: { type: [string, 'null'], format: date-time, description: Quand le destinataire l'a lu. }
         appel:
-          description: 'Si le message annonce un appel vocal et vidéo (#157) : sa salle, et s''il est encore en cours (lancé il y a moins d''une heure).'
+          description: >-
+            Si le message garde la trace d'un appel (#157). Un appel WebRTC a son `id`, son `statut` et sa durée ; un
+            ancien appel par Jitsi n'a que son `url` (encore en cours pendant une heure).
           oneOf:
             - type: object
-              required: [url, enCours]
+              required: [enCours, video]
               properties:
-                url: { type: string, format: uri }
+                id: { type: [string, 'null'], format: uuid }
+                url: { type: [string, 'null'], format: uri }
                 enCours: { type: boolean }
+                statut: { type: [string, 'null'], enum: [sonne, en_cours, termine, refuse, manque, annule, null] }
+                video: { type: boolean }
+                dureeSecondes: { type: [integer, 'null'], description: 'Pour un appel décroché puis terminé.' }
             - { type: 'null' }
+
+    Appel:
+      type: object
+      description: >-
+        Un appel WebRTC vu par l'une des deux personnes. `offre` n'est donnée qu'à la personne appelée tant que ça
+        sonne, `reponse` qu'à l'appelant : chacun ne reçoit que ce dont son navigateur a besoin.
+      required: [id, statut, video, deMoi, personne, creeLe]
+      properties:
+        id: { type: string, format: uuid }
+        statut: { type: string, enum: [sonne, en_cours, termine, refuse, manque, annule] }
+        video: { type: boolean }
+        deMoi: { type: boolean, description: "Vrai si c'est moi qui appelle." }
+        personne: { $ref: '#/components/schemas/Personne' }
+        offre: { type: [string, 'null'] }
+        reponse: { type: [string, 'null'] }
+        creeLe: { type: string, format: date-time }
+        reponduLe: { type: [string, 'null'], format: date-time }
+        termineLe: { type: [string, 'null'], format: date-time }
 
     InvitationCercle:
       type: object

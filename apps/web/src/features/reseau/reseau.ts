@@ -36,11 +36,6 @@ export async function envoyerMessage(personneId: string, texte: string, cercleId
 }
 
 /** Lancer un appel vocal et vidéo avec une personne (#157) : le message qui l'annonce porte la salle. */
-export async function lancerAppel(personneId: string): Promise<Envoi> {
-  const { data, error } = await api.POST('/api/conversations/{personneId}/appel', { params: { path: { personneId } } })
-  return data ? { ok: true, message: data } : { ok: false, code: (error as { code?: string } | undefined)?.code ?? null }
-}
-
 /** Une personne recommandée pour un besoin, transmise jusqu'au cercle par l'état de la navigation. */
 export type RecommandeDuBesoin = { id: string; nom: string }
 
