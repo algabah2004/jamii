@@ -43,6 +43,35 @@ describe('s’inscrire à un hackathon', () => {
     expect(page.find('[data-test="form-equipe"]').exists()).toBe(true)
   })
 
+  it('sur candidature, confirme l’envoi et dit que l’organisateur n’a pas répondu', async () => {
+    modifierHackathon(ID, (h) => Object.assign(h, { modeInscription: 'candidature' }))
+    const page = await monter()
+    await attendre(page, '[data-test="sinscrire"]')
+    expect(page.find('[data-test="statut-candidature"]').exists()).toBe(false)
+    expect(page.find('[data-test="aller-participer"]').exists()).toBe(true)
+
+    await page.get('[data-test="sinscrire"]').trigger('click')
+    await attendre(page, '[data-test="statut-candidature"]')
+    expect(page.get('[data-test="statut-candidature"]').text()).toContain('Candidature envoyée')
+    // Le résumé ne propose plus « Participer » : il dit où en est la candidature.
+    expect(page.find('[data-test="aller-participer"]').exists()).toBe(false)
+    expect(page.get('[data-test="candidature"]').text()).toContain("attend la réponse de l'organisateur")
+    expect(page.find('[data-test="barre-mobile"] a[href="#participer"]').exists()).toBe(false)
+  })
+
+  it('sur candidature, dit aussi quand on est sur la liste d’attente, et rien une fois accepté', async () => {
+    modifierHackathon(ID, (h) => Object.assign(h, { moi: { role: 'participant', equipeId: null, inscription: 'attente', actions: ['creer_equipe'] } }))
+    let page = await monter()
+    await attendre(page, '[data-test="statut-candidature"]')
+    expect(page.get('[data-test="statut-candidature"]').text()).toContain("liste d'attente")
+
+    modifierHackathon(ID, (h) => Object.assign(h, { moi: { role: 'participant', equipeId: null, inscription: 'acceptee', actions: ['creer_equipe'] } }))
+    page = await monter()
+    await attendre(page, '[data-test="participer"]')
+    expect(page.find('[data-test="statut-candidature"]').exists()).toBe(false)
+    expect(page.find('[data-test="candidature"]').exists()).toBe(false)
+  })
+
   it('dit quand les inscriptions sont fermées', async () => {
     serveur.use(http.post('/api/hackathons/:id/inscriptions', () => HttpResponse.json({ code: 'delai_depasse' }, { status: 409 })))
     const page = await monter()

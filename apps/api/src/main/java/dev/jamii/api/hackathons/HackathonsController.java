@@ -39,7 +39,7 @@ class HackathonsController {
 	record TailleEquipe(int min, int max) {
 	}
 
-	record Moi(String role, UUID equipeId, List<String> actions) {
+	record Moi(String role, UUID equipeId, String inscription, List<String> actions) {
 	}
 
 	record HackathonResume(UUID id, String titre, String theme, String lieu, String ville, String statut, Instant debutLe,
@@ -143,7 +143,7 @@ class HackathonsController {
 				hackathons.nombresInscrits(List.of(h.id())).getOrDefault(h.id(), 0), h.description(), h.calendrier(),
 				new TailleEquipe(h.tailleMin(), h.tailleMax()), h.modeInscription(), h.deploiementObligatoire(), h.codeDeConduite(),
 				h.questions(), h.questionnaire(), h.criteres(), h.prix(), h.version(), h.creeLe(),
-				new Moi(l.role(), l.equipeId(), actions(l, statut, qui, h, maintenant)));
+				new Moi(l.role(), l.equipeId(), l.inscription(), actions(l, statut, qui, h, maintenant)));
 	}
 
 	private static HackathonResume resume(Hackathons.Hackathon h, Compte organisateur, Instant maintenant, int inscrits) {

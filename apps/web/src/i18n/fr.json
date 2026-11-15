@@ -1362,7 +1362,12 @@
       "aNoter": "Il te reste {n} projet à noter | Il te reste {n} projets à noter",
       "toutNote": "Tous les projets sont notés",
       "noter": "Noter les projets",
-      "noterCourt": "Noter"
+      "noterCourt": "Noter",
+      "candidature": {
+        "en_attente": "Ta candidature attend la réponse de l'organisateur.",
+        "attente": "Tu es sur la liste d'attente."
+      },
+      "voirCandidature": "Voir"
     },
     "inscription": {
       "titre": "Participer",
@@ -1382,6 +1387,16 @@
         "etat_invalide": "Ce hackathon n'accepte pas d'inscriptions pour le moment.",
         "validation": "Le nom de l'équipe doit faire entre 2 et 60 caractères.",
         "autre": "L'inscription n'a pas abouti. Réessaie dans un instant."
+      },
+      "candidature": {
+        "en_attente": {
+          "titre": "Candidature envoyée",
+          "aide": "L'organisateur choisit les participants. Reviens ici pour voir sa réponse."
+        },
+        "attente": {
+          "titre": "Tu es sur la liste d'attente",
+          "aide": "L'organisateur a gardé ta candidature sans la refuser. Reviens ici pour voir sa réponse."
+        }
       }
     },
     "equipes": {
