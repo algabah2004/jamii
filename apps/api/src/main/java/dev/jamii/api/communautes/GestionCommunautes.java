@@ -30,7 +30,7 @@ class GestionCommunautes {
 	}
 
 	record Resume(UUID id, String communaute, String type, String titre, UUID auteurId, int nombreReponses,
-			Instant accepteeLe, Instant creeLe) {
+			Instant accepteeLe, Instant creeLe, String contenu, String propositionIa) {
 	}
 
 	record Detail(Resume resume, UUID communauteId, String contenu, UUID projetId, UUID reponseAccepteeId,
@@ -167,7 +167,7 @@ class GestionCommunautes {
 
 	@Transactional(readOnly = true)
 	Optional<Detail> lirePublication(UUID id) {
-		return base.sql(RESUME.replaceFirst("SELECT ", "SELECT p.communaute_id, p.contenu, p.projet_id, p.reponse_acceptee_id, p.proposition_ia, ")
+		return base.sql(RESUME.replaceFirst("SELECT ", "SELECT p.communaute_id, p.projet_id, p.reponse_acceptee_id, ")
 				+ " WHERE p.id = :id")
 			.param("id", id)
 			.query((rs, n) -> new Detail(resume(rs, n), rs.getObject("communaute_id", UUID.class), rs.getString("contenu"),
@@ -192,7 +192,7 @@ class GestionCommunautes {
 	}
 
 	private static final String RESUME = """
-			SELECT p.id, c.slug, p.type, p.titre, p.auteur_id, p.acceptee_le, p.cree_le,
+			SELECT p.id, c.slug, p.type, p.titre, p.auteur_id, p.acceptee_le, p.cree_le, p.contenu, p.proposition_ia,
 			       (SELECT count(*) FROM reponse r WHERE r.publication_id = p.id) AS nombre_reponses
 			FROM publication p JOIN communaute c ON c.id = p.communaute_id
 			""";
@@ -201,7 +201,8 @@ class GestionCommunautes {
 		Timestamp acceptee = rs.getTimestamp("acceptee_le");
 		return new Resume(rs.getObject("id", UUID.class), rs.getString("slug"), rs.getString("type"), rs.getString("titre"),
 				rs.getObject("auteur_id", UUID.class), rs.getInt("nombre_reponses"),
-				acceptee == null ? null : acceptee.toInstant(), rs.getTimestamp("cree_le").toInstant());
+				acceptee == null ? null : acceptee.toInstant(), rs.getTimestamp("cree_le").toInstant(), rs.getString("contenu"),
+				rs.getString("proposition_ia"));
 	}
 
 	private static Fiche fiche(ResultSet rs, int n) throws SQLException {

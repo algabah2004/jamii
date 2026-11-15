@@ -42,8 +42,9 @@ class CommunautesController {
 			int nombreMembres, int questionsOuvertes, boolean membre, boolean moderateur) {
 	}
 
+	/** Dans un fil, chaque publication se lit en entier (contrat v0.6) : son texte et l'état de la réponse de l'IA. */
 	record PublicationResume(UUID id, String communaute, String type, String titre, PersonneResume auteur,
-			int nombreReponses, Instant accepteeLe, Instant creeLe) {
+			int nombreReponses, Instant accepteeLe, Instant creeLe, String contenu, PropositionIa propositionIa) {
 	}
 
 	record PropositionIa(String statut) {

@@ -48,7 +48,9 @@ class VuesPublications {
 
 	static CommunautesController.PublicationResume resume(GestionCommunautes.Resume r, Map<UUID, Compte> comptes) {
 		return new CommunautesController.PublicationResume(r.id(), r.communaute(), r.type(), r.titre(), personne(r.auteurId(), comptes),
-				r.nombreReponses(), r.accepteeLe(), r.creeLe());
+				r.nombreReponses(), r.accepteeLe(), r.creeLe(), r.contenu(),
+				r.propositionIa() == null ? null
+						: new CommunautesController.PropositionIa(PropositionsIa.statutAffiche(r.propositionIa(), r.creeLe(), Instant.now())));
 	}
 
 	static CommunautesController.PersonneResume personne(UUID id, Map<UUID, Compte> comptes) {

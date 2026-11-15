@@ -361,6 +361,7 @@ export interface components {
              */
             projetId?: string;
         };
+        /** @description Dans un fil, une publication se lit en entier (v0.6) : son texte et l'état de la réponse de l'IA. */
         PublicationResume: {
             /** Format: uuid */
             id: string;
@@ -378,6 +379,10 @@ export interface components {
             accepteeLe: string | null;
             /** Format: date-time */
             creeLe: string;
+            /** @description Texte brut, affiché échappé. */
+            contenu: string;
+            /** @description Pour une question seulement. */
+            propositionIa: components["schemas"]["PropositionIa"] | null;
         };
         PagePublications: components["schemas"]["Page"] & {
             elements?: components["schemas"]["PublicationResume"][];
