@@ -180,7 +180,7 @@ export const handlersCercles = [
   http.post('/api/cercles/:id/tirage', ({ params }) => {
     const c = trouver(params.id)
     if (!c) return erreur('introuvable', 404)
-    if (!c.moi.estCreateur) return erreur('interdit', 403)
+    if (!c.moi.estMembre) return erreur('interdit', 403)
     if (c.tirage) return erreur('tirage_deja_fait')
     if (c.membres.length < c.taille) return erreur('cercle_incomplet')
     if (c.membres.some((m) => !m.aDeposeIdee)) return erreur('idees_manquantes')
