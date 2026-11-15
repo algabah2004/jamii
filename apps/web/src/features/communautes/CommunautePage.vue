@@ -103,6 +103,12 @@ async function basculerAdhesion() {
 /** Après « Rejoindre », les salons et le côté se rechargent (adresse de l'appel, zone d'écriture). */
 const cleRecharge = ref(0)
 
+/** Un salon supprimé : on revient dans # général, et la barre et le côté oublient le salon. */
+async function salonSupprime() {
+  await router.replace({ query: { salon: 'general' } })
+  cleRecharge.value++
+}
+
 const ONGLETS: Onglet[] = ['recents', 'ouvertes', 'resolues', 'projets']
 function choisirOnglet(o: Onglet) {
   void router.replace({ query: o === 'recents' ? {} : { onglet: o } })
@@ -148,7 +154,7 @@ const prenom = computed(() => moi.value?.nom.split(' ')[0] ?? '')
 </script>
 
 <template>
-  <EspaceCommunautes :actuelle="etat === 'introuvable' ? undefined : slug" :actif="actif" :communaute="communaute">
+  <EspaceCommunautes :actuelle="etat === 'introuvable' ? undefined : slug" :actif="actif" :communaute="communaute" :recharge="cleRecharge">
     <JSquelette v-if="etat === 'chargement' && !communaute" :nombre="4" />
     <div v-else-if="etat === 'introuvable'" class="etat-vide">
       <h1>{{ t('introuvable.titre') }}</h1>
@@ -167,8 +173,10 @@ const prenom = computed(() => moi.value?.nom.split(' ')[0] ?? '')
           :slug="slug"
           :salon="salon ?? undefined"
           :membre="communaute.membre"
+          :moderateur="communaute.moderateur"
           :adhesion-en-cours="adhesionEnCours"
           @rejoindre="basculerAdhesion"
+          @supprime="salonSupprime"
         />
       </div>
 

@@ -148,6 +148,32 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/communautes/{slug}/salons/{salon}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Nom court de la communauté dans l'adresse (`flutter`, `fintech`, `antenne-dakar`). */
+                slug: components["parameters"]["Slug"];
+                /** @description Nom court du salon (`general`, `entraide`, `projets`). */
+                salon: components["parameters"]["SalonSlug"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Supprimer un salon et tous ses messages (modérateurs seulement, v0.5)
+         * @description Définitif : les messages du salon sont supprimés avec lui. `#général` ne se supprime pas (`409 salon_protege`) :
+         *     c'est là qu'on arrive dans une communauté. Un autre membre reçoit `403` (`pas_moderateur`).
+         */
+        delete: operations["supprimerSalon"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/communautes/{slug}/salons/{salon}/messages": {
         parameters: {
             query?: never;
@@ -875,6 +901,33 @@ export interface operations {
                 };
             };
             400: components["responses"]["Invalide"];
+            401: components["responses"]["NonConnecte"];
+            403: components["responses"]["Interdit"];
+            404: components["responses"]["Introuvable"];
+            409: components["responses"]["Conflit"];
+        };
+    };
+    supprimerSalon: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Nom court de la communauté dans l'adresse (`flutter`, `fintech`, `antenne-dakar`). */
+                slug: components["parameters"]["Slug"];
+                /** @description Nom court du salon (`general`, `entraide`, `projets`). */
+                salon: components["parameters"]["SalonSlug"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Supprimé. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             401: components["responses"]["NonConnecte"];
             403: components["responses"]["Interdit"];
             404: components["responses"]["Introuvable"];

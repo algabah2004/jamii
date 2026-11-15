@@ -135,3 +135,27 @@ describe('créer un salon', () => {
     expect(ia.page.find('[data-test="ajouter-salon"]').exists()).toBe(false)
   })
 })
+
+describe('supprimer un salon', () => {
+  it('un modérateur supprime un salon après confirmation, et revient dans # général ; # général ne se supprime pas', async () => {
+    const { page, routeur } = await ouvrir('/communautes/flutter?salon=projets')
+    await vi.waitFor(() => expect(page.find('[data-test="supprimer-salon"]').exists()).toBe(true))
+    expect(page.get('[data-test="confirmer-suppression"]').text()).toContain('Supprimer #projets')
+    expect(page.get('[data-test="confirmer-suppression"]').text()).toContain("C'est définitif")
+
+    await page.get('[data-test="supprimer-salon"]').trigger('click')
+    await page.get('[data-test="confirmer"]').trigger('click')
+    await vi.waitFor(() => expect(routeur.currentRoute.value.query.salon).toBe('general'))
+    await vi.waitFor(() => expect(page.find('[data-test="barre-salon-projets"]').exists()).toBe(false))
+    expect(page.find('[data-test="barre-salon-entraide"]').exists()).toBe(true)
+    // Dans # général, pas de bouton de suppression.
+    await vi.waitFor(() => expect(page.find('[data-test="salons"] h1').text()).toBe('# général'))
+    expect(page.find('[data-test="supprimer-salon"]').exists()).toBe(false)
+  })
+
+  it('un membre qui ne modère pas ne voit pas le bouton', async () => {
+    const { page } = await ouvrir('/communautes/ia?salon=projets')
+    await vi.waitFor(() => expect(page.find('[data-test="salons"] h1').exists()).toBe(true))
+    expect(page.find('[data-test="supprimer-salon"]').exists()).toBe(false)
+  })
+})
