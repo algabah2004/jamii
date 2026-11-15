@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LienPersonne from '../../components/LienPersonne.vue'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
@@ -175,9 +176,9 @@ async function ouvrir() {
             <div class="annonce__corps">
               <p class="annonce__tete">
                 <span class="personne">
-                  <JAvatar :nom="a.auteur.nom" :url="a.auteur.avatarUrl" :taille="28" />
+                  <LienPersonne :id="a.auteur.id" doublon><JAvatar :nom="a.auteur.nom" :url="a.auteur.avatarUrl" :taille="28" /></LienPersonne>
                   <span>
-                    <strong>{{ a.auteur.nom }}</strong>
+                    <strong><LienPersonne :id="a.auteur.id">{{ a.auteur.nom }}</LienPersonne></strong>
                     <span class="role">{{ t('hackathons.discussion.organisation') }}</span>
                   </span>
                 </span>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LienPersonne from '../../components/LienPersonne.vue'
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
@@ -63,9 +64,9 @@ async function agir(personneId: string, appel: () => Promise<unknown>) {
         <h2 id="contacts-recues">{{ t('reseau.contacts.recues') }}</h2>
         <ul class="liste carte" data-test="contacts-recues">
           <li v-for="c in recues" :key="c.personne.id" class="ligne ligne--demande">
-            <JAvatar :nom="c.personne.nom" :url="c.personne.avatarUrl" :taille="44" />
+            <LienPersonne :id="c.personne.id" doublon><JAvatar :nom="c.personne.nom" :url="c.personne.avatarUrl" :taille="44" /></LienPersonne>
             <span class="ligne__qui">
-              <strong>{{ c.personne.nom }}</strong>
+              <strong><LienPersonne :id="c.personne.id">{{ c.personne.nom }}</LienPersonne></strong>
               <span class="texte-discret">{{ [c.personne.ville, ...(c.competences ?? []).slice(0, 3)].filter(Boolean).join(' · ') }}</span>
             </span>
             <span class="ligne__actions">
@@ -81,8 +82,8 @@ async function agir(personneId: string, appel: () => Promise<unknown>) {
         <p v-if="!contacts.length" class="texte-discret" data-test="contacts-vide">{{ t('reseau.contacts.vide') }}</p>
         <ul v-else class="grille-cartes" data-test="contacts">
           <li v-for="c in contacts" :key="c.personne.id" class="carte contact">
-            <JAvatar :nom="c.personne.nom" :url="c.personne.avatarUrl" :taille="48" />
-            <strong>{{ c.personne.nom }}</strong>
+            <LienPersonne :id="c.personne.id" doublon><JAvatar :nom="c.personne.nom" :url="c.personne.avatarUrl" :taille="48" /></LienPersonne>
+            <strong><LienPersonne :id="c.personne.id">{{ c.personne.nom }}</LienPersonne></strong>
             <span v-if="c.personne.ville" class="texte-discret">{{ c.personne.ville }}</span>
             <ul v-if="c.competences?.length" class="competences">
               <li v-for="x in c.competences" :key="x" class="etiquette">{{ x }}</li>
@@ -96,8 +97,8 @@ async function agir(personneId: string, appel: () => Promise<unknown>) {
         <h2 id="contacts-envoyees">{{ t('reseau.contacts.envoyees') }}</h2>
         <ul class="liste carte" data-test="contacts-envoyees">
           <li v-for="c in envoyees" :key="c.personne.id" class="ligne">
-            <JAvatar :nom="c.personne.nom" :url="c.personne.avatarUrl" :taille="40" />
-            <span class="ligne__qui"><strong>{{ c.personne.nom }}</strong></span>
+            <LienPersonne :id="c.personne.id" doublon><JAvatar :nom="c.personne.nom" :url="c.personne.avatarUrl" :taille="40" /></LienPersonne>
+            <span class="ligne__qui"><strong><LienPersonne :id="c.personne.id">{{ c.personne.nom }}</LienPersonne></strong></span>
             <JBouton variante="secondaire" :occupe="enCours === c.personne.id" @click="agir(c.personne.id, () => retirerContact(c.personne.id))">{{ t('reseau.contacts.annuler') }}</JBouton>
           </li>
         </ul>

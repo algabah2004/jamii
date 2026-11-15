@@ -168,6 +168,32 @@ describe('profil professionnel (#159)', () => {
     await vi.waitFor(() => expect(page.find('[data-test="introuvable"]').exists()).toBe(true))
   })
 
+  it("propose d'écrire à la personne et de se mettre en contact", async () => {
+    serveur.use(http.get('/api/profils/:id', () => HttpResponse.json(pro)))
+    const page = await ouvrir('/p/b2c3')
+    await vi.waitFor(() => expect(page.find('[data-test="ecrire"]').exists()).toBe(true))
+    expect(page.get('[data-test="ecrire"]').text()).toBe('Écrire à Kofi')
+    expect(page.get('[data-test="ecrire"]').attributes('href')).toBe('/messages/b2c3')
+  })
+
+  it("montre au moins qui c'est, avec les actions, quand le profil n'est pas publié", async () => {
+    const kofi = 'c1a00000-0000-4000-8000-000000000002'
+    const page = await ouvrir(`/p/${kofi}`)
+    await vi.waitFor(() => expect(page.find('[data-test="non-publie"]').exists()).toBe(true))
+    expect(page.get('[data-test="non-publie"] h1').text()).toBe('Kofi Yao')
+    expect(page.get('[data-test="ecrire"]').attributes('href')).toBe(`/messages/${kofi}`)
+    await vi.waitFor(() => expect(page.find('[data-test="contact"]').text()).toBe('Ajouter aux contacts'))
+    await page.get('[data-test="contact"]').trigger('click')
+    await vi.waitFor(() => expect(page.get('[data-test="contact"]').text()).toBe('Demande envoyée · annuler'))
+  })
+
+  it("n'affiche pas les actions sur son propre profil", async () => {
+    serveur.use(http.get('/api/profils/:id', () => HttpResponse.json({ ...pro, utilisateurId: '6f1c2a4e-8b7d-4c3e-9a10-2b5d7e9f0a11' })))
+    const page = await ouvrir('/p/6f1c2a4e-8b7d-4c3e-9a10-2b5d7e9f0a11')
+    await vi.waitFor(() => expect(page.find('[data-test="identite"]').exists()).toBe(true))
+    expect(page.find('[data-test="actions-profil"]').exists()).toBe(false)
+  })
+
   it('le lien public et le drapeau se construisent sans erreur', () => {
     expect(lienProfil('abc', 'https://jamii.exemple')).toBe('https://jamii.exemple/p/abc')
     expect(urlDrapeau('SN')).toContain('sn.svg')

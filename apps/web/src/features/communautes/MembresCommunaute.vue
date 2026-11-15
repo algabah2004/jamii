@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LienPersonne from '../../components/LienPersonne.vue'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
@@ -62,10 +63,10 @@ const depuis = (iso: string) => new Intl.DateTimeFormat(locale.value, { month: '
     <ul v-else class="grille">
       <li v-for="m in visibles" :key="m.personne.id" class="membre" data-test="membre">
         <span class="membre__avatar">
-          <JAvatar :nom="m.personne.nom" :url="m.personne.avatarUrl" :taille="56" />
+          <LienPersonne :id="m.personne.id" doublon><JAvatar :nom="m.personne.nom" :url="m.personne.avatarUrl" :taille="56" /></LienPersonne>
           <span v-if="m.actif" class="membre__actif" :title="t('communautes.membresPage.actif')" />
         </span>
-        <strong class="membre__nom">{{ m.personne.nom }}</strong>
+        <strong class="membre__nom"><LienPersonne :id="m.personne.id">{{ m.personne.nom }}</LienPersonne></strong>
         <span class="membre__etiquettes">
           <span v-if="m.role === 'moderateur'" class="pastille pastille--moderation">{{ t('communautes.membresPage.moderation') }}</span>
           <span v-if="m.actif" class="pastille pastille--actif">{{ t('communautes.membresPage.actif') }}</span>

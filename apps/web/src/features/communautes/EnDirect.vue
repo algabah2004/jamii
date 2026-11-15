@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LienPersonne from '../../components/LienPersonne.vue'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
@@ -85,7 +86,7 @@ const appel = computed(() => salons.value.find((s) => s.appel))
     <h2 id="actifs">{{ t('communautes.direct.actifs') }}</h2>
     <ul class="avatars">
       <li v-for="m in actifs.slice(0, 12)" :key="m.personne.id" :title="m.personne.nom">
-        <JAvatar :nom="m.personne.nom" :url="m.personne.avatarUrl" :taille="36" />
+        <LienPersonne :id="m.personne.id" :nom="m.personne.nom"><JAvatar :nom="m.personne.nom" :url="m.personne.avatarUrl" :taille="36" /></LienPersonne>
       </li>
     </ul>
     <RouterLink :to="{ path: `/communautes/${slug}`, query: { voir: 'membres' } }" class="tous">{{ t('communautes.direct.tousLesMembres') }} →</RouterLink>

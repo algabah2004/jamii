@@ -246,7 +246,8 @@
       "decouvrir": "Discover Jamii",
       "invitationTitre": "Show what you can do, too.",
       "invitationTexte": "On Jamii, projects you launch with a team become proof.",
-      "rejoindre": "Create my profile"
+      "rejoindre": "Create my profile",
+      "nonPublie": "{nom} hasn't published their profile yet. You can already message them."
     }
   },
   "etat": {
@@ -1142,6 +1143,17 @@
       "lu": "Read",
       "envoye": "Sent",
       "aideClavier": "Enter to send, Shift + Enter for a new line."
+    },
+    "profil": {
+      "ecrire": "Message {nom}",
+      "enContact": "Connected",
+      "contact": {
+        "aucun": "Add to contacts",
+        "envoyee": "Request sent · cancel",
+        "recue": "Accept their request",
+        "accepte": "Connected"
+      },
+      "voir": "View {nom}'s profile"
     }
   },
   "hackathons": {
