@@ -1,5 +1,6 @@
 package dev.jamii.api.hackathons;
 
+import dev.jamii.api.questionnaires.Questionnaire;
 import java.nio.charset.StandardCharsets;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -8,6 +9,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.context.ApplicationEventPublisher;
@@ -27,7 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 class Inscriptions {
 
 	record Inscription(UUID id, UUID hackathonId, UUID utilisateurId, UUID equipeId, String statut, boolean chercheEquipe,
-			List<String> competences, Instant creeLe) {
+			List<String> competences, List<Questionnaire.Reponse> reponses, Instant creeLe) {
 	}
 
 	record Equipe(UUID id, UUID hackathonId, String nom, UUID chefId, List<UUID> membres, int tailleMax, Instant creeLe) {
@@ -39,7 +41,7 @@ class Inscriptions {
 	record PageEquipes(List<Equipe> elements, String curseurSuivant) {
 	}
 
-	private static final String COLONNES = "id, hackathon_id, utilisateur_id, equipe_id, statut, cherche_equipe, competences, cree_le";
+	private static final String COLONNES = "id, hackathon_id, utilisateur_id, equipe_id, statut, cherche_equipe, competences, reponses, cree_le";
 
 	private final JdbcClient base;
 
@@ -60,21 +62,32 @@ class Inscriptions {
 	 * personne (409 `deja_inscrit`, même avec deux requêtes simultanées). L'organisateur ne participe pas (403).
 	 */
 	@Transactional
-	Inscription sInscrire(UUID hackathonId, UUID moi, boolean chercheEquipe, List<String> competences) {
+	Inscription sInscrire(UUID hackathonId, UUID moi, boolean chercheEquipe, List<String> competences, Object reponses) {
 		Hackathons.Hackathon h = inscriptionsOuvertes(hackathonId, moi);
-		return inscrire(h, moi, chercheEquipe, competences);
+		return inscrire(h, moi, chercheEquipe, competences, reponses);
 	}
 
-	private Inscription inscrire(Hackathons.Hackathon h, UUID moi, boolean chercheEquipe, List<String> competences) {
+	/**
+	 * Le seul endroit où naît une inscription : les réponses au questionnaire du hackathon y sont vérifiées, qu'on
+	 * s'inscrive seul ou en créant son équipe (400 sous `reponses.<id>` si une réponse obligatoire manque).
+	 */
+	private Inscription inscrire(Hackathons.Hackathon h, UUID moi, boolean chercheEquipe, List<String> competences, Object brutes) {
+		List<Map<String, String>> erreurs = new ArrayList<>();
+		List<Questionnaire.Reponse> reponses = Questionnaire.verifier(brutes, h.questionnaire(), "reponses",
+				(champ, code) -> erreurs.add(Map.of("champ", champ, "code", code)));
+		if (!erreurs.isEmpty()) {
+			throw ErreurHackathons.validation(erreurs);
+		}
 		UUID id = UUID.randomUUID();
 		try {
 			base.sql("""
-					INSERT INTO inscription (id, hackathon_id, utilisateur_id, statut, cherche_equipe, competences, cree_le)
-					VALUES (:id, :h, :u, :statut, :cherche, :competences, :t)
+					INSERT INTO inscription (id, hackathon_id, utilisateur_id, statut, cherche_equipe, competences, reponses, cree_le)
+					VALUES (:id, :h, :u, :statut, :cherche, :competences, CAST(:reponses AS jsonb), :t)
 					""")
 				.param("id", id).param("h", h.id()).param("u", moi)
 				.param("statut", "ouvert".equals(h.modeInscription()) ? "acceptee" : "en_attente").param("cherche", chercheEquipe)
-				.param("competences", competences.toArray(String[]::new)).param("t", Timestamp.from(hackathons.maintenant()))
+				.param("competences", competences.toArray(String[]::new)).param("reponses", Questionnaire.enJson(reponses))
+				.param("t", Timestamp.from(hackathons.maintenant()))
 				.update();
 		}
 		catch (DuplicateKeyException e) {
@@ -90,7 +103,7 @@ class Inscriptions {
 	 * Déjà dans une équipe : 409 `deja_inscrit`.
 	 */
 	@Transactional
-	Equipe creerEquipe(UUID hackathonId, UUID moi, String nom) {
+	Equipe creerEquipe(UUID hackathonId, UUID moi, String nom, Object reponses) {
 		Hackathons.Hackathon h = inscriptionsOuvertes(hackathonId, moi);
 		var existante = base.sql("SELECT id, equipe_id, statut FROM inscription WHERE hackathon_id = :h AND utilisateur_id = :u")
 			.param("h", hackathonId).param("u", moi)
@@ -105,7 +118,7 @@ class Inscriptions {
 			}
 		}
 		else {
-			inscrire(h, moi, false, List.of());
+			inscrire(h, moi, false, List.of(), reponses);
 		}
 		UUID equipe = UUID.randomUUID();
 		base.sql("INSERT INTO equipe (id, hackathon_id, nom, chef_id, cree_le) VALUES (:id, :h, :nom, :chef, :t)")
@@ -287,7 +300,7 @@ class Inscriptions {
 		return new Inscription(rs.getObject("id", UUID.class), rs.getObject("hackathon_id", UUID.class),
 				rs.getObject("utilisateur_id", UUID.class), rs.getObject("equipe_id", UUID.class), rs.getString("statut"),
 				rs.getBoolean("cherche_equipe"), List.of((String[]) rs.getArray("competences").getArray()),
-				rs.getTimestamp("cree_le").toInstant());
+				Questionnaire.reponses(rs.getString("reponses")), rs.getTimestamp("cree_le").toInstant());
 	}
 
 	/** Le curseur : la date de création et l'identifiant du dernier élément de la page, en base 64 (opaque pour le front). */

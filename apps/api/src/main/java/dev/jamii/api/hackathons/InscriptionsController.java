@@ -1,5 +1,6 @@
 package dev.jamii.api.hackathons;
 
+import dev.jamii.api.questionnaires.Questionnaire;
 import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -38,7 +39,7 @@ class InscriptionsController {
 	}
 
 	record InscriptionVue(UUID id, PersonneResume personne, String statut, boolean chercheEquipe, UUID equipeId,
-			List<String> competences, Instant creeLe) {
+			List<String> competences, List<Questionnaire.Reponse> reponses, Instant creeLe) {
 	}
 
 	record EquipeVue(UUID id, String nom, PersonneResume chef, List<PersonneResume> membres, int tailleMax, boolean complete,
@@ -67,12 +68,12 @@ class InscriptionsController {
 	@PostMapping("/inscriptions")
 	ResponseEntity<InscriptionVue> sInscrire(@AuthenticationPrincipal UtilisateurConnecte moi, @PathVariable UUID hackathonId,
 			@RequestBody Map<String, Object> corps) {
-		Corps c = new Corps(corps, Set.of("chercheEquipe", "competences"));
+		Corps c = new Corps(corps, Set.of("chercheEquipe", "competences", "reponses"));
 		boolean cherche = c.booleen("chercheEquipe", true);
 		List<String> competences = competences(c, corps.get("competences"));
 		c.verifier();
-		Inscriptions.Inscription i = inscriptions.sInscrire(hackathonId, moi.id(), cherche, competences);
-		return ResponseEntity.status(HttpStatus.CREATED).body(vues(List.of(i)).getFirst());
+		Inscriptions.Inscription i = inscriptions.sInscrire(hackathonId, moi.id(), cherche, competences, corps.get("reponses"));
+		return ResponseEntity.status(HttpStatus.CREATED).body(vues(List.of(i), true).getFirst());
 	}
 
 	@GetMapping("/inscriptions")
@@ -83,7 +84,7 @@ class InscriptionsController {
 			throw ErreurHackathons.validation("statut", "valeur_inconnue");
 		}
 		Inscriptions.PageInscriptions page = inscriptions.lister(hackathonId, moi.id(), statut, limite(limite), curseur);
-		return new PageInscriptions(vues(page.elements()), page.curseurSuivant());
+		return new PageInscriptions(vues(page.elements(), true), page.curseurSuivant());
 	}
 
 	@PatchMapping(path = "/inscriptions/{inscriptionId}", consumes = { "application/merge-patch+json", "application/json" })
@@ -92,14 +93,15 @@ class InscriptionsController {
 		Corps c = new Corps(corps, Set.of("statut"));
 		String statut = c.choix("statut", List.of("acceptee", "refusee", "attente"), true);
 		c.verifier();
-		return vues(List.of(inscriptions.trier(hackathonId, inscriptionId, moi.id(), statut))).getFirst();
+		return vues(List.of(inscriptions.trier(hackathonId, inscriptionId, moi.id(), statut)), true).getFirst();
 	}
 
 	@GetMapping("/sans-equipe")
 	PageInscriptions sansEquipe(@AuthenticationPrincipal UtilisateurConnecte moi, @PathVariable UUID hackathonId,
 			@RequestParam(defaultValue = "20") int limite, @RequestParam(required = false) String curseur) {
 		Inscriptions.PageInscriptions page = inscriptions.sansEquipe(hackathonId, moi.id(), limite(limite), curseur);
-		return new PageInscriptions(vues(page.elements()), page.curseurSuivant());
+		// Les autres participants ne lisent pas les réponses au questionnaire : elles sont pour l'organisateur.
+		return new PageInscriptions(vues(page.elements(), false), page.curseurSuivant());
 	}
 
 	@GetMapping("/equipes")
@@ -112,10 +114,10 @@ class InscriptionsController {
 	@PostMapping("/equipes")
 	ResponseEntity<EquipeVue> creerEquipe(@AuthenticationPrincipal UtilisateurConnecte moi, @PathVariable UUID hackathonId,
 			@RequestBody Map<String, Object> corps) {
-		Corps c = new Corps(corps, Set.of("nom"));
+		Corps c = new Corps(corps, Set.of("nom", "reponses"));
 		String nom = c.texte("nom", 2, 60, true);
 		c.verifier();
-		Inscriptions.Equipe e = inscriptions.creerEquipe(hackathonId, moi.id(), nom);
+		Inscriptions.Equipe e = inscriptions.creerEquipe(hackathonId, moi.id(), nom, corps.get("reponses"));
 		return ResponseEntity.created(URI.create("/api/hackathons/" + hackathonId + "/equipes/" + e.id()))
 			.body(equipes(List.of(e)).getFirst());
 	}
@@ -131,11 +133,11 @@ class InscriptionsController {
 
 	// ---------------------------------------------------------------- vues
 
-	private List<InscriptionVue> vues(List<Inscriptions.Inscription> liste) {
+	private List<InscriptionVue> vues(List<Inscriptions.Inscription> liste, boolean avecReponses) {
 		Map<UUID, Compte> comptes = annuaire.lire(liste.stream().map(Inscriptions.Inscription::utilisateurId).distinct().toList());
 		return liste.stream()
 			.map(i -> new InscriptionVue(i.id(), personne(i.utilisateurId(), comptes.get(i.utilisateurId())), i.statut(),
-					i.chercheEquipe(), i.equipeId(), i.competences(), i.creeLe()))
+					i.chercheEquipe(), i.equipeId(), i.competences(), avecReponses ? i.reponses() : List.of(), i.creeLe()))
 			.toList();
 	}
 

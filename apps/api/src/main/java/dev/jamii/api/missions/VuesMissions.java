@@ -1,5 +1,6 @@
 package dev.jamii.api.missions;
 
+import dev.jamii.api.questionnaires.Questionnaire;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -43,7 +44,7 @@ class VuesMissions {
 	record MissionVue(UUID id, UUID demandeId, String titre, String besoin, String statut, List<String> competences,
 			Missions.Montant budget, LocalDate dateSouhaitee, String visibilite, String ville, String pays, boolean aDistance,
 			PersonneResume client, int nombrePropositions, Instant publieeLe, int version, Instant creeLe, Moi moi,
-			Travail travail) {
+			Travail travail, List<Questionnaire.Question> questionnaire) {
 	}
 
 	record MissionResume(UUID id, String titre, String statut, List<String> competences, Missions.Montant budget,
@@ -52,7 +53,7 @@ class VuesMissions {
 	}
 
 	record PropositionVue(UUID id, PersonneResume developpeur, String message, Missions.Montant prix, int delaiJours,
-			List<String> reponses, String statut, Instant envoyeeLe) {
+			List<Questionnaire.Reponse> reponses, String statut, Instant envoyeeLe) {
 	}
 
 	private final Annuaire annuaire;
@@ -85,7 +86,7 @@ class VuesMissions {
 		return new MissionVue(m.id(), m.demandeId(), m.titre(), m.besoin(), m.statut(), m.competences(), m.budget(),
 				m.dateSouhaitee(), m.visibilite(), m.ville(), m.pays(), m.aDistance(), personne(m.clientId(), client), nombre,
 				m.publieeLe(), m.version(), m.creeLe(), new Moi(l.role(), avecAvis(l, qui, actions(l, qui, nombre, retenu, courant, suivi(courant)))),
-				courant.map(this::travail).orElse(null));
+				courant.map(this::travail).orElse(null), m.questionnaire());
 	}
 
 	MissionResume resume(Missions.Mission m, Compte client, int nombre) {
