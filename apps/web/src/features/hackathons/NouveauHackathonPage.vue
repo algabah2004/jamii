@@ -189,7 +189,6 @@ async function creer() {
       <div>
         <JBouton type="submit" :desactive="!valide" :occupe="envoi === 'envoi'" data-test="enregistrer">{{ t('hackathons.nouveau.enregistrer') }}</JBouton>
       </div>
-      <p class="texte-discret provisoire" data-test="provisoire">{{ t('hackathons.nouveau.provisoire') }}</p>
     </form>
   </section>
 </template>
@@ -211,5 +210,4 @@ legend { font-size: var(--type-label-size); font-weight: var(--type-label-weight
 .lien:disabled { opacity: 0.5; cursor: default; }
 .lien:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .erreur { margin: 0; color: var(--danger); font-weight: 600; }
-.provisoire { margin: 0; font-size: var(--type-body-sm-size); }
 </style>

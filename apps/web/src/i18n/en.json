@@ -1134,7 +1134,6 @@
       "devise": "Currency",
       "ajouterPrix": "Add a prize",
       "enregistrer": "Save the draft",
-      "provisoire": "Temporary screen: its design will be reworked with the design system.",
       "invalide": {
         "titre": "The name must be between 3 and 120 characters.",
         "theme": "The theme must be between 2 and 120 characters.",
@@ -1170,7 +1169,14 @@
       "confirmerAnnulation": "Confirm the cancellation",
       "brouillon": "Draft: nobody else can see this hackathon for now.",
       "introuvable": "This hackathon does not exist, or you are not allowed to see it.",
-      "provisoire": "Temporary screen: its design will be reworked with the design system.",
+      "defi": "The challenge",
+      "part": "{n}% of the score",
+      "resume": "At a glance",
+      "prochaine": "Next step",
+      "participer": "Take part",
+      "seConnecter": "Sign in to take part",
+      "inscrit": "You are taking part in this hackathon.",
+      "inscritsTitre": "Registered",
       "erreurs": {
         "modification_concurrente": "The hackathon changed in the meantime. Reload the page.",
         "etat_invalide": "This action is no longer possible for this hackathon.",
@@ -1398,7 +1404,6 @@
       "invitation": "Only the developers I invite",
       "ville": "Your city (optional)",
       "creer": "Save the draft",
-      "provisoire": "Temporary screen: its design will be reworked with the design system.",
       "invalide": {
         "titre": "The title must be between 3 and 120 characters.",
         "besoin": "The description must be at least 20 characters.",
@@ -1424,7 +1429,17 @@
       "fermerAide": "Nobody will be able to offer their services any more.",
       "invite": "You are invited to offer your services for this mission.",
       "brouillon": "Draft: nobody else can see this mission for now.",
-      "provisoire": "Temporary screen: its design will be reworked with the design system.",
+      "resume": "At a glance",
+      "proposer": "Offer my services",
+      "seConnecter": "Sign in to offer my services",
+      "propositionsTitre": "Proposals received",
+      "etapes": "Where the mission stands",
+      "etape": {
+        "publiee": "Published",
+        "attribuee": "Developer chosen",
+        "en_cours": "In progress",
+        "terminee": "Done"
+      },
       "introuvable": "This mission does not exist, or you are not allowed to see it.",
       "erreurs": {
         "modification_concurrente": "The mission changed in the meantime. Reload the page.",

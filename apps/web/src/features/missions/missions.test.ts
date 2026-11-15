@@ -157,10 +157,6 @@ describe('publier une mission', () => {
     expect(page.text()).toContain('de une à dix compétences')
   })
 
-  it('dit qu’un écran est provisoire', async () => {
-    const { page } = await monter('/missions/nouvelle')
-    expect(page.get('[data-test="provisoire"]').text()).toContain('provisoire')
-  })
 })
 
 describe('une mission', () => {

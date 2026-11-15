@@ -183,10 +183,6 @@ describe('créer un hackathon', () => {
     expect(envoye).toBe(false)
   })
 
-  it('dit qu’un écran est provisoire', async () => {
-    const { page } = await monter('/hackathons/nouveau')
-    expect(page.get('[data-test="provisoire"]').text()).toContain('provisoire')
-  })
 })
 
 describe('un hackathon', () => {
