@@ -10,7 +10,7 @@ import { formaterMontant, listerPropositions, retenirProposition, retirerProposi
  * retient une ; la sienne seulement pour un développeur, qui peut la retirer tant que la mission n'est pas attribuée.
  */
 const props = defineProps<{ mission: Mission }>()
-const emit = defineEmits<{ maj: [mission: Mission]; recharger: [] }>()
+const emit = defineEmits<{ maj: [mission: Mission]; recharger: []; ecrire: [personne: Proposition['developpeur']] }>()
 const { t, locale } = useI18n()
 
 const propositions = ref<Proposition[]>([])
@@ -108,6 +108,9 @@ async function agir(p: Proposition, retenir: boolean) {
         <!-- Texte libre du développeur : affiché échappé, avec ses retours à la ligne. -->
         <p class="message">{{ p.message }}</p>
         <div class="actions">
+          <JBouton v-if="estClient" variante="discret" data-test="ecrire-developpeur" @click="emit('ecrire', p.developpeur)">
+            {{ t('missions.proposition.ecrire', { nom: p.developpeur.nom }) }}
+          </JBouton>
           <JBouton v-if="peutRetenir && p.statut === 'envoyee'" variante="secondaire" :occupe="envoi === p.id" data-test="retenir" @click="agir(p, true)">
             {{ t('missions.proposition.retenir') }}
           </JBouton>

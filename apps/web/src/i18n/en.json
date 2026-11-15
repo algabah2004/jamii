@@ -1670,7 +1670,8 @@
         "prix": "Lowest price",
         "delai": "Shortest time"
       },
-      "auDessus": "Above budget"
+      "auDessus": "Above budget",
+      "ecrire": "Write"
     },
     "devis": {
       "titre": "Send my quote",
@@ -1703,7 +1704,25 @@
         "autre": "The action did not go through. Try again in a moment."
       }
     },
-    "aFaire": "Your turn"
+    "aFaire": "Your turn",
+    "echanges": {
+      "titre": "Messages",
+      "titreAvec": "Messages with {nom}",
+      "toutVoir": "Full conversation in Messages",
+      "choisir": "To talk with a developer, click “Write” on their proposal.",
+      "indisponible": "Messages aren't responding right now.",
+      "videClient": "No messages with {nom} yet. Ask your questions before choosing: timing, steps, what's included.",
+      "videDeveloppeur": "A question about the mission? Write to the client, before or after offering your services.",
+      "fil": "Messages exchanged",
+      "ecrire": "Write to {nom}",
+      "envoyer": "Send",
+      "ecrireClient": "Write to the client",
+      "prudence": "Keep your messages and payments on Jamii: if there's a disagreement, that's what counts.",
+      "erreurs": {
+        "trop": "Too many messages at once. Try again in a moment.",
+        "autre": "The message wasn't sent. Try again."
+      }
+    }
   },
   "themes": {
     "passerClair": "Switch to light theme",
