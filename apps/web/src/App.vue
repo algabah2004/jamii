@@ -3,6 +3,7 @@ import { computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, RouterView } from 'vue-router'
 import ReglagesAffichage from './components/ReglagesAffichage.vue'
+import BoutonTheme from './components/BoutonTheme.vue'
 import { chargerSession, seDeconnecter, useSession } from './session'
 import { JAvatar, JBouton, JSquelette } from './design-system'
 import { arreterActivite, suivreActivite, useActivite } from './features/reseau/activite'
@@ -44,6 +45,8 @@ watch(etat, (e) => (e === 'connecte' ? suivreActivite() : arreterActivite()), { 
           {{ t('connexion.seConnecter') }}
         </RouterLink>
         <template v-else-if="etat === 'connecte' && moi">
+          <!-- Clair ou sombre en un clic : les autres réglages (langue, « Système ») sont dans le pied de page. -->
+          <BoutonTheme />
           <!-- Le profil se reconnaît à son visage : l'avatar mène au profil, le nom reste lisible par tous. -->
           <RouterLink to="/notifications" class="icone-entete" :class="{ 'router-link-active': ['/messages', '/contacts'].some((p) => $route.path.startsWith(p)) }" data-test="lien-activite" :aria-label="t('reseau.onglets.lien', { n: nonLus }, nonLus)">
             <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20.5a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" /></svg>
@@ -96,6 +99,7 @@ watch(etat, (e) => (e === 'connecte' ? suivreActivite() : arreterActivite()), { 
 /* Le cadre commun : en-tête, contenu et pied alignés sur la même largeur (variables du design system, #19). */
 #app { min-height: 100vh; display: flex; flex-direction: column; overflow-x: clip; }
 .entete__interieur, main, .pied__interieur { width: 100%; max-width: 72rem; margin-inline: auto; }
+.entete__interieur { max-width: 84rem; }
 main, .pied__interieur { padding-inline: var(--space-6); }
 @media (max-width: 720px) { main, .pied__interieur { padding-inline: var(--space-4); } }
 /* Les pages qui remplissent l'écran (l'espace d'une communauté) : toute la largeur, une petite marge. */
@@ -109,7 +113,8 @@ main.main--pleine { max-width: none; padding-inline: var(--space-4); }
 .entete__interieur {
   pointer-events: auto;
   display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-8);
-  min-height: 56px; max-width: 70rem;
+  /* Huit entrées de menu depuis les missions et les hackathons : la capsule s'élargit pour qu'aucune ne soit coupée. */
+  min-height: 56px; max-width: 84rem;
   padding-inline: var(--space-6) var(--space-2);
   border-radius: var(--radius-pill);
 }
