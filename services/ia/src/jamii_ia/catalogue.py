@@ -28,6 +28,9 @@ class ServiceCatalogue:
     # `tous` : utilisable sans développeur. `developpeurs` : sert à ce que des développeurs
     # construisent.
     pour_qui: str = "tous"
+    # Ce que le service ne fait pas, et quand conseiller autre chose : c'est ce qui évite de forcer.
+    limites: str = ""
+    pas_pour_toi: str = ""
 
 
 class Catalogue:
@@ -47,6 +50,8 @@ class Catalogue:
                     prix_indicatif=s.get("prixIndicatif"),
                     lien=str(s["lien"]),
                     pour_qui=str(s.get("pourQui", "tous")),
+                    limites=" ".join(str(s.get("limites") or "").split()),
+                    pas_pour_toi=" ".join(str(s.get("pasPourToi") or "").split()),
                 )
                 for s in contenu.get("services", [])
             ]
@@ -64,10 +69,17 @@ class Catalogue:
         return cls(services)
 
     def pour_l_ia(self) -> list[dict[str, str]]:
-        return [
-            {"id": s.id, "pourQuoi": s.pour_quoi, "pourQui": s.pour_qui}
-            for s in self._services.values()
-        ]
+        fiches = []
+        for s in self._services.values():
+            fiche = {"id": s.id, "pourQuoi": s.pour_quoi, "pourQui": s.pour_qui}
+            if s.prix_indicatif:
+                fiche["prix"] = s.prix_indicatif
+            if s.limites:
+                fiche["limites"] = s.limites
+            if s.pas_pour_toi:
+                fiche["pasPourToi"] = s.pas_pour_toi
+            fiches.append(fiche)
+        return fiches
 
     def pour_developpeurs(self, id_service: str) -> bool:
         service = self._services.get(id_service)

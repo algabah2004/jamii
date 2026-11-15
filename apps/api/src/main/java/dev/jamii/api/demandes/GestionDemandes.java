@@ -26,13 +26,19 @@ import tools.jackson.databind.node.ObjectNode;
 @Service
 class GestionDemandes {
 
-	/** 10 orientations par heure et par utilisateur (contracts/ia.yaml). */
-	static final int PLANS_PAR_HEURE = 10;
+	/** 4 nouvelles demandes par heure et par utilisateur : contre les rafales, en plus du quota du jour. */
+	static final int PLANS_PAR_HEURE = 4;
 
 	/** Au-delà, un service IA qui ne répond toujours pas fait passer l'orientation à « échouée ». */
 	static final Duration DELAI_PLAN = Duration.ofMinutes(2);
 
 	static final int PRECISIONS_MAX = 5;
+
+	/**
+	 * 6 conseils d'Ayo par jour et par personne (une demande ou une précision chacun, sur 24 heures glissantes) : assez
+	 * pour décrire trois besoins et les ajuster, trop peu pour vider le budget IA du jour et priver les autres d'Ayo.
+	 */
+	static final int ANALYSES_PAR_JOUR = 6;
 
 	/** Une adresse e-mail ou un numéro de téléphone n'est jamais envoyé à l'IA. */
 	private static final Pattern EMAIL = Pattern.compile("[\\w.+-]+@[\\w-]+(\\.[\\w-]+)+");
@@ -92,9 +98,17 @@ class GestionDemandes {
 
 		final long attenteSecondes;
 
+		/** Vrai quand c'est le quota du jour, pas la limite de l'heure : le front le dit autrement. */
+		final boolean duJour;
+
 		TropDePlans(long attenteSecondes) {
+			this(attenteSecondes, false);
+		}
+
+		TropDePlans(long attenteSecondes, boolean duJour) {
 			super(null, null, false, false);
 			this.attenteSecondes = attenteSecondes;
+			this.duJour = duJour;
 		}
 
 	}
@@ -123,6 +137,7 @@ class GestionDemandes {
 		if (recentes.size() >= PLANS_PAR_HEURE) {
 			throw new TropDePlans(Math.max(1, Duration.between(maintenant, recentes.getFirst().plus(Duration.ofHours(1))).toSeconds()));
 		}
+		verifierQuotaDuJour(auteur, maintenant);
 		UUID id = UUID.randomUUID();
 		base.sql("""
 				INSERT INTO demande (id, auteur_id, titre, description, duree_semaines, secteur, ville, pays,
@@ -251,10 +266,39 @@ class GestionDemandes {
 		if (rang > PRECISIONS_MAX) {
 			return Ajout.LIMITE;
 		}
+		verifierQuotaDuJour(auteur, maintenant);
 		base.sql("INSERT INTO demande_precision (demande_id, rang, texte, cree_le) VALUES (:d, :r, :t, :c)")
 			.param("d", demandeId).param("r", rang).param("t", texte).param("c", Timestamp.from(maintenant)).update();
 		base.sql("UPDATE demande SET tache_ia_id = NULL, orientation = NULL WHERE id = :d").param("d", demandeId).update();
 		return Ajout.AJOUTEE;
+	}
+
+	/** Les conseils demandés sur les dernières 24 heures (demandes et précisions), du plus ancien au plus récent. */
+	private List<Instant> analysesDuJour(UUID auteur, Instant maintenant) {
+		return base.sql("""
+				SELECT t FROM (
+				  SELECT cree_le AS t FROM demande WHERE auteur_id = :a AND cree_le > :depuis
+				  UNION ALL
+				  SELECT p.cree_le FROM demande_precision p JOIN demande d ON d.id = p.demande_id
+				  WHERE d.auteur_id = :a AND p.cree_le > :depuis
+				) x ORDER BY t
+				""")
+			.param("a", auteur)
+			.param("depuis", Timestamp.from(maintenant.minus(Duration.ofDays(1))))
+			.query((rs, n) -> rs.getTimestamp("t").toInstant())
+			.list();
+	}
+
+	/** Ce qu'il reste à la personne aujourd'hui, affiché par le front (« encore 2 conseils aujourd'hui »). */
+	int analysesRestantes(UUID auteur, Instant maintenant) {
+		return Math.max(0, ANALYSES_PAR_JOUR - analysesDuJour(auteur, maintenant).size());
+	}
+
+	private void verifierQuotaDuJour(UUID auteur, Instant maintenant) {
+		List<Instant> jour = analysesDuJour(auteur, maintenant);
+		if (jour.size() >= ANALYSES_PAR_JOUR) {
+			throw new TropDePlans(Math.max(1, Duration.between(maintenant, jour.getFirst().plus(Duration.ofDays(1))).toSeconds()), true);
+		}
 	}
 
 	@Transactional

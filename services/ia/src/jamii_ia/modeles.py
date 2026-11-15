@@ -160,9 +160,20 @@ class ServiceSystalink(BaseModel):
     lien: str
 
 
+class QuestionAyo(BaseModel):
+    """La question qu'Ayo pose quand il manque une information importante, avec des réponses
+    toutes prêtes à toucher. La personne peut aussi répondre librement ou passer."""
+
+    texte: str = Field(min_length=1, max_length=200)
+    suggestions: list[str] = Field(default_factory=list, max_length=3)
+
+
 class Orientation(BaseModel):
     resume: str = Field(min_length=1, max_length=600)
     message: str | None = Field(default=None, max_length=900)
+    # Les prochaines étapes concrètes pour la personne, dans l'ordre : 3 au plus.
+    etapes: list[str] = Field(default_factory=list, max_length=3)
+    question: QuestionAyo | None = None
     secteur: str = Field(min_length=1, max_length=60)
     services: list[ServiceSystalink] = Field(max_length=4)
     developpeursNecessaires: bool

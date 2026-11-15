@@ -303,6 +303,8 @@
       "systatalk": "SystaTalk",
       "systaforms": "SystaForms",
       "systaone": "SystaONE",
+      "hebergement": "Hosting and online shop",
+      "email": "Professional e-mail",
       "domaines": "Domain names"
     },
     "tendances": {
@@ -779,7 +781,8 @@
       "exemple": "For example: I don’t want to sell online, only show my items.",
       "envoyer": "Send",
       "limite": "You have already added 5 details to this request. Describe a new need to start over."
-    }
+    },
+    "quota": "You have used all of today's advice. Ayo will be back tomorrow, and your requests stay in “Your requests”."
   },
   "cercles": {
     "titre": "Circles",

@@ -104,13 +104,13 @@ const etapeEnCours = computed(() => Math.min(ETAPES.length - 1, Math.floor(secon
  * précisions ; le fil montre ce qu'elle a écrit, puis la dernière réponse de l'assistant.
  */
 const precision = ref('')
-const envoiPrecision = ref<'repos' | 'envoi' | 'erreur' | 'limite'>('repos')
+const envoiPrecision = ref<'repos' | 'envoi' | 'erreur' | 'limite' | 'quota'>('repos')
 async function envoyerPrecision() {
   if (!demande.value || precision.value.trim().length < 3) return
   envoiPrecision.value = 'envoi'
   try {
     const r = await preciserDemande(demande.value.id, precision.value)
-    if (r === 'limite') return void (envoiPrecision.value = 'limite')
+    if (r === 'limite' || r === 'quota') return void (envoiPrecision.value = r)
     if (!r) return void (envoiPrecision.value = 'erreur')
     demande.value = r
     precision.value = ''
@@ -311,6 +311,7 @@ const messageErreur = computed(() =>
             <JBouton type="submit" :occupe="envoiPrecision === 'envoi'" :disabled="precision.trim().length < 3" data-test="envoyer-precision">{{ t('demandes.discuter.envoyer') }}</JBouton>
           </div>
           <p v-if="envoiPrecision === 'limite'" role="alert" class="erreur">{{ t('demandes.discuter.limite') }}</p>
+          <p v-else-if="envoiPrecision === 'quota'" role="alert" class="erreur" data-test="quota">{{ t('demandes.quota') }}</p>
           <p v-else-if="envoiPrecision === 'erreur'" role="alert" class="erreur">{{ t('etat.indisponible') }}</p>
         </form>
 

@@ -62,7 +62,8 @@ class DemandesController {
 
 	record Demande(UUID id, String titre, String description, Integer dureeSemaines, String secteur, String ville,
 			String pays, boolean offresSystalink, Instant creeLe, EtatDeLaTache plan, EtatDeLaTache orientation,
-			List<Recommandations.Recommandation> recommandations, List<Precision> precisions, Publication publication) {
+			List<Recommandations.Recommandation> recommandations, List<Precision> precisions, Publication publication,
+			int conseilsRestants) {
 	}
 
 	private final GestionDemandes gestion;
@@ -120,9 +121,7 @@ class DemandesController {
 			id = gestion.creer(moi.id(), titre, description, demande.dureeSemaines(), contexte, Instant.now());
 		}
 		catch (GestionDemandes.TropDePlans trop) {
-			return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-				.header(HttpHeaders.RETRY_AFTER, String.valueOf(trop.attenteSecondes))
-				.body(problemeSimple(HttpStatus.TOO_MANY_REQUESTS, "trop_de_requetes", "Trop de plans demandés, réessaie plus tard"));
+			return tropDeConseils(trop);
 		}
 		return ResponseEntity.created(URI.create("/api/demandes/" + id)).cacheControl(CacheControl.noStore())
 			.body(vue(gestion.lire(id, moi.id()).orElseThrow()));
@@ -146,7 +145,14 @@ class DemandesController {
 			return probleme(HttpStatus.BAD_REQUEST, "validation", "Certains champs sont invalides",
 					List.of(Map.of("champ", "texte", "code", "longueur_invalide")));
 		}
-		return switch (gestion.preciser(demandeId, moi.id(), texte, Instant.now())) {
+		GestionDemandes.Ajout ajout;
+		try {
+			ajout = gestion.preciser(demandeId, moi.id(), texte, Instant.now());
+		}
+		catch (GestionDemandes.TropDePlans trop) {
+			return tropDeConseils(trop);
+		}
+		return switch (ajout) {
 			case INTROUVABLE -> probleme(HttpStatus.NOT_FOUND, "introuvable", "Ressource introuvable", null);
 			case LIMITE -> probleme(HttpStatus.CONFLICT, "trop_de_precisions",
 					"Cette demande a déjà " + GestionDemandes.PRECISIONS_MAX + " précisions : décris un nouveau besoin", null);
@@ -228,7 +234,8 @@ class DemandesController {
 		return new Demande(fiche.id(), fiche.titre(), fiche.description(), fiche.dureeSemaines(), fiche.secteur(),
 				fiche.ville(), fiche.pays(), fiche.offresSystalink(), fiche.creeLe(), etatDuPlan, orientation, recommandes,
 				fiche.precisions().stream().map(p -> new Precision(p.texte(), p.creeLe())).toList(),
-				fiche.publieeLe() == null ? null : new Publication(fiche.publieeLe(), fiche.publieeResume()));
+				fiche.publieeLe() == null ? null : new Publication(fiche.publieeLe(), fiche.publieeResume()),
+				gestion.analysesRestantes(fiche.auteurId(), Instant.now()));
 	}
 
 	/**
@@ -247,6 +254,16 @@ class DemandesController {
 						moments.proposerUneFois(mesure, ContexteMoment.DEMANDE, demandeId).toString()));
 		}
 		return copie;
+	}
+
+	/** 429 : la limite de l'heure (`trop_de_requetes`) ou les conseils du jour épuisés (`quota_du_jour`). */
+	private ResponseEntity<?> tropDeConseils(GestionDemandes.TropDePlans trop) {
+		return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+			.header(HttpHeaders.RETRY_AFTER, String.valueOf(trop.attenteSecondes))
+			.body(trop.duJour
+					? problemeSimple(HttpStatus.TOO_MANY_REQUESTS, "quota_du_jour",
+							"Tu as utilisé tes " + GestionDemandes.ANALYSES_PAR_JOUR + " conseils du jour, reviens demain")
+					: problemeSimple(HttpStatus.TOO_MANY_REQUESTS, "trop_de_requetes", "Trop de plans demandés, réessaie plus tard"));
 	}
 
 	private static String propre(String texte) {

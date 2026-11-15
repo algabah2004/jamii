@@ -268,7 +268,7 @@ class DemandesTest {
 	}
 
 	@Test
-	void onzieme_demande_de_l_heure_repond_429_et_n_est_pas_enregistree() {
+	void cinquieme_demande_de_l_heure_repond_429_et_n_est_pas_enregistree() {
 		UtilisateurConnecte pme = utilisateur("Awa");
 		for (int i = 0; i < GestionDemandes.PLANS_PAR_HEURE; i++) {
 			idCree(creer(pme, BESOIN));
@@ -282,6 +282,32 @@ class DemandesTest {
 		assertThat(base.sql("SELECT count(*) FROM demande WHERE auteur_id = :a").param("a", pme.id()).query(Long.class).single())
 			.isEqualTo(GestionDemandes.PLANS_PAR_HEURE);
 		assertThat(IA.cles).hasSize(GestionDemandes.PLANS_PAR_HEURE);
+	}
+
+	@Test
+	void au_septieme_conseil_du_jour_ayo_demande_de_revenir_demain_sans_rien_enregistrer() {
+		UtilisateurConnecte pme = utilisateur("Awa");
+		String premiere = idCree(creer(pme, BESOIN));
+		idCree(creer(pme, BESOIN));
+		String derniere = idCree(creer(pme, BESOIN));
+		assertThat(corps(lire(pme, derniere)).get("conseilsRestants").asInt()).isEqualTo(3);
+		for (int i = 0; i < 3; i++) {
+			assertThat(preciser(pme, premiere, "{\"texte\":\"Précision " + i + "\"}")).hasStatusOk();
+		}
+		assertThat(corps(lire(pme, premiere)).get("conseilsRestants").asInt()).isZero();
+
+		MvcTestResult precision = preciser(pme, derniere, "{\"texte\":\"Encore une\"}");
+		MvcTestResult demande = creer(pme, BESOIN);
+
+		for (MvcTestResult refus : List.of(precision, demande)) {
+			assertThat(refus).hasStatus(HttpStatus.TOO_MANY_REQUESTS);
+			assertThat(refus).bodyJson().extractingPath("$.code").isEqualTo("quota_du_jour");
+			assertThat(Long.parseLong(refus.getResponse().getHeader("Retry-After"))).isBetween(1L, 86_400L);
+		}
+		assertThat(base.sql("SELECT count(*) FROM demande WHERE auteur_id = :a").param("a", pme.id()).query(Long.class).single())
+			.isEqualTo(3);
+		assertThat(base.sql("SELECT count(*) FROM demande_precision WHERE demande_id = :d").param("d", UUID.fromString(derniere))
+			.query(Long.class).single()).isZero();
 	}
 
 	// ---------------------------------------------------------------- lecture
