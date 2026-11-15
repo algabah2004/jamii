@@ -98,6 +98,40 @@ class SecuriteTest {
 	}
 
 	@Test
+	void sans_application_google_le_bouton_n_est_pas_propose_et_rien_ne_demarre() {
+		assertThat(mvc.get().uri("/api/auth/fournisseurs")).hasStatusOk().bodyJson().extractingPath("$.google").isEqualTo(false);
+		assertThat(SecuriteConfig.resolveurAvecRetour(clients).resolve(new MockHttpServletRequest("GET", "/api/auth/google"))).isNull();
+		assertThat(mvc.get().uri("/api/auth/google")).hasStatus(HttpStatus.NOT_FOUND);
+	}
+
+	@Test
+	void relier_github_n_est_retenu_que_pour_une_personne_connectee() {
+		var resolveur = SecuriteConfig.resolveurAvecRetour(clients);
+		var anonyme = new MockHttpServletRequest("GET", "/api/auth/github");
+		anonyme.setParameter("lier", "1");
+		assertThat(resolveur.resolve(anonyme)).isNotNull();
+		assertThat(anonyme.getSession().getAttribute(SecuriteConfig.ATTRIBUT_LIER)).isNull();
+
+		UtilisateurConnecte moi = new UtilisateurConnecte(UUID.randomUUID(), java.util.Set.of(Role.MEMBRE));
+		var contexte = org.springframework.security.core.context.SecurityContextHolder.getContext();
+		contexte.setAuthentication(new org.springframework.security.authentication.TestingAuthenticationToken(moi, null));
+		try {
+			var connecte = new MockHttpServletRequest("GET", "/api/auth/github");
+			connecte.setParameter("lier", "1");
+			assertThat(resolveur.resolve(connecte)).isNotNull();
+			assertThat(connecte.getSession().getAttribute(SecuriteConfig.ATTRIBUT_LIER)).isEqualTo(moi.id());
+			// Une connexion ordinaire ensuite efface une liaison abandonnée en route.
+			var ordinaire = new MockHttpServletRequest("GET", "/api/auth/github");
+			ordinaire.setSession(connecte.getSession());
+			resolveur.resolve(ordinaire);
+			assertThat(ordinaire.getSession().getAttribute(SecuriteConfig.ATTRIBUT_LIER)).isNull();
+		}
+		finally {
+			org.springframework.security.core.context.SecurityContextHolder.clearContext();
+		}
+	}
+
+	@Test
 	void seule_api_auth_github_demarre_une_connexion() {
 		var autre = new MockHttpServletRequest("POST", "/api/auth/lien-email");
 		assertThat(SecuriteConfig.resolveurAvecRetour(clients).resolve(autre)).isNull();

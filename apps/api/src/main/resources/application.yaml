@@ -35,6 +35,13 @@ spring:
             # read:user suffit pour le profil. user:email viendra avec le rattachement d'un e-mail vérifié.
             scope: read:user
             redirect-uri: "{baseUrl}/api/auth/{registrationId}/retour"
+          # Se connecter avec Google (#260). Sans GOOGLE_CLIENT_ID, le bouton n'apparaît pas et /api/auth/google ne
+          # démarre rien. Pas d'« openid » : le profil vient de userinfo (sub, email, email_verified, name, picture).
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:a-configurer}
+            client-secret: ${GOOGLE_CLIENT_SECRET:a-configurer}
+            scope: profile, email
+            redirect-uri: "{baseUrl}/api/auth/{registrationId}/retour"
   # En local uniquement (./mvnw spring-boot:run) : Spring Boot lance le PostgreSQL de docker-compose.yml
   # et s'y connecte tout seul. docker compose lit lui-même le .env de la racine.
   # Ce module n'est pas embarqué dans le jar de production, ni actif pendant les tests.

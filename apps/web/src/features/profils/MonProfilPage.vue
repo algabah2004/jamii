@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRoute } from 'vue-router'
 import { api } from '../../api/client'
 import { JBouton, JChamp, JIllustration, JSquelette } from '../../design-system'
 import { useSession } from '../../session'
@@ -57,6 +57,20 @@ void charger()
 const enCours = computed(() => profil.value?.generation.statut === 'en_cours')
 const echec = computed(() => (profil.value?.generation.statut === 'echec' ? profil.value.generation.erreur : null))
 const sansGithub = computed(() => !moi.value?.loginGithub)
+
+/*
+ * Relier son GitHub (proposition 0005) : une personne venue par Google ou par e-mail rattache son compte GitHub à son
+ * compte Jamii, puis génère sa carte de compétences. L'API revient ici avec `?github=relie` ou `?erreurGithub=…`.
+ */
+const route = useRoute()
+const lienGithub = '/api/auth/github?lier=1'
+const githubRelie = computed(() => route.query.github === 'relie')
+const ERREURS_LIEN = ['github_deja_utilise', 'compte_deja_relie', 'refus_github', 'requete_invalide', 'github_indisponible']
+const erreurLien = computed(() => {
+  const code = route.query.erreurGithub
+  if (typeof code !== 'string' || !code) return null
+  return ERREURS_LIEN.includes(code) ? code : 'github_indisponible'
+})
 
 async function generer() {
   occupe.value = true
@@ -224,12 +238,17 @@ async function enregistrer() {
           <li v-for="cle in ['langages', 'sujets', 'etoiles']" :key="cle">✓ {{ t(`profil.generation.lu.${cle}`) }}</li>
           <li class="jamais">✕ {{ t('profil.generation.lu.jamais') }}</li>
         </ul>
-        <p v-if="sansGithub" class="texte-discret">{{ t('profil.generation.sansGithub') }}</p>
+        <template v-if="sansGithub">
+          <p class="texte-discret">{{ t('profil.generation.sansGithub') }}</p>
+          <a :href="lienGithub" class="j-bouton j-bouton--principal" data-test="relier-github">{{ t('profil.generation.relier') }}</a>
+        </template>
         <template v-else>
           <p v-if="enCours" role="status" class="en-cours" data-test="en-cours">{{ t('profil.generation.enCours') }}</p>
           <JBouton v-else :occupe="occupe" data-test="generer" @click="generer">{{ t('profil.generation.bouton') }}</JBouton>
           <p class="texte-discret">{{ t('profil.generation.prive') }}</p>
         </template>
+        <p v-if="githubRelie && !sansGithub" role="status" class="relie" data-test="github-relie">✓ {{ t('profil.generation.relie') }}</p>
+        <p v-if="erreurLien" role="alert" class="erreur" data-test="erreur-lien">{{ t(`profil.generation.erreursLien.${erreurLien}`) }}</p>
         <p v-if="echec" role="alert" class="erreur">{{ t(`profil.generation.erreurs.${echec}`) }}</p>
         <p v-if="message" role="alert" class="erreur">{{ message }}</p>
       </div>
@@ -379,4 +398,5 @@ async function enregistrer() {
 .pastille:disabled { opacity: 0.45; cursor: not-allowed; }
 .realisation-saisie { display: grid; gap: var(--space-3); padding: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-md); justify-items: stretch; }
 .realisation-saisie > :last-child { justify-self: start; }
+.relie { margin: 0; font-weight: 700; color: var(--success, var(--ink)); }
 </style>
