@@ -93,6 +93,9 @@ class Inscriptions {
 		catch (DuplicateKeyException e) {
 			throw ErreurHackathons.conflit("deja_inscrit", "Tu es déjà inscrit à ce hackathon");
 		}
+		if (!"ouvert".equals(h.modeInscription())) {
+			evenements.publishEvent(new InscriptionRecue(h.id(), id, h.organisateurId(), moi, hackathons.maintenant()));
+		}
 		return lireInscription(id);
 	}
 
