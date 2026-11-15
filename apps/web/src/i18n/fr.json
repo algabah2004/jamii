@@ -99,54 +99,115 @@
         "lien": "Décrire mon besoin"
       }
     },
-    "vedette": {
-      "surtitre": "Travailler ensemble",
-      "titre": "Des missions payées, des hackathons ouverts à tous",
-      "intro": "Sur Jamii, un besoin devient un travail payé, et un défi devient un projet en ligne. Tout se passe au même endroit, du premier message au dernier jalon.",
-      "missions": {
-        "pour": "Pour les PME et les développeurs",
-        "titre": "Les missions",
-        "texte": "Un commerçant, une association ou une PME publie son besoin. Des développeurs proposent leurs services, et le travail avance jalon par jalon.",
-        "pastille": "Devis",
-        "etapes": {
-          "1": {
-            "titre": "Publier",
-            "texte": "Le client décrit son besoin, ou repart du plan préparé avec Ayo."
-          },
-          "2": {
-            "titre": "Choisir",
-            "texte": "Les développeurs envoient une proposition et un devis. Le client compare, échange et choisit."
-          },
-          "3": {
-            "titre": "Livrer jalon par jalon",
-            "texte": "Chaque jalon est payé, livré, puis reçu par le client. Chacun sait toujours où en est le travail."
-          }
+    "sectionMissions": {
+      "surtitre": "Freelance",
+      "titre": "Les missions : embaucher un développeur, jalon par jalon",
+      "intro": "Une PME, un commerçant ou une association a un besoin précis. Il le publie comme mission, des développeurs du continent proposent leurs services, et le travail est découpé en jalons : chacun a son montant et son délai.",
+      "titreEtapes": "Comment ça marche",
+      "etapes": {
+        "1": {
+          "titre": "Publier la mission",
+          "texte": "Décris le besoin, le budget et les compétences. La mission est publique, ou visible seulement des développeurs que tu invites."
         },
-        "voir": "Voir les missions",
-        "creer": "Publier une mission"
+        "2": {
+          "titre": "Recevoir des propositions",
+          "texte": "Les développeurs proposent leurs services. Tu échanges avec eux, tu en retiens un, puis il t'envoie un devis découpé en jalons."
+        },
+        "3": {
+          "titre": "Avancer jalon par jalon",
+          "texte": "Le développeur livre chaque jalon. Tu l'acceptes ou tu demandes une retouche. Chacun voit toujours la prochaine étape."
+        },
+        "4": {
+          "titre": "Payer et donner son avis",
+          "texte": "Le client déclare le paiement, le développeur confirme l'avoir reçu. À la fin, chacun laisse un avis à l'autre."
+        }
       },
-      "hackathons": {
-        "pour": "Pour les organisateurs et les équipes",
-        "titre": "Les hackathons",
-        "texte": "Un défi ouvert à tous, de l'inscription aux résultats. Chaque hackathon a son espace de discussion, et un jury pour noter les projets rendus.",
-        "pastille": "Équipe",
-        "etapes": {
-          "1": {
-            "titre": "S'inscrire",
-            "texte": "Librement ou sur candidature : l'organisateur accepte, refuse ou met en liste d'attente."
-          },
-          "2": {
-            "titre": "Former son équipe",
-            "texte": "Invite tes coéquipiers et échange avec les autres participants dans l'espace du hackathon."
-          },
-          "3": {
-            "titre": "Rendre et être noté",
-            "texte": "L'équipe rend son projet avec le lien du produit. Le jury note, puis les résultats sont publiés."
-          }
+      "cotes": {
+        "client": {
+          "titre": "Tu as un besoin",
+          "points": [
+            "Tu pars de ton besoin, ou du plan préparé avec Ayo.",
+            "Tu compares les propositions et les profils avant de choisir.",
+            "Tu paies jalon par jalon, jamais tout d'un coup."
+          ],
+          "lien": "Publier une mission"
         },
-        "voir": "Voir les hackathons",
-        "creer": "Organiser un hackathon"
-      }
+        "developpeur": {
+          "titre": "Tu es développeur",
+          "points": [
+            "Tu trouves des missions qui demandent tes compétences.",
+            "Tu proposes un devis clair : des jalons, des montants, des délais.",
+            "Tu peux demander une prolongation, et un modérateur tranche en cas de désaccord."
+          ],
+          "lien": "Voir les missions"
+        }
+      },
+      "argent": {
+        "titre": "Et l'argent ?",
+        "texte": "Jamii n'encaisse pas le paiement : le client paie le développeur directement, puis chacun le déclare dans la mission (« payé », puis « reçu »). Tout le monde voit où en est chaque jalon."
+      },
+      "apercu": {
+        "devis": "Devis",
+        "paye": "Payé",
+        "recu": "Reçu",
+        "livre": "Livré",
+        "aFaire": "À faire",
+        "propositions": "Propositions reçues"
+      },
+      "voir": "Voir les missions",
+      "publier": "Publier une mission"
+    },
+    "sectionHackathons": {
+      "surtitre": "Hackathons, challenges et concours d'innovation",
+      "titre": "Organiser un défi, du premier inscrit aux gagnants",
+      "intro": "Une école, une entreprise, une communauté ou une ville lance un défi. Jamii s'occupe des inscriptions, des équipes, des rendus et de la notation du jury, en ligne, sur place ou les deux.",
+      "titreEtapes": "Comment ça marche",
+      "etapes": {
+        "1": {
+          "titre": "Créer et publier",
+          "texte": "L'organisateur fixe le calendrier, la taille des équipes, les critères notés et leur poids, les prix et le code de conduite."
+        },
+        "2": {
+          "titre": "S'inscrire et former les équipes",
+          "texte": "Inscription libre ou sur candidature. Les participants seuls se trouvent grâce au tableau « Je cherche une équipe »."
+        },
+        "3": {
+          "titre": "Rendre son projet",
+          "texte": "Chaque équipe rend le lien de son produit et répond aux questions. Le rendu reste modifiable jusqu'à l'heure limite."
+        },
+        "4": {
+          "titre": "Noter et publier les résultats",
+          "texte": "Le jury note chaque critère de 1 à 5, jamais le projet de sa propre équipe. L'organisateur confirme les gagnants."
+        }
+      },
+      "formats": {
+        "titre": "Trois formats",
+        "hackathon": {
+          "signe": "48 h",
+          "titre": "Hackathon",
+          "texte": "Un temps court et intense, en ligne, sur place ou hybride. Les équipes construisent un produit qui marche."
+        },
+        "challenge": {
+          "signe": "4 sem.",
+          "titre": "Challenge",
+          "texte": "Un défi sur plusieurs semaines, pour aller plus loin : les équipes rendent un projet abouti avant l'heure limite."
+        },
+        "concours": {
+          "signe": "★",
+          "titre": "Concours d'innovation",
+          "texte": "Une entreprise ou une école pose un problème réel et récompense les meilleures idées, avec des prix en argent ou en services."
+        }
+      },
+      "sponsor": {
+        "titre": "Des prix et des sponsors.",
+        "texte": "Chaque prix peut avoir un sponsor et un montant, ou aucun montant : de la visibilité ou de l'hébergement, par exemple sur Systalink."
+      },
+      "apercu": {
+        "equipe": "Équipe",
+        "jury": "Jury"
+      },
+      "voir": "Voir les hackathons",
+      "organiser": "Organiser un hackathon"
     }
   },
   "profil": {
