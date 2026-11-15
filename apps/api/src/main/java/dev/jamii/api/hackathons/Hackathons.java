@@ -69,11 +69,14 @@ class Hackathons {
 
 	}
 
-	/** Un hackathon, et ce que la personne qui le lit est pour lui : `organisateur`, `jure`, `participant` (avec son équipe) ou `visiteur`. */
-	record Lecture(Hackathon hackathon, String role, UUID equipeId) {
+	/**
+	 * Un hackathon, et ce que la personne qui le lit est pour lui : `organisateur`, `jure`, `participant` (avec son équipe)
+	 * ou `visiteur`. `inscription` est le statut de son inscription (`en_attente`, `acceptee` ou `attente`), `null` si elle n'en a pas.
+	 */
+	record Lecture(Hackathon hackathon, String role, UUID equipeId, String inscription) {
 
 		Lecture(Hackathon hackathon, String role) {
-			this(hackathon, role, null);
+			this(hackathon, role, null, null);
 		}
 
 	}
@@ -351,17 +354,20 @@ class Hackathons {
 			return Optional.empty();
 		}
 		if (moi != null) {
-			var inscrit = base.sql("SELECT equipe_id FROM inscription WHERE hackathon_id = :h AND utilisateur_id = :u AND statut <> 'refusee'")
-				.param("h", h.id()).param("u", moi).query((rs, i) -> Optional.ofNullable(rs.getObject("equipe_id", UUID.class))).optional();
-			UUID equipe = inscrit.flatMap(e -> e).orElse(null);
+			record Mienne(UUID equipeId, String statut) {
+			}
+			var inscrit = base.sql("SELECT equipe_id, statut FROM inscription WHERE hackathon_id = :h AND utilisateur_id = :u AND statut <> 'refusee'")
+				.param("h", h.id()).param("u", moi).query((rs, i) -> new Mienne(rs.getObject("equipe_id", UUID.class), rs.getString("statut"))).optional();
+			UUID equipe = inscrit.map(Mienne::equipeId).orElse(null);
+			String statutInscription = inscrit.map(Mienne::statut).orElse(null);
 			// Un juré peut aussi être inscrit : il reste juré, et ne note pas le projet de son équipe.
 			boolean jure = base.sql("SELECT 1 FROM jure WHERE hackathon_id = :h AND utilisateur_id = :u").param("h", h.id()).param("u", moi)
 				.query(Integer.class).optional().isPresent();
 			if (jure) {
-				return Optional.of(new Lecture(h, "jure", equipe));
+				return Optional.of(new Lecture(h, "jure", equipe, statutInscription));
 			}
 			if (inscrit.isPresent()) {
-				return Optional.of(new Lecture(h, "participant", equipe));
+				return Optional.of(new Lecture(h, "participant", equipe, statutInscription));
 			}
 		}
 		return Optional.of(new Lecture(h, "visiteur"));

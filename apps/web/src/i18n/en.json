@@ -1270,7 +1270,12 @@
       "aNoter": "{n} project left to score | {n} projects left to score",
       "toutNote": "All projects are scored",
       "noter": "Score the projects",
-      "noterCourt": "Score"
+      "noterCourt": "Score",
+      "candidature": {
+        "en_attente": "Your application is waiting for the organiser.",
+        "attente": "You're on the waiting list."
+      },
+      "voirCandidature": "See"
     },
     "inscription": {
       "titre": "Take part",
@@ -1290,6 +1295,16 @@
         "etat_invalide": "This hackathon is not accepting registrations right now.",
         "validation": "The team name must be between 2 and 60 characters.",
         "autre": "Registration did not go through. Try again in a moment."
+      },
+      "candidature": {
+        "en_attente": {
+          "titre": "Application sent",
+          "aide": "The organiser picks the participants. Come back here to see the answer."
+        },
+        "attente": {
+          "titre": "You're on the waiting list",
+          "aide": "The organiser kept your application without declining it. Come back here to see the answer."
+        }
       }
     },
     "equipes": {
