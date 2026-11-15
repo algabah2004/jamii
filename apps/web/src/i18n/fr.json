@@ -1665,7 +1665,8 @@
       "aucuneQuestion": "Aucune question en attente. Posez la première !",
       "salonsTitre": "Salons",
       "rejoindre": "Rejoindre la communauté",
-      "voir": "Voir la communauté"
+      "voir": "Voir la communauté",
+      "espaceDisparu": "Cette communauté n'est plus disponible. L'organisation peut en ouvrir une autre."
     },
     "onglets": {
       "titre": "Sections du hackathon",
