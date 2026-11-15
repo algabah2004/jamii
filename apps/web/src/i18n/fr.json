@@ -1164,6 +1164,16 @@
       "livrees": "{n}/{total} tâches livrées",
       "pointFait": "point fait",
       "ecrire": "Écrire"
+    },
+    "repartition": {
+      "intro": "Ayo peut proposer qui prend quoi, d'après les compétences de chacun et ce qu'il porte déjà.",
+      "demander": "Ayo, propose une répartition",
+      "parCompetences": "Pour ses compétences : {competences}",
+      "parCharge": "Aucune tâche en cours : le travail se partage | {n} tâche en cours, le moins chargé | {n} tâches en cours, le moins chargé",
+      "confier": "Lui confier",
+      "toutConfier": "Tout confier comme proposé",
+      "rien": "Toutes les tâches ont déjà quelqu’un.",
+      "note": "Une proposition calculée à partir des profils : rien n'est confié sans votre clic. Le bénéficiaire du tour n'est jamais choisi."
     }
   },
   "reseau": {
