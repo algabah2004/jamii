@@ -1,5 +1,6 @@
 package dev.jamii.api.missions;
 
+import dev.jamii.api.questionnaires.Questionnaire;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -17,7 +18,8 @@ import dev.jamii.api.auth.DonneesPersonnelles;
  * <ul>
  * <li>ses brouillons sont effacés ; ses missions publiées sont fermées ;</li>
  * <li>une mission attribuée, en cours ou en désaccord dont il est une partie est annulée : l'autre ne peut plus avancer ;</li>
- * <li>ses propositions en attente sont retirées ; les informations de départ qu'il a données sont effacées ;</li>
+ * <li>ses propositions en attente sont retirées ; ses réponses aux questionnaires et les informations de départ
+ * qu'il a données sont effacées ;</li>
  * <li>ses avis restent, sans lien vers lui ; le travail terminé reste visible de l'autre partie, au nom de « Compte
  * supprimé ».</li>
  * </ul>
@@ -31,7 +33,8 @@ class DonneesMissions implements DonneesPersonnelles {
 	record Publiee(UUID id, String titre, String besoin, String statut, Instant creeLe) {
 	}
 
-	record Envoyee(UUID missionId, String message, long centimes, String devise, int delaiJours, String statut, Instant envoyeeLe) {
+	record Envoyee(UUID missionId, String message, long centimes, String devise, int delaiJours,
+			List<Questionnaire.Reponse> reponses, String statut, Instant envoyeeLe) {
 	}
 
 	record Livree(UUID missionId, String jalon, String message, List<String> liens, Instant livreeLe) {
@@ -56,11 +59,12 @@ class DonneesMissions implements DonneesPersonnelles {
 					rs.getString("statut"), rs.getTimestamp("cree_le").toInstant()))
 			.list();
 		List<Envoyee> propositions = base.sql("""
-				SELECT mission_id, message, prix_centimes, devise, delai_jours, statut, cree_le FROM proposition
+				SELECT mission_id, message, prix_centimes, devise, delai_jours, reponses_questionnaire, statut, cree_le FROM proposition
 				WHERE developpeur_id = :u ORDER BY cree_le, id
 				""").param("u", utilisateurId)
 			.query((rs, i) -> new Envoyee(rs.getObject("mission_id", UUID.class), rs.getString("message"), rs.getLong("prix_centimes"),
-					rs.getString("devise"), rs.getInt("delai_jours"), rs.getString("statut"), rs.getTimestamp("cree_le").toInstant()))
+					rs.getString("devise"), rs.getInt("delai_jours"), Questionnaire.reponses(rs.getString("reponses_questionnaire")),
+					rs.getString("statut"), rs.getTimestamp("cree_le").toInstant()))
 			.list();
 		List<Livree> livraisons = base.sql("""
 				SELECT d.mission_id, j.titre, l.message, l.liens, l.livree_le FROM livraison l
@@ -91,6 +95,7 @@ class DonneesMissions implements DonneesPersonnelles {
 		base.sql("UPDATE mission SET informations_depart = NULL WHERE client_id = :u").param("u", utilisateurId).update();
 		base.sql("UPDATE proposition SET statut = 'retiree' WHERE developpeur_id = :u AND statut IN ('envoyee', 'retenue')")
 			.param("u", utilisateurId).update();
+		base.sql("UPDATE proposition SET reponses_questionnaire = '[]' WHERE developpeur_id = :u").param("u", utilisateurId).update();
 		// avis_mission.auteur_id passe à NULL avec la suppression du compte (ON DELETE SET NULL).
 	}
 

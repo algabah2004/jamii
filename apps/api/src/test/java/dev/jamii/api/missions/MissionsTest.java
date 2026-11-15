@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oauth2Login;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Set;
@@ -237,10 +239,16 @@ class MissionsTest {
 		String brouillon = mission("publique", awa).get("id").asString();
 		String invitation = publiee("invitation", awa).get("id").asString();
 
-		JsonNode page = corpsDe(lire("/api/missions", null));
-		assertThat(page.get("curseurSuivant").isNull()).isTrue();
-		String elements = page.get("elements").toString();
-		assertThat(elements).contains(ouverte).doesNotContain(brouillon).doesNotContain(invitation);
+		// La base est partagée entre les classes de test : on parcourt toutes les pages au lieu de supposer qu'il n'y en a qu'une.
+		StringBuilder elements = new StringBuilder();
+		String curseur = null;
+		do {
+			String uri = "/api/missions?limite=100" + (curseur == null ? "" : "&curseur=" + URLEncoder.encode(curseur, StandardCharsets.UTF_8));
+			JsonNode page = corpsDe(lire(uri, null));
+			elements.append(page.get("elements"));
+			curseur = page.get("curseurSuivant").isNull() ? null : page.get("curseurSuivant").asString();
+		} while (curseur != null);
+		assertThat(elements.toString()).contains(ouverte).doesNotContain(brouillon).doesNotContain(invitation);
 
 		assertThat(corpsDe(lire("/api/missions?vue=miennes", awa)).get("elements").toString())
 			.contains(ouverte, brouillon, invitation);

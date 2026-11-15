@@ -5,6 +5,7 @@ import { JAvatar, JBouton, JSquelette } from '../../design-system'
 import { formaterDate } from './action'
 import { lireConversations } from '../reseau/reseau'
 import { formaterMontant, listerPropositions, retenirProposition, retirerProposition, type Mission, type Proposition } from './missions'
+import ReponsesQuestionnaire from '../questionnaires/ReponsesQuestionnaire.vue'
 
 /*
  * Les propositions d'une mission (contracts/missions.yaml, tag « propositions ») : toutes pour le client, qui en
@@ -121,6 +122,7 @@ async function agir(p: Proposition, retenir: boolean) {
         </p>
         <!-- Texte libre du développeur : affiché échappé, avec ses retours à la ligne. -->
         <p class="message">{{ p.message }}</p>
+        <ReponsesQuestionnaire :questions="mission.questionnaire" :reponses="p.reponses ?? []" />
         <div class="actions">
           <JBouton v-if="estClient" variante="secondaire" data-test="ecrire-developpeur" @click="ecrire(p)">
             <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M4 4.5h12a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H9l-3.5 3v-3H4a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" /></svg>

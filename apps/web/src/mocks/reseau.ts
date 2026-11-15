@@ -128,6 +128,16 @@ export const handlersReseau = [
     return HttpResponse.json(message, { status: 201 })
   }),
 
+  http.post('/api/conversations/:personneId/appel', ({ params }) => {
+    const personneId = String(params.personneId)
+    if (personneId === AWA) return erreur('soi_meme')
+    if (!personne(personneId)) return erreur('introuvable', 404)
+    const salle = `jamii-prive-${Math.random().toString(16).slice(2, 14)}`
+    const message: Message = { id: nouvelId(), deMoi: true, texte: '📞 Appel vocal', invitation: null, envoyeLe: new Date().toISOString(), luLe: null, appel: { url: `https://meet.jit.si/${salle}`, enCours: true } }
+    messages.set(personneId, [message, ...(messages.get(personneId) ?? [])])
+    return HttpResponse.json(message, { status: 201 })
+  }),
+
   http.get('/api/conversations', () => {
     const elements = [...messages.entries()]
       .filter(([, liste]) => liste.length)

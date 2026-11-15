@@ -106,26 +106,8 @@ class PropositionsController {
 		String message = e.texte("message", 30, 4000, true);
 		Missions.Montant prix = e.montant("prix", true);
 		int delai = e.entier("delaiJours", 1, 365, true);
-		List<String> reponses = new ArrayList<>();
-		Object brutes = corps.get("reponses");
-		if (brutes instanceof List<?> liste) {
-			if (liste.size() > 5) {
-				e.ajouter("reponses", "trop_nombreuses");
-			}
-			for (Object o : liste) {
-				if (o instanceof String s && s.length() <= 1000) {
-					reponses.add(s);
-				}
-				else {
-					e.ajouter("reponses", "format_invalide");
-				}
-			}
-		}
-		else if (brutes != null) {
-			e.ajouter("reponses", "type_invalide");
-		}
 		e.verifier();
-		return new Propositions.Nouvelle(message, prix, delai, List.copyOf(reponses));
+		return new Propositions.Nouvelle(message, prix, delai, corps.get("reponses"));
 	}
 
 	private static Devis.Nouveau lireDevis(Map<String, Object> corps) {
