@@ -467,7 +467,7 @@
       "projets": "Projects"
     },
     "chercher": "Search the feed",
-    "quoiDeNeuf": "What's new, {prenom}? A question, an idea…",
+    "quoiDeNeuf": "What's new, {prenom}?",
     "rienTrouve": "Nothing matches your search.",
     "ouvrir": "Open",
     "liste": {
@@ -560,6 +560,27 @@
       "titre": "Delete #{salon}?",
       "texte": "The channel is empty: it will be deleted for everyone. This cannot be undone. | The channel and its message will be deleted for everyone. This cannot be undone. | The channel and its {n} messages will be deleted for everyone. This cannot be undone.",
       "confirmer": "Delete the channel"
+    },
+    "fil": {
+      "voirPlus": "See more",
+      "voirMoins": "See less",
+      "iaPrepare": "The AI is preparing an answer…",
+      "iaPropose": "The AI suggested an answer, to be checked by a member.",
+      "repondre": "Reply",
+      "copierLien": "Copy link",
+      "lienCopie": "Link copied",
+      "ia": "AI suggestion",
+      "acceptee": "Accepted answer",
+      "aVerifier": "To check",
+      "valideePar": "Checked by {nom}",
+      "valider": "I confirm this answer",
+      "accepter": "Accept this answer",
+      "tonRepondre": "Write your reply…",
+      "raccourci": "Ctrl + Enter to send",
+      "minimum": "At least 10 characters",
+      "pagePublication": "Open the post on its own",
+      "questionIa": "Question (the AI suggests an answer)",
+      "encore": "{n} more character | {n} more characters"
     }
   },
   "question": {

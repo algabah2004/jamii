@@ -211,8 +211,11 @@ export const handlersCommunautes = [
     const elements = etat.publications
       .filter((p) => p.communaute === params.slug && (!ouvertes || (p.type === 'question' && !p.reponseAccepteeId)))
       .sort((a, b) => b.creeLe.localeCompare(a.creeLe))
-      .map(({ id, communaute, type, titre, auteur, nombreReponses, accepteeLe, creeLe }) =>
-        ({ id, communaute, type, titre, auteur, nombreReponses, accepteeLe, creeLe }))
+      .map((p) => {
+        avancerIa(p)
+        const { id, communaute, type, titre, auteur, nombreReponses, accepteeLe, creeLe, contenu, propositionIa } = p
+        return { id, communaute, type, titre, auteur, nombreReponses, accepteeLe, creeLe, contenu, propositionIa }
+      })
     return HttpResponse.json({ elements, curseurSuivant: null })
   }),
 

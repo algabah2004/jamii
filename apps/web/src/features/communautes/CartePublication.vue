@@ -1,0 +1,253 @@
+<script setup lang="ts">
+import { computed, nextTick, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { RouterLink } from 'vue-router'
+import { api } from '../../api/client'
+import type { components } from '../../api/generated/communautes'
+import { JAvatar } from '../../design-system'
+import { ilYa } from '../vitrine/vitrine'
+
+type PublicationResume = components['schemas']['PublicationResume']
+type Publication = components['schemas']['Publication']
+type Reponse = components['schemas']['Reponse']
+
+/*
+ * Une publication dans le fil, comme sur un réseau social : le texte en entier, les réponses qui s'ouvrent en dessous,
+ * et la réponse qu'on écrit sans quitter le fil. Accepter une réponse ou valider celle de l'IA se fait ici aussi, avec
+ * les règles du contrat (le serveur les revérifie). Les textes sont affichés échappés (jamais v-html).
+ */
+const props = defineProps<{ publication: PublicationResume; membre: boolean }>()
+const emit = defineEmits<{ maj: [publication: PublicationResume] }>()
+const { t, locale } = useI18n()
+
+const p = computed(() => props.publication)
+/** Une publication écrite dans le fil a pour titre le début de son texte : on ne le répète pas. */
+const titreSepare = computed(() => !p.value.contenu.startsWith(p.value.titre.replace(/…$/, '')))
+const long = computed(() => p.value.contenu.length > 420)
+const deplie = ref(false)
+
+const ouvert = ref(false)
+const detail = ref<Publication | null>(null)
+const etat = ref<'repos' | 'chargement' | 'indisponible'>('repos')
+async function chargerFil() {
+  etat.value = 'chargement'
+  try {
+    const { data } = await api.GET('/api/publications/{publicationId}', { params: { path: { publicationId: p.value.id } } })
+    if (!data) throw new Error('fil indisponible')
+    detail.value = data
+    etat.value = 'repos'
+    emit('maj', { ...p.value, nombreReponses: data.nombreReponses, accepteeLe: data.accepteeLe, propositionIa: data.propositionIa })
+  } catch {
+    etat.value = 'indisponible'
+  }
+}
+async function basculer() {
+  ouvert.value = !ouvert.value
+  if (ouvert.value && !detail.value) await chargerFil()
+}
+
+const zone = ref<HTMLTextAreaElement | null>(null)
+async function repondreIci() {
+  if (!ouvert.value) await basculer()
+  await nextTick()
+  zone.value?.focus()
+}
+
+const texte = ref('')
+const envoi = ref<'repos' | 'envoi' | 'erreur'>('repos')
+const valide = computed(() => texte.value.trim().length >= 10)
+async function repondre() {
+  if (!valide.value || envoi.value === 'envoi') return
+  envoi.value = 'envoi'
+  try {
+    const { data } = await api.POST('/api/publications/{publicationId}/reponses', {
+      params: { path: { publicationId: p.value.id } },
+      body: { contenu: texte.value.trim() },
+    })
+    if (!data) return void (envoi.value = 'erreur')
+    texte.value = ''
+    envoi.value = 'repos'
+    await chargerFil()
+  } catch {
+    envoi.value = 'erreur'
+  }
+}
+function touche(e: KeyboardEvent) {
+  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+    e.preventDefault()
+    void repondre()
+  }
+}
+
+// Les règles de l'entraide (contrat) : l'auteur de la question accepte une réponse humaine, un autre membre valide
+// celle de l'IA. Le serveur les revérifie de toute façon.
+const dejaAcceptee = computed(() => Boolean(detail.value?.reponseAccepteeId))
+const peutValider = (r: Reponse) => Boolean(detail.value && r.proposeeParIa && !dejaAcceptee.value && detail.value.moi.estMembre && !detail.value.moi.estAuteur)
+const peutAccepter = (r: Reponse) => Boolean(detail.value && !r.proposeeParIa && r.auteur && r.auteur.id !== detail.value.auteur?.id
+  && !dejaAcceptee.value && detail.value.moi.estAuteur && detail.value.type === 'question')
+const message = ref<string | null>(null)
+const ERREURS = new Set(['pas_membre', 'pas_auteur_question', 'propre_question', 'propre_reponse', 'proposee_par_ia', 'deja_acceptee'])
+async function agir(action: 'valider' | 'accepter', reponseId: string) {
+  message.value = null
+  const chemin = action === 'valider' ? '/api/reponses/{reponseId}/valider' : '/api/reponses/{reponseId}/accepter'
+  const { data, error } = await api.POST(chemin, { params: { path: { reponseId } } })
+  if (data) {
+    detail.value = data
+    emit('maj', { ...p.value, nombreReponses: data.nombreReponses, accepteeLe: data.accepteeLe, propositionIa: data.propositionIa })
+    message.value = t(action === 'valider' ? 'question.merciValidation' : 'question.merciAcceptation')
+    return
+  }
+  const code = (error as { code?: string } | undefined)?.code ?? ''
+  message.value = t(ERREURS.has(code) ? `question.erreurs.${code}` : 'question.erreurs.autre')
+}
+
+const copie = ref(false)
+async function copierLien() {
+  try {
+    await navigator.clipboard.writeText(new URL(`/publications/${p.value.id}`, window.location.origin).toString())
+    copie.value = true
+    setTimeout(() => (copie.value = false), 1800)
+  } catch {
+    copie.value = false
+  }
+}
+</script>
+
+<template>
+  <article class="publication" :aria-labelledby="`auteur-${p.id}`" data-test="publication">
+    <JAvatar :nom="p.auteur?.nom ?? '?'" :url="p.auteur?.avatarUrl" :taille="44" class="publication__avatar" />
+    <div class="publication__corps">
+      <header class="tete">
+        <strong :id="`auteur-${p.id}`">{{ p.auteur?.nom ?? t('communautes.compteSupprime') }}</strong>
+        <span class="tete__quand">· {{ ilYa(p.creeLe, locale) }}</span>
+        <span class="type" :class="`type--${p.type}`">{{ t(`communautes.types.${p.type}`) }}</span>
+      </header>
+
+      <p v-if="titreSepare" class="titre">{{ p.titre }}</p>
+      <p class="texte" :class="{ 'texte--coupe': long && !deplie }" data-test="texte">{{ p.contenu }}</p>
+      <button v-if="long" type="button" class="lien" @click="deplie = !deplie">{{ deplie ? t('communautes.fil.voirMoins') : t('communautes.fil.voirPlus') }}</button>
+
+      <p v-if="p.accepteeLe" class="statut statut--resolue">✓ {{ t('communautes.reponseAcceptee') }}</p>
+      <p v-else-if="p.propositionIa?.statut === 'en_attente'" class="statut statut--ia">{{ t('communautes.fil.iaPrepare') }}</p>
+      <p v-else-if="p.propositionIa?.statut === 'prete'" class="statut statut--ia">{{ t('communautes.fil.iaPropose') }}</p>
+
+      <footer class="actions">
+        <button type="button" class="action" :aria-expanded="ouvert" :data-test="`reponses-${p.id}`" @click="basculer">
+          <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M3 4.5A1.5 1.5 0 0 1 4.5 3h11A1.5 1.5 0 0 1 17 4.5v8a1.5 1.5 0 0 1-1.5 1.5H8l-4 3v-3h.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" /></svg>
+          <span>{{ t('communautes.reponses', { n: p.nombreReponses }, p.nombreReponses) }}</span>
+        </button>
+        <button v-if="membre" type="button" class="action" :data-test="`repondre-${p.id}`" @click="repondreIci">
+          <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M8 5 3 10l5 5M3.5 10H12a5 5 0 0 1 5 5v1" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          <span>{{ t('communautes.fil.repondre') }}</span>
+        </button>
+        <button type="button" class="action" @click="copierLien">
+          <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M8.5 11.5a3 3 0 0 0 4.2 0l2.8-2.8a3 3 0 0 0-4.2-4.2l-.9.9M11.5 8.5a3 3 0 0 0-4.2 0L4.5 11.3a3 3 0 0 0 4.2 4.2l.9-.9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
+          <span role="status">{{ copie ? t('communautes.fil.lienCopie') : t('communautes.fil.copierLien') }}</span>
+        </button>
+      </footer>
+
+      <section v-if="ouvert" class="fil" :aria-label="t('communautes.reponses', { n: p.nombreReponses }, p.nombreReponses)" :data-test="`fil-${p.id}`">
+        <p v-if="etat === 'chargement' && !detail" class="texte-discret" role="status">{{ t('etat.chargement') }}</p>
+        <p v-else-if="etat === 'indisponible'" class="texte-discret" role="alert">{{ t('etat.indisponible') }}</p>
+        <ol v-if="detail?.reponses.length" class="reponses">
+          <li v-for="r in detail.reponses" :key="r.id" class="reponse" :class="{ 'reponse--acceptee': r.acceptee, 'reponse--ia': r.proposeeParIa }" data-test="reponse">
+            <span v-if="r.proposeeParIa" class="reponse__ia" aria-hidden="true">IA</span>
+            <JAvatar v-else :nom="r.auteur?.nom ?? '?'" :url="r.auteur?.avatarUrl" :taille="32" />
+            <div class="reponse__corps">
+              <p class="reponse__tete">
+                <strong>{{ r.proposeeParIa ? t('communautes.fil.ia') : (r.auteur?.nom ?? t('communautes.compteSupprime')) }}</strong>
+                <span class="tete__quand">· {{ ilYa(r.creeLe, locale) }}</span>
+                <span v-if="r.acceptee" class="pastille pastille--acceptee">✓ {{ t('communautes.fil.acceptee') }}</span>
+                <span v-else-if="r.proposeeParIa" class="pastille pastille--ia">{{ t('communautes.fil.aVerifier') }}</span>
+              </p>
+              <p class="reponse__texte">{{ r.contenu }}</p>
+              <p v-if="r.valideePar" class="texte-discret reponse__validee">{{ t('communautes.fil.valideePar', { nom: r.valideePar.nom }) }}</p>
+              <div v-if="peutValider(r) || peutAccepter(r)" class="reponse__commandes">
+                <button v-if="peutValider(r)" type="button" class="petit" :data-test="`valider-${r.id}`" @click="agir('valider', r.id)">{{ t('communautes.fil.valider') }}</button>
+                <button v-if="peutAccepter(r)" type="button" class="petit" :data-test="`accepter-${r.id}`" @click="agir('accepter', r.id)">{{ t('communautes.fil.accepter') }}</button>
+              </div>
+            </div>
+          </li>
+        </ol>
+        <p v-else-if="detail" class="texte-discret">{{ t('communautes.espace.premier') }}</p>
+        <p v-if="message" role="status" class="message">{{ message }}</p>
+
+        <form v-if="membre" class="repondre" :data-test="`form-reponse-${p.id}`" @submit.prevent="repondre">
+          <label class="visuellement-cache" :for="`repondre-${p.id}`">{{ t('communautes.fil.tonRepondre') }}</label>
+          <textarea :id="`repondre-${p.id}`" ref="zone" v-model="texte" rows="2" :maxlength="10000" :placeholder="t('communautes.fil.tonRepondre')" @keydown="touche" />
+          <div class="repondre__bas">
+            <span class="texte-discret" :class="{ ok: valide }">{{ valide ? t('communautes.fil.raccourci') : t('communautes.fil.minimum') }}</span>
+            <button type="submit" class="publier" :disabled="!valide || envoi === 'envoi'">{{ t('communautes.fil.repondre') }}</button>
+          </div>
+          <p v-if="envoi === 'erreur'" role="alert" class="erreur">{{ t('question.erreurs.autre') }}</p>
+        </form>
+        <RouterLink :to="`/publications/${p.id}`" class="lien lien--discret">{{ t('communautes.fil.pagePublication') }}</RouterLink>
+      </section>
+    </div>
+  </article>
+</template>
+
+<style scoped>
+/* Une publication : pas de carte qui grandit au survol, juste une ligne de séparation et un fond très léger. */
+.publication { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: var(--space-3); padding: var(--space-4) var(--space-6); }
+.publication + .publication { border-top: 1px solid var(--line); }
+.publication__corps { display: grid; gap: var(--space-2); min-width: 0; }
+.tete { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px var(--space-2); }
+.tete strong { font-size: 0.9375rem; }
+.tete__quand { color: var(--ink-muted); font-size: 0.875rem; }
+.type { margin-inline-start: auto; padding: 2px 10px; border-radius: var(--radius-pill); font-size: 0.75rem; font-weight: 700; background: var(--surface-raised); color: var(--ink-muted); }
+.type--question { background: color-mix(in srgb, var(--electric-blue) 14%, transparent); color: var(--action-ink); }
+.type--montre_ton_projet { background: color-mix(in srgb, var(--cantaloupe) 18%, transparent); color: var(--proof-ink); }
+.titre { margin: 0; font-weight: 700; font-size: 1.0625rem; line-height: 1.35; }
+.texte { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.55; }
+.texte--coupe { display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
+.lien { justify-self: start; padding: 0; border: 0; background: none; color: var(--action-ink); font: inherit; font-size: var(--type-body-sm-size); font-weight: 600; cursor: pointer; }
+.lien--discret { color: var(--ink-muted); font-weight: 500; }
+.statut { margin: 0; font-size: 0.8125rem; font-weight: 600; }
+.statut--resolue { color: #1a7f45; }
+.statut--ia { color: var(--action-ink); }
+
+.actions { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-6); margin-top: var(--space-1); }
+.action {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 var(--space-2); margin-inline-start: calc(-1 * var(--space-2));
+  border: 0; border-radius: var(--radius-pill); background: none; color: var(--ink-muted); font: inherit; font-size: 0.875rem; cursor: pointer;
+  transition: color var(--motion-fast) var(--ease-out), background var(--motion-fast) var(--ease-out);
+}
+.action:hover, .action[aria-expanded='true'] { color: var(--action-ink); background: color-mix(in srgb, var(--electric-blue) 10%, transparent); }
+.action:focus-visible, .lien:focus-visible, .petit:focus-visible, .publier:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+.fil { display: grid; gap: var(--space-3); margin-top: var(--space-2); padding-top: var(--space-3); border-top: 1px dashed var(--line); }
+.reponses { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-4); }
+.reponse { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: var(--space-3); }
+.reponse__ia { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 10px; background: color-mix(in srgb, var(--electric-blue) 16%, transparent); color: var(--action-ink); font-size: 0.75rem; font-weight: 800; }
+.reponse__corps { display: grid; gap: 4px; min-width: 0; }
+.reponse__tete { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px var(--space-2); font-size: 0.875rem; }
+.reponse__texte { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.5; }
+.reponse__validee { margin: 0; font-size: 0.8125rem; }
+.reponse--acceptee .reponse__texte { padding-inline-start: var(--space-3); border-inline-start: 3px solid #23a55a; }
+.pastille { padding: 1px 8px; border-radius: var(--radius-pill); font-size: 0.6875rem; font-weight: 700; }
+.pastille--acceptee { background: color-mix(in srgb, #23a55a 16%, transparent); color: #1a7f45; }
+.pastille--ia { background: var(--surface-raised); color: var(--ink-muted); }
+.reponse__commandes { display: flex; gap: var(--space-2); margin-top: 2px; }
+.petit { min-height: 30px; padding: 0 var(--space-3); border-radius: var(--radius-pill); border: 1px solid var(--line-strong); background: transparent; color: var(--ink); font: inherit; font-size: 0.8125rem; font-weight: 600; cursor: pointer; }
+.petit:hover { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.message { margin: 0; color: var(--action-ink); font-weight: 600; font-size: var(--type-body-sm-size); }
+
+.repondre { display: grid; gap: var(--space-2); }
+.repondre textarea {
+  width: 100%; min-height: 64px; resize: vertical; padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-md);
+  background: var(--surface-raised); color: var(--ink); font: inherit; line-height: 1.5;
+}
+.repondre textarea:focus { outline: none; border-color: var(--electric-blue); }
+.repondre__bas { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.repondre__bas .ok { color: var(--ink-muted); }
+.publier {
+  min-height: 36px; padding: 0 var(--space-4); border: 0; border-radius: var(--radius-pill); background: var(--electric-blue); color: #fff;
+  font: inherit; font-weight: 700; font-size: 0.875rem; cursor: pointer;
+}
+.publier:disabled { opacity: 0.45; cursor: default; }
+.erreur { margin: 0; color: var(--danger); font-weight: 600; }
+:root[data-theme='sombre'] .statut--resolue, :root[data-theme='sombre'] .pastille--acceptee { color: #57d68d; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme='clair']) .statut--resolue, :root:not([data-theme='clair']) .pastille--acceptee { color: #57d68d; } }
+@media (max-width: 640px) { .publication { padding: var(--space-4); } }
+</style>

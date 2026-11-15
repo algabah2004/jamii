@@ -55,12 +55,12 @@ describe('les salons en direct', () => {
 
   it('on arrive sur le fil : la bannière, « En direct », et la recherche filtre les publications', async () => {
     const { page } = await ouvrir('/communautes/flutter')
-    await vi.waitFor(() => expect(page.findAll('[data-test="publications"] > li')).toHaveLength(4))
+    await vi.waitFor(() => expect(page.findAll('[data-test="publication"]')).toHaveLength(4))
     expect(page.find('[data-test="banniere"]').text()).toContain('Flutter et Dart')
     expect(page.find('[data-test="barre-fil"]').attributes('aria-current')).toBe('page')
     await vi.waitFor(() => expect(page.find('[data-test="en-direct"]').text()).toContain('# entraide'))
     await page.get('[data-test="recherche"]').setValue('apk')
-    expect(page.findAll('[data-test="publications"] > li')).toHaveLength(1)
+    expect(page.findAll('[data-test="publication"]')).toHaveLength(1)
     await page.get('[data-test="recherche"]').setValue('rien de tel ici')
     expect(page.find('[data-test="vide"]').text()).toBe('Rien ne correspond à ta recherche.')
     page.unmount()

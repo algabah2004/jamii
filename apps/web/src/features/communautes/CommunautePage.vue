@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { JAvatar, JBadgePreuve, JBouton, JChamp, JDeplier, JFiltres, JIllustration, JSquelette } from '../../design-system'
+import { JAvatar, JBouton, JIllustration, JSquelette } from '../../design-system'
 import { computed, nextTick, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
@@ -8,6 +8,7 @@ import type { components } from '../../api/generated/communautes'
 import { ilYa } from '../vitrine/vitrine'
 import { useSession } from '../../session'
 import BanniereCommunaute from './BanniereCommunaute.vue'
+import CartePublication from './CartePublication.vue'
 import EnDirect from './EnDirect.vue'
 import EspaceCommunautes from './EspaceCommunautes.vue'
 import MembresCommunaute from './MembresCommunaute.vue'
@@ -98,7 +99,7 @@ async function basculerAdhesion() {
   const devientMembre = !communaute.value.membre
   await chargerCommunaute(true)
   cleRecharge.value++
-  if (devientMembre && vue.value === 'fil') formulaireOuvert.value = true
+  if (devientMembre && vue.value === 'fil') void nextTick(() => zoneEcrire.value?.focus())
 }
 /** Après « Rejoindre », les salons et le côté se rechargent (adresse de l'appel, zone d'écriture). */
 const cleRecharge = ref(0)
@@ -124,32 +125,69 @@ const visibles = computed(() => {
   return liste.filter((p) => `${p.titre} ${p.auteur?.nom ?? ''}`.toLocaleLowerCase(locale.value).includes(q))
 })
 
-// « Quoi de neuf ? » : mêmes limites que le contrat, vérifiées aussi par le serveur.
-const formulaire = ref({ type: 'question' as 'question' | 'discussion', titre: '', contenu: '' })
+// « Quoi de neuf ? » : on écrit directement dans le fil. Le contrat demande un titre : c'est le début du texte
+// (sa première ligne, ou ses 80 premiers caractères). La question demande l'aide de l'IA, la discussion non.
+const texte = ref('')
+const genre = ref<'question' | 'discussion'>('discussion')
 const envoi = ref<'repos' | 'envoi' | 'erreur'>('repos')
-const valide = computed(() => formulaire.value.titre.trim().length >= 10 && formulaire.value.contenu.trim().length >= 20)
+const valide = computed(() => texte.value.trim().length >= 20)
+const zoneEcrire = ref<HTMLTextAreaElement | null>(null)
+function titreDe(contenu: string) {
+  const ligne = contenu.split('\n')[0]!.trim()
+  const base = ligne.length >= 10 ? ligne : contenu.replace(/\s+/g, ' ')
+  return base.length > 150 ? `${base.slice(0, 149).trimEnd()}…` : base
+}
 async function publier() {
-  if (!valide.value) return
+  if (!valide.value || envoi.value === 'envoi') return
   envoi.value = 'envoi'
-  const { data } = await api.POST('/api/communautes/{slug}/publications', {
-    params: { path: { slug: slug.value } },
-    body: { ...formulaire.value, titre: formulaire.value.titre.trim(), contenu: formulaire.value.contenu.trim() },
-  })
-  if (!data) return void (envoi.value = 'erreur')
-  envoi.value = 'repos'
-  formulaire.value = { type: 'question', titre: '', contenu: '' }
-  formulaireOuvert.value = false
-  await router.push(`/publications/${data.id}`)
+  const contenu = texte.value.trim()
+  try {
+    const { data } = await api.POST('/api/communautes/{slug}/publications', {
+      params: { path: { slug: slug.value } },
+      body: { type: genre.value, titre: titreDe(contenu), contenu },
+    })
+    if (!data) return void (envoi.value = 'erreur')
+    const { id, communaute: c, type, titre, auteur, nombreReponses, accepteeLe, creeLe, propositionIa } = data
+    publications.value = [{ id, communaute: c, type, titre, auteur, nombreReponses, accepteeLe, creeLe, contenu: data.contenu, propositionIa }, ...publications.value]
+    texte.value = ''
+    envoi.value = 'repos'
+    void nextTick(ajusterZone)
+    if (type === 'question') suivreIa(id)
+  } catch {
+    envoi.value = 'erreur'
+  }
 }
-const formulaireOuvert = ref(false)
-const zoneFormulaire = ref<HTMLElement | null>(null)
-function ouvrirFormulaire(type: 'question' | 'discussion') {
-  formulaire.value.type = type
-  formulaireOuvert.value = true
+/** La zone grandit avec le texte. Ctrl/Cmd + Entrée publie. */
+function ajusterZone() {
+  const el = zoneEcrire.value
+  if (!el) return
+  el.style.height = 'auto'
+  el.style.height = `${Math.min(el.scrollHeight, 320)}px`
 }
-watch(formulaireOuvert, (ouvert) => {
-  if (ouvert) void nextTick(() => zoneFormulaire.value?.querySelector('input')?.focus({ preventScroll: true }))
-})
+function toucheEcrire(e: KeyboardEvent) {
+  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+    e.preventDefault()
+    void publier()
+  }
+}
+function remplacer(maj: PublicationResume) {
+  publications.value = publications.value.map((x) => (x.id === maj.id ? maj : x))
+}
+/** Une question vient de partir : on relit sa carte jusqu'à ce que l'IA ait proposé sa réponse (une minute au plus). */
+function suivreIa(id: string, essais = 0) {
+  if (essais >= 20) return
+  setTimeout(async () => {
+    try {
+      const { data } = await api.GET('/api/publications/{publicationId}', { params: { path: { publicationId: id } } })
+      if (!data) return
+      const actuelle = publications.value.find((x) => x.id === id)
+      if (actuelle) remplacer({ ...actuelle, nombreReponses: data.nombreReponses, propositionIa: data.propositionIa })
+      if (data.propositionIa?.statut === 'en_attente') suivreIa(id, essais + 1)
+    } catch {
+      // On réessaiera au prochain passage sur la page.
+    }
+  }, 3000)
+}
 const prenom = computed(() => moi.value?.nom.split(' ')[0] ?? '')
 </script>
 
@@ -227,86 +265,70 @@ const prenom = computed(() => moi.value?.nom.split(' ')[0] ?? '')
           </label>
         </div>
 
-        <section class="carte-espace compositeur" :aria-label="t('communautes.espace.invite')">
-          <JDeplier>
-            <div v-if="communaute.membre && formulaireOuvert" ref="zoneFormulaire">
-              <form class="formulaire" data-test="publier" @submit.prevent="publier">
-                <JFiltres
-                  v-model="formulaire.type"
-                  :libelle="t('communautes.type')"
-                  :options="[
-                    { valeur: 'question', texte: t('communautes.types.question') },
-                    { valeur: 'discussion', texte: t('communautes.types.discussion') },
-                  ]"
-                />
-                <JChamp v-model="formulaire.titre" :libelle="t('communautes.champTitre')" :maxlength="150" requis />
-                <JChamp
-                  v-model="formulaire.contenu"
-                  :libelle="t('communautes.champContenu')"
-                  :aide="formulaire.type === 'question' ? t('communautes.aideIa') : undefined"
-                  multiligne
-                  :lignes="5"
-                  :maxlength="10000"
-                  requis
-                />
-                <p v-if="envoi === 'erreur'" role="alert" class="erreur">{{ t('communautes.erreurPublier') }}</p>
-                <div class="formulaire__commandes">
-                  <JBouton variante="discret" @click="formulaireOuvert = false">{{ t('communautes.annuler') }}</JBouton>
-                  <JBouton type="submit" :desactive="!valide" :occupe="envoi === 'envoi'">{{ t('communautes.publier') }}</JBouton>
+        <!-- Écrire directement dans le fil : ce qu'on publie apparaît en haut, sans changer de page. -->
+        <section class="carte-espace fil" :aria-label="t('communautes.espace.fil')">
+          <form v-if="communaute.membre" class="ecrire" data-test="publier" @submit.prevent="publier">
+            <JAvatar v-if="moi" :nom="moi.nom" :url="moi.avatarUrl" :taille="44" />
+            <div class="ecrire__corps">
+              <label class="visuellement-cache" for="quoi-de-neuf">{{ t('communautes.quoiDeNeuf', { prenom }) }}</label>
+              <textarea
+                id="quoi-de-neuf"
+                ref="zoneEcrire"
+                v-model="texte"
+                rows="2"
+                :maxlength="10000"
+                :placeholder="t('communautes.quoiDeNeuf', { prenom })"
+                data-test="zone-publier"
+                @input="ajusterZone"
+                @keydown="toucheEcrire"
+              />
+              <div class="ecrire__bas">
+                <div class="genres" role="radiogroup" :aria-label="t('communautes.type')">
+                  <button
+                    v-for="g in (['discussion', 'question'] as const)"
+                    :key="g"
+                    type="button"
+                    role="radio"
+                    class="genre"
+                    :aria-checked="genre === g"
+                    :data-test="`genre-${g}`"
+                    @click="genre = g"
+                  >
+                    {{ g === 'question' ? t('communautes.fil.questionIa') : t('communautes.types.discussion') }}
+                  </button>
                 </div>
-              </form>
+                <span class="compteur" :class="{ 'compteur--court': texte.trim().length > 0 && !valide }">
+                  {{ texte.trim().length > 0 && !valide ? t('communautes.fil.encore', { n: 20 - texte.trim().length }, 20 - texte.trim().length) : '' }}
+                </span>
+                <button type="submit" class="publier" :disabled="!valide || envoi === 'envoi'" data-test="envoyer-publication">{{ t('communautes.publier') }}</button>
+              </div>
+              <p v-if="envoi === 'erreur'" role="alert" class="erreur">{{ t('communautes.erreurPublier') }}</p>
             </div>
-          </JDeplier>
-          <div v-if="communaute.membre && !formulaireOuvert" class="quoi-de-neuf">
-            <JAvatar v-if="moi" :nom="moi.nom" :url="moi.avatarUrl" :taille="40" />
-            <button type="button" class="quoi-de-neuf__invite" data-test="ouvrir-formulaire" @click="ouvrirFormulaire('question')">
-              {{ t('communautes.quoiDeNeuf', { prenom }) }}
-            </button>
-            <button type="button" class="raccourci" :title="t('communautes.types.question')" @click="ouvrirFormulaire('question')">
-              <span aria-hidden="true">?</span><span class="visuellement-cache">{{ t('communautes.types.question') }}</span>
-            </button>
-            <button type="button" class="raccourci" :title="t('communautes.types.discussion')" @click="ouvrirFormulaire('discussion')">
-              <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M3 4.5A1.5 1.5 0 0 1 4.5 3h11A1.5 1.5 0 0 1 17 4.5v8a1.5 1.5 0 0 1-1.5 1.5H8l-4 3v-3h.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" /></svg>
-              <span class="visuellement-cache">{{ t('communautes.types.discussion') }}</span>
-            </button>
-          </div>
-          <div v-if="!communaute.membre" class="rejoindre">
+          </form>
+          <div v-else class="rejoindre">
             <p>{{ t('communautes.rejoindrePourPublier') }}</p>
             <JBouton :occupe="adhesionEnCours" @click="basculerAdhesion">{{ t('communautes.rejoindre') }}</JBouton>
           </div>
-        </section>
 
-        <JSquelette v-if="etatFil === 'chargement'" :nombre="3" />
-        <div v-else-if="etatFil === 'indisponible'" role="alert" class="carte-espace vide">
-          <p>{{ t('etat.indisponible') }}</p>
-          <JBouton variante="secondaire" @click="chargerFil">{{ t('etat.reessayer') }}</JBouton>
-        </div>
-        <div v-else-if="visibles.length === 0" class="carte-espace vide">
-          <JIllustration nom="communaute" />
-          <p data-test="vide">{{ recherche ? t('communautes.rienTrouve') : t('communautes.vide') }}</p>
-        </div>
-        <TransitionGroup v-else tag="ul" name="fil" class="publications" data-test="publications" appear>
-          <li v-for="(p, i) in visibles" :key="p.id" class="publication" :style="{ '--rang': i }">
-            <header class="publication__tete">
-              <JAvatar :nom="p.auteur?.nom ?? '?'" :url="p.auteur?.avatarUrl" :taille="40" />
-              <p class="publication__qui">
-                <strong>{{ p.auteur?.nom ?? t('communautes.compteSupprime') }}</strong>
-                <span>{{ ilYa(p.creeLe, locale) }}</span>
-              </p>
-              <span class="type" :class="`type--${p.type}`">{{ t(`communautes.types.${p.type}`) }}</span>
-            </header>
-            <h2 class="publication__titre"><RouterLink :to="`/publications/${p.id}`" class="publication__lien">{{ p.titre }}</RouterLink></h2>
-            <footer class="publication__pied">
-              <span class="reponses">
-                <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M3 4.5A1.5 1.5 0 0 1 4.5 3h11A1.5 1.5 0 0 1 17 4.5v8a1.5 1.5 0 0 1-1.5 1.5H8l-4 3v-3h.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" /></svg>
-                {{ t('communautes.reponses', { n: p.nombreReponses }, p.nombreReponses) }}
-              </span>
-              <JBadgePreuve v-if="p.accepteeLe">✓ {{ t('communautes.reponseAcceptee') }}</JBadgePreuve>
-              <span v-else-if="p.type === 'question' && p.nombreReponses === 0" class="appel-aide">{{ t('communautes.espace.premier') }}</span>
-              <span class="publication__ouvrir" aria-hidden="true">{{ t('communautes.ouvrir') }} →</span>
-            </footer>
-          </li>
-        </TransitionGroup>
+          <JSquelette v-if="etatFil === 'chargement'" :nombre="3" class="fil__attente" />
+          <div v-else-if="etatFil === 'indisponible'" role="alert" class="vide">
+            <p>{{ t('etat.indisponible') }}</p>
+            <JBouton variante="secondaire" @click="chargerFil">{{ t('etat.reessayer') }}</JBouton>
+          </div>
+          <div v-else-if="visibles.length === 0" class="vide">
+            <JIllustration nom="communaute" />
+            <p data-test="vide">{{ recherche ? t('communautes.rienTrouve') : t('communautes.vide') }}</p>
+          </div>
+          <TransitionGroup v-else tag="div" name="nouvelle" class="publications" data-test="publications">
+            <CartePublication
+              v-for="pub in visibles"
+              :key="pub.id"
+              :publication="pub"
+              :membre="communaute.membre"
+              @maj="remplacer"
+            />
+          </TransitionGroup>
+        </section>
       </template>
     </template>
 
@@ -339,58 +361,41 @@ const prenom = computed(() => moi.value?.nom.split(' ')[0] ?? '')
 .recherche input { border: 0; outline: 0; background: transparent; color: var(--ink); font: inherit; width: 16rem; max-width: 60vw; }
 .recherche:focus-within { outline: 2px solid var(--focus); outline-offset: 1px; }
 
-.compositeur { padding: var(--space-4); }
-.quoi-de-neuf { display: flex; align-items: center; gap: var(--space-3); }
-.quoi-de-neuf__invite {
-  flex: 1; min-height: 48px; text-align: start; padding: 0 var(--space-4); border: 1px solid transparent; border-radius: var(--radius-pill);
-  background: var(--surface-raised); color: var(--ink-muted); font: inherit; cursor: text;
+/* Le fil : un seul panneau, la zone pour écrire en haut, puis les publications séparées par une ligne. */
+.fil { overflow: hidden; }
+.ecrire { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: var(--space-3); padding: var(--space-4) var(--space-6); border-bottom: 1px solid var(--line); }
+.ecrire__corps { display: grid; gap: var(--space-2); min-width: 0; }
+.ecrire textarea {
+  width: 100%; min-height: 52px; resize: none; padding: var(--space-2) 0; border: 0; background: transparent; color: var(--ink);
+  font: inherit; font-size: 1.125rem; line-height: 1.5; outline: none;
 }
-.quoi-de-neuf__invite:hover { border-color: var(--line-strong); }
-.raccourci {
-  display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid var(--line); border-radius: 12px;
-  background: var(--surface); color: var(--ink-muted); font: inherit; font-weight: 800; font-size: 1.0625rem; cursor: pointer;
-  transition: transform var(--motion-fast) var(--ease-out);
+.ecrire textarea::placeholder { color: var(--ink-muted); }
+.ecrire__bas { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); padding-top: var(--space-2); border-top: 1px solid var(--line); }
+.genres { display: flex; gap: var(--space-1); }
+.genre {
+  min-height: 32px; padding: 0 var(--space-3); border-radius: var(--radius-pill); border: 1px solid var(--line); background: transparent;
+  color: var(--ink-muted); font: inherit; font-size: 0.8125rem; font-weight: 600; cursor: pointer;
 }
-.raccourci:hover { color: var(--ink); border-color: var(--line-strong); transform: rotate(-6deg); }
-.formulaire { display: grid; gap: var(--space-4); }
-.formulaire__commandes { display: flex; gap: var(--space-2); justify-content: flex-end; }
-.rejoindre { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.genre[aria-checked='true'] { border-color: var(--electric-blue); background: color-mix(in srgb, var(--electric-blue) 12%, transparent); color: var(--action-ink); }
+.genre:focus-visible, .publier:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.compteur { margin-inline-start: auto; color: var(--ink-muted); font-size: 0.8125rem; font-variant-numeric: tabular-nums; }
+.compteur--court { color: var(--proof-ink); }
+.publier {
+  min-height: 38px; padding: 0 var(--space-6); border: 0; border-radius: var(--radius-pill); background: var(--electric-blue); color: #fff;
+  font: inherit; font-weight: 700; cursor: pointer;
+}
+.publier:disabled { opacity: 0.45; cursor: default; }
+.rejoindre { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-4) var(--space-6); border-bottom: 1px solid var(--line); background: var(--action-soft); }
 .rejoindre p { margin: 0; font-weight: 600; }
 .erreur { color: var(--danger); font-weight: 600; margin: 0; }
-
+.fil__attente { padding: var(--space-4); }
 .vide { display: grid; justify-items: center; gap: var(--space-3); padding: var(--space-8) var(--space-6); text-align: center; color: var(--ink-muted); }
 .vide p { margin: 0; }
 .vide .j-illustration { width: 12rem; }
-
-.publications { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
-.publication {
-  position: relative; display: grid; gap: var(--space-3); padding: var(--space-4) var(--space-6);
-  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--ombre-carte);
-  transition: transform var(--motion-fast) var(--ease-out), border-color var(--motion-fast) var(--ease-out);
-}
-.publication:hover { transform: translateY(-2px); border-color: var(--line-strong); }
-.publication:has(:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
-@media (prefers-reduced-motion: reduce) { .publication:hover, .raccourci:hover { transform: none; } }
-.publication__tete { display: flex; align-items: center; gap: var(--space-3); }
-.publication__qui { margin: 0; flex: 1; min-width: 0; display: grid; line-height: 1.25; }
-.publication__qui span { color: var(--ink-muted); font-size: 0.8125rem; }
-.type { padding: 3px 10px; border-radius: var(--radius-pill); font-size: 0.75rem; font-weight: 700; background: var(--surface-raised); color: var(--ink); }
-.type--question { background: color-mix(in srgb, var(--electric-blue) 16%, transparent); color: var(--action-ink); }
-.type--montre_ton_projet { background: color-mix(in srgb, var(--cantaloupe) 20%, transparent); color: var(--proof-ink); }
-.publication__titre { margin: 0; font-family: var(--font-display); font-size: 1.25rem; line-height: 1.3; letter-spacing: -0.01em; }
-/* Toute la carte mène à la publication ; le titre reste le seul nom du lien. */
-.publication__lien { color: var(--ink); text-decoration: none; }
-.publication__lien::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
-.publication__lien:focus-visible { outline: none; }
-.publication__pied { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); padding-top: var(--space-3); border-top: 1px solid var(--line); }
-.reponses { display: inline-flex; align-items: center; gap: var(--space-1); color: var(--ink-muted); font-size: var(--type-body-sm-size); }
-.appel-aide { color: var(--proof-ink); font-size: var(--type-body-sm-size); font-weight: 700; }
-.publication__ouvrir { margin-inline-start: auto; color: var(--ink-muted); font-size: var(--type-body-sm-size); font-weight: 600; }
-.publication:hover .publication__ouvrir { color: var(--ink); }
-
-.fil-enter-active { transition: opacity var(--motion-base) var(--ease-out), transform var(--motion-base) var(--ease-out); transition-delay: calc(var(--rang) * 40ms); }
-.fil-enter-from { opacity: 0; transform: translateY(8px); }
-@media (prefers-reduced-motion: reduce) { .fil-enter-active { transition: none; } }
+/* Une publication qu'on vient d'écrire arrive en douceur en haut du fil (rien si le mouvement est réduit). */
+.nouvelle-enter-active { transition: opacity 260ms var(--ease-out), transform 260ms var(--ease-out); }
+.nouvelle-enter-from { opacity: 0; transform: translateY(-8px); }
+@media (prefers-reduced-motion: reduce) { .nouvelle-enter-active { transition: none; } }
 
 .apropos { padding: var(--space-6); display: grid; gap: var(--space-4); }
 .apropos h1 { margin: 0; font-size: 1.5rem; }
@@ -404,7 +409,6 @@ const prenom = computed(() => moi.value?.nom.split(' ')[0] ?? '')
 
 @media (max-width: 860px) {
   .cadre-salon { height: calc(100dvh - 12rem); }
-  .publication { padding: var(--space-4); }
-  .raccourci { display: none; }
+  .ecrire { padding: var(--space-4); }
 }
 </style>

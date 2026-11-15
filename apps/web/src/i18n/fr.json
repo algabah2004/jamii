@@ -467,7 +467,7 @@
       "projets": "Projets"
     },
     "chercher": "Chercher dans le fil",
-    "quoiDeNeuf": "Quoi de neuf, {prenom} ? Une question, une idée…",
+    "quoiDeNeuf": "Quoi de neuf, {prenom} ?",
     "rienTrouve": "Rien ne correspond à ta recherche.",
     "ouvrir": "Ouvrir",
     "liste": {
@@ -560,6 +560,27 @@
       "titre": "Supprimer #{salon} ?",
       "texte": "Le salon est vide : il sera supprimé pour tout le monde. C'est définitif. | Le salon et son message seront supprimés pour tout le monde. C'est définitif. | Le salon et ses {n} messages seront supprimés pour tout le monde. C'est définitif.",
       "confirmer": "Supprimer le salon"
+    },
+    "fil": {
+      "voirPlus": "Voir plus",
+      "voirMoins": "Voir moins",
+      "iaPrepare": "L'IA prépare une réponse…",
+      "iaPropose": "L'IA a proposé une réponse, à vérifier par un membre.",
+      "repondre": "Répondre",
+      "copierLien": "Copier le lien",
+      "lienCopie": "Lien copié",
+      "ia": "Proposition de l'IA",
+      "acceptee": "Réponse acceptée",
+      "aVerifier": "À vérifier",
+      "valideePar": "Validée par {nom}",
+      "valider": "Je confirme cette réponse",
+      "accepter": "Accepter cette réponse",
+      "tonRepondre": "Écris ta réponse…",
+      "raccourci": "Ctrl + Entrée pour envoyer",
+      "minimum": "10 caractères au moins",
+      "pagePublication": "Ouvrir la publication seule",
+      "questionIa": "Question (l'IA propose une réponse)",
+      "encore": "Encore {n} caractère | Encore {n} caractères"
     }
   },
   "question": {

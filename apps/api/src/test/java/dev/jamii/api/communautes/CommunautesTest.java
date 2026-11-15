@@ -156,6 +156,19 @@ class CommunautesTest {
 	}
 
 	@Test
+	void le_fil_donne_le_texte_de_chaque_publication_et_l_etat_de_l_ia() {
+		UtilisateurConnecte awa = utilisateur("Awa Diop");
+		String slug = communaute(null);
+		rejoindre(awa, slug);
+		publier(awa, slug, QUESTION);
+
+		MvcTestResult fil = get(awa, "/api/communautes/{s}/publications", slug);
+
+		assertThat(fil).bodyJson().extractingPath("$.elements[0].contenu").isEqualTo("Mon appli perd la liste des commandes quand le réseau coupe.");
+		assertThat(fil).bodyJson().extractingPath("$.elements[0].propositionIa.statut").isNotNull();
+	}
+
+	@Test
 	void une_discussion_n_a_pas_de_proposition_de_l_ia() {
 		UtilisateurConnecte qui = utilisateur("Chidi Okafor");
 		String slug = communaute(null);

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Jamii · Communautés et entraide
-  version: 0.5.0
+  version: 0.6.0
   summary: Communautés thématiques, questions-réponses où l'IA propose et un pair valide, discussions, signalements.
   description: |
     Responsable : @rev22rse22 (module communautés, #155 ; repris d'@Amar233-ui le 14/11). Règles communes : docs/api-conventions.md. Modèle : docs/modele-donnees.md
@@ -529,7 +529,8 @@ components:
 
     PublicationResume:
       type: object
-      required: [id, communaute, type, titre, auteur, nombreReponses, accepteeLe, creeLe]
+      description: 'Dans un fil, une publication se lit en entier (v0.6) : son texte et l''état de la réponse de l''IA.'
+      required: [id, communaute, type, titre, auteur, nombreReponses, accepteeLe, creeLe, contenu, propositionIa]
       properties:
         id: { type: string, format: uuid }
         communaute: { type: string, description: Slug de la communauté. }
@@ -541,6 +542,10 @@ components:
         nombreReponses: { type: integer, minimum: 0 }
         accepteeLe: { type: [string, 'null'], format: date-time, description: 'Pour une question : quand une réponse a été acceptée.' }
         creeLe: { type: string, format: date-time }
+        contenu: { type: string, description: 'Texte brut, affiché échappé.' }
+        propositionIa:
+          oneOf: [{ $ref: '#/components/schemas/PropositionIa' }, { type: 'null' }]
+          description: 'Pour une question seulement.'
 
     PagePublications:
       allOf:
