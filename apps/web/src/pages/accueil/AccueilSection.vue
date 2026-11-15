@@ -4,6 +4,8 @@
  * puis les étapes du parcours, puis ce que chaque module ajoute (emplacement par défaut).
  * La teinte suit la marque : bleu pour l'action (missions), orange pour la preuve (hackathons).
  */
+import { vApparait } from './apparait'
+
 defineProps<{
   id: string
   teinte: 'bleu' | 'orange'
@@ -19,7 +21,7 @@ defineProps<{
 
 <template>
   <section :class="['section', `section--${teinte}`, { 'section--inverse': inverse }]" :aria-labelledby="`${id}-titre`" :data-test="id">
-    <div class="section__haut">
+    <div v-apparait class="section__haut">
       <div class="section__texte">
         <p class="section__surtitre">{{ surtitre }}</p>
         <h2 :id="`${id}-titre`">{{ titre }}</h2>
@@ -32,7 +34,7 @@ defineProps<{
 
     <h3 class="section__titre-etapes">{{ titreEtapes }}</h3>
     <ol class="etapes" :data-test="`${id}-etapes`">
-      <li v-for="(e, i) in etapes" :key="i" class="etape">
+      <li v-for="(e, i) in etapes" :key="i" v-apparait="i * 110" class="etape">
         <span class="etape__numero" aria-hidden="true">{{ i + 1 }}</span>
         <strong class="etape__titre">{{ e.titre }}</strong>
         <span class="etape__texte">{{ e.texte }}</span>

@@ -40,6 +40,10 @@ input:not([type='radio'], [type='checkbox'], [type='range']), select, textarea {
 }
 input[type='radio'], input[type='checkbox'] { accent-color: var(--action); width: 1.1em; height: 1.1em; }
 
+/* Les options d'un menu ont leur propre fond : on leur donne l'encre et la surface du thème, sinon une encre
+   claire héritée d'une zone sombre devient illisible sur le fond blanc du navigateur. */
+select option { color: var(--ink); background: var(--surface); }
+
 ::selection { background: var(--action-soft); color: var(--ink); }
 
 img, svg { max-width: 100%; }

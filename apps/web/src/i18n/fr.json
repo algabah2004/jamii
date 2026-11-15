@@ -86,19 +86,6 @@
       "apercuProfil": "Profil prouvé"
     },
     "decrireBesoin": "J’ai un besoin pour mon entreprise",
-    "aussi": {
-      "titre": "Et aussi sur Jamii",
-      "cercles": {
-        "titre": "Les cercles",
-        "texte": "4 à 6 développeurs construisent, à tour de rôle, le projet de chacun. Systalink en est le garant.",
-        "lien": "Voir les cercles"
-      },
-      "besoin": {
-        "titre": "Tu as un besoin ?",
-        "texte": "Commerçant, cabinet, association : décris-le avec tes mots. Ayo te dit ce qui existe déjà, et qui peut faire le reste.",
-        "lien": "Décrire mon besoin"
-      }
-    },
     "sectionMissions": {
       "surtitre": "Freelance",
       "titre": "Les missions : embaucher un développeur, jalon par jalon",
@@ -207,6 +194,129 @@
       "prix": {
         "titre": "Des prix.",
         "texte": "Chaque prix peut avoir un montant, ou n'en avoir aucun : de la visibilité ou de l'hébergement, par exemple."
+      }
+    },
+    "faq": {
+      "surtitre": "Questions fréquentes",
+      "titre": "Les questions qu'on nous pose",
+      "intro": "Les réponses aux questions qu'on nous pose le plus, sur chaque fonctionnalité.",
+      "questions": {
+        "quoi": {
+          "q": "C'est quoi, Jamii ?",
+          "r": "La plateforme d'échange des développeurs africains. Tu y trouves des coéquipiers, tu échanges dans des communautés, tu réponds aux besoins des PME, et tu fais vivre tes projets jusqu'à les mettre en ligne."
+        },
+        "connexion": {
+          "q": "Comment je me connecte ?",
+          "r": "Avec GitHub si tu es développeur, avec Google, ou avec ton adresse e-mail : on t'envoie un lien de connexion, sans mot de passe à retenir."
+        },
+        "pasDev": {
+          "q": "Je ne suis pas développeur. Jamii est-il pour moi ?",
+          "r": "Oui. Un commerçant, une association ou une PME décrit son besoin avec ses mots. L'assistant de Jamii en fait un plan clair, dit ce qui existe déjà, et qui peut faire le reste."
+        },
+        "cercle": {
+          "q": "C'est quoi, un cercle ?",
+          "r": "Un groupe de 4 à 6 développeurs qui construisent, à tour de rôle, le projet de chacun. À chaque tour, tout le cercle aide un membre à avancer."
+        },
+        "paiement": {
+          "q": "Comment se passe le paiement d'une mission ?",
+          "r": "Le travail est découpé en jalons, chacun avec son montant. Le client paie le développeur directement, puis chacun le déclare dans la mission : « payé », puis « reçu ». Jamii n'encaisse pas l'argent."
+        },
+        "hackathon": {
+          "q": "Qui peut organiser un hackathon ?",
+          "r": "Toute personne connectée : une école, une entreprise, une communauté. Le hackathon reste un brouillon, visible de toi seul, jusqu'à ce que tu le publies. Il a son espace de discussion, ses critères et son jury."
+        },
+        "vitrine": {
+          "q": "Comment un projet arrive-t-il dans la vitrine ?",
+          "r": "Quand un projet est en ligne, Jamii vérifie qu'il répond, puis le montre dans la vitrine avec son équipe. Un lien qui ne répond plus n'y apparaît pas."
+        },
+        "langues": {
+          "q": "Dans quelles langues est Jamii ?",
+          "r": "En français et en anglais. L'assistant répond dans la langue de la personne qui lui écrit."
+        },
+        "donnees": {
+          "q": "Que deviennent mes données ?",
+          "r": "On collecte le minimum. Depuis ton profil, tu peux exporter toutes tes données ou supprimer ton compte, à tout moment."
+        }
+      }
+    },
+    "appel": {
+      "titre": "Par où veux-tu commencer ?",
+      "dev": {
+        "qui": "Développeur",
+        "titre": "Je construis",
+        "texte": "Crée ton profil à partir de tes dépôts, trouve une équipe et mets tes projets en ligne.",
+        "action": "Se connecter",
+        "actionConnecte": "Voir mon profil"
+      },
+      "besoin": {
+        "qui": "PME, association, commerçant",
+        "titre": "J'ai un besoin",
+        "texte": "Décris-le avec tes mots. L'assistant en fait un plan, et des développeurs peuvent y répondre.",
+        "action": "Décrire mon besoin"
+      }
+    },
+    "fonctionnalites": {
+      "surtitre": "Fonctionnalités",
+      "titre": "Tout ce qu'il faut pour construire à plusieurs",
+      "intro": "Chaque partie de Jamii répond à un moment de la vie d'un projet : se présenter, trouver de l'aide, former une équipe, et montrer le résultat.",
+      "communautes": {
+        "titre": "Des communautés où l'on s'entraide",
+        "texte": "Rejoins une communauté ou crée la tienne. Pose ta question dans un salon, et marque la réponse qui t'a aidé pour qu'elle serve aux suivants.",
+        "points": [
+          "Salons de discussion",
+          "Questions et réponses",
+          "Réponse acceptée"
+        ],
+        "lien": "Voir les communautés"
+      },
+      "cercles": {
+        "titre": "Les cercles",
+        "texte": "4 à 6 développeurs construisent, à tour de rôle, le projet de chacun. À chaque tour, tout le cercle aide un membre à avancer.",
+        "points": [
+          "4 à 6 membres",
+          "Un tour par projet"
+        ],
+        "lien": "Voir les cercles"
+      },
+      "assistant": {
+        "titre": "Un assistant pour ton besoin",
+        "texte": "Décris ton besoin avec tes mots. L'assistant en fait un cahier des charges, des jalons et des tâches, et dit quels rôles il reste à trouver.",
+        "points": [
+          "Cahier des charges",
+          "Jalons et tâches",
+          "Rôles à trouver"
+        ],
+        "lien": "Décrire mon besoin"
+      },
+      "vitrine": {
+        "titre": "La vitrine des projets en ligne",
+        "texte": "Les projets que la communauté a mis en ligne, avec leur équipe. Jamii vérifie que chaque lien répond avant de le montrer.",
+        "points": [
+          "Lien vérifié",
+          "L'équipe et ses pays"
+        ],
+        "lien": "Voir la vitrine",
+        "enLigne": "En ligne"
+      },
+      "profil": {
+        "titre": "Un profil qui prouve",
+        "texte": "Pas de CV : ton profil montre tes dépôts, tes projets en ligne et l'avis de tes coéquipiers, sur une carte de compétences.",
+        "points": [
+          "Carte de compétences",
+          "Dépôts GitHub",
+          "Avis des coéquipiers"
+        ],
+        "lien": "Voir mon profil"
+      },
+      "messages": {
+        "titre": "Messages et notifications",
+        "texte": "Écris à un coéquipier, garde tes contacts, et sois prévenu de ce qui te concerne : une proposition, une invitation, une candidature.",
+        "points": [
+          "Messages",
+          "Contacts",
+          "Notifications"
+        ],
+        "lien": "Ouvrir mes messages"
       }
     }
   },

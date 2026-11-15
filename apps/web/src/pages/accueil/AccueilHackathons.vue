@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 import AccueilSection from './AccueilSection.vue'
+import { vApparait } from './apparait'
 
 const { t } = useI18n()
 const cle = 'accueil.sectionHackathons'
@@ -49,14 +50,14 @@ const CRITERES = [82, 64, 48] as const
     </template>
 
     <ul class="formats" :aria-label="t(`${cle}.formats.titre`)">
-      <li v-for="f in FORMATS" :key="f" class="format" :data-test="`format-${f}`">
+      <li v-for="(f, i) in FORMATS" :key="f" v-apparait="i * 110" class="format" :data-test="`format-${f}`">
         <span class="format__signe" aria-hidden="true">{{ t(`${cle}.formats.${f}.signe`) }}</span>
         <h4>{{ t(`${cle}.formats.${f}.titre`) }}</h4>
         <p>{{ t(`${cle}.formats.${f}.texte`) }}</p>
       </li>
     </ul>
 
-    <p class="prix" data-test="section-hackathons-prix">
+    <p v-apparait class="prix" data-test="section-hackathons-prix">
       <strong>{{ t(`${cle}.prix.titre`) }}</strong> {{ t(`${cle}.prix.texte`) }}
     </p>
   </AccueilSection>
@@ -83,6 +84,12 @@ const CRITERES = [82, 64, 48] as const
   background: color-mix(in srgb, var(--proof) 28%, var(--surface)); color: var(--proof-ink); font-size: 0.8125rem;
 }
 .podium__marche:nth-child(2) { background: var(--proof); color: var(--midnight); }
+.podium__marche { transform-origin: bottom; animation: monte-marche 900ms var(--ease-out) both; }
+.podium__marche:nth-child(1) { animation-delay: 150ms; }
+.podium__marche:nth-child(3) { animation-delay: 300ms; }
+@keyframes monte-marche { from { transform: scaleY(0.15); opacity: 0; } }
+@keyframes flotte { 50% { transform: rotate(-3deg) translateY(-5px); } }
+.jury { animation: flotte 4.5s ease-in-out infinite; }
 /* Une petite carte posée sur le tableau : les critères que le jury note. */
 .jury {
   position: relative; z-index: 1; justify-self: end; margin: calc(-1 * var(--space-6)) 4% 0 0; width: 9.5rem; display: grid; gap: 6px;
@@ -118,5 +125,5 @@ const CRITERES = [82, 64, 48] as const
 @media (max-width: 560px) {
   .tableau { transform: none; }
 }
-@media (prefers-reduced-motion: reduce) { .format { transition: none; } .format:hover { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .format { transition: none; } .format:hover { transform: none; } .podium__marche, .jury { animation: none; } }
 </style>

@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 import AccueilSection from './AccueilSection.vue'
+import { vApparait } from './apparait'
 
 const { t, tm, rt } = useI18n()
 const cle = 'accueil.sectionMissions'
@@ -61,7 +62,7 @@ const JALONS = [
     </template>
 
     <ul class="cotes">
-      <li v-for="c in COTES" :key="c.qui" class="cote" :data-test="`cote-${c.qui}`">
+      <li v-for="(c, i) in COTES" :key="c.qui" v-apparait="i * 120" class="cote" :data-test="`cote-${c.qui}`">
         <h4>{{ t(`${cle}.cotes.${c.qui}.titre`) }}</h4>
         <ul class="cote__points">
           <li v-for="(p, i) in points(c.qui)" :key="i">{{ p }}</li>
@@ -71,7 +72,7 @@ const JALONS = [
     </ul>
 
     <!-- Ce qu'un ingénieur demandera en premier : où passe l'argent. On le dit sans détour. -->
-    <p class="argent" data-test="section-missions-argent">
+    <p v-apparait class="argent" data-test="section-missions-argent">
       <strong>{{ t(`${cle}.argent.titre`) }}</strong> {{ t(`${cle}.argent.texte`) }}
     </p>
   </AccueilSection>
@@ -106,7 +107,14 @@ const JALONS = [
   border: 2px solid color-mix(in srgb, var(--ink) 18%, transparent);
 }
 .jalon--fait .jalon__rond { background: var(--action); border-color: var(--action); color: var(--midnight); }
-.jalon--en-cours .jalon__rond { border-color: var(--action); color: var(--action-ink); box-shadow: 0 0 0 4px color-mix(in srgb, var(--action) 20%, transparent); }
+.jalon--en-cours .jalon__rond { border-color: var(--action); color: var(--action-ink); animation: halo-jalon 2.4s var(--ease-out) infinite; }
+@keyframes halo-jalon {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--action) 50%, transparent); }
+  70%, 100% { box-shadow: 0 0 0 9px transparent; }
+}
+@keyframes flotte { 50% { transform: rotate(2deg) translateY(-5px); } }
+.propositions { animation: flotte 4.5s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .jalon--en-cours .jalon__rond, .propositions { animation: none; } }
 .jalon--a-venir { opacity: 0.6; }
 /* Une petite carte posée sur le devis : les propositions reçues. */
 .propositions {
