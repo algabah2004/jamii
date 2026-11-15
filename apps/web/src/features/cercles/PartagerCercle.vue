@@ -9,7 +9,7 @@ import { JBouton, JChamp, JDeplier } from '../../design-system'
  * Publier le cercle dans une de mes communautés (contracts/communautes.yaml, `publier`) : une discussion pré-remplie
  * avec le lien du cercle. Dans la publication, ce lien s'affiche en carte « Rejoindre le cercle » (CarteCercleLien).
  */
-const props = defineProps<{ cercleId: string; cercleNom: string; ville: string; manquants: number }>()
+const props = defineProps<{ cercleId: string; cercleNom: string; ville: string | null; manquants: number }>()
 const { t } = useI18n()
 
 type Communaute = { slug: string; nom: string }
@@ -29,7 +29,7 @@ async function ouvrir() {
   erreur.value = null
   publiee.value = null
   titre.value = t('cercles.partage.titreParDefaut', { cercle: props.cercleNom, n: props.manquants }, props.manquants)
-  contenu.value = t('cercles.partage.contenuParDefaut', { ville: props.ville, lien: lien() })
+  contenu.value = props.ville ? t('cercles.partage.contenuParDefaut', { ville: props.ville, lien: lien() }) : t('cercles.partage.contenuSansVille', { lien: lien() })
   if (communautes.value) return
   const { data } = await api.GET('/api/communautes', { params: { query: { membre: 'moi', limite: 50 } } })
   communautes.value = (data?.elements ?? []).map((c) => ({ slug: c.slug, nom: c.nom }))

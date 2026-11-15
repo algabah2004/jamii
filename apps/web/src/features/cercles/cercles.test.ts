@@ -148,11 +148,19 @@ describe('la page du cercle', () => {
 describe('du cercle vide au tirage', () => {
   it("crée un cercle, dépose son idée, puis tire l'ordre au sort : le premier tour commence", async () => {
     const { page, routeur } = await ouvrir('/cercles/nouveau')
-    const champs = page.findAll('[data-test="nouveau-cercle"] input:not([type="radio"])')
-    await champs[0]!.setValue('Cercle de Thiès')
-    await champs[1]!.setValue('Thiès')
-    await page.find('input[type="radio"][value="4"]').setValue(true)
-    await page.find('[data-test="nouveau-cercle"]').trigger('submit')
+    // Une question à la fois : le nom, combien on sera, puis l'aperçu. Pas de ville.
+    await vi.waitFor(() => expect(page.find('[data-test="champ-nom"]').exists()).toBe(true))
+    expect(page.find('[data-test="nouveau-cercle"]').text()).not.toContain('Ville')
+    expect(page.get('[data-test="suivant"]').attributes('disabled')).toBeDefined()
+    await page.get('[data-test="champ-nom"]').setValue('Cercle de Thiès')
+    await page.get('[data-test="champ-nom"]').trigger('keydown', { key: 'Enter' })
+    await vi.waitFor(() => expect(page.find('[data-test="taille-4"]').exists()).toBe(true))
+    await page.get('[data-test="taille-4"]').trigger('change')
+    await vi.waitFor(() => expect(page.text()).toContain('Prêt à lancer « Cercle de Thiès » ?'), { timeout: 2000 })
+    expect(page.text()).toContain('3 personnes le rejoignent')
+    await page.get('[data-test="suivant"]').trigger('click')
+    await vi.waitFor(() => expect(page.find('[data-test="succes"]').exists()).toBe(true))
+    await page.get('[data-test="entrer"]').trigger('click')
     await vi.waitFor(() => expect(routeur.currentRoute.value.name).toBe('cercle'))
     await vi.waitFor(() => expect(page.find('[data-test="attente-tirage"]').exists()).toBe(true))
 
@@ -168,6 +176,17 @@ describe('du cercle vide au tirage', () => {
     await page.find('[data-test="tirer"]').trigger('click')
     await vi.waitFor(() => expect(page.find('[data-test="tour"]').exists()).toBe(true))
     expect(page.findAll('[data-test="ordre"] li .ordre__numero').map((n) => n.text())).toEqual(['1', '2', '3', '4'])
+  })
+
+  it("revient en arrière sans perdre ce qu'on a écrit", async () => {
+    const { page } = await ouvrir('/cercles/nouveau')
+    await vi.waitFor(() => expect(page.find('[data-test="champ-nom"]').exists()).toBe(true))
+    await page.get('[data-test="champ-nom"]').setValue('Cercle Ubuntu')
+    await page.get('[data-test="suivant"]').trigger('click')
+    await vi.waitFor(() => expect(page.find('[data-test="taille-5"]').exists()).toBe(true))
+    await page.get('[data-test="precedent"]').trigger('click')
+    await vi.waitFor(() => expect(page.find('[data-test="champ-nom"]').exists()).toBe(true))
+    expect((page.get('[data-test="champ-nom"]').element as HTMLInputElement).value).toBe('Cercle Ubuntu')
   })
 
   it('rejoint un cercle ouvert : on voit alors les idées, mais pas le bouton du créateur', async () => {

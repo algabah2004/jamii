@@ -15,7 +15,7 @@ export type Idee = components['schemas']['Idee']
 export type Tache = ComposantsProjets['schemas']['Tache']
 
 export const TAILLES = [4, 5, 6] as const
-export const LIMITES = { nomMin: 3, nomMax: 80, villeMin: 2, villeMax: 80, ideeTitreMin: 3, ideeTitreMax: 120, ideeDescriptionMin: 10, ideeDescriptionMax: 5000 } as const
+export const LIMITES = { nomMin: 3, nomMax: 80, ideeTitreMin: 3, ideeTitreMax: 120, ideeDescriptionMin: 10, ideeDescriptionMax: 5000 } as const
 /** Un tour dure deux semaines (docs/priorites.md). */
 export const DUREE_TOUR_JOURS = 14
 const JOUR = 86_400_000
@@ -116,8 +116,8 @@ export async function lireAvancement(projetId: string): Promise<Avancement | nul
   }
 }
 
-export const creerCercle = (c: { nom: string; ville: string; taille: number }) =>
-  resultat(api.POST('/api/cercles', { body: { nom: c.nom.trim(), ville: c.ville.trim(), taille: c.taille } }))
+export const creerCercle = (c: { nom: string; taille: number }) =>
+  resultat(api.POST('/api/cercles', { body: { nom: c.nom.trim(), taille: c.taille } }))
 export const rejoindreCercle = (cercleId: string) => resultat(api.POST('/api/cercles/{cercleId}/membres', { params: { path: { cercleId } } }))
 export const deposerIdee = (cercleId: string, idee: Idee) =>
   resultat(api.PUT('/api/cercles/{cercleId}/membres/moi/idee', { params: { path: { cercleId } }, body: { titre: idee.titre.trim(), description: idee.description.trim() } }))

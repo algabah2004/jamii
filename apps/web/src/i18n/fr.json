@@ -927,15 +927,42 @@
     },
     "nouveau": {
       "titre": "Créer un cercle",
-      "intro": "Tu en seras le premier membre. Les autres le rejoignent, chacun dépose son idée, puis tu tires l'ordre au sort.",
       "nom": "Nom du cercle",
-      "nomAide": "Par exemple, Cercle de Dakar.",
-      "ville": "Ville",
       "taille": "Combien serez-vous ?",
       "personnes": "{n} personnes",
-      "tailleAide": "{n} tours de deux semaines : chacun reçoit son projet.",
       "creer": "Créer le cercle",
-      "duBesoin": "Une fois le cercle créé, tu pourras inviter {noms} en un clic."
+      "duBesoin": "Une fois le cercle créé, tu pourras inviter {noms} en un clic.",
+      "etape": "Étape {n} sur {total}",
+      "suivant": "Continuer",
+      "retour": "Retour",
+      "entree": "Entrée ↵ pour continuer",
+      "nomExemple": "Cercle Ubuntu",
+      "inspirations": "Pour s'inspirer :",
+      "q": {
+        "nom": "Comment s'appelle ton cercle ?",
+        "nomAide": "Un nom court, que les autres reconnaîtront. Tu pourras inviter des développeurs de tout le continent : le cercle travaille en ligne.",
+        "taille": "Combien serez-vous ?",
+        "tailleAide": "Toi compris. Chaque membre a son tour : pendant deux semaines, tout le cercle construit son projet.",
+        "apercu": "Prêt à lancer « {nom} » ?"
+      },
+      "duree": "{semaines} semaines en tout",
+      "promesses": {
+        "membre": "Tu en es le premier membre.",
+        "idees": "{n} personnes le rejoignent, et chacun dépose son idée de projet.",
+        "tirage": "Quand le cercle est complet, tu tires l'ordre de passage au sort.",
+        "tours": "{n} tours de deux semaines : chacun repart avec son projet construit."
+      },
+      "apercu": "Aperçu du cercle",
+      "places": "Il reste {n} places à prendre.",
+      "tailleAVenir": "Choisis combien vous serez.",
+      "etapes": {
+        "nom": "Le nom",
+        "taille": "Combien vous serez",
+        "apercu": "Comment ça marche"
+      },
+      "succes": "« {nom} » est créé !",
+      "succesAide": "Invite maintenant les {n} autres membres.",
+      "entrer": "Entrer dans le cercle"
     },
     "membresTitre": "Les membres",
     "livrer": "Livrer le tour",
@@ -975,7 +1002,8 @@
       "voir": "Voir la publication",
       "erreur": "La publication n'est pas partie. Réessaie.",
       "aucuneCommunaute": "Rejoins d'abord une communauté pour y publier.",
-      "carte": "Cercle de la Tech Tontine"
+      "carte": "Cercle de la Tech Tontine",
+      "contenuSansVille": "On construit à tour de rôle le projet de chaque membre, en ligne. Il reste de la place : rejoins-nous ici {lien}"
     },
     "code": {
       "titre": "Le code du tour",
@@ -994,7 +1022,8 @@
         "fusionnee": "Fusionnée",
         "fermee": "Fermée"
       }
-    }
+    },
+    "sousTitreSansVille": "{n} membres"
   },
   "reseau": {
     "competences": "Compétences",
