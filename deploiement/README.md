@@ -48,6 +48,8 @@ compose, coturn, réglé par `turnserver.conf`. À faire une fois sur le serveur
 # 1. Le secret partagé entre l'API et coturn, et l'adresse publique, dans /opt/jamii/.env (jamais dans le dépôt)
 echo "TURN_SECRET=$(openssl rand -hex 32)" >> /opt/jamii/.env
 echo "IP_PUBLIQUE=<l'adresse IP publique du serveur>" >> /opt/jamii/.env
+# Un seul nom, qui pointe vers le serveur (pas DOMAINE, qui liste plusieurs adresses pour Caddy). jamii.dev par défaut.
+echo "TURN_HOTE=jamii.dev" >> /opt/jamii/.env
 # 2. Le pare-feu : le port TURN et la plage de relais
 ufw allow 3478/udp && ufw allow 3478/tcp && ufw allow 49160:49359/udp
 # 3. Copier compose.yml et turnserver.conf à jour dans /opt/jamii, puis

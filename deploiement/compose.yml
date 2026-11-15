@@ -24,7 +24,8 @@ services:
     environment:
       JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=35 -XX:+UseSerialGC
       # Les appels WebRTC (#157) : l'API signe des identifiants temporaires pour notre relais coturn (service turn).
-      TURN_URLS: turn:${DOMAINE}:3478?transport=udp,turn:${DOMAINE}:3478?transport=tcp
+      # TURN_HOTE est un seul nom (DOMAINE peut en lister plusieurs pour Caddy, ce qui donnerait une adresse invalide).
+      TURN_URLS: turn:${TURN_HOTE:-jamii.dev}:3478?transport=udp,turn:${TURN_HOTE:-jamii.dev}:3478?transport=tcp
       TURN_SECRET: ${TURN_SECRET}
     depends_on: { postgres: { condition: service_healthy } }
 
@@ -59,7 +60,7 @@ services:
       - -c
       - /etc/coturn/turnserver.conf
       - --static-auth-secret=${TURN_SECRET}
-      - --realm=${DOMAINE}
+      - --realm=${TURN_HOTE:-jamii.dev}
       - --external-ip=${IP_PUBLIQUE}
 
 volumes:
