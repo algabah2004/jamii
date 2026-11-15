@@ -23,7 +23,7 @@ afterEach(() => {
 })
 
 describe('les salons en direct', () => {
-  it("ouvrent # général par défaut, puis un autre salon depuis la barre, avec l'appel pour un membre", async () => {
+  it('ouvrent # général, puis un autre salon depuis la barre ; un membre peut y lancer un appel', async () => {
     const { page, routeur } = await ouvrir('/communautes/flutter?salon=general')
     await vi.waitFor(() => expect(page.find('[data-test="salons"] h1').exists()).toBe(true))
     expect(page.find('[data-test="salons"] h1').text()).toBe('# général')
@@ -33,10 +33,34 @@ describe('les salons en direct', () => {
     await vi.waitFor(() => expect(page.findAll('[data-test="message"]')).toHaveLength(3))
     expect(routeur.currentRoute.value.query.salon).toBe('entraide')
     expect(page.find('[data-test="barre-salon-entraide"]').attributes('aria-current')).toBe('page')
-    const appel = page.find('[data-test="appel"]')
-    expect(appel.attributes('href')).toBe('https://meet.jit.si/jamii-flutter-entraide-demo')
-    expect(appel.attributes('target')).toBe('_blank')
-    expect(appel.attributes('rel')).toBe('noopener noreferrer')
+    // Pas de salle ouverte en permanence : tant que personne ne lance d'appel, il n'y a rien à rejoindre.
+    expect(page.find('[data-test="lancer-appel"]').exists()).toBe(true)
+    expect(page.find('[data-test="rejoindre-appel"]').exists()).toBe(false)
+    page.unmount()
+  })
+
+  it('lancer un appel ouvre sa salle dans un nouvel onglet, l’annonce dans le salon, et on peut le terminer', async () => {
+    const onglet = { opener: {} as unknown, location: { href: '' }, close: vi.fn() }
+    const ouvrirOnglet = vi.spyOn(window, 'open').mockReturnValue(onglet as unknown as Window)
+    const { page } = await ouvrir('/communautes/flutter?salon=entraide')
+    await vi.waitFor(() => expect(page.find('[data-test="lancer-appel"]').exists()).toBe(true))
+
+    await page.get('[data-test="lancer-appel"]').trigger('click')
+    expect(ouvrirOnglet).toHaveBeenCalledWith('', '_blank')
+    await vi.waitFor(() => expect(page.find('[data-test="appel-en-cours"]').exists()).toBe(true))
+    expect(onglet.location.href).toMatch(/^https:\/\/meet\.jit\.si\/jamii-flutter-entraide-/)
+    expect(onglet.opener).toBeNull()
+    const rejoindre = page.get('[data-test="rejoindre-appel"]')
+    expect(rejoindre.attributes('href')).toBe(onglet.location.href)
+    expect(rejoindre.attributes('rel')).toBe('noopener noreferrer')
+    expect(page.find('[data-test="lancer-appel"]').exists()).toBe(false)
+    await vi.waitFor(() => expect(page.find('[data-test="annonce-appel"]').exists()).toBe(true))
+    expect(page.get('[data-test="annonce-appel"]').text()).toContain('a lancé un appel')
+
+    await page.get('[data-test="terminer-appel"]').trigger('click')
+    await vi.waitFor(() => expect(page.find('[data-test="lancer-appel"]').exists()).toBe(true))
+    await vi.waitFor(() => expect(page.get('[data-test="annonce-appel"]').text()).toContain('Appel terminé'))
+    ouvrirOnglet.mockRestore()
     page.unmount()
   })
 
@@ -132,7 +156,8 @@ describe('les salons en direct', () => {
   it("à un non-membre : on lit, mais ni appel ni écriture, et on l'invite à rejoindre", async () => {
     const { page } = await ouvrir('/communautes/fintech?salon=general')
     await vi.waitFor(() => expect(page.find('[data-test="salons"] h1').exists()).toBe(true))
-    expect(page.find('[data-test="appel"]').exists()).toBe(false)
+    expect(page.find('[data-test="lancer-appel"]').exists()).toBe(false)
+    expect(page.find('[data-test="rejoindre-appel"]').exists()).toBe(false)
     expect(page.find('[data-test="ecrire"]').exists()).toBe(false)
     expect(page.find('[data-test="rejoindre-salon"]').exists()).toBe(true)
     expect(page.text()).toContain('Rejoins la communauté pour écrire ici')

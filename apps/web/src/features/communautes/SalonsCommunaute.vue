@@ -4,6 +4,8 @@ import { useI18n } from 'vue-i18n'
 import { api } from '../../api/client'
 import type { components } from '../../api/generated/communautes'
 import { JAvatar, JBouton } from '../../design-system'
+import { useSession } from '../../session'
+import { ilYa } from '../vitrine/vitrine'
 import { marquerLu } from './lus'
 import SupprimerSalon from './SupprimerSalon.vue'
 
@@ -31,8 +33,9 @@ const salons = ref<Salon[]>([])
 const etat = ref<'chargement' | 'pret' | 'indisponible'>('chargement')
 const actuel = computed(() => salons.value.find((s) => s.slug === props.salon) ?? salons.value[0] ?? null)
 
-async function chargerSalons() {
-  etat.value = 'chargement'
+/** `silencieux` : une relecture pour suivre les appels, sans effacer l'écran. */
+async function chargerSalons(silencieux = false) {
+  if (!silencieux) etat.value = 'chargement'
   try {
     const { data } = await api.GET('/api/communautes/{slug}/salons', { params: { path: { slug: props.slug } } })
     if (!data) throw new Error('salons indisponibles')
@@ -40,9 +43,59 @@ async function chargerSalons() {
     emit('salons', data.elements)
     etat.value = 'pret'
   } catch {
-    etat.value = 'indisponible'
+    if (!silencieux) etat.value = 'indisponible'
   }
 }
+
+// ---------------------------------------------------------------- les appels (contrat v0.7)
+// Un appel n'existe que quand quelqu'un le lance : une salle neuve, annoncée dans le salon, en cours une heure au plus.
+const { moi } = useSession()
+const appel = computed(() => actuel.value?.appel ?? null)
+const peutTerminer = computed(() => Boolean(appel.value && (props.moderateur || (moi.value && appel.value.lancePar?.id === moi.value.id))))
+const etatAppel = ref<'repos' | 'envoi' | 'erreur' | 'trop'>('repos')
+
+/**
+ * L'onglet de l'appel s'ouvre tout de suite, pendant le clic (sinon le navigateur le bloque), puis reçoit l'adresse
+ * de la salle quand l'API a répondu.
+ */
+async function lancerAppel() {
+  const salon = actuel.value
+  if (!salon || etatAppel.value === 'envoi') return
+  etatAppel.value = 'envoi'
+  const fenetre = typeof window.open === 'function' ? window.open('', '_blank') : null
+  try {
+    const { data, response } = await api.POST('/api/communautes/{slug}/salons/{salon}/appel', {
+      params: { path: { slug: props.slug, salon: salon.slug } },
+    })
+    if (!data?.url) {
+      fenetre?.close()
+      return void (etatAppel.value = response.status === 429 ? 'trop' : 'erreur')
+    }
+    if (fenetre) {
+      fenetre.opener = null
+      fenetre.location.href = data.url
+    }
+    etatAppel.value = 'repos'
+    await chargerSalons(true)
+    void lire()
+  } catch {
+    fenetre?.close()
+    etatAppel.value = 'erreur'
+  }
+}
+async function terminerAppel() {
+  const salon = actuel.value
+  if (!salon) return
+  try {
+    await api.DELETE('/api/communautes/{slug}/salons/{salon}/appel', { params: { path: { slug: props.slug, salon: salon.slug } } })
+  } finally {
+    await chargerSalons(true)
+    void lire(true)
+  }
+}
+/** L'annonce d'un appel donne « Rejoindre » tant que c'est l'appel en cours du salon. */
+const rejoignable = (m: Message) => Boolean(m.appel?.enCours && appel.value && appel.value.id === m.appel.id && appel.value.url)
+let suiviAppels: ReturnType<typeof setInterval> | null = null
 
 const messages = ref<Message[]>([])
 const premierChargement = ref(true)
@@ -88,6 +141,7 @@ async function lire(complet = false) {
     if (numero !== lecture || salon !== actuel.value) return
     if (!data) throw new Error('messages indisponibles')
     coupe.value = false
+    if (!complet && data.elements.some((m) => m.appel)) void chargerSalons(true)
     ajouter(complet ? data.elements : [...messages.value, ...data.elements], complet)
   } catch {
     if (numero === lecture) coupe.value = true
@@ -134,9 +188,14 @@ watch(() => props.slug, () => void chargerSalons())
 onMounted(async () => {
   document.addEventListener('visibilitychange', visibilite)
   await chargerSalons()
+  // Un appel peut se terminer tout seul (une heure) ou être terminé ailleurs : on relit les salons de temps en temps.
+  suiviAppels = setInterval(() => {
+    if (document.visibilityState !== 'hidden') void chargerSalons(true)
+  }, 20_000)
 })
 onBeforeUnmount(() => {
   arreter()
+  if (suiviAppels) clearInterval(suiviAppels)
   document.removeEventListener('visibilitychange', visibilite)
 })
 
@@ -235,17 +294,25 @@ function teinte(id: string) {
             :messages="messages.length"
             @supprime="emit('supprime', $event)"
           />
-          <a
-            v-if="actuel.appelUrl"
-            :href="actuel.appelUrl"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="appel"
-            data-test="appel"
-          >
+          <!-- Un appel en cours : on le rejoint. Sinon, un membre peut en lancer un. -->
+          <template v-if="appel">
+            <span class="en-cours" data-test="appel-en-cours">
+              <span class="en-cours__point" aria-hidden="true" />
+              {{ t('communautes.appels.enCours', { nom: appel.lancePar?.nom.split(' ')[0] ?? '…', quand: ilYa(appel.lanceLe, locale) }) }}
+            </span>
+            <a v-if="appel.url" :href="appel.url" target="_blank" rel="noopener noreferrer" class="appel" data-test="rejoindre-appel">
+              <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M6.6 3.5 8.4 7a1 1 0 0 1-.2 1.1L7 9.3a10 10 0 0 0 3.7 3.7l1.2-1.2a1 1 0 0 1 1.1-.2l3.5 1.8a1 1 0 0 1 .5 1.2l-.6 1.9a2 2 0 0 1-2.2 1.4C8.9 17.2 2.8 11.1 2.1 5.8A2 2 0 0 1 3.5 3.6l1.9-.6a1 1 0 0 1 1.2.5Z" fill="currentColor" /></svg>
+              <span>{{ t('communautes.appels.rejoindre') }}</span><span class="visuellement-cache"> {{ t('communautes.salons.nouvelOnglet') }}</span>
+            </a>
+            <button v-if="peutTerminer" type="button" class="terminer" data-test="terminer-appel" @click="terminerAppel">{{ t('communautes.appels.terminer') }}</button>
+          </template>
+          <button v-else-if="membre" type="button" class="appel" :disabled="etatAppel === 'envoi'" data-test="lancer-appel" @click="lancerAppel">
             <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M6.6 3.5 8.4 7a1 1 0 0 1-.2 1.1L7 9.3a10 10 0 0 0 3.7 3.7l1.2-1.2a1 1 0 0 1 1.1-.2l3.5 1.8a1 1 0 0 1 .5 1.2l-.6 1.9a2 2 0 0 1-2.2 1.4C8.9 17.2 2.8 11.1 2.1 5.8A2 2 0 0 1 3.5 3.6l1.9-.6a1 1 0 0 1 1.2.5Z" fill="currentColor" /></svg>
-            <span>{{ t('communautes.salons.appel') }}</span><span class="visuellement-cache"> {{ t('communautes.salons.nouvelOnglet') }}</span>
-          </a>
+            <span>{{ t('communautes.appels.lancer') }}</span>
+          </button>
+          <span v-if="etatAppel === 'trop' || etatAppel === 'erreur'" role="alert" class="appel__erreur">
+            {{ etatAppel === 'trop' ? t('communautes.appels.trop') : t('etat.indisponible') }}
+          </span>
         </div>
       </header>
 
@@ -267,7 +334,14 @@ function teinte(id: string) {
                   <strong :style="{ color: teinte(l.message.auteur.id) }">{{ l.message.auteur.nom }}</strong>
                   <time :datetime="l.message.envoyeLe">{{ heure(l.message.envoyeLe) }}</time>
                 </p>
-                <p class="message__texte">{{ l.message.texte }}</p>
+                <div v-if="l.message.appel" class="annonce" :class="{ 'annonce--finie': !l.message.appel.enCours }" data-test="annonce-appel">
+                  <span class="annonce__icone" aria-hidden="true">📞</span>
+                  <span>{{ l.message.appel.enCours ? t('communautes.appels.annonce') : t('communautes.appels.termine') }}</span>
+                  <a v-if="rejoignable(l.message)" :href="appel!.url!" target="_blank" rel="noopener noreferrer" class="annonce__rejoindre">
+                    {{ t('communautes.appels.rejoindre') }}<span class="visuellement-cache"> {{ t('communautes.salons.nouvelOnglet') }}</span>
+                  </a>
+                </div>
+                <p v-else class="message__texte">{{ l.message.texte }}</p>
               </div>
             </li>
           </template>
@@ -332,6 +406,26 @@ function teinte(id: string) {
 @media (prefers-color-scheme: dark) { :root:not([data-theme='clair']) .appel { color: #57d68d; } }
 .appel:hover { background: color-mix(in srgb, #23a55a 24%, transparent); }
 .appel:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+button.appel { border: 0; font: inherit; font-weight: 600; font-size: var(--type-body-sm-size); cursor: pointer; }
+button.appel:disabled { opacity: 0.6; cursor: progress; }
+.appel__erreur { color: var(--danger); font-size: 0.8125rem; font-weight: 600; }
+.en-cours { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-muted); font-size: 0.8125rem; }
+.en-cours__point { width: 8px; height: 8px; border-radius: 50%; background: #23a55a; animation: pouls-appel 2s infinite; }
+@keyframes pouls-appel { 0% { box-shadow: 0 0 0 0 rgb(35 165 90 / 0.6); } 70% { box-shadow: 0 0 0 7px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
+@media (prefers-reduced-motion: reduce) { .en-cours__point { animation: none; } }
+.terminer {
+  min-height: 36px; padding: 0 var(--space-3); border-radius: var(--radius-pill); border: 1px solid var(--line-strong);
+  background: transparent; color: var(--ink); font: inherit; font-size: var(--type-body-sm-size); font-weight: 600; cursor: pointer;
+}
+.terminer:hover { border-color: var(--danger); color: var(--danger); }
+.terminer:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.annonce {
+  display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md); background: color-mix(in srgb, #23a55a 12%, transparent); font-weight: 600; font-size: var(--type-body-sm-size);
+}
+.annonce--finie { background: var(--surface-raised); color: var(--ink-muted); font-weight: 500; }
+.annonce__rejoindre { padding: 2px 12px; border-radius: var(--radius-pill); background: #1a7f45; color: #fff; text-decoration: none; font-weight: 700; }
+.annonce__rejoindre:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
 .salon__fil { position: relative; flex: 1; min-height: 0; display: flex; }
 .salon__messages { flex: 1; list-style: none; margin: 0; padding: var(--space-4) 0 var(--space-3); overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; }

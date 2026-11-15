@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Jamii · Communautés et entraide
-  version: 0.6.0
+  version: 0.7.0
   summary: Communautés thématiques, questions-réponses où l'IA propose et un pair valide, discussions, signalements.
   description: |
     Responsable : @rev22rse22 (module communautés, #155 ; repris d'@Amar233-ui le 14/11). Règles communes : docs/api-conventions.md. Modèle : docs/modele-donnees.md
@@ -27,8 +27,8 @@ info:
     **Salons (v0.2, #155)** : chaque communauté a des salons de discussion écrite (`general`, `entraide`, `projets`).
     Lire est ouvert à tout utilisateur connecté, écrire demande d'être membre. Le front relit les nouveaux messages
     **toutes les 3 secondes** avec `apres` (le `numero` du dernier message reçu) : pas de WebSocket, rien de plus à
-    héberger derrière le proxy de DataCloud. Chaque salon a sa salle d'appel vocal et vidéo (`appelUrl`, Jitsi pour la
-    CADEV), donnée **aux membres seulement** : l'adresse contient un suffixe aléatoire. Les messages d'un compte
+    héberger derrière le proxy de DataCloud. Un membre **lance un appel** vocal et vidéo dans un salon (v0.7) : une salle
+    neuve, annoncée dans le salon, donnée **aux membres seulement** (Jitsi pour la CADEV). Les messages d'un compte
     supprimé sont supprimés avec lui (une discussion en direct n'a pas besoin d'être relue comme une réponse).
 
     **CSRF** : toute requête POST ou DELETE envoie l'en-tête `X-XSRF-TOKEN` (socle.yaml, schéma `csrf`).
@@ -285,6 +285,49 @@ paths:
         '403': { $ref: './socle.yaml#/components/responses/Interdit' }
         '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
         '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/communautes/{slug}/salons/{salon}/appel:
+    parameters:
+      - $ref: '#/components/parameters/Slug'
+      - $ref: '#/components/parameters/SalonSlug'
+    post:
+      tags: [salons]
+      operationId: lancerAppel
+      summary: Lancer un appel dans le salon, ou rejoindre celui qui est en cours (membres, v0.7)
+      description: |
+        S'il n'y a pas d'appel en cours, en crée un, avec une salle neuve, et poste dans le salon un message qui l'annonce
+        (`201`). S'il y en a un, le renvoie (`200`) : un seul appel à la fois par salon. Un appel se termine tout seul
+        une heure après son lancement. Limité à 10 appels lancés par heure et par personne.
+      security:
+        - session: []
+          csrf: []
+      responses:
+        '200':
+          description: L'appel déjà en cours.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AppelSalon' }
+        '201':
+          description: Appel lancé.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AppelSalon' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '429': { $ref: './socle.yaml#/components/responses/TropDeRequetes' }
+    delete:
+      tags: [salons]
+      operationId: terminerAppel
+      summary: Terminer l'appel en cours (celui qui l'a lancé, ou un modérateur)
+      security:
+        - session: []
+          csrf: []
+      responses:
+        '204': { description: Terminé. }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
 
   /api/communautes/{slug}/salons/{salon}/messages:
     parameters:
@@ -624,6 +667,21 @@ components:
           oneOf: [{ $ref: './profils.yaml#/components/schemas/Pays' }, { type: 'null' }]
           description: Pour une antenne locale.
 
+    AppelSalon:
+      type: object
+      description: |
+        Un appel lancé dans un salon. « En cours » veut dire lancé il y a moins d'une heure et pas terminé : le service
+        d'appel ne prévient pas Jamii quand les gens partent, on ne dit donc pas combien de personnes sont dedans.
+      required: [id, lancePar, lanceLe, url]
+      properties:
+        id: { type: string, format: uuid }
+        lancePar: { oneOf: [{ $ref: './projets.yaml#/components/schemas/PersonneResume' }, { type: 'null' }] }
+        lanceLe: { type: string, format: date-time }
+        url:
+          type: [string, 'null']
+          format: uri
+          description: 'La salle de cet appel (une adresse neuve à chaque appel). `null` si je ne suis pas membre.'
+
     NouveauSalon:
       type: object
       required: [nom, sujet]
@@ -643,26 +701,32 @@ components:
 
     Salon:
       type: object
-      required: [id, slug, nom, sujet, appelUrl]
+      required: [id, slug, nom, sujet, appel]
       properties:
         id: { type: string, format: uuid }
         slug: { type: string, examples: [general, entraide, projets] }
         nom: { type: string, maxLength: 60, description: 'Affiché « # » devant : « #entraide ».' }
         sujet: { type: string, maxLength: 200 }
-        appelUrl:
-          type: [string, 'null']
-          format: uri
-          description: 'La salle d''appel vocal et vidéo du salon. `null` si je ne suis pas membre de la communauté.'
+        appel:
+          oneOf: [{ $ref: '#/components/schemas/AppelSalon' }, { type: 'null' }]
+          description: 'L''appel en cours dans le salon (v0.7), ou `null` s''il n''y en a pas.'
 
     MessageSalon:
       type: object
-      required: [id, numero, auteur, texte, envoyeLe]
+      required: [id, numero, auteur, texte, envoyeLe, appel]
       properties:
         id: { type: string, format: uuid }
         numero: { type: integer, format: int64, description: 'Croissant : sert de curseur à `apres`.' }
         auteur: { $ref: './projets.yaml#/components/schemas/PersonneResume' }
         texte: { type: string, maxLength: 2000, description: Texte brut, affiché échappé. }
         envoyeLe: { type: string, format: date-time }
+        appel:
+          type: ['object', 'null']
+          description: 'Si le message annonce un appel lancé (v0.7) : cet appel, et s''il est encore en cours.'
+          required: [id, enCours]
+          properties:
+            id: { type: string, format: uuid }
+            enCours: { type: boolean }
 
     NouveauMessageSalon:
       type: object

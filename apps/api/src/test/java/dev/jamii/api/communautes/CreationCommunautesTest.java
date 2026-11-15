@@ -86,7 +86,7 @@ class CreationCommunautesTest {
 		JsonNode salons = corps(mvc.get().uri("/api/communautes/{s}/salons", slug).with(oauth2Login().oauth2User(awa)).exchange())
 			.get("elements");
 		assertThat(salons).hasSize(3);
-		assertThat(salons.get(0).get("appelUrl").asString()).startsWith("https://appels.example/jamii-" + slug + "-general-");
+		assertThat(salons.get(0).get("appel").isNull()).as("pas d'appel tant que personne n'en lance").isTrue();
 	}
 
 	@Test
@@ -136,7 +136,7 @@ class CreationCommunautesTest {
 		MvcTestResult cree = post(awa, "/api/communautes/{s}/salons", "{\"nom\":\"# Offres d'emploi\",\"sujet\":\"Les offres d'emploi de la région.\"}", slug);
 		assertThat(cree).hasStatus(HttpStatus.CREATED);
 		assertThat(corps(cree).get("slug").asString()).isEqualTo("offres-d-emploi");
-		assertThat(corps(cree).get("appelUrl").asString()).startsWith("https://appels.example/jamii-" + slug + "-offres-d-emploi-");
+		assertThat(corps(cree).get("appel").isNull()).isTrue();
 
 		MvcTestResult double_ = post(awa, "/api/communautes/{s}/salons", "{\"nom\":\"Offres d emploi\",\"sujet\":\"Encore les offres.\"}", slug);
 		assertThat(double_).hasStatus(HttpStatus.CONFLICT);

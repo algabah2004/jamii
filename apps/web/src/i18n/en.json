@@ -581,6 +581,16 @@
       "pagePublication": "Open the post on its own",
       "questionIa": "Question (the AI suggests an answer)",
       "encore": "{n} more character | {n} more characters"
+    },
+    "appels": {
+      "lancer": "Start a call",
+      "rejoindre": "Join",
+      "terminer": "End the call",
+      "enCours": "Call started by {nom}, {quand}",
+      "annonce": "started a call",
+      "termine": "Call ended",
+      "enDirect": "{nom} is on a call in #{salon}, join",
+      "trop": "You have started many calls: try again in a moment."
     }
   },
   "question": {

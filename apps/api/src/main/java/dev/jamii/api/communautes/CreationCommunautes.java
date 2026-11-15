@@ -158,7 +158,7 @@ class CreationCommunautes {
 			.query(Integer.class).single();
 		Salons.Salon salon = ajouterSalon(c, slug, court, nom.toLowerCase(Locale.ROOT), sujet, ordre);
 		return ResponseEntity.status(HttpStatus.CREATED)
-			.body(new SalonsController.Salon(salon.id(), salon.slug(), salon.nom(), salon.sujet(), appels + "/" + salon.salleAppel()));
+			.body(new SalonsController.Salon(salon.id(), salon.slug(), salon.nom(), salon.sujet(), null));
 	}
 
 	/** Supprimer un salon : modérateurs seulement, et jamais # général. Ses messages partent avec lui (ON DELETE CASCADE). */
@@ -192,7 +192,7 @@ class CreationCommunautes {
 				INSERT INTO salon (id, communaute_id, slug, nom, sujet, ordre, salle_appel) VALUES (:id, :c, :slug, :nom, :sujet, :o, :salle)
 				""").param("id", id).param("c", communaute).param("slug", slug).param("nom", nom).param("sujet", sujet)
 			.param("o", ordre).param("salle", salle).update();
-		return new Salons.Salon(id, slug, nom, sujet, salle);
+		return new Salons.Salon(id, slug, nom, sujet);
 	}
 
 	/** « Devs du Sahel ! » → « devs-du-sahel » : sans accents, minuscules, des tirets, au plus `max` caractères. */
