@@ -1438,7 +1438,28 @@
         "etat_invalide": "Ce hackathon est annulé : on ne publie plus d'annonce.",
         "trop_de_requetes": "Trop d'envois d'un coup. Réessaie dans un moment.",
         "autre": "Ça n'a pas marché. Réessaie dans un moment."
-      }
+      },
+      "nouvelleCourt": "+ Nouvelle annonce",
+      "annuler": "Annuler",
+      "nouveau": "Nouveau",
+      "chapeau": "Les nouvelles de l’organisation, et un espace pour poser vos questions.",
+      "organisation": "Organisation",
+      "confirmerRetrait": "Retirer cette annonce pour tout le monde ?",
+      "garder": "Garder",
+      "communaute": "Communauté du hackathon",
+      "membres": "aucun membre | un membre | {n} membres",
+      "aucuneQuestion": "Aucune question en attente. Posez la première !",
+      "salonsTitre": "Salons",
+      "rejoindre": "Rejoindre la communauté",
+      "voir": "Voir la communauté"
+    },
+    "onglets": {
+      "titre": "Sections du hackathon",
+      "presentation": "Présentation",
+      "discussion": "Annonces et échanges",
+      "equipes": "Équipes",
+      "gestion": "Gestion",
+      "nouvelles": "nouvelle annonce | nouvelles annonces"
     }
   },
   "missions": {
@@ -1699,7 +1720,9 @@
         "delai": "Délai le plus court"
       },
       "auDessus": "Au-dessus du budget",
-      "ecrire": "Écrire"
+      "ecrire": "Écrire",
+      "ecrireA": "à {nom}",
+      "nonLus": "message non lu | messages non lus"
     },
     "devis": {
       "titre": "Envoyer mon devis",
@@ -1749,7 +1772,8 @@
       "erreurs": {
         "trop": "Trop de messages d'un coup. Réessaie dans un moment.",
         "autre": "Le message n'est pas parti. Réessaie."
-      }
+      },
+      "fermer": "Fermer les échanges"
     }
   },
   "themes": {

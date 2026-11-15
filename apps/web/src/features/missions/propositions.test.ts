@@ -171,8 +171,9 @@ describe('les échanges entre le client et un développeur', () => {
   it('la cliente choisit une proposition, lit la conversation et répond', async () => {
     const envoyes = echanges()
     const page = await monter()
-    await attendre(page, '[data-test="choisir"]')
     await attendre(page, '[data-test="ecrire-developpeur"]')
+    // Avant d'avoir choisi : pas de panneau d'échanges sur la page, la conversation s'ouvre sur le côté.
+    expect(page.find('#echanges').exists()).toBe(false)
     await page.get('[data-test="ecrire-developpeur"]').trigger('click')
     await attendre(page, '[data-test="message"]')
     expect(page.get('[data-test="echanges"]').text()).toContain('Échanges avec Kofi Mensah')
@@ -182,6 +183,9 @@ describe('les échanges entre le client et un développeur', () => {
     await vi.waitFor(() => expect(page.findAll('[data-test="message"]')).toHaveLength(2))
     expect(envoyes).toEqual([{ texte: 'Oui, le compte marchand est prêt.' }])
     expect(page.get('[data-test="ouvrir-messages"]').attributes('href')).toMatch(/^\/messages\//)
+    expect(page.get('[data-test="tiroir-echanges"]').attributes('open')).toBeDefined()
+    await page.get('[data-test="fermer-tiroir"]').trigger('click')
+    await vi.waitFor(() => expect(page.find('[data-test="echanges"]').exists()).toBe(false))
   })
 
   it('un développeur écrit au client avant de proposer ses services', async () => {

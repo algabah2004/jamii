@@ -1438,7 +1438,28 @@
         "etat_invalide": "This hackathon is cancelled: no more announcements.",
         "trop_de_requetes": "Too many posts at once. Try again in a moment.",
         "autre": "That didn't work. Try again in a moment."
-      }
+      },
+      "nouvelleCourt": "+ New announcement",
+      "annuler": "Cancel",
+      "nouveau": "New",
+      "chapeau": "News from the organisers, and a space to ask your questions.",
+      "organisation": "Organisers",
+      "confirmerRetrait": "Remove this announcement for everyone?",
+      "garder": "Keep",
+      "communaute": "Hackathon community",
+      "membres": "no members | one member | {n} members",
+      "aucuneQuestion": "No questions waiting. Ask the first one!",
+      "salonsTitre": "Channels",
+      "rejoindre": "Join the community",
+      "voir": "See the community"
+    },
+    "onglets": {
+      "titre": "Hackathon sections",
+      "presentation": "Overview",
+      "discussion": "Announcements and discussion",
+      "equipes": "Teams",
+      "gestion": "Manage",
+      "nouvelles": "new announcement | new announcements"
     }
   },
   "missions": {
@@ -1699,7 +1720,9 @@
         "delai": "Shortest time"
       },
       "auDessus": "Above budget",
-      "ecrire": "Write"
+      "ecrire": "Write",
+      "ecrireA": "to {nom}",
+      "nonLus": "unread message | unread messages"
     },
     "devis": {
       "titre": "Send my quote",
@@ -1749,7 +1772,8 @@
       "erreurs": {
         "trop": "Too many messages at once. Try again in a moment.",
         "autre": "The message wasn't sent. Try again."
-      }
+      },
+      "fermer": "Close messages"
     }
   },
   "themes": {

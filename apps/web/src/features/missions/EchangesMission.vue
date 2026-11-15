@@ -86,7 +86,7 @@ async function envoyer() {
       </p>
       <!-- Une zone qui défile doit pouvoir prendre le focus (AXE : scrollable-region-focusable). -->
       <ol v-else ref="fil" class="fil" tabindex="0" :aria-label="t('missions.echanges.fil')" data-test="fil">
-        <li v-for="m in recents" :key="m.id" :class="{ moi: m.deMoi }" data-test="message">
+        <li v-for="m in recents" :key="m.id" :class="{ 'de-moi': m.deMoi }" data-test="message">
           <span v-if="!m.deMoi" class="auteur"><JAvatar :nom="avec.nom" :url="avec.avatarUrl ?? null" :taille="20" /></span>
           <p class="bulle">{{ m.texte }}</p>
           <span class="heure texte-discret">{{ quand(m.envoyeLe, locale) }}</span>
@@ -121,14 +121,14 @@ async function envoyer() {
 }
 .fil:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .fil li { display: grid; grid-template-columns: auto 1fr; gap: var(--space-1) var(--space-2); align-items: end; justify-items: start; }
-.fil li.moi { grid-template-columns: 1fr; justify-items: end; }
+.fil li.de-moi { grid-template-columns: 1fr; justify-items: end; }
 .bulle {
   max-inline-size: 36rem; padding: var(--space-2) var(--space-3); border-radius: var(--radius-md); white-space: pre-line;
   background: var(--surface-raised, var(--surface)); border: 1px solid var(--line-strong);
 }
-.moi .bulle { background: var(--action); border-color: var(--action); color: var(--on-action); }
+.de-moi .bulle { background: var(--action); border-color: var(--action); color: var(--on-action); }
 .heure { grid-column: 1 / -1; font-size: 0.75rem; }
-.fil li:not(.moi) .heure { padding-inline-start: 28px; }
+.fil li:not(.de-moi) .heure { padding-inline-start: 28px; }
 .saisie { display: grid; grid-template-columns: 1fr auto; gap: var(--space-3); align-items: end; }
 textarea {
   inline-size: 100%; padding: var(--space-3); border: 1px solid var(--line-strong); border-radius: var(--radius-md);
