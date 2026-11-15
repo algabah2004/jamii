@@ -54,6 +54,11 @@ tags:
   - { name: inscriptions, description: 'S''inscrire, former les équipes.' }
   - { name: rendus, description: 'Rendre le projet d''une équipe.' }
   - { name: jury, description: 'Noter, suivre la notation, publier les résultats.' }
+  - name: discussion
+    description: >-
+      Les annonces de l'organisateur à tous, et la communauté liée (contracts/communautes.yaml) où les participants posent
+      leurs questions et échangent dans des salons. Jamii ne copie rien : le hackathon garde seulement le nom court de la
+      communauté.
 
 paths:
   /api/hackathons:
@@ -482,6 +487,100 @@ paths:
         '403': { $ref: './socle.yaml#/components/responses/Interdit' }
         '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
 
+  /api/hackathons/{hackathonId}/discussion:
+    parameters:
+      - $ref: '#/components/parameters/HackathonId'
+    get:
+      tags: [discussion]
+      operationId: lireDiscussion
+      summary: Les annonces du hackathon (50 dernières) et la communauté liée
+      description: Public comme le hackathon (`404` pour un brouillon qui n'est pas le mien).
+      security: []
+      responses:
+        '200':
+          description: La discussion.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Discussion' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+  /api/hackathons/{hackathonId}/annonces:
+    parameters:
+      - $ref: '#/components/parameters/HackathonId'
+    post:
+      tags: [discussion]
+      operationId: annoncer
+      summary: Publier une annonce à tous (organisateur)
+      description: Pas sur un hackathon annulé (`409` `etat_invalide`). Au plus 10 annonces par heure (`429`).
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [texte]
+              additionalProperties: false
+              properties:
+                texte: { type: string, minLength: 1, maxLength: 2000, description: Texte brut, affiché échappé. }
+      responses:
+        '201':
+          description: Publiée.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Annonce' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+        '429': { $ref: './socle.yaml#/components/responses/TropDeRequetes' }
+  /api/hackathons/{hackathonId}/annonces/{annonceId}:
+    parameters:
+      - $ref: '#/components/parameters/HackathonId'
+      - { name: annonceId, in: path, required: true, schema: { type: string, format: uuid } }
+    delete:
+      tags: [discussion]
+      operationId: retirerAnnonce
+      summary: Retirer une annonce (organisateur). Idempotent.
+      security:
+        - session: []
+          csrf: []
+      responses:
+        '204': { description: Retirée. }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+  /api/hackathons/{hackathonId}/communaute:
+    parameters:
+      - $ref: '#/components/parameters/HackathonId'
+    put:
+      tags: [discussion]
+      operationId: lierCommunaute
+      summary: Lier une communauté au hackathon, ou la délier avec `null` (organisateur)
+      description: >-
+        Le front crée d'abord la communauté (`POST /api/communautes`, l'organisateur en devient modérateur), puis la lie.
+        On peut aussi lier une communauté existante. Seul le format du nom court est vérifié (`400` `format`).
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [communaute]
+              additionalProperties: false
+              properties:
+                communaute: { type: [string, 'null'], pattern: '^[a-z0-9]([a-z0-9-]{0,78}[a-z0-9])?$' }
+      responses:
+        '204': { description: Liée (ou déliée). }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
   /api/hackathons/{hackathonId}/mes-notes:
     parameters:
       - $ref: '#/components/parameters/HackathonId'
@@ -639,6 +738,20 @@ components:
               version: { type: integer, description: 'La `version` du hackathon lue juste avant.' }
 
   schemas:
+    Annonce:
+      type: object
+      required: [id, auteur, texte, publieeLe]
+      properties:
+        id: { type: string, format: uuid }
+        auteur: { $ref: './projets.yaml#/components/schemas/PersonneResume' }
+        texte: { type: string }
+        publieeLe: { type: string, format: date-time }
+    Discussion:
+      type: object
+      required: [communaute, annonces]
+      properties:
+        communaute: { type: [string, 'null'], description: Nom court de la communauté liée, ou `null`. }
+        annonces: { type: array, items: { $ref: '#/components/schemas/Annonce' }, description: La plus récente d'abord. }
     Montant: { $ref: './missions.yaml#/components/schemas/Montant' }
 
     StatutHackathon:

@@ -1382,6 +1382,35 @@
         "seuls": "Nobody is looking for a team. | One person is still looking for a team. | {n} people are still looking for a team.",
         "notation": "All scores are in. | One jury score is missing. | {n} jury scores are missing."
       }
+    },
+    "discussion": {
+      "titre": "Announcements and discussion",
+      "aller": "Announcements and questions",
+      "indisponible": "The discussion isn't responding right now.",
+      "annonces": "Announcements from the organisers",
+      "nouvelle": "New announcement to all participants",
+      "exemple": "E.g. submissions open tomorrow at 9 am. Check that your link works.",
+      "aideAnnonce": "Visible to everyone, even without an account.",
+      "publier": "Publish announcement",
+      "retirer": "Remove",
+      "aucuneAnnonce": "No announcements yet.",
+      "toutes": "See all {n} announcements",
+      "moins": "See less",
+      "espace": "Questions and discussion",
+      "aideEspace": "Ask the organisers and other participants, or chat in the channels. The best answer is highlighted.",
+      "questionsOuvertes": "Questions waiting for an answer",
+      "reponses": "no answers | one answer | {n} answers",
+      "poser": "Ask a question",
+      "salons": "Open the channels",
+      "connexion": "You need a Jamii account to ask a question or write in a channel.",
+      "aideOuvrir": "Open a discussion space: a community for this hackathon, with channels and Q&A. You moderate it.",
+      "ouvrir": "Open the discussion space",
+      "pasEncore": "The organisers haven't opened a discussion space yet.",
+      "erreurs": {
+        "etat_invalide": "This hackathon is cancelled: no more announcements.",
+        "trop_de_requetes": "Too many posts at once. Try again in a moment.",
+        "autre": "That didn't work. Try again in a moment."
+      }
     }
   },
   "missions": {

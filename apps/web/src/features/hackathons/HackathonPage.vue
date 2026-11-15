@@ -19,6 +19,7 @@ import JuryHackathon from './JuryHackathon.vue'
 import NotationHackathon from './NotationHackathon.vue'
 import RenduEquipe from './RenduEquipe.vue'
 import ResultatsHackathon from './ResultatsHackathon.vue'
+import DiscussionHackathon from './DiscussionHackathon.vue'
 import TriCandidatures from './TriCandidatures.vue'
 import PilotageHackathon from './PilotageHackathon.vue'
 import { useSession } from '../../session'
@@ -217,6 +218,7 @@ const annuler = () => (raisonValide.value ? agir(() => annulerHackathon(hackatho
           <div v-if="voitJury" id="jury" class="ancre"><JuryHackathon :hackathon="hackathon" /></div>
           <RenduEquipe v-if="monEquipe" :hackathon="hackathon" :equipe-id="monEquipe" />
           <div v-if="voitEquipes" id="equipes" class="ancre"><EquipesHackathon :hackathon="hackathon" /></div>
+          <div v-if="hackathon.statut !== 'brouillon'" id="discussion" class="ancre"><DiscussionHackathon :hackathon="hackathon" /></div>
         </div>
 
         <aside class="carte resume" :aria-label="t('hackathons.detail.resume')" data-test="resume">
@@ -234,6 +236,7 @@ const annuler = () => (raisonValide.value ? agir(() => annulerHackathon(hackatho
             data-test="se-connecter"
           >{{ t('hackathons.detail.seConnecter') }}</RouterLink>
           <p v-else-if="hackathon.moi.role === 'participant'" class="resume__inscrit" data-test="inscrit">{{ t('hackathons.detail.inscrit') }}</p>
+          <a v-if="hackathon.statut !== 'brouillon'" href="#discussion" class="j-bouton j-bouton--secondaire" data-test="aller-discussion">{{ t('hackathons.discussion.aller') }}</a>
 
           <dl class="faits">
             <div>

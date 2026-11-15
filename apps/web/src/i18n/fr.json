@@ -1382,6 +1382,35 @@
         "seuls": "Personne ne cherche d'équipe. | Une personne cherche encore une équipe. | {n} personnes cherchent encore une équipe.",
         "notation": "Toutes les notes sont données. | Il manque une note du jury. | Il manque {n} notes du jury."
       }
+    },
+    "discussion": {
+      "titre": "Annonces et échanges",
+      "aller": "Annonces et questions",
+      "indisponible": "La discussion ne répond pas pour le moment.",
+      "annonces": "Annonces de l'organisation",
+      "nouvelle": "Nouvelle annonce à tous les participants",
+      "exemple": "Ex. : le dépôt des rendus ouvre demain à 9 h. Pensez à vérifier que votre lien répond.",
+      "aideAnnonce": "Visible par tous, même sans compte.",
+      "publier": "Publier l'annonce",
+      "retirer": "Retirer",
+      "aucuneAnnonce": "Aucune annonce pour le moment.",
+      "toutes": "Voir les {n} annonces",
+      "moins": "Voir moins",
+      "espace": "Questions et échanges",
+      "aideEspace": "Pose ta question à l'organisation et aux autres participants, ou discute dans les salons. La meilleure réponse est mise en avant.",
+      "questionsOuvertes": "Questions qui attendent une réponse",
+      "reponses": "aucune réponse | une réponse | {n} réponses",
+      "poser": "Poser une question",
+      "salons": "Ouvrir les salons",
+      "connexion": "Il faut un compte Jamii pour poser une question ou écrire dans un salon.",
+      "aideOuvrir": "Ouvre un espace d'échange : une communauté dédiée au hackathon, avec des salons et des questions-réponses. Tu en es modératrice ou modérateur.",
+      "ouvrir": "Ouvrir l'espace d'échange",
+      "pasEncore": "L'organisation n'a pas encore ouvert d'espace d'échange.",
+      "erreurs": {
+        "etat_invalide": "Ce hackathon est annulé : on ne publie plus d'annonce.",
+        "trop_de_requetes": "Trop d'envois d'un coup. Réessaie dans un moment.",
+        "autre": "Ça n'a pas marché. Réessaie dans un moment."
+      }
     }
   },
   "missions": {
