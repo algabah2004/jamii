@@ -63,6 +63,7 @@ const budget = (m: MissionResume) => (m.budget ? formaterMontant(m.budget, local
         <li v-for="m in missions" :key="m.id" class="carte mission" :data-statut="m.statut" data-test="mission">
           <p class="mission__haut">
             <span class="etiquette" :data-statut="m.statut">{{ t(`missions.statuts.${m.statut}`) }}</span>
+            <span v-if="m.aFaire" class="a-faire" data-test="a-faire">{{ t('missions.aFaire') }}</span>
             <span class="texte-discret">{{ [m.ville, m.aDistance ? t('missions.aDistance') : null].filter(Boolean).join(' · ') }}</span>
           </p>
           <h2 class="mission__titre">
@@ -143,5 +144,9 @@ const budget = (m: MissionResume) => (m.budget ? formaterMontant(m.budget, local
   font-size: var(--type-body-sm-size); font-weight: 700;
 }
 .etiquette[data-statut='publiee'] { border-color: var(--action); }
+.a-faire {
+  padding: 2px var(--space-3); border-radius: var(--radius-pill); background: var(--cantaloupe); color: var(--midnight);
+  font-size: var(--type-body-sm-size); font-weight: 800;
+}
 .suite { display: flex; justify-content: center; }
 </style>

@@ -759,6 +759,11 @@ components:
         client: { $ref: './projets.yaml#/components/schemas/PersonneResume' }
         nombrePropositions: { type: integer, minimum: 0 }
         publieeLe: { type: [string, 'null'], format: date-time }
+        aFaire:
+          type: boolean
+          description: >-
+            Vrai seulement dans « Les miennes », quand la personne a une action qui fait attendre l'autre partie
+            (retenir, accepter un devis ou un jalon, livrer, déclarer un paiement, donner son avis…). Toujours faux ailleurs.
 
     Mission:
       allOf:

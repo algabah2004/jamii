@@ -527,6 +527,8 @@ export interface components {
             nombrePropositions: number;
             /** Format: date-time */
             publieeLe: string | null;
+            /** @description Vrai seulement dans « Les miennes », quand la personne a une action qui fait attendre l'autre partie (retenir, accepter un devis ou un jalon, livrer, déclarer un paiement, donner son avis…). Toujours faux ailleurs. */
+            aFaire?: boolean;
         };
         Mission: components["schemas"]["MissionResume"] & {
             /** Format: uuid */

@@ -1660,7 +1660,8 @@
         "interdit": "You are not allowed to do this.",
         "autre": "The action did not go through. Try again in a moment."
       }
-    }
+    },
+    "aFaire": "Your turn"
   },
   "themes": {
     "passerClair": "Switch to light theme",

@@ -75,6 +75,9 @@ describe('la liste des missions', () => {
     expect(page.find('[data-test="publier-une-mission"]').exists()).toBe(true)
     await page.get('[data-test="onglet-miennes"]').trigger('click')
     await vi.waitFor(() => expect(page.get('[data-test="onglet-miennes"]').attributes('aria-pressed')).toBe('true'))
+    // Une proposition attend la cliente : la carte le signale ; la liste publique ne le montre jamais.
+    await vi.waitFor(() => expect(page.findAll('[data-test="a-faire"]').length).toBeGreaterThan(0))
+    expect(page.get('[data-test="a-faire"]').text()).toBe('À toi de jouer')
   })
 
   it('dit quand il n’y a aucune mission', async () => {

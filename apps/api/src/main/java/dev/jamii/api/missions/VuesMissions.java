@@ -47,7 +47,8 @@ class VuesMissions {
 	}
 
 	record MissionResume(UUID id, String titre, String statut, List<String> competences, Missions.Montant budget,
-			String ville, String pays, boolean aDistance, PersonneResume client, int nombrePropositions, Instant publieeLe) {
+			String ville, String pays, boolean aDistance, PersonneResume client, int nombrePropositions, Instant publieeLe,
+			boolean aFaire) {
 	}
 
 	record PropositionVue(UUID id, PersonneResume developpeur, String message, Missions.Montant prix, int delaiJours,
@@ -88,8 +89,21 @@ class VuesMissions {
 	}
 
 	MissionResume resume(Missions.Mission m, Compte client, int nombre) {
+		return resume(m, client, nombre, false);
+	}
+
+	MissionResume resume(Missions.Mission m, Compte client, int nombre, boolean aFaire) {
 		return new MissionResume(m.id(), m.titre(), m.statut(), m.competences(), m.budget(), m.ville(), m.pays(), m.aDistance(),
-				personne(m.clientId(), client), nombre, m.publieeLe());
+				personne(m.clientId(), client), nombre, m.publieeLe(), aFaire);
+	}
+
+	/** Les actions qui font attendre l'autre partie : elles valent la pastille « À toi de jouer » dans « Les miennes ». */
+	static final java.util.Set<String> URGENTES = java.util.Set.of("retenir", "accepter_devis", "demarrer", "accepter_jalon",
+			"declarer_paye", "envoyer_devis", "livrer", "declarer_recu", "trancher", "donner_avis");
+
+	/** Vrai si la personne a une action urgente sur cette mission (vue complète : réservé à « Les miennes », page courte). */
+	boolean aFaire(UUID missionId, UUID qui) {
+		return vue(missions.lire(missionId, qui), qui).moi().actions().stream().anyMatch(URGENTES::contains);
 	}
 
 	PropositionVue proposition(Propositions.Proposition p, Compte developpeur) {

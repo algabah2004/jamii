@@ -143,9 +143,22 @@ class PropositionsTest {
 
 		assertThat(corps(lire("/api/missions?vue=miennes", kofi)).get("elements").toString()).contains(m);
 		assertThat(corps(lire("/api/missions?vue=miennes", yann)).get("elements").toString()).doesNotContain(m);
+		// Une proposition attend la cliente : « À toi de jouer » pour elle, pas pour le candidat qui attend sa réponse.
+		assertThat(aFaire(corps(lire("/api/missions?vue=miennes", awa)), m)).isTrue();
+		assertThat(aFaire(corps(lire("/api/missions?vue=miennes", kofi)), m)).isFalse();
+		assertThat(aFaire(corps(lire("/api/missions", awa)), m)).isFalse();
 
 		assertThat(action("/api/missions/" + m + "/propositions/" + deKofi + "/retirer", "{}", kofi)).hasStatus(HttpStatus.NO_CONTENT);
 		assertThat(corps(lire("/api/missions?vue=miennes", kofi)).get("elements").toString()).doesNotContain(m);
+	}
+
+	private static boolean aFaire(JsonNode page, String missionId) {
+		for (JsonNode e : page.get("elements")) {
+			if (e.get("id").asString().equals(missionId)) {
+				return e.get("aFaire").asBoolean();
+			}
+		}
+		throw new AssertionError("mission absente de la page");
 	}
 
 	@Test

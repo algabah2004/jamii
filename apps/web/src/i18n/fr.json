@@ -1660,7 +1660,8 @@
         "interdit": "Tu n'as pas le droit de faire cette action.",
         "autre": "L'action n'a pas abouti. Réessaie dans un instant."
       }
-    }
+    },
+    "aFaire": "À toi de jouer"
   },
   "themes": {
     "passerClair": "Passer au thème clair",
