@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { RouterLink, useRoute } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { JAvatar, JBouton, JChamp, JSquelette } from '../../design-system'
 import {
   annulerHackathon,
@@ -35,6 +35,7 @@ import { useSession } from '../../session'
  */
 const { t, locale } = useI18n()
 const route = useRoute()
+const routeur = useRouter()
 const session = useSession()
 /** L'heure de la lecture de la page : elle situe le hackathon dans son calendrier. */
 const maintenant = Date.now()
@@ -73,6 +74,8 @@ const monEquipe = computed(() => {
 })
 /** L'organisateur gère son jury dès la publication, jusqu'aux résultats. */
 const voitJury = computed(() => hackathon.value?.moi.role === 'organisateur' && ['publie', 'en_cours', 'evaluation', 'resultats'].includes(hackathon.value.statut))
+/** L'onglet « Gestion » : ce que seul l'organisateur pilote (candidatures, jury, publication des résultats). */
+const voitGestion = computed(() => voitJury.value || peut('confirmer_resultats') || (peut('trier_inscriptions') && hackathon.value?.modeInscription === 'candidature'))
 const voitEquipes = computed(() => !['brouillon', 'annule'].includes(hackathon.value?.statut ?? 'brouillon'))
 
 const peut = (nom: string) => (hackathon.value?.moi.actions as string[] | undefined)?.includes(nom) ?? false
@@ -106,6 +109,59 @@ const criteres = computed(() => {
   return liste.map((c) => ({ ...c, part: Math.round((c.poids / total) * 100) }))
 })
 const participe = computed(() => peut('sinscrire') || peut('creer_equipe'))
+
+/** La barre du bas (mobile) : participer, se connecter, ou rejoindre les annonces et échanges. */
+const barreMobile = computed(() => Boolean(hackathon.value && hackathon.value.statut !== 'brouillon' && hackathon.value.moi.role !== 'organisateur'))
+
+// ---------------------------------------------------------------- les onglets
+
+type Onglet = 'presentation' | 'discussion' | 'equipes' | 'gestion'
+const nouvellesAnnonces = ref(0)
+const onglets = computed<Onglet[]>(() => {
+  const h = hackathon.value
+  if (!h || h.statut === 'brouillon') return ['presentation']
+  const liste: Onglet[] = ['presentation', 'discussion']
+  if (voitEquipes.value) liste.push('equipes')
+  if (voitGestion.value) liste.push('gestion')
+  return liste
+})
+const onglet = computed<Onglet>(() => onglets.value.find((o) => o === route.query.onglet) ?? 'presentation')
+/** Les liens internes (#jury, #equipes…) ouvrent l'onglet qui contient leur section. */
+const ONGLET_DE: Record<string, Onglet> = {
+  participer: 'presentation', candidatures: 'gestion', jury: 'gestion', equipes: 'equipes', discussion: 'discussion',
+}
+async function choisirOnglet(o: Onglet, ancre?: string) {
+  await routeur.replace({ query: { ...route.query, onglet: o === 'presentation' ? undefined : o }, hash: ancre ? `#${ancre}` : '' })
+  // Le panneau n'est visible qu'une fois la route changée : on défile après, pas avant.
+  await nextTick()
+  if (ancre) document.getElementById(ancre)?.scrollIntoView({ block: 'start' })
+}
+function suivreAncre() {
+  const ancre = window.location.hash.slice(1)
+  const cible = ONGLET_DE[ancre]
+  if (cible && onglets.value.includes(cible)) void choisirOnglet(cible, ancre)
+}
+onMounted(() => window.addEventListener('hashchange', suivreAncre))
+onBeforeUnmount(() => window.removeEventListener('hashchange', suivreAncre))
+watch(() => hackathon.value?.id, (id) => {
+  if (id) void nextTick(suivreAncre)
+})
+
+/** Flèches gauche et droite, Début et Fin : le motif « onglets » de l'ARIA. */
+function clavierOnglets(e: KeyboardEvent) {
+  const liste = onglets.value
+  const i = liste.indexOf(onglet.value)
+  const cibles: Record<string, Onglet | undefined> = {
+    ArrowRight: liste[(i + 1) % liste.length],
+    ArrowLeft: liste[(i - 1 + liste.length) % liste.length],
+    Home: liste[0],
+    End: liste[liste.length - 1],
+  }
+  const cible = cibles[e.key]
+  if (!cible) return
+  e.preventDefault()
+  void choisirOnglet(cible).then(() => document.getElementById(`onglet-${cible}`)?.focus())
+}
 const invitationConnexion = computed(() => session.etat.value === 'non_connecte' && hackathon.value?.statut === 'publie')
 const raisonValide = computed(() => raison.value.trim().length >= LIMITES.raisonMin)
 const message = computed(() => {
@@ -136,7 +192,7 @@ const annuler = () => (raisonValide.value ? agir(() => annulerHackathon(hackatho
 
 
 <template>
-  <section class="hackathon">
+  <section class="hackathon" :class="{ 'avec-barre': barreMobile }">
     <p class="retour"><RouterLink to="/hackathons">{{ t('hackathons.detail.retour') }}</RouterLink></p>
 
     <JSquelette v-if="etat === 'chargement'" :nombre="3" />
@@ -154,71 +210,103 @@ const annuler = () => (raisonValide.value ? agir(() => annulerHackathon(hackatho
 
       <div class="disposition">
         <div class="principal">
-          <!-- Une fois les résultats publiés, c'est ce qu'on vient voir : ils passent avant le défi. -->
-          <ResultatsHackathon v-if="hackathon.statut === 'resultats'" :hackathon="hackathon" />
-          <article class="carte contenu">
-            <p v-if="hackathon.statut === 'brouillon'" class="note" data-test="brouillon">{{ t('hackathons.detail.brouillon') }}</p>
+          <!-- Des onglets plutôt qu'une page de 5 000 px : chacun a son adresse (?onglet=…) pour être partagé. -->
+          <div v-if="onglets.length > 1" class="onglets" role="tablist" :aria-label="t('hackathons.onglets.titre')" @keydown="clavierOnglets">
+            <button
+              v-for="o in onglets"
+              :id="`onglet-${o}`"
+              :key="o"
+              type="button"
+              role="tab"
+              class="onglet"
+              :aria-selected="onglet === o"
+              :aria-controls="`panneau-${o}`"
+              :tabindex="onglet === o ? 0 : -1"
+              :data-test="`onglet-${o}`"
+              @click="void choisirOnglet(o)"
+            >
+              {{ t(`hackathons.onglets.${o}`) }}
+              <span v-if="o === 'discussion' && nouvellesAnnonces" class="onglet__pastille" data-test="nouvelles-annonces">
+                {{ nouvellesAnnonces }}<span class="visuellement-cache"> {{ t('hackathons.onglets.nouvelles', nouvellesAnnonces) }}</span>
+              </span>
+            </button>
+          </div>
 
-            <section aria-labelledby="defi">
-              <h2 id="defi">{{ t('hackathons.detail.defi') }}</h2>
-              <!-- Texte brut de l'organisateur : affiché échappé, avec ses retours à la ligne. -->
-              <p class="texte" data-test="description">{{ hackathon.description }}</p>
-            </section>
+          <div v-show="onglet === 'presentation'" id="panneau-presentation" class="panneau" role="tabpanel" aria-labelledby="onglet-presentation">
+            <!-- Une fois les résultats publiés, c'est ce qu'on vient voir : ils passent avant le défi. -->
+            <ResultatsHackathon v-if="hackathon.statut === 'resultats'" :hackathon="hackathon" />
+            <article class="carte contenu">
+              <p v-if="hackathon.statut === 'brouillon'" class="note" data-test="brouillon">{{ t('hackathons.detail.brouillon') }}</p>
 
-            <p v-if="hackathon.deploiementObligatoire" class="note" data-test="deploiement">{{ t('hackathons.detail.deploiement') }}</p>
+              <section aria-labelledby="defi">
+                <h2 id="defi">{{ t('hackathons.detail.defi') }}</h2>
+                <!-- Texte brut de l'organisateur : affiché échappé, avec ses retours à la ligne. -->
+                <p class="texte" data-test="description">{{ hackathon.description }}</p>
+              </section>
 
-            <section aria-labelledby="calendrier">
-              <h2 id="calendrier">{{ t('hackathons.detail.calendrier') }}</h2>
-              <ol class="frise" data-test="calendrier">
-                <li v-for="e in etapes" :key="e.cle" :data-etat="e.etat" :aria-current="e.etat === 'actuelle' ? 'step' : undefined">
-                  <span class="frise__point" aria-hidden="true" />
-                  <span class="frise__nom">{{ t(`hackathons.calendrier.${e.cle}`) }}</span>
-                  <span class="frise__date">{{ e.jour }} <span class="texte-discret">· {{ e.heure }}</span></span>
-                </li>
-              </ol>
-            </section>
+              <p v-if="hackathon.deploiementObligatoire" class="note" data-test="deploiement">{{ t('hackathons.detail.deploiement') }}</p>
 
-            <section aria-labelledby="criteres">
-              <h2 id="criteres">{{ t('hackathons.detail.criteres') }}</h2>
-              <ul class="criteres" data-test="criteres">
-                <li v-for="c in criteres" :key="c.id ?? c.nom">
-                  <span class="criteres__nom">{{ c.nom }}</span>
-                  <span class="criteres__part">{{ t('hackathons.detail.part', { n: c.part }) }}</span>
-                  <span class="criteres__barre" aria-hidden="true"><span :style="{ inlineSize: `${c.part}%` }" /></span>
-                </li>
-              </ul>
-            </section>
+              <section aria-labelledby="calendrier">
+                <h2 id="calendrier">{{ t('hackathons.detail.calendrier') }}</h2>
+                <ol class="frise" data-test="calendrier">
+                  <li v-for="e in etapes" :key="e.cle" :data-etat="e.etat" :aria-current="e.etat === 'actuelle' ? 'step' : undefined">
+                    <span class="frise__point" aria-hidden="true" />
+                    <span class="frise__nom">{{ t(`hackathons.calendrier.${e.cle}`) }}</span>
+                    <span class="frise__date">{{ e.jour }} <span class="texte-discret">· {{ e.heure }}</span></span>
+                  </li>
+                </ol>
+              </section>
 
-            <section v-if="hackathon.prix.length" aria-labelledby="prix">
-              <h2 id="prix">{{ t('hackathons.detail.prix') }}</h2>
-              <ul class="prix" data-test="prix">
-                <li v-for="p in hackathon.prix" :key="p.id ?? p.nom">
-                  <strong>{{ p.nom }}</strong>
-                  <span v-if="p.montant" class="prix__montant">{{ formaterMontant(p.montant, locale) }}</span>
-                  <span v-if="p.sponsor" class="texte-discret">{{ t('hackathons.detail.offertPar', { sponsor: p.sponsor }) }}</span>
-                </li>
-              </ul>
-            </section>
+              <section aria-labelledby="criteres">
+                <h2 id="criteres">{{ t('hackathons.detail.criteres') }}</h2>
+                <ul class="criteres" data-test="criteres">
+                  <li v-for="c in criteres" :key="c.id ?? c.nom">
+                    <span class="criteres__nom">{{ c.nom }}</span>
+                    <span class="criteres__part">{{ t('hackathons.detail.part', { n: c.part }) }}</span>
+                    <span class="criteres__barre" aria-hidden="true"><span :style="{ inlineSize: `${c.part}%` }" /></span>
+                  </li>
+                </ul>
+              </section>
 
-            <section v-if="hackathon.questions.length" aria-labelledby="questions">
-              <h2 id="questions">{{ t('hackathons.detail.questions') }}</h2>
-              <ul class="questions"><li v-for="q in hackathon.questions" :key="q">{{ q }}</li></ul>
-            </section>
+              <section v-if="hackathon.prix.length" aria-labelledby="prix">
+                <h2 id="prix">{{ t('hackathons.detail.prix') }}</h2>
+                <ul class="prix" data-test="prix">
+                  <li v-for="p in hackathon.prix" :key="p.id ?? p.nom">
+                    <strong>{{ p.nom }}</strong>
+                    <span v-if="p.montant" class="prix__montant">{{ formaterMontant(p.montant, locale) }}</span>
+                    <span v-if="p.sponsor" class="texte-discret">{{ t('hackathons.detail.offertPar', { sponsor: p.sponsor }) }}</span>
+                  </li>
+                </ul>
+              </section>
 
-            <section v-if="hackathon.codeDeConduite" aria-labelledby="code">
-              <h2 id="code">{{ t('hackathons.detail.code') }}</h2>
-              <p class="texte">{{ hackathon.codeDeConduite }}</p>
-            </section>
-          </article>
+              <section v-if="hackathon.questions.length" aria-labelledby="questions">
+                <h2 id="questions">{{ t('hackathons.detail.questions') }}</h2>
+                <ul class="questions"><li v-for="q in hackathon.questions" :key="q">{{ q }}</li></ul>
+              </section>
 
-          <ConfirmerResultats v-if="peut('confirmer_resultats')" :hackathon="hackathon" @publie="rafraichir" />
-          <div v-if="peut('trier_inscriptions') && hackathon.modeInscription === 'candidature'" id="candidatures" class="ancre"><TriCandidatures :hackathon="hackathon" /></div>
-          <div v-if="participe" id="participer"><InscriptionHackathon :hackathon="hackathon" @inscrit="rafraichir" /></div>
-          <NotationHackathon v-if="peut('noter')" :hackathon="hackathon" />
-          <div v-if="voitJury" id="jury" class="ancre"><JuryHackathon :hackathon="hackathon" /></div>
-          <RenduEquipe v-if="monEquipe" :hackathon="hackathon" :equipe-id="monEquipe" />
-          <div v-if="voitEquipes" id="equipes" class="ancre"><EquipesHackathon :hackathon="hackathon" /></div>
-          <div v-if="hackathon.statut !== 'brouillon'" id="discussion" class="ancre"><DiscussionHackathon :hackathon="hackathon" /></div>
+              <section v-if="hackathon.codeDeConduite" aria-labelledby="code">
+                <h2 id="code">{{ t('hackathons.detail.code') }}</h2>
+                <p class="texte">{{ hackathon.codeDeConduite }}</p>
+              </section>
+            </article>
+            <div v-if="participe" id="participer"><InscriptionHackathon :hackathon="hackathon" @inscrit="rafraichir" /></div>
+            <NotationHackathon v-if="peut('noter')" :hackathon="hackathon" />
+            <RenduEquipe v-if="monEquipe" :hackathon="hackathon" :equipe-id="monEquipe" />
+          </div>
+
+          <div v-if="voitGestion" v-show="onglet === 'gestion'" id="panneau-gestion" class="panneau" role="tabpanel" aria-labelledby="onglet-gestion">
+            <ConfirmerResultats v-if="peut('confirmer_resultats')" :hackathon="hackathon" @publie="rafraichir" />
+            <div v-if="peut('trier_inscriptions') && hackathon.modeInscription === 'candidature'" id="candidatures" class="ancre"><TriCandidatures :hackathon="hackathon" /></div>
+            <div v-if="voitJury" id="jury" class="ancre"><JuryHackathon :hackathon="hackathon" /></div>
+          </div>
+
+          <div v-if="voitEquipes" v-show="onglet === 'equipes'" id="panneau-equipes" class="panneau" role="tabpanel" aria-labelledby="onglet-equipes">
+            <div id="equipes" class="ancre"><EquipesHackathon :hackathon="hackathon" /></div>
+          </div>
+
+          <div v-if="hackathon.statut !== 'brouillon'" v-show="onglet === 'discussion'" id="panneau-discussion" class="panneau" role="tabpanel" aria-labelledby="onglet-discussion">
+            <div id="discussion" class="ancre"><DiscussionHackathon :hackathon="hackathon" @nouvelles="nouvellesAnnonces = $event" /></div>
+          </div>
         </div>
 
         <aside class="carte resume" :aria-label="t('hackathons.detail.resume')" data-test="resume">
@@ -278,21 +366,62 @@ const annuler = () => (raisonValide.value ? agir(() => annulerHackathon(hackatho
           <p v-if="message" role="alert" class="erreur" data-test="erreur">{{ message }}</p>
         </aside>
       </div>
+
+      <div v-if="barreMobile" class="barre-mobile" data-test="barre-mobile">
+        <p v-if="prochaine"><span class="texte-discret">{{ t(`hackathons.calendrier.${prochaine.cle}`) }}</span><strong>{{ prochaine.jour }}</strong></p>
+        <p v-else><strong>{{ hackathon.titre }}</strong></p>
+        <a v-if="participe" href="#participer" class="j-bouton j-bouton--principal">{{ t('hackathons.detail.participer') }}</a>
+        <RouterLink v-else-if="invitationConnexion" :to="{ name: 'connexion', query: { retour: route.fullPath } }" class="j-bouton j-bouton--principal">
+          {{ t('hackathons.detail.seConnecter') }}
+        </RouterLink>
+        <a v-else href="#discussion" class="j-bouton j-bouton--principal">{{ t('hackathons.discussion.aller') }}</a>
+      </div>
     </template>
   </section>
 </template>
 
 <style scoped>
 .hackathon { display: grid; gap: var(--space-6); }
+/* Sur mobile, le résumé passe sous tout le reste : l'action principale reste sous le pouce, dans une barre en bas. */
+.barre-mobile {
+  position: fixed; inset-inline: 0; inset-block-end: 0; z-index: 20;
+  display: flex; gap: var(--space-3); align-items: center; justify-content: space-between;
+  padding: var(--space-3) var(--space-4) calc(var(--space-3) + env(safe-area-inset-bottom));
+  background: var(--surface); border-block-start: 1px solid var(--line-strong);
+  box-shadow: 0 -8px 24px color-mix(in srgb, #000 18%, transparent);
+}
+.barre-mobile p { margin: 0; display: grid; line-height: 1.2; min-width: 0; }
+.barre-mobile strong { font-size: 1.0625rem; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.barre-mobile .j-bouton { flex: 0 0 auto; }
+@media (max-width: 959px) { .avec-barre { padding-block-end: 5.5rem; } }
+@media (min-width: 960px) { .barre-mobile { display: none; } }
+
 .retour { margin: 0; font-size: var(--type-body-sm-size); }
 .message { margin: 0; padding: var(--space-6); }
 .theme { margin: 0; font-size: 1.125rem; }
 
 .disposition { display: grid; gap: var(--space-6); grid-template-columns: minmax(0, 1fr); align-items: start; }
 .principal { display: grid; gap: var(--space-6); min-width: 0; }
+.panneau { display: grid; gap: var(--space-6); min-width: 0; }
+.onglets {
+  display: flex; gap: var(--space-1); overflow-x: auto; scrollbar-width: none; padding: var(--space-1);
+  border-radius: var(--radius-pill); background: var(--surface); border: 1px solid var(--line-strong);
+}
+.onglet {
+  display: inline-flex; flex: 0 0 auto; gap: var(--space-2); align-items: center; min-height: 40px; padding: 0 var(--space-4);
+  border: 0; border-radius: var(--radius-pill); background: transparent; color: var(--ink); font: inherit; font-weight: 600; cursor: pointer;
+}
+.onglet:hover { background: color-mix(in srgb, var(--action) 10%, transparent); }
+.onglet[aria-selected='true'] { background: var(--action); color: var(--on-action); }
+.onglet:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.onglet__pastille {
+  min-inline-size: 1.25rem; padding: 0 6px; border-radius: var(--radius-pill); background: var(--cantaloupe); color: var(--midnight);
+  font-size: 0.75rem; font-weight: 800; text-align: center; font-variant-numeric: tabular-nums;
+}
 @media (min-width: 960px) {
   .disposition { grid-template-columns: minmax(0, 1fr) 20rem; }
-  .resume { position: sticky; top: 6rem; }
+  /* Collant, mais jamais plus haut que l'écran : sinon le bas (tableau de bord, actions) resterait hors de portée. */
+  .resume { position: sticky; top: 6rem; max-block-size: calc(100vh - 7rem); overflow-y: auto; overscroll-behavior: contain; }
 }
 
 .contenu { display: grid; gap: var(--space-8); padding: var(--space-8); }

@@ -18,8 +18,8 @@ On travaille **par gros blocs de bout en bout** : chacun possède une fonctionna
 
 - **Entre deux modules, seulement un contrat ou un événement public.** Un module expose une interface publique (comme `systalink.ChiffresDesModules`) ou publie un événement (comme `communautes.ReponseAcceptee`, ou `demandes.DemandePubliee`). L'autre module l'utilise sans jamais lire ses tables ni ses classes internes. `ModulesTest` (Spring Modulith) fait échouer la CI sinon.
 - **Les agents IA ne s'appellent que par `contracts/ia.yaml`.** Le module freelance ne code pas d'IA : il demande une tâche à @algabah2004.
-- **Les migrations SQL sont horodatées** (`V20261114_1530__salons.sql`, l'heure GMT à laquelle tu l'écris) : deux modules ne prennent jamais le même numéro. Si une migration plus récente que la tienne est fusionnée avant toi, renomme la tienne avec l'heure actuelle avant de fusionner (Flyway refuse une migration plus ancienne que la dernière appliquée).
-- **`CODEOWNERS`** demande la relecture du propriétaire du module touché.
+- **Les migrations SQL sont horodatées** (`V20261114_1530__salons.sql`, l'heure GMT à laquelle tu l'écris) : deux modules ne prennent jamais le même numéro. Une migration plus ancienne que la dernière appliquée est acceptée (`spring.flyway.out-of-order`, #256) : tu n'as rien à renommer.
+- **`CODEOWNERS`** prévient le propriétaire du module touché. Sa relecture n'est jamais obligatoire pour fusionner.
 
 Le **plan de chaque bloc** est dans [`docs/blocs/`](blocs/README.md). C'est un **point de départ** que son responsable réécrit à sa façon. Seuls le **but** et le critère **« terminé quand »** sont fixés par le chef de projet. Les tickets GitHub servent au suivi au jour le jour.
 
@@ -27,7 +27,7 @@ Le **plan de chaque bloc** est dans [`docs/blocs/`](blocs/README.md). C'est un *
 
 1. **Le contrat avant le code.** Chaque bloc écrit d'abord son contrat OpenAPI dans `contracts/` et le fait fusionner. Les autres codent contre ce contrat, jamais contre l'implémentation de quelqu'un d'autre.
 2. **Des données factices pour ne jamais attendre.** Le front tourne sur des données simulées (MSW) générées depuis les contrats, et le back simule l'utilisateur connecté tant que le socle n'est pas prêt.
-3. **Chacun son territoire.** Tu modifies ton territoire (voir le tableau). Pour toucher à celui d'un autre, tu le préviens dans son ticket, ou c'est lui qui fait la modification. Les fichiers communs (`contracts/socle.yaml`, ossature du front, CI) passent par leur responsable.
+3. **Chacun son module, sans barrière.** Tu travailles d'abord dans ton module (voir le tableau). Si tu as besoin de changer celui d'un autre, ou un fichier commun (`contracts/socle.yaml`, ossature du front, CI), fais-le dans ta PR et mentionne son responsable. Tu n'attends pas son accord.
 4. **Gros bloc, petites PR.** On fusionne **au moins tous les 2 ou 3 jours**, avec des PR de **moins de 400 lignes** environ. Une énorme PR générée par IA est impossible à relire.
 5. **Relire ce que son IA produit.** Tu dois pouvoir expliquer chaque ligne en revue. « C'est l'IA qui l'a écrit » n'est pas une réponse devant le jury de Systalink.
 

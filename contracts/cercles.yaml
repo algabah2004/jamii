@@ -23,7 +23,7 @@ info:
     navigateur. Il est **enregistré** : `tirage.effectueLe` et `tirage.parId` disent quand et par qui, et l'ordre ne
     change plus jamais.
 
-    **Droits** : tout utilisateur connecté voit un cercle (nom, ville, membres, tours). Seuls les membres du cercle voient
+    **Droits** : tout utilisateur connecté voit un cercle (nom, membres, tours). Seuls les membres du cercle voient
     les **idées** des autres. Seul le créateur tire au sort. Le tour peut être livré par le membre à qui il appartient
     ou par le créateur.
 
@@ -294,10 +294,15 @@ components:
     CreationCercle:
       type: object
       additionalProperties: false
-      required: [nom, ville, taille]
+      required: [nom, taille]
       properties:
         nom: { type: string, minLength: 3, maxLength: 80, examples: ['Cercle de Dakar'] }
-        ville: { type: string, minLength: 2, maxLength: 80, description: Texte libre. }
+        ville:
+          type: string
+          minLength: 2
+          maxLength: 80
+          deprecated: true
+          description: "Facultative depuis le 15/11 : le formulaire ne la demande plus (un cercle travaille en ligne). Encore acceptée pour les anciens clients."
         taille: { type: integer, minimum: 4, maximum: 6, description: 'Nombre de membres, créateur compris.' }
 
     Idee:
@@ -314,7 +319,7 @@ components:
       properties:
         id: { type: string, format: uuid }
         nom: { type: string }
-        ville: { type: string }
+        ville: { type: [string, 'null'], description: 'null pour les cercles créés sans ville.' }
         taille: { type: integer, minimum: 4, maximum: 6 }
         statut: { $ref: '#/components/schemas/StatutCercle' }
         nombreMembres: { type: integer, minimum: 1, maximum: 6 }

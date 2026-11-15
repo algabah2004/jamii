@@ -139,9 +139,10 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('./features/vitrine/VitrinePage.vue'),
   },
   {
-    // Public : uniquement des chiffres agrégés (contracts/systalink.yaml).
+    // Réservé à l'équipe Systalink (contracts/systalink.yaml v0.3) : la page dit « réservé » aux autres.
     path: '/systalink',
     name: 'systalink',
+    meta: { connexionRequise: true },
     component: () => import('./features/systalink/TableauDeBordPage.vue'),
   },
   {

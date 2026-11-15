@@ -121,7 +121,7 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
       <header class="page-tete motif motif--reseau">
         <div class="page-tete__texte">
           <h1>{{ cercle.nom }}</h1>
-          <p>{{ t('cercles.sousTitre', { n: cercle.membres.length, ville: cercle.ville }) }}</p>
+          <p>{{ cercle.ville ? t('cercles.sousTitre', { n: cercle.membres.length, ville: cercle.ville }) : t('cercles.sousTitreSansVille', { n: cercle.membres.length }) }}</p>
         </div>
       </header>
 

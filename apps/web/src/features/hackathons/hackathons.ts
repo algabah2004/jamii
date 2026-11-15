@@ -271,6 +271,27 @@ export async function questionsOuvertes(slug: string): Promise<QuestionOuverte[]
   return (data?.elements ?? []).map((p) => ({ id: p.id, titre: p.titre, nombreReponses: p.nombreReponses }))
 }
 
+/** Ce qu'on montre de l'espace d'échange : la communauté liée et ses salons (les communautés demandent une connexion). */
+export type Espace = { nom: string; nombreMembres: number; questionsOuvertes: number; membre: boolean; salons: { slug: string; nom: string }[] }
+
+export async function lireEspace(slug: string): Promise<Espace | null> {
+  const chemin = { params: { path: { slug } } }
+  const [c, s] = await Promise.all([api.GET('/api/communautes/{slug}', chemin), api.GET('/api/communautes/{slug}/salons', chemin)])
+  if (!c.data) return null
+  const { nom, nombreMembres, questionsOuvertes, membre } = c.data
+  return { nom, nombreMembres, questionsOuvertes, membre, salons: (s.data?.elements ?? []).slice(0, 4).map(({ slug, nom }) => ({ slug, nom })) }
+}
+
+/** « à l'instant », « il y a 5 min », « il y a 3 h », puis la date : une annonce se lit d'abord par sa fraîcheur. */
+export function depuis(iso: string, langue: string, maintenant = Date.now()): string {
+  const secondes = Math.round((maintenant - Date.parse(iso)) / 1000)
+  const relatif = new Intl.RelativeTimeFormat(langue, { numeric: 'auto' })
+  if (secondes < 60) return relatif.format(0, 'second')
+  if (secondes < 3600) return relatif.format(-Math.floor(secondes / 60), 'minute')
+  if (secondes < 86400) return relatif.format(-Math.floor(secondes / 3600), 'hour')
+  return new Intl.DateTimeFormat(langue, { day: 'numeric', month: 'long' }).format(new Date(iso))
+}
+
 /** L'identifiant d'un compte, tiré du lien de son profil Jamii (`…/p/<uuid>`, la page publique de son profil) ou donné tel quel ; `null` sinon. */
 export function lireIdentifiant(texte: string): string | null {
   const trouve = texte.trim().match(/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/?$/i)

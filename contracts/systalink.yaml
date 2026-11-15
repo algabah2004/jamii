@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Jamii · Espace Systalink
-  version: 0.2.0
+  version: 0.3.0
   summary: Tableau de bord, tendances du marché, clients qui ont demandé à être suivis, et mesure des « moments Systalink ».
   description: |
     Responsable : @Amar233-ui (bloc #18). Règles communes : docs/api-conventions.md. Modèle : docs/modele-donnees.md (table `moment_systalink`).
@@ -9,8 +9,10 @@ info:
     **Ce que le tableau de bord prouve** : Jamii amène des utilisateurs et des projets au cloud Systalink.
     Il montre seulement des **chiffres agrégés**, jamais une personne, un nom ou un identifiant.
 
-    **Lecture publique** : le tableau de bord se lit sans connexion. Il ne contient que des comptes, et un pays
-    regroupe au moins 5 inscrits (sinon il passe dans `autres`). Personne ne peut donc être reconnu.
+    **Réservé à l'équipe Systalink (v0.3)** : tout l'espace (tableau de bord, tendances, clients suivis) demande le
+    rôle `systalink` : un admin, ou un login GitHub ou un e-mail listé dans `SYSTALINK_ACCES`. Sans connexion : `401` ;
+    connecté sans ce rôle : `403`. `GET /api/systalink/acces` dit au front s'il doit montrer le lien. Les chiffres
+    restent agrégés : un pays regroupe au moins 5 inscrits (sinon il passe dans `autres`).
 
     **Ce qu'on ne mesure pas** : le passage à une offre payante DataCloud. Jamii ne voit pas les achats faits chez
     Systalink, et on n'invente pas ce chiffre. Il faudra une donnée de Systalink (API ou webhook) pour l'ajouter.
@@ -33,12 +35,32 @@ servers:
   - url: http://localhost:8080
 
 tags:
-  - { name: tableau-de-bord, description: 'Chiffres agrégés pour Systalink (lecture publique).' }
+  - { name: tableau-de-bord, description: 'Chiffres agrégés pour Systalink (rôle systalink).' }
   - { name: moments, description: 'Mesure de chaque service Systalink proposé, puis accepté.' }
-  - { name: tendances, description: 'Ce que les besoins décrits sur Jamii disent du marché (lecture publique, anonyme).' }
+  - { name: tendances, description: 'Ce que les besoins décrits sur Jamii disent du marché (anonyme, rôle systalink).' }
   - { name: clients-suivis, description: 'Les personnes qui ont demandé à recevoir les offres Systalink (rôle systalink).' }
 
 paths:
+  /api/systalink/acces:
+    get:
+      tags: [tableau-de-bord]
+      operationId: accesSystalink
+      summary: La personne connectée fait-elle partie de l'équipe Systalink ?
+      description: Pour le menu. Ne révèle rien d'autre ; la vraie vérification est faite par chaque route.
+      security:
+        - session: []
+      responses:
+        '200':
+          description: La réponse.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [acces]
+                properties:
+                  acces: { type: boolean }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+
   /api/systalink/tableau-de-bord:
     get:
       tags: [tableau-de-bord]
@@ -47,7 +69,8 @@ paths:
       description: |
         Calculé par l'API et mis en cache 5 minutes : la page tient la charge même si toute la salle l'ouvre en même temps.
         Les compteurs `nouveaux…` portent sur la période demandée. Les totaux portent sur toute la vie de Jamii.
-      security: []
+      security:
+        - session: []
       parameters:
         - name: periode
           in: query
@@ -57,7 +80,7 @@ paths:
           description: Les chiffres.
           headers:
             Cache-Control:
-              schema: { type: string, examples: ['public, max-age=300'] }
+              schema: { type: string, examples: ['private, max-age=300'] }
           content:
             application/json:
               schema: { $ref: '#/components/schemas/TableauDeBord' }
@@ -74,6 +97,8 @@ paths:
                       - { service: orion, proposes: 5, acceptes: 2 }
                       - { service: yokk, proposes: 8, acceptes: 3 }
         '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
 
   /api/systalink/moments/{momentId}/accepter:
     post:
@@ -105,7 +130,8 @@ paths:
       tags: [tendances]
       operationId: tendancesSystalink
       summary: Les tendances du marché, à partir des besoins décrits sur Jamii
-      security: []
+      security:
+        - session: []
       parameters:
         - name: periode
           in: query
@@ -117,6 +143,8 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Tendances' }
         '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
 
   /api/systalink/clients-suivis:
     get:

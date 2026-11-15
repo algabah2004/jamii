@@ -113,12 +113,13 @@ export const handlersCercles = [
     return HttpResponse.json({ elements: liste.map(resume), suivant: null })
   }),
   http.post('/api/cercles', async ({ request }) => {
-    const c = (await request.json()) as { nom: string; ville: string; taille: number }
-    if (!c.nom || c.nom.length < 3 || !c.ville || c.ville.length < 2 || ![4, 5, 6].includes(c.taille)) return erreur('invalide', 400)
+    const c = (await request.json()) as { nom: string; ville?: string; taille: number }
+    // La ville est facultative depuis le 15/11 : le formulaire ne la demande plus.
+    if (!c.nom || c.nom.length < 3 || (c.ville != null && c.ville.length < 2) || ![4, 5, 6].includes(c.taille)) return erreur('invalide', 400)
     // En démo, les autres membres rejoignent tout de suite avec leur idée : on peut aller au tirage seule.
     const membres = [membre(0, null, false), ...[1, 2, 3, 4, 5].slice(0, c.taille - 1).map((i) => membre(i, null))]
     const cercle: Cercle = {
-      id: `a0c1e2c1-0000-4000-8000-${String(cercles.length + 1).padStart(12, '0')}`, nom: c.nom, ville: c.ville, taille: c.taille, statut: 'ouvert',
+      id: `a0c1e2c1-0000-4000-8000-${String(cercles.length + 1).padStart(12, '0')}`, nom: c.nom, ville: c.ville ?? null, taille: c.taille, statut: 'ouvert',
       nombreMembres: membres.length, createur: PERSONNES[0]!.personne, creeLe: new Date().toISOString(),
       membres, tours: [], tourEnCours: null, tirage: null, moi: { estCreateur: true, estMembre: true },
     }

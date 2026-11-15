@@ -694,6 +694,17 @@ class CerclesTest {
 	}
 
 
+	@Test
+	void la_ville_est_facultative_un_cercle_se_cree_avec_son_nom_et_sa_taille() {
+		UtilisateurConnecte moi = utilisateur("Sans ville");
+		var json = assertThat(ecrire("POST", "/api/cercles", moi, "{\"nom\":\"Cercle en ligne\",\"taille\":5}"))
+			.hasStatus(HttpStatus.CREATED).bodyJson();
+		json.extractingPath("$.nom").isEqualTo("Cercle en ligne");
+		json.extractingPath("$.ville").isNull();
+		assertThat(lire("/api/cercles?portee=mes", moi)).hasStatusOk().bodyJson()
+			.extractingPath("$.elements[0].ville").isNull();
+	}
+
 	// ---------------------------------------------------------------- activité du dépôt d'un tour
 
 	/** Un dépôt par cercle : le cache d'une minute ne mélange jamais deux tests. */

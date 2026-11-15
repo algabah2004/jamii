@@ -301,7 +301,8 @@ export interface components {
             /** Format: uuid */
             id: string;
             nom: string;
-            ville: string;
+            /** @description null pour les cercles créés sans ville. */
+            ville: string | null;
             taille: number;
             statut: components["schemas"]["StatutCercle"];
             nombreMembres: number;

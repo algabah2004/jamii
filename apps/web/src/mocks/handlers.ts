@@ -99,6 +99,8 @@ export const handlers = [
           { status: 401, headers: { 'Content-Type': 'application/problem+json' } },
         ),
   ),
+  // En démo, le compte connecté fait partie de l'équipe Systalink : l'espace reste visible pendant la présentation.
+  http.get('/api/systalink/acces', () => HttpResponse.json({ acces: connecte })),
   http.get('/api/systalink/tableau-de-bord', ({ request }) => {
     const periode = new URL(request.url).searchParams.get('periode') ?? 'mois'
     return HttpResponse.json({ ...tableauDemo, periode } as TableauDeBord)

@@ -29,6 +29,22 @@ describe('chargerSession', () => {
   })
 })
 
+describe('l’accès à l’espace Systalink', () => {
+  it('ne montre l’espace qu’à son équipe, et l’oublie si l’API ne répond pas', async () => {
+    await chargerSession()
+    expect(useSession().accesSystalink.value).toBe(true)
+
+    serveur.use(http.get('/api/systalink/acces', () => HttpResponse.json({ acces: false })))
+    await chargerSession()
+    expect(useSession().accesSystalink.value).toBe(false)
+
+    serveur.use(http.get('/api/systalink/acces', () => HttpResponse.error()))
+    await chargerSession()
+    expect(useSession().etat.value).toBe('connecte')
+    expect(useSession().accesSystalink.value).toBe(false)
+  })
+})
+
 describe('seDeconnecter', () => {
   it('envoie le jeton CSRF et oublie l’utilisateur', async () => {
     document.cookie = 'XSRF-TOKEN=jeton-de-test'
