@@ -111,6 +111,11 @@ const criteres = computed(() => {
   return liste.map((c) => ({ ...c, part: Math.round((c.poids / total) * 100) }))
 })
 const participe = computed(() => peut('sinscrire') || peut('creer_equipe'))
+/** Sa candidature attend l'organisateur (ou est en liste d'attente) : le résumé le dit au lieu de proposer « Participer ». */
+const candidature = computed(() => {
+  const s = hackathon.value?.moi.inscription
+  return s === 'en_attente' || s === 'attente' ? s : null
+})
 /** Le juré, pendant l'évaluation : combien de projets il lui reste à noter (donné par `NotationHackathon`). */
 const notation = ref<{ notes: number; total: number } | null>(null)
 const texteNotation = computed(() => {
@@ -330,7 +335,10 @@ const annuler = () => (raisonValide.value ? agir(() => annulerHackathon(hackatho
             <p v-if="texteNotation" class="resume__etape">{{ texteNotation }}</p>
             <a href="#noter" class="j-bouton j-bouton--principal" data-test="aller-noter">{{ t('hackathons.detail.noter') }}</a>
           </div>
-          <a v-if="participe" href="#participer" class="j-bouton j-bouton--principal" data-test="aller-participer">{{ t('hackathons.detail.participer') }}</a>
+          <p v-if="candidature" class="resume__inscrit" :data-statut="candidature" data-test="candidature">
+            {{ t(`hackathons.detail.candidature.${candidature}`) }} <a href="#participer">{{ t('hackathons.detail.voirCandidature') }}</a>
+          </p>
+          <a v-else-if="participe" href="#participer" class="j-bouton j-bouton--principal" data-test="aller-participer">{{ t('hackathons.detail.participer') }}</a>
           <RouterLink
             v-else-if="invitationConnexion"
             :to="{ name: 'connexion', query: { retour: route.fullPath } }"
@@ -386,7 +394,7 @@ const annuler = () => (raisonValide.value ? agir(() => annulerHackathon(hackatho
         <p v-else-if="prochaine"><span class="texte-discret">{{ t(`hackathons.calendrier.${prochaine.cle}`) }}</span><strong>{{ prochaine.jourCourt }}</strong></p>
         <p v-else><strong>{{ hackathon.titre }}</strong></p>
         <a v-if="peut('noter')" href="#noter" class="j-bouton j-bouton--principal">{{ t('hackathons.detail.noterCourt') }}</a>
-        <a v-else-if="participe" href="#participer" class="j-bouton j-bouton--principal">{{ t('hackathons.detail.participer') }}</a>
+        <a v-else-if="participe && !candidature" href="#participer" class="j-bouton j-bouton--principal">{{ t('hackathons.detail.participer') }}</a>
         <RouterLink v-else-if="invitationConnexion" :to="{ name: 'connexion', query: { retour: route.fullPath } }" class="j-bouton j-bouton--principal">
           {{ t('hackathons.detail.seConnecter') }}
         </RouterLink>

@@ -888,6 +888,10 @@ components:
               properties:
                 role: { type: string, enum: [organisateur, jure, participant, visiteur] }
                 equipeId: { type: [string, 'null'], format: uuid }
+                inscription:
+                  type: [string, 'null']
+                  enum: [en_attente, acceptee, attente, null]
+                  description: "Le statut de l'inscription de la personne (`en_attente` : sa candidature attend l'organisateur ; `attente` : liste d'attente), `null` si elle n'est pas inscrite."
                 actions:
                   type: array
                   items:

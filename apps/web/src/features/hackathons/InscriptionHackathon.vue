@@ -14,6 +14,11 @@ import { erreursParQuestion, erreursRestantes, focaliserQuestion, manquantes, re
 const props = defineProps<{ hackathon: Hackathon }>()
 const emit = defineEmits<{ inscrit: [] }>()
 const { t } = useI18n()
+/** Sa candidature, si elle n'est pas encore acceptée : l'organisateur n'a pas répondu, ou l'a mise en liste d'attente. */
+const candidature = computed(() => {
+  const s = props.hackathon.moi.inscription
+  return s === 'en_attente' || s === 'attente' ? s : null
+})
 
 const chercheEquipe = ref(true)
 const nom = ref('')
@@ -76,7 +81,11 @@ function creer() {
 <template>
   <section class="carte participer" aria-labelledby="participer-titre" data-test="participer">
     <h2 id="participer-titre">{{ t('hackathons.inscription.titre') }}</h2>
-    <p class="texte-discret">
+    <div v-if="candidature" class="statut" data-test="statut-candidature" :data-statut="candidature">
+      <p class="statut__titre">{{ t(`hackathons.inscription.candidature.${candidature}.titre`) }}</p>
+      <p class="texte-discret">{{ t(`hackathons.inscription.candidature.${candidature}.aide`) }}</p>
+    </div>
+    <p v-else class="texte-discret">
       {{ hackathon.modeInscription === 'candidature' ? t('hackathons.inscription.introCandidature') : t('hackathons.inscription.intro') }}
     </p>
 
@@ -121,4 +130,8 @@ function creer() {
 .case { display: flex; gap: var(--space-2); align-items: center; min-height: 44px; }
 .erreur { margin: 0; color: var(--danger); font-weight: 600; }
 .questions { display: grid; gap: var(--space-3); }
+/* Le statut de la candidature : un encart, avec le texte pour le dire (la couleur ne fait que le souligner). */
+.statut { display: grid; gap: var(--space-1); padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); border-inline-start: 3px solid var(--cantaloupe); background: color-mix(in srgb, var(--cantaloupe) 10%, transparent); }
+.statut p { margin: 0; }
+.statut__titre { font-weight: 700; }
 </style>

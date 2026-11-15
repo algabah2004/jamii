@@ -611,6 +611,11 @@ export interface components {
                 role: "organisateur" | "jure" | "participant" | "visiteur";
                 /** Format: uuid */
                 equipeId?: string | null;
+                /**
+                 * @description Le statut de l'inscription de la personne (`en_attente` : sa candidature attend l'organisateur ; `attente` : liste d'attente), `null` si elle n'est pas inscrite.
+                 * @enum {string|null}
+                 */
+                inscription?: "en_attente" | "acceptee" | "attente" | null;
                 actions: ("modifier" | "publier" | "annuler" | "sinscrire" | "creer_equipe" | "inviter" | "rendre" | "noter" | "trier_inscriptions" | "inviter_jure" | "confirmer_resultats")[];
             };
         };

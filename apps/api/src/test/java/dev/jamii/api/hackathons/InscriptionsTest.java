@@ -263,8 +263,13 @@ class InscriptionsTest {
 		assertThat(iKofi.get("statut").asString()).isEqualTo("en_attente");
 		assertThat(corpsDe(lire("/api/hackathons/" + h, awa)).at("/moi/actions").toString()).contains("trier_inscriptions");
 
+		// Le candidat retrouve le statut de sa candidature en relisant le hackathon.
+		assertThat(corpsDe(lire("/api/hackathons/" + h, kofi)).at("/moi/inscription").asString()).isEqualTo("en_attente");
+		assertThat(corpsDe(lire("/api/hackathons/" + h, awa)).at("/moi/inscription").isNull()).isTrue();
+
 		assertThat(trier(h, iFatou.get("id").asString(), "acceptee", kofi)).hasStatus(HttpStatus.FORBIDDEN);
 		assertThat(trier(h, iFatou.get("id").asString(), "acceptee", awa)).hasStatus(HttpStatus.OK);
+		assertThat(corpsDe(lire("/api/hackathons/" + h, fatou)).at("/moi/inscription").asString()).isEqualTo("acceptee");
 		String e = equipe(h, "Les Griots", kofi).get("id").asString();
 		assertThat(inviter(h, e, fatou, kofi)).hasStatus(HttpStatus.OK);
 

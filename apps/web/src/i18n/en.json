@@ -1049,7 +1049,87 @@
         "fermee": "Closed"
       }
     },
-    "sousTitreSansVille": "{n} members"
+    "sousTitreSansVille": "{n} members",
+    "onglets": {
+      "aria": "The circle and its room",
+      "cercle": "The circle",
+      "salon": "Room"
+    },
+    "salon": {
+      "titre": "The circle's room",
+      "contexteAvant": "Before the draw · {n} of {taille} members. Get to know each other and sharpen your ideas.",
+      "contexteTour": "Turn {n} · {titre}",
+      "contexteJour": "day {jour} of 14 · {faites}/{total} tasks",
+      "contexteTermine": "The circle is complete. Well done, everyone!",
+      "pointsAria": "Members, and who posted their daily check-in",
+      "pointsCompte": "{n} of {total} posted their check-in today",
+      "aFaitSonPoint": "{nom} posted their check-in today",
+      "lancerAppel": "Start a circle call",
+      "appelEnCours": "Call in progress · started by {nom} {quand}",
+      "rejoindre": "Join",
+      "terminer": "End",
+      "aLanceAppel": "started a circle call",
+      "appelTermine": "Call ended",
+      "coupsTitre": "A member needs a hand | {n} members need a hand",
+      "aider": "I can help",
+      "regle": "It's sorted",
+      "fil": "The circle's messages",
+      "vide": "Nothing yet. Start the conversation!",
+      "aujourdhui": "today",
+      "hier": "yesterday",
+      "quelquun": "Someone",
+      "evenements": {
+        "cercle_cree": "{nom} created the circle",
+        "membre_rejoint": "{nom} joined the circle",
+        "tirage": "{nom} ran the draw: the turn order is set",
+        "tour_ouvert": "Turn {n} begins: over to {nom}'s project",
+        "tour_livre": "Turn {n} is delivered: well done on {nom}'s project",
+        "cercle_termine": "Every turn is delivered: the circle is complete"
+      },
+      "sonPoint": "Daily check-in",
+      "fait": "Done",
+      "prevu": "Next",
+      "bloque": "Blocked",
+      "bloqueFacultatif": "Blocked (optional)",
+      "faitAide": "What you did since your last check-in",
+      "prevuAide": "What you're doing next",
+      "bloqueAide": "What's blocking you, if anything",
+      "demandeTitre": "Needs a hand",
+      "reglee": "Sorted",
+      "regleePar": "Sorted thanks to {nom}",
+      "nouveaux": "1 new message | {n} new messages",
+      "coupe": "Connection lost, retrying…",
+      "modes": "What you want to tell the circle",
+      "modeTexte": "Message",
+      "modePoint": "My check-in",
+      "modeBloque": "I'm stuck",
+      "pointFaitAujourdhui": "You've already posted your check-in today. See you tomorrow!",
+      "placeholder": "Write to the circle…",
+      "bloquePlaceholder": "What are you stuck on? Be specific: the circle will help you faster.",
+      "aideEntree": "Enter to send, Shift + Enter for a new line",
+      "envoyer": "Send",
+      "envoyerPoint": "Share my check-in",
+      "envoyerBloque": "Ask for a hand",
+      "erreurs": {
+        "envoi": "The message didn't go through. Try again.",
+        "pointDejaFait": "You've already posted your check-in today.",
+        "trop": "Too many messages at once. Wait a moment.",
+        "tropAppels": "Too many calls started in an hour. Try again later."
+      }
+    },
+    "tableau": {
+      "aria": "Turn dashboard",
+      "pasDeTour": "The dashboard opens with the first turn, after the draw.",
+      "avancement": "Turn progress",
+      "miennes": "My tasks",
+      "aucuneMienne": "You haven't taken a task yet. Pick one from the open tasks.",
+      "libres": "Open tasks",
+      "etAutres": "and {n} more in the “The circle” tab",
+      "equipe": "The team",
+      "livrees": "{n}/{total} tasks delivered",
+      "pointFait": "checked in",
+      "ecrire": "Message"
+    }
   },
   "reseau": {
     "competences": "Skills",
@@ -1296,7 +1376,12 @@
       "aNoter": "{n} project left to score | {n} projects left to score",
       "toutNote": "All projects are scored",
       "noter": "Score the projects",
-      "noterCourt": "Score"
+      "noterCourt": "Score",
+      "candidature": {
+        "en_attente": "Your application is waiting for the organiser.",
+        "attente": "You're on the waiting list."
+      },
+      "voirCandidature": "See"
     },
     "inscription": {
       "titre": "Take part",
@@ -1316,6 +1401,16 @@
         "etat_invalide": "This hackathon is not accepting registrations right now.",
         "validation": "The team name must be between 2 and 60 characters.",
         "autre": "Registration did not go through. Try again in a moment."
+      },
+      "candidature": {
+        "en_attente": {
+          "titre": "Application sent",
+          "aide": "The organiser picks the participants. Come back here to see the answer."
+        },
+        "attente": {
+          "titre": "You're on the waiting list",
+          "aide": "The organiser kept your application without declining it. Come back here to see the answer."
+        }
       }
     },
     "equipes": {
