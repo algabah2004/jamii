@@ -1134,7 +1134,6 @@
       "devise": "Devise",
       "ajouterPrix": "Ajouter un prix",
       "enregistrer": "Enregistrer le brouillon",
-      "provisoire": "Écran provisoire : son design sera repris avec le design system.",
       "invalide": {
         "titre": "Le nom doit faire entre 3 et 120 caractères.",
         "theme": "Le thème doit faire entre 2 et 120 caractères.",
@@ -1170,7 +1169,14 @@
       "confirmerAnnulation": "Confirmer l'annulation",
       "brouillon": "Brouillon : personne d'autre ne voit ce hackathon pour le moment.",
       "introuvable": "Ce hackathon n'existe pas, ou tu n'as pas le droit de le voir.",
-      "provisoire": "Écran provisoire : son design sera repris avec le design system.",
+      "defi": "Le défi",
+      "part": "{n} % de la note",
+      "resume": "En bref",
+      "prochaine": "Prochaine étape",
+      "participer": "Participer",
+      "seConnecter": "Se connecter pour participer",
+      "inscrit": "Tu participes à ce hackathon.",
+      "inscritsTitre": "Inscrits",
       "erreurs": {
         "modification_concurrente": "Le hackathon a changé entre-temps. Recharge la page.",
         "etat_invalide": "Cette action n'est plus possible pour ce hackathon.",
@@ -1398,7 +1404,6 @@
       "invitation": "Seulement les développeurs que j'invite",
       "ville": "Ta ville (facultatif)",
       "creer": "Enregistrer le brouillon",
-      "provisoire": "Écran provisoire : son design sera repris avec le design system.",
       "invalide": {
         "titre": "Le titre doit faire entre 3 et 120 caractères.",
         "besoin": "La description doit faire au moins 20 caractères.",
@@ -1424,7 +1429,17 @@
       "fermerAide": "Plus personne ne pourra proposer ses services.",
       "invite": "Tu es invité à proposer tes services pour cette mission.",
       "brouillon": "Brouillon : personne d'autre ne voit cette mission pour le moment.",
-      "provisoire": "Écran provisoire : son design sera repris avec le design system.",
+      "resume": "En bref",
+      "proposer": "Proposer mes services",
+      "seConnecter": "Se connecter pour proposer mes services",
+      "propositionsTitre": "Propositions reçues",
+      "etapes": "Où en est la mission",
+      "etape": {
+        "publiee": "Publiée",
+        "attribuee": "Développeur choisi",
+        "en_cours": "En cours",
+        "terminee": "Terminée"
+      },
       "introuvable": "Cette mission n'existe pas, ou tu n'as pas le droit de la voir.",
       "erreurs": {
         "modification_concurrente": "La mission a changé entre-temps. Recharge la page.",
