@@ -90,9 +90,18 @@ async function resultat(appel: Promise<{ data?: unknown; error?: unknown }>): Pr
 }
 
 export async function lireCercles(portee: 'mes' | 'ouverts'): Promise<CercleResume[]> {
-  const { data, error } = await api.GET('/api/cercles', { params: { query: { portee } } })
-  if (error || !data) throw new Error('cercles indisponibles')
-  return data.elements ?? []
+  const elements: CercleResume[] = []
+  const curseurs = new Set<string>()
+  let curseur: string | undefined
+  do {
+    const { data, error } = await api.GET('/api/cercles', { params: { query: { portee, limite: 100, ...(curseur ? { curseur } : {}) } } })
+    if (error || !data) throw new Error('cercles indisponibles')
+    elements.push(...(data.elements ?? []))
+    curseur = data.curseurSuivant ?? undefined
+    if (curseur && curseurs.has(curseur)) throw new Error('pagination des cercles invalide')
+    if (curseur) curseurs.add(curseur)
+  } while (curseur)
+  return elements
 }
 
 export async function lireCercle(id: string): Promise<Cercle | null> {

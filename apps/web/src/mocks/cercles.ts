@@ -82,6 +82,35 @@ function cercleSaintLouis(): Cercle {
   }
 }
 
+// Répertoire de démonstration uniquement : jamais inséré dans l’API ni dans une base de production.
+const DECOUVERTES = [
+  ['Sahel Mobile', 'Bamako', 'Aïssata Koné'], ['Lagos Builders', 'Lagos', 'Chinedu Okafor'],
+  ['Nairobi Open Source', 'Nairobi', 'Wanjiku Kamau'], ['Design & Impact', 'Accra', 'Abena Owusu'],
+  ['Santé Connect', 'Kigali', 'Diane Uwase'], ['Les Makers de Thiès', 'Thiès', 'Cheikh Sarr'],
+  ['Casa Web Studio', 'Casablanca', 'Salma El Amrani'], ['Douala Numérique', 'Douala', 'Alain Ngono'],
+  ['Cotonou Créatif', 'Cotonou', 'Grâce Dossou'], ['Tunis Code Lab', 'Tunis', 'Yasmine Ben Ali'],
+  ['Ubuntu Builders', 'Cape Town', 'Lerato Molefe'], ['Freetown Devs', 'Freetown', 'Mariama Bangura'],
+  ['AgriTech Ensemble', 'Ouagadougou', 'Adama Ouédraogo'], ['Les Artisanes du Web', 'Dakar', 'Sokhna Ba'],
+  ['Conakry Connect', 'Conakry', 'Mamadou Diallo'], ['Luanda Digital', 'Luanda', 'Ana dos Santos'],
+  ['Maputo Makers', 'Maputo', 'Celina Machel'], ['Tech pour l’école', 'Abidjan', 'Aya N’Guessan'],
+  ['Addis Creative Code', 'Addis-Abeba', 'Hana Tesfaye'], ['Nouakchott Ensemble', 'Nouakchott', 'Aminet Mint Ahmed'],
+  ['Antananarivo Studio', 'Antananarivo', 'Mialy Rakoto'],
+] as const
+
+function cerclesDecouverte(): Cercle[] {
+  return DECOUVERTES.map(([nom, ville, fondateur], i) => {
+    const createur = p(`c1a00000-0000-4000-8000-${String(100 + i).padStart(12, '0')}`, fondateur)
+    const taille = 4 + i % 3
+    const autres = Array.from({ length: i % (taille - 1) }, (_, j) => membre(1 + (i + j) % 5, null))
+    const membres: MembreCercle[] = [{ personne: createur, rang: null, aDeposeIdee: true, rejointLe: ilYa(i + 2) }, ...autres]
+    return {
+      id: `a0c1e2c1-0000-4000-8000-${String(100 + i).padStart(12, '0')}`, nom, ville, taille, statut: 'ouvert',
+      nombreMembres: membres.length, createur, creeLe: ilYa(i + 2), membres, tours: [], tourEnCours: null, tirage: null,
+      moi: { estCreateur: false, estMembre: false },
+    }
+  })
+}
+
 export const ID_DAKAR = 'a0c1e2c1-0000-4000-8000-00000000da4a'
 export const ID_SAINT_LOUIS = 'a0c1e2c1-0000-4000-8000-0000000051a1'
 export const ID_ABIDJAN = 'a0c1e2c1-0000-4000-8000-0000000ab1d1'
@@ -120,7 +149,7 @@ function salonDakar() {
 export function reinitialiserCercles() {
   projets.clear()
   suivantProjet = 1
-  cercles = [cercleSaintLouis(), cercleDakar(), cercleAbidjan()]
+  cercles = [cercleSaintLouis(), cercleDakar(), cercleAbidjan(), ...cerclesDecouverte()]
   salons.clear()
   suivantNumero = 1
   appels.clear()

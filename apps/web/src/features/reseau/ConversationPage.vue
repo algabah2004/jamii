@@ -23,6 +23,7 @@ import {
  * zone de saisie collée en bas (Entrée envoie, Maj + Entrée va à la ligne). Le fil se relit toutes les 5 secondes
  * tant que l'onglet est visible : pas de WebSocket, comme les salons. Les textes restent du texte brut (jamais v-html).
  */
+const emit = defineEmits<{ actualise: [] }>()
 const { t, locale } = useI18n()
 const route = useRoute()
 const routeur = useRouter()
@@ -46,6 +47,7 @@ async function charger() {
     lien.value = await lireLien(r.personne.id).catch(() => null)
     // La lecture a marqué la conversation comme lue : la pastille du menu se met à jour tout de suite.
     void rafraichirActivite()
+    emit('actualise')
     await descendre()
   } catch {
     etat.value = 'indisponible'
@@ -63,6 +65,7 @@ async function relire() {
     const enBas = !fil.value || fil.value.scrollHeight - fil.value.scrollTop - fil.value.clientHeight < 80
     messages.value = r.messages
     if (r.messages.at(-1)?.id !== dernier) {
+      emit('actualise')
       void rafraichirActivite()
       if (enBas) await descendre()
     }
@@ -146,6 +149,7 @@ async function envoyer() {
     const r = await envoyerMessage(personne.value.id, texte.value)
     if (r.ok) {
       messages.value.push(r.message)
+      emit('actualise')
       texte.value = ''
       await descendre()
       zone.value?.focus()
@@ -181,6 +185,7 @@ async function appeler() {
       fenetre.location.href = r.message.appel.url
     }
     messages.value.push(r.message)
+    emit('actualise')
     appel.value = 'repos'
     await descendre()
   } catch {
@@ -224,15 +229,15 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
     </div>
 
     <div v-else-if="personne" class="cadre">
-      <header class="tete">
+      <header class="tete verre">
         <RouterLink to="/messages" class="tete__retour" :aria-label="t('reseau.messages.tous')">
           <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M12.5 4.5 7 10l5.5 5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
         </RouterLink>
         <JAvatar :nom="personne.nom" :url="personne.avatarUrl" :taille="44" />
         <div class="tete__qui">
-          <h1>{{ personne.nom }}</h1>
+          <h2>{{ personne.nom }}</h2>
           <p>
-            <span v-if="personne.ville">{{ personne.ville }}</span>
+            <RouterLink :to="`/p/${personne.id}`" class="tete__profil">{{ t('reseau.messages.voirProfil') }}</RouterLink><span v-if="personne.ville"> · {{ personne.ville }}</span>
             <span v-if="lien && lien !== 'aucun' && lien !== 'recue'" class="tete__lien" data-test="lien-contact">{{ t(`reseau.contacts.statut.${lien}`) }}</span>
           </p>
         </div>
@@ -305,7 +310,7 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
         <p v-if="erreurInvitation" role="alert" class="erreur">{{ erreurInvitation }}</p>
       </div>
 
-      <form class="saisie" data-test="form-message" @submit.prevent="envoyer">
+      <form class="saisie verre" data-test="form-message" @submit.prevent="envoyer">
         <p v-if="erreur" role="alert" class="erreur saisie__erreur">{{ erreur }}</p>
         <label for="message" class="visuellement-cache">{{ t('reseau.messages.ecrire', { nom: prenom(personne.nom) }) }}</label>
         <textarea
@@ -327,20 +332,22 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
 </template>
 
 <style scoped>
-.discussion { max-width: 52rem; margin-inline: auto; }
+.discussion { height: 100%; min-width: 0; }
 .cadre {
   display: grid; grid-template-rows: auto 1fr auto auto;
-  height: min(calc(100dvh - 9rem), 54rem); min-height: 28rem;
-  border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); overflow: hidden;
+  height: 100%; min-height: 0;
+  background: var(--bg); overflow: hidden;
 }
 
-.tete { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--line); background: var(--surface-raised, var(--surface)); }
-.tete__retour { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; color: var(--ink); }
+.tete { display: flex; align-items: center; gap: var(--space-3); min-height: 80px; padding: 16px 20px; margin: 14px 14px -10px; border-radius: 22px; z-index: 2; }
+.tete__retour { display: none; place-items: center; width: 36px; height: 36px; border-radius: 50%; color: var(--ink); }
 .tete__retour:hover { background: color-mix(in srgb, var(--ink) 8%, transparent); }
 .tete__qui { flex: 1; min-width: 0; }
-.tete__qui h1 { margin: 0; font-size: 1.0625rem; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tete__qui p { margin: 0; display: flex; gap: var(--space-2); align-items: center; color: var(--ink-muted); font-size: var(--type-body-sm-size); }
-.tete__lien { padding: 0 8px; border-radius: var(--radius-pill); background: var(--action-soft); color: var(--action-ink); font-weight: 600; font-size: 0.75rem; }
+.tete__qui h2 { margin: 0; font-size: 1.0625rem; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tete__qui p { margin: 0; display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; color: var(--ink-muted); font-size: var(--type-body-sm-size); }
+.tete__profil { color: var(--ink-muted); text-decoration: none; }
+.tete__profil:hover { color: var(--action-ink); text-decoration: underline; }
+.tete__lien { padding: 0 8px; border-radius: var(--radius-pill); background: var(--action-soft); color: var(--action-ink); font-weight: 600; font-size: 0.875rem; }
 .tete__actions { display: flex; align-items: center; gap: var(--space-2); }
 
 .rond { display: grid; place-items: center; flex: none; width: 44px; height: 44px; border-radius: 50%; border: 0; cursor: pointer; transition: transform var(--motion-fast, 120ms) ease, background var(--motion-fast, 120ms) ease; }
@@ -348,12 +355,12 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
 .rond:not(:disabled):hover { transform: scale(1.06); }
 .rond:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .rond--appel { background: var(--action-soft); color: var(--action-ink); }
-.rond--envoyer { background: var(--action); color: var(--on-action); }
+.rond--envoyer { background: var(--proof); color: var(--on-proof); }
 
 .fil {
-  overflow-y: auto; padding: var(--space-4) var(--space-4) var(--space-2); overscroll-behavior: contain;
+  min-height: 0; overflow-y: auto; padding: 34px clamp(20px, 4vw, 64px) 40px; overscroll-behavior: contain;
   background:
-    radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--ink) 6%, transparent) 1px, transparent 0) 0 0 / 22px 22px,
+    radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--ink) 3%, transparent) 1px, transparent 0) 0 0 / 22px 22px,
     var(--bg);
 }
 .accueil { display: grid; justify-items: center; gap: var(--space-2); padding: var(--space-8, 3rem) var(--space-4); text-align: center; color: var(--ink-muted); }
@@ -362,7 +369,7 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
 
 .jours { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
 .jour { display: flex; justify-content: center; margin: var(--space-4) 0 var(--space-2); }
-.jour span { padding: 2px 12px; border-radius: var(--radius-pill); background: var(--surface); border: 1px solid var(--line); color: var(--ink-muted); font-size: 0.75rem; font-weight: 600; text-transform: capitalize; }
+.jour span { padding: 2px 12px; border-radius: var(--radius-pill); background: var(--surface); border: 1px solid var(--line); color: var(--ink-muted); font-size: 0.875rem; font-weight: 600; text-transform: capitalize; }
 
 .ligne { display: flex; align-items: flex-end; gap: var(--space-2); margin-top: var(--space-2); animation: arrive 180ms ease-out; }
 .ligne--suite { margin-top: 0; }
@@ -372,16 +379,16 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
 
 .bulle { display: grid; gap: var(--space-1); max-width: min(75%, 34rem); padding: var(--space-2) var(--space-3); border-radius: 18px; box-shadow: 0 1px 1px color-mix(in srgb, var(--ink) 8%, transparent); }
 .bulle--autre .bulle { background: var(--surface); color: var(--ink); border-bottom-left-radius: 6px; }
-.bulle--moi .bulle { background: var(--action); color: var(--on-action); border-bottom-right-radius: 6px; }
+.bulle--moi .bulle { background: var(--proof); color: var(--on-proof); border-bottom-right-radius: 6px; }
 .ligne--suite.bulle--autre .bulle { border-top-left-radius: 6px; }
 .ligne--suite.bulle--moi .bulle { border-top-right-radius: 6px; }
-.bulle__texte { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.45; }
-.bulle__meta { display: inline-flex; justify-self: end; gap: 4px; align-items: center; font-size: 0.6875rem; opacity: 0.75; }
+.bulle__texte { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.55; }
+.bulle__meta { display: inline-flex; justify-self: end; gap: 4px; align-items: center; font-size: 0.8125rem; opacity: 0.85; }
 .bulle__lu { letter-spacing: -2px; }
 .bulle__lu--oui { font-weight: 800; }
 
 .invitation { display: grid; gap: var(--space-1); justify-items: start; margin-top: var(--space-1); padding: var(--space-3); border-radius: 12px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); }
-.invitation__titre { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-muted); }
+.invitation__titre { font-size: 0.875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-muted); }
 .invitation__cercle { font-weight: 700; color: var(--ink); }
 .invitation__infos { color: var(--ink-muted); font-size: var(--type-body-sm-size); }
 
@@ -389,18 +396,18 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
 .appel-carte__icone { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--success, #1f9d55); color: #fff; flex: none; }
 .appel-carte--fini .appel-carte__icone { background: var(--line-strong); color: var(--ink-muted); }
 .appel-carte__texte { display: grid; flex: 1; line-height: 1.3; }
-.appel-carte__texte span { color: var(--ink-muted); font-size: 0.8125rem; }
+.appel-carte__texte span { color: var(--ink-muted); font-size: 0.9375rem; }
 .appel-carte__rejoindre { padding: 6px 14px; border-radius: var(--radius-pill); background: var(--success, #1f9d55); color: #fff; font-weight: 700; text-decoration: none; white-space: nowrap; }
 .appel-carte__rejoindre:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
-.saisie { display: flex; align-items: flex-end; flex-wrap: wrap; gap: var(--space-2); padding: var(--space-3) var(--space-4); border-top: 1px solid var(--line); background: var(--surface); }
+.saisie { display: flex; align-items: flex-end; flex-wrap: wrap; gap: var(--space-2); padding: 10px; margin: -14px 24px 0; border-radius: 30px; z-index: 2; }
 .saisie textarea {
   flex: 1; min-width: 0; min-height: 44px; max-height: 160px; padding: 11px var(--space-4); resize: none;
-  border: 1px solid var(--line-strong); border-radius: 22px; background: var(--bg); color: var(--ink); font: inherit; line-height: 1.4;
+  border: 1px solid transparent; border-radius: 22px; background: transparent; color: var(--ink); font: inherit; line-height: 1.4;
 }
 .saisie textarea:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
 .saisie__erreur { flex-basis: 100%; }
-.aide { margin: 0; padding: 0 var(--space-4) var(--space-2); font-size: 0.75rem; background: var(--surface); }
+.aide { margin: 0; padding: 8px 36px 16px; font-size: 0.8125rem; background: var(--bg); }
 .erreur { margin: 0; color: var(--danger); font-weight: 600; }
 
 @keyframes arrive { from { opacity: 0; transform: translateY(6px); } }
@@ -408,8 +415,14 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
   .ligne { animation: none; }
   .rond { transition: none; }
 }
-@media (max-width: 40rem) {
-  .cadre { height: calc(100dvh - 7rem); border-radius: 0; border-inline: 0; }
+@media (max-width: 45rem) {
+  .tete__retour { display: grid; }
+  .tete { padding: 10px; margin: 10px 10px -10px; gap: 8px; min-height: 76px; flex-wrap: wrap; }
+  .tete__qui { min-width: 100px; }
+  .tete__actions { margin-left: auto; }
+  .tete__actions .j-bouton { font-size: 0.8125rem; padding-inline: 8px; }
+  .fil { padding: 30px 16px 40px; }
+  .saisie { padding: 8px; margin: -14px 12px 12px; }
   .aide { display: none; }
   .bulle { max-width: 85%; }
 }

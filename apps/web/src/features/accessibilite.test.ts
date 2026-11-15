@@ -114,3 +114,21 @@ describe('AXE, hackathons', () => {
     expect(await violations(`/hackathons/${HACKATHON}`, '[data-test="form-notes"]')).toEqual([])
   })
 })
+
+
+describe('AXE, messagerie', () => {
+  it('la liste des conversations et la recherche', async () => {
+    expect(await violations('/messages', '[data-test="conversations"]')).toEqual([])
+  })
+
+  it('la discussion avec la liste des conversations', async () => {
+    expect(await violations('/messages/d2e00000-0000-4000-8000-000000000002', '[data-test="form-message"]')).toEqual([])
+  })
+})
+
+
+describe('AXE, exploration des cercles', () => {
+  it('la recherche, les filtres et les cartes', async () => {
+    expect(await violations('/cercles', '[data-test="cercles-ouverts"]')).toEqual([])
+  })
+})
