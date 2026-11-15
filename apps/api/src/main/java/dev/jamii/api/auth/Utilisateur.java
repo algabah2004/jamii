@@ -79,6 +79,34 @@ class Utilisateur {
 		this.misAJourLe = maintenant;
 	}
 
+	/**
+	 * Un compte créé par une connexion Google : le nom et la photo que la personne a choisis chez Google, à la place du
+	 * nom neutre. Seulement à la création : ensuite, c'est son profil Jamii qui décide.
+	 */
+	void completerDepuisGoogle(String nomAffiche, String avatarUrl, Instant maintenant) {
+		if (nomAffiche != null && !nomAffiche.isBlank()) {
+			String nomPropre = nomAffiche.strip();
+			this.nom = nomPropre.length() > NOM_MAX ? nomPropre.substring(0, NOM_MAX) : nomPropre;
+		}
+		if (avatarUrl != null && avatarUrl.startsWith("https://") && avatarUrl.length() <= 500) {
+			this.avatarUrl = avatarUrl;
+		}
+		this.misAJourLe = maintenant;
+	}
+
+	/**
+	 * Relier un compte GitHub à un compte venu par Google ou par e-mail (proposition 0005) : le login sert à générer la
+	 * carte de compétences. Le nom reste celui que la personne a choisi ; l'avatar GitHub seulement s'il n'y en a pas.
+	 */
+	void lierGithub(long githubId, String login, String avatarUrl, Instant maintenant) {
+		this.githubId = githubId;
+		this.loginGithub = login;
+		if (this.avatarUrl == null) {
+			this.avatarUrl = avatarUrl;
+		}
+		this.misAJourLe = maintenant;
+	}
+
 	UUID id() {
 		return id;
 	}

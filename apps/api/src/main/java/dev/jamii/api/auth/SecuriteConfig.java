@@ -26,7 +26,19 @@ class SecuriteConfig {
 
 	static final String CONNEXION_GITHUB = "/api/auth/github";
 
+	/** Se connecter avec Google (#260), seulement si l'application Google est configurée. */
+	static final String CONNEXION_GOOGLE = "/api/auth/google";
+
+	/** La valeur par défaut d'un identifiant d'application dans application.yaml : pas configuré. */
+	static final String NON_CONFIGURE = "a-configurer";
+
 	private static final String ATTRIBUT_RETOUR = "jamii.retour";
+
+	/** L'identifiant du compte connecté qui relie son GitHub (`/api/auth/github?lier=1`, proposition 0005). */
+	static final String ATTRIBUT_LIER = "jamii.lier";
+
+	/** Là où revient une personne qui a relié son GitHub, ou qui n'y est pas arrivée. */
+	static final String RETOUR_LIER = "/profil";
 
 	@Bean
 	SecurityFilterChain securite(HttpSecurity http, ConnexionGithub connexionGithub, ErreursSecurite erreurs,
@@ -51,9 +63,14 @@ class SecuriteConfig {
 				.authorizationEndpoint(debut -> debut.authorizationRequestResolver(resolveurAvecRetour(clients)))
 				.redirectionEndpoint(retour -> retour.baseUri("/api/auth/*/retour"))
 				.userInfoEndpoint(profil -> profil.userService(connexionGithub))
-				.successHandler((requete, reponse, auth) -> reponse.sendRedirect(webUrl + retirerRetour(requete)))
-				.failureHandler((requete, reponse, echec) -> reponse
-					.sendRedirect(webUrl + "/connexion?erreur=" + codeEchec(echec))))
+				.successHandler((requete, reponse, auth) -> {
+					boolean lier = retirerLier(requete);
+					reponse.sendRedirect(webUrl + (lier ? RETOUR_LIER + "?github=relie" : retirerRetour(requete)));
+				})
+				.failureHandler((requete, reponse, echec) -> {
+					String code = codeEchec(echec, requete.getRequestURI());
+					reponse.sendRedirect(webUrl + (retirerLier(requete) ? RETOUR_LIER + "?erreurGithub=" + code : "/connexion?erreur=" + code));
+				}))
 			.logout(sortie -> sortie.logoutUrl("/api/auth/deconnexion")
 				.logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT))
 				.deleteCookies("JAMII_SESSION"))
@@ -70,8 +87,8 @@ class SecuriteConfig {
 	}
 
 	/**
-	 * Ne démarre la connexion que sur /api/auth/github (les autres routes /api/auth/… ne sont pas des fournisseurs),
-	 * et retient en session le chemin « retour » s'il est sûr.
+	 * Ne démarre la connexion que sur /api/auth/github, et sur /api/auth/google si Google est configuré (les autres
+	 * routes /api/auth/… ne sont pas des fournisseurs), et retient en session le chemin « retour » s'il est sûr.
 	 */
 	static OAuth2AuthorizationRequestResolver resolveurAvecRetour(ClientRegistrationRepository clients) {
 		var parDefaut = new DefaultOAuth2AuthorizationRequestResolver(clients, "/api/auth");
@@ -80,10 +97,20 @@ class SecuriteConfig {
 			@Override
 			public OAuth2AuthorizationRequest resolve(HttpServletRequest requete) {
 				String chemin = requete.getRequestURI().substring(requete.getContextPath().length());
-				if (!CONNEXION_GITHUB.equals(chemin)) {
+				boolean google = CONNEXION_GOOGLE.equals(chemin) && googleConfigure(clients);
+				if (!CONNEXION_GITHUB.equals(chemin) && !google) {
 					return null;
 				}
 				requete.getSession().setAttribute(ATTRIBUT_RETOUR, CheminRetour.valider(requete.getParameter("retour")));
+				// Relier son GitHub : seulement pour une personne déjà connectée. Sinon, une connexion GitHub ordinaire.
+				var connecte = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+				if (!google && "1".equals(requete.getParameter("lier")) && connecte != null
+						&& connecte.getPrincipal() instanceof UtilisateurConnecte moi) {
+					requete.getSession().setAttribute(ATTRIBUT_LIER, moi.id());
+				}
+				else {
+					requete.getSession().removeAttribute(ATTRIBUT_LIER);
+				}
 				return parDefaut.resolve(requete);
 			}
 
@@ -95,6 +122,25 @@ class SecuriteConfig {
 		};
 	}
 
+	/** Le compte à relier, lu pendant le retour de GitHub (la requête en cours), ou `null`. */
+	static java.util.UUID compteALier() {
+		if (!(org.springframework.web.context.request.RequestContextHolder.getRequestAttributes()
+				instanceof org.springframework.web.context.request.ServletRequestAttributes attributs)) {
+			return null;
+		}
+		HttpSession session = attributs.getRequest().getSession(false);
+		return session != null && session.getAttribute(ATTRIBUT_LIER) instanceof java.util.UUID id ? id : null;
+	}
+
+	static boolean retirerLier(HttpServletRequest requete) {
+		HttpSession session = requete.getSession(false);
+		if (session == null || session.getAttribute(ATTRIBUT_LIER) == null) {
+			return false;
+		}
+		session.removeAttribute(ATTRIBUT_LIER);
+		return true;
+	}
+
 	static String retirerRetour(HttpServletRequest requete) {
 		HttpSession session = requete.getSession(false);
 		if (session == null || !(session.getAttribute(ATTRIBUT_RETOUR) instanceof String retour)) {
@@ -104,6 +150,25 @@ class SecuriteConfig {
 		return CheminRetour.valider(retour);
 	}
 
+	static boolean googleConfigure(ClientRegistrationRepository clients) {
+		var google = clients.findByRegistrationId("google");
+		return google != null && FournisseursController.configure(google.getClientId());
+	}
+
+	/** Pour un retour de Google, les codes du contrat : refus_google, google_indisponible, email_non_verifie. */
+	static String codeEchec(Exception echec, String chemin) {
+		if (chemin == null || !chemin.startsWith(CONNEXION_GOOGLE + "/")) {
+			return codeEchec(echec);
+		}
+		String code = echec instanceof OAuth2AuthenticationException oauth ? oauth.getError().getErrorCode() : "";
+		return switch (code) {
+			case "access_denied" -> "refus_google";
+			case "email_non_verifie" -> "email_non_verifie";
+			case "invalid_state_parameter", "authorization_request_not_found", "invalid_request" -> "requete_invalide";
+			default -> "google_indisponible";
+		};
+	}
+
 	/** Codes du contrat : refus_github, github_indisponible, requete_invalide. */
 	static String codeEchec(Exception echec) {
 		if (!(echec instanceof OAuth2AuthenticationException oauth)) {
@@ -111,6 +176,7 @@ class SecuriteConfig {
 		}
 		return switch (oauth.getError().getErrorCode()) {
 			case "access_denied" -> "refus_github";
+			case "github_deja_utilise", "compte_deja_relie" -> oauth.getError().getErrorCode();
 			case "invalid_state_parameter", "authorization_request_not_found", "invalid_request" -> "requete_invalide";
 			default -> "github_indisponible";
 		};

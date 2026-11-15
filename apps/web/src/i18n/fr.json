@@ -20,7 +20,7 @@
     "githubTexte": "Connecte-toi avec GitHub. Ta carte de compétences se construit à partir de tes dépôts publics.",
     "ou": "ou",
     "emailTitre": "Tu as un besoin, sans compte GitHub",
-    "emailTexte": "PME, association ou particulier : reçois un lien de connexion par e-mail. Pas de mot de passe.",
+    "emailTexte": "PME, association ou particulier : pas besoin de GitHub, ni de mot de passe.",
     "email": "Ton adresse e-mail",
     "emailInvalide": "Cette adresse e-mail n'est pas valide.",
     "recevoirLien": "Recevoir un lien de connexion",
@@ -37,9 +37,14 @@
     "erreurs": {
       "refus_github": "Tu as refusé l'accès sur GitHub : rien n'a été partagé. Tu peux réessayer, ou recevoir un lien par e-mail.",
       "requete_invalide": "La connexion avec GitHub a expiré. Réessaie.",
-      "github_indisponible": "GitHub ne répond pas pour le moment. Réessaie dans un instant, ou reçois un lien par e-mail."
+      "github_indisponible": "GitHub ne répond pas pour le moment. Réessaie dans un instant, ou reçois un lien par e-mail.",
+      "refus_google": "Tu as refusé l'accès sur Google : rien n'a été partagé. Tu peux réessayer, ou recevoir un lien par e-mail.",
+      "google_indisponible": "Google ne répond pas pour le moment. Réessaie dans un instant, ou reçois un lien par e-mail.",
+      "email_non_verifie": "Google n'a pas confirmé ton adresse e-mail. Reçois plutôt un lien de connexion par e-mail."
     },
-    "seConnecter": "Se connecter"
+    "seConnecter": "Se connecter",
+    "google": "Continuer avec Google",
+    "googleOu": "Ou reçois un lien de connexion par e-mail :"
   },
   "accueil": {
     "titre": "Trouve ton équipe, construis ton projet, mets-le en ligne.",
@@ -115,7 +120,7 @@
       "regenerer": "Mettre à jour depuis GitHub",
       "enCours": "Lecture de tes dépôts GitHub…",
       "prive": "Ton profil reste privé jusqu'à ce que tu le publies.",
-      "sansGithub": "Ton compte n'est pas relié à GitHub. Connecte-toi avec GitHub pour générer ton profil.",
+      "sansGithub": "Ton compte n'est pas encore relié à GitHub. Relie-le pour générer ta carte de compétences à partir de tes dépôts publics.",
       "tropSouvent": "Tu as déjà mis ton profil à jour plusieurs fois cette heure-ci. Réessaie un peu plus tard.",
       "erreurs": {
         "github_indisponible": "GitHub ne répond pas pour le moment. Ton profil précédent est conservé : réessaie dans quelques minutes.",
@@ -126,6 +131,15 @@
         "sujets": "Les sujets de tes dépôts",
         "etoiles": "Les étoiles de tes dépôts",
         "jamais": "Jamais tes dépôts privés"
+      },
+      "relier": "Relier mon GitHub",
+      "relie": "Ton GitHub est relié. Tu peux générer ta carte de compétences.",
+      "erreursLien": {
+        "github_deja_utilise": "Ce GitHub est déjà relié à un autre compte Jamii. Connecte-toi avec GitHub pour retrouver ce compte.",
+        "compte_deja_relie": "Ton compte est déjà relié à un autre GitHub.",
+        "refus_github": "Tu as refusé l'accès sur GitHub : rien n'a été relié.",
+        "requete_invalide": "La liaison avec GitHub a expiré. Réessaie.",
+        "github_indisponible": "GitHub ne répond pas pour le moment. Réessaie dans un instant."
       }
     },
     "disponibilite": {
