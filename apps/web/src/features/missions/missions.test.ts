@@ -90,6 +90,20 @@ describe('la liste des missions', () => {
     expect(page.get('[data-test="aucune"]').text()).toContain('Aucune mission ouverte')
   })
 
+  it('recherche dans les compétences et la ville, puis permet de réinitialiser les filtres', async () => {
+    const { page } = await monter('/missions')
+    await attendre(page, '[data-test="liste"]')
+    await page.get('[data-test="recherche-exploration"]').setValue('VUE dakar')
+    expect(page.findAll('[data-test="mission"]')).toHaveLength(1)
+    await page.get('[data-test="filtre-distance"]').trigger('click')
+    expect(page.findAll('[data-test="mission"]')).toHaveLength(1)
+    await page.get('[data-test="recherche-exploration"]').setValue('inexistante')
+    expect(page.find('[data-test="sans-resultat"]').exists()).toBe(true)
+    await page.get('[data-test="sans-resultat"] button').trigger('click')
+    expect(page.findAll('[data-test="mission"]')).toHaveLength(1)
+    expect(page.get('[data-test="filtre-distance"]').attributes('aria-pressed')).toBe('false')
+  })
+
   it('le dit quand l’API ne répond pas', async () => {
     serveur.use(http.get('/api/missions', () => HttpResponse.json({ code: 'erreur' }, { status: 500 })))
     const { page } = await monter('/missions')

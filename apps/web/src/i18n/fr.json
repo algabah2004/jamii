@@ -1494,7 +1494,11 @@
       "nonAttribuee": "Non attribuée",
       "etat": "État",
       "ajouter": "Ajouter la tâche",
-      "statut": { "a_faire": "À faire", "en_cours": "En cours", "livree": "Livrée" },
+      "statut": {
+        "a_faire": "À faire",
+        "en_cours": "En cours",
+        "livree": "Livrée"
+      },
       "pasDeTour": "Le tableau de bord s’ouvrira avec le premier tour, après le tirage.",
       "avancement": "Avancement du tour",
       "miennes": "Mes tâches",
@@ -2651,6 +2655,66 @@
         "quartier": "Le défi numérique du quartier",
         "sante": "Hack Santé Afrique"
       }
+    }
+  },
+  "exploration": {
+    "effacer": "Effacer la recherche",
+    "reinitialiser": "Réinitialiser les filtres",
+    "ouvrir": "Ouvrir : {titre}",
+    "resultats": "Aucun résultat | {n} résultat | {n} résultats",
+    "aucunResultat": "Aucun résultat pour cette recherche.",
+    "essayerAutrement": "Essaie un autre mot ou élargis les filtres pour retrouver une opportunité.",
+    "dansLaListe": "La recherche porte sur les éléments de cette liste. « Voir plus » permet d’en charger d’autres.",
+    "missions": {
+      "surtitre": "Missions · des compétences qui font avancer",
+      "titre": "Ton talent.",
+      "accent": "Un projet qui compte.",
+      "statMissions": "mission dans cette sélection | missions dans cette sélection",
+      "statCompetences": "compétence recherchée | compétences recherchées",
+      "explorer": "Trouver une mission",
+      "vedette": "Une mission à découvrir",
+      "attenteTitre": "Le prochain projet commence ici.",
+      "attente": "Un besoin précis, les bonnes compétences et une collaboration qui avance. Publie ta mission ou explore les opportunités.",
+      "recherche": "Chercher une mission, une compétence, une ville…",
+      "resultats": "Des projets pour tes compétences"
+    },
+    "hackathons": {
+      "surtitre": "Hackathons · les idées prennent leur élan",
+      "titre": "Un défi.",
+      "accent": "Tout à construire.",
+      "statDefis": "défi dans cette sélection | défis dans cette sélection",
+      "statInscrits": "inscription | inscriptions",
+      "statVilles": "ville représentée | villes représentées",
+      "explorer": "Explorer les défis",
+      "vedette": "Un défi à découvrir",
+      "attenteTitre": "À plusieurs, on va plus loin.",
+      "attente": "Réunis une équipe, confronte tes idées et construis quelque chose à montrer. Ton prochain défi est peut-être ici.",
+      "recherche": "Chercher un défi, un thème, une ville…",
+      "resultats": "Choisis ton prochain défi"
+    },
+    "vitrine": {
+      "surtitre": "Showcase · construit ensemble, partagé avec tous",
+      "titre": "Des idées.",
+      "accent": "Devenues réelles.",
+      "statProjets": "projet dans cette sélection | projets dans cette sélection",
+      "statCreateurs": "créateur | créateurs",
+      "statPays": "pays représenté | pays représentés",
+      "explorer": "Explorer les réalisations",
+      "creer": "Trouver mon équipe",
+      "vedette": "À découvrir dans la vitrine",
+      "equipe": "Construit en équipe",
+      "membres": "{n} créateur | {n} créateurs",
+      "attenteTitre": "La prochaine réalisation peut être la tienne.",
+      "attente": "Des projets utiles, des équipes de tout le continent et des idées qui passent à la mise en ligne.",
+      "recherche": "Chercher un projet, une équipe, un sujet…",
+      "origine": "Origine du projet",
+      "origines": {
+        "tous": "Toutes les origines",
+        "cercle": "Nés d’un cercle",
+        "demande": "Pour une PME",
+        "idee": "Initiatives libres"
+      },
+      "resultats": "Ce que la communauté construit"
     }
   }
 }

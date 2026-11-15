@@ -133,6 +133,12 @@ describe('AXE, exploration des cercles', () => {
   })
 })
 
+describe('AXE, vitrine des projets', () => {
+  it('la recherche, les filtres d’origine et les cartes des projets', async () => {
+    expect(await violations('/vitrine', '[data-test="projets"]')).toEqual([])
+  })
+})
+
 
 describe('AXE, création guidée d’un besoin', () => {
   it('la première étape et les exemples', async () => {

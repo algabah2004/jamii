@@ -98,6 +98,20 @@ describe('la liste des hackathons', () => {
     const { page } = await monter('/hackathons')
     await attendre(page, '[data-test="indisponible"]')
   })
+
+  it('recherche un thème sans tenir compte des accents et conserve le filtre de statut', async () => {
+    const { page } = await monter('/hackathons')
+    await attendre(page, '[data-test="liste"]')
+    await page.get('[data-test="filtre-publie"]').trigger('click')
+    await attendre(page, '[data-test="liste"]')
+    await page.get('[data-test="recherche-exploration"]').setValue('heberges DAKAR')
+    expect(page.findAll('[data-test="hackathon"]')).toHaveLength(1)
+    await page.get('[data-test="recherche-exploration"]').setValue('inexistant')
+    expect(page.find('[data-test="sans-resultat"]').exists()).toBe(true)
+    await page.get('[data-test="sans-resultat"] button').trigger('click')
+    expect(page.findAll('[data-test="hackathon"]')).toHaveLength(1)
+    expect(page.get('[data-test="filtre-publie"]').attributes('aria-pressed')).toBe('true')
+  })
 })
 
 describe('créer un hackathon', () => {

@@ -9,12 +9,13 @@ import { ilYa, lienSur, type ProjetEnVitrine } from './vitrine'
  * (l'adresse a répondu), le lien s'ouvre dans un nouvel onglet sans lui donner la main sur Jamii.
  * Pas de bouton bleu par carte : la charte réserve le bleu à l'action principale de l'écran.
  */
-withDefaults(defineProps<{ projet: ProjetEnVitrine; niveau?: 2 | 3 }>(), { niveau: 2 })
+withDefaults(defineProps<{ projet: ProjetEnVitrine; niveau?: 2 | 3; illustration?: boolean }>(), { niveau: 2, illustration: false })
 const { t, locale } = useI18n()
 </script>
 
 <template>
   <article class="projet">
+    <div v-if="illustration" class="projet__visuel" aria-hidden="true"><span>{{ projet.titre.split(/\s+/).slice(0, 2).map((mot) => mot[0]).join('') }}</span><div><i /><i /><i /></div><b>↗</b></div>
     <div class="projet__haut">
       <JBadgePreuve v-if="projet.hebergeur === 'datacloud'" data-test="badge-systalink">✓ {{ t('vitrine.hebergeSurSystalink') }}</JBadgePreuve>
       <JBadgePreuve v-else data-test="badge-en-ligne">✓ {{ t('profil.projets.enLigne') }}</JBadgePreuve>
@@ -77,4 +78,11 @@ const { t, locale } = useI18n()
 .projet__lien { font-weight: 600; text-decoration: none; }
 .projet__lien:hover { text-decoration: underline; }
 .projet__verifie { color: var(--ink-muted); font-size: var(--type-body-sm-size); }
+.projet__visuel { display: flex; align-items: center; gap: 20px; min-height: 108px; padding: 24px; margin: -24px -24px 12px; border-radius: var(--radius-lg) var(--radius-lg) 0 0; background: linear-gradient(115deg, var(--action-soft), var(--proof-soft)); border-bottom: 1px solid var(--line); }
+.projet__visuel > span { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 16px; background: var(--surface); color: var(--action-ink); font: 700 1.4rem var(--font-display); box-shadow: var(--ombre-carte); transform: rotate(-7deg); }
+.projet__visuel > div { display: grid; gap: 8px; flex: 1; }
+.projet__visuel i { height: 6px; width: 80%; border-radius: 5px; background: var(--action); opacity: .15; }
+.projet__visuel i:nth-child(2) { width: 60%; }
+.projet__visuel i:nth-child(3) { width: 40%; background: var(--proof); opacity: .5; }
+.projet__visuel b { align-self: flex-start; color: var(--proof-ink); font-size: 1.5rem; }
 </style>

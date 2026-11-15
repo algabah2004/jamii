@@ -137,6 +137,7 @@ export const routes: RouteRecordRaw[] = [
     path: '/vitrine',
     name: 'vitrine',
     component: () => import('./features/vitrine/VitrinePage.vue'),
+    meta: { pleineLargeur: true },
   },
   {
     // Réservé à l'équipe Systalink (contracts/systalink.yaml v0.3) : la page dit « réservé » aux autres.
