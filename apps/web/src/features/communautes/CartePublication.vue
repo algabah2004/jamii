@@ -5,7 +5,6 @@ import TexteRiche from '../../components/texte/TexteRiche.vue'
 import LienPersonne from '../../components/LienPersonne.vue'
 import { computed, nextTick, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { RouterLink } from 'vue-router'
 import { api } from '../../api/client'
 import type { components } from '../../api/generated/communautes'
 import { JAvatar } from '../../design-system'
@@ -192,7 +191,6 @@ async function copierLien() {
           </div>
           <p v-if="envoi === 'erreur'" role="alert" class="erreur">{{ t('question.erreurs.autre') }}</p>
         </form>
-        <RouterLink :to="`/publications/${p.id}`" class="lien lien--discret">{{ t('communautes.fil.pagePublication') }}</RouterLink>
       </section>
     </div>
   </article>
@@ -215,7 +213,6 @@ async function copierLien() {
 .texte--coupe { max-height: 15rem; overflow: hidden; -webkit-mask-image: linear-gradient(to bottom, #000 70%, transparent); mask-image: linear-gradient(to bottom, #000 70%, transparent); }
 .medias { margin-top: var(--space-1); }
 .lien { justify-self: start; padding: 0; border: 0; background: none; color: var(--action-ink); font: inherit; font-size: var(--type-body-sm-size); font-weight: 600; cursor: pointer; }
-.lien--discret { color: var(--ink-muted); font-weight: 500; }
 .statut { margin: 0; font-size: 0.8125rem; font-weight: 600; }
 .statut--resolue { color: #1a7f45; }
 .statut--ia { color: var(--action-ink); }
