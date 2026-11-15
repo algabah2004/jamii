@@ -43,6 +43,8 @@ final class DemoSalonsCercles {
 
 	/** L'histoire des cercles dont le salon est vide, dans l'ordre du temps (comme la migration pour les anciens). */
 	private void histoire() {
+		var cercles = new java.util.ArrayList<>(java.util.List.of(DAKAR, ABIDJAN, DonneesDemo.NAIROBI));
+		cercles.addAll(DemoDecouverteCercles.identifiants());
 		base.sql("""
 				INSERT INTO message_cercle (id, cercle_id, type, evenement, evenement_tour, evenement_personne, envoye_le)
 				SELECT gen_random_uuid(), h.cercle_id, 'evenement', h.evenement, h.tour, h.personne, h.le
@@ -68,7 +70,7 @@ final class DemoSalonsCercles {
 				WHERE h.le IS NOT NULL AND h.cercle_id IN (:cercles)
 				  AND NOT EXISTS (SELECT 1 FROM message_cercle x WHERE x.cercle_id = h.cercle_id)
 				ORDER BY h.le, h.rang
-				""").param("cercles", java.util.List.of(DAKAR, ABIDJAN, DonneesDemo.NAIROBI)).update();
+				""").param("cercles", cercles).update();
 	}
 
 	private void dakar() {

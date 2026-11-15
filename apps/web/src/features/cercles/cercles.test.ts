@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { http, HttpResponse } from 'msw'
 import { createMemoryHistory } from 'vue-router'
 import { serveur } from '../../test-setup'
@@ -8,7 +8,9 @@ import { creerRouteur } from '../../router'
 import { chargerSession } from '../../session'
 import App from '../../App.vue'
 import { ID_ABIDJAN, ID_DAKAR } from '../../mocks/cercles'
-import { avancement, avantTirage, ordreDePassage, positionsAnneau, pourcentage, titreDuTour, type MembreCercle } from './cercles'
+import { avancement, avantTirage, lireCercles, ordreDePassage, positionsAnneau, pourcentage, titreDuTour, type MembreCercle } from './cercles'
+
+enableAutoUnmount(afterEach)
 
 async function ouvrir(adresse: string) {
   ;(i18n.global.locale as unknown as { value: string }).value = 'fr'
@@ -138,10 +140,71 @@ describe('la page du cercle', () => {
   it('sépare mes cercles de ceux qui cherchent des membres', async () => {
     const { page } = await ouvrir('/cercles')
     await vi.waitFor(() => expect(page.findAll('[data-test="cercles-mes"] li')).toHaveLength(2))
-    // Le seul cercle ouvert m'est recommandé : il n'apparaît qu'une fois, dans « Cercles qui ont besoin de toi ».
-    expect(page.findAll('[data-test="cercles-pour-moi"] li')).toHaveLength(1)
-    expect(page.find('[data-test="vide-ouverts"]').exists()).toBe(true)
+    // Les recommandations sont limitées à six, les autres cercles restent explorables sans doublons.
+    expect(page.findAll('[data-test="cercles-pour-moi"] li')).toHaveLength(6)
+    expect(page.findAll('[data-test="cercles-ouverts"] li')).toHaveLength(16)
+    const liens = page.findAll('.grille a').map((a) => a.attributes('href'))
+    expect(new Set(liens).size).toBe(24)
     expect(page.find('nav a[href="/cercles"]').exists()).toBe(true)
+  })
+})
+
+describe('le catalogue distant des cercles', () => {
+  it('lit toutes les pages de l’API pour ne pas masquer les cercles après le vingtième', async () => {
+    const curseurs: (string | null)[] = []
+    serveur.use(http.get('/api/cercles', ({ request }) => {
+      const query = new URL(request.url).searchParams
+      expect(query.get('limite')).toBe('100')
+      curseurs.push(query.get('curseur'))
+      return HttpResponse.json(query.get('curseur')
+        ? { elements: [{ id: 'deuxieme-page', nom: 'Dernier cercle' }], curseurSuivant: null }
+        : { elements: [{ id: 'premiere-page', nom: 'Premier cercle' }], curseurSuivant: 'page-suivante' })
+    }))
+    expect((await lireCercles('ouverts')).map((c) => c.nom)).toEqual(['Premier cercle', 'Dernier cercle'])
+    expect(curseurs).toEqual([null, 'page-suivante'])
+  })
+
+  it('refuse un curseur qui boucle au lieu de multiplier les requêtes', async () => {
+    serveur.use(http.get('/api/cercles', () => HttpResponse.json({ elements: [], curseurSuivant: 'meme-page' })))
+    await expect(lireCercles('ouverts')).rejects.toThrow('pagination des cercles invalide')
+  })
+})
+
+describe('explorer les cercles', () => {
+  it('recherche par nom, ville et créateur sans tenir compte des accents', async () => {
+    const { page } = await ouvrir('/cercles')
+    await vi.waitFor(() => expect(page.findAll('.grille a')).toHaveLength(24))
+    await page.get('[data-test="rechercher-cercles"]').setValue('THIES')
+    expect(page.findAll('.grille a')).toHaveLength(1)
+    expect(page.get('.grille').text()).toContain('Les Makers de Thiès')
+    await page.get('[data-test="rechercher-cercles"]').setValue('Salma')
+    expect(page.get('.grille').text()).toContain('Casa Web Studio')
+    await page.get('[data-test="rechercher-cercles"]').setValue('aucun-cercle')
+    expect(page.get('[data-test="aucun-cercle"]').text()).toContain('Pas encore le bon cercle')
+    await page.get('[data-test="aucun-cercle"] button').trigger('click')
+    expect(page.findAll('.grille a')).toHaveLength(24)
+  })
+
+  it('combine la ville et les filtres sans mélanger mes cercles et ceux à rejoindre', async () => {
+    const { page } = await ouvrir('/cercles')
+    await vi.waitFor(() => expect(page.findAll('.grille a')).toHaveLength(24))
+    await page.get('[data-test="ville-cercles"]').setValue('Dakar')
+    expect(page.findAll('.grille a')).toHaveLength(2)
+    await page.get('[data-test="filtre-mes"]').trigger('click')
+    expect(page.findAll('.grille a')).toHaveLength(1)
+    expect(page.get('.grille a').text()).toContain('Cercle de Dakar')
+    await page.get('[data-test="filtre-ouverts"]').trigger('click')
+    expect(page.findAll('.grille a')).toHaveLength(1)
+    expect(page.get('.grille a').text()).toContain('Les Artisanes du Web')
+  })
+
+  it('trie les cercles à rejoindre par nombre de places disponibles', async () => {
+    const { page } = await ouvrir('/cercles')
+    await vi.waitFor(() => expect(page.findAll('[data-test="cercles-ouverts"] li')).toHaveLength(16))
+    await page.get('[data-test="tri-cercles"]').setValue('places')
+    const cartes = page.findAll('[data-test="cercles-ouverts"] li')
+    expect(cartes[0]!.text()).toContain('5 places libres')
+    expect(cartes.at(-1)!.text()).toContain('1 place libre')
   })
 })
 

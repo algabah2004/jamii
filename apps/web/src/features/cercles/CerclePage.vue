@@ -14,7 +14,7 @@ import { avancement, avantTirage, deposerIdee, LIMITES, lireAvancement, lireCerc
 
 /*
  * La page d'un cercle : qui en fait partie, l'ordre de passage, le tour en cours et où il en est.
- * L'anneau montre la règle de la tontine d'un coup d'œil : chacun son tour, et Systalink au centre, garant.
+ * L'anneau montre les membres et leur ordre de passage, avec le bénéficiaire du tour mis en avant.
  */
 const { t } = useI18n()
 const { moi } = useSession()
@@ -151,10 +151,6 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
             <svg class="anneau__trace" viewBox="0 0 100 100" aria-hidden="true">
               <circle cx="50" cy="50" r="40" />
             </svg>
-            <div class="anneau__garant">
-              <strong>Systalink</strong>
-              <span>{{ t('cercles.garant') }}</span>
-            </div>
             <span v-for="(p, i) in placesLibres" :key="`libre-${i}`" class="anneau__libre" :style="{ left: `${p.x}%`, top: `${p.y}%` }" aria-hidden="true" />
             <div
               v-for="(m, i) in ordre"
@@ -296,14 +292,7 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
   fill: none; stroke: var(--line-strong); stroke-width: 0.5; stroke-dasharray: 1.2 1.8;
   animation: tourne 60s linear infinite; transform-origin: 50% 50%;
 }
-.anneau__garant {
-  position: absolute; left: 50%; top: 50%; translate: -50% -50%;
-  display: grid; place-content: center; justify-items: center; gap: 2px; text-align: center; width: 34%; aspect-ratio: 1; border-radius: 50%;
-  border: 2px solid var(--action); background: var(--surface);
-  box-shadow: 0 0 0 10px color-mix(in srgb, var(--action) 8%, transparent);
-}
-.anneau__garant strong { font-family: var(--font-display); font-size: clamp(0.9rem, 2.4vw, 1.25rem); }
-.anneau__garant span { color: var(--action-ink); font-size: var(--type-body-sm-size); }
+
 .anneau__membre {
   position: absolute; translate: -50% -50%;
   display: grid; justify-items: center; gap: var(--space-1);

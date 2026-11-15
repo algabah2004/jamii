@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
+import org.springframework.transaction.annotation.Transactional;
 
 import dev.jamii.api.TestcontainersConfiguration;
 import dev.jamii.api.auth.Role;
@@ -123,6 +124,8 @@ class DonneesDemoTest {
 	@Test
 	void recharger_ne_cree_aucun_doublon() {
 		long utilisateurs = compter("SELECT count(*) FROM utilisateur");
+		long cercles = compter("SELECT count(*) FROM cercle");
+		long membresCercles = compter("SELECT count(*) FROM cercle_membre");
 		long projets = compter("SELECT count(*) FROM projet");
 		long taches = compter("SELECT count(*) FROM tache");
 		long messages = compter("SELECT count(*) FROM message_salon");
@@ -132,6 +135,8 @@ class DonneesDemoTest {
 		assertThat(demo.charger(Instant.now())).isFalse();
 
 		assertThat(compter("SELECT count(*) FROM utilisateur")).isEqualTo(utilisateurs);
+		assertThat(compter("SELECT count(*) FROM cercle")).isEqualTo(cercles);
+		assertThat(compter("SELECT count(*) FROM cercle_membre")).isEqualTo(membresCercles);
 		assertThat(compter("SELECT count(*) FROM projet")).isEqualTo(projets);
 		assertThat(compter("SELECT count(*) FROM tache")).isEqualTo(taches);
 		assertThat(compter("SELECT count(*) FROM message_salon")).as("les communautés se complètent sans doublon").isEqualTo(messages);
@@ -240,6 +245,51 @@ class DonneesDemoTest {
 	void aucun_compte_de_demo_n_a_de_login_github_ni_d_adresse_joignable() {
 		assertThat(compter("SELECT count(*) FROM utilisateur WHERE email LIKE '%@demo.jamii.test'")).as("les 6 de la démo et les 12 des communautés").isEqualTo(18);
 		assertThat(compter("SELECT count(*) FROM utilisateur WHERE email LIKE '%@demo.jamii.test' AND login_github IS NOT NULL")).isZero();
+	}
+
+	@Test
+	void les_nouveaux_cercles_sont_lisibles_par_la_vraie_api_et_ont_des_places_libres() {
+		var cercles = mvc.get().uri("/api/cercles?portee=ouverts&limite=100")
+			.with(oauth2Login().oauth2User(connecte(DonneesDemo.AWA)));
+		assertThat(cercles).hasStatusOk();
+		assertThat(cercles).bodyJson().extractingPath("$.elements[*].nom").asArray()
+			.contains("Sahel Mobile", "Lagos Builders", "Les Makers de Thiès", "Antananarivo Studio");
+		assertThat(cercles).bodyJson().extractingPath("$.elements.length()").isEqualTo(22);
+		UUID sahel = DonneesDemo.id("cercle:decouverte:sahel-mobile");
+		var detail = mvc.get().uri("/api/cercles/" + sahel)
+			.with(oauth2Login().oauth2User(connecte(DonneesDemo.AWA)));
+		assertThat(detail).bodyJson().extractingPath("$.ville").isEqualTo("Bamako");
+		assertThat(detail).bodyJson().extractingPath("$.nombreMembres").isEqualTo(1);
+		assertThat(detail).bodyJson().extractingPath("$.taille").isEqualTo(4);
+		assertThat(detail).bodyJson().extractingPath("$.moi.estMembre").isEqualTo(false);
+		assertThat(compter("SELECT count(*) FROM cercle")).isEqualTo(24);
+	}
+
+	@Test
+	@Transactional
+	void une_base_de_demo_deja_chargee_recoit_les_nouveaux_cercles() {
+		UUID sahel = DonneesDemo.id("cercle:decouverte:sahel-mobile");
+		base.sql("DELETE FROM cercle WHERE id = :id").param("id", sahel).update();
+		assertThat(compter("SELECT count(*) FROM cercle")).isEqualTo(23);
+		assertThat(demo.charger(Instant.now())).as("les anciennes données étaient déjà chargées").isFalse();
+		assertThat(compter("SELECT count(*) FROM cercle")).isEqualTo(24);
+		assertThat(compter("SELECT count(*) FROM cercle_membre WHERE cercle_id = '" + sahel + "'")).isEqualTo(1);
+		assertThat(compter("SELECT count(*) FROM message_cercle WHERE cercle_id = '" + sahel + "'"))
+			.as("le salon du cercle raconte sa création").isPositive();
+	}
+
+	@Test
+	@Transactional
+	void recharger_preserve_les_modifications_des_visiteurs() {
+		UUID douala = DonneesDemo.id("cercle:decouverte:douala-numerique");
+		base.sql("UPDATE cercle SET nom = 'Douala, notre équipe' WHERE id = :id").param("id", douala).update();
+		base.sql("DELETE FROM cercle_membre WHERE cercle_id = :c AND utilisateur_id <> (SELECT createur_id FROM cercle WHERE id = :c)")
+			.param("c", douala).update();
+		demo.charger(Instant.now());
+		assertThat(base.sql("SELECT nom FROM cercle WHERE id = :id").param("id", douala).query(String.class).single())
+			.isEqualTo("Douala, notre équipe");
+		assertThat(compter("SELECT count(*) FROM cercle_membre WHERE cercle_id = '" + douala + "'"))
+			.as("les membres retirés ne sont pas réinsérés").isEqualTo(1);
 	}
 
 }
