@@ -29,6 +29,7 @@ const ABIDJAN = 'a0c1e2c1-0000-4000-8000-0000000ab1d1'
 const personnes = (): Personne[] => [
   { id: KOFI, nom: 'Kofi Yao', avatarUrl: null, ville: 'Abidjan' },
   ...PROFILS.map((p) => ({ id: p.utilisateurId, nom: p.nom, avatarUrl: null, ville: p.ville })),
+  ...cerclesDemo().filter((c) => ![KOFI, AWA].includes(c.createur.id)).map((c) => ({ ...c.createur, ville: c.ville })),
 ]
 const personne = (id: string) => personnes().find((p) => p.id === id)
 
@@ -75,7 +76,7 @@ const erreur = (code: string, status = 409) =>
   HttpResponse.json({ type: `urn:jamii:erreur:${code}`, title: code, status, code }, { status, headers: { 'Content-Type': 'application/problem+json' } })
 
 export const handlersReseau = [
-  http.get('/api/recommandations/cercles', () => {
+  http.get('/api/recommandations/cercles', ({ request }) => {
     const elements = cerclesDemo()
       .filter((c) => c.statut === 'ouvert' && !c.tirage && !c.moi.estMembre && c.nombreMembres < c.taille)
       .map((c) => ({
@@ -83,7 +84,8 @@ export const handlersReseau = [
         competences: COMPETENCES_AWA.slice(0, 1),
         raisons: c.taille - c.nombreMembres === 1 ? ['competence_manquante', 'presque_complet'] : ['competence_manquante'],
       }))
-    return HttpResponse.json({ elements })
+    const limite = Math.max(1, Math.min(20, Number(new URL(request.url).searchParams.get('limite')) || 6))
+    return HttpResponse.json({ elements: elements.slice(0, limite) })
   }),
 
   http.get('/api/recommandations/profils', ({ request }) => {

@@ -21,11 +21,11 @@ import org.springframework.transaction.support.TransactionTemplate;
 import dev.jamii.api.projets.Projets;
 
 /**
- * Les données de la démo (docs/priorites.md) : 6 membres et 3 cercles, dont celui de Dakar avec un tour livré et un
+ * Les données de la démo (docs/priorites.md) : 24 cercles, dont celui de Dakar avec un tour livré et un
  * tour en cours, chacun avec ses jalons et ses tâches ; un hackathon terminé et une mission en cours ({@link DemoHackathonMission}). Chargées <b>seulement</b> avec le profil `demo` (`SPRING_PROFILES_ACTIVE=demo`), jamais par une
- * migration : une base de production n'en voit jamais la couleur.
+ * migration : le même profil active les données sur la démo distante.
  * <p>
- * Rejouable : les identifiants sont fixes, et si Awa existe déjà, rien n'est rechargé. Les comptes n'ont ni login
+ * Rejouable : le socle se charge une seule fois, les nouveaux cercles se complètent aux redémarrages. Les comptes n'ont ni login
  * GitHub (aucune invitation ne part vers un vrai compte) ni adresse joignable (domaine réservé `.test`).
  */
 @Component
@@ -106,6 +106,8 @@ class DonneesDemo implements ApplicationRunner {
 		// Les communautés se complètent à chaque démarrage (ON CONFLICT DO NOTHING) : une base déjà chargée reçoit ce qui manque.
 		transaction.executeWithoutResult(statut -> new DemoCommunautes(base, maintenant).charger());
 		transaction.executeWithoutResult(statut -> new DemoAnnonces(base, maintenant).completer());
+		// Les nouveaux cercles se complètent aussi sur la base distante déjà chargée, sans réinitialisation.
+		transaction.executeWithoutResult(statut -> new DemoDecouverteCercles(base, maintenant).charger());
 		// Après les communautés : leurs personnes existent alors toutes. Un profil publié pour chacune.
 		transaction.executeWithoutResult(statut -> new DemoProfils(base, maintenant).charger());
 		transaction.executeWithoutResult(statut -> new DemoSalonsCercles(base, maintenant).charger());

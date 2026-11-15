@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { http, HttpResponse } from 'msw'
 import { createMemoryHistory } from 'vue-router'
 import { serveur } from '../../test-setup'
@@ -10,6 +10,8 @@ import App from '../../App.vue'
 import { ID_ABIDJAN } from '../../mocks/cercles'
 import { rafraichirActivite } from './activite'
 import { quand } from './reseau'
+
+enableAutoUnmount(afterEach)
 
 async function ouvrir(adresse: string) {
   ;(i18n.global.locale as unknown as { value: string }).value = 'fr'
@@ -32,6 +34,47 @@ describe('les messages', () => {
     await routeur.push(`/messages/${KOFI}`)
     await vi.waitFor(() => expect(page.find('[data-test="fil"]').exists()).toBe(true))
     await vi.waitFor(() => expect(page.find('[data-test="lien-activite"]').attributes('aria-label')).toBe('Notifications, 1 nouvelle'))
+  })
+
+  it('ouvre les messages depuis une autre page et distingue leur compteur des notifications', async () => {
+    const { page, routeur } = await ouvrir('/missions')
+    const acces = page.get('[data-test="lien-messages"]')
+    expect(acces.attributes('href')).toBe('/messages')
+    expect(acces.attributes('aria-label')).toBe('Messages, 1 non lu')
+    await acces.trigger('click')
+    await vi.waitFor(() => expect(routeur.currentRoute.value.path).toBe('/messages'))
+    await routeur.push(`/messages/${KOFI}`)
+    await vi.waitFor(() => expect(acces.attributes('aria-label')).toBe('Messages'))
+    expect(page.get('[data-test="lien-activite"]').attributes('aria-label')).toBe('Notifications, 1 nouvelle')
+  })
+
+  it('recherche une conversation et filtre les non lus', async () => {
+    const { page } = await ouvrir('/messages')
+    await vi.waitFor(() => expect(page.findAll('[data-test="conversations"] li')).toHaveLength(2))
+    await page.get('[data-test="rechercher-conversation"]').setValue('AMINA')
+    expect(page.findAll('[data-test="conversations"] li')).toHaveLength(1)
+    expect(page.get('[data-test="conversations"]').text()).toContain('Amina Bello')
+    await page.get('[data-test="rechercher-conversation"]').setValue('personne inconnue')
+    expect(page.get('[data-test="messages-vide"]').text()).toContain('Aucune personne')
+    await page.get('[data-test="rechercher-conversation"]').setValue('')
+    await page.get('[data-test="filtre-non-lus"]').trigger('click')
+    expect(page.findAll('[data-test="conversations"] li')).toHaveLength(1)
+    expect(page.get('[data-test="conversations"]').text()).toContain('Kofi Yao')
+  })
+
+  it('commence un échange depuis les contacts et garde la liste en lisant et en répondant', async () => {
+    const { page, routeur } = await ouvrir('/messages')
+    await page.get('[data-test="nouveau-message"]').trigger('click')
+    await vi.waitFor(() => expect(page.get('[data-test="contacts-messagerie"]').text()).toContain('Amina Bello'))
+    await page.get(`[data-test="contacts-messagerie"] a[href="/messages/${AMINA}"]`).trigger('click')
+    await vi.waitFor(() => expect(page.find('[data-test="form-message"]').exists()).toBe(true))
+    expect(routeur.currentRoute.value.path).toBe(`/messages/${AMINA}`)
+    expect(page.find('[data-test="contacts-messagerie"]').exists()).toBe(true)
+    await page.get('[data-test="form-message"] textarea').setValue('On avance ensemble !')
+    await page.get('[data-test="form-message"]').trigger('submit')
+    await vi.waitFor(() => expect(page.get('[data-test="fil"]').text()).toContain('On avance ensemble !'))
+    await page.get('.filtres button').trigger('click')
+    await vi.waitFor(() => expect(page.findAll('[data-test="conversations"] li')[0]!.text()).toContain('On avance ensemble !'))
   })
 
   it('liste les notifications avec une phrase claire, puis les marque toutes comme lues', async () => {
