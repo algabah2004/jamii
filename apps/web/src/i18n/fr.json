@@ -1836,7 +1836,10 @@
       "candidature_acceptee": "Ta candidature à un hackathon est acceptée.",
       "candidature_refusee": "Ta candidature à un hackathon n'a pas été retenue.",
       "candidature_attente": "Tu es sur la liste d'attente d'un hackathon.",
-      "invitation_equipe": "{nom} t'a ajouté à son équipe de hackathon."
+      "invitation_equipe": "{nom} t'a ajouté à son équipe de hackathon.",
+      "nouvel_abonne": "{nom} te suit.",
+      "suivi_cercle": "{nom} a ouvert un cercle : {cercle}.",
+      "suivi_publication": "{nom} a publié dans une communauté."
     },
     "contacts": {
       "recues": "Demandes reçues",
@@ -3118,6 +3121,20 @@
       "fete": "Fête et nourriture",
       "nature": "Nature et animaux"
     }
+  },
+  "abonnes": {
+    "suivre": "Suivre",
+    "abonne": "Abonné",
+    "teSuit": "Te suit",
+    "abonnes": "abonné | abonné | abonnés",
+    "abonnements": "abonnement | abonnement | abonnements",
+    "titreAbonnes": "Abonnés",
+    "titreAbonnements": "Abonnements",
+    "fermer": "Fermer",
+    "chargement": "Chargement…",
+    "aucunAbonne": "Personne ne suit encore ce profil.",
+    "aucunAbonnement": "Ce profil ne suit encore personne.",
+    "etDautres": "et {n} autres"
   },
   "reactions": {
     "reagir": "Réagir",

@@ -5,6 +5,7 @@ import { RouterLink, useRoute } from 'vue-router'
 import { api } from '../../api/client'
 import { JAvatar, JBouton, JSquelette } from '../../design-system'
 import { useSession } from '../../session'
+import AbonnesProfil from '../reseau/AbonnesProfil.vue'
 import ActionsProfil from '../reseau/ActionsProfil.vue'
 import FicheProfil from './FicheProfil.vue'
 import type { Profil } from './profils'
@@ -71,6 +72,7 @@ watch(() => String(route.params.id), (id) => void charger(id), { immediate: true
         <h1>{{ personne.nom }}</h1>
         <p v-if="personne.ville" class="texte-discret">{{ personne.ville }}</p>
         <p class="texte-discret">{{ t('profil.public.nonPublie', { nom: prenom(personne.nom) }) }}</p>
+        <AbonnesProfil v-if="moi" :personne-id="personne.id" :peut-suivre="autre" />
         <ActionsProfil v-if="autre" :personne-id="personne.id" :prenom="prenom(personne.nom)" />
       </div>
     </div>
@@ -80,8 +82,9 @@ watch(() => String(route.params.id), (id) => void charger(id), { immediate: true
     </div>
     <template v-else-if="profil">
       <FicheProfil :profil="profil" :moi="moi?.id === profil.utilisateurId">
-        <template v-if="autre" #actions>
-          <ActionsProfil :personne-id="profil.utilisateurId" :prenom="prenom(profil.nom)" />
+        <template v-if="moi" #actions>
+          <AbonnesProfil :personne-id="profil.utilisateurId" :peut-suivre="autre" />
+          <ActionsProfil v-if="autre" :personne-id="profil.utilisateurId" :prenom="prenom(profil.nom)" />
         </template>
       </FicheProfil>
       <aside v-if="!moi" class="carte invitation" data-test="invitation">

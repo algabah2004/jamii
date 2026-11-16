@@ -47,6 +47,7 @@ tags:
   - { name: notifications, description: 'Ce qui s''est passé depuis ma dernière visite.' }
   - { name: appels, description: 'Les appels audio et vidéo en tête-à-tête, en WebRTC (#157).' }
   - { name: presence, description: '« En ligne » et « Vu il y a … » (#157).' }
+  - { name: abonnes, description: 'Suivre quelqu''un, comme sur LinkedIn (#157).' }
 
 paths:
   /api/recommandations/cercles:
@@ -594,6 +595,91 @@ paths:
               schema: { $ref: '#/components/schemas/Activite' }
         '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
 
+  /api/personnes/{personneId}/abonnement:
+    parameters:
+      - $ref: '#/components/parameters/PersonneId'
+    get:
+      tags: [abonnes]
+      operationId: lireAbonnement
+      summary: Les compteurs du profil, et si je suis cette personne
+      responses:
+        '200':
+          description: Les compteurs.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Suivi' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+    put:
+      tags: [abonnes]
+      operationId: suivre
+      summary: Suivre cette personne (sans son accord ; idempotent)
+      description: |
+        La personne suivie reçoit « X te suit » (une seule fois, même après un désabonnement). Ensuite, l'abonné est
+        prévenu quand elle ouvre un cercle (`suivi_cercle`) ou publie dans une communauté (`suivi_publication`).
+        Contre le spam : 200 nouveaux abonnements par jour au plus (429). Code 409 `soi_meme`.
+      security: [{ session: [], csrf: [] }]
+      responses:
+        '200':
+          description: Les compteurs à jour.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Suivi' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+        '429': { $ref: './socle.yaml#/components/responses/TropDeRequetes' }
+    delete:
+      tags: [abonnes]
+      operationId: neplusSuivre
+      summary: Ne plus suivre cette personne (idempotent)
+      security: [{ session: [], csrf: [] }]
+      responses:
+        '200':
+          description: Les compteurs à jour.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Suivi' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+
+  /api/personnes/{personneId}/abonnes:
+    parameters:
+      - $ref: '#/components/parameters/PersonneId'
+    get:
+      tags: [abonnes]
+      operationId: listerAbonnes
+      summary: Qui suit cette personne, les plus récents d'abord
+      parameters:
+        - { name: limite, in: query, schema: { type: integer, minimum: 1, maximum: 50, default: 50 } }
+      responses:
+        '200':
+          description: La liste et le total.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ListeAbonnes' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+
+  /api/personnes/{personneId}/abonnements:
+    parameters:
+      - $ref: '#/components/parameters/PersonneId'
+    get:
+      tags: [abonnes]
+      operationId: listerAbonnements
+      summary: Qui cette personne suit, les plus récents d'abord
+      parameters:
+        - { name: limite, in: query, schema: { type: integer, minimum: 1, maximum: 50, default: 50 } }
+      responses:
+        '200':
+          description: La liste et le total.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ListeAbonnes' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+
   /api/presence:
     get:
       tags: [presence]
@@ -695,6 +781,29 @@ components:
       schema: { type: string, format: uuid }
 
   schemas:
+    Suivi:
+      type: object
+      required: [abonnes, abonnements, jeSuis, meSuit]
+      properties:
+        abonnes: { type: integer, minimum: 0, description: 'Combien de personnes la suivent.' }
+        abonnements: { type: integer, minimum: 0, description: 'Combien de personnes elle suit.' }
+        jeSuis: { type: boolean, description: 'Je la suis.' }
+        meSuit: { type: boolean, description: 'Elle me suit.' }
+
+    ListeAbonnes:
+      type: object
+      required: [elements, total]
+      properties:
+        total: { type: integer, minimum: 0 }
+        elements:
+          type: array
+          items:
+            type: object
+            required: [personne, depuis]
+            properties:
+              personne: { $ref: '#/components/schemas/Personne' }
+              depuis: { type: string, format: date-time }
+
     EtatPresence:
       type: object
       required: [personneId, enLigne, vuLe]
@@ -906,7 +1015,7 @@ components:
 
     TypeNotification:
       type: string
-      enum: [message_recu, invitation_cercle, demande_contact, contact_accepte, membre_rejoint, tirage_effectue, tour_livre, cercle_recommande, proposition_recue, devis_recu, mission_attribuee, candidature_recue, candidature_acceptee, candidature_refusee, candidature_attente, invitation_equipe]
+      enum: [message_recu, invitation_cercle, demande_contact, contact_accepte, membre_rejoint, tirage_effectue, tour_livre, cercle_recommande, proposition_recue, devis_recu, mission_attribuee, candidature_recue, candidature_acceptee, candidature_refusee, candidature_attente, invitation_equipe, nouvel_abonne, suivi_cercle, suivi_publication]
 
     Notification:
       type: object

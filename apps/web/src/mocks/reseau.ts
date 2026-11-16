@@ -43,6 +43,9 @@ const messages = new Map<string, Message[]>()
 const contacts = new Map<string, { statut: Exclude<StatutLien, 'aucun'>; depuis: string }>()
 let notifications: Notification[] = []
 let presenceVisible = true
+// Abonnés (#157) : Kofi suit Awa ; Awa ne suit encore personne.
+const abonnements = new Set<string>()
+const cle = (de: string, a: string) => `${de}>${a}`
 let suivant = 1
 const nouvelId = () => `e3f00000-0000-4000-8000-${String(suivant++).padStart(12, '0')}`
 const ilYa = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOString()
@@ -59,6 +62,8 @@ export function reinitialiserReseau() {
   contacts.clear()
   suivant = 1
   presenceVisible = true
+  abonnements.clear()
+  abonnements.add(cle(KOFI, AWA))
   // Kofi invite Awa dans son cercle d'Abidjan (non lu), Amina lui a répondu hier (lu).
   const abidjan = cerclesDemo().find((c) => c.id === ABIDJAN)
   messages.set(KOFI, [
@@ -84,6 +89,22 @@ reinitialiserReseau()
 // Présence (#157) : Kofi est en ligne, Amina a été vue il y a 25 minutes. Awa peut cacher la sienne.
 const vuLe = (id: string): { enLigne: boolean; vuLe: string | null } =>
   id === KOFI ? { enLigne: true, vuLe: null } : id === PROFILS[1].utilisateurId ? { enLigne: false, vuLe: ilYa(25) } : { enLigne: false, vuLe: null }
+
+const suivi = (id: string) => {
+  const liens = [...abonnements].map((x) => x.split('>') as [string, string])
+  return HttpResponse.json({
+    abonnes: liens.filter(([, a]) => a === id).length,
+    abonnements: liens.filter(([de]) => de === id).length,
+    jeSuis: abonnements.has(cle(AWA, id)),
+    meSuit: abonnements.has(cle(id, AWA)),
+  })
+}
+const liste = (id: string, sens: 'abonnes' | 'abonnements') => {
+  const liens = [...abonnements].map((x) => x.split('>') as [string, string])
+  const ids = sens === 'abonnes' ? liens.filter(([, a]) => a === id).map(([de]) => de) : liens.filter(([de]) => de === id).map(([, a]) => a)
+  const elements = ids.map((p) => ({ personne: personne(p) ?? { id: p, nom: 'Awa Diop', avatarUrl: null, ville: 'Dakar' }, depuis: ilYa(60) }))
+  return HttpResponse.json({ elements, total: elements.length })
+}
 
 const nonLus = (liste: Message[]) => liste.filter((m) => !m.deMoi && !m.luLe).length
 
@@ -239,8 +260,8 @@ export const handlersReseau = [
   }),
 
   http.post('/api/conversations/:personneId/messages/:messageId/reactions', async ({ params, request }) => {
-    const liste = messages.get(String(params.personneId)) ?? []
-    const m = liste.find((x) => x.id === params.messageId)
+    const fil = messages.get(String(params.personneId)) ?? []
+    const m = fil.find((x) => x.id === params.messageId)
     if (!m) return erreur('introuvable', 404)
     if (m.supprime) return erreur('message_supprime')
     const corps = (await request.json()) as { emoji?: string; active?: boolean }
@@ -256,6 +277,21 @@ export const handlersReseau = [
       : nouvelle && nouvelle.nombre > 0 ? [...autres, nouvelle] : autres
     return HttpResponse.json(m.reactions)
   }),
+  http.get('/api/personnes/:id/abonnement', ({ params }) => suivi(String(params.id))),
+  http.put('/api/personnes/:id/abonnement', ({ params }) => {
+    const id = String(params.id)
+    if (id === AWA) return erreur('soi_meme')
+    if (!abonnements.has(cle(AWA, id))) {
+      abonnements.add(cle(AWA, id))
+    }
+    return suivi(id)
+  }),
+  http.delete('/api/personnes/:id/abonnement', ({ params }) => {
+    abonnements.delete(cle(AWA, String(params.id)))
+    return suivi(String(params.id))
+  }),
+  http.get('/api/personnes/:id/abonnes', ({ params }) => liste(String(params.id), 'abonnes')),
+  http.get('/api/personnes/:id/abonnements', ({ params }) => liste(String(params.id), 'abonnements')),
   http.get('/api/presence', ({ request }) => {
     const ids = (new URL(request.url).searchParams.get('personnes') ?? '').split(',').filter(Boolean)
     if (!ids.length || ids.length > 50) return erreur('validation', 400)

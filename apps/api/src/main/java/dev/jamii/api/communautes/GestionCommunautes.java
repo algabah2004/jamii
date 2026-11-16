@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -72,8 +73,11 @@ class GestionCommunautes {
 
 	private final JdbcClient base;
 
-	GestionCommunautes(JdbcClient base) {
+	private final ApplicationEventPublisher evenements;
+
+	GestionCommunautes(JdbcClient base, ApplicationEventPublisher evenements) {
 		this.base = base;
+		this.evenements = evenements;
 	}
 
 	/** Les plus actives cette semaine d'abord, puis par slug : un ordre stable pour le curseur (activite, slug). */
@@ -160,6 +164,8 @@ class GestionCommunautes {
 				""").param("id", id).param("c", communaute).param("auteur", auteur).param("type", type)
 			.param("titre", titre).param("contenu", contenu).param("projet", projetId)
 			.param("t", Timestamp.from(maintenant)).param("pieces", dev.jamii.api.fichiers.Fichiers.tableau(pieces)).update();
+		// Les abonnés de l'auteur sont prévenus après la validation (#157).
+		evenements.publishEvent(new PublicationCreee(id, communaute, auteur, maintenant));
 		return id;
 	}
 

@@ -396,6 +396,73 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/personnes/{personneId}/abonnement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description L'identifiant de l'autre personne. */
+                personneId: components["parameters"]["PersonneId"];
+            };
+            cookie?: never;
+        };
+        /** Les compteurs du profil, et si je suis cette personne */
+        get: operations["lireAbonnement"];
+        /**
+         * Suivre cette personne (sans son accord ; idempotent)
+         * @description La personne suivie reçoit « X te suit » (une seule fois, même après un désabonnement). Ensuite, l'abonné est
+         *     prévenu quand elle ouvre un cercle (`suivi_cercle`) ou publie dans une communauté (`suivi_publication`).
+         *     Contre le spam : 200 nouveaux abonnements par jour au plus (429). Code 409 `soi_meme`.
+         */
+        put: operations["suivre"];
+        post?: never;
+        /** Ne plus suivre cette personne (idempotent) */
+        delete: operations["neplusSuivre"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/personnes/{personneId}/abonnes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description L'identifiant de l'autre personne. */
+                personneId: components["parameters"]["PersonneId"];
+            };
+            cookie?: never;
+        };
+        /** Qui suit cette personne, les plus récents d'abord */
+        get: operations["listerAbonnes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/personnes/{personneId}/abonnements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description L'identifiant de l'autre personne. */
+                personneId: components["parameters"]["PersonneId"];
+            };
+            cookie?: never;
+        };
+        /** Qui cette personne suit, les plus récents d'abord */
+        get: operations["listerAbonnements"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/presence": {
         parameters: {
             query?: never;
@@ -475,6 +542,24 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        Suivi: {
+            /** @description Combien de personnes la suivent. */
+            abonnes: number;
+            /** @description Combien de personnes elle suit. */
+            abonnements: number;
+            /** @description Je la suis. */
+            jeSuis: boolean;
+            /** @description Elle me suit. */
+            meSuit: boolean;
+        };
+        ListeAbonnes: {
+            total: number;
+            elements: {
+                personne: components["schemas"]["Personne"];
+                /** Format: date-time */
+                depuis: string;
+            }[];
+        };
         EtatPresence: {
             /** Format: uuid */
             personneId: string;
@@ -656,7 +741,7 @@ export interface components {
             demandesContact: number;
         };
         /** @enum {string} */
-        TypeNotification: "message_recu" | "invitation_cercle" | "demande_contact" | "contact_accepte" | "membre_rejoint" | "tirage_effectue" | "tour_livre" | "cercle_recommande" | "proposition_recue" | "devis_recu" | "mission_attribuee" | "candidature_recue" | "candidature_acceptee" | "candidature_refusee" | "candidature_attente" | "invitation_equipe";
+        TypeNotification: "message_recu" | "invitation_cercle" | "demande_contact" | "contact_accepte" | "membre_rejoint" | "tirage_effectue" | "tour_livre" | "cercle_recommande" | "proposition_recue" | "devis_recu" | "mission_attribuee" | "candidature_recue" | "candidature_acceptee" | "candidature_refusee" | "candidature_attente" | "invitation_equipe" | "nouvel_abonne" | "suivi_cercle" | "suivi_publication";
         /**
          * @description Le front écrit la phrase à partir de `type`, `personne` et `cercle`, et mène à `lien`
          *     (chemin du front : `/messages/{id}`, `/cercles/{id}`, `/contacts`).
@@ -1515,6 +1600,138 @@ export interface operations {
                 };
             };
             401: components["responses"]["NonConnecte"];
+        };
+    };
+    lireAbonnement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description L'identifiant de l'autre personne. */
+                personneId: components["parameters"]["PersonneId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Les compteurs. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Suivi"];
+                };
+            };
+            401: components["responses"]["NonConnecte"];
+            404: components["responses"]["Introuvable"];
+        };
+    };
+    suivre: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description L'identifiant de l'autre personne. */
+                personneId: components["parameters"]["PersonneId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Les compteurs à jour. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Suivi"];
+                };
+            };
+            401: components["responses"]["NonConnecte"];
+            404: components["responses"]["Introuvable"];
+            409: components["responses"]["Conflit"];
+            429: components["responses"]["TropDeRequetes"];
+        };
+    };
+    neplusSuivre: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description L'identifiant de l'autre personne. */
+                personneId: components["parameters"]["PersonneId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Les compteurs à jour. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Suivi"];
+                };
+            };
+            401: components["responses"]["NonConnecte"];
+        };
+    };
+    listerAbonnes: {
+        parameters: {
+            query?: {
+                limite?: number;
+            };
+            header?: never;
+            path: {
+                /** @description L'identifiant de l'autre personne. */
+                personneId: components["parameters"]["PersonneId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description La liste et le total. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListeAbonnes"];
+                };
+            };
+            400: components["responses"]["Invalide"];
+            401: components["responses"]["NonConnecte"];
+            404: components["responses"]["Introuvable"];
+        };
+    };
+    listerAbonnements: {
+        parameters: {
+            query?: {
+                limite?: number;
+            };
+            header?: never;
+            path: {
+                /** @description L'identifiant de l'autre personne. */
+                personneId: components["parameters"]["PersonneId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description La liste et le total. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListeAbonnes"];
+                };
+            };
+            400: components["responses"]["Invalide"];
+            401: components["responses"]["NonConnecte"];
+            404: components["responses"]["Introuvable"];
         };
     };
     lirePresence: {
