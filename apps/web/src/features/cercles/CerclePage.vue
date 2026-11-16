@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import PreparationIdee from './PreparationIdee.vue'
+import PiecesJointes from '../../components/texte/PiecesJointes.vue'
+import type { PieceJointe } from '../../components/texte/fichiers'
+import type { DepotIdee } from './cercles'
 import LienRetour from '../../components/LienRetour.vue'
 import LienPersonne from '../../components/LienPersonne.vue'
 import { computed, ref, watch } from 'vue'
@@ -114,10 +118,16 @@ async function livrer() {
 }
 const livres = computed(() => cercle.value?.tours.filter((x) => x.statut === 'livre') ?? [])
 
-const idee = ref({ titre: '', description: '' })
+const idee = ref<DepotIdee>({ titre: '', description: '', backlog: [] })
+const documentIdee = ref<PieceJointe | null>(null)
+const preparationOccupee = ref(false)
+const csvInvalide = ref(false)
 const ideeOuverte = ref(false)
 function ouvrirIdee() {
-  idee.value = { titre: monIdee.value?.titre ?? '', description: monIdee.value?.description ?? '' }
+  idee.value = { titre: monIdee.value?.titre ?? '', description: monIdee.value?.description ?? '', backlog: monIdee.value?.backlog ?? [] }
+  documentIdee.value = monIdee.value?.cahierCharges ?? null
+  preparationOccupee.value = false
+  csvInvalide.value = false
   ideeOuverte.value = true
 }
 const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.ideeTitreMin && idee.value.description.trim().length >= LIMITES.ideeDescriptionMin)
@@ -184,9 +194,9 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
       <OutilCalendrier v-else-if="outil === 'calendrier'" :cercle="cercle" :suivi="suivi" :moi-id="moi?.id ?? null" />
 
       <template v-else>
-      <div class="mise-en-page">
+      <div class="mise-en-page" :class="{ 'mise-en-page--edition': ideeOuverte }">
         <!-- L'anneau : les membres dans l'ordre de passage, le bénéficiaire du tour mis en avant. -->
-        <figure class="anneau carte" data-test="anneau">
+        <figure v-show="!ideeOuverte" class="anneau carte" data-test="anneau">
           <div class="anneau__scene">
             <svg class="anneau__trace" viewBox="0 0 100 100" aria-hidden="true">
               <circle cx="50" cy="50" r="40" />
@@ -247,12 +257,12 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
             <RouterLink to="/vitrine">{{ t('cercles.voirVitrine') }}</RouterLink>
           </section>
           <section v-else-if="!cercle.tirage && preparation" class="carte tour" aria-labelledby="avant-titre" data-test="attente-tirage">
-            <h2 id="avant-titre">{{ t('cercles.avantTirage') }}</h2>
-            <ul class="etapes-tirage">
+            <h2 id="avant-titre">{{ ideeOuverte ? t('cercles.dossier.titre') : t('cercles.avantTirage') }}</h2>
+            <ul v-if="!ideeOuverte" class="etapes-tirage">
               <li :class="{ fait: !preparation.manquants }">{{ t('cercles.etapeMembres', { n: cercle.membres.length, taille: cercle.taille }) }}</li>
               <li :class="{ fait: !preparation.sansIdee }">{{ t('cercles.etapeIdees', { n: cercle.membres.length - preparation.sansIdee, total: cercle.membres.length }) }}</li>
             </ul>
-            <p class="texte-discret">{{ t('cercles.avantTirageAide', { n: preparation.manquants }, preparation.manquants) }}</p>
+            <p v-if="!ideeOuverte" class="texte-discret">{{ t('cercles.avantTirageAide', { n: preparation.manquants }, preparation.manquants) }}</p>
 
             <JBouton v-if="!membre && preparation.manquants" :occupe="action === 'rejoindre'" data-test="rejoindre" @click="agir('rejoindre', () => rejoindreCercle(cercle!.id))">{{ t('cercles.rejoindre') }}</JBouton>
 
@@ -264,11 +274,14 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
                 </div>
               </JDeplier>
               <JDeplier>
-                <form v-if="ideeOuverte" class="formulaire-idee" data-test="form-idee" @submit.prevent="agir('idee', () => deposerIdee(cercle!.id, idee))">
+                <form v-if="ideeOuverte" class="formulaire-idee" data-test="form-idee" @submit.prevent="!preparationOccupee && !csvInvalide && agir('idee', () => deposerIdee(cercle!.id, { ...idee, cahierChargesId: documentIdee?.id ?? null }))">
+                  <div class="idee-champs">
                   <JChamp v-model="idee.titre" :libelle="t('cercles.ideeTitre')" :maxlength="LIMITES.ideeTitreMax" requis />
                   <JChamp v-model="idee.description" :libelle="t('cercles.ideeDescription')" :aide="t('cercles.ideeAide')" multiligne :lignes="4" :maxlength="LIMITES.ideeDescriptionMax" requis />
+                  </div>
+                  <PreparationIdee :key="cercle.id" v-model:document="documentIdee" :backlog="idee.backlog ?? []" :cercle-id="cercle.id" @update:backlog="idee.backlog = $event" @occupe="preparationOccupee = $event" @invalide="csvInvalide = $event" />
                   <div class="commandes">
-                    <JBouton type="submit" :desactive="!ideeValide" :occupe="action === 'idee'">{{ t('cercles.enregistrerIdee') }}</JBouton>
+                    <JBouton type="submit" :desactive="!ideeValide || preparationOccupee || csvInvalide" :occupe="action === 'idee'">{{ t('cercles.enregistrerIdee') }}</JBouton>
                     <JBouton variante="secondaire" @click="ideeOuverte = false">{{ t('communautes.annuler') }}</JBouton>
                   </div>
                 </form>
@@ -276,8 +289,8 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
             </template>
 
             <!-- Le tirage est fait par le serveur, une seule fois : ici on ne fait que le demander. -->
-            <JBouton v-if="membre" :desactive="!preparation.pret" :occupe="action === 'tirage'" data-test="tirer" @click="agir('tirage', () => tirerAuSort(cercle!.id))">{{ t('cercles.tirer') }}</JBouton>
-            <p v-if="membre" class="texte-discret">{{ t('cercles.tirageAide') }}</p>
+            <JBouton v-if="membre && !ideeOuverte" :desactive="!preparation.pret" :occupe="action === 'tirage'" data-test="tirer" @click="agir('tirage', () => tirerAuSort(cercle!.id))">{{ t('cercles.tirer') }}</JBouton>
+            <p v-if="membre && !ideeOuverte" class="texte-discret">{{ t('cercles.tirageAide') }}</p>
             <p v-if="erreur" role="alert" class="erreur">{{ erreur }}</p>
           </section>
 
@@ -294,11 +307,17 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
           <li v-for="m in ordre" :key="m.personne.id" class="carte ordre__ligne" :class="`ordre__ligne--${tourDe(m.personne.id)?.statut ?? 'a_venir'}`">
             <span v-if="cercle.tirage" class="ordre__numero">{{ m.rang }}</span>
             <LienPersonne :id="m.personne.id" doublon><JAvatar :nom="m.personne.nom" :url="m.personne.avatarUrl" :taille="40" /></LienPersonne>
-            <span class="ordre__qui">
+            <div class="ordre__qui">
               <strong><LienPersonne :id="m.personne.id">{{ m.personne.nom }}</LienPersonne></strong>
               <!-- Les idées ne sont visibles que des membres : les autres voient seulement si elle est déposée. -->
               <span>{{ m.idee?.titre ?? (m.aDeposeIdee ? t('cercles.ideeDeposee') : t('cercles.pasDIdee')) }}</span>
-            </span>
+              <details v-if="m.idee" class="dossier-membre" data-test="dossier-idee">
+                <summary>{{ t('cercles.dossier.voir') }}</summary>
+                <p>{{ m.idee.description }}</p>
+                <PiecesJointes v-if="m.idee.cahierCharges" :pieces="[m.idee.cahierCharges]" />
+                <template v-if="m.idee.backlog?.length"><strong>{{ t('cercles.dossier.tachesPretes', { n: m.idee.backlog.length }) }}</strong><ol><li v-for="(tache, i) in m.idee.backlog" :key="i">{{ tache.titre }}</li></ol></template>
+              </details>
+            </div>
             <span v-if="cercle.tirage" class="ordre__statut">{{ t(`cercles.statutTour.${tourDe(m.personne.id)?.statut ?? 'a_venir'}`) }}</span>
           </li>
         </ol>
@@ -349,6 +368,10 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
 .mise-en-page { display: grid; gap: var(--space-6); grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); align-items: start; }
 @media (max-width: 860px) { .mise-en-page { grid-template-columns: 1fr; } }
 
+.mise-en-page--edition { grid-template-columns: minmax(0, 1fr); }
+.idee-champs { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.2fr); gap: var(--space-4); align-items: start; }
+@media (max-width: 760px) { .idee-champs { grid-template-columns: 1fr; } }
+
 .anneau { margin: 0; padding: var(--space-6); }
 .anneau__scene { position: relative; aspect-ratio: 1; max-width: 30rem; margin: 0 auto; }
 .anneau__trace { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
@@ -378,6 +401,10 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
 .etapes-tirage li.fait::before { content: '✓'; display: grid; place-items: center; font-size: 0.75rem; line-height: 1; font-weight: 700; border-color: var(--action); background: var(--action); color: var(--on-action); }
 .mon-idee, .formulaire-idee { display: grid; gap: var(--space-3); }
 .mon-idee p { margin: 0; }
+.dossier-membre { margin-top: var(--space-2); min-width: 0; font-size: .9375rem; }
+.dossier-membre summary { cursor: pointer; color: var(--action-ink); font-weight: 600; }
+.dossier-membre > p { white-space: pre-wrap; }
+.dossier-membre ol { max-height: 240px; overflow: auto; padding-left: 22px; }
 .commandes { display: flex; flex-wrap: wrap; gap: var(--space-3); }
 .erreur { margin: 0; color: var(--danger); font-weight: 600; }
 .confirmation { display: grid; gap: var(--space-3); padding: var(--space-4); border-radius: var(--radius-md); background: var(--proof-soft); }

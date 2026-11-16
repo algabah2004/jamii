@@ -12,6 +12,7 @@ export type CercleResume = components['schemas']['CercleResume']
 export type MembreCercle = components['schemas']['MembreCercle']
 export type Tour = components['schemas']['Tour']
 export type Idee = components['schemas']['Idee']
+export type DepotIdee = components['schemas']['DepotIdee']
 export type Tache = ComposantsProjets['schemas']['Tache']
 export type Jalon = ComposantsProjets['schemas']['Jalon']
 
@@ -169,8 +170,16 @@ export async function changerTache(projetId: string, tache: Tache, changement: D
 export const creerCercle = (c: { nom: string; taille: number }) =>
   resultat(api.POST('/api/cercles', { body: { nom: c.nom.trim(), taille: c.taille } }))
 export const rejoindreCercle = (cercleId: string) => resultat(api.POST('/api/cercles/{cercleId}/membres', { params: { path: { cercleId } } }))
-export const deposerIdee = (cercleId: string, idee: Idee) =>
-  resultat(api.PUT('/api/cercles/{cercleId}/membres/moi/idee', { params: { path: { cercleId } }, body: { titre: idee.titre.trim(), description: idee.description.trim() } }))
+export async function deposerIdee(cercleId: string, idee: DepotIdee): Promise<Resultat> {
+  const { data, error } = await api.PUT('/api/cercles/{cercleId}/membres/moi/idee', {
+    params: { path: { cercleId } },
+    body: { ...idee, titre: idee.titre.trim(), description: idee.description.trim() },
+  })
+  if (error || !data) return { ok: false, code: code(error) }
+  // L'API renvoie le membre modifié ; la page a besoin du cercle entier, comme pour les autres actions.
+  const cercle = await lireCercle(cercleId)
+  return cercle ? { ok: true, cercle } : { ok: false, code: 'introuvable' }
+}
 export const tirerAuSort = (cercleId: string) => resultat(api.POST('/api/cercles/{cercleId}/tirage', { params: { path: { cercleId } } }))
 export const livrerTour = (cercleId: string, numero: number) =>
   resultat(api.POST('/api/cercles/{cercleId}/tours/{numero}/livrer', { params: { path: { cercleId, numero } } }))

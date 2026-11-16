@@ -34,7 +34,10 @@ class CerclesController {
 	record CreationCercle(String nom, String ville, Integer taille) {
 	}
 
-	record Idee(String titre, String description) {
+	record DepotIdee(String titre, String description, UUID cahierChargesId, List<dev.jamii.api.projets.Projets.TachePrevue> backlog) {}
+
+	record Idee(String titre, String description, dev.jamii.api.fichiers.Fichiers.Piece cahierCharges,
+			List<dev.jamii.api.projets.Projets.TachePrevue> backlog) {
 	}
 
 	record PersonneResume(UUID id, String nom, String avatarUrl) {
@@ -78,6 +81,8 @@ class CerclesController {
 	record ActiviteDepot(String etat, Depot depot, Instant luLe, List<Commit> commits, List<DemandeDeFusion> demandesDeFusion) {
 	}
 
+	private final DossiersIdees dossiers;
+
 	private final GestionCercles gestion;
 
 	private final DepotsDesTours depots;
@@ -86,7 +91,8 @@ class CerclesController {
 
 	private final ActiviteDesTours activite;
 
-	CerclesController(GestionCercles gestion, DepotsDesTours depots, Annuaire annuaire, ActiviteDesTours activite) {
+	CerclesController(GestionCercles gestion, DepotsDesTours depots, Annuaire annuaire, ActiviteDesTours activite, DossiersIdees dossiers) {
+		this.dossiers = dossiers;
 		this.gestion = gestion;
 		this.depots = depots;
 		this.annuaire = annuaire;
@@ -143,7 +149,7 @@ class CerclesController {
 	}
 
 	@PutMapping("/api/cercles/{cercleId}/membres/moi/idee")
-	MembreCercle deposerIdee(@PathVariable UUID cercleId, @RequestBody Idee idee, @AuthenticationPrincipal UtilisateurConnecte moi) {
+	MembreCercle deposerIdee(@PathVariable UUID cercleId, @RequestBody DepotIdee idee, @AuthenticationPrincipal UtilisateurConnecte moi) {
 		String titre = idee.titre() == null ? "" : idee.titre().strip();
 		String description = idee.description() == null ? "" : idee.description().strip();
 		List<Map<String, String>> erreurs = new ArrayList<>();
@@ -156,7 +162,7 @@ class CerclesController {
 		if (!erreurs.isEmpty()) {
 			throw new ErreurCercle(HttpStatus.BAD_REQUEST, "validation", "Certains champs sont invalides", erreurs, 0);
 		}
-		gestion.deposerIdee(cercleId, moi.id(), titre, description);
+		gestion.deposerIdee(cercleId, moi.id(), titre, description, idee.cahierChargesId(), idee.backlog());
 		return vue(cercleId, moi.id()).membres().stream().filter(m -> m.personne().id().equals(moi.id())).findFirst().orElseThrow();
 	}
 
@@ -214,7 +220,7 @@ class CerclesController {
 			.filter(m -> comptes.containsKey(m.utilisateurId()))
 			.map(m -> new MembreCercle(personne(comptes.get(m.utilisateurId())), m.rang(), m.ideeTitre() != null,
 					// Les idées des autres ne sont visibles que des membres du cercle.
-					estMembre && m.ideeTitre() != null ? new Idee(m.ideeTitre(), m.ideeDescription()) : null, m.rejointLe()))
+					estMembre && m.ideeTitre() != null ? new Idee(m.ideeTitre(), m.ideeDescription(), dossiers.document(cercleId, m.utilisateurId()), dossiers.backlog(cercleId, m.utilisateurId())) : null, m.rejointLe()))
 			.toList();
 		List<Tour> tours = cercle.tirageLe() == null ? List.of() : vue.membres().stream()
 			.filter(m -> m.rang() != null && comptes.containsKey(m.utilisateurId()))
@@ -251,6 +257,11 @@ class CerclesController {
 	}
 
 	// ---------------------------------------------------------------- erreurs
+
+	@ExceptionHandler(dev.jamii.api.fichiers.ErreurFichier.class)
+	ResponseEntity<ProblemDetail> erreurFichier(dev.jamii.api.fichiers.ErreurFichier e) {
+		return dev.jamii.api.fichiers.FichiersController.probleme(e);
+	}
 
 	@ExceptionHandler(ErreurCercle.class)
 	ResponseEntity<ProblemDetail> erreur(ErreurCercle e) {

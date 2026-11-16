@@ -48,6 +48,7 @@ paths:
               required: [fichier]
               properties:
                 fichier: { type: string, format: binary }
+                cercleId: { type: string, format: uuid, description: 'Document réservé à une idée de ce cercle ; envoi par un membre, consultation par les membres après enregistrement de l’idée. Incompatible avec destinataireId.' }
                 destinataireId: { type: string, format: uuid, description: 'Pour un message privé : réserve ce fichier à cette conversation. Seul son auteur le lit avant envoi ; ensuite, son destinataire aussi.' }
       responses:
         '201':

@@ -160,7 +160,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/Idee' }
+            schema: { $ref: '#/components/schemas/DepotIdee' }
       responses:
         '200':
           description: Idée enregistrée.
@@ -442,6 +442,28 @@ components:
       properties:
         titre: { type: string, minLength: 3, maxLength: 120 }
         description: { type: string, minLength: 10, maxLength: 5000, description: 'Texte brut, affiché échappé.' }
+        cahierCharges: { oneOf: [{ $ref: './fichiers.yaml#/components/schemas/PieceJointe' }, { type: 'null' }] }
+        backlog: { type: array, maxItems: 100, items: { $ref: '#/components/schemas/TacheBacklog' } }
+
+    TacheBacklog:
+      type: object
+      additionalProperties: false
+      required: [titre]
+      properties:
+        titre: { type: string, minLength: 3, maxLength: 160 }
+        description: { type: [string, 'null'], maxLength: 2000 }
+        priorite: { type: string, enum: [haute, normale, basse], default: normale }
+        echeance: { type: [string, 'null'], format: date }
+
+    DepotIdee:
+      type: object
+      additionalProperties: false
+      required: [titre, description]
+      properties:
+        titre: { type: string, minLength: 3, maxLength: 120 }
+        description: { type: string, minLength: 10, maxLength: 5000 }
+        cahierChargesId: { type: [string, 'null'], format: uuid, description: 'Document téléversé avec le cercleId de ce cercle.' }
+        backlog: { type: array, maxItems: 100, items: { $ref: '#/components/schemas/TacheBacklog' }, description: 'Remplace le backlog préparé. Les tâches seront créées une seule fois à l’ouverture du tour.' }
 
     CercleResume:
       type: object

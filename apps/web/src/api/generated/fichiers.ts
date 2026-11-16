@@ -159,6 +159,11 @@ export interface operations {
                     fichier: string;
                     /**
                      * Format: uuid
+                     * @description Document réservé à une idée de ce cercle ; envoi par un membre, consultation par les membres après enregistrement de l’idée. Incompatible avec destinataireId.
+                     */
+                    cercleId?: string;
+                    /**
+                     * Format: uuid
                      * @description Pour un message privé : réserve ce fichier à cette conversation. Seul son auteur le lit avant envoi ; ensuite, son destinataire aussi.
                      */
                     destinataireId?: string;
