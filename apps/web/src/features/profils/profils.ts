@@ -114,16 +114,3 @@ export function ilYa(date: string | null | undefined, langue: string, maintenant
   }
   return format.format(0, 'minute')
 }
-
-/** Les chiffres de la bande sous l'en-tête : seulement ceux qui existent, jamais un « 0 » qui dessert. */
-export function chiffresProfil(profil: Pick<Profil, 'depotsGithub' | 'langages' | 'projets' | 'fiabilite'>) {
-  const etoiles = profil.depotsGithub.reduce((total, d) => total + d.etoiles, 0)
-  const point = (type: Preuve['type']) => profil.fiabilite.find((f) => f.type === type)
-  return {
-    etoiles: etoiles || null,
-    langage: profil.langages[0]?.nom ?? null,
-    enLigne: profil.projets.filter((p) => p.enLigne).length || null,
-    aTemps: point('tache_livree_a_temps') ?? null,
-    avis: point('avis_coequipier')?.nombre || null,
-  }
-}

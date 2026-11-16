@@ -8,7 +8,7 @@ import { i18n } from '../../i18n'
 import { creerRouteur } from '../../router'
 import { chargerSession } from '../../session'
 import App from '../../App.vue'
-import { chiffresProfil, competencesPhares, couleurLangage, hoteLisible, ilYa, lienProfil, lireCompetences, pourcentage, urlDrapeau } from './profils'
+import { competencesPhares, couleurLangage, hoteLisible, ilYa, lienProfil, lireCompetences, pourcentage, urlDrapeau } from './profils'
 
 async function ouvrir(chemin = '/profil') {
   ;(i18n.global.locale as unknown as { value: string }).value = 'fr'
@@ -214,7 +214,7 @@ describe('profil professionnel (#159)', () => {
     expect(page.find('[data-test="actions-profil"]').exists()).toBe(false)
   })
 
-  it('montre la bande de chiffres, « À propos » avec le résumé de l’IA, et les avis des coéquipiers', async () => {
+  it('montre « Infos » avec le résumé de l’IA, l’activité GitHub et les recommandations des coéquipiers', async () => {
     serveur.use(
       http.get('/api/profils/:id', () =>
         HttpResponse.json({
@@ -233,12 +233,11 @@ describe('profil professionnel (#159)', () => {
     )
     const page = await ouvrir('/p/b2c3')
     await vi.waitFor(() => expect(page.find('[data-test="avis"]').exists()).toBe(true))
-    const chiffres = page.get('[data-test="chiffres"]').text()
-    expect(chiffres).toContain('★ 12')
-    expect(chiffres).toContain('langage principal')
+    expect(page.get('[data-test="liens"]').text()).toContain('★ 12 étoiles')
     expect(page.get('[data-test="a-propos"]').text()).toContain('Résumé proposé par l')
     expect(page.get('[data-test="avis"]').text()).toContain('Toujours à l’heure.')
-    expect(page.get('[data-test="depots"]').text()).toContain('mis à jour')
+    expect(page.get('[data-test="depots"]').text()).toContain('Kofi a mis à jour ce dépôt')
+    expect(page.get('[data-test="avis"]').text()).toContain('Ont travaillé ensemble sur Marché Facile')
   })
 
   it('le lien public et le drapeau se construisent sans erreur', () => {
@@ -267,17 +266,6 @@ describe('outils', () => {
     expect(ilYa('2026-11-13T12:00:00Z', 'fr', maintenant)).toBe('il y a 3 jours')
     expect(ilYa('2026-09-01T12:00:00Z', 'en', maintenant)).toBe('3 months ago')
     expect(ilYa(null, 'fr', maintenant)).toBeNull()
-  })
-  it('la bande de chiffres ne garde que ce qui existe', () => {
-    const vide = chiffresProfil({ depotsGithub: [], langages: [], projets: [], fiabilite: [] })
-    expect(Object.values(vide).every((v) => v === null)).toBe(true)
-    const plein = chiffresProfil({
-      depotsGithub: [{ nom: 'a', url: 'https://github.com/x/a', etoiles: 4 }, { nom: 'b', url: 'https://github.com/x/b', etoiles: 3 }],
-      langages: [{ nom: 'Dart', part: 1 }],
-      projets: [{ projetId: 'p', titre: 'P', role: 'porteur', enLigne: true }],
-      fiabilite: [{ type: 'avis_coequipier', nombre: 2, contestees: 0 }],
-    })
-    expect(plein).toMatchObject({ etoiles: 7, langage: 'Dart', enLigne: 1, aTemps: null, avis: 2 })
   })
 })
 
