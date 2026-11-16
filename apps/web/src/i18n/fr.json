@@ -3101,5 +3101,22 @@
       "titre": "Montrer quand je suis en ligne",
       "aide": "Les personnes à qui tu écris voient « En ligne » ou « Vu il y a 5 min ». Si tu le caches, tu ne vois plus non plus quand les autres sont en ligne."
     }
+  },
+  "emojis": {
+    "ouvrir": "Emojis",
+    "titre": "Choisir un emoji",
+    "chercher": "Chercher : rire, feu, merci…",
+    "categories": "Catégories",
+    "resultats": "Résultats",
+    "aucun": "Aucun emoji ne correspond.",
+    "cat": {
+      "recents": "Récents",
+      "visages": "Visages",
+      "gestes": "Gestes",
+      "coeurs": "Cœurs et symboles",
+      "tech": "Tech et travail",
+      "fete": "Fête et nourriture",
+      "nature": "Nature et animaux"
+    }
   }
 }
