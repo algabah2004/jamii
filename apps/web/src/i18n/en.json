@@ -47,12 +47,25 @@
     "googleOu": "Or get a sign-in link by email:",
     "bienvenue": "Welcome to Jamii",
     "accroche": "The exchange platform for African developers, open to anyone with a need.",
-    "points": [
-      "Find teammates and start a circle.",
-      "Talk in the communities.",
-      "Describe your need to Ayo, the AI assistant."
-    ],
-    "rassurance": "No password. Nothing is published without your consent."
+    "rassurance": "No password. Nothing is published without your consent.",
+    "accesTitre": "Sign in or create an account",
+    "sousTitre": "Your account is created the first time you sign in.",
+    "githubPastille": "For developers",
+    "emailPastille": "For everyone",
+    "atouts": {
+      "cercles": {
+        "titre": "Circles",
+        "texte": "Find teammates and run a project or a tontine together."
+      },
+      "communautes": {
+        "titre": "Communities",
+        "texte": "Talk with developers from across the continent."
+      },
+      "ayo": {
+        "titre": "Ayo, the AI assistant",
+        "texte": "Describe your need and Ayo helps you find the right people."
+      }
+    }
   },
   "accueil": {
     "titre": "Find your team, build your project, put it online.",
