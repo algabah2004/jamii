@@ -278,7 +278,7 @@ const messageErreur = computed(() =>
     <RouterLink v-if="historique.length > 12" to="/demandes" class="historique__toutes">{{ t('demandes.mesDemandes.toutes') }}</RouterLink>
   </aside>
   <section class="demande fond-verre">
-    <div class="entete">
+    <div class="entete-discussion">
       <p class="retour"><LienRetour to="/demandes">{{ t('demandes.mesDemandes.titre') }}</LienRetour></p>
       <button v-if="demande" type="button" class="lien-discret supprimer" :disabled="suppression === 'envoi'" data-test="supprimer-discussion" @click="supprimer">
         {{ t('demandes.discussion.supprimer') }}
@@ -634,7 +634,7 @@ const messageErreur = computed(() =>
 .historique { display: none; }
 @media (min-width: 1100px) {
   .page-demande { grid-template-columns: 15rem minmax(0, 64rem); }
-  .historique { position: sticky; top: var(--space-6); display: grid; gap: var(--space-3); max-height: calc(100vh - 2 * var(--space-6)); overflow-y: auto; }
+  .historique { position: sticky; top: calc(64px + var(--space-6)); display: grid; gap: var(--space-3); max-height: calc(100vh - 64px - 2 * var(--space-6)); overflow-y: auto; }
 }
 .historique__nouvelle { justify-content: center; }
 .historique__titre { margin: var(--space-2) 0 0; font-size: var(--type-body-sm-size); color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.04em; }
@@ -650,8 +650,8 @@ const messageErreur = computed(() =>
 .assistant__nom strong { color: var(--ink); }
 .question-ayo { display: grid; gap: var(--space-4); border-inline-start: 3px solid var(--action); }
 .question-ayo__texte { margin: 0; font-size: 1.1875rem; }
-.entete { display: flex; justify-content: space-between; align-items: center; gap: var(--space-3); }
-.entete .retour { margin: 0; }
+.entete-discussion { display: flex; justify-content: space-between; align-items: center; gap: var(--space-3); }
+.entete-discussion .retour { margin: 0; }
 .supprimer { color: var(--ink-muted); }
 .supprimer:hover { color: var(--danger); }
 .fil { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
