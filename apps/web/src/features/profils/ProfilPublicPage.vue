@@ -82,7 +82,7 @@ watch(() => String(route.params.id), (id) => void charger(id), { immediate: true
     </div>
     <template v-else-if="profil">
       <FicheProfil :profil="profil" :moi="moi?.id === profil.utilisateurId">
-        <template v-if="moi" #actions>
+        <template v-if="moi" #boutons>
           <AbonnesProfil :personne-id="profil.utilisateurId" :peut-suivre="autre" />
           <ActionsProfil v-if="autre" :personne-id="profil.utilisateurId" :prenom="prenom(profil.nom)" />
         </template>

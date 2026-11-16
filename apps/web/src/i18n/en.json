@@ -477,13 +477,21 @@
       }
     },
     "langages": {
-      "titre": "Languages",
+      "titre": "Programming languages",
       "estimation": "Estimated from the size of your public GitHub repositories (forks excluded)."
     },
     "competences": {
       "titre": "Skills",
       "declaree": "(declared)",
-      "source": "Deduced from your GitHub repositories, plus the ones you add."
+      "source": "Deduced from your GitHub repositories, plus the ones you add.",
+      "phare": "Featured",
+      "toutes": "Show all {n} skills",
+      "moins": "Show less",
+      "sources": {
+        "github": "Inferred from GitHub repositories",
+        "declaree": "Added by the person",
+        "ia": "Suggested by AI, confirmed by the person"
+      }
     },
     "projets": {
       "titre": "Projects on Jamii",
@@ -496,7 +504,8 @@
     "depots": {
       "titre": "GitHub repositories",
       "etoiles": "no stars | {n} star | {n} stars",
-      "pasUnePreuve": "Repositories show what you code. Only a project that is online and verified counts as proof."
+      "pasUnePreuve": "Repositories show what you code. Only a project that is online and verified counts as proof.",
+      "toutVoir": "See all on GitHub"
     },
     "fiabilite": {
       "titre": "Why you can count on {prenom}",
@@ -534,7 +543,8 @@
       "site": "Website"
     },
     "langues": {
-      "parle": "Speaks:"
+      "parle": "Speaks:",
+      "titre": "Languages"
     },
     "phares": {
       "titre": "Featured skills"
@@ -569,6 +579,25 @@
       "invitationTexte": "On Jamii, projects you launch with a team become proof.",
       "rejoindre": "Create my profile",
       "nonPublie": "{nom} hasn't published their profile yet. You can already message them."
+    },
+    "aPropos": {
+      "titre": "About",
+      "ia": "Summary suggested by AI from public repositories"
+    },
+    "avis": {
+      "titre": "Recommendations",
+      "projet": "Worked together on {projet}"
+    },
+    "experience": {
+      "titre": "Experience",
+      "surJamii": "Project on Jamii",
+      "competences": "Skills:"
+    },
+    "activite": {
+      "titre": "Activity",
+      "sousTitre": "On GitHub, {'@'}{login}",
+      "misAJour": "{nom} updated this repository · {quand}",
+      "depot": "{nom}’s repository"
     }
   },
   "etat": {

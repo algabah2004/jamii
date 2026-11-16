@@ -262,7 +262,7 @@ async function enregistrer() {
 
     <template v-else-if="profil">
       <FicheProfil :profil="profil" moi>
-        <template #actions>
+        <template #boutons>
           <AbonnesProfil v-if="moi" :personne-id="moi.id" />
           <div class="barre-actions">
             <p class="visibilite" :class="{ 'visibilite--publie': profil.publie }" data-test="visibilite">
@@ -279,6 +279,8 @@ async function enregistrer() {
               {{ enCours ? t('profil.generation.enCours') : t('profil.generation.regenerer') }}
             </JBouton>
           </div>
+        </template>
+        <template #actions>
           <p v-if="message" role="status" data-test="message">{{ message }}</p>
           <p v-if="echec" role="alert">{{ t(`profil.generation.erreurs.${echec}`) }}</p>
 

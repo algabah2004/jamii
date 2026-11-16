@@ -483,7 +483,15 @@
     "competences": {
       "titre": "Compétences",
       "declaree": "(déclarée)",
-      "source": "Déduites de tes dépôts GitHub, plus celles que tu ajoutes."
+      "source": "Déduites de tes dépôts GitHub, plus celles que tu ajoutes.",
+      "phare": "Mise en avant",
+      "toutes": "Afficher les {n} compétences",
+      "moins": "Afficher moins",
+      "sources": {
+        "github": "Déduite des dépôts GitHub",
+        "declaree": "Ajoutée par la personne",
+        "ia": "Proposée par l’IA, validée par la personne"
+      }
     },
     "projets": {
       "titre": "Projets sur Jamii",
@@ -496,7 +504,8 @@
     "depots": {
       "titre": "Dépôts GitHub",
       "etoiles": "aucune étoile | {n} étoile | {n} étoiles",
-      "pasUnePreuve": "Les dépôts montrent ce que tu codes. Seul un projet mis en ligne et vérifié compte comme preuve."
+      "pasUnePreuve": "Les dépôts montrent ce que tu codes. Seul un projet mis en ligne et vérifié compte comme preuve.",
+      "toutVoir": "Tout voir sur GitHub"
     },
     "fiabilite": {
       "titre": "Pourquoi on peut compter sur {prenom}",
@@ -534,7 +543,8 @@
       "site": "Site"
     },
     "langues": {
-      "parle": "Parle :"
+      "parle": "Parle :",
+      "titre": "Langues"
     },
     "phares": {
       "titre": "Compétences mises en avant"
@@ -569,6 +579,25 @@
       "invitationTexte": "Sur Jamii, tes projets mis en ligne avec une équipe deviennent des preuves.",
       "rejoindre": "Créer mon profil",
       "nonPublie": "{nom} n’a pas encore publié son profil. Vous pouvez déjà lui écrire."
+    },
+    "aPropos": {
+      "titre": "Infos",
+      "ia": "Résumé proposé par l'IA à partir des dépôts publics"
+    },
+    "avis": {
+      "titre": "Recommandations",
+      "projet": "Ont travaillé ensemble sur {projet}"
+    },
+    "experience": {
+      "titre": "Expérience",
+      "surJamii": "Projet sur Jamii",
+      "competences": "Compétences :"
+    },
+    "activite": {
+      "titre": "Activité",
+      "sousTitre": "Sur GitHub, {'@'}{login}",
+      "misAJour": "{nom} a mis à jour ce dépôt · {quand}",
+      "depot": "Dépôt de {nom}"
     }
   },
   "etat": {
