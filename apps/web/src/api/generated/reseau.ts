@@ -112,6 +112,27 @@ export interface paths {
         patch: operations["modifierMessage"];
         trace?: never;
     };
+    "/api/conversations/{personneId}/messages/{messageId}/reactions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ajouter ou retirer ma réaction (un emoji)
+         * @description Une réaction par emoji et par personne (répéter ne change rien) ; 10 emojis différents au plus par personne et par
+         *     message (409 `trop_de_reactions`). Seul un emoji est accepté (400). 409 `message_supprime`.
+         */
+        post: operations["reagirAuMessage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/conversations/{personneId}/messages/{messageId}/transfert": {
         parameters: {
             query?: never;
@@ -532,6 +553,14 @@ export interface components {
             sorte?: "image" | "video" | "document" | "audio" | null;
             supprime: boolean;
         };
+        Reaction: {
+            emoji: string;
+            nombre: number;
+            /** @description J'ai réagi avec cet emoji. */
+            deMoi: boolean;
+            /** @description Qui a réagi (10 au plus), pour le survol. « moi » pour moi. */
+            noms: string[];
+        };
         Message: {
             /** Format: uuid */
             id: string;
@@ -547,6 +576,8 @@ export interface components {
             supprime: boolean;
             /** @description Une copie transférée depuis une autre conversation. */
             transfere: boolean;
+            /** @description Les réactions, dans l'ordre de la première de chaque emoji. Vide pour un message supprimé. */
+            reactions: components["schemas"]["Reaction"][];
             /** @description Texte mis en forme (petit Markdown), affiché échappé. */
             texte: string;
             piecesJointes: components["schemas"]["PieceJointe"][];
@@ -1037,6 +1068,42 @@ export interface operations {
             400: components["responses"]["Invalide"];
             401: components["responses"]["NonConnecte"];
             /** @description Pas mon message, ou pas dans cette conversation. */
+            404: components["responses"]["Introuvable"];
+            409: components["responses"]["Conflit"];
+        };
+    };
+    reagirAuMessage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description L'identifiant de l'autre personne. */
+                personneId: components["parameters"]["PersonneId"];
+                messageId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    emoji: string;
+                    /** @description true pour ajouter, false pour retirer. */
+                    active: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Les réactions à jour du message. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Reaction"][];
+                };
+            };
+            400: components["responses"]["Invalide"];
+            401: components["responses"]["NonConnecte"];
             404: components["responses"]["Introuvable"];
             409: components["responses"]["Conflit"];
         };

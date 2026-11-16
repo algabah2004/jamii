@@ -3118,5 +3118,15 @@
       "fete": "Party and food",
       "nature": "Nature and animals"
     }
+  },
+  "reactions": {
+    "reagir": "React",
+    "avec": "React with {emoji}",
+    "autres": "More emojis",
+    "titre": "Reactions",
+    "toi": "You",
+    "quiEtAutres": "{noms} and {n} others",
+    "pastille": "{emoji}: {n} reaction, {qui} | {emoji}: {n} reaction, {qui} | {emoji}: {n} reactions, {qui}",
+    "erreur": "The reaction could not be saved. Try again."
   }
 }
