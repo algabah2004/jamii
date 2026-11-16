@@ -5,10 +5,29 @@ import en from './en.json'
 export type Langue = 'fr' | 'en'
 export const LANGUES: Langue[] = ['fr', 'en']
 
-/** Français d'abord (docs/vocabulaire.md), anglais si le navigateur le préfère. */
-export function langueInitiale(preferees: readonly string[] = navigator.languages ?? []): Langue {
-  const premiere = preferees[0]?.slice(0, 2)
-  return premiere === 'en' ? 'en' : 'fr'
+export const CLE_LANGUE = 'jamii.langue'
+
+/** La langue choisie avec le sélecteur, gardée dans ce navigateur. */
+function langueRetenue(): string | null {
+  try {
+    return localStorage.getItem(CLE_LANGUE)
+  } catch {
+    return null
+  }
+}
+
+/** Retient le choix de langue, pour la prochaine visite. */
+export function retenirLangue(langue: Langue) {
+  try {
+    localStorage.setItem(CLE_LANGUE, langue)
+  } catch {
+    /* Mémoire du navigateur indisponible : la langue reviendra au français. */
+  }
+}
+
+/** Français par défaut (docs/vocabulaire.md), quelle que soit la langue du navigateur ; l'anglais seulement si on l'a choisi. */
+export function langueInitiale(retenue: string | null = langueRetenue()): Langue {
+  return retenue === 'en' ? 'en' : 'fr'
 }
 
 export const i18n = createI18n<[typeof fr], Langue>({

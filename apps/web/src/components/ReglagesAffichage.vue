@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { LANGUES, type Langue } from '../i18n'
+import { LANGUES, retenirLangue, type Langue } from '../i18n'
 import { choisirTheme, themeActuel, type Theme } from '../design-system'
 
 /** La langue et le thème : dans l'en-tête sur ordinateur, dans le pied de page sur téléphone. */
@@ -9,6 +9,7 @@ const { t, locale } = useI18n()
 function changerLangue(langue: Langue) {
   locale.value = langue
   document.documentElement.lang = langue
+  retenirLangue(langue)
 }
 </script>
 
