@@ -28,6 +28,9 @@ export class FausseConnexion {
   remoteDescription: { type: string; sdp: string } | null = null
   iceGatheringState = 'complete'
   connectionState = 'new'
+  signalingState = 'stable'
+  /** Toutes les connexions créées, pour l'appel du cercle (une par participant). */
+  static toutes: FausseConnexion[] = []
   ontrack: unknown = null
   onconnectionstatechange: (() => void) | null = null
   voies: FausseVoie[] = []
@@ -36,6 +39,7 @@ export class FausseConnexion {
   constructor(config: unknown) {
     this.config = config
     FausseConnexion.derniere = this
+    FausseConnexion.toutes.push(this)
   }
   addTransceiver(p: FaussePiste | string) {
     const voie = { sender: { replaceTrack: vi.fn(async () => undefined) }, receiver: { track: { kind: typeof p === 'string' ? p : p.kind } }, direction: 'sendrecv' }
@@ -46,9 +50,13 @@ export class FausseConnexion {
   createDataChannel() { return this.canal }
   async createOffer() { return { type: 'offer', sdp: 'v=0\r\no=- offre\r\n' } }
   async createAnswer() { return { type: 'answer', sdp: 'v=0\r\no=- reponse\r\n' } }
-  async setLocalDescription(d: { type: string; sdp: string }) { this.localDescription = d }
+  async setLocalDescription(d: { type: string; sdp: string }) {
+    this.localDescription = d
+    this.signalingState = d.type === 'offer' ? 'have-local-offer' : 'stable'
+  }
   async setRemoteDescription(d: { type: string; sdp: string }) {
     this.remoteDescription = d
+    this.signalingState = d.type === 'offer' ? 'have-remote-offer' : 'stable'
     if (d.type === 'offer') {
       this.addTransceiver('audio').direction = 'recvonly'
       this.addTransceiver('video').direction = 'recvonly'
@@ -65,6 +73,7 @@ export class FausseConnexion {
 /** Installe le faux WebRTC ; `micro: false` simule un micro refusé. */
 export function installerFauxWebrtc({ micro = true } = {}) {
   FausseConnexion.derniere = null
+  FausseConnexion.toutes = []
   vi.stubGlobal('RTCPeerConnection', FausseConnexion)
   vi.stubGlobal('MediaStream', FauxFlux)
   const getUserMedia = vi.fn(async (c: { audio?: unknown; video?: unknown }) => {

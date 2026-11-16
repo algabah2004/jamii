@@ -251,7 +251,7 @@ class CerclesController {
 		return new PersonneResume(compte.id(), compte.nom(), compte.avatarUrl());
 	}
 
-	private static ErreurCercle validation(String champ, String code) {
+	static ErreurCercle validation(String champ, String code) {
 		return new ErreurCercle(HttpStatus.BAD_REQUEST, "validation", "Certains champs sont invalides",
 				List.of(Map.of("champ", champ, "code", code)), 0);
 	}

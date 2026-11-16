@@ -365,9 +365,10 @@ paths:
       operationId: lancerAppelCercle
       summary: Lancer l'appel du cercle, ou rejoindre celui qui est en cours (membres)
       description: |
-        Un seul appel à la fois : s'il y en a un, `200` avec celui-ci. Sinon une salle neuve est créée (`201`), et un
-        message `appel` l'annonce dans le salon. Un appel est « en cours » une heure au plus. Au plus 10 appels lancés
-        par heure et par personne (`429`).
+        Un seul appel à la fois : s'il y en a un, `200` avec celui-ci. Sinon un appel neuf est créé (`201`), et un
+        message `appel` l'annonce dans le salon. L'appel se passe dans Jamii, en WebRTC (#157) : on y entre ensuite par
+        `POST …/appel/presence`. Il se termine quand le dernier présent part, ou une heure après son lancement. Au plus
+        10 appels lancés par heure et par personne (`429`).
       security:
         - session: []
           csrf: []
@@ -398,6 +399,77 @@ paths:
         '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
         '403': { description: '`pas_membre` ou `pas_lanceur`.', $ref: './socle.yaml#/components/responses/Interdit' }
         '404': { description: Pas d'appel en cours., $ref: './socle.yaml#/components/responses/Introuvable' }
+
+  /api/cercles/{cercleId}/salon/appel/presence:
+    parameters:
+      - $ref: '#/components/parameters/CercleId'
+    post:
+      tags: [salon]
+      operationId: presenceAppelCercle
+      summary: Je suis dans l'appel du cercle (toutes les 1,5 s)
+      description: |
+        L'appel du cercle en WebRTC (#157) : au plus 6 membres, chacun relié directement à chacun (un maillage). Le son
+        et l'image ne passent jamais par l'API. Ce signe de vie renvoie qui est là, et les offres ou réponses SDP qui
+        m'attendent : lues une seule fois, puis effacées. Pour chaque paire, c'est le dernier arrivé (`arriveLe`, puis
+        l'identifiant) qui envoie l'offre. Sans signe de vie pendant 12 s, on a quitté l'appel. Jamais en cache.
+      security:
+        - session: []
+          csrf: []
+      responses:
+        '200':
+          description: La salle.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SalleAppelCercle' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { description: '`pas_membre`.', $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { description: '`pas_d_appel` : aucun appel en cours.', $ref: './socle.yaml#/components/responses/Introuvable' }
+    delete:
+      tags: [salon]
+      operationId: quitterAppelCercle
+      summary: Je quitte l'appel ; le dernier à partir le termine
+      security:
+        - session: []
+          csrf: []
+      responses:
+        '204': { description: Parti (sans effet si l'appel est déjà fini). }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { description: '`pas_membre`.', $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+
+  /api/cercles/{cercleId}/salon/appel/signaux:
+    parameters:
+      - $ref: '#/components/parameters/CercleId'
+    post:
+      tags: [salon]
+      operationId: signalAppelCercle
+      summary: Une offre ou une réponse SDP pour un autre présent
+      description: |
+        Les deux personnes doivent être dans l'appel (`409 pas_dans_l_appel`). Le SDP complet, candidats ICE inclus,
+        commence par `v=0` et fait au plus 30 000 caractères. Au plus 6 signaux en attente d'une personne à une autre
+        (`429`). Un signal non lu disparaît au bout d'une minute.
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [a, type, sdp]
+              properties:
+                a: { type: string, format: uuid }
+                type: { type: string, enum: [offre, reponse] }
+                sdp: { type: string, maxLength: 30000 }
+      responses:
+        '204': { description: Déposé. }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { description: '`pas_membre`.', $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+        '429': { $ref: './socle.yaml#/components/responses/TropDeRequetes' }
 
 components:
   securitySchemes:
@@ -689,9 +761,35 @@ components:
 
     AppelCercle:
       type: object
-      required: [id, lancePar, lanceLe, url]
+      required: [id, lancePar, lanceLe, url, presents]
       properties:
         id: { type: string, format: uuid }
         lancePar: { oneOf: [{ $ref: './projets.yaml#/components/schemas/PersonneResume' }, { type: 'null' }] }
         lanceLe: { type: string, format: date-time }
-        url: { type: string, format: uri, description: 'L''adresse de la salle (Jitsi). Une salle neuve à chaque appel.' }
+        url: { type: string, format: uri, description: 'L''ancienne salle Jitsi, gardée pour compatibilité : l''appel se passe désormais dans Jamii (WebRTC, #157).' }
+        presents: { type: integer, minimum: 0, description: 'Combien de membres sont dans l''appel en ce moment.' }
+
+    SalleAppelCercle:
+      type: object
+      required: [appelId, presents, signaux]
+      properties:
+        appelId: { type: string, format: uuid }
+        presents:
+          type: array
+          description: Les présents, moi compris, du premier arrivé au dernier.
+          items:
+            type: object
+            required: [personne, arriveLe]
+            properties:
+              personne: { $ref: './projets.yaml#/components/schemas/PersonneResume' }
+              arriveLe: { type: string, format: date-time }
+        signaux:
+          type: array
+          description: Les offres et réponses qui m'attendaient, dans l'ordre d'envoi. Effacées une fois lues.
+          items:
+            type: object
+            required: [de, type, sdp]
+            properties:
+              de: { type: string, format: uuid }
+              type: { type: string, enum: [offre, reponse] }
+              sdp: { type: string }

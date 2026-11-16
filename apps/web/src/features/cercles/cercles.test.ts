@@ -8,6 +8,8 @@ import { creerRouteur } from '../../router'
 import { chargerSession } from '../../session'
 import App from '../../App.vue'
 import { ID_ABIDJAN, ID_DAKAR } from '../../mocks/cercles'
+import { installerFauxWebrtc } from '../reseau/fauxWebrtc'
+import { reinitialiserAppelCercle } from './appelCercle'
 
 // jsdom ne sait pas envoyer un FormData par fetch (« Premature close ») : l'envoi d'un fichier est simulé ici, avec la
 // vraie règle de taille. Le parcours réel est vérifié par l'API (FichiersTest) et dans le navigateur.
@@ -413,16 +415,18 @@ describe('le salon du cercle', () => {
     page.unmount()
   })
 
-  it("lance l'appel du cercle et propose de le rejoindre ou de le terminer", async () => {
-    const ouverture = vi.spyOn(window, 'open').mockReturnValue(null)
+  it("lance l'appel du cercle dans Jamii, sans quitter la page, puis le termine", async () => {
+    installerFauxWebrtc()
     const { page } = await ouvrir(`/cercles/${ID_DAKAR}?onglet=salon`)
     await vi.waitFor(() => expect(page.find('[data-test="lancer-appel"]').exists()).toBe(true))
     await page.get('[data-test="lancer-appel"]').trigger('click')
-    await vi.waitFor(() => expect(page.find('[data-test="rejoindre-appel"]').exists()).toBe(true))
-    expect(page.get('[data-test="rejoindre-appel"]').attributes('href')).toContain('jamii-cercle')
+    // La fenêtre d'appel s'ouvre par-dessus la page ; le salon propose d'y revenir.
+    await vi.waitFor(() => expect(document.body.querySelector('[data-test="fenetre-appel-cercle"]')).not.toBeNull())
+    await vi.waitFor(() => expect(page.find('[data-test="revenir-appel"]').exists()).toBe(true))
     await page.get('[data-test="terminer-appel"]').trigger('click')
     await vi.waitFor(() => expect(page.find('[data-test="lancer-appel"]').exists()).toBe(true))
-    ouverture.mockRestore()
+    reinitialiserAppelCercle()
+    vi.unstubAllGlobals()
     page.unmount()
   })
 })

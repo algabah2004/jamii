@@ -9,6 +9,7 @@ import { JAvatar, JBouton, JSquelette } from './design-system'
 import { arreterActivite, suivreActivite, useActivite } from './features/reseau/activite'
 import { arreterAppelsEntrants, suivreAppelsEntrants } from './features/reseau/appel'
 import FenetreAppel from './features/reseau/FenetreAppel.vue'
+import FenetreAppelCercle from './features/cercles/FenetreAppelCercle.vue'
 
 const { t } = useI18n()
 const { etat, moi, accesSystalink } = useSession()
@@ -107,6 +108,7 @@ watch(etat, (e) => (e === 'connecte' ? suivreAppelsEntrants() : arreterAppelsEnt
   </footer>
 
   <FenetreAppel v-if="etat === 'connecte'" />
+  <FenetreAppelCercle v-if="etat === 'connecte'" />
 </template>
 
 <style>

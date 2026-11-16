@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { appelCercleActif, quitter as quitterAppelCercle, reduire as reduireAppelCercle, rejoindre, useAppelCercle } from './appelCercle'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import LienPersonne from '../../components/LienPersonne.vue'
@@ -190,36 +191,29 @@ async function regler(m: MessageCercle) {
   }
 }
 
-// ---------------------------------------------------------------- l'appel du cercle
+// ---------------------------------------------------------------- l'appel du cercle (#157)
 
 const etatAppel = ref<'repos' | 'envoi' | 'erreur' | 'trop'>('repos')
 const peutTerminer = computed(() => !!appel.value && !!moi.value && (appel.value.lancePar?.id === moi.value.id || props.cercle.moi.estCreateur))
+const { etat: appelEnDirect } = useAppelCercle()
+const dansCetAppel = computed(() => appelCercleActif() && appelEnDirect.cercleId === props.cercle.id)
 
-/** L'onglet de l'appel s'ouvre pendant le clic (sinon le navigateur le bloque), puis reçoit l'adresse de la salle. */
-async function appeler() {
+/** L'appel se passe dans Jamii, en WebRTC (appelCercle.ts) : lancer ou rejoindre ouvre la fenêtre d'appel. */
+async function appeler(video = false) {
   if (etatAppel.value === 'envoi') return
+  if (dansCetAppel.value) return reduireAppelCercle(false)
   etatAppel.value = 'envoi'
-  const fenetre = typeof window.open === 'function' ? window.open('', '_blank') : null
   try {
-    const r = await lancerAppel(props.cercle.id)
-    if (!r.appel?.url) {
-      fenetre?.close()
-      etatAppel.value = r.statut === 429 ? 'trop' : 'erreur'
-      return
-    }
-    if (fenetre) {
-      fenetre.opener = null
-      fenetre.location.href = r.appel.url
-    }
-    appel.value = r.appel
-    etatAppel.value = 'repos'
+    await rejoindre({ id: props.cercle.id, nom: props.cercle.nom }, video)
+    const fin = appelEnDirect.phase === 'fini' ? appelEnDirect.fin : null
+    etatAppel.value = fin === 'trop_de_requetes' ? 'trop' : fin === 'impossible' ? 'erreur' : 'repos'
     void lire()
   } catch {
-    fenetre?.close()
     etatAppel.value = 'erreur'
   }
 }
 async function raccrocher() {
+  if (dansCetAppel.value) await quitterAppelCercle()
   await terminerAppel(props.cercle.id)
   appel.value = null
   void lire()
@@ -268,11 +262,15 @@ const contexte = computed(() => {
       </div>
       <div class="appel" data-test="appel-cercle">
         <template v-if="appel">
-          <span class="appel__direct"><span class="appel__pulse" aria-hidden="true" />{{ t('cercles.salon.appelEnCours', { nom: prenom(appel.lancePar?.nom) || t('cercles.salon.quelquun'), quand: ilYa(appel.lanceLe, locale) }) }}</span>
-          <a :href="appel.url" target="_blank" rel="noopener noreferrer" class="bouton bouton--direct" data-test="rejoindre-appel">{{ t('cercles.salon.rejoindre') }}</a>
+          <span class="appel__direct"><span class="appel__pulse" aria-hidden="true" />{{ t('cercles.salon.appelEnCours', { nom: prenom(appel.lancePar?.nom) || t('cercles.salon.quelquun'), quand: ilYa(appel.lanceLe, locale) }) }}<template v-if="appel.presents"> · {{ t('cercles.salon.presents', { n: appel.presents }, appel.presents) }}</template></span>
+          <button v-if="dansCetAppel" type="button" class="bouton bouton--direct" data-test="revenir-appel" @click="reduireAppelCercle(false)">{{ t('cercles.salon.revenirAppel') }}</button>
+          <template v-else>
+            <button type="button" class="bouton bouton--direct" :disabled="etatAppel === 'envoi'" data-test="rejoindre-appel" @click="appeler(false)">{{ t('cercles.salon.rejoindre') }}</button>
+            <button type="button" class="bouton" :disabled="etatAppel === 'envoi'" data-test="rejoindre-appel-video" @click="appeler(true)">{{ t('cercles.salon.rejoindreVideo') }}</button>
+          </template>
           <button v-if="peutTerminer" type="button" class="bouton bouton--discret" data-test="terminer-appel" @click="raccrocher">{{ t('cercles.salon.terminer') }}</button>
         </template>
-        <button v-else type="button" class="bouton" :disabled="etatAppel === 'envoi'" :aria-busy="etatAppel === 'envoi' || undefined" data-test="lancer-appel" @click="appeler">
+        <button v-else type="button" class="bouton" :disabled="etatAppel === 'envoi'" :aria-busy="etatAppel === 'envoi' || undefined" data-test="lancer-appel" @click="appeler(false)">
           <IconeCercle nom="appel" :taille="16" />{{ t('cercles.salon.lancerAppel') }}
         </button>
       </div>
@@ -352,7 +350,7 @@ const contexte = computed(() => {
 
               <p v-else-if="l.message.type === 'appel'" class="message__appel">
                 <IconeCercle nom="appel" :taille="16" />{{ t('cercles.salon.aLanceAppel') }}
-                <a v-if="l.message.appel?.enCours && appel && appel.id === l.message.appel.id" :href="appel.url" target="_blank" rel="noopener noreferrer" class="lien-fort">{{ t('cercles.salon.rejoindre') }}</a>
+                <button v-if="l.message.appel?.enCours && appel && appel.id === l.message.appel.id && !dansCetAppel" type="button" class="lien-fort lien-bouton" @click="appeler(false)">{{ t('cercles.salon.rejoindre') }}</button>
                 <span v-else class="discret">· {{ t('cercles.salon.appelTermine') }}</span>
               </p>
             </div>
@@ -482,4 +480,5 @@ const contexte = computed(() => {
   .aide__actions { grid-column: 2; }
 }
 @media (prefers-reduced-motion: reduce) { .appel__pulse { animation: none; } }
+.lien-bouton { border: 0; background: none; padding: 0; font: inherit; cursor: pointer; }
 </style>

@@ -246,10 +246,30 @@ export const handlersCercles = [
     if (s.reponse) return s.reponse
     const deja = appels.get(s.cercle.id)
     if (deja) return HttpResponse.json(deja)
-    const appel: AppelCercle = { id: `a9e10000-0000-4000-8000-${String(suivantNumero).padStart(12, '0')}`, lancePar: PERSONNES[0]!.personne, lanceLe: new Date().toISOString(), url: 'https://meet.jit.si/jamii-cercle-demo' }
+    const appel: AppelCercle = { id: `a9e10000-0000-4000-8000-${String(suivantNumero).padStart(12, '0')}`, lancePar: PERSONNES[0]!.personne, lanceLe: new Date().toISOString(), url: 'https://meet.jit.si/jamii-cercle-demo', presents: 0 }
     appels.set(s.cercle.id, appel)
     poster(s.cercle.id, { type: 'appel', auteur: PERSONNES[0]!.personne, appel: { id: appel.id, enCours: true }, envoyeLe: appel.lanceLe })
     return HttpResponse.json(appel, { status: 201 })
+  }),
+  // La salle WebRTC de l'appel (#157). En démo, on y est seul : les autres membres n'existent pas vraiment.
+  http.post('/api/cercles/:id/salon/appel/presence', ({ params }) => {
+    const s = salonDe(params.id)
+    if (s.reponse) return s.reponse
+    const appel = appels.get(s.cercle.id)
+    if (!appel) return erreur('pas_d_appel', 404)
+    appel.presents = 1
+    return HttpResponse.json({ appelId: appel.id, presents: [{ personne: PERSONNES[0]!.personne, arriveLe: appel.lanceLe }], signaux: [] })
+  }),
+  http.post('/api/cercles/:id/salon/appel/signaux', () => erreur('pas_dans_l_appel')),
+  http.delete('/api/cercles/:id/salon/appel/presence', ({ params }) => {
+    const s = salonDe(params.id)
+    if (s.reponse) return s.reponse
+    const appel = appels.get(s.cercle.id)
+    if (appel) {
+      appels.delete(s.cercle.id)
+      for (const m of s.messages) if (m.appel?.id === appel.id) m.appel = { id: appel.id, enCours: false }
+    }
+    return new HttpResponse(null, { status: 204 })
   }),
   http.delete('/api/cercles/:id/salon/appel', ({ params }) => {
     const s = salonDe(params.id)

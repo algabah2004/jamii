@@ -54,7 +54,8 @@ class SalonCercleController {
 			Evenement evenement, CoupDeMain coupDeMain, AppelDuMessage appel, Instant envoyeLe, List<Fichiers.Piece> piecesJointes) {
 	}
 
-	record AppelCercle(UUID id, PersonneResume lancePar, Instant lanceLe, String url) {
+	/** `presents` : combien de membres sont dans l'appel WebRTC (#157). `url` : l'ancienne salle Jitsi, plus utilisée. */
+	record AppelCercle(UUID id, PersonneResume lancePar, Instant lanceLe, String url, int presents) {
 	}
 
 	record Salon(List<MessageCercle> elements, List<MessageCercle> coupsDeMain, List<MessageCercle> decisions, List<UUID> pointsDuJour,
@@ -77,6 +78,13 @@ class SalonCercleController {
 	private final Fichiers fichiers;
 
 	private final String appels;
+
+	private SalleAppelCercle salleAppel;
+
+	@org.springframework.beans.factory.annotation.Autowired
+	void salleAppel(SalleAppelCercle salleAppel) {
+		this.salleAppel = salleAppel;
+	}
 
 	SalonCercleController(GestionCercles gestion, SalonCercle salon, Annuaire annuaire, Fichiers fichiers,
 			@Value("${jamii.appels.url:https://meet.jit.si}") String appels) {
@@ -101,7 +109,9 @@ class SalonCercleController {
 		var messages = salon.messages(cercleId, apres, limite, maintenant);
 		var coups = salon.coupsDeMainOuverts(cercleId, maintenant);
 		var decisions = salon.decisions(cercleId, maintenant);
-		var appel = salon.appelEnCours(cercleId, maintenant);
+		// Un appel dont tout le monde est parti (onglets fermés) se termine ici : le bandeau ne promet pas un appel vide.
+		var appel = salon.appelEnCours(cercleId, maintenant)
+			.filter(a -> salleAppel.presents(a.id(), a.lanceLe(), maintenant) >= 0 && salon.appelEnCours(cercleId, maintenant).isPresent());
 		Set<UUID> ids = new HashSet<>();
 		for (var m : messages) {
 			personnes(m, ids);
@@ -192,7 +202,9 @@ class SalonCercleController {
 	ResponseEntity<AppelCercle> lancerAppel(@PathVariable UUID cercleId, @AuthenticationPrincipal UtilisateurConnecte moi) {
 		membre(cercleId, moi.id());
 		Instant maintenant = Instant.now();
-		var enCours = salon.appelEnCours(cercleId, maintenant);
+		// Un appel vide depuis plus de 30 s est clos par `presents` : on en lance alors un neuf.
+		var enCours = salon.appelEnCours(cercleId, maintenant)
+			.filter(a -> salleAppel.presents(a.id(), a.lanceLe(), maintenant) >= 0 && salon.appelEnCours(cercleId, maintenant).isPresent());
 		if (enCours.isPresent()) {
 			var a = enCours.get();
 			return ResponseEntity.ok(vue(a, annuaire.lire(a.lancePar() == null ? List.of() : List.of(a.lancePar()))));
@@ -276,7 +288,8 @@ class SalonCercleController {
 	}
 
 	private AppelCercle vue(SalonCercle.Appel a, Map<UUID, Compte> comptes) {
-		return new AppelCercle(a.id(), personne(a.lancePar(), comptes), a.lanceLe(), appels + "/" + a.salle());
+		return new AppelCercle(a.id(), personne(a.lancePar(), comptes), a.lanceLe(), appels + "/" + a.salle(),
+				salleAppel.presents(a.id(), a.lanceLe(), Instant.now()));
 	}
 
 	private static PersonneResume personne(UUID id, Map<UUID, Compte> comptes) {

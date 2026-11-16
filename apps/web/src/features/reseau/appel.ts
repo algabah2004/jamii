@@ -1,5 +1,6 @@
 import { reactive, readonly, shallowRef } from 'vue'
 import { api, lireJetonCsrf } from '../../api/client'
+import { appelCercleActif } from '../cercles/appelCercle'
 import type { components } from '../../api/generated/reseau'
 
 /*
@@ -94,7 +95,7 @@ export const partageEcranPossible = () =>
 
 /** Appeler une personne depuis sa conversation. Un appel vocal peut allumer la caméra ensuite. */
 export async function appeler(personne: Personne, video: boolean): Promise<void> {
-  if (appelActif()) return
+  if (appelActif() || appelCercleActif()) return
   const s = nouvelleSession()
   Object.assign(etat, etatInitial(), { phase: 'preparation', personne, video, deMoi: true })
   const flux = await ouvrirMedia(video)
@@ -174,6 +175,7 @@ export function arreterAppelsEntrants(): void {
 
 export async function verifierEntrant(): Promise<void> {
   if (etat.phase !== 'repos' && etat.phase !== 'sonne_chez_moi' && etat.phase !== 'fini') return
+  if (appelCercleActif()) return
   try {
     const { data } = await api.GET('/api/appels/entrant')
     if (etat.phase === 'sonne_chez_moi') {
