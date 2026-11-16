@@ -1028,77 +1028,12 @@
   },
   "demandes": {
     "nouvelle": {
-      "titre": "Décris ton besoin",
-      "intro": "Explique avec tes mots ce dont ton entreprise a besoin. Jamii te dit ce qui existe déjà chez Systalink, et quels développeurs peuvent faire le reste.",
-      "champTitre": "En une phrase, de quoi as-tu besoin ?",
-      "aideTitre": "Par exemple : une boutique en ligne pour mon atelier.",
-      "champDescription": "Ce que ça doit faire, en quelques phrases.",
-      "aideDescription": "Au moins {n} caractères. Pas besoin de mots techniques.",
-      "duree": "En combien de temps aimerais-tu l’avoir ?",
       "semaines": "{n} semaine | {n} semaines",
-      "jeNeSaisPas": "Je ne sais pas",
       "envoyer": "Analyser mon besoin",
-      "rassurance": "Gratuit. Rien n’est publié sans ton accord.",
       "erreur": "Ta demande n'a pas pu être envoyée. Réessaie dans un instant.",
-      "exemplesTitre": "Pour t’inspirer",
-      "ensuiteTitre": "Et ensuite ?",
-      "ensuite1": "Jamii comprend ton besoin et te montre les services Systalink qui suffisent.",
-      "ensuite2": "S'il faut des développeurs, il te propose les bons profils, avec la raison de chaque choix, et un plan.",
-      "ensuite3": "Tu décides : rien n'est publié ni transmis sans ton accord.",
       "prudence": "N'écris ni nom de client ni information confidentielle : décris seulement le besoin.",
-      "secteur": "Ton secteur (facultatif)",
-      "ville": "Ta ville (facultatif)",
-      "questionsTitre": "Pour t'aider à bien le décrire (facultatif)",
-      "questionQui": "Qui va s’en servir ?",
-      "questionProbleme": "Qu’est-ce qui te fait perdre du temps ou des clients aujourd’hui ?",
-      "questionReussite": "Si ça marche, qu’est-ce qui aura changé dans quelques mois ?",
-      "libelleQui": "Qui va s'en servir :",
-      "libelleProbleme": "Ce qui fait perdre du temps ou des clients aujourd’hui :",
-      "libelleReussite": "Ce qui aura changé si ça marche :",
-      "etape": "Étape {n} sur {total}",
-      "suivant": "Continuer",
-      "passer": "Passer",
-      "retour": "Retour",
-      "entree": "Entrée ↵ pour continuer",
-      "q": {
-        "besoin": "De quoi as-tu besoin ?",
-        "details": "Dis-m’en un peu plus",
-        "questions": "Pour que je te comprenne bien",
-        "precisions": "Quelques précisions",
-        "envoi": "Je regarde ton besoin ?"
-      },
       "encore": "Encore {n} caractères, avec tes mots.",
-      "assez": "C'est assez pour commencer. Tu peux en dire plus.",
-      "precisionsAide": "Tout est facultatif. Ça aide à trouver des développeurs proches de toi et à estimer le plan.",
-      "recap": "Ce qu’Ayo a compris",
-      "titreAVenir": "Ton besoin en une phrase",
-      "descriptionAVenir": "Ce que tu racontes apparaîtra ici.",
-      "precisionsDonnees": "{n} précision | {n} précisions",
-      "etapes": {
-        "besoin": "Ton besoin",
-        "details": "Les détails",
-        "questions": "Trois questions",
-        "precisions": "Les précisions",
-        "envoi": "L'analyse"
-      },
-      "budget": "Ton budget (une fourchette suffit)",
-      "libelleBudget": "Budget envisagé :",
-      "note": "Noté :",
-      "modifier": "Modifier",
-      "placeholderDetails": "Par exemple : je vends des chaussures à Dakar, je veux que mes clients voient les modèles et commandent depuis leur téléphone…",
-      "assezEntree": "C’est parfait. Entrée pour continuer, Maj + Entrée pour aller à la ligne.",
-      "aideSaisie": "Entrée pour envoyer, Maj + Entrée pour aller à la ligne",
-      "repondreAyo": "Répondre à Ayo",
-      "passee": "Passé",
-      "placeholders": {
-        "besoin": "Par exemple : une boutique en ligne pour mon atelier",
-        "details": "Raconte avec tes mots…",
-        "question": "Ta réponse, ou « Passer »",
-        "choix": "Choisis ci-dessus, puis continue"
-      },
-      "exempleQui": "Par exemple : mes clientes, mes deux couturières et moi.",
-      "exempleProbleme": "Par exemple : je réponds aux mêmes questions sur WhatsApp toute la journée.",
-      "exempleReussite": "Par exemple : je reçois des commandes en ligne chaque semaine."
+      "repondreAyo": "Répondre à Ayo"
     },
     "publication": {
       "titre": "Publier ma demande",
@@ -1234,7 +1169,6 @@
       "videAide": "Explique ce dont tu as besoin avec tes mots : Jamii te dit ce qui existe déjà et qui peut faire le reste.",
       "enCours": "Réponse en préparation…",
       "publiee": "Publiée",
-      "precisions": "{n} précision | {n} précisions",
       "ouvrir": "Ouvrir",
       "autres": "Tes autres demandes",
       "toutes": "Voir toutes tes demandes",
@@ -1262,14 +1196,7 @@
       "etape2Aide": "Il te montre ce qui existe déjà, prépare un brief et trouve les bons profils.",
       "etape3": "Tu choisis",
       "etape3Aide": "Rien ne part sans toi. Tu relis, tu compares, tu lances.",
-      "dejaDemande": "Ce que tu as déjà demandé"
-    },
-    "discuter": {
-      "titre": "Quelque chose ne te convient pas ?",
-      "aide": "Dis-le avec tes mots : je reprends ton besoin avec ta précision.",
-      "exemple": "Par exemple : je ne veux pas vendre en ligne, seulement montrer mes articles.",
-      "envoyer": "Envoyer",
-      "limite": "Tu as déjà précisé 5 fois ce besoin. Décris un nouveau besoin pour repartir de zéro."
+      "dejaDemande": "Tes discussions avec Ayo"
     },
     "quota": "Tu as utilisé tous tes conseils d'aujourd'hui. Ayo te retrouve demain, et tes demandes restent dans « Tes demandes ».",
     "ayo": {
@@ -1280,17 +1207,6 @@
       "maintenant": "Et maintenant ?",
       "autres": "Voir les autres possibilités ({n}) | Voir l’autre possibilité | Voir les autres possibilités ({n})",
       "libre": "Tu n’es obligé de rien : prends le temps de comparer, et reviens quand tu veux.",
-      "question": {
-        "repondre": "Répondre",
-        "libre": "Ou réponds avec tes mots…",
-        "passer": "Passer, donne-moi ton conseil"
-      },
-      "pasCa": {
-        "titre": "Ce n’est pas tout à fait ça ?",
-        "cher": "C’est trop cher pour moi",
-        "complique": "C’est trop compliqué pour moi",
-        "autre": "Je cherche autre chose"
-      },
       "restants": "Plus de conseil aujourd’hui | Il te reste 1 conseil aujourd’hui | Il te reste {n} conseils aujourd’hui",
       "conversation": "Tu parles avec Ayo",
       "avertissement": "Ayo est une intelligence artificielle : il prépare, tu décides. Relis ses propositions avant de lancer quoi que ce soit.",
@@ -1306,20 +1222,12 @@
         "publier": "Publier"
       },
       "seul": "Tu préfères suivre ce plan seul, sans former de cercle ?",
-      "preciser": "Préciser",
       "genre": {
         "hebergement": "Hébergement uniquement",
         "outil": "Outil prêt à l’emploi"
       },
       "hebergementSeul": "Ce service héberge ton projet : il le met en ligne et garde tes données. Il ne le crée pas.",
       "hebergementSeulDevs": "Systalink se charge seulement de mettre en ligne et de garder ce que les développeurs construiront. Il ne développe rien."
-    },
-    "budgets": {
-      "moins_500k": "Moins de 500 000 F CFA",
-      "de_500k_a_2m": "500 000 à 2 millions F CFA",
-      "de_2m_a_5m": "2 à 5 millions F CFA",
-      "plus_5m": "Plus de 5 millions F CFA",
-      "inconnu": "Je ne sais pas encore"
     },
     "brief": {
       "titre": "Le brief de ton projet",
@@ -1333,6 +1241,19 @@
       "critere": "Critère",
       "ville": "Ville",
       "contacter": "Contacter"
+    },
+    "discussion": {
+      "nouvelle": "Nouvelle discussion",
+      "intro": "Raconte avec tes mots ce que tu veux améliorer dans ton activité. Ayo te pose une question s'il lui manque quelque chose, puis te conseille.",
+      "placeholder": "Par exemple : je vends des tissus à Thiès et mes clientes commandent toutes sur WhatsApp, je m'y perds…",
+      "question": "Ayo te pose une question",
+      "ouEcris": "Ou réponds avec tes mots, en bas.",
+      "repondre": "Réponds à Ayo…",
+      "reagir": "Pose une question à Ayo, ou dis-lui ce qui ne te va pas…",
+      "limite": "Cette discussion est déjà longue. Ouvre une nouvelle discussion pour continuer.",
+      "supprimer": "Supprimer la discussion",
+      "confirmerSuppression": "Supprimer cette discussion ? Ton besoin et tous les messages seront effacés. Une mission déjà publiée reste en ligne.",
+      "messages": "{n} message | {n} messages"
     }
   },
   "cercles": {

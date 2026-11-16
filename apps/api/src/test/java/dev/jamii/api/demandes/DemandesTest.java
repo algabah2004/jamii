@@ -145,15 +145,15 @@ class DemandesTest {
 		assertThat(reponse).hasStatusOk();
 		assertThat(reponse).bodyJson().extractingPath("$.precisions[0].texte")
 			.isEqualTo("Je veux surtout montrer mon stock, pas vendre.");
-		assertThat(IA.entrees.getLast().description()).contains("Précisions de la personne",
-				"Je veux surtout montrer mon stock, pas vendre.", "Je vends mes créations");
+		assertThat(IA.entrees.getLast().description()).contains("Suite de la conversation",
+				"Personne : Je veux surtout montrer mon stock, pas vendre.", "Je vends mes créations");
 		assertThat(IA.parCle).hasSize(2);
 		assertThat(base.sql("SELECT tache_ia_id FROM demande WHERE id = :i").param("i", UUID.fromString(id))
 			.query(UUID.class).single()).as("nouvelle tâche").isNotEqualTo(premiere);
 	}
 
 	@Test
-	void cinq_precisions_au_plus_et_jamais_sur_la_demande_d_un_autre() {
+	void douze_reponses_au_plus_et_jamais_sur_la_demande_d_un_autre() {
 		UtilisateurConnecte awa = utilisateur("Awa");
 		String id = idCree(creer(awa, BESOIN));
 		for (int i = 0; i < GestionDemandes.PRECISIONS_MAX; i++) {
@@ -162,6 +162,53 @@ class DemandesTest {
 		assertThat(preciser(awa, id, "{\"texte\":\"une de trop\"}")).hasStatus(HttpStatus.CONFLICT);
 		assertThat(preciser(utilisateur("Curieux"), id, "{\"texte\":\"intrusion\"}")).hasStatus(HttpStatus.NOT_FOUND);
 		assertThat(preciser(awa, id, "{\"texte\":\"x\"}")).hasStatus(HttpStatus.BAD_REQUEST);
+	}
+
+	@Test
+	void ayo_pose_une_question_la_reponse_la_garde_et_ayo_relit_toute_la_conversation() {
+		UtilisateurConnecte awa = utilisateur("Awa");
+		String id = idCree(creer(awa, BESOIN));
+		UUID tache = IA.parCle.get(UUID.fromString(id));
+		IA.etats.put(tache, new PlansIa.Etat("terminee", "ia", json.readTree("""
+				{"resume":"Tu veux que tes clientes commandent seules.","message":"Tu vends tes créations sur WhatsApp.",
+				 "secteur":"commerce","services":[],"etapes":[],"developpeursNecessaires":false,"competences":[],"plan":null,
+				 "question":{"texte":"Tes clientes paient comment ?","suggestions":["Mobile Money"]}}
+				"""), null));
+		assertThat(lire(awa, id)).bodyJson().extractingPath("$.orientation.resultat.question.texte").isEqualTo("Tes clientes paient comment ?");
+		// Une question n'est pas un conseil : rien ne part vers les tendances ni vers Systalink.
+		assertThat(base.sql("SELECT orientation IS NULL FROM demande WHERE id = :i").param("i", UUID.fromString(id))
+			.query(Boolean.class).single()).isTrue();
+
+		MvcTestResult reponse = preciser(awa, id, "{\"texte\":\"Mobile Money, surtout Wave.\"}");
+
+		assertThat(reponse).hasStatusOk();
+		assertThat(reponse).bodyJson().extractingPath("$.precisions[0].ayo")
+			.isEqualTo("Tu vends tes créations sur WhatsApp.\n\nTes clientes paient comment ?");
+		assertThat(reponse).bodyJson().extractingPath("$.precisions[0].ayoQuestion").isEqualTo(true);
+		assertThat(reponse).bodyJson().extractingPath("$.orientation.statut").isEqualTo("en_attente");
+		assertThat(IA.entrees.getLast().description()).contains(
+				"Ayo (question) : Tu vends tes créations sur WhatsApp. Tes clientes paient comment ?",
+				"Personne : Mobile Money, surtout Wave.");
+	}
+
+	@Test
+	void je_supprime_ma_conversation_et_seulement_la_mienne() {
+		UtilisateurConnecte awa = utilisateur("Awa");
+		UtilisateurConnecte autre = utilisateur("Autre");
+		String id = idCree(creer(awa, BESOIN));
+		assertThat(preciser(awa, id, "{\"texte\":\"Une précision.\"}")).hasStatusOk();
+
+		assertThat(supprimer(autre, id)).hasStatus(HttpStatus.NOT_FOUND);
+		assertThat(supprimer(awa, id)).hasStatus(HttpStatus.NO_CONTENT);
+
+		assertThat(lire(awa, id)).hasStatus(HttpStatus.NOT_FOUND);
+		assertThat(supprimer(awa, id)).hasStatus(HttpStatus.NOT_FOUND);
+		assertThat(base.sql("SELECT count(*) FROM demande_precision WHERE demande_id = :d").param("d", UUID.fromString(id))
+			.query(Long.class).single()).isZero();
+	}
+
+	private MvcTestResult supprimer(UtilisateurConnecte qui, String id) {
+		return mvc.delete().uri("/api/demandes/{id}", id).with(csrf()).with(oauth2Login().oauth2User(qui)).exchange();
 	}
 
 	private MvcTestResult preciser(UtilisateurConnecte qui, String id, String corps) {
@@ -294,14 +341,16 @@ class DemandesTest {
 	}
 
 	@Test
-	void au_septieme_conseil_du_jour_ayo_demande_de_revenir_demain_sans_rien_enregistrer() {
+	void au_dela_des_messages_du_jour_ayo_demande_de_revenir_demain_sans_rien_enregistrer() {
 		UtilisateurConnecte pme = utilisateur("Awa");
 		String premiere = idCree(creer(pme, BESOIN));
-		idCree(creer(pme, BESOIN));
+		String deuxieme = idCree(creer(pme, BESOIN));
 		String derniere = idCree(creer(pme, BESOIN));
-		assertThat(corps(lire(pme, derniere)).get("conseilsRestants").asInt()).isEqualTo(3);
-		for (int i = 0; i < 3; i++) {
-			assertThat(preciser(pme, premiere, "{\"texte\":\"Précision " + i + "\"}")).hasStatusOk();
+		int restants = GestionDemandes.ANALYSES_PAR_JOUR - 3;
+		assertThat(corps(lire(pme, derniere)).get("conseilsRestants").asInt()).isEqualTo(restants);
+		for (int i = 0; i < restants; i++) {
+			String ou = i < GestionDemandes.PRECISIONS_MAX ? premiere : deuxieme;
+			assertThat(preciser(pme, ou, "{\"texte\":\"Précision " + i + "\"}")).hasStatusOk();
 		}
 		assertThat(corps(lire(pme, premiere)).get("conseilsRestants").asInt()).isZero();
 

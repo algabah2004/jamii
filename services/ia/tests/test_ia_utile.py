@@ -244,7 +244,7 @@ def test_le_message_de_l_assistant_passe_avant_les_options():
     resultat = orientation.lire(reponse, BESOIN_CABINET, CATALOGUE)
 
     assert resultat["message"].startswith("Tu vends au marché")
-    assert "Précisions de la personne" in orientation.CONSIGNE
+    assert "Ayo (question)" in orientation.CONSIGNE
 
 
 def test_la_consigne_demande_des_mots_simples_et_deux_services_au_plus():
@@ -376,8 +376,8 @@ def test_une_analyse_de_profil_refuse_toute_donnee_personnelle(client, jeton):
 # --- Ayo : conseil honnête, prochaines étapes, une question au plus ---
 
 
-def test_ayo_donne_ses_etapes_et_au_plus_une_question_avec_ses_suggestions():
-    reponse = json.dumps(
+def _conseil_et_question(question: dict | None) -> str:
+    return json.dumps(
         {
             "message": "Tu perds des commandes sur WhatsApp.",
             "resume": "Tu veux que tes clients commandent seuls.",
@@ -390,25 +390,60 @@ def test_ayo_donne_ses_etapes_et_au_plus_une_question_avec_ses_suggestions():
                 "Ouvre ta boutique",
                 "x",
             ],
-            "question": {
-                "texte": "Tes clients paient surtout comment ?",
-                "suggestions": ["Mobile Money", "À la livraison", "", "Carte", "Autre"],
-            },
-            "developpeursNecessaires": False,
+            "question": question,
+            "developpeursNecessaires": True,
+            "competences": ["flutter"],
         }
     )
-    resultat = orientation.lire(reponse, BESOIN_CABINET, CATALOGUE)
+
+
+def test_ayo_conseille_avec_ses_etapes_quand_il_ne_pose_pas_de_question():
+    resultat = orientation.lire(_conseil_et_question(None), BESOIN_CABINET, CATALOGUE)
 
     assert resultat["etapes"] == [
         "Note tes 10 produits",
         "Prends-les en photo",
         "Ouvre ta boutique",
     ]
+    assert "question" not in resultat
+    assert resultat["services"][0]["lien"].startswith("https://systalink.com/")
+    assert resultat["developpeursNecessaires"] is True
+
+
+def test_quand_ayo_pose_une_question_il_ne_conseille_pas_encore():
+    question = {
+        "texte": "Tes clients paient surtout comment ?",
+        "suggestions": ["Mobile Money", "À la livraison", "", "Carte", "Autre"],
+    }
+    resultat = orientation.lire(_conseil_et_question(question), BESOIN_CABINET, CATALOGUE)
+
     assert resultat["question"] == {
         "texte": "Tes clients paient surtout comment ?",
         "suggestions": ["Mobile Money", "À la livraison", "Carte"],
     }
-    assert resultat["services"][0]["lien"].startswith("https://systalink.com/")
+    assert resultat["message"] == "Tu perds des commandes sur WhatsApp."
+    assert resultat["services"] == []
+    assert resultat["etapes"] == []
+    assert resultat["competences"] == []
+    assert resultat["developpeursNecessaires"] is False
+    assert resultat["plan"] is None
+
+
+def test_apres_deux_questions_ayo_conseille_avec_ce_qu_il_sait():
+    conversation = {
+        **BESOIN_CABINET,
+        "description": BESOIN_CABINET["description"]
+        + "\n\nSuite de la conversation :"
+        + "\nAyo (question) : Combien de clients ?\nPersonne : Une trentaine."
+        + "\nAyo (question) : Ils paient comment ?\nPersonne : Mobile Money.",
+    }
+    question = {"texte": "Et tu livres où ?", "suggestions": ["Dakar"]}
+    resultat = orientation.lire(_conseil_et_question(question), conversation, CATALOGUE)
+
+    assert orientation.questions_posees(conversation) == 2
+    assert "question" not in resultat
+    assert resultat["services"][0]["id"] == "boutique-en-ligne"
+    assert resultat["etapes"]
 
 
 def test_sans_question_ni_etapes_la_reponse_reste_valide():
@@ -461,8 +496,9 @@ def test_ayo_connait_les_limites_de_chaque_service_et_reste_honnete():
             {
                 "titre": "x",
                 "description": (
-                    "Je veux un site.\n\nPrécisions de la personne :\n"
-                    "- I need it in English for my customers"
+                    "Je veux un site pour mes clientes.\n\nSuite de la conversation :\n"
+                    "Ayo (question) : Tes clientes viennent d'où ?\n"
+                    "Personne : I need it in English for my customers"
                 ),
                 "langue": "fr",
             },

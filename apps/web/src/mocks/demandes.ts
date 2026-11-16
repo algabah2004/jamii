@@ -146,6 +146,25 @@ export function orientationDemo(dureeSemaines = 8, langue: Langue = 'fr'): Orien
   }
 }
 
+/** La question d'Ayo en démo : il ne conseille pas encore (contracts/ia.yaml). */
+export function questionDemo(langue: Langue = 'fr'): Orientation {
+  const en = langue === 'en'
+  return {
+    message: en ? 'Happy to help you with that.' : 'Avec plaisir, je vais t’aider.',
+    resume: en ? 'A need to clarify.' : 'Un besoin à préciser.',
+    secteur: 'autre',
+    etapes: [],
+    question: {
+      texte: en ? 'Who are your customers, and how do they reach you today?' : 'Qui sont tes clients, et comment te contactent-ils aujourd’hui ?',
+      suggestions: en ? ['On WhatsApp', 'They come to the shop', 'By phone'] : ['Sur WhatsApp', 'Ils viennent à la boutique', 'Par téléphone'],
+    },
+    services: [],
+    developpeursNecessaires: false,
+    competences: [],
+    plan: null,
+  }
+}
+
 /** Les développeurs recommandés en démo : un score calculé par l'API, et ses raisons. */
 export const RECOMMANDES: Recommandation[] = [
   { utilisateurId: 'd2e00000-0000-4000-8000-000000000001', nom: 'Kwame Mensah', avatarUrl: null, ville: 'Accra', pays: 'GH', score: 86, competencesCouvertes: ['react', 'typescript', 'postgresql'], raisons: ['React, confirmé (3 dépôts)', 'PostgreSQL (2 dépôts)', 'Disponible'] },
@@ -200,8 +219,11 @@ export const handlersDemandes = [
     if (!trouvee) return HttpResponse.json({ code: 'introuvable' }, { status: 404 })
     const { texte } = (await request.json()) as { texte: string }
     const precisions = trouvee.demande.precisions ?? []
-    if (precisions.length >= 5) return HttpResponse.json({ code: 'trop_de_precisions' }, { status: 409 })
-    trouvee.demande.precisions = [...precisions, { texte: texte.trim(), creeLe: new Date().toISOString() }]
+    if (precisions.length >= 12) return HttpResponse.json({ code: 'trop_de_precisions' }, { status: 409 })
+    // Comme l'API : la réponse garde ce qu'Ayo venait de dire.
+    const avant = trouvee.demande.orientation?.resultat
+    const ayo = avant ? [avant.message ?? avant.resume, avant.question?.texte].filter(Boolean).join('\n\n') : null
+    trouvee.demande.precisions = [...precisions, { texte: texte.trim(), creeLe: new Date().toISOString(), ayo, ayoQuestion: Boolean(avant?.question) }]
     trouvee.demande.plan = { statut: 'en_attente' }
     trouvee.demande.orientation = { statut: 'en_attente' }
     trouvee.pretA = Date.now() + DELAI_PLAN_MS
@@ -213,16 +235,21 @@ export const handlersDemandes = [
     if (!trouvee) return HttpResponse.json({ code: 'introuvable' }, { status: 404 })
     const { demande, pretA, langue } = trouvee
     if (Date.now() >= pretA && demande.plan.statut !== 'terminee') {
-      const orientation = orientationDemo(demande.dureeSemaines ?? 8, langue)
+      // Un premier message très court (moins de 40 caractères) : Ayo demande d’abord une précision, sans conseiller.
+      const orientation = !demande.precisions?.length && demande.description.length < 40 ? questionDemo(langue) : orientationDemo(demande.dureeSemaines ?? 8, langue)
       demande.orientation = { statut: 'terminee', origine: 'ia', resultat: orientation }
       demande.plan = { statut: 'terminee', origine: 'ia', resultat: orientation.plan ?? undefined }
-      demande.recommandations = RECOMMANDES
+      demande.recommandations = orientation.developpeursNecessaires ? RECOMMANDES : []
     } else if (demande.plan.statut === 'en_attente') {
       demande.plan = { statut: 'en_cours' }
       demande.orientation = { statut: 'en_cours' }
     }
     return HttpResponse.json(demande)
   }),
+
+  http.delete('/api/demandes/:id', ({ params }) =>
+    demandes.delete(String(params.id)) ? new HttpResponse(null, { status: 204 }) : HttpResponse.json({ code: 'introuvable' }, { status: 404 }),
+  ),
 
   http.post('/api/demandes/:id/publication', async ({ params, request }) => {
     const trouvee = demandes.get(String(params.id))

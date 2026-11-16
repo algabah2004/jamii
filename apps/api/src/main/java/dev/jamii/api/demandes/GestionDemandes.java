@@ -36,13 +36,17 @@ class GestionDemandes {
 	 */
 	static final Duration SECOURS_APRES = Duration.ofSeconds(20);
 
-	static final int PRECISIONS_MAX = 5;
+	/** Les réponses de la personne dans une conversation, après son premier message. */
+	static final int PRECISIONS_MAX = 12;
+
+	/** Ce que l'IA lit de la conversation : le contrat ia.yaml accepte 8 000 caractères. */
+	static final int CONVERSATION_MAX = 8000;
 
 	/**
-	 * 6 conseils d'Ayo par jour et par personne (une demande ou une précision chacun, sur 24 heures glissantes) : assez
-	 * pour décrire trois besoins et les ajuster, trop peu pour vider le budget IA du jour et priver les autres d'Ayo.
+	 * 20 messages à Ayo par jour et par personne (un premier message ou une réponse chacun, sur 24 heures glissantes) :
+	 * de quoi tenir plusieurs conversations, avec leurs questions, sans vider le budget IA du jour des autres.
 	 */
-	static final int ANALYSES_PAR_JOUR = 6;
+	static final int ANALYSES_PAR_JOUR = 20;
 
 	/** Une adresse e-mail ou un numéro de téléphone n'est jamais envoyé à l'IA. */
 	private static final Pattern EMAIL = Pattern.compile("[\\w.+-]+@[\\w-]+(\\.[\\w-]+)+");
@@ -69,20 +73,32 @@ class GestionDemandes {
 					: UUID.nameUUIDFromBytes((id + ":" + precisions.size()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
 		}
 
-		/** Le besoin tel que l'IA le lit : le texte de départ, puis les précisions, sans dépasser 4 000 caractères. */
+		/**
+		 * La conversation telle que l'IA la lit : le premier message, puis chaque échange, une ligne par prise de parole.
+		 * Ayo voit ainsi ce qu'il a déjà dit et demandé (`Ayo (question)`), et ne repose pas la même question. Au-delà de
+		 * 8 000 caractères, le début du premier message est raccourci : la fin de la conversation compte le plus.
+		 */
 		String besoinComplet() {
 			if (precisions.isEmpty()) {
 				return description;
 			}
-			StringBuilder ajout = new StringBuilder("\n\nPrécisions de la personne :");
-			precisions.forEach(p -> ajout.append("\n- ").append(p.texte()));
-			int place = Math.max(20, 4000 - ajout.length());
-			return (description.length() > place ? description.substring(0, place) : description) + ajout;
+			StringBuilder suite = new StringBuilder("\n\nSuite de la conversation :");
+			for (Precision p : precisions) {
+				if (p.ayo() != null && !p.ayo().isBlank()) {
+					String ayo = p.ayo().replaceAll("\\s+", " ").strip();
+					suite.append(p.ayoQuestion() ? "\nAyo (question) : " : "\nAyo (conseil) : ")
+						.append(ayo.length() > 400 ? ayo.substring(0, 400) + "…" : ayo);
+				}
+				suite.append("\nPersonne : ").append(p.texte().replaceAll("\\s+", " ").strip());
+			}
+			int place = Math.max(20, CONVERSATION_MAX - suite.length());
+			return (description.length() > place ? description.substring(0, place) : description) + suite;
 		}
 
 	}
 
-	record Precision(String texte, Instant creeLe) {
+	/** Une réponse de la personne, avec ce qu'Ayo venait de lui dire (vide pour les plus anciennes). */
+	record Precision(String texte, Instant creeLe, String ayo, boolean ayoQuestion) {
 	}
 
 	/** Une ligne de « Tes demandes ». */
@@ -219,8 +235,12 @@ class GestionDemandes {
 				retenirTache(demande.id(), tache);
 			}
 			PlansIa.Etat etat = ia.lire(tache);
-			if ("terminee".equals(etat.statut()) && etat.resultat() != null && demande.orientation() == null) {
-				retenirResume(demande.id(), etat.resultat());
+			if ("terminee".equals(etat.statut()) && etat.resultat() != null) {
+				retenirAyo(demande.id(), etat.resultat());
+				// Une question n'est pas encore un conseil : rien ne part vers les tendances ni vers Systalink.
+				if (demande.orientation() == null && !poseUneQuestion(etat.resultat())) {
+					retenirResume(demande.id(), etat.resultat());
+				}
 			}
 			return new Etat(etat.statut(), etat.origine(), etat.resultat(), etat.erreurCode());
 		}
@@ -249,9 +269,10 @@ class GestionDemandes {
 	}
 
 	private List<Precision> precisions(UUID demandeId) {
-		return base.sql("SELECT texte, cree_le FROM demande_precision WHERE demande_id = :d ORDER BY rang")
+		return base.sql("SELECT texte, cree_le, ayo, ayo_question FROM demande_precision WHERE demande_id = :d ORDER BY rang")
 			.param("d", demandeId)
-			.query((rs, n) -> new Precision(rs.getString("texte"), rs.getTimestamp("cree_le").toInstant()))
+			.query((rs, n) -> new Precision(rs.getString("texte"), rs.getTimestamp("cree_le").toInstant(), rs.getString("ayo"),
+					rs.getBoolean("ayo_question")))
 			.list();
 	}
 
@@ -277,8 +298,9 @@ class GestionDemandes {
 	}
 
 	/**
-	 * Ajoute une précision et relance l'analyse : la tâche et le résumé précédents sont oubliés, la prochaine lecture
-	 * dépose une nouvelle tâche avec le besoin complet. 5 précisions au plus par demande.
+	 * Ajoute une réponse de la personne et relance Ayo : la tâche et le résumé précédents sont oubliés, la prochaine
+	 * lecture dépose une nouvelle tâche avec toute la conversation. La réponse garde ce qu'Ayo venait de dire, pour le
+	 * fil. 12 réponses au plus par demande.
 	 */
 	@Transactional
 	Ajout preciser(UUID demandeId, UUID auteur, String texte, Instant maintenant) {
@@ -294,9 +316,13 @@ class GestionDemandes {
 			return Ajout.LIMITE;
 		}
 		verifierQuotaDuJour(auteur, maintenant);
-		base.sql("INSERT INTO demande_precision (demande_id, rang, texte, cree_le) VALUES (:d, :r, :t, :c)")
+		base.sql("""
+				INSERT INTO demande_precision (demande_id, rang, texte, cree_le, ayo, ayo_question)
+				SELECT :d, :r, :t, :c, ayo_dernier, ayo_question FROM demande WHERE id = :d
+				""")
 			.param("d", demandeId).param("r", rang).param("t", texte).param("c", Timestamp.from(maintenant)).update();
-		base.sql("UPDATE demande SET tache_ia_id = NULL, orientation = NULL WHERE id = :d").param("d", demandeId).update();
+		base.sql("UPDATE demande SET tache_ia_id = NULL, orientation = NULL, ayo_dernier = NULL, ayo_question = FALSE WHERE id = :d")
+			.param("d", demandeId).update();
 		return Ajout.AJOUTEE;
 	}
 
@@ -326,6 +352,39 @@ class GestionDemandes {
 		if (jour.size() >= ANALYSES_PAR_JOUR) {
 			throw new TropDePlans(Math.max(1, Duration.between(maintenant, jour.getFirst().plus(Duration.ofDays(1))).toSeconds()), true);
 		}
+	}
+
+	/**
+	 * Supprimer une conversation : la demande, ses réponses et ce qu'Ayo y a dit. Faux si elle n'est pas à lui. Une mission
+	 * déjà publiée depuis elle reste en ligne : d'autres y ont peut-être déjà répondu (elle a sa propre copie).
+	 */
+	@Transactional
+	boolean supprimer(UUID demandeId, UUID auteur) {
+		return base.sql("DELETE FROM demande WHERE id = :id AND auteur_id = :a").param("id", demandeId).param("a", auteur)
+			.update() == 1;
+	}
+
+	/** Ayo pose une question avant de conseiller (contracts/ia.yaml, `Orientation.question`). */
+	static boolean poseUneQuestion(JsonNode orientation) {
+		return orientation.path("question").path("texte").asString("").strip().length() > 0;
+	}
+
+	/** Ce qu'Ayo vient de dire, en texte, pour la prochaine réponse de la personne. Écrit une fois par analyse. */
+	@Transactional
+	void retenirAyo(UUID demandeId, JsonNode orientation) {
+		String message = texte(orientation, "message");
+		if (message == null || message.isBlank()) {
+			message = texte(orientation, "resume");
+		}
+		boolean question = poseUneQuestion(orientation);
+		String dit = ((message == null ? "" : message.strip())
+				+ (question ? "\n\n" + orientation.path("question").path("texte").asString("").strip() : "")).strip();
+		if (dit.isEmpty()) {
+			return;
+		}
+		base.sql("UPDATE demande SET ayo_dernier = :dit, ayo_question = :q WHERE id = :id AND ayo_dernier IS NULL")
+			.param("dit", dit.length() > 1200 ? dit.substring(0, 1200) : dit).param("q", question).param("id", demandeId)
+			.update();
 	}
 
 	@Transactional

@@ -42,12 +42,14 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Préciser son besoin après avoir lu la réponse
-         * @description « Ce n'est pas tout à fait ça » : la personne écrit ce qui ne lui convient pas. L'analyse repart avec le besoin
-         *     de départ **et** toutes les précisions (l'orientation repasse à `en_attente`). **5 précisions au plus** par
-         *     demande (`409 trop_de_precisions` ensuite : décrire un nouveau besoin). Pour un autre utilisateur, `404`.
-         *     Une précision compte comme un conseil : au-delà de 6 conseils sur 24 heures (demandes et précisions), `429` avec
-         *     le code `quota_du_jour` (la limite de l'heure garde le code `trop_de_requetes`).
+         * Répondre à Ayo dans la conversation
+         * @description La demande est une **conversation avec Ayo** (v0.4). La personne répond à sa question, ou réagit à son conseil
+         *     (« et si je n'ai pas de smartphone ? »). Ayo relit toute la conversation (l'orientation repasse à `en_attente`) :
+         *     il pose une autre question (deux au plus par conversation) ou il conseille. La réponse garde ce qu'Ayo venait de
+         *     dire (`precisions[].ayo`). **12 réponses au plus** par demande (`409 trop_de_precisions` ensuite : ouvrir une
+         *     nouvelle conversation). Pour un autre utilisateur, `404`. Chaque message à Ayo compte : au-delà de 20 sur
+         *     24 heures (premiers messages et réponses), `429` avec le code `quota_du_jour` (la limite de l'heure garde le
+         *     code `trop_de_requetes`).
          */
         post: operations["preciserDemande"];
         delete?: never;
@@ -118,7 +120,12 @@ export interface paths {
         get: operations["lireDemande"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Supprimer une conversation avec Ayo
+         * @description La demande, toutes ses réponses et ce qu'Ayo y a dit disparaissent. Une mission déjà publiée depuis elle reste en
+         *     ligne : elle a sa propre copie, et des développeurs y ont peut-être déjà répondu. Pour un autre utilisateur, `404`.
+         */
+        delete: operations["supprimerDemande"];
         options?: never;
         head?: never;
         patch?: never;
@@ -187,13 +194,20 @@ export interface components {
              *     l'orientation n'est pas terminée, ou si `developpeursNecessaires` vaut `false`. Seuls les profils publiés.
              */
             recommandations?: components["schemas"]["Recommandation"][];
-            /** @description Les conseils d'Ayo qu'il reste à l'auteur sur 24 heures glissantes (une nouvelle demande ou une précision chacun). À 0, `429 quota_du_jour`. */
+            /** @description Les messages à Ayo qu'il reste à l'auteur sur 24 heures glissantes (un premier message ou une réponse chacun). À 0, `429 quota_du_jour`. */
             conseilsRestants?: number;
-            /** @description Ce que la personne a ajouté après avoir lu la réponse, dans l'ordre. Texte brut. */
+            /**
+             * @description La suite de la conversation, dans l'ordre : chaque réponse de la personne, avec ce qu'Ayo lui avait dit juste
+             *     avant (`ayo`). La dernière réponse d'Ayo, elle, est dans `orientation`. Texte brut.
+             */
             precisions?: {
                 texte: string;
                 /** Format: date-time */
                 creeLe: string;
+                /** @description Ce qu'Ayo avait dit juste avant, en texte. `null` pour les plus anciennes réponses. */
+                ayo: string | null;
+                /** @description Vrai si Ayo avait posé une question. */
+                ayoQuestion: boolean;
             }[];
         };
         DemandeResumee: {
@@ -204,7 +218,7 @@ export interface components {
             resume?: string | null;
             /** Format: date-time */
             creeLe: string;
-            /** @description Nombre de précisions ajoutées par l'auteur. */
+            /** @description Nombre de réponses de la personne après son premier message. */
             precisions: number;
             /** @description Vrai si l'auteur a publié le résumé de sa demande. */
             publiee: boolean;
@@ -379,7 +393,12 @@ export interface components {
             secteur: string;
             /** @description Les prochaines étapes concrètes pour la personne, dans l'ordre (« Note tes 10 produits les plus vendus »). Vide dans le repli sans IA et hors sujet. */
             etapes?: string[];
-            /** @description La question d'Ayo quand une information changerait son conseil, avec des réponses toutes prêtes. Absente si le besoin est clair ou déjà précisé ; la réponse part comme une précision de la demande. */
+            /**
+             * @description La question d'Ayo quand une information manque et changerait son conseil, avec des réponses toutes prêtes.
+             *     **Ayo ne conseille pas encore** : `services`, `etapes` et `competences` sont vides, `developpeursNecessaires`
+             *     vaut `false` et `plan` `null`. Deux questions au plus par conversation (lignes `Ayo (question)` de
+             *     `description`) ; ensuite, il conseille. Absente quand Ayo conseille. La réponse part comme une précision.
+             */
             question?: null | {
                 texte: string;
                 suggestions: string[];
@@ -615,6 +634,28 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Demande"];
                 };
+            };
+            401: components["responses"]["NonConnecte"];
+            404: components["responses"]["Introuvable"];
+        };
+    };
+    supprimerDemande: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                demandeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Conversation supprimée. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             401: components["responses"]["NonConnecte"];
             404: components["responses"]["Introuvable"];
