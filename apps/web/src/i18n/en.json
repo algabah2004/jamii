@@ -1786,7 +1786,22 @@
       "produit": "Planning, priorities, follow-up",
       "test": "Tests, quality, acceptance"
     },
-    "cherche": "Looking for:"
+    "cherche": "Looking for:",
+    "points": {
+      "ontRepondu": "nobody has answered yet | answered | answered",
+      "repondu": "answered",
+      "pasEncore": "not answered yet",
+      "uneFoisParJour": "One check-in a day, visible to the whole circle.",
+      "aiderAuSalon": "Help {nom} in the room"
+    },
+    "decisions": {
+      "aide": "What the team has decided, written once and found without digging through the room.",
+      "registreTenuPar": "Log kept by",
+      "compte": "decisions | decision | decisions",
+      "tour": "Round {n}",
+      "tourAvecTitre": "Round {n} · {titre}",
+      "horsTour": "Before the rounds"
+    }
   },
   "reseau": {
     "competences": "Skills",

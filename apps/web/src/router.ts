@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import { installerMemoireEspaces } from './memoireEspaces'
 import { useSession } from './session'
 import AccueilPage from './pages/AccueilPage.vue'
 
@@ -160,5 +161,6 @@ export function creerRouteur(historique = createWebHistory()) {
       return { name: 'connexion', query: { retour: vers.fullPath } }
     }
   })
+  installerMemoireEspaces(routeur)
   return routeur
 }
