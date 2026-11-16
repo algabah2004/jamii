@@ -133,6 +133,10 @@ export const handlersReseau = [
     return HttpResponse.json(message, { status: 201 })
   }),
 
+  // « … est en train d'écrire » (#157) : en démo, personne n'écrit.
+  http.post('/api/conversations/:personneId/ecriture', () => new HttpResponse(null, { status: 204 })),
+  http.get('/api/conversations/:personneId/ecriture', () => HttpResponse.json({ ecrit: false })),
+
   // Les appels WebRTC (#157). En démo sans API, personne ne décroche : l'appel sonne, puis on raccroche.
   http.get('/api/appels/ice', () => HttpResponse.json({ iceServers: [{ urls: ['stun:stun.l.google.com:19302'] }], relais: false })),
 

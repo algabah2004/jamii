@@ -1840,7 +1840,8 @@
       "rejoindre": "Rejoindre",
       "lu": "Lu",
       "envoye": "Envoyé",
-      "aideClavier": "Entrée pour envoyer, Maj + Entrée pour aller à la ligne."
+      "aideClavier": "Entrée pour envoyer, Maj + Entrée pour aller à la ligne.",
+      "ecrit": "{nom} est en train d'écrire…"
     },
     "profil": {
       "ecrire": "Écrire à {nom}",

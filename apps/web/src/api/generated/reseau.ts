@@ -82,6 +82,33 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/conversations/{personneId}/ecriture": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description L'identifiant de l'autre personne. */
+                personneId: components["parameters"]["PersonneId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Cette personne est-elle en train de m'écrire ?
+         * @description Lu toutes les 2 secondes tant que la conversation est ouverte et l'onglet visible. Jamais en cache.
+         */
+        get: operations["lireEcriture"];
+        put?: never;
+        /**
+         * Je suis en train d'écrire à cette personne (#157)
+         * @description Envoyé par le front au plus toutes les 3 secondes pendant la frappe. Éphémère : gardé en mémoire 6 secondes, jamais en base, et effacé quand le message part.
+         */
+        post: operations["signalerEcriture"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/appels/ice": {
         parameters: {
             query?: never;
@@ -798,6 +825,55 @@ export interface operations {
             404: components["responses"]["Introuvable"];
             409: components["responses"]["Conflit"];
             429: components["responses"]["TropDeRequetes"];
+        };
+    };
+    lireEcriture: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description L'identifiant de l'autre personne. */
+                personneId: components["parameters"]["PersonneId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Vrai si elle a écrit dans les 6 dernières secondes. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ecrit: boolean;
+                    };
+                };
+            };
+            401: components["responses"]["NonConnecte"];
+        };
+    };
+    signalerEcriture: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description L'identifiant de l'autre personne. */
+                personneId: components["parameters"]["PersonneId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Noté. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["NonConnecte"];
+            404: components["responses"]["Introuvable"];
         };
     };
     serveursIce: {
