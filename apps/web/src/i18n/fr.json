@@ -672,7 +672,12 @@
     },
     "reserve": {
       "titre": "Réservé à l’équipe Systalink",
-      "texte": "Cet espace montre à Systalink ce que Jamii lui apporte. Si tu fais partie de l’équipe Systalink, demande à l’équipe Jamii d’ajouter ton compte."
+      "texte": "Cet espace montre à Systalink ce que Jamii lui apporte. Si tu fais partie de l’équipe Systalink, demande à l’équipe Jamii d’ajouter ton compte.",
+      "jury": "Tu fais partie du jury de la CADEV ? Entre le code d’accès donné avec la soumission.",
+      "code": "Code d’accès jury",
+      "entrer": "Entrer",
+      "codeFaux": "Ce code n’est pas le bon. Vérifie-le et réessaie.",
+      "tropDEssais": "Trop d’essais. Demande de l’aide à l’équipe Jamii."
     },
     "dontDatacloud": "dont {n} sur DataCloud"
   },

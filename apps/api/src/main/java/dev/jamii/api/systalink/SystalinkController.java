@@ -14,6 +14,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -39,7 +40,26 @@ class SystalinkController {
 	/** Pour le menu : le lien vers l'espace Systalink ne s'affiche qu'à son équipe. */
 	@GetMapping("/api/systalink/acces")
 	Map<String, Boolean> acces(@AuthenticationPrincipal UtilisateurConnecte moi) {
-		return Map.of("acces", acces.aAcces(moi));
+		return Map.of("acces", acces.aAcces(moi), "codeJury", acces.codeJuryOuvert());
+	}
+
+	record CodeJury(String code) {
+	}
+
+	/** Le jury de la CADEV entre le code donné avec la soumission et voit l'espace Systalink. */
+	@PostMapping("/api/systalink/code-jury")
+	ResponseEntity<?> codeJury(@RequestBody CodeJury corps, @AuthenticationPrincipal UtilisateurConnecte moi) {
+		if (moi == null) {
+			return probleme(HttpStatus.UNAUTHORIZED, "non_connecte", "Connexion requise", null);
+		}
+		return switch (acces.entrerCode(moi, corps == null ? null : corps.code())) {
+			case ACCORDE -> ResponseEntity.noContent().build();
+			case FAUX -> probleme(HttpStatus.BAD_REQUEST, "validation", "Certains champs sont invalides",
+					List.of(Map.of("champ", "code", "code", "code_faux")));
+			case TROP_D_ESSAIS -> probleme(HttpStatus.TOO_MANY_REQUESTS, "trop_de_requetes",
+					"Trop d'essais, demande de l'aide à l'équipe Jamii", null);
+			case FERME -> probleme(HttpStatus.NOT_FOUND, "introuvable", "Ressource introuvable", null);
+		};
 	}
 
 	@GetMapping("/api/systalink/tableau-de-bord")

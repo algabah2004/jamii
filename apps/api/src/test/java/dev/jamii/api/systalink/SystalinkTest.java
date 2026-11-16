@@ -218,6 +218,17 @@ class SystalinkTest {
 			.bodyJson().extractingPath("$.acces").isEqualTo(true);
 	}
 
+	@Test
+	void sans_code_jury_configure_personne_n_entre_par_code() {
+		var membre = new UtilisateurConnecte(UUID.randomUUID(), Set.of(Role.MEMBRE));
+
+		assertThat(mvc.get().uri("/api/systalink/acces").with(oauth2Login().oauth2User(membre)))
+			.bodyJson().extractingPath("$.codeJury").isEqualTo(false);
+		assertThat(mvc.post().uri("/api/systalink/code-jury").with(oauth2Login().oauth2User(membre)).with(csrf())
+			.contentType(org.springframework.http.MediaType.APPLICATION_JSON).content("{\"code\":\"\"}"))
+			.hasStatus(HttpStatus.NOT_FOUND);
+	}
+
 	private MvcTestResult accepter(UUID momentId) {
 		return mvc.post()
 			.uri("/api/systalink/moments/{id}/accepter", momentId)

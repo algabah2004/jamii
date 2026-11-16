@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Jamii · Espace Systalink
-  version: 0.3.0
+  version: 0.4.0
   summary: Tableau de bord, tendances du marché, clients qui ont demandé à être suivis, et mesure des « moments Systalink ».
   description: |
     Responsable : @Amar233-ui (bloc #18). Règles communes : docs/api-conventions.md. Modèle : docs/modele-donnees.md (table `moment_systalink`).
@@ -13,6 +13,11 @@ info:
     rôle `systalink` : un admin, ou un login GitHub ou un e-mail listé dans `SYSTALINK_ACCES`. Sans connexion : `401` ;
     connecté sans ce rôle : `403`. `GET /api/systalink/acces` dit au front s'il doit montrer le lien. Les chiffres
     restent agrégés : un pays regroupe au moins 5 inscrits (sinon il passe dans `autres`).
+
+    **Code d'accès jury (v0.4)** : pour la CADEV, un juré connecté entre le code donné avec la soumission
+    (`SYSTALINK_CODE_JURY`, 8 caractères au moins) et reçoit le rôle `systalink`, gardé dans la table `acces_jury`.
+    5 essais par compte. Sans code configuré, la route répond `404` et la page ne propose rien. Retirer le code
+    retire aussi l'accès aux jurés.
 
     **Ce qu'on ne mesure pas** : le passage à une offre payante DataCloud. Jamii ne voit pas les achats faits chez
     Systalink, et on n'invente pas ce chiffre. Il faudra une donnée de Systalink (API ou webhook) pour l'ajouter.
@@ -56,10 +61,35 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [acces]
+                required: [acces, codeJury]
                 properties:
                   acces: { type: boolean }
+                  codeJury: { type: boolean, description: 'Vrai si un code d''accès jury est en service : la page propose de l''entrer.' }
         '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+
+  /api/systalink/code-jury:
+    post:
+      tags: [tableau-de-bord]
+      operationId: entrerCodeJury
+      summary: Un juré de la CADEV entre son code et voit l'espace Systalink
+      description: 'Comparaison en temps constant. 5 essais par compte, puis `429`. Déjà autorisé : `204` sans rien changer.'
+      security:
+        - session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code]
+              properties:
+                code: { type: string, maxLength: 200 }
+      responses:
+        '204': { description: Accès accordé. }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '429': { $ref: './socle.yaml#/components/responses/TropDeRequetes' }
 
   /api/systalink/tableau-de-bord:
     get:
