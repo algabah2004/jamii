@@ -43,7 +43,8 @@ watch(etat, (e) => (e === 'connecte' ? suivreAppelsEntrants() : arreterAppelsEnt
         </RouterLink>
       </nav>
       <div class="actions">
-        <ReglagesAffichage class="reglages--entete" />
+        <!-- Clair ou sombre en un clic, connecté ou non : la langue et « Système » sont dans le pied de page. -->
+        <BoutonTheme />
         <RouterLink
           v-if="etat === 'non_connecte' && !$route.path.startsWith('/connexion')"
           :to="{ path: '/connexion', query: $route.path === '/' ? {} : { retour: $route.fullPath } }"
@@ -53,8 +54,6 @@ watch(etat, (e) => (e === 'connecte' ? suivreAppelsEntrants() : arreterAppelsEnt
           {{ t('connexion.seConnecter') }}
         </RouterLink>
         <template v-else-if="etat === 'connecte' && moi">
-          <!-- Clair ou sombre en un clic : les autres réglages (langue, « Système ») sont dans le pied de page. -->
-          <BoutonTheme />
           <!-- Le profil se reconnaît à son visage : l'avatar mène au profil, le nom reste lisible par tous. -->
           <RouterLink to="/messages" class="acces-messages icone-entete" :class="{ 'router-link-active': $route.path.startsWith('/messages') }" data-test="lien-messages" :aria-label="t('reseau.messages.lien', { n: messagesNonLus }, messagesNonLus)" :title="t('reseau.messages.titre')">
             <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 4h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-6 4V6a2 2 0 0 1 2-2Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M7 9h10M7 13h6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
@@ -89,7 +88,7 @@ watch(etat, (e) => (e === 'connecte' ? suivreAppelsEntrants() : arreterAppelsEnt
     </RouterView>
   </main>
 
-  <footer v-if="!$route.meta.messagerie" class="pied motif motif--ondes motif--haut" :class="{ 'pied--reglages': etat === 'connecte' }">
+  <footer v-if="!$route.meta.messagerie" class="pied motif motif--ondes motif--haut">
     <div class="pied__interieur">
       <div class="pied__marque">
         <RouterLink to="/" class="marque">Jamii<span class="marque__point" aria-hidden="true" /></RouterLink>
@@ -185,8 +184,6 @@ main.main--pleine { max-width: none; padding-inline: var(--space-4); }
 .actions { display: flex; align-items: center; gap: var(--space-2); }
 /* Libellé long sur ordinateur, court sur téléphone (le nom accessible reste le libellé complet). */
 .lien-court { display: none; }
-/* Sur ordinateur, la langue et le thème sont dans l'en-tête ; sur téléphone, dans le pied de page. */
-.pied .reglages--pied { display: none; }
 .bouton-entete { min-height: 36px; white-space: nowrap; }
 .moi { display: inline-flex; align-items: center; gap: var(--space-2); padding: 2px var(--space-3) 2px 2px; border: 1px solid var(--line); border-radius: var(--radius-pill); color: var(--ink); text-decoration: none; font-weight: 600; font-size: var(--type-body-sm-size); }
 .moi:hover, .moi.router-link-active { border-color: var(--action); }
@@ -202,10 +199,6 @@ main.main--pleine { max-width: none; padding-inline: var(--space-4); }
 /* Sur la scène, les liens passent au-dessus de lumières vives : texte plus franc. */
 .entete--scene { --ink-muted: color-mix(in srgb, var(--ink) 88%, transparent); }
 
-/* Connecté, le menu a 6 entrées et l'icône des messages : la langue et le thème passent dans le pied de page,
-   quelle que soit la largeur (la capsule de l'en-tête ne dépasse jamais 70rem). */
-.entete--connecte .reglages--entete { display: none; }
-.pied--reglages .reglages--pied { display: flex; }
 /* Portable (jusqu'à 1600 px de large, soit la plupart des portables à 100 % ou 125 %) : le menu se resserre et
    « Espace Systalink » devient « Systalink », pour que tout tienne sans barre de défilement. */
 @media (max-width: 1600px) {
@@ -214,13 +207,11 @@ main.main--pleine { max-width: none; padding-inline: var(--space-4); }
   .lien-long { display: none; }
   .lien-court { display: inline; }
 }
-/* Entre tablette et grand écran, « Espace Systalink » se raccourcit et les réglages passent aussi en bas. */
+/* Entre tablette et grand écran, « Espace Systalink » se raccourcit. */
 @media (max-width: 1180px) {
   .entete nav a { padding: 0 var(--space-3); }
   .lien-long { display: none; }
   .lien-court { display: inline; }
-  .entete .reglages--entete { display: none; }
-  .pied .reglages--pied { display: flex; }
 }
 /* Écran étroit : la marque et les réglages sur la première ligne, le menu entier sur la seconde. */
 @media (max-width: 960px) {
@@ -231,8 +222,6 @@ main.main--pleine { max-width: none; padding-inline: var(--space-4); }
   .entete nav a { padding: 0 var(--space-2); font-size: var(--type-body-sm-size); }
   .lien-long { display: none; }
   .lien-court { display: inline; }
-  .entete .reglages--entete { display: none; }
-  .pied .reglages--pied { display: flex; }
   .moi__nom { display: none; }
   .moi { padding: 2px; }
 }
