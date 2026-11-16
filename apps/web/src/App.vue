@@ -140,8 +140,16 @@ main.main--pleine { max-width: none; padding-inline: var(--space-4); }
 }
 /* En sombre, la surface à 58 % se fond dans le fond : le verre prend un voile clair, un bord et un reflet plus
    nets, pour que la capsule se détache tout en laissant voir le motif flouté dessous. */
-:root[data-theme='sombre'] .entete__interieur.verre,
+/* En clair, la capsule garde sa teinte sombre : sur une page claire, un verre à 55 % virerait au gris. Les deux
+   règles du thème sombre ci-dessous, plus précises, reprennent la main en sombre. */
 .zone-sombre .entete__interieur.verre {
+  background: color-mix(in srgb, white 5%, color-mix(in srgb, var(--surface-raised) 90%, transparent));
+  border-color: color-mix(in srgb, white 14%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 18%, transparent),
+    0 12px 32px color-mix(in srgb, black 28%, transparent);
+}
+:root[data-theme='sombre'] .entete__interieur.verre {
   background: color-mix(in srgb, white 9%, color-mix(in srgb, var(--surface-raised) 55%, transparent));
   border-color: color-mix(in srgb, white 16%, transparent);
   box-shadow:
