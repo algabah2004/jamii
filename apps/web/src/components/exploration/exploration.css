@@ -49,15 +49,6 @@
 .exploration__calendrier { display: inline-grid; justify-items: center; gap: 0; padding: 10px 20px; background: var(--proof); color: var(--on-proof); border-radius: 18px; line-height: 1.1; transform: rotate(-5deg); }
 .exploration__calendrier strong { font-family: var(--font-display); font-size: 3rem; }
 .exploration__calendrier span { font-size: .875rem; font-weight: 700; text-transform: uppercase; }
-.exploration__browser { padding: 0; border-radius: 14px; overflow: hidden; border: 1px solid var(--line-strong); margin-bottom: 24px; background: var(--surface); }
-.exploration__browser-barre { display: flex; align-items: center; gap: 5px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
-.exploration__browser-barre i { width: 6px; height: 6px; border-radius: 50%; background: var(--line-strong); }
-.exploration__browser-barre span { margin-inline: auto; color: var(--ink-muted); font-size: .75rem; }
-.exploration__browser-corps { display: flex; gap: 12px; align-items: flex-end; height: 116px; padding: 22px; background: linear-gradient(125deg, var(--action-soft), var(--surface)); }
-.exploration__browser-corps i { flex: 1; height: 52%; border-radius: 8px 8px 2px 2px; background: var(--action); opacity: .35; }
-.exploration__browser-corps i:nth-child(2) { height: 78%; opacity: .55; }
-.exploration__browser-corps i:nth-child(3) { height: 60%; background: var(--proof); opacity: .8; }
-.exploration__browser-corps i:nth-child(4) { height: 100%; background: var(--proof); opacity: 1; }
 @media (max-width: 900px) {
   .exploration__hero { gap: 28px; grid-template-columns: minmax(0, 1fr) minmax(280px, .85fr); }
   .exploration__hero h1 { font-size: clamp(2.4rem, 5vw, 4rem); }
