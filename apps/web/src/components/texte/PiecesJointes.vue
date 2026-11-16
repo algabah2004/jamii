@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import LecteurVocal from './LecteurVocal.vue'
 import { tailleLisible, type PieceJointe } from './fichiers'
 
 /*
@@ -26,12 +27,7 @@ const extension = (nom: string) => (nom.includes('.') ? nom.split('.').pop()!.sl
         <span v-if="images.length > 4 && p === images[3]" class="pieces__plus" aria-hidden="true">+{{ images.length - 4 }}</span>
       </a>
     </div>
-    <div v-for="p in sons" :key="p.id" class="pieces__son" data-test="message-vocal">
-      <span class="pieces__micro" aria-hidden="true">
-        <svg viewBox="0 0 20 20" width="16" height="16"><path d="M10 2.5A2.5 2.5 0 0 0 7.5 5v4.5a2.5 2.5 0 0 0 5 0V5A2.5 2.5 0 0 0 10 2.5ZM5 9.5a5 5 0 0 0 10 0M10 14.5v3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>
-      </span>
-      <audio :src="p.url" controls preload="metadata" :aria-label="t('vocal.message')" />
-    </div>
+    <LecteurVocal v-for="p in sons" :key="p.id" :url="p.url" :nom="t('vocal.message')" />
     <video v-for="p in videos" :key="p.id" class="pieces__video" :src="p.url" controls preload="metadata" playsinline :aria-label="p.nom" />
     <ul v-if="documents.length" class="pieces__documents">
       <li v-for="p in documents" :key="p.id">
@@ -60,9 +56,6 @@ const extension = (nom: string) => (nom.includes('.') ? nom.split('.').pop()!.sl
 .pieces__images--2 .pieces__image img, .pieces__images--4 .pieces__image img { aspect-ratio: 1; }
 .pieces__image:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
 .pieces__plus { position: absolute; inset: 0; display: grid; place-items: center; background: rgb(2 7 10 / 0.55); color: #fff; font-size: 1.5rem; font-weight: 700; }
-.pieces__son { display: flex; align-items: center; gap: var(--space-2); max-width: 22rem; }
-.pieces__micro { display: grid; place-items: center; flex: none; width: 32px; height: 32px; border-radius: 50%; background: var(--action-soft); color: var(--action); }
-.pieces__son audio { width: 100%; min-width: 12rem; height: 40px; }
 .pieces__video { width: 100%; max-height: 26rem; border-radius: var(--radius-md); background: #02070A; }
 .pieces__documents { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
 .document { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); color: var(--ink); text-decoration: none; max-width: 24rem; }

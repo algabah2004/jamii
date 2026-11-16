@@ -138,7 +138,9 @@ describe('le message vocal (#157)', () => {
     vi.spyOn(Date, 'now').mockReturnValue(maintenant + 4_000)
     await page.get('[data-test="envoyer-vocal"]').trigger('click')
     await vi.waitFor(() => expect(page.find('[data-test="message-vocal"]').exists()).toBe(true))
-    expect(page.get('[data-test="message-vocal"] audio').attributes('src')).toMatch(/^\/api\/fichiers\//)
+    // Le lecteur maison télécharge le son une fois, puis le lit en local (forme d'onde et lecture).
+    await vi.waitFor(() => expect(page.get('[data-test="message-vocal"] audio').attributes('src')).toMatch(/^blob:/))
+    expect(page.find('[data-test="jouer-vocal"]').exists()).toBe(true)
     expect(envois).toEqual([{ nom: 'message-vocal.webm', destinataire: 'c1a00000-0000-4000-8000-000000000002', vocal: true }])
   })
 })

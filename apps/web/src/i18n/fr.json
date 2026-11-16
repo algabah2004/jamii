@@ -3039,6 +3039,11 @@
       "type_refuse": "Ce navigateur enregistre dans un format que Jamii n’accepte pas.",
       "trop_de_requetes": "Trop de fichiers envoyés en une heure. Réessaie plus tard.",
       "erreur": "Le message vocal n’a pas pu être envoyé. Réessaie."
-    }
+    },
+    "ecouter": "Écouter le message vocal",
+    "pause": "Mettre en pause",
+    "position": "Position dans le {nom}",
+    "vitesse": "Vitesse de lecture : ×{v}",
+    "illisible": "Ce message vocal ne peut pas être lu sur cet appareil."
   }
 }
