@@ -34,7 +34,7 @@ class GestionCercles {
 	private static final SecureRandom HASARD = new SecureRandom();
 
 	record Fiche(UUID id, String nom, String ville, int taille, UUID createurId, String statut, Integer tourEnCours,
-			Instant tirageLe, Instant creeLe, int nombreMembres, UUID tireParId) {
+			Instant tirageLe, Instant creeLe, int nombreMembres, UUID tireParId, List<String> profilsRecherches) {
 	}
 
 	record Membre(UUID utilisateurId, Instant rejointLe, String ideeTitre, String ideeDescription, Integer rang,
@@ -94,7 +94,7 @@ class GestionCercles {
 				: "c.statut = 'ouvert' AND (SELECT count(*) FROM cercle_membre m WHERE m.cercle_id = c.id) < c.taille";
 		String apres = avant == null ? "" : "AND (c.cree_le, c.id) < (:avant, :avantId)";
 		var requete = base.sql("""
-				SELECT c.id, c.nom, c.ville, c.taille, c.createur_id, c.statut, c.tour_en_cours, c.tirage_le, c.cree_le, c.tire_par,
+				SELECT c.id, c.nom, c.ville, c.taille, c.createur_id, c.statut, c.tour_en_cours, c.tirage_le, c.cree_le, c.tire_par, c.profils_recherches,
 				       (SELECT count(*) FROM cercle_membre m WHERE m.cercle_id = c.id) AS nombre_membres
 				FROM cercle c
 				WHERE %s %s
@@ -122,7 +122,7 @@ class GestionCercles {
 	// ---------------------------------------------------------------- écriture
 
 	@Transactional
-	UUID creer(UUID moi, String nom, String ville, int taille, Instant maintenant) {
+	UUID creer(UUID moi, String nom, String ville, int taille, List<String> profils, Instant maintenant) {
 		List<Instant> recents = base.sql("SELECT cree_le FROM cercle WHERE createur_id = :moi AND cree_le > :depuis ORDER BY cree_le")
 			.param("moi", moi)
 			.param("depuis", Timestamp.from(maintenant.minus(Duration.ofDays(1))))
@@ -136,8 +136,10 @@ class GestionCercles {
 		UUID id = UUID.randomUUID();
 		Timestamp t = Timestamp.from(maintenant);
 		base.sql("""
-				INSERT INTO cercle (id, nom, ville, taille, createur_id, cree_le) VALUES (:id, :nom, :ville, :taille, :moi, :t)
+				INSERT INTO cercle (id, nom, ville, taille, createur_id, cree_le, profils_recherches)
+				VALUES (:id, :nom, :ville, :taille, :moi, :t, CAST(:profils AS TEXT[]))
 				""")
+			.param("profils", "{" + String.join(",", profils) + "}")
 			.param("id", id).param("nom", nom).param("ville", ville).param("taille", taille).param("moi", moi)
 			.param("t", t).update();
 		ajouterMembre(id, moi, t);
@@ -314,7 +316,7 @@ class GestionCercles {
 			return Optional.empty();
 		}
 		return base.sql("""
-				SELECT c.id, c.nom, c.ville, c.taille, c.createur_id, c.statut, c.tour_en_cours, c.tirage_le, c.cree_le, c.tire_par,
+				SELECT c.id, c.nom, c.ville, c.taille, c.createur_id, c.statut, c.tour_en_cours, c.tirage_le, c.cree_le, c.tire_par, c.profils_recherches,
 				       (SELECT count(*) FROM cercle_membre m WHERE m.cercle_id = c.id) AS nombre_membres
 				FROM cercle c WHERE c.id = :id
 				""")
@@ -347,7 +349,8 @@ class GestionCercles {
 		return new Fiche(rs.getObject("id", UUID.class), rs.getString("nom"), rs.getString("ville"), rs.getInt("taille"),
 				rs.getObject("createur_id", UUID.class), rs.getString("statut"), entier(rs, "tour_en_cours"),
 				rs.getTimestamp("tirage_le") == null ? null : rs.getTimestamp("tirage_le").toInstant(),
-				rs.getTimestamp("cree_le").toInstant(), rs.getInt("nombre_membres"), rs.getObject("tire_par", UUID.class));
+				rs.getTimestamp("cree_le").toInstant(), rs.getInt("nombre_membres"), rs.getObject("tire_par", UUID.class),
+				List.of((String[]) rs.getArray("profils_recherches").getArray()));
 	}
 
 }

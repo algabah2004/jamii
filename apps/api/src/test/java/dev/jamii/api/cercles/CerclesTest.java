@@ -210,6 +210,19 @@ class CerclesTest {
 		assertThat(reponse).bodyJson().extractingPath("$.tourEnCours").isNull();
 		assertThat(reponse).bodyJson().extractingPath("$.tirage").isNull();
 		assertThat(reponse).bodyJson().extractingPath("$.membres[0].rang").isNull();
+		assertThat(reponse).bodyJson().extractingPath("$.profilsRecherches").isEqualTo(List.of());
+	}
+
+	@Test
+	void le_createur_dit_quels_profils_il_cherche_et_ils_s_affichent_partout() {
+		UtilisateurConnecte awa = utilisateur("Awa");
+		MvcTestResult reponse = ecrire("POST", "/api/cercles", awa,
+				"{\"nom\":\"Cercle mobile\",\"taille\":5,\"profils\":[\"mobile\",\"design\",\"mobile\",\"back\"]}");
+		assertThat(reponse).hasStatus(HttpStatus.CREATED);
+		// Les doublons disparaissent, l'ordre choisi reste.
+		assertThat(reponse).bodyJson().extractingPath("$.profilsRecherches").isEqualTo(List.of("mobile", "design", "back"));
+		assertThat(mvc.get().uri("/api/cercles").with(oauth2Login().oauth2User(utilisateur("Kofi"))).exchange())
+			.bodyJson().extractingPath("$.elements[?(@.nom == 'Cercle mobile')].profilsRecherches[0]").isEqualTo(List.of("mobile"));
 	}
 
 	@Test
@@ -221,7 +234,9 @@ class CerclesTest {
 				{ "{\"nom\":\"Cercle\",\"ville\":\"Dakar\",\"taille\":3}", "taille" },
 				{ "{\"nom\":\"Cercle\",\"ville\":\"Dakar\",\"taille\":7}", "taille" },
 				{ "{\"nom\":\"Cercle\",\"ville\":\"Dakar\"}", "taille" },
-				{ "{\"nom\":\"" + "x".repeat(81) + "\",\"ville\":\"Dakar\",\"taille\":4}", "nom" } };
+				{ "{\"nom\":\"" + "x".repeat(81) + "\",\"ville\":\"Dakar\",\"taille\":4}", "nom" },
+				{ "{\"nom\":\"Cercle\",\"taille\":4,\"profils\":[\"cuisinier\"]}", "profils" },
+				{ "{\"nom\":\"Cercle\",\"taille\":4,\"profils\":[\"front\",\"back\",\"mobile\",\"design\",\"data\",\"ia\"]}", "profils" } };
 		for (String[] c : cas) {
 			MvcTestResult reponse = ecrire("POST", "/api/cercles", awa, c[0]);
 			assertThat(reponse).as(c[1]).hasStatus(HttpStatus.BAD_REQUEST);

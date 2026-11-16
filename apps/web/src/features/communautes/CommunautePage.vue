@@ -235,7 +235,7 @@ const prenom = computed(() => moi.value?.nom.split(' ')[0] ?? '')
 
       <!-- Le fil : la bannière, « Quoi de neuf ? », puis les publications. -->
       <template v-else>
-        <BanniereCommunaute :communaute="communaute" :actifs="actifs" :adhesion-en-cours="adhesionEnCours" @adhesion="basculerAdhesion" />
+        <BanniereCommunaute :communaute="communaute" :actifs="actifs" :adhesion-en-cours="adhesionEnCours" @adhesion="basculerAdhesion" @maj="(c) => (communaute = c)" />
 
         <div class="barre-fil">
           <nav class="onglets" :aria-label="t('communautes.filtre')">

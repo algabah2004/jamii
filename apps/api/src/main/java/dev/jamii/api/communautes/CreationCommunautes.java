@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -48,7 +49,11 @@ class CreationCommunautes {
 			new String[] { "entraide", "entraide", "Une question rapide, un blocage : quelqu'un t'aide." },
 			new String[] { "projets", "projets", "Montrer ce qu'on construit et trouver des coéquipiers." });
 
-	record NouvelleCommunaute(String nom, String description, String theme, String pays) {
+	record NouvelleCommunaute(String nom, String description, String theme, String pays, UUID couvertureId) {
+	}
+
+	/** `fichierId` vide : la communauté revient à son motif. */
+	record ChoixCouverture(UUID fichierId) {
 	}
 
 	record NouveauSalon(String nom, String sujet) {
@@ -62,10 +67,13 @@ class CreationCommunautes {
 
 	private final String appels;
 
-	CreationCommunautes(JdbcClient base, GestionCommunautes communautes,
+	private final dev.jamii.api.fichiers.Fichiers fichiers;
+
+	CreationCommunautes(JdbcClient base, GestionCommunautes communautes, dev.jamii.api.fichiers.Fichiers fichiers,
 			@Value("${jamii.appels.url:https://meet.jit.si}") String appels) {
 		this.base = base;
 		this.communautes = communautes;
+		this.fichiers = fichiers;
 		this.appels = appels.endsWith("/") ? appels.substring(0, appels.length() - 1) : appels;
 	}
 
@@ -87,6 +95,9 @@ class CreationCommunautes {
 		if (demande.pays() != null && !demande.pays().matches("[A-Z]{2}")) {
 			erreurs.add(Map.of("champ", "pays", "code", "valeur_invalide"));
 		}
+		if (demande.couvertureId() != null && !fichiers.estImagePublique(demande.couvertureId(), moi.id())) {
+			erreurs.add(Map.of("champ", "couvertureId", "code", "image_invalide"));
+		}
 		if (!erreurs.isEmpty()) {
 			return Problemes.probleme(HttpStatus.BAD_REQUEST, "validation", "Certains champs sont invalides", erreurs);
 		}
@@ -104,9 +115,9 @@ class CreationCommunautes {
 			.param("s", s).query(Boolean.class).single());
 		UUID id = UUID.randomUUID();
 		base.sql("""
-				INSERT INTO communaute (id, slug, nom, description, theme, pays, createur_id, cree_le)
-				VALUES (:id, :slug, :nom, :description, :theme, :pays, :u, :t)
-				""").param("id", id).param("slug", slug).param("nom", nom).param("description", description)
+				INSERT INTO communaute (id, slug, nom, description, theme, pays, createur_id, cree_le, couverture_id)
+				VALUES (:id, :slug, :nom, :description, :theme, :pays, :u, :t, :couverture)
+				""").param("couverture", demande.couvertureId(), java.sql.Types.OTHER).param("id", id).param("slug", slug).param("nom", nom).param("description", description)
 			.param("theme", demande.theme()).param("pays", demande.pays()).param("u", moi.id())
 			.param("t", Timestamp.from(maintenant)).update();
 		base.sql("""
@@ -162,6 +173,29 @@ class CreationCommunautes {
 	}
 
 	/** Supprimer un salon : modérateurs seulement, et jamais # général. Ses messages partent avec lui (ON DELETE CASCADE). */
+	/** Changer la couverture, ou revenir au motif : réservé aux modérateurs. */
+	@PutMapping("/api/communautes/{slug}/couverture")
+	@Transactional
+	ResponseEntity<?> changerCouverture(@PathVariable String slug, @RequestBody ChoixCouverture choix,
+			@AuthenticationPrincipal UtilisateurConnecte moi) {
+		Instant maintenant = Instant.now();
+		var fiche = communautes.lire(slug, moi.id(), maintenant);
+		if (fiche.isEmpty()) {
+			return Problemes.introuvable();
+		}
+		if (!fiche.get().moderateur()) {
+			return Problemes.interdit("pas_moderateur", "Seuls les modérateurs changent la couverture");
+		}
+		UUID image = choix == null ? null : choix.fichierId();
+		if (image != null && !fichiers.estImagePublique(image, moi.id())) {
+			return Problemes.probleme(HttpStatus.BAD_REQUEST, "validation", "Cette image ne peut pas servir de couverture",
+					List.of(Map.of("champ", "fichierId", "code", "image_invalide")));
+		}
+		base.sql("UPDATE communaute SET couverture_id = :f WHERE id = :c").param("f", image, java.sql.Types.OTHER)
+			.param("c", fiche.get().id()).update();
+		return ResponseEntity.ok(CommunautesController.communaute(communautes.lire(slug, moi.id(), maintenant).orElseThrow()));
+	}
+
 	@DeleteMapping("/api/communautes/{slug}/salons/{salon}")
 	@Transactional
 	ResponseEntity<?> supprimerSalon(@PathVariable String slug, @PathVariable String salon,

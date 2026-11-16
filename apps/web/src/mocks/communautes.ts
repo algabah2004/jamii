@@ -32,7 +32,7 @@ function reponse(r: Partial<Reponse> & Pick<Reponse, 'id' | 'contenu'>): Reponse
 
 function etatInitial(): Etat {
   const communaute = (slug: string, nom: string, description: string, theme: string, pays: string | null, nombreMembres: number, membre: boolean) =>
-    ({ id: crypto.randomUUID(), slug, nom, description, theme, pays, nombreMembres, questionsOuvertes: 0, membre, moderateur: slug === 'flutter' }) as Communaute
+    ({ id: crypto.randomUUID(), slug, nom, description, theme, pays, nombreMembres, questionsOuvertes: 0, membre, moderateur: slug === 'flutter', couverture: null }) as Communaute
   return {
     communautes: [
       communaute('flutter', 'Flutter et Dart', 'Applications mobiles qui marchent aussi avec peu de réseau.', 'flutter', null, 214, true),
@@ -259,7 +259,7 @@ export const handlersCommunautes = [
   }),
 
   http.post('/api/communautes', async ({ request }) => {
-    const corps = (await request.json()) as { nom?: string; description?: string; theme?: string; pays?: string | null }
+    const corps = (await request.json()) as { nom?: string; description?: string; theme?: string; pays?: string | null; couvertureId?: string | null }
     const nom = corps.nom?.trim() ?? ''
     if (nom.length < 3 || (corps.description?.trim().length ?? 0) < 10 || !corps.theme) return erreur(400, 'validation')
     let slug = nomCourt(nom)
@@ -267,9 +267,19 @@ export const handlersCommunautes = [
     const c = {
       id: crypto.randomUUID(), slug, nom, description: corps.description!.trim(), theme: corps.theme, pays: corps.pays ?? null,
       nombreMembres: 1, questionsOuvertes: 0, membre: true, moderateur: true,
+      couverture: corps.couvertureId ? `/api/fichiers/${corps.couvertureId}` : null,
     } as Communaute
     etat.communautes.unshift(c)
     return HttpResponse.json(c, { status: 201, headers: { Location: `/api/communautes/${slug}` } })
+  }),
+
+  http.put('/api/communautes/:slug/couverture', async ({ params, request }) => {
+    const c = etat.communautes.find((x) => x.slug === params.slug)
+    if (!c) return erreur(404, 'introuvable')
+    if (!c.moderateur) return erreur(403, 'pas_moderateur')
+    const { fichierId } = (await request.json()) as { fichierId?: string | null }
+    c.couverture = fichierId ? `/api/fichiers/${fichierId}` : null
+    return HttpResponse.json(c)
   }),
 
   http.post('/api/communautes/:slug/salons', async ({ params, request }) => {

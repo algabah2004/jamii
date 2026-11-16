@@ -506,6 +506,17 @@ components:
           deprecated: true
           description: "Facultative depuis le 15/11 : le formulaire ne la demande plus (un cercle travaille en ligne). Encore acceptée pour les anciens clients."
         taille: { type: integer, minimum: 4, maximum: 6, description: 'Nombre de membres, créateur compris.' }
+        profils:
+          type: array
+          maxItems: 5
+          uniqueItems: true
+          description: 'Les profils dont le cercle a besoin. Facultatif : vide, rien de précisé.'
+          items: { $ref: '#/components/schemas/ProfilRecherche' }
+
+    ProfilRecherche:
+      type: string
+      enum: [front, back, mobile, design, data, ia, devops, securite, produit, test]
+      description: 'Un profil recherché : développement front, back ou mobile, design, données, IA, mise en ligne (devops), sécurité, produit (chef de projet), test.'
 
     Idee:
       type: object
@@ -539,7 +550,7 @@ components:
 
     CercleResume:
       type: object
-      required: [id, nom, ville, taille, statut, nombreMembres, createur, creeLe]
+      required: [id, nom, ville, taille, statut, nombreMembres, createur, creeLe, profilsRecherches]
       properties:
         id: { type: string, format: uuid }
         nom: { type: string }
@@ -549,6 +560,10 @@ components:
         nombreMembres: { type: integer, minimum: 1, maximum: 6 }
         createur: { $ref: './projets.yaml#/components/schemas/PersonneResume' }
         creeLe: { type: string, format: date-time }
+        profilsRecherches:
+          type: array
+          description: 'Les profils dont le cercle a besoin, choisis à sa création. Vide : rien de précisé.'
+          items: { $ref: '#/components/schemas/ProfilRecherche' }
 
     Cercle:
       allOf:

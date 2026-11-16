@@ -31,7 +31,10 @@ import dev.jamii.api.auth.UtilisateurConnecte;
 @RestController
 class CerclesController {
 
-	record CreationCercle(String nom, String ville, Integer taille) {
+	/** Les profils qu'un cercle peut rechercher (la même liste que la migration et le contrat). */
+	static final List<String> PROFILS = List.of("front", "back", "mobile", "design", "data", "ia", "devops", "securite", "produit", "test");
+
+	record CreationCercle(String nom, String ville, Integer taille, List<String> profils) {
 	}
 
 	record DepotIdee(String titre, String description, UUID cahierChargesId, List<dev.jamii.api.projets.Projets.TachePrevue> backlog) {}
@@ -44,7 +47,7 @@ class CerclesController {
 	}
 
 	record CercleResume(UUID id, String nom, String ville, int taille, String statut, int nombreMembres,
-			PersonneResume createur, Instant creeLe) {
+			PersonneResume createur, Instant creeLe, List<String> profilsRecherches) {
 	}
 
 	record MembreCercle(PersonneResume personne, Integer rang, boolean aDeposeIdee, Idee idee, Instant rejointLe) {
@@ -63,7 +66,8 @@ class CerclesController {
 	}
 
 	record Cercle(UUID id, String nom, String ville, int taille, String statut, int nombreMembres, PersonneResume createur,
-			Instant creeLe, List<MembreCercle> membres, List<Tour> tours, Integer tourEnCours, Tirage tirage, Moi moi) {
+			Instant creeLe, List<String> profilsRecherches, List<MembreCercle> membres, List<Tour> tours, Integer tourEnCours, Tirage tirage,
+			Moi moi) {
 	}
 
 	record Page(List<CercleResume> elements, String curseurSuivant) {
@@ -130,10 +134,14 @@ class CerclesController {
 		if (demande.taille() == null || demande.taille() < 4 || demande.taille() > 6) {
 			erreurs.add(Map.of("champ", "taille", "code", "hors_limites"));
 		}
+		List<String> profils = demande.profils() == null ? List.of() : demande.profils().stream().distinct().toList();
+		if (profils.size() > 5 || !PROFILS.containsAll(profils)) {
+			erreurs.add(Map.of("champ", "profils", "code", "valeur_invalide"));
+		}
 		if (!erreurs.isEmpty()) {
 			throw new ErreurCercle(HttpStatus.BAD_REQUEST, "validation", "Certains champs sont invalides", erreurs, 0);
 		}
-		UUID id = gestion.creer(moi.id(), nom, ville, demande.taille(), Instant.now());
+		UUID id = gestion.creer(moi.id(), nom, ville, demande.taille(), profils, Instant.now());
 		return ResponseEntity.created(URI.create("/api/cercles/" + id)).body(vue(id, moi.id()));
 	}
 
@@ -231,7 +239,7 @@ class CerclesController {
 		Tirage tirage = cercle.tirageLe() == null ? null
 				: new Tirage(cercle.tirageLe(), cercle.tireParId() != null ? cercle.tireParId() : cercle.createurId());
 		return new Cercle(cercle.id(), cercle.nom(), cercle.ville(), cercle.taille(), cercle.statut(), cercle.nombreMembres(),
-				personne(comptes.get(cercle.createurId())), cercle.creeLe(), membres, tours, cercle.tourEnCours(), tirage,
+				personne(comptes.get(cercle.createurId())), cercle.creeLe(), cercle.profilsRecherches(), membres, tours, cercle.tourEnCours(), tirage,
 				new Moi(cercle.createurId().equals(moi), estMembre));
 	}
 
@@ -244,7 +252,7 @@ class CerclesController {
 
 	private static CercleResume resume(GestionCercles.Fiche f, Map<UUID, Compte> comptes) {
 		return new CercleResume(f.id(), f.nom(), f.ville(), f.taille(), f.statut(), f.nombreMembres(),
-				personne(comptes.get(f.createurId())), f.creeLe());
+				personne(comptes.get(f.createurId())), f.creeLe(), f.profilsRecherches());
 	}
 
 	static PersonneResume personne(Compte compte) {

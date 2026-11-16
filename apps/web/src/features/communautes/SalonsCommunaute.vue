@@ -308,7 +308,7 @@ function teinte(id: string) {
         </div>
       </header>
 
-      <div class="salon__fil">
+      <div class="salon__fil motif fond-discussion" data-test="motif-discussion">
         <ol ref="liste" class="salon__messages" aria-live="polite" aria-relevant="additions" data-test="messages" @scroll.passive="defilement">
           <li class="accueil">
             <span class="accueil__signe" aria-hidden="true">#</span>

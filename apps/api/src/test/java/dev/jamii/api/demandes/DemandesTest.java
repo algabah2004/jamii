@@ -238,7 +238,8 @@ class DemandesTest {
 				{ "{\"titre\":\"Un titre\",\"description\":\"trop court\"}", "description" },
 				{ "{\"titre\":\"Un titre\",\"description\":\"" + "d".repeat(4001) + "\"}", "description" },
 				{ "{\"titre\":\"Un titre\",\"description\":\"" + longue + "\",\"dureeSemaines\":0}", "dureeSemaines" },
-				{ "{\"titre\":\"Un titre\",\"description\":\"" + longue + "\",\"dureeSemaines\":27}", "dureeSemaines" } };
+				{ "{\"titre\":\"Un titre\",\"description\":\"" + longue + "\",\"dureeSemaines\":27}", "dureeSemaines" },
+				{ "{\"titre\":\"Un titre\",\"description\":\"" + longue + "\",\"langue\":\"wo\"}", "langue" } };
 		for (String[] c : cas) {
 			MvcTestResult reponse = creer(pme, c[0]);
 			assertThat(reponse).as(c[1]).hasStatus(HttpStatus.BAD_REQUEST);
@@ -246,6 +247,14 @@ class DemandesTest {
 			assertThat(reponse).bodyJson().extractingPath("$.erreurs[0].champ").isEqualTo(c[1]);
 		}
 		assertThat(IA.cles).as("une demande invalide n'est jamais envoyée à l'IA").isEmpty();
+	}
+
+	@Test
+	void la_langue_de_l_ecran_part_vers_l_ia_et_le_francais_par_defaut() {
+		creer(utilisateur("Awa"), "{\"titre\":\"Track contributions\",\"description\":\"Our savings group needs to track it.\",\"langue\":\"en\"}");
+		creer(utilisateur("Kofi"), "{\"titre\":\"Un titre\",\"description\":\"Une description d'au moins vingt caractères.\"}");
+
+		assertThat(IA.entrees).extracting(PlansIa.Entree::langue).containsExactly("en", "fr");
 	}
 
 	@Test

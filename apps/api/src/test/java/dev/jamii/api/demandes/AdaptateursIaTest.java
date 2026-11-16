@@ -151,6 +151,30 @@ class AdaptateursIaTest {
 	}
 
 	@Test
+	void l_adaptateur_http_transmet_la_langue_de_l_ecran() throws Exception {
+		List<Requete> recues = new ArrayList<>();
+		HttpServer serveur = faux(recues, new AtomicReference<>("{}"), 200);
+		try {
+			PlansIaHttp ia = new PlansIaHttp("http://127.0.0.1:" + serveur.getAddress().getPort(), "jeton", Duration.ofSeconds(2));
+			ia.deposer(UUID.randomUUID(), new PlansIa.Entree("Track contributions", "Our savings group needs it.", 8, null, null, "en"));
+			assertThat(JSON.readTree(recues.getFirst().corps()).get("entree").get("langue").asString()).isEqualTo("en");
+		}
+		finally {
+			serveur.stop(0);
+		}
+	}
+
+	@Test
+	void le_repli_parle_la_langue_de_l_ecran() {
+		PlansIaSimules ia = new PlansIaSimules(Duration.ZERO, java.time.Clock.systemUTC(), JSON);
+		PlansIa.Etat etat = ia.lire(ia.deposer(UUID.randomUUID(),
+				new PlansIa.Entree("Track contributions", "Our savings group needs it.", 8, null, null, "en")));
+		assertThat(etat.resultat().get("plan").get("jalons").get(0).get("titre").asString()).isEqualTo("Mock-up approved");
+		assertThat(ia.lire(ia.deposer(UUID.randomUUID(), ENTREE)).resultat().get("plan").get("jalons").get(0).get("titre").asString())
+			.isEqualTo("Maquette validée");
+	}
+
+	@Test
 	void l_adaptateur_http_lit_l_etat_et_le_resultat() throws Exception {
 		List<Requete> recues = new ArrayList<>();
 		AtomicReference<String> reponse = new AtomicReference<>(

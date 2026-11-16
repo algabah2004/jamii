@@ -22,6 +22,7 @@ import {
   type DemandeResumee,
 } from './demandes'
 import AyoAvatar from './AyoAvatar.vue'
+import BadgeIa from '../../components/BadgeIa.vue'
 import PublierDemande from './PublierDemande.vue'
 
 /*
@@ -94,10 +95,13 @@ const pret = computed(() => analyse.value === 'pret')
 const enPreparation = computed(() => analyse.value === 'attente' && !tropLong.value)
 const repli = computed(() => (demande.value ? estRepli(demande.value) : false))
 const recommandes = computed(() => demande.value?.recommandations ?? [])
-
-/** Où en est le besoin : décrit, analysé (la réponse est prête), publié. */
-const PARCOURS = ['preparation', 'prete', 'publiee'] as const
-const rangParcours = computed(() => (demande.value?.publication ? 2 : pret.value ? 1 : 0))
+// Les plus proches du besoin d'abord, avec leur correspondance affichée (comme sur Malt), et les raisons qui l'expliquent.
+const recommandesTries = computed(() => [...recommandes.value].sort((a, b) => b.score - a.score))
+const aComparer = ref<string[]>([])
+function basculerComparaison(id: string) {
+  aComparer.value = aComparer.value.includes(id) ? aComparer.value.filter((x) => x !== id) : [...aComparer.value, id].slice(0, 3)
+}
+const compares = computed(() => recommandesTries.value.filter((r) => aComparer.value.includes(r.utilisateurId)))
 
 /** Pendant l'analyse, on montre ce que fait l'assistant : l'attente se comprend. */
 const ETAPES = ['lire', 'chercher', 'preparer'] as const
@@ -156,11 +160,14 @@ function repondre(texte: string) {
   void envoyerPrecision()
 }
 
-/** Le premier service est le conseil principal d'Ayo ; les autres restent à un clic, sans s'imposer. */
-const principal = computed(() => orientation.value?.services[0] ?? null)
-const autresServices = computed(() => orientation.value?.services.slice(1) ?? [])
+/**
+ * Les services Systalink proposés, chacun avec ce qu'il est : de l'hébergement (DataCloud : mettre en ligne, stocker),
+ * ou un outil prêt à l'emploi. Systalink n'écrit pas le logiciel : la page le dit pour chaque hébergement.
+ */
+const services = computed(() =>
+  (orientation.value?.services ?? []).map((sv) => ({ ...sv, genre: sv.id.startsWith('datacloud-') ? ('hebergement' as const) : ('outil' as const) })),
+)
 const etapesAyo = computed(() => orientation.value?.etapes ?? [])
-const autresOuverts = ref(false)
 
 /** « Ce n'est pas tout à fait ça ? » : une raison toute prête, que la personne complète si elle veut. */
 const RAISONS = ['cher', 'complique', 'autre'] as const
@@ -207,18 +214,6 @@ function voirDetails() {
 /** « Ce n'est pas tout à fait ça ? » : replié, une ligne ; ouvert d'un clic. */
 const precisionOuverte = ref(false)
 
-/**
- * « Former un cercle avec eux » : la création du cercle s'ouvre avec le titre et la ville du besoin. Ils passent par
- * l'état de la navigation, jamais par l'adresse : le besoin ne se retrouve ni dans l'historique ni dans les journaux.
- */
-function formerCercle() {
-  const d = demande.value
-  if (!d) return
-  // Les développeurs recommandés suivent jusqu'au cercle, pour être invités en un clic une fois qu'il existe.
-  const duBesoin = recommandes.value.map((r) => ({ id: r.utilisateurId, nom: r.nom }))
-  void router.push({ path: '/cercles/nouveau', state: { nom: d.titre.slice(0, 60), ville: d.ville ?? '', duBesoin } })
-}
-
 /** « Recevoir les offres Systalink » : jamais cochée d'avance, modifiable à tout moment. */
 const offres = ref<'repos' | 'envoi' | 'erreur'>('repos')
 async function changerOffres(accepte: boolean) {
@@ -255,7 +250,7 @@ const messageErreur = computed(() =>
 <template>
   <div class="page-demande">
   <aside v-if="historique.length" class="historique" :aria-label="t('demandes.mesDemandes.titre')" data-test="historique">
-    <RouterLink to="/demandes/nouvelle" class="j-bouton j-bouton--principal historique__nouvelle">+ {{ t('demandes.mesDemandes.nouvelle') }}</RouterLink>
+    <RouterLink to="/demandes" class="j-bouton j-bouton--principal historique__nouvelle">+ {{ t('demandes.mesDemandes.nouvelle') }}</RouterLink>
     <h2 class="historique__titre">{{ t('demandes.mesDemandes.titre') }}</h2>
     <ul>
       <li v-for="d in historique.slice(0, 12)" :key="d.id">
@@ -281,33 +276,14 @@ const messageErreur = computed(() =>
     </div>
 
     <template v-else-if="demande">
-      <header class="tete">
-        <ol class="parcours" :aria-label="t('demandes.mesDemandes.parcours')" data-test="parcours">
-          <li v-for="(e, i) in PARCOURS" :key="e" :class="{ fait: i < rangParcours, actuel: i === rangParcours }">
-            <span aria-hidden="true">{{ i < rangParcours ? '✓' : i + 1 }}</span>{{ t(`demandes.mesDemandes.jalons.${e}`) }}
-          </li>
-        </ol>
-        <h1>{{ demande.titre }}</h1>
-        <ul class="contexte" data-test="contexte">
-          <li v-if="demande.secteur">{{ te(`demandes.secteurs.${demande.secteur}`) ? t(`demandes.secteurs.${demande.secteur}`) : demande.secteur }}</li>
-          <li v-if="demande.ville">{{ demande.ville }}</li>
-          <li v-if="demande.dureeSemaines">{{ t('demandes.nouvelle.semaines', { n: demande.dureeSemaines }, demande.dureeSemaines) }}</li>
-          <li class="texte-discret">{{ dateCourte(demande.creeLe) }}</li>
-        </ul>
-        <!-- Ce que la personne a écrit : replié, une ligne ; ses mots, jamais interprétés. -->
-        <details class="besoin" :open="!pret">
-          <summary>{{ t('demandes.reponse.relire') }}<span v-if="demande.precisions?.length" class="besoin__compte">{{ t('demandes.mesDemandes.precisions', { n: demande.precisions.length }, demande.precisions.length) }}</span></summary>
-          <div class="fil" data-test="fil">
-            <p class="bulle bulle--moi">{{ demande.description }}</p>
-            <p v-for="p in demande.precisions ?? []" :key="p.creeLe" class="bulle bulle--moi" data-test="precision">{{ p.texte }}</p>
-          </div>
-        </details>
-      </header>
+      <!-- Seule la réponse d'Ayo occupe la page : le titre reste pour les lecteurs d'écran et l'historique à côté. -->
+      <h1 class="visuellement-cache">{{ demande.titre }}</h1>
 
-      <div v-if="enPreparation" class="carte attente" role="status" data-test="plan-attente">
-        <AyoAvatar :taille="52" reflechit />
-        <div>
-          <strong>{{ t('demandes.ayo.reflechit') }}</strong>
+      <div v-if="enPreparation" class="ayo-message" role="status" data-test="plan-attente">
+        <AyoAvatar :taille="44" reflechit class="ayo-message__avatar" />
+        <div class="ayo-message__bulle">
+          <p class="ayo-message__qui"><strong>{{ t('demandes.ayo.nom') }}</strong> <BadgeIa long /></p>
+          <p class="ecrit"><span class="points" aria-hidden="true"><i /><i /><i /></span><strong>{{ t('demandes.ayo.reflechit') }}</strong></p>
           <ol class="etapes" data-test="etapes">
             <li v-for="(e, i) in ETAPES" :key="e" :class="{ 'etapes--faite': i < etapeEnCours, 'etapes--en-cours': i === etapeEnCours }">
               <span aria-hidden="true">{{ i < etapeEnCours ? '✓' : i === etapeEnCours ? '•' : '·' }}</span> {{ t(`demandes.plan.etapes.${e}`) }}
@@ -328,94 +304,90 @@ const messageErreur = computed(() =>
       </div>
 
       <template v-if="pret">
-        <!-- 1. La réponse d'Ayo, et sa question s'il en a une : une seule carte, une seule voix. -->
-        <section class="carte reponse" aria-labelledby="compris-titre" data-test="compris">
-          <div class="reponse__tete">
-            <AyoAvatar :taille="44" />
-            <p class="reponse__qui"><strong>{{ t('demandes.ayo.nom') }}</strong><span>{{ t('demandes.ayo.role') }}</span></p>
-            <span class="proposition" data-test="plan-propose">✨ {{ t('demandes.plan.propose') }}</span>
-          </div>
-          <h2 id="compris-titre" class="visuellement-cache">{{ t('demandes.orientation.compris') }}</h2>
-          <p class="reponse__texte">{{ orientation ? orientation.message || orientation.resume : plan?.cahierDesCharges.resume }}</p>
-          <p v-if="repli" class="reponse__repli" role="status" data-test="plan-repli"><span aria-hidden="true">ⓘ</span> {{ t(orientation ? 'demandes.orientation.repli' : 'demandes.plan.repli') }}</p>
-
-          <div v-if="orientation?.question && questionOuverte" class="question-ayo" data-test="question-ayo">
-            <p class="question-ayo__texte">{{ orientation.question.texte }}</p>
-            <div class="puces">
-              <button v-for="sug in orientation.question.suggestions" :key="sug" type="button" class="puce" :disabled="envoiPrecision === 'envoi'" data-test="suggestion" @click="repondre(sug)">{{ sug }}</button>
+        <!-- La réponse d'Ayo, en une seule carte rangée en sections : ce qu'il a compris, son conseil, la suite. -->
+        <section class="ayo-message reponse" aria-labelledby="compris-titre" data-test="compris">
+          <AyoAvatar :taille="44" class="ayo-message__avatar" />
+          <div class="ayo-message__bulle">
+            <div class="reponse__tete">
+              <p class="ayo-message__qui"><strong>{{ t('demandes.ayo.nom') }}</strong> <BadgeIa long /></p>
+              <span class="proposition" data-test="plan-propose">{{ t('demandes.plan.propose') }}</span>
             </div>
-            <form class="question-ayo__libre" @submit.prevent="repondre(reponseLibre)">
-              <input v-model="reponseLibre" maxlength="500" :aria-label="t('demandes.ayo.question.libre')" :placeholder="t('demandes.ayo.question.libre')" />
-              <JBouton type="submit" variante="secondaire" :occupe="envoiPrecision === 'envoi'" :disabled="reponseLibre.trim().length < 3">{{ t('demandes.ayo.question.repondre') }}</JBouton>
-            </form>
-            <p v-if="envoiPrecision === 'quota'" role="alert" class="erreur" data-test="quota">{{ t('demandes.quota') }}</p>
-            <p v-else-if="envoiPrecision === 'limite'" role="alert" class="erreur">{{ t('demandes.discuter.limite') }}</p>
-            <p v-else-if="envoiPrecision === 'erreur'" role="alert" class="erreur">{{ t('etat.indisponible') }}</p>
-            <button type="button" class="lien-discret" data-test="passer" @click="questionPassee = true">{{ t('demandes.ayo.question.passer') }} →</button>
-          </div>
-        </section>
+            <h2 id="compris-titre" class="reponse__titre">{{ t('demandes.orientation.compris') }}</h2>
+            <p class="reponse__texte">{{ orientation ? orientation.message || orientation.resume : plan?.cahierDesCharges.resume }}</p>
+            <p v-if="repli" class="reponse__repli" role="status" data-test="plan-repli"><span aria-hidden="true">ⓘ</span> {{ t(orientation ? 'demandes.orientation.repli' : 'demandes.plan.repli') }}</p>
 
-        <!-- 2. Ses conseils : au plus deux choix côte à côte, un seul bouton chacun. -->
-        <section v-if="orientation && !questionOuverte" class="conseils" aria-labelledby="options" data-test="chemins">
-          <h2 id="options" class="section-titre">{{ t('demandes.reponse.conseils') }}</h2>
-          <div class="conseils__liste">
-            <article v-if="principal" class="carte choix choix--systalink" data-test="services-systalink">
-              <span class="choix__badge">{{ t('demandes.ayo.conseil') }}</span>
-              <div class="choix__corps" data-test="service">
-                <h3>{{ principal.nom }}</h3>
-                <p>{{ principal.pourCeBesoin }}</p>
-                <p v-if="principal.prixIndicatif" class="choix__prix">{{ principal.prixIndicatif }}</p>
-                <a :href="principal.lien" target="_blank" rel="noopener noreferrer" class="choix__action" data-test="voir-service" @click="signalerClicService(principal.momentId)">
-                  {{ t('demandes.orientation.voirService') }}<span class="visuellement-cache"> : {{ principal.nom }}</span> ↗</a>
+            <div v-if="orientation?.question && questionOuverte" class="question-ayo" data-test="question-ayo">
+              <p class="question-ayo__texte">{{ orientation.question.texte }}</p>
+              <div class="puces">
+                <button v-for="sug in orientation.question.suggestions" :key="sug" type="button" class="puce" :disabled="envoiPrecision === 'envoi'" data-test="suggestion" @click="repondre(sug)">{{ sug }}</button>
               </div>
-              <p class="choix__note">{{ t('demandes.chemins.pret.partenaire') }}</p>
-            </article>
+              <form class="question-ayo__libre" @submit.prevent="repondre(reponseLibre)">
+                <input v-model="reponseLibre" maxlength="500" :aria-label="t('demandes.ayo.question.libre')" :placeholder="t('demandes.ayo.question.libre')" />
+                <JBouton type="submit" variante="secondaire" :occupe="envoiPrecision === 'envoi'" :disabled="reponseLibre.trim().length < 3">{{ t('demandes.ayo.question.repondre') }}</JBouton>
+              </form>
+              <p v-if="envoiPrecision === 'quota'" role="alert" class="erreur" data-test="quota">{{ t('demandes.quota') }}</p>
+              <p v-else-if="envoiPrecision === 'limite'" role="alert" class="erreur">{{ t('demandes.discuter.limite') }}</p>
+              <p v-else-if="envoiPrecision === 'erreur'" role="alert" class="erreur">{{ t('etat.indisponible') }}</p>
+              <button type="button" class="lien-discret" data-test="passer" @click="questionPassee = true">{{ t('demandes.ayo.question.passer') }} →</button>
+            </div>
 
-            <article v-if="orientation.developpeursNecessaires" class="carte choix choix--devs" data-test="chemin-developpeurs">
-              <span class="choix__badge choix__badge--devs">{{ principal ? t('demandes.chemins.surMesure.badge') : t('demandes.ayo.conseil') }}</span>
-              <h3>{{ t('demandes.chemins.surMesure.titre') }}</h3>
-              <p>{{ t('demandes.chemins.surMesure.texte') }}</p>
-              <div v-if="recommandes.length" class="choix__equipe">
-                <span class="pile" aria-hidden="true">
-                  <JAvatar v-for="r in recommandes.slice(0, 4)" :key="r.utilisateurId" :nom="r.nom" :url="r.avatarUrl" :taille="36" />
-                </span>
-                <span class="texte-discret">{{ t('demandes.chemins.surMesure.devs', { n: recommandes.length }, recommandes.length) }}<template v-if="dureeSemaines"> · {{ t('demandes.chemins.surMesure.duree', { n: dureeSemaines }, dureeSemaines) }}</template></span>
-              </div>
-              <div class="choix__boutons">
-                <button v-if="recommandes.length" type="button" class="choix__action" data-test="former-cercle" @click="formerCercle">{{ t('demandes.orientation.formerCercle') }} →</button>
-                <button v-else type="button" class="choix__action" @click="voirDeveloppeurs">{{ t('demandes.chemins.surMesure.voirDevs') }}</button>
-                <button v-if="plan" type="button" class="lien-discret" data-test="voir-details" @click="voirDetails">{{ t('demandes.chemins.surMesure.voirProjet') }}</button>
-              </div>
-            </article>
+            <template v-if="orientation && !questionOuverte">
+              <section class="reponse__partie" aria-labelledby="options" data-test="chemins">
+                <h2 id="options" class="reponse__titre">{{ t('demandes.reponse.conseils') }}</h2>
 
-            <article v-if="!principal && !orientation.developpeursNecessaires" class="carte choix">
-              <h3>{{ t('demandes.chemins.aucun.titre') }}</h3>
-              <p>{{ t('demandes.chemins.aucun.texte') }}</p>
-              <RouterLink to="/communautes" class="choix__action">{{ t('demandes.chemins.aucun.action') }}</RouterLink>
-            </article>
+                <!-- Le développement : ce que Systalink ne fait pas. -->
+                <article v-if="orientation.developpeursNecessaires" class="piste" data-test="chemin-developpeurs">
+                  <h3 class="piste__titre">{{ t('demandes.chemins.surMesure.titre') }}</h3>
+                  <p>{{ t('demandes.chemins.surMesure.texte') }}</p>
+                  <div v-if="recommandes.length" class="piste__equipe">
+                    <span class="pile" aria-hidden="true">
+                      <JAvatar v-for="r in recommandes.slice(0, 4)" :key="r.utilisateurId" :nom="r.nom" :url="r.avatarUrl" :taille="32" />
+                    </span>
+                    <span class="texte-discret">{{ t('demandes.chemins.surMesure.devs', { n: recommandes.length }, recommandes.length) }}<template v-if="dureeSemaines"> · {{ t('demandes.chemins.surMesure.duree', { n: dureeSemaines }, dureeSemaines) }}</template></span>
+                  </div>
+                  <div class="piste__boutons">
+                    <!-- Le besoin part en mission : les développeurs de Jamii se proposent, la personne choisit. -->
+                    <RouterLink :to="{ name: 'nouvelle-mission', query: { demande: demande.id } }" class="choix__action" data-test="publier-mission-conseil">{{ t('demandes.plan.publierMission') }}</RouterLink>
+                    <button v-if="recommandes.length" type="button" class="lien-discret" @click="voirDeveloppeurs">{{ t('demandes.chemins.surMesure.voirDevs') }}</button>
+                    <button v-if="plan" type="button" class="lien-discret" data-test="voir-details" @click="voirDetails">{{ t('demandes.chemins.surMesure.voirProjet') }}</button>
+                  </div>
+                </article>
+
+                <!-- Systalink : chaque service dit ce qu'il est. L'hébergement est annoncé comme hébergement, rien de plus. -->
+                <div v-if="services.length" class="services-ayo" data-test="services-systalink">
+                  <article v-for="sv in services" :key="sv.id" class="piste piste--systalink" data-test="service">
+                    <div class="piste__entete">
+                      <h3 class="piste__titre">{{ sv.nom }}</h3>
+                      <span class="genre" :class="`genre--${sv.genre}`" data-test="genre-service">{{ t(`demandes.reponse.genre.${sv.genre}`) }}</span>
+                    </div>
+                    <p>{{ sv.pourCeBesoin }}</p>
+                    <p v-if="sv.genre === 'hebergement'" class="piste__limite" data-test="hebergement-seul">
+                      {{ t(orientation.developpeursNecessaires ? 'demandes.reponse.hebergementSeulDevs' : 'demandes.reponse.hebergementSeul') }}
+                    </p>
+                    <p class="piste__pied">
+                      <span v-if="sv.prixIndicatif" class="choix__prix">{{ sv.prixIndicatif }}</span>
+                      <a :href="sv.lien" target="_blank" rel="noopener noreferrer" class="lien-discret" data-test="voir-service" @click="signalerClicService(sv.momentId)">
+                        {{ t('demandes.orientation.voirService') }}<span class="visuellement-cache"> : {{ sv.nom }}</span> ↗</a>
+                    </p>
+                  </article>
+                  <p class="texte-discret services-ayo__note" data-test="libre">{{ t('demandes.chemins.pret.partenaire') }}</p>
+                </div>
+
+                <article v-if="!services.length && !orientation.developpeursNecessaires" class="piste">
+                  <h3 class="piste__titre">{{ t('demandes.chemins.aucun.titre') }}</h3>
+                  <p>{{ t('demandes.chemins.aucun.texte') }}</p>
+                  <RouterLink to="/communautes" class="choix__action">{{ t('demandes.chemins.aucun.action') }}</RouterLink>
+                </article>
+              </section>
+
+              <section v-if="etapesAyo.length" class="reponse__partie" aria-labelledby="maintenant" data-test="etapes-ayo">
+                <h2 id="maintenant" class="reponse__titre">{{ t('demandes.ayo.maintenant') }}</h2>
+                <ol class="reponse__etapes">
+                  <li v-for="e in etapesAyo" :key="e">{{ e }}</li>
+                </ol>
+              </section>
+            </template>
           </div>
-
-          <div v-if="etapesAyo.length" class="carte maintenant" data-test="etapes-ayo">
-            <h3>{{ t('demandes.ayo.maintenant') }}</h3>
-            <ol>
-              <li v-for="e in etapesAyo" :key="e">{{ e }}</li>
-            </ol>
-          </div>
-
-          <div v-if="autresServices.length" class="autres">
-            <button type="button" class="lien-discret" :aria-expanded="autresOuverts" aria-controls="autres-services" data-test="voir-autres" @click="autresOuverts = !autresOuverts">
-              {{ t('demandes.ayo.autres', { n: autresServices.length }, autresServices.length) }} {{ autresOuverts ? '▴' : '▾' }}</button>
-            <ul v-show="autresOuverts" id="autres-services" class="autres__liste">
-              <li v-for="sv in autresServices" :key="sv.id" class="carte autre" data-test="service">
-                <strong>{{ sv.nom }}</strong>
-                <p>{{ sv.pourCeBesoin }}</p>
-                <p v-if="sv.prixIndicatif" class="choix__prix">{{ sv.prixIndicatif }}</p>
-                <a :href="sv.lien" target="_blank" rel="noopener noreferrer" class="lien-discret" data-test="voir-service" @click="signalerClicService(sv.momentId)">
-                  {{ t('demandes.orientation.voirService') }}<span class="visuellement-cache"> : {{ sv.nom }}</span> ↗</a>
-              </li>
-            </ul>
-          </div>
-          <p class="libre" data-test="libre">🤝 {{ t('demandes.ayo.libre') }}</p>
         </section>
 
         <!-- 3. Le reste, rangé : les développeurs, le projet, publier. -->
@@ -439,7 +411,7 @@ const messageErreur = computed(() =>
           <div v-if="orientation?.developpeursNecessaires" v-show="onglet === 'developpeurs'" id="panneau-developpeurs" role="tabpanel" aria-labelledby="onglet-developpeurs" class="panneau" data-test="developpeurs">
             <p class="texte-discret">{{ t('demandes.orientation.developpeursAide') }}</p>
             <ul v-if="recommandes.length" class="recommandes">
-              <li v-for="r in recommandes" :key="r.utilisateurId" class="carte recommande" data-test="recommande">
+              <li v-for="r in recommandesTries" :key="r.utilisateurId" class="carte recommande" :class="{ 'recommande--compare': aComparer.includes(r.utilisateurId) }" data-test="recommande">
                 <div class="recommande__tete">
                   <JAvatar :nom="r.nom" :url="r.avatarUrl" :taille="44" />
                   <div>
@@ -447,16 +419,55 @@ const messageErreur = computed(() =>
                     <span v-if="r.ville" class="texte-discret">{{ r.ville }}</span>
                   </div>
                 </div>
+                <div class="correspondance" data-test="correspondance">
+                  <span class="correspondance__chiffre">{{ r.score }} %</span>
+                  <span class="correspondance__barre" aria-hidden="true"><i :style="{ width: `${r.score}%` }" /></span>
+                  <span class="correspondance__libelle">{{ t('demandes.match.libelle') }} <BadgeIa /></span>
+                </div>
+                <ul v-if="r.competencesCouvertes.length" class="competences-couvertes" :aria-label="t('demandes.match.competences')">
+                  <li v-for="c in r.competencesCouvertes" :key="c">{{ c }}</li>
+                </ul>
                 <ul class="raisons" :aria-label="t('demandes.orientation.pourquoi')">
                   <li v-for="raison in r.raisons" :key="raison">✓ {{ raison }}</li>
                 </ul>
-                <RouterLink :to="`/messages/${r.utilisateurId}`" class="recommande__ecrire">{{ t('demandes.orientation.ecrire', { nom: r.nom.split(' ')[0] }) }}</RouterLink>
+                <div class="recommande__actions">
+                  <RouterLink :to="`/messages/${r.utilisateurId}`" class="recommande__ecrire">{{ t('demandes.orientation.ecrire', { nom: r.nom.split(' ')[0] }) }}</RouterLink>
+                  <label class="comparer">
+                    <input type="checkbox" :checked="aComparer.includes(r.utilisateurId)" :disabled="!aComparer.includes(r.utilisateurId) && aComparer.length >= 3" data-test="comparer" @change="basculerComparaison(r.utilisateurId)" />
+                    {{ t('demandes.match.comparer') }}
+                  </label>
+                </div>
               </li>
             </ul>
+            <!-- Comparer côte à côte, comme sur Malt : 2 ou 3 profils, les mêmes lignes pour chacun. -->
+            <div v-if="compares.length >= 2" class="comparaison" data-test="comparaison">
+              <table>
+                <caption>{{ t('demandes.match.comparaison') }}</caption>
+                <thead>
+                  <tr><th scope="col"><span class="visuellement-cache">{{ t('demandes.match.critere') }}</span></th><th v-for="r in compares" :key="r.utilisateurId" scope="col"><JAvatar :nom="r.nom" :url="r.avatarUrl" :taille="28" /> {{ r.nom }}</th></tr>
+                </thead>
+                <tbody>
+                  <tr><th scope="row">{{ t('demandes.match.libelle') }}</th><td v-for="r in compares" :key="r.utilisateurId"><strong>{{ r.score }} %</strong></td></tr>
+                  <tr><th scope="row">{{ t('demandes.match.ville') }}</th><td v-for="r in compares" :key="r.utilisateurId">{{ r.ville ?? '—' }}</td></tr>
+                  <tr><th scope="row">{{ t('demandes.match.competences') }}</th><td v-for="r in compares" :key="r.utilisateurId">{{ r.competencesCouvertes.join(', ') || '—' }}</td></tr>
+                  <tr><th scope="row">{{ t('demandes.orientation.pourquoi') }}</th><td v-for="r in compares" :key="r.utilisateurId"><ul><li v-for="raison in r.raisons" :key="raison">{{ raison }}</li></ul></td></tr>
+                  <tr><th scope="row"><span class="visuellement-cache">{{ t('demandes.match.contacter') }}</span></th><td v-for="r in compares" :key="r.utilisateurId"><RouterLink :to="`/messages/${r.utilisateurId}`">{{ t('demandes.orientation.ecrire', { nom: r.nom.split(' ')[0] }) }}</RouterLink></td></tr>
+                </tbody>
+              </table>
+            </div>
             <p v-else class="carte vide" data-test="aucun-recommande">{{ t('demandes.orientation.aucun') }}</p>
           </div>
 
-          <div v-if="plan" v-show="onglet === 'projet' || !orientation" id="details-projet" role="tabpanel" aria-labelledby="onglet-projet" class="panneau details">
+          <div v-if="plan" v-show="onglet === 'projet' || !orientation" id="details-projet" role="tabpanel" aria-labelledby="onglet-projet" class="panneau details brief" data-test="brief">
+            <!-- Le brief, à la façon de Malt : un document clair, préparé par l'IA, que la personne relit avant de lancer. -->
+            <header class="brief__tete">
+              <AyoAvatar :taille="32" />
+              <div>
+                <h2 class="brief__titre">{{ t('demandes.brief.titre') }}</h2>
+                <p class="texte-discret">{{ t('demandes.brief.aide') }}</p>
+              </div>
+              <BadgeIa long />
+            </header>
             <section class="carte bloc" aria-labelledby="resume">
               <h3 id="resume">{{ t('demandes.plan.resume') }}</h3>
               <p class="resume">{{ plan.cahierDesCharges.resume }}</p>
@@ -604,11 +615,6 @@ const messageErreur = computed(() =>
 .historique__nom { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .historique__lien .texte-discret { font-size: var(--type-label-size); }
 .historique__toutes { font-size: var(--type-body-sm-size); font-weight: 600; }
-.fil { display: grid; gap: var(--space-2); justify-items: end; }
-.bulle { margin: 0; max-width: min(42rem, 92%); padding: var(--space-3) var(--space-4); border-radius: var(--radius-lg); white-space: pre-wrap; line-height: 1.5; }
-.bulle--moi { background: var(--action-soft); color: var(--ink); border-end-end-radius: 4px; }
-.bulle--jamii { background: var(--surface); border: 1px solid var(--line); border-end-start-radius: 4px; max-width: 100%; }
-.bulle--jamii .resume { margin: 0; font-size: 1.0625rem; }
 .assistant { display: grid; grid-template-columns: auto 1fr; gap: var(--space-3); align-items: end; }
 .assistant__nom { margin: 0 0 var(--space-1); font-size: var(--type-body-sm-size); color: var(--ink-muted); }
 .assistant__nom strong { color: var(--ink); }
@@ -627,14 +633,6 @@ const messageErreur = computed(() =>
 .puce:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .puce:disabled { opacity: 0.6; cursor: wait; }
 .chemin--principal { border: 2px solid var(--action); }
-.maintenant { display: grid; gap: var(--space-2); }
-.maintenant h3 { margin: 0; font-size: 1.0625rem; }
-.maintenant ol { margin: 0; padding-inline-start: 1.4em; display: grid; gap: var(--space-2); line-height: 1.5; }
-.maintenant ::marker { font-weight: 700; color: var(--action-ink); }
-.autres { display: grid; gap: var(--space-3); justify-items: start; }
-.autres__liste { list-style: none; margin: 0; padding: 0; width: 100%; display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr)); }
-.autre { display: grid; gap: var(--space-2); align-content: start; }
-.autre p { margin: 0; }
 .chemins__libre { margin: 0; color: var(--ink-muted); }
 .discuter__restants { margin: 0; font-size: var(--type-body-sm-size); }
 .discuter { display: grid; gap: var(--space-3); }
@@ -666,9 +664,6 @@ const messageErreur = computed(() =>
 .details { display: grid; gap: var(--space-6); }
 .demande { display: grid; gap: var(--space-6); max-width: 64rem; }
 .retour { margin: 0; font-size: var(--type-body-sm-size); }
-.tete { display: grid; gap: var(--space-4); }
-.tete h1 { margin: 0; font-size: clamp(1.875rem, 4vw, 2.5rem); line-height: 1.1; letter-spacing: -0.6px; }
-.besoin { margin: 0; padding: var(--space-4) var(--space-6); white-space: pre-wrap; color: var(--ink-muted); font-style: italic; border-inline-start: 3px solid var(--line-strong); }
 
 .attente { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-4); padding: var(--space-6); }
 .attente strong { display: block; }
@@ -678,15 +673,6 @@ const messageErreur = computed(() =>
 .attente__icone { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: color-mix(in srgb, var(--danger) 14%, transparent); color: var(--danger); font-weight: 800; }
 .attente__actions { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
 .bouton-lien--discret { background: transparent; color: var(--action-ink); border: 1px solid var(--line-strong); }
-.parcours { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); font-size: var(--type-body-sm-size); color: var(--ink-muted); }
-.parcours li { display: inline-flex; align-items: center; gap: var(--space-2); }
-.parcours li span { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--line-strong); font-size: 0.75rem; font-weight: 700; }
-.parcours li.fait { color: var(--ink); font-weight: 600; }
-.parcours li.fait span { background: var(--ink); border-color: var(--ink); color: var(--bg); }
-.parcours li.actuel { color: var(--ink); font-weight: 700; }
-.parcours li.actuel span { background: var(--cantaloupe); border-color: var(--cantaloupe); color: #02070A; }
-.contexte { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-2); }
-.contexte li { padding: 2px 12px; border-radius: var(--radius-pill); background: var(--surface); border: 1px solid var(--line); font-size: var(--type-body-sm-size); font-weight: 600; }
 .repli { border-inline-start: 4px solid var(--electric-blue); }
 @media (prefers-reduced-motion: reduce) { .points i { animation: none; } }
 
@@ -778,47 +764,23 @@ const messageErreur = computed(() =>
 .offres__case > span { display: grid; gap: var(--space-1); }
 
 /* La page de réponse : une carte d'Ayo, deux choix, des onglets, une ligne pour préciser. */
-.tete { gap: var(--space-3); }
-.besoin { border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); }
-.besoin summary { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-4); cursor: pointer; font-weight: 600; font-size: var(--type-body-sm-size); list-style: none; }
-.besoin summary::-webkit-details-marker { display: none; }
-.besoin summary::before { content: '▸'; transition: transform var(--motion-fast) var(--ease-out); }
-.besoin[open] summary::before { transform: rotate(90deg); }
 .besoin__compte { margin-inline-start: auto; padding: 0 8px; border-radius: var(--radius-pill); background: var(--action-soft); color: var(--action-ink); font-size: 0.75rem; }
-.besoin .fil { padding: 0 var(--space-4) var(--space-4); }
 
-.reponse { display: grid; gap: var(--space-3); padding: var(--space-6); border-top: 4px solid var(--electric-blue); }
+.reponse .ayo-message__bulle { gap: var(--space-3); }
 .reponse__tete { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
-.reponse__qui { margin: 0; display: grid; line-height: 1.2; }
-.reponse__qui span { color: var(--ink-muted); font-size: var(--type-body-sm-size); }
 .reponse__tete .proposition { margin-inline-start: auto; }
 .reponse__texte { margin: 0; font-size: 1.125rem; line-height: 1.6; white-space: pre-wrap; }
 .reponse__repli { margin: 0; padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm); background: var(--surface-raised); font-size: var(--type-body-sm-size); font-weight: 600; }
 .reponse .question-ayo { display: grid; gap: var(--space-3); margin-top: var(--space-2); padding-top: var(--space-4); border-top: 1px dashed var(--line-strong); border-inline-start: 0; }
 .reponse .question-ayo__texte { margin: 0; font-size: 1.0625rem; font-weight: 700; }
 
-.section-titre { margin: 0; font-size: var(--type-h3-size); line-height: var(--type-h3-line); }
-.conseils { display: grid; gap: var(--space-4); }
-.conseils__liste { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); align-items: stretch; }
-.choix { display: grid; gap: var(--space-3); align-content: start; padding: var(--space-6); }
-.choix h3 { margin: 0; font-size: 1.1875rem; }
-.choix p { margin: 0; }
-.choix--systalink { border: 2px solid var(--action); }
-.choix--devs { border: 2px solid color-mix(in srgb, var(--cantaloupe) 70%, transparent); }
-.choix__badge { justify-self: start; padding: 2px var(--space-3); border-radius: var(--radius-pill); background: var(--action-soft); color: var(--action-ink); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
-.choix__badge--devs { background: var(--proof-soft); color: var(--proof-ink); }
-.choix__corps { display: grid; gap: var(--space-2); }
 .choix__prix { font-weight: 700; }
-.choix__note { color: var(--ink-muted); font-size: var(--type-body-sm-size); }
-.choix__equipe { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
 .pile { display: inline-flex; }
 .pile > :not(:first-child) { margin-inline-start: -10px; }
 .pile > * { box-shadow: 0 0 0 2px var(--surface); border-radius: 50%; }
-.choix__boutons { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); margin-top: var(--space-1); }
 .choix__action { justify-self: start; display: inline-flex; align-items: center; min-height: 44px; padding: 0 var(--space-5, 1.25rem); border-radius: var(--radius-pill); border: 0; background: var(--action); color: var(--on-action); font: inherit; font-weight: 700; text-decoration: none; cursor: pointer; }
 .choix__action:focus-visible, .lien-discret:focus-visible, .onglet:focus-visible, .preciser__ouvrir:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .lien-discret { justify-self: start; border: 0; padding: 0; background: none; color: var(--action-ink); font: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
-.libre { margin: 0; color: var(--ink-muted); font-size: var(--type-body-sm-size); }
 
 .onglets { display: grid; gap: var(--space-4); scroll-margin-top: var(--space-6); }
 .onglets__barre { display: flex; gap: var(--space-1); overflow-x: auto; border-bottom: 1px solid var(--line); }
@@ -841,4 +803,69 @@ const messageErreur = computed(() =>
 .preciser textarea { flex: 1 1 16rem; min-height: 3.25rem; padding: var(--space-3); border: 1px solid var(--line-strong); border-radius: var(--radius-md); background: var(--surface); color: var(--ink); font: inherit; resize: vertical; }
 .preciser__restants { margin: 0; font-size: 0.8125rem; }
 @media (prefers-reduced-motion: reduce) { .besoin summary::before { transition: none; } }
+
+/* ---------------------------------------------------------------- la conversation avec Ayo, l'assistant IA */
+.ayo-message { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-3); align-items: start; }
+.ayo-message__bulle {
+  display: grid; gap: var(--space-2); min-width: 0; padding: var(--space-4) var(--space-6) var(--space-6);
+  border-radius: 4px var(--radius-lg) var(--radius-lg) var(--radius-lg); border: 1px solid color-mix(in srgb, var(--action) 22%, var(--line));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--action-soft) 45%, var(--surface)), var(--surface) 70%);
+}
+.ayo-message__qui { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); font-size: var(--type-body-sm-size); }
+.ecrit { margin: 0; display: flex; align-items: center; gap: var(--space-3); }
+/* Les trois points d'une IA qui écrit. */
+.points { display: inline-flex; gap: 4px; padding: 8px 10px; border-radius: var(--radius-pill); background: var(--surface-raised); }
+.points i { width: 6px; height: 6px; border-radius: 50%; background: var(--action); opacity: 0.35; animation: point 1.2s infinite ease-in-out; }
+.points i:nth-child(2) { animation-delay: 0.15s; }
+.points i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes point { 30% { opacity: 1; transform: translateY(-3px); } 60% { opacity: 0.35; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .points i { animation: none; opacity: 0.7; } }
+
+/* ---------------------------------------------------------------- le brief, préparé par l'IA */
+.brief { padding: var(--space-6); border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); }
+.brief__tete { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--space-3); align-items: center; padding-bottom: var(--space-4); border-bottom: 1px solid var(--line); }
+.brief__titre { margin: 0; font-size: 1.25rem; }
+.brief__tete p { margin: 2px 0 0; font-size: var(--type-body-sm-size); }
+.brief__tete .badge-ia { justify-self: start; }
+
+/* ---------------------------------------------------------------- les profils : correspondance, comparaison */
+.correspondance { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 2px var(--space-3); }
+.correspondance__chiffre { grid-row: span 2; font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; color: var(--action-ink); }
+.correspondance__barre { height: 6px; border-radius: var(--radius-pill); background: var(--surface-raised); overflow: hidden; }
+.correspondance__barre i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--action), var(--proof)); }
+.correspondance__libelle { display: flex; align-items: center; gap: var(--space-1); color: var(--ink-muted); font-size: 0.75rem; font-weight: 600; }
+.competences-couvertes { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px; }
+.competences-couvertes li { padding: 1px 8px; border-radius: var(--radius-pill); background: var(--surface-raised); border: 1px solid var(--line); font-size: 0.75rem; font-weight: 600; }
+.recommande--compare { border-color: var(--action); box-shadow: 0 0 0 1px var(--action); }
+.recommande__actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.comparer { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-muted); font-size: var(--type-body-sm-size); cursor: pointer; }
+.comparer input { width: 16px; height: 16px; accent-color: var(--action); }
+.comparaison { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); }
+.comparaison table { width: 100%; border-collapse: collapse; font-size: var(--type-body-sm-size); }
+.comparaison caption { padding: var(--space-3) var(--space-4); text-align: left; font-weight: 700; }
+.comparaison th, .comparaison td { padding: var(--space-2) var(--space-4); border-top: 1px solid var(--line); text-align: left; vertical-align: top; }
+.comparaison thead th { white-space: nowrap; }
+.comparaison thead th :deep(.j-avatar) { vertical-align: middle; margin-inline-end: 6px; }
+.comparaison tbody th { color: var(--ink-muted); font-weight: 600; white-space: nowrap; }
+.comparaison ul { margin: 0; padding-inline-start: 1em; }
+@media (max-width: 640px) { .ayo-message { grid-template-columns: 1fr; } .ayo-message__avatar { display: none; } .brief__tete { grid-template-columns: minmax(0, 1fr); } }
+
+/* La réponse d'Ayo, rangée en sections comme une réponse écrite. */
+.reponse__titre { margin: 0; font-size: 1.0625rem; font-weight: 700; }
+.reponse__partie { display: grid; gap: var(--space-3); padding-top: var(--space-4); border-top: 1px solid var(--line); }
+.reponse__etapes { margin: 0; padding-inline-start: 1.4em; display: grid; gap: var(--space-2); line-height: 1.5; }
+.reponse__etapes ::marker { font-weight: 700; color: var(--action-ink); }
+.piste { display: grid; gap: var(--space-2); padding: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface-raised); }
+.piste p { margin: 0; line-height: 1.5; }
+.piste__titre { margin: 0; font-size: 1rem; }
+.piste__entete { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); }
+.piste__equipe { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+.piste__boutons { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); margin-top: var(--space-1); }
+.piste__limite { padding: var(--space-2) var(--space-3); border-inline-start: 3px solid var(--line-strong); background: var(--surface); border-radius: var(--radius-sm); font-size: var(--type-body-sm-size); font-weight: 600; }
+.piste__pied { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); }
+.genre { padding: 2px var(--space-3); border-radius: var(--radius-pill); font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
+.genre--hebergement { background: var(--action-soft); color: var(--action-ink); }
+.genre--outil { background: var(--proof-soft); color: var(--proof-ink); }
+.services-ayo { display: grid; gap: var(--space-3); }
+.services-ayo__note { margin: 0; font-size: var(--type-body-sm-size); }
 </style>
