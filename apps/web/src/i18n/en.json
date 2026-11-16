@@ -1837,7 +1837,10 @@
       "candidature_acceptee": "Your application to a hackathon is accepted.",
       "candidature_refusee": "Your application to a hackathon was not selected.",
       "candidature_attente": "You are on a hackathon's waiting list.",
-      "invitation_equipe": "{nom} added you to their hackathon team."
+      "invitation_equipe": "{nom} added you to their hackathon team.",
+      "nouvel_abonne": "{nom} follows you.",
+      "suivi_cercle": "{nom} opened a circle: {cercle}.",
+      "suivi_publication": "{nom} posted in a community."
     },
     "contacts": {
       "recues": "Requests received",
@@ -3102,5 +3105,46 @@
       "titre": "Show when I'm online",
       "aide": "People you write to see “Online” or “Seen 5 min ago”. If you hide it, you no longer see when others are online either."
     }
+  },
+  "emojis": {
+    "ouvrir": "Emojis",
+    "titre": "Pick an emoji",
+    "chercher": "Search: laugh, fire, thanks…",
+    "categories": "Categories",
+    "resultats": "Results",
+    "aucun": "No matching emoji.",
+    "cat": {
+      "recents": "Recent",
+      "visages": "Faces",
+      "gestes": "Gestures",
+      "coeurs": "Hearts and symbols",
+      "tech": "Tech and work",
+      "fete": "Party and food",
+      "nature": "Nature and animals"
+    }
+  },
+  "abonnes": {
+    "suivre": "Follow",
+    "abonne": "Following",
+    "teSuit": "Follows you",
+    "abonnes": "follower | follower | followers",
+    "abonnements": "following | following | following",
+    "titreAbonnes": "Followers",
+    "titreAbonnements": "Following",
+    "fermer": "Close",
+    "chargement": "Loading…",
+    "aucunAbonne": "Nobody follows this profile yet.",
+    "aucunAbonnement": "This profile does not follow anyone yet.",
+    "etDautres": "and {n} more"
+  },
+  "reactions": {
+    "reagir": "React",
+    "avec": "React with {emoji}",
+    "autres": "More emojis",
+    "titre": "Reactions",
+    "toi": "You",
+    "quiEtAutres": "{noms} and {n} others",
+    "pastille": "{emoji}: {n} reaction, {qui} | {emoji}: {n} reaction, {qui} | {emoji}: {n} reactions, {qui}",
+    "erreur": "The reaction could not be saved. Try again."
   }
 }

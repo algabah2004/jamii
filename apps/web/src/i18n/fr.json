@@ -1837,7 +1837,10 @@
       "candidature_acceptee": "Ta candidature à un hackathon est acceptée.",
       "candidature_refusee": "Ta candidature à un hackathon n'a pas été retenue.",
       "candidature_attente": "Tu es sur la liste d'attente d'un hackathon.",
-      "invitation_equipe": "{nom} t'a ajouté à son équipe de hackathon."
+      "invitation_equipe": "{nom} t'a ajouté à son équipe de hackathon.",
+      "nouvel_abonne": "{nom} te suit.",
+      "suivi_cercle": "{nom} a ouvert un cercle : {cercle}.",
+      "suivi_publication": "{nom} a publié dans une communauté."
     },
     "contacts": {
       "recues": "Demandes reçues",
@@ -3102,5 +3105,46 @@
       "titre": "Montrer quand je suis en ligne",
       "aide": "Les personnes à qui tu écris voient « En ligne » ou « Vu il y a 5 min ». Si tu le caches, tu ne vois plus non plus quand les autres sont en ligne."
     }
+  },
+  "emojis": {
+    "ouvrir": "Emojis",
+    "titre": "Choisir un emoji",
+    "chercher": "Chercher : rire, feu, merci…",
+    "categories": "Catégories",
+    "resultats": "Résultats",
+    "aucun": "Aucun emoji ne correspond.",
+    "cat": {
+      "recents": "Récents",
+      "visages": "Visages",
+      "gestes": "Gestes",
+      "coeurs": "Cœurs et symboles",
+      "tech": "Tech et travail",
+      "fete": "Fête et nourriture",
+      "nature": "Nature et animaux"
+    }
+  },
+  "abonnes": {
+    "suivre": "Suivre",
+    "abonne": "Abonné",
+    "teSuit": "Te suit",
+    "abonnes": "abonné | abonné | abonnés",
+    "abonnements": "abonnement | abonnement | abonnements",
+    "titreAbonnes": "Abonnés",
+    "titreAbonnements": "Abonnements",
+    "fermer": "Fermer",
+    "chargement": "Chargement…",
+    "aucunAbonne": "Personne ne suit encore ce profil.",
+    "aucunAbonnement": "Ce profil ne suit encore personne.",
+    "etDautres": "et {n} autres"
+  },
+  "reactions": {
+    "reagir": "Réagir",
+    "avec": "Réagir avec {emoji}",
+    "autres": "Plus d’emojis",
+    "titre": "Réactions",
+    "toi": "Toi",
+    "quiEtAutres": "{noms} et {n} autres",
+    "pastille": "{emoji} : {n} réaction, {qui} | {emoji} : {n} réaction, {qui} | {emoji} : {n} réactions, {qui}",
+    "erreur": "La réaction n’a pas pu être enregistrée. Réessaie."
   }
 }

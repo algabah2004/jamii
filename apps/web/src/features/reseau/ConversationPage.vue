@@ -4,6 +4,8 @@ import EnregistreurVocal from '../../components/texte/EnregistreurVocal.vue'
 import PiecesJointes from '../../components/texte/PiecesJointes.vue'
 import TexteRiche from '../../components/texte/TexteRiche.vue'
 import TransfertMessage from './TransfertMessage.vue'
+import BarreReactions from '../../components/texte/BarreReactions.vue'
+import PastillesReactions from '../../components/texte/PastillesReactions.vue'
 import { textePresence, usePresence } from './presence'
 import { envoyerFichier, type PieceJointe } from '../../components/texte/fichiers'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
@@ -14,6 +16,7 @@ import { rejoindreCercle } from '../cercles/cercles'
 import { rafraichirActivite } from './activite'
 import { appeler, useAppel } from './appel'
 import {
+  reagirMessage,
   ajouterContact,
   envoyerMessage,
   LONGUEUR_MESSAGE,
@@ -205,6 +208,20 @@ const horloge = setInterval(() => (maintenant.value = Date.now()), 30_000)
 
 function remplacer(m: Message) {
   messages.value = messages.value.map((x) => (x.id === m.id ? m : x))
+}
+/** Réagir avec un emoji (#157) : un deuxième clic sur le même retire ma réaction. */
+async function reagir(m: Message, emoji: string) {
+  if (!personne.value) return
+  menu.value = null
+  const active = !m.reactions.some((r) => r.emoji === emoji && r.deMoi)
+  try {
+    const reactions = await reagirMessage(personne.value.id, m.id, emoji, active)
+    if (!reactions) throw new Error('refus')
+    const actuel = messages.value.find((x) => x.id === m.id)
+    if (actuel) remplacer({ ...actuel, reactions })
+  } catch {
+    erreur.value = t('reactions.erreur')
+  }
 }
 function ouvrirMenu(m: Message) {
   aSupprimer.value = null
@@ -566,6 +583,7 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
                     <span v-else class="invitation__infos">{{ t('reseau.messages.cercleFerme') }}</span>
                   </template>
                 </div>
+                <PastillesReactions :reactions="m.reactions" @basculer="(e) => reagir(m, e)" />
                 <span class="bulle__meta">
                   <span v-if="m.modifieLe" class="bulle__modifie" data-test="modifie">{{ t('reseau.actions.modifie') }}</span>
                   <time :datetime="m.envoyeLe">{{ heure(m.envoyeLe) }}</time>
@@ -582,6 +600,7 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
                 </button>
                 <div v-if="menu === m.id" class="actions__menu" role="menu">
                   <template v-if="aSupprimer !== m.id">
+                    <BarreReactions :actives="m.reactions.filter((r) => r.deMoi).map((r) => r.emoji)" @choisir="(e) => reagir(m, e)" />
                     <button type="button" role="menuitem" data-test="action-repondre" @click="repondre(m)">{{ t('reseau.actions.repondre') }}</button>
                     <button v-if="modifiable(m, maintenant)" type="button" role="menuitem" data-test="action-modifier" @click="modifier(m)">{{ t('reseau.actions.modifier') }}</button>
                     <button v-if="transferable(m)" type="button" role="menuitem" data-test="action-transferer" @click="transferer(m)">{{ t('reseau.actions.transferer') }}</button>

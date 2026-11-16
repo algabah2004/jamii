@@ -58,6 +58,17 @@ export async function supprimerMessage(personneId: string, messageId: string): P
   return response.ok
 }
 
+export type Reaction = components['schemas']['Reaction']
+
+/** Ajouter (`active`) ou retirer ma réaction ; les réactions à jour, ou `null` en cas de refus. */
+export async function reagirMessage(personneId: string, messageId: string, emoji: string, active: boolean): Promise<Reaction[] | null> {
+  const { data } = await api.POST('/api/conversations/{personneId}/messages/{messageId}/reactions', {
+    params: { path: { personneId, messageId } },
+    body: { emoji, active },
+  })
+  return data ?? null
+}
+
 export async function transfererMessage(personneId: string, messageId: string, destinataires: string[]): Promise<{ ok: boolean; code: string | null }> {
   const { response, error } = await api.POST('/api/conversations/{personneId}/messages/{messageId}/transfert', {
     params: { path: { personneId, messageId } },

@@ -43,6 +43,9 @@ const messages = new Map<string, Message[]>()
 const contacts = new Map<string, { statut: Exclude<StatutLien, 'aucun'>; depuis: string }>()
 let notifications: Notification[] = []
 let presenceVisible = true
+// Abonnés (#157) : Kofi suit Awa ; Awa ne suit encore personne.
+const abonnements = new Set<string>()
+const cle = (de: string, a: string) => `${de}>${a}`
 let suivant = 1
 const nouvelId = () => `e3f00000-0000-4000-8000-${String(suivant++).padStart(12, '0')}`
 const ilYa = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOString()
@@ -59,14 +62,16 @@ export function reinitialiserReseau() {
   contacts.clear()
   suivant = 1
   presenceVisible = true
+  abonnements.clear()
+  abonnements.add(cle(KOFI, AWA))
   // Kofi invite Awa dans son cercle d'Abidjan (non lu), Amina lui a répondu hier (lu).
   const abidjan = cerclesDemo().find((c) => c.id === ABIDJAN)
   messages.set(KOFI, [
-    { id: nouvelId(), deMoi: false, texte: 'Salut Awa ! Notre cercle cherche quelqu’un qui connaît Flutter. Tu nous rejoins ?', invitation: abidjan ? { cercle: resumeCercle(abidjan) } : null, envoyeLe: ilYa(12), luLe: null, piecesJointes: [], supprime: false, transfere: false },
+    { id: nouvelId(), deMoi: false, texte: 'Salut Awa ! Notre cercle cherche quelqu’un qui connaît Flutter. Tu nous rejoins ?', invitation: abidjan ? { cercle: resumeCercle(abidjan) } : null, envoyeLe: ilYa(12), luLe: null, piecesJointes: [], supprime: false, transfere: false, reactions: [] },
   ])
   messages.set(PROFILS[1].utilisateurId, [
-    { id: nouvelId(), deMoi: false, texte: 'Avec plaisir, je regarde ton idée ce soir.', invitation: null, envoyeLe: ilYa(60 * 20), luLe: ilYa(60 * 19), piecesJointes: [], supprime: false, transfere: false },
-    { id: nouvelId(), deMoi: true, texte: 'Bonjour Amina, tu aurais un moment pour relire les écrans de mon appli ?', invitation: null, envoyeLe: ilYa(60 * 22), luLe: ilYa(60 * 21), piecesJointes: [], supprime: false, transfere: false },
+    { id: nouvelId(), deMoi: false, texte: 'Avec plaisir, je regarde ton idée ce soir.', invitation: null, envoyeLe: ilYa(60 * 20), luLe: ilYa(60 * 19), piecesJointes: [], supprime: false, transfere: false, reactions: [] },
+    { id: nouvelId(), deMoi: true, texte: 'Bonjour Amina, tu aurais un moment pour relire les écrans de mon appli ?', invitation: null, envoyeLe: ilYa(60 * 22), luLe: ilYa(60 * 21), piecesJointes: [], supprime: false, transfere: false, reactions: [{ emoji: '❤️', nombre: 1, deMoi: false, noms: ['Amina Bello'] }] },
   ])
   // Amina est un contact ; Ibrahima (Saint-Louis) a demandé à en être un.
   const AMINA = PROFILS[1].utilisateurId
@@ -84,6 +89,22 @@ reinitialiserReseau()
 // Présence (#157) : Kofi est en ligne, Amina a été vue il y a 25 minutes. Awa peut cacher la sienne.
 const vuLe = (id: string): { enLigne: boolean; vuLe: string | null } =>
   id === KOFI ? { enLigne: true, vuLe: null } : id === PROFILS[1].utilisateurId ? { enLigne: false, vuLe: ilYa(25) } : { enLigne: false, vuLe: null }
+
+const suivi = (id: string) => {
+  const liens = [...abonnements].map((x) => x.split('>') as [string, string])
+  return HttpResponse.json({
+    abonnes: liens.filter(([, a]) => a === id).length,
+    abonnements: liens.filter(([de]) => de === id).length,
+    jeSuis: abonnements.has(cle(AWA, id)),
+    meSuit: abonnements.has(cle(id, AWA)),
+  })
+}
+const liste = (id: string, sens: 'abonnes' | 'abonnements') => {
+  const liens = [...abonnements].map((x) => x.split('>') as [string, string])
+  const ids = sens === 'abonnes' ? liens.filter(([, a]) => a === id).map(([de]) => de) : liens.filter(([de]) => de === id).map(([, a]) => a)
+  const elements = ids.map((p) => ({ personne: personne(p) ?? { id: p, nom: 'Awa Diop', avatarUrl: null, ville: 'Dakar' }, depuis: ilYa(60) }))
+  return HttpResponse.json({ elements, total: elements.length })
+}
 
 const nonLus = (liste: Message[]) => liste.filter((m) => !m.deMoi && !m.luLe).length
 
@@ -141,7 +162,7 @@ export const handlersReseau = [
       invitations.set(c.id, (invitations.get(c.id) ?? new Set()).add(personneId))
       invitation = { cercle: resumeCercle(c) }
     }
-    const message: Message = { id: nouvelId(), deMoi: true, texte, invitation, envoyeLe: new Date().toISOString(), luLe: null, piecesJointes: piecesDe(corps.pieces, personneId), reponseA: citation(personneId, corps.reponseA), supprime: false, transfere: false }
+    const message: Message = { id: nouvelId(), deMoi: true, texte, invitation, envoyeLe: new Date().toISOString(), luLe: null, piecesJointes: piecesDe(corps.pieces, personneId), reponseA: citation(personneId, corps.reponseA), supprime: false, transfere: false, reactions: [] }
     messages.set(personneId, [message, ...(messages.get(personneId) ?? [])])
     return HttpResponse.json(message, { status: 201 })
   }),
@@ -174,7 +195,7 @@ export const handlersReseau = [
     if (!uniques.length || uniques.length > 5 || uniques.includes(AWA)) return erreur('validation', 400)
     if (uniques.some((id) => !personne(id))) return erreur('introuvable', 404)
     for (const id of uniques) {
-      const copie: Message = { ...m, id: nouvelId(), deMoi: true, envoyeLe: new Date().toISOString(), luLe: null, reponseA: null, modifieLe: null, transfere: true }
+      const copie: Message = { ...m, id: nouvelId(), deMoi: true, envoyeLe: new Date().toISOString(), luLe: null, reponseA: null, modifieLe: null, transfere: true, reactions: [] }
       messages.set(id, [copie, ...(messages.get(id) ?? [])])
     }
     return new HttpResponse(null, { status: 204 })
@@ -198,7 +219,7 @@ export const handlersReseau = [
     if (!corps?.offre?.startsWith('v=0')) return erreur('validation', 400)
     const id = nouvelId()
     const video = corps.video === true
-    const message: Message = { id: nouvelId(), deMoi: true, texte: video ? '📹 Appel vidéo' : '📞 Appel vocal', invitation: null, envoyeLe: new Date().toISOString(), luLe: null, appel: { id, enCours: true, statut: 'sonne', video }, piecesJointes: [], supprime: false, transfere: false }
+    const message: Message = { id: nouvelId(), deMoi: true, texte: video ? '📹 Appel vidéo' : '📞 Appel vocal', invitation: null, envoyeLe: new Date().toISOString(), luLe: null, appel: { id, enCours: true, statut: 'sonne', video }, piecesJointes: [], supprime: false, transfere: false, reactions: [] }
     messages.set(personneId, [message, ...(messages.get(personneId) ?? [])])
     appels.set(id, { id, statut: 'sonne', video, deMoi: true, personne: p, creeLe: message.envoyeLe, message })
     return HttpResponse.json(appels.get(id), { status: 201 })
@@ -238,6 +259,39 @@ export const handlersReseau = [
     return HttpResponse.json({ personne: p, elements, curseurSuivant: null })
   }),
 
+  http.post('/api/conversations/:personneId/messages/:messageId/reactions', async ({ params, request }) => {
+    const fil = messages.get(String(params.personneId)) ?? []
+    const m = fil.find((x) => x.id === params.messageId)
+    if (!m) return erreur('introuvable', 404)
+    if (m.supprime) return erreur('message_supprime')
+    const corps = (await request.json()) as { emoji?: string; active?: boolean }
+    if (!corps.emoji || /[a-z0-9<>]/i.test(corps.emoji)) return erreur('validation', 400)
+    const autres = m.reactions.filter((r) => r.emoji !== corps.emoji)
+    const celle = m.reactions.find((r) => r.emoji === corps.emoji)
+    const sansMoi = celle ? { ...celle, nombre: celle.nombre - (celle.deMoi ? 1 : 0), deMoi: false, noms: celle.noms.filter((n) => n !== 'moi') } : null
+    const nouvelle = corps.active
+      ? { emoji: corps.emoji, nombre: (sansMoi?.nombre ?? 0) + 1, deMoi: true, noms: [...(sansMoi?.noms ?? []), 'moi'] }
+      : sansMoi
+    m.reactions = celle
+      ? m.reactions.map((r) => (r.emoji === corps.emoji ? nouvelle : r)).filter((r): r is NonNullable<typeof r> => !!r && r.nombre > 0)
+      : nouvelle && nouvelle.nombre > 0 ? [...autres, nouvelle] : autres
+    return HttpResponse.json(m.reactions)
+  }),
+  http.get('/api/personnes/:id/abonnement', ({ params }) => suivi(String(params.id))),
+  http.put('/api/personnes/:id/abonnement', ({ params }) => {
+    const id = String(params.id)
+    if (id === AWA) return erreur('soi_meme')
+    if (!abonnements.has(cle(AWA, id))) {
+      abonnements.add(cle(AWA, id))
+    }
+    return suivi(id)
+  }),
+  http.delete('/api/personnes/:id/abonnement', ({ params }) => {
+    abonnements.delete(cle(AWA, String(params.id)))
+    return suivi(String(params.id))
+  }),
+  http.get('/api/personnes/:id/abonnes', ({ params }) => liste(String(params.id), 'abonnes')),
+  http.get('/api/personnes/:id/abonnements', ({ params }) => liste(String(params.id), 'abonnements')),
   http.get('/api/presence', ({ request }) => {
     const ids = (new URL(request.url).searchParams.get('personnes') ?? '').split(',').filter(Boolean)
     if (!ids.length || ids.length > 50) return erreur('validation', 400)

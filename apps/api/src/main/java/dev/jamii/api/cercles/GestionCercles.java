@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -59,7 +60,11 @@ class GestionCercles {
 
 	private final DossiersIdees dossiers;
 
-	GestionCercles(JdbcClient base, Projets projets, Annuaire annuaire, SalonCercle salon, DossiersIdees dossiers) {
+	private final ApplicationEventPublisher evenements;
+
+	GestionCercles(JdbcClient base, Projets projets, Annuaire annuaire, SalonCercle salon, DossiersIdees dossiers,
+			ApplicationEventPublisher evenements) {
+		this.evenements = evenements;
 		this.dossiers = dossiers;
 		this.base = base;
 		this.projets = projets;
@@ -144,6 +149,8 @@ class GestionCercles {
 			.param("t", t).update();
 		ajouterMembre(id, moi, t);
 		salon.evenement(id, "cercle_cree", null, moi, maintenant);
+		// Ses abonnés sont prévenus après la validation (#157).
+		evenements.publishEvent(new CercleCree(id, moi, maintenant));
 		return id;
 	}
 

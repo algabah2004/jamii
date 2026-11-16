@@ -47,6 +47,7 @@ tags:
   - { name: notifications, description: 'Ce qui s''est passé depuis ma dernière visite.' }
   - { name: appels, description: 'Les appels audio et vidéo en tête-à-tête, en WebRTC (#157).' }
   - { name: presence, description: '« En ligne » et « Vu il y a … » (#157).' }
+  - { name: abonnes, description: 'Suivre quelqu''un, comme sur LinkedIn (#157).' }
 
 paths:
   /api/recommandations/cercles:
@@ -211,6 +212,39 @@ paths:
         '204': { description: Supprimé. }
         '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
         '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+
+  /api/conversations/{personneId}/messages/{messageId}/reactions:
+    post:
+      tags: [messages]
+      operationId: reagirAuMessage
+      summary: Ajouter ou retirer ma réaction (un emoji)
+      description: |
+        Une réaction par emoji et par personne (répéter ne change rien) ; 10 emojis différents au plus par personne et par
+        message (409 `trop_de_reactions`). Seul un emoji est accepté (400). 409 `message_supprime`.
+      security: [{ session: [], csrf: [] }]
+      parameters:
+        - $ref: '#/components/parameters/PersonneId'
+        - { name: messageId, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [emoji, active]
+              properties:
+                emoji: { type: string, maxLength: 32 }
+                active: { type: boolean, description: 'true pour ajouter, false pour retirer.' }
+      responses:
+        '200':
+          description: Les réactions à jour du message.
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Reaction' } }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
 
   /api/conversations/{personneId}/messages/{messageId}/transfert:
     parameters:
@@ -561,6 +595,91 @@ paths:
               schema: { $ref: '#/components/schemas/Activite' }
         '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
 
+  /api/personnes/{personneId}/abonnement:
+    parameters:
+      - $ref: '#/components/parameters/PersonneId'
+    get:
+      tags: [abonnes]
+      operationId: lireAbonnement
+      summary: Les compteurs du profil, et si je suis cette personne
+      responses:
+        '200':
+          description: Les compteurs.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Suivi' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+    put:
+      tags: [abonnes]
+      operationId: suivre
+      summary: Suivre cette personne (sans son accord ; idempotent)
+      description: |
+        La personne suivie reçoit « X te suit » (une seule fois, même après un désabonnement). Ensuite, l'abonné est
+        prévenu quand elle ouvre un cercle (`suivi_cercle`) ou publie dans une communauté (`suivi_publication`).
+        Contre le spam : 200 nouveaux abonnements par jour au plus (429). Code 409 `soi_meme`.
+      security: [{ session: [], csrf: [] }]
+      responses:
+        '200':
+          description: Les compteurs à jour.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Suivi' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+        '429': { $ref: './socle.yaml#/components/responses/TropDeRequetes' }
+    delete:
+      tags: [abonnes]
+      operationId: neplusSuivre
+      summary: Ne plus suivre cette personne (idempotent)
+      security: [{ session: [], csrf: [] }]
+      responses:
+        '200':
+          description: Les compteurs à jour.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Suivi' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+
+  /api/personnes/{personneId}/abonnes:
+    parameters:
+      - $ref: '#/components/parameters/PersonneId'
+    get:
+      tags: [abonnes]
+      operationId: listerAbonnes
+      summary: Qui suit cette personne, les plus récents d'abord
+      parameters:
+        - { name: limite, in: query, schema: { type: integer, minimum: 1, maximum: 50, default: 50 } }
+      responses:
+        '200':
+          description: La liste et le total.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ListeAbonnes' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+
+  /api/personnes/{personneId}/abonnements:
+    parameters:
+      - $ref: '#/components/parameters/PersonneId'
+    get:
+      tags: [abonnes]
+      operationId: listerAbonnements
+      summary: Qui cette personne suit, les plus récents d'abord
+      parameters:
+        - { name: limite, in: query, schema: { type: integer, minimum: 1, maximum: 50, default: 50 } }
+      responses:
+        '200':
+          description: La liste et le total.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ListeAbonnes' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+
   /api/presence:
     get:
       tags: [presence]
@@ -662,6 +781,29 @@ components:
       schema: { type: string, format: uuid }
 
   schemas:
+    Suivi:
+      type: object
+      required: [abonnes, abonnements, jeSuis, meSuit]
+      properties:
+        abonnes: { type: integer, minimum: 0, description: 'Combien de personnes la suivent.' }
+        abonnements: { type: integer, minimum: 0, description: 'Combien de personnes elle suit.' }
+        jeSuis: { type: boolean, description: 'Je la suis.' }
+        meSuit: { type: boolean, description: 'Elle me suit.' }
+
+    ListeAbonnes:
+      type: object
+      required: [elements, total]
+      properties:
+        total: { type: integer, minimum: 0 }
+        elements:
+          type: array
+          items:
+            type: object
+            required: [personne, depuis]
+            properties:
+              personne: { $ref: '#/components/schemas/Personne' }
+              depuis: { type: string, format: date-time }
+
     EtatPresence:
       type: object
       required: [personneId, enLigne, vuLe]
@@ -751,9 +893,22 @@ components:
         sorte: { type: [string, 'null'], enum: [image, video, document, audio, null], description: 'La sorte de sa première pièce jointe.' }
         supprime: { type: boolean }
 
+    Reaction:
+      type: object
+      required: [emoji, nombre, deMoi, noms]
+      properties:
+        emoji: { type: string, maxLength: 32 }
+        nombre: { type: integer, minimum: 1 }
+        deMoi: { type: boolean, description: "J'ai réagi avec cet emoji." }
+        noms:
+          type: array
+          maxItems: 10
+          description: 'Qui a réagi (10 au plus), pour le survol. « moi » pour moi.'
+          items: { type: string }
+
     Message:
       type: object
-      required: [id, deMoi, texte, envoyeLe, piecesJointes, supprime, transfere]
+      required: [id, deMoi, texte, envoyeLe, piecesJointes, supprime, transfere, reactions]
       properties:
         id: { type: string, format: uuid }
         deMoi: { type: boolean, description: "C'est moi qui l'ai écrit." }
@@ -764,6 +919,10 @@ components:
         modifieLe: { type: [string, 'null'], format: date-time, description: 'Quand il a été corrigé, s''il l''a été.' }
         supprime: { type: boolean, description: 'Supprimé pour tout le monde : texte et pièces jointes vides.' }
         transfere: { type: boolean, description: 'Une copie transférée depuis une autre conversation.' }
+        reactions:
+          type: array
+          description: 'Les réactions, dans l''ordre de la première de chaque emoji. Vide pour un message supprimé.'
+          items: { $ref: '#/components/schemas/Reaction' }
         texte: { type: string, description: 'Texte mis en forme (petit Markdown), affiché échappé.' }
         piecesJointes: { type: array, maxItems: 6, items: { $ref: './fichiers.yaml#/components/schemas/PieceJointe' } }
         invitation:
@@ -856,7 +1015,7 @@ components:
 
     TypeNotification:
       type: string
-      enum: [message_recu, invitation_cercle, demande_contact, contact_accepte, membre_rejoint, tirage_effectue, tour_livre, cercle_recommande, proposition_recue, devis_recu, mission_attribuee, candidature_recue, candidature_acceptee, candidature_refusee, candidature_attente, invitation_equipe]
+      enum: [message_recu, invitation_cercle, demande_contact, contact_accepte, membre_rejoint, tirage_effectue, tour_livre, cercle_recommande, proposition_recue, devis_recu, mission_attribuee, candidature_recue, candidature_acceptee, candidature_refusee, candidature_attente, invitation_equipe, nouvel_abonne, suivi_cercle, suivi_publication]
 
     Notification:
       type: object
