@@ -163,6 +163,43 @@ paths:
         '409': { $ref: './socle.yaml#/components/responses/Conflit' }
         '429': { $ref: './socle.yaml#/components/responses/TropDeRequetes' }
 
+  /api/conversations/{personneId}/ecriture:
+    parameters:
+      - $ref: '#/components/parameters/PersonneId'
+    post:
+      tags: [messages]
+      operationId: signalerEcriture
+      summary: Je suis en train d'écrire à cette personne (#157)
+      description: >-
+        Envoyé par le front au plus toutes les 3 secondes pendant la frappe. Éphémère : gardé en mémoire 6 secondes,
+        jamais en base, et effacé quand le message part.
+      security:
+        - session: []
+          csrf: []
+      responses:
+        '204':
+          description: Noté.
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+    get:
+      tags: [messages]
+      operationId: lireEcriture
+      summary: Cette personne est-elle en train de m'écrire ?
+      description: Lu toutes les 2 secondes tant que la conversation est ouverte et l'onglet visible. Jamais en cache.
+      security:
+        - session: []
+      responses:
+        '200':
+          description: Vrai si elle a écrit dans les 6 dernières secondes.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ecrit]
+                properties:
+                  ecrit: { type: boolean }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+
   /api/appels/ice:
     get:
       tags: [appels]

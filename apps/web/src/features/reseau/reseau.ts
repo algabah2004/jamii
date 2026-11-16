@@ -36,6 +36,20 @@ export async function envoyerMessage(personneId: string, texte: string, cercleId
 }
 
 /** Lancer un appel vocal et vidéo avec une personne (#157) : le message qui l'annonce porte la salle. */
+/** « Je suis en train d'écrire » (#157) : silencieux en cas d'échec, ce n'est qu'un indice. */
+export async function signalerEcriture(personneId: string): Promise<void> {
+  await api.POST('/api/conversations/{personneId}/ecriture', { params: { path: { personneId } } }).catch(() => undefined)
+}
+
+export async function lireEcriture(personneId: string): Promise<boolean> {
+  try {
+    const { data } = await api.GET('/api/conversations/{personneId}/ecriture', { params: { path: { personneId } } })
+    return data?.ecrit === true
+  } catch {
+    return false
+  }
+}
+
 /** Une personne recommandée pour un besoin, transmise jusqu'au cercle par l'état de la navigation. */
 export type RecommandeDuBesoin = { id: string; nom: string }
 

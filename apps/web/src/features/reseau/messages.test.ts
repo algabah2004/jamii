@@ -149,6 +149,31 @@ describe('les messages', () => {
     expect(page.findAll('[data-test="fil"] li').at(-1)!.find('.bulle__lu').exists()).toBe(true)
   })
 
+  it("montre que l'autre écrit, et signale ma frappe sans inonder l'API", async () => {
+    let signaux = 0
+    let ecrit = false
+    serveur.use(
+      http.post('/api/conversations/:id/ecriture', () => {
+        signaux++
+        return new HttpResponse(null, { status: 204 })
+      }),
+      http.get('/api/conversations/:id/ecriture', () => HttpResponse.json({ ecrit })),
+    )
+    const { page } = await ouvrir(`/messages/${AMINA}`)
+    await vi.waitFor(() => expect(page.find('[data-test="form-message"] textarea').exists()).toBe(true))
+    const zone = page.find('[data-test="form-message"] textarea')
+    await zone.setValue('B')
+    await zone.setValue('Bo')
+    await zone.setValue('Bon')
+    await vi.waitFor(() => expect(signaux).toBe(1))
+    expect(page.find('[data-test="en-train-d-ecrire"]').exists()).toBe(false)
+
+    ecrit = true
+    await vi.waitFor(() => expect(page.find('[data-test="en-train-d-ecrire"]').text()).toContain("Amina est en train d'écrire"), { timeout: 3000 })
+    ecrit = false
+    await vi.waitFor(() => expect(page.find('[data-test="en-train-d-ecrire"]').exists()).toBe(false), { timeout: 3000 })
+  })
+
   it("appelle la personne dans Jamii : l'appel sonne dans la fenêtre d'appel, et raccrocher l'annule", async () => {
     installerFauxWebrtc()
     try {

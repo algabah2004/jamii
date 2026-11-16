@@ -121,6 +121,14 @@ class ReseauController {
 
 	private Appels appelsWebrtc;
 
+	private Ecriture ecriture;
+
+	/** Un message envoyé efface « … est en train d'écrire » chez l'autre (#157). */
+	@org.springframework.beans.factory.annotation.Autowired
+	void ecriture(Ecriture ecriture) {
+		this.ecriture = ecriture;
+	}
+
 	/** Les appels WebRTC (#157), pour les cartes de la conversation. */
 	@org.springframework.beans.factory.annotation.Autowired
 	void appelsWebrtc(Appels appelsWebrtc) {
@@ -224,6 +232,7 @@ class ReseauController {
 		var destinataire = personne(personneId);
 		var pieces = fichiers.verifierPiecesPrivees(corps.pieces(), moi.id(), destinataire);
 		var ligne = messagerie.envoyer(moi.id(), destinataire, corps.texte(), corps.cercleId(), pieces);
+		ecriture.arreter(moi.id(), destinataire);
 		return ResponseEntity.status(HttpStatus.CREATED).body(message(ligne, moi.id(), invitations(List.of(ligne)), Map.of()));
 	}
 
