@@ -87,6 +87,18 @@ describe('le message vocal (#157)', () => {
     expect(fichier.type).toBe('audio/webm')
     expect(piste.stop).toHaveBeenCalled()
     expect(v.find('[data-test="enregistrer-vocal"]').exists()).toBe(true)
+    // Le composeur cache son propre bouton d'envoi pendant l'enregistrement, puis le remontre.
+    expect(v.emitted('enCours')).toEqual([[true], [false]])
+  })
+
+  it("prévient le composeur s'il disparaît en plein enregistrement", async () => {
+    installer()
+    const v = monter()
+    await v.get('[data-test="enregistrer-vocal"]').trigger('click')
+    await vi.waitFor(() => expect(v.find('[data-test="vocal-en-cours"]').exists()).toBe(true))
+    expect(v.emitted('enCours')).toEqual([[true]])
+    v.unmount()
+    expect(v.emitted('enCours')!.at(-1)).toEqual([false])
   })
 
   it("n'envoie rien si on annule, ni un message de moins d'une seconde", async () => {

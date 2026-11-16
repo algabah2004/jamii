@@ -159,6 +159,8 @@ async function ajouter() {
 const texte = ref('')
 const envoi = ref(false)
 const erreur = ref<string | null>(null)
+/** Pendant un message vocal, le bouton d’envoi du composeur laisse la place à celui de l’enregistreur. */
+const vocalEnCours = ref(false)
 const pieces = ref<PieceJointe[]>([])
 const composeur = ref<InstanceType<typeof Composeur> | null>(null)
 const valide = computed(() =>
@@ -652,10 +654,11 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
           :erreur="erreur"
           :max="LONGUEUR_MESSAGE"
           test-envoyer="envoyer-message"
+          :masquer-envoi="vocalEnCours && !edition"
           @envoyer="envoyer"
         >
-          <template #outils>
-            <EnregistreurVocal v-if="!edition" :desactive="envoi" @envoyer="envoyerVocal" @erreur="(code) => (erreur = t(`vocal.erreurs.${code}`))" />
+          <template #action>
+            <EnregistreurVocal v-if="!edition" :desactive="envoi" @envoyer="envoyerVocal" @en-cours="(actif) => (vocalEnCours = actif)" @erreur="(code) => (erreur = t(`vocal.erreurs.${code}`))" />
           </template>
         </Composeur>
       </form>

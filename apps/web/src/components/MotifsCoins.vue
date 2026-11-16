@@ -5,11 +5,12 @@
  * Purement décoratif. La page qui l'accueille porte la classe `avec-motifs` (base.css).
  */
 export type Planche = 'communautes' | 'cercles' | 'demandes' | 'missions' | 'hackathons' | 'vitrine' | 'systalink'
-defineProps<{ planche: Planche }>()
+/** `orange` : une partie des dessins prend l'orange de Jamii (sur la droite et en bas), le reste garde le bleu. */
+defineProps<{ planche: Planche; orange?: boolean }>()
 </script>
 
 <template>
-  <div class="motifs-coins" :class="`motifs-coins--${planche}`" aria-hidden="true" data-test="motifs-coins" />
+  <div class="motifs-coins" :class="[`motifs-coins--${planche}`, { 'motifs-coins--orange': orange }]" aria-hidden="true" data-test="motifs-coins" />
 </template>
 
 <style scoped>
@@ -31,6 +32,14 @@ defineProps<{ planche: Planche }>()
   /* Le motif, gardé seulement là où il y a une tache (l'union des cinq). */
   -webkit-mask-composite: source-in, source-over, source-over, source-over, source-over;
   mask-composite: intersect, add, add, add, add;
+}
+.motifs-coins--orange {
+  --orange: color-mix(in srgb, var(--cantaloupe) 85%, #7a1f00);
+  background:
+    radial-gradient(44rem 34rem at 100% 22rem, var(--orange) 25%, transparent 78%),
+    radial-gradient(40rem 30rem at 40% 100%, var(--orange) 20%, transparent 78%),
+    var(--action-ink);
+  opacity: 0.26;
 }
 .motifs-coins--communautes { --planche: url('../../../../docs/design/motifs/tech-objets.svg'); }
 .motifs-coins--cercles { --planche: url('../../../../docs/design/motifs/page-cercles.svg'); }

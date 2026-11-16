@@ -44,7 +44,15 @@
     },
     "seConnecter": "Se connecter",
     "google": "Continuer avec Google",
-    "googleOu": "Ou reçois un lien de connexion par e-mail :"
+    "googleOu": "Ou reçois un lien de connexion par e-mail :",
+    "bienvenue": "Bienvenue sur Jamii",
+    "accroche": "La plateforme d'échange des développeurs africains, ouverte à toute personne qui a un besoin.",
+    "points": [
+      "Trouve des coéquipiers et crée un cercle.",
+      "Échange dans les communautés.",
+      "Décris ton besoin à Ayo, l'assistant IA."
+    ],
+    "rassurance": "Pas de mot de passe. Rien n'est publié sans ton accord."
   },
   "accueil": {
     "titre": "Trouve ton équipe, construis ton projet, mets-le en ligne.",
