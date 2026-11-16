@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import LienRetour from '../../components/LienRetour.vue'
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
+import { ilYa } from '../vitrine/vitrine'
+import IconeMission from './IconeMission.vue'
+import './missions.css'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute } from 'vue-router'
 import { JAvatar, JBouton, JSquelette } from '../../design-system'
@@ -42,6 +45,11 @@ async function charger() {
     etat.value = mission.value ? 'pret' : 'introuvable'
   } catch {
     etat.value = 'indisponible'
+  }
+  // Arrivé par « Contacter » (depuis la liste ou après la connexion) : on descend aux échanges.
+  if (etat.value === 'pret' && route.hash === '#echanges') {
+    await nextTick()
+    document.getElementById('echanges')?.scrollIntoView?.({ behavior: 'smooth', block: 'start' })
   }
 }
 watch(id, () => void charger(), { immediate: true })
@@ -133,20 +141,24 @@ async function agir(appel: (id: string, version: number) => Promise<Resultat<Mis
     <template v-else-if="mission">
       <header class="page-tete motif motif--reseau">
         <div class="page-tete__texte">
-          <p class="etiquette" :data-statut="mission.statut" data-test="statut">{{ t(`missions.statuts.${mission.statut}`) }}</p>
+          <p class="etiquette" :data-statut="mission.statut" data-test="statut"><span class="etiquette__point" aria-hidden="true"></span>{{ t(`missions.statuts.${mission.statut}`) }}</p>
           <h1 data-test="titre">{{ mission.titre }}</h1>
           <p v-if="mission.ville || mission.aDistance" class="lieu">{{ [mission.ville, mission.aDistance ? t('missions.aDistance') : null].filter(Boolean).join(' · ') }}</p>
+          <p class="auteur" data-test="auteur">
+            <JAvatar :nom="mission.client.nom" :url="mission.client.avatarUrl" :taille="28" />
+            <span>{{ t('missions.par', { nom: mission.client.nom }) }}<template v-if="mission.publieeLe"> · {{ t('missions.publiee', { quand: ilYa(mission.publieeLe, locale) }) }}</template></span>
+          </p>
         </div>
       </header>
 
       <div class="disposition">
         <div class="principal">
-          <article class="carte contenu">
-            <p v-if="mission.statut === 'brouillon'" class="note" data-test="brouillon">{{ t('missions.detail.brouillon') }}</p>
-            <p v-if="mission.moi.role === 'invite'" class="note" data-test="invite">{{ t('missions.detail.invite') }}</p>
+          <article class="carte contenu m-bloc">
+            <p v-if="mission.statut === 'brouillon'" class="note m-note" data-test="brouillon">{{ t('missions.detail.brouillon') }}</p>
+            <p v-if="mission.moi.role === 'invite'" class="note m-note" data-test="invite">{{ t('missions.detail.invite') }}</p>
 
             <section v-if="etapeActuelle >= 0" aria-labelledby="etapes">
-              <h2 id="etapes">{{ t('missions.detail.etapes') }}</h2>
+              <h2 id="etapes" class="m-tete"><IconeMission nom="etapes" /><span>{{ t('missions.detail.etapes') }}</span></h2>
               <ol class="etapes" data-test="etapes">
                 <li
                   v-for="(e, i) in ETAPES"
@@ -161,7 +173,7 @@ async function agir(appel: (id: string, version: number) => Promise<Resultat<Mis
             </section>
 
             <section aria-labelledby="besoin">
-              <h2 id="besoin">{{ t('missions.detail.besoin') }}</h2>
+              <h2 id="besoin" class="m-tete"><IconeMission nom="besoin" /><span>{{ t('missions.detail.besoin') }}</span></h2>
               <!-- Texte brut du client : affiché échappé, avec ses retours à la ligne. -->
               <p class="besoin" data-test="besoin">{{ mission.besoin }}</p>
             </section>
@@ -183,7 +195,7 @@ async function agir(appel: (id: string, version: number) => Promise<Resultat<Mis
           <TiroirEchanges v-if="mission.moi.role === 'client'" :mission="mission" :avec="choisi" @fermer="choisi = null" />
         </div>
 
-        <aside class="carte resume" :aria-label="t('missions.detail.resume')" data-test="resume">
+        <aside class="carte resume m-bloc" :data-ton="etape ? 'orange' : undefined" :aria-label="t('missions.detail.resume')" data-test="resume">
           <div v-if="etape" class="resume__prochaine" data-test="prochaine-etape">
             <p class="texte-discret">{{ t('missions.detail.prochaine') }}</p>
             <p class="resume__etape">{{ etapeTexte }}</p>
@@ -208,9 +220,24 @@ async function agir(appel: (id: string, version: number) => Promise<Resultat<Mis
             data-test="se-connecter"
           >{{ t('missions.detail.seConnecter') }}</RouterLink>
 
-          <a v-if="echanges.visible && mission.moi.role !== 'client'" href="#echanges" class="j-bouton j-bouton--secondaire" data-test="aller-echanges">
-            {{ t('missions.echanges.ecrireClient') }}
-          </a>
+          <!-- Le client, et le moyen de lui écrire : un développeur connecté passe par les échanges de la mission ;
+               un visiteur se connecte d'abord, puis revient directement aux échanges. -->
+          <div v-if="mission.moi.role !== 'client'" class="contact" data-test="contact">
+            <div class="contact__qui">
+              <JAvatar :nom="mission.client.nom" :url="mission.client.avatarUrl" :taille="44" />
+              <p><small>{{ t('missions.detail.publieePar') }}</small><strong>{{ mission.client.nom }}</strong></p>
+            </div>
+            <template v-if="echanges.visible">
+              <p class="texte-discret">{{ t('missions.detail.contacterAide') }}</p>
+              <a href="#echanges" class="j-bouton j-bouton--secondaire" data-test="aller-echanges">{{ t('missions.contacterNom', { nom: mission.client.nom }) }}</a>
+            </template>
+            <RouterLink
+              v-else-if="invitationConnexion"
+              :to="{ name: 'connexion', query: { retour: `${route.path}#echanges` } }"
+              class="j-bouton j-bouton--secondaire"
+              data-test="se-connecter-contacter"
+            >{{ t('missions.detail.seConnecterContacter', { nom: mission.client.nom }) }}</RouterLink>
+          </div>
 
           <dl class="faits">
             <div v-if="dateSouhaitee">
@@ -221,7 +248,7 @@ async function agir(appel: (id: string, version: number) => Promise<Resultat<Mis
               <dt>{{ t('missions.detail.propositionsTitre') }}</dt>
               <dd data-test="nombre-propositions">{{ mission.nombrePropositions }}</dd>
             </div>
-            <div>
+            <div v-if="mission.moi.role === 'client'">
               <dt>{{ t('missions.detail.client') }}</dt>
               <dd class="client"><JAvatar :nom="mission.client.nom" :url="mission.client.avatarUrl" :taille="32" /> {{ mission.client.nom }}</dd>
             </div>
@@ -274,6 +301,15 @@ async function agir(appel: (id: string, version: number) => Promise<Resultat<Mis
 .retour { margin: 0; font-size: var(--type-body-sm-size); }
 .message { margin: 0; padding: var(--space-6); }
 .lieu { margin: 0; font-size: 1.125rem; }
+.auteur { margin: var(--space-3) 0 0; display: flex; gap: var(--space-2); align-items: center; font-size: var(--type-body-sm-size); color: var(--ink-muted); }
+.contact {
+  display: grid; gap: var(--space-3); padding: var(--space-4); border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--action) 8%, var(--surface-raised)); border: 1px solid color-mix(in srgb, var(--action) 25%, transparent);
+}
+.contact__qui { display: flex; gap: var(--space-3); align-items: center; }
+.contact__qui p { display: grid; line-height: 1.25; min-width: 0; }
+.contact__qui small { font-size: .75rem; color: var(--ink-muted); }
+.contact__qui strong { font-size: 1.0625rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .disposition { display: grid; gap: var(--space-6); grid-template-columns: minmax(0, 1fr); align-items: start; }
 .principal { display: grid; gap: var(--space-6); min-width: 0; }
@@ -283,42 +319,44 @@ async function agir(appel: (id: string, version: number) => Promise<Resultat<Mis
   .resume { position: sticky; top: 6rem; max-block-size: calc(100vh - 7rem); overflow-y: auto; overscroll-behavior: contain; }
 }
 
-.contenu { display: grid; gap: var(--space-8); padding: var(--space-8); }
-@media (max-width: 600px) { .contenu { padding: var(--space-4); } }
-.contenu h2 { margin: 0 0 var(--space-3); font-size: 1.0625rem; }
-.besoin { margin: 0; white-space: pre-line; line-height: 1.6; }
+.contenu { display: grid; gap: var(--space-8); }
+.contenu h2 { margin: 0 0 var(--space-4); font-size: 1.125rem; }
+.besoin { margin: 0; white-space: pre-line; line-height: 1.7; font-size: 1.0625rem; }
 
 /* Où en est la mission : quatre étapes, l'actuelle mise en avant. */
 .etapes { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-2); }
 @media (max-width: 600px) { .etapes { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-.etapes li { display: grid; gap: var(--space-2); justify-items: start; padding-block-start: var(--space-3); border-block-start: 3px solid var(--line-strong); font-size: var(--type-body-sm-size); font-weight: 600; }
+.etapes li { display: grid; gap: var(--space-2); justify-items: start; padding: var(--space-3); border-radius: 12px; border-block-start: 4px solid var(--line-strong); background: var(--surface-raised); font-size: var(--type-body-sm-size); font-weight: 600; }
+.etapes li[data-etat='actuelle'] { background: color-mix(in srgb, var(--action) 12%, var(--surface-raised)); }
 .etapes li[data-etat='passee'], .etapes li[data-etat='actuelle'] { border-color: var(--action); }
 .etapes li[data-etat='actuelle'] { font-weight: 800; }
 .etapes__point { display: grid; place-items: center; inline-size: 1.5rem; block-size: 1.5rem; border-radius: 50%; border: 2px solid var(--line-strong); font-size: 0.75rem; font-weight: 700; }
 .etapes li[data-etat='passee'] .etapes__point, .etapes li[data-etat='actuelle'] .etapes__point { border-color: var(--action); background: var(--action); color: var(--on-action, #fff); }
 
 .competences { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-2); }
-.competences li { padding: 2px var(--space-3); border-radius: var(--radius-pill); border: 1px solid var(--line-strong); font-size: var(--type-body-sm-size); font-weight: 600; }
+.competences li { padding: 4px var(--space-3); border-radius: var(--radius-pill); font-size: var(--type-body-sm-size); font-weight: 600; background: color-mix(in srgb, var(--action) 10%, var(--surface-raised)); border: 1px solid color-mix(in srgb, var(--action) 25%, transparent); }
 
-.resume { display: grid; gap: var(--space-4); padding: var(--space-6); }
+.resume { display: grid; gap: var(--space-4); }
 .resume p { margin: 0; }
 .resume__prochaine { display: grid; gap: var(--space-2); padding-block-end: var(--space-4); border-block-end: 1px solid var(--line-strong); }
 .resume__etape { font-weight: 800; font-size: 1.125rem; }
 .resume__budget { display: grid; gap: var(--space-1); padding-block-end: var(--space-4); border-block-end: 1px solid var(--line-strong); }
-.resume__montant { font-weight: 800; font-size: 1.5rem; font-variant-numeric: tabular-nums; }
+.resume__montant { font-weight: 800; font-size: 1.875rem; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
 .resume .j-bouton { justify-content: center; text-align: center; }
 .faits { margin: 0; display: grid; gap: var(--space-3); }
 .faits dt { font-size: var(--type-body-sm-size); color: var(--ink-muted); }
 .faits dd { margin: 0; font-weight: 600; }
 .client { display: flex; gap: var(--space-2); align-items: center; }
 .etiquette {
-  display: inline-block; margin: 0 0 var(--space-2); padding: 2px var(--space-3); border-radius: var(--radius-pill);
+  display: inline-flex; gap: 6px; align-items: center; margin: 0 0 var(--space-2); padding: 2px var(--space-3); border-radius: var(--radius-pill);
   border: 1px solid var(--line-strong); font-size: var(--type-body-sm-size); font-weight: 700;
 }
-.etiquette[data-statut='publiee'] { border-color: var(--action); }
+.etiquette[data-statut='publiee'] { border-color: var(--action); background: color-mix(in srgb, var(--action) 12%, transparent); }
+.etiquette__point { inline-size: .5rem; block-size: .5rem; border-radius: 50%; background: var(--line-strong); }
+.etiquette[data-statut='publiee'] .etiquette__point { background: var(--action); }
+.etiquette[data-statut='attribuee'] .etiquette__point, .etiquette[data-statut='en_cours'] .etiquette__point { background: var(--cantaloupe); }
 .actions { display: grid; gap: var(--space-4); padding-block-start: var(--space-4); border-block-start: 1px solid var(--line-strong); }
 .actions p { margin: var(--space-2) 0 0; }
-.note { margin: 0; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); border-inline-start: 3px solid var(--cantaloupe); background: color-mix(in srgb, var(--surface) 60%, transparent); font-weight: 600; }
 .erreur { margin: 0; color: var(--danger); font-weight: 600; }
 #proposer, #propositions-titre, #envoyer-devis, #echanges { scroll-margin-block-start: 6rem; }
 .statut-candidat { margin: 0; display: grid; gap: var(--space-2); padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); border-inline-start: 3px solid var(--line-strong); font-weight: 600; }

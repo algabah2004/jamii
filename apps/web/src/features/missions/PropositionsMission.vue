@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import IconeMission from './IconeMission.vue'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { JAvatar, JBouton, JSquelette } from '../../design-system'
@@ -20,6 +21,8 @@ const etat = ref<'chargement' | 'pret' | 'indisponible'>('chargement')
 const envoi = ref<string | null>(null)
 const tri = ref<'recentes' | 'prix' | 'delai'>('recentes')
 const TRIS = ['recentes', 'prix', 'delai'] as const
+/** La couleur de la pastille d'état : bleu retenue, vert acceptée, neutre sinon. */
+const TONS: Record<Proposition['statut'], string | undefined> = { envoyee: undefined, retenue: 'bleu', acceptee: 'vert', non_retenue: undefined, retiree: undefined }
 /** Les messages non lus de chaque développeur, pour le compteur du bouton « Écrire » (client seulement). */
 const nonLus = ref<Record<string, number>>({})
 async function chargerNonLus() {
@@ -94,8 +97,11 @@ async function agir(p: Proposition, retenir: boolean) {
 </script>
 
 <template>
-  <section class="carte propositions" aria-labelledby="propositions-titre" data-test="propositions">
-    <h2 id="propositions-titre">{{ estClient ? t('missions.proposition.titre') : t('missions.proposition.titreMienne') }}</h2>
+  <section class="carte propositions m-bloc" aria-labelledby="propositions-titre" data-test="propositions">
+    <header class="m-tete">
+      <IconeMission nom="propositions" />
+      <div><h2 id="propositions-titre">{{ estClient ? t('missions.proposition.titre') : t('missions.proposition.titreMienne') }}</h2><p v-if="etat === 'pret' && propositions.length && estClient">{{ t('missions.propositions', { n: propositions.length }, propositions.length) }}</p></div>
+    </header>
     <JSquelette v-if="etat === 'chargement'" :nombre="2" />
     <p v-else-if="etat === 'indisponible'" role="alert" class="texte-discret">{{ t('missions.proposition.indisponible') }}</p>
     <p v-else-if="!propositions.length" class="texte-discret" data-test="aucune-proposition">{{ t('missions.proposition.aucune') }}</p>
@@ -108,17 +114,17 @@ async function agir(p: Proposition, retenir: boolean) {
       <li v-for="p in triees" :key="p.id" :data-statut="p.statut" data-test="proposition">
         <header class="tete">
           <span class="personne">
-            <JAvatar :nom="p.developpeur.nom" :url="p.developpeur.avatarUrl" :taille="28" />
+            <JAvatar :nom="p.developpeur.nom" :url="p.developpeur.avatarUrl" :taille="40" />
             <RouterLink v-if="estClient" :to="`/p/${p.developpeur.id}`" data-test="profil-developpeur">{{ p.developpeur.nom }}</RouterLink>
             <template v-else>{{ p.developpeur.nom }}</template>
           </span>
-          <span class="etiquette" data-test="statut-proposition">{{ t(`missions.proposition.statuts.${p.statut}`) }}</span>
+          <span class="etiquette m-pastille" :data-ton="TONS[p.statut]" data-test="statut-proposition">{{ t(`missions.proposition.statuts.${p.statut}`) }}</span>
         </header>
         <p class="faits">
-          <strong>{{ formaterMontant(p.prix, locale) }}</strong>
-          <span v-if="auDessus(p)" class="au-dessus" data-test="au-dessus">{{ t('missions.proposition.auDessus') }}</span> ·
-          {{ t('missions.proposition.delai', { n: p.delaiJours }, p.delaiJours) }} ·
-          <span class="texte-discret">{{ t('missions.proposition.envoyeeLe', { date: formaterDate(p.envoyeeLe, locale) }) }}</span>
+          <strong class="m-montant prix">{{ formaterMontant(p.prix, locale) }}</strong>
+          <span v-if="auDessus(p)" class="au-dessus m-pastille" data-ton="orange" data-test="au-dessus">{{ t('missions.proposition.auDessus') }}</span>
+          <span class="m-pastille delai">{{ t('missions.proposition.delai', { n: p.delaiJours }, p.delaiJours) }}</span>
+          <span class="texte-discret date">{{ t('missions.proposition.envoyeeLe', { date: formaterDate(p.envoyeeLe, locale) }) }}</span>
         </p>
         <!-- Texte libre du développeur : affiché échappé, avec ses retours à la ligne. -->
         <p class="message">{{ p.message }}</p>
@@ -155,17 +161,27 @@ async function agir(p: Proposition, retenir: boolean) {
 </template>
 
 <style scoped>
-.propositions { display: grid; gap: var(--space-4); padding: var(--space-8); }
-.propositions h2 { margin: 0; font-size: 1.25rem; }
+.propositions { display: grid; gap: var(--space-5, 20px); }
 .liste { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--space-4); }
-.liste > li { display: grid; gap: var(--space-2); padding: var(--space-4); border: 1px solid var(--line-strong); border-radius: var(--radius-md); }
-.liste > li[data-statut='retenue'] { border-color: var(--action); }
+.liste > li {
+  display: grid; gap: var(--space-3); padding: var(--space-5, 20px); border-radius: 16px;
+  border: 1px solid var(--line); background: var(--surface);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+.liste > li:hover { border-color: color-mix(in srgb, var(--action) 45%, var(--line)); box-shadow: 0 10px 24px color-mix(in srgb, var(--action) 10%, transparent); }
+.liste > li[data-statut='retenue'], .liste > li[data-statut='acceptee'] {
+  border-color: var(--action); background: color-mix(in srgb, var(--action) 6%, var(--surface));
+}
+@media (prefers-reduced-motion: reduce) { .liste > li { transition: none; } }
 .liste > li[data-statut='retiree'], .liste > li[data-statut='non_retenue'] { opacity: 0.75; }
 .tete { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; justify-content: space-between; }
-.personne { display: flex; gap: var(--space-2); align-items: center; font-weight: 600; }
+.personne { display: flex; gap: var(--space-3); align-items: center; font-weight: 700; font-size: 1.0625rem; }
+.faits { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); align-items: center; }
+.prix { font-size: 1.5rem; margin-inline-end: var(--space-2); }
+.date { margin-inline-start: auto; font-size: var(--type-body-sm-size); }
 .etiquette { margin: 0; }
 .liste p { margin: 0; }
-.message { white-space: pre-line; }
+.message { white-space: pre-line; padding: var(--space-3) var(--space-4); border-radius: 12px; background: var(--surface-raised); line-height: 1.55; }
 .non-lus {
   min-inline-size: 1.25rem; padding: 0 6px; border-radius: var(--radius-pill); background: var(--cantaloupe); color: var(--midnight);
   font-size: 0.75rem; font-weight: 800; text-align: center;
@@ -174,7 +190,6 @@ async function agir(p: Proposition, retenir: boolean) {
 .tri { min-height: 36px; padding: 0 var(--space-3); border: 1px solid var(--line-strong); border-radius: var(--radius-pill); background: var(--surface); font-weight: 600; cursor: pointer; }
 .tri[aria-pressed='true'] { background: var(--action); border-color: var(--action); color: var(--on-action); }
 .tri:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-.au-dessus { margin-inline-start: var(--space-2); padding: 0 var(--space-2); border-radius: var(--radius-pill); border: 1px solid var(--cantaloupe); font-size: var(--type-body-sm-size); font-weight: 700; }
 .actions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
 .texte-discret { margin: 0; }
 .erreur { margin: 0; color: var(--danger); font-weight: 600; }

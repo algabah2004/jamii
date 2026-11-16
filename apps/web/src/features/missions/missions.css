@@ -1,0 +1,76 @@
+/*
+ * Le langage visuel commun des écrans d'une mission (annonce, propositions, devis, suivi, échanges).
+ * Chargé par MissionPage. Classes préfixées « m- » pour ne rien heurter ailleurs.
+ *
+ * Un bloc a un ton (`data-ton`) : bleu pour ce qui avance, orange pour ce qui attend quelqu'un, neutre sinon.
+ * Le ton colore la lueur du coin, la bordure et la pastille d'icône de l'en-tête.
+ */
+.m-bloc, .carte.m-bloc {
+  --ton: var(--action);
+  --ton-encre: var(--action-ink);
+  position: relative;
+  overflow: hidden;
+  padding: clamp(20px, 3vw, 32px);
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--ton) 24%, var(--line));
+  background:
+    radial-gradient(90% 55% at 100% 0%, color-mix(in srgb, var(--ton) 10%, transparent), transparent 65%),
+    var(--surface);
+}
+.m-bloc[data-ton='orange'] {
+  --ton: var(--cantaloupe);
+  --ton-encre: color-mix(in srgb, var(--cantaloupe) 70%, var(--ink));
+}
+.m-bloc[data-ton='neutre'] {
+  --ton: var(--line-strong);
+  --ton-encre: var(--ink-muted);
+}
+
+/* L'en-tête : une pastille d'icône, le titre et une ligne d'aide. */
+.m-tete { display: flex; gap: 14px; align-items: center; min-width: 0; }
+.m-tete > div { display: grid; gap: 2px; min-width: 0; }
+.m-tete h2, .m-tete h3 { margin: 0; font-size: 1.25rem; line-height: 1.25; letter-spacing: -0.015em; }
+.m-tete p { margin: 0; font-size: var(--type-body-sm-size); color: var(--ink-muted); }
+.m-icone {
+  flex: none; display: grid; place-items: center; inline-size: 2.75rem; block-size: 2.75rem; border-radius: 14px;
+  background: color-mix(in srgb, var(--ton) 16%, transparent); color: var(--ton-encre);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ton) 30%, transparent);
+}
+.m-icone svg { inline-size: 1.375rem; block-size: 1.375rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Une note qui attend quelqu'un : bordure orange, fond teinté. */
+.m-note {
+  margin: 0; padding: var(--space-3) var(--space-4); border-radius: 12px; font-weight: 600;
+  border-inline-start: 4px solid var(--cantaloupe);
+  background: color-mix(in srgb, var(--cantaloupe) 10%, var(--surface));
+}
+
+/* Des chiffres clés en tuiles. */
+.m-tuiles { margin: 0; display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); }
+.m-tuiles > div {
+  display: grid; gap: 4px; align-content: start; padding: 12px 14px; border-radius: 14px;
+  background: color-mix(in srgb, var(--ton, var(--action)) 6%, var(--surface-raised));
+  border: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+}
+.m-tuiles dt { font-size: .75rem; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; color: var(--ink-muted); }
+.m-tuiles dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.m-tuiles dd.m-fort { font-size: 1.25rem; font-weight: 800; }
+
+/* Une pastille d'état. */
+.m-pastille {
+  display: inline-flex; gap: 6px; align-items: center; margin: 0; padding: 3px 10px; border-radius: var(--radius-pill);
+  font-size: var(--type-body-sm-size); font-weight: 700; white-space: nowrap;
+  background: var(--surface-raised); border: 1px solid var(--line-strong);
+}
+.m-pastille[data-ton='bleu'] { background: color-mix(in srgb, var(--action) 14%, transparent); border-color: color-mix(in srgb, var(--action) 50%, transparent); }
+.m-pastille[data-ton='orange'] { background: color-mix(in srgb, var(--cantaloupe) 16%, transparent); border-color: color-mix(in srgb, var(--cantaloupe) 55%, transparent); }
+.m-pastille[data-ton='vert'] { background: color-mix(in srgb, var(--succes, #1f9d62) 16%, transparent); border-color: color-mix(in srgb, var(--succes, #1f9d62) 55%, transparent); }
+.m-pastille[data-ton='rouge'] { color: var(--danger); border-color: var(--danger); background: color-mix(in srgb, var(--danger) 8%, transparent); }
+
+/* Un montant mis en avant. */
+.m-montant { font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+
+/* Une barre de progression. */
+.m-progression { block-size: 8px; border-radius: var(--radius-pill); background: var(--surface-raised); overflow: hidden; }
+.m-progression > span { display: block; block-size: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--action), color-mix(in srgb, var(--action) 55%, var(--cantaloupe))); transition: inline-size 400ms ease; }
+@media (prefers-reduced-motion: reduce) { .m-progression > span { transition: none; } }

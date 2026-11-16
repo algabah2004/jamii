@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import IconeMission from './IconeMission.vue'
 import { computed, ref, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { JBouton, JChamp } from '../../design-system'
@@ -73,9 +74,11 @@ async function envoyer() {
 </script>
 
 <template>
-  <form class="carte proposer" aria-labelledby="proposer-titre" data-test="form-proposer" @submit.prevent="envoyer">
-    <h2 id="proposer-titre">{{ t('missions.proposition.proposer.titre') }}</h2>
-    <p class="texte-discret">{{ t('missions.proposition.proposer.intro') }}</p>
+  <form class="carte proposer m-bloc" aria-labelledby="proposer-titre" data-test="form-proposer" @submit.prevent="envoyer">
+    <header class="m-tete">
+      <IconeMission nom="proposer" />
+      <div><h2 id="proposer-titre">{{ t('missions.proposition.proposer.titre') }}</h2><p>{{ t('missions.proposition.proposer.intro') }}</p></div>
+    </header>
     <JChamp
       v-model="message"
       :libelle="t('missions.proposition.proposer.message')"
@@ -84,7 +87,7 @@ async function envoyer() {
       requis
       :maxlength="LIMITES_PROPOSITION.messageMax"
     />
-    <div class="ligne">
+    <div class="ligne offre">
       <JChamp
         v-model="prix"
         :libelle="t('missions.proposition.proposer.prix')"
@@ -117,8 +120,9 @@ async function envoyer() {
 </template>
 
 <style scoped>
-.proposer { display: grid; gap: var(--space-4); padding: var(--space-8); }
-.proposer h2 { margin: 0; font-size: 1.25rem; }
+.proposer { display: grid; gap: var(--space-5, 20px); }
+/* Le prix et le délai : ce que le client compare d'abord, dans un encart teinté. */
+.offre { padding: var(--space-4); border-radius: 14px; background: color-mix(in srgb, var(--action) 6%, var(--surface-raised)); }
 .texte-discret { margin: 0; }
 .ligne { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); align-items: start; }
 .devise { display: grid; gap: var(--space-1); }
