@@ -487,7 +487,37 @@
         "annee": "Year",
         "retirer": "Remove this project",
         "ajouter": "Add a project"
-      }
+      },
+      "crayon": "Edit: {bloc}",
+      "blocs": {
+        "identite": "Title and introduction",
+        "lieu": "Place and availability",
+        "liens": "Links",
+        "langues": "Languages",
+        "competences": "Skills",
+        "realisations": "Projects done elsewhere"
+      },
+      "blocEnCours": "You are editing: {bloc}",
+      "autresBlocs": "The other blocks do not change",
+      "enregistrerBloc": "Save this block",
+      "rienPublie": "Nothing is published until you save.",
+      "titreVide": "Add a title: it is the first thing people read under your name.",
+      "bioVide": "Say where you come from and what you like to build.",
+      "languesVide": "Add the languages you speak.",
+      "liensVide": "Add your LinkedIn or your website.",
+      "titreAide": "It is the first thing people read under your name.",
+      "bioAide": "Say where you come from and what you like to build.",
+      "compteur": "{n} of {max}",
+      "incompletes": "{n} blocks left to fill | {n} block left to fill | {n} blocks left to fill",
+      "ajouter": {
+        "identite": "+ Add your title and introduction",
+        "lieu": "+ Add your country and city",
+        "liens": "+ Add your links",
+        "langues": "+ Add your languages",
+        "realisations": "+ Add a project done elsewhere"
+      },
+      "competencesVide": "No skills yet: the ones from your GitHub repositories are added by themselves, and you can add your own.",
+      "competencesPointille": "A skill you declare is shown dashed until a repository or a project proves it."
     },
     "langages": {
       "titre": "Programming languages",
@@ -504,7 +534,9 @@
         "github": "Inferred from GitHub repositories",
         "declaree": "Added by the person",
         "ia": "Suggested by AI, confirmed by the person"
-      }
+      },
+      "preuvesNombre": "no repository | backed by {n} repository | backed by {n} repositories",
+      "sansPreuve": "No proof yet"
     },
     "projets": {
       "titre": "Projects on Jamii",
@@ -553,7 +585,8 @@
       }
     },
     "liens": {
-      "site": "Website"
+      "site": "Website",
+      "titre": "Elsewhere"
     },
     "langues": {
       "parle": "Speaks:",
@@ -579,10 +612,9 @@
       "copier": "Copy profile link",
       "copie": "Link copied",
       "competences": "Skills",
-      "projetsVerifies": "no verified project | {n} verified project on Jamii | {n} verified projects on Jamii",
-      "realisations": "no work | {n} project | {n} projects",
       "scanner": "See my profile",
-      "message": "My profile on Jamii: {lien}"
+      "message": "My profile on Jamii: {lien}",
+      "aide": "It shows when you paste your profile link."
     },
     "public": {
       "introuvable": "This profile is not public",
@@ -598,7 +630,7 @@
       "ia": "Summary suggested by AI from public repositories"
     },
     "avis": {
-      "titre": "Recommendations",
+      "titre": "What teammates say",
       "projet": "Worked together on {projet}"
     },
     "experience": {
@@ -611,6 +643,23 @@
       "sousTitre": "On GitHub, {'@'}{login}",
       "misAJour": "{nom} updated this repository · {quand}",
       "depot": "{nom}’s repository"
+    },
+    "anneau": {
+      "avec": "Proof ring: {liste}",
+      "sans": "Proof ring: no proof yet"
+    },
+    "preuves": {
+      "plein": "Solid line: verified by Jamii",
+      "pointille": "Dashed line: declared by the person"
+    },
+    "navigation": "On this profile",
+    "barre": {
+      "titre": "My profile",
+      "visibilite": "Profile visibility",
+      "publie": "Published",
+      "prive": "Private",
+      "publieAide": "Anyone can see your profile.",
+      "priveAide": "Only you can see your profile."
     }
   },
   "etat": {
