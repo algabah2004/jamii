@@ -1291,7 +1291,12 @@
       "reagir": "Ask Ayo a question, or tell him what doesn't suit you…",
       "limite": "This conversation is already long. Start a new conversation to go on.",
       "supprimer": "Delete the conversation",
-      "confirmerSuppression": "Delete this conversation? Your need and all the messages will be erased. A mission already published stays online.",
+      "suppression": {
+        "titre": "Delete this conversation?",
+        "texte": "Your need and every message exchanged with Ayo will be erased. A mission already published stays online.",
+        "annuler": "Cancel",
+        "confirmer": "Delete"
+      },
       "messages": "{n} message | {n} messages",
       "reponse": "Ayo answers you"
     }

@@ -1291,7 +1291,12 @@
       "reagir": "Pose une question à Ayo, ou dis-lui ce qui ne te va pas…",
       "limite": "Cette discussion est déjà longue. Ouvre une nouvelle discussion pour continuer.",
       "supprimer": "Supprimer la discussion",
-      "confirmerSuppression": "Supprimer cette discussion ? Ton besoin et tous les messages seront effacés. Une mission déjà publiée reste en ligne.",
+      "suppression": {
+        "titre": "Supprimer cette discussion ?",
+        "texte": "Ton besoin et tous les messages échangés avec Ayo seront effacés. Une mission déjà publiée reste en ligne.",
+        "annuler": "Annuler",
+        "confirmer": "Supprimer"
+      },
       "messages": "{n} message | {n} messages",
       "reponse": "Ayo te répond"
     }
