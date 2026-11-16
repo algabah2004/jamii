@@ -44,7 +44,15 @@
     },
     "seConnecter": "Sign in",
     "google": "Continue with Google",
-    "googleOu": "Or get a sign-in link by email:"
+    "googleOu": "Or get a sign-in link by email:",
+    "bienvenue": "Welcome to Jamii",
+    "accroche": "The exchange platform for African developers, open to anyone with a need.",
+    "points": [
+      "Find teammates and start a circle.",
+      "Talk in the communities.",
+      "Describe your need to Ayo, the AI assistant."
+    ],
+    "rassurance": "No password. Nothing is published without your consent."
   },
   "accueil": {
     "titre": "Find your team, build your project, put it online.",
