@@ -5,6 +5,8 @@ import { createMemoryHistory, createRouter, RouterView } from 'vue-router'
 import { i18n } from '../i18n'
 import { routes } from '../router'
 import { chargerSession } from '../session'
+import { http, HttpResponse } from 'msw'
+import { serveur } from '../test-setup'
 import { deposerRendu, modifierHackathon, reinitialiserHackathons, type Hackathon, type Rendu } from '../mocks/hackathons'
 import { MISSION_EN_COURS, reinitialiserMissions } from '../mocks/missions'
 
@@ -144,5 +146,12 @@ describe('AXE, vitrine des projets', () => {
 describe('AXE, décrire son besoin à Ayo', () => {
   it('la conversation, ses exemples et la zone de saisie', async () => {
     expect(await violations('/demandes', '[data-test="conversation-demande"]')).toEqual([])
+  })
+})
+
+describe('AXE, se connecter', () => {
+  it('la présentation de Jamii et les deux façons de se connecter', async () => {
+    serveur.use(http.get('/api/me', () => HttpResponse.json({ code: 'non_connecte' }, { status: 401 })))
+    expect(await violations('/connexion', '[data-test="formulaire-email"]')).toEqual([])
   })
 })
