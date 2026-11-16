@@ -5,6 +5,7 @@ import { RouterLink, useRoute } from 'vue-router'
 import { JAvatar, JBouton, JSquelette } from '../../design-system'
 import ConversationPage from './ConversationPage.vue'
 import { useActivite } from './activite'
+import { usePresence } from './presence'
 import { lireContacts, lireConversations, quand, type Contact, type Conversation } from './reseau'
 
 const { t, locale } = useI18n()
@@ -43,6 +44,8 @@ async function nouveauxContacts() {
   finally { chargeContacts.value = false }
 }
 void charger()
+// Un point vert sur l'avatar des personnes en ligne (#157).
+const presences = usePresence(() => conversations.value.map((c) => c.personne.id))
 watch(() => activite.value?.messagesNonLus, () => void actualiser())
 const minuterie = setInterval(() => {
   if (document.visibilityState === 'visible') void actualiser()
@@ -91,7 +94,11 @@ const apercu = (c: Conversation) =>
         <ul v-else-if="visibles.length" class="conversations" data-test="conversations">
           <li v-for="c in visibles" :key="c.personne.id">
             <RouterLink :to="`/messages/${c.personne.id}`" class="conversation" :class="{ 'conversation--active': selection === c.personne.id, 'conversation--nouvelle': c.nonLus }" :aria-current="selection === c.personne.id ? 'page' : undefined">
-              <JAvatar :nom="c.personne.nom" :url="c.personne.avatarUrl" :taille="48" />
+              <span class="avatar-presence">
+                <JAvatar :nom="c.personne.nom" :url="c.personne.avatarUrl" :taille="48" />
+                <span v-if="presences.get(c.personne.id)?.enLigne" class="point-en-ligne" data-test="en-ligne" :title="t('presence.enLigne')" />
+              </span>
+              <span class="visuellement-cache" v-if="presences.get(c.personne.id)?.enLigne">{{ t('presence.enLigne') }}</span>
               <span class="conversation__texte"><span class="conversation__haut"><strong>{{ c.personne.nom }}</strong><time :datetime="c.dernierMessage.envoyeLe">{{ quand(c.dernierMessage.envoyeLe, locale) }}</time></span><span class="apercu">{{ apercu(c) }}</span><span v-if="c.dernierMessage.invitation" class="etiquette">{{ t('reseau.messages.invitationCourte') }}</span></span>
               <span v-if="c.nonLus" class="pastille" :aria-label="t('reseau.messages.nonLus', { n: c.nonLus }, c.nonLus)">{{ c.nonLus }}</span>
             </RouterLink>
@@ -119,6 +126,8 @@ const apercu = (c: Conversation) =>
 
 <style scoped>
 .messagerie { display: grid; grid-template-columns: minmax(320px, 380px) minmax(0, 1fr); flex: 1; min-height: 0; gap: 14px; background: transparent; }
+.avatar-presence { position: relative; display: inline-flex; flex: none; }
+.point-en-ligne { position: absolute; right: 1px; bottom: 1px; width: 13px; height: 13px; border-radius: 50%; background: var(--en-ligne); box-shadow: 0 0 0 2.5px var(--surface); }
 .boite { min-width: 0; min-height: 0; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 26px; background: var(--surface); overflow: hidden; }
 .boite__tete { padding: 28px 24px 20px; }
 .surtitre { font-size: 0.8125rem; letter-spacing: 0.13em; text-transform: uppercase; font-weight: 700; color: var(--ink-muted); }
