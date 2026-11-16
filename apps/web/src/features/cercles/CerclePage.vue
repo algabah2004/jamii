@@ -348,7 +348,6 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
 .cercle-page { display: grid; gap: var(--space-6); width: 100%; max-width: 96rem; margin-inline: auto; margin-top: calc(-1 * var(--space-4)); }
 /* Même cadre pour toutes les sous-pages (rien ne bouge en passant de l'une à l'autre) ; dans le salon, la discussion
  * prend toute la hauteur. */
-.cercle-page--salon .espace--outils { align-items: stretch; }
 /* Un en-tête compact : le retour, puis le nom du cercle et ses infos sur une ligne. La place va aux outils. */
 .cercle-tete { display: grid; gap: var(--space-2); padding-top: var(--space-2); }
 .cercle-tete__ligne { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1) var(--space-4); }
@@ -365,7 +364,7 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
 .identite__retour:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
 .identite__nom { margin: 0; font-size: 1.25rem; line-height: 1.2; letter-spacing: -0.3px; overflow-wrap: anywhere; }
 .identite__infos { margin: 0; color: var(--ink-muted); font-size: var(--type-body-sm-size); }
-.barre-laterale { position: sticky; top: calc(var(--space-12) + var(--space-8)); display: grid; gap: var(--space-6); }
+.barre-laterale { align-content: start; position: sticky; top: calc(var(--space-12) + var(--space-8)); display: grid; gap: var(--space-6); }
 .outils-nav { display: grid; gap: 2px; }
 .outil-lien {
   display: flex; align-items: center; gap: var(--space-3); min-height: 42px; padding: 0 var(--space-3); border-radius: var(--radius-md);
