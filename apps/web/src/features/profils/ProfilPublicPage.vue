@@ -7,6 +7,7 @@ import { JAvatar, JBouton, JSquelette } from '../../design-system'
 import { useSession } from '../../session'
 import ActionsProfil from '../reseau/ActionsProfil.vue'
 import FicheProfil from './FicheProfil.vue'
+import IconeProfil from './IconeProfil.vue'
 import type { Profil } from './profils'
 
 /**
@@ -65,12 +66,13 @@ watch(() => String(route.params.id), (id) => void charger(id), { immediate: true
       <p class="texte-discret">{{ t('profil.public.introuvableAide') }}</p>
       <RouterLink to="/">{{ t('profil.public.decouvrir') }}</RouterLink>
     </div>
-    <div v-else-if="etat === 'non-publie' && personne" class="carte non-publie" data-test="non-publie">
-      <JAvatar :nom="personne.nom" :url="personne.avatarUrl" :taille="104" />
+    <div v-else-if="etat === 'non-publie' && personne" class="non-publie" data-test="non-publie">
+      <div class="non-publie__fond" aria-hidden="true" />
+      <JAvatar :nom="personne.nom" :url="personne.avatarUrl" :taille="112" class="non-publie__photo" />
       <div class="non-publie__texte">
         <h1>{{ personne.nom }}</h1>
-        <p v-if="personne.ville" class="texte-discret">{{ personne.ville }}</p>
-        <p class="texte-discret">{{ t('profil.public.nonPublie', { nom: prenom(personne.nom) }) }}</p>
+        <p v-if="personne.ville" class="non-publie__ville"><IconeProfil nom="lieu" />{{ personne.ville }}</p>
+        <p class="non-publie__note"><IconeProfil nom="cadenas" :taille="16" />{{ t('profil.public.nonPublie', { nom: prenom(personne.nom) }) }}</p>
         <ActionsProfil v-if="autre" :personne-id="personne.id" :prenom="prenom(personne.nom)" />
       </div>
     </div>
@@ -84,22 +86,32 @@ watch(() => String(route.params.id), (id) => void charger(id), { immediate: true
           <ActionsProfil :personne-id="profil.utilisateurId" :prenom="prenom(profil.nom)" />
         </template>
       </FicheProfil>
-      <aside v-if="!moi" class="carte invitation" data-test="invitation">
-        <p><strong>{{ t('profil.public.invitationTitre') }}</strong> {{ t('profil.public.invitationTexte') }}</p>
-        <RouterLink to="/connexion" class="invitation__lien">{{ t('profil.public.rejoindre') }}</RouterLink>
+      <aside v-if="!moi" class="invitation" data-test="invitation">
+        <div>
+          <p class="invitation__titre">{{ t('profil.public.invitationTitre') }}</p>
+          <p class="invitation__texte">{{ t('profil.public.invitationTexte') }}</p>
+        </div>
+        <RouterLink to="/connexion" class="invitation__lien">{{ t('profil.public.rejoindre') }} <IconeProfil nom="fleche" :taille="16" /></RouterLink>
       </aside>
     </template>
   </section>
 </template>
 
 <style scoped>
-.profil-public { display: grid; gap: var(--space-6); }
+.profil-public { display: grid; gap: 24px; }
 .etat-vide { display: grid; gap: var(--space-3); justify-items: start; }
 .etat-vide h1, .etat-vide p { margin: 0; }
-.non-publie { display: flex; flex-wrap: wrap; gap: var(--space-6); align-items: center; }
-.non-publie__texte { display: grid; gap: var(--space-2); justify-items: start; min-width: 0; }
+.non-publie { position: relative; isolation: isolate; overflow: hidden; display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-end; padding: 80px clamp(20px, 4vw, 44px) 32px; border: 1px solid var(--line); border-radius: 28px; background: var(--surface); box-shadow: var(--ombre-carte); }
+.non-publie__fond { position: absolute; inset: 0 0 auto; height: 130px; z-index: -1; background: radial-gradient(ellipse 60% 120% at 15% 0%, color-mix(in srgb, var(--action) 30%, transparent), transparent 70%), linear-gradient(180deg, var(--action-soft), var(--surface)); }
+.non-publie__photo { border-radius: 50%; box-shadow: 0 0 0 5px var(--surface); }
+.non-publie__texte { display: grid; gap: 10px; justify-items: start; min-width: 0; flex: 1 1 18rem; }
 .non-publie__texte h1, .non-publie__texte p { margin: 0; }
-.invitation { display: flex; flex-wrap: wrap; gap: var(--space-4); align-items: center; justify-content: space-between; }
-.invitation p { margin: 0; max-width: 40rem; }
-.invitation__lien { font-weight: 700; }
+.non-publie__texte h1 { font-size: clamp(2rem, 4vw, 3rem); letter-spacing: -.04em; line-height: 1.05; }
+.non-publie__ville { display: flex; align-items: center; gap: 6px; font-weight: 600; }
+.non-publie__note { display: flex; align-items: center; gap: 8px; color: var(--ink-muted); }
+.invitation { display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: center; justify-content: space-between; padding: 24px clamp(20px, 3vw, 32px); border-radius: 24px; background: radial-gradient(ellipse at 100% 0, color-mix(in srgb, var(--proof) 35%, transparent), transparent 60%), var(--midnight); color: #EEF4F7; }
+.invitation p { margin: 0; }
+.invitation__titre { font-family: var(--font-display); font-size: 1.375rem; font-weight: 700; letter-spacing: -.02em; }
+.invitation__texte { color: #9DB0BC; max-width: 46ch; }
+.invitation__lien { display: inline-flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 22px; border-radius: 50px; background: var(--proof); color: var(--on-proof); font-weight: 700; text-decoration: none; }
 </style>

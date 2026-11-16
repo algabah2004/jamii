@@ -1,25 +1,19 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute } from 'vue-router'
 import { api } from '../../api/client'
-import { JBouton, JChamp, JIllustration, JSquelette } from '../../design-system'
+import { JBouton, JIllustration, JSquelette } from '../../design-system'
 import { useSession } from '../../session'
-import { nomPays } from '../systalink/calculs'
 import CarteCompetences from './CarteCompetences.vue'
+import EditeurProfil from './EditeurProfil.vue'
 import FicheProfil from './FicheProfil.vue'
+import IconeProfil from './IconeProfil.vue'
 import PartagerCarte from './PartagerCarte.vue'
-import {
-  DISPONIBILITES,
-  LANGUES_PROPOSEES,
-  lireCompetences,
-  nomLangue,
-  PAYS_AFRIQUE,
-  type Disponibilite,
-  type MonProfil,
-} from './profils'
+import { completude, SECTION_ETAPE, type EtapeProfil, type SectionEdition } from './completude'
+import type { MonProfil } from './profils'
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const { moi } = useSession()
 
 const profil = ref<MonProfil | null>(null)
@@ -98,125 +92,43 @@ async function changerVisibilite() {
   }
 }
 
-// ---------- Modifier ce que je déclare ----------
+// ---------- La jauge « profil complet » ----------
+const jauge = computed(() => (profil.value ? completude(profil.value) : null))
+const prochaine = computed<EtapeProfil | null>(() => jauge.value?.manquantes[0] ?? null)
+function faireEtape(e: EtapeProfil) {
+  const section = SECTION_ETAPE[e]
+  if (section) ouvrirEdition(section)
+  else void changerVisibilite()
+}
+
+// ---------- Modifier : le panneau, et l'aperçu en direct derrière lui ----------
 const edition = ref(false)
-interface BrouillonRealisation { titre: string; role: string; description: string; technologies: string; url: string; annee: string }
-const brouillon = ref({
-  titre: '', bio: '', pays: '', ville: '', disponibilite: 'disponible' as Disponibilite, heures: '', competences: '',
-  linkedin: '', siteWeb: '', langues: [] as string[], phares: [] as string[], realisations: [] as BrouillonRealisation[],
-})
-const REALISATIONS_MAX = 6
-const PHARES_MAX = 3
-const erreurs = ref<Record<string, string>>({})
+const sectionEdition = ref<SectionEdition>('essentiel')
+const apercu = ref<Partial<MonProfil> | null>(null)
+const affiche = computed(() => (profil.value && edition.value && apercu.value ? { ...profil.value, ...apercu.value } : profil.value))
 
-const competencesDeclarees = computed(() =>
-  (profil.value?.competences ?? []).filter((c) => c.source === 'declaree').map((c) => c.competence),
-)
-const languesTriees = computed(() =>
-  [...LANGUES_PROPOSEES].sort((a, b) => nomLangue(a, locale.value).localeCompare(nomLangue(b, locale.value), locale.value)),
-)
-/** Les compétences que l'on peut mettre en avant : celles du profil, plus celles en cours de saisie. */
-const choixPhares = computed(() => [
-  ...new Set([
-    ...(profil.value?.competences ?? []).filter((c) => c.source !== 'declaree').map((c) => c.competence),
-    ...lireCompetences(brouillon.value.competences).map((c) => c.toLowerCase()),
-    ...brouillon.value.phares,
-  ]),
-])
-function basculer(liste: string[], valeur: string, max = Infinity) {
-  const i = liste.indexOf(valeur)
-  if (i >= 0) liste.splice(i, 1)
-  else if (liste.length < max) liste.push(valeur)
-}
-function ajouterRealisation() {
-  if (brouillon.value.realisations.length < REALISATIONS_MAX) {
-    brouillon.value.realisations.push({ titre: '', role: '', description: '', technologies: '', url: '', annee: '' })
-  }
-}
-const paysTries = computed(() =>
-  [...PAYS_AFRIQUE].sort((a, b) => nomPays(a, locale.value).localeCompare(nomPays(b, locale.value), locale.value)),
-)
-
-function ouvrirEdition() {
-  const p = profil.value!
-  brouillon.value = {
-    titre: p.titre ?? '',
-    linkedin: p.linkedin ?? '',
-    siteWeb: p.siteWeb ?? '',
-    langues: [...p.langues],
-    phares: [...p.competencesPhares],
-    realisations: p.realisations.map((r) => ({
-      titre: r.titre,
-      role: r.role ?? '',
-      description: r.description ?? '',
-      technologies: (r.technologies ?? []).join(', '),
-      url: r.url ?? '',
-      annee: r.annee ? String(r.annee) : '',
-    })),
-    bio: p.bio ?? '',
-    pays: p.pays ?? '',
-    ville: p.ville ?? '',
-    disponibilite: p.disponibilite,
-    heures: p.heuresParSemaine ? String(p.heuresParSemaine) : '',
-    competences: competencesDeclarees.value.join(', '),
-  }
-  erreurs.value = {}
+function ouvrirEdition(section: SectionEdition = 'essentiel') {
+  sectionEdition.value = section
+  message.value = null
+  apercu.value = null
   edition.value = true
 }
-
-async function enregistrer() {
-  const b = brouillon.value
-  occupe.value = true
-  erreurs.value = {}
-  message.value = null
-  try {
-    const { data, error, response } = await api.PATCH('/api/me/profil', {
-      headers: { 'Content-Type': 'application/merge-patch+json' },
-      body: {
-        bio: b.bio.trim() || null,
-        pays: b.pays || null,
-        ville: b.ville.trim() || null,
-        disponibilite: b.disponibilite,
-        heuresParSemaine: b.heures ? Number(b.heures) : null,
-        competencesDeclarees: lireCompetences(b.competences),
-        titre: b.titre.trim() || null,
-        linkedin: b.linkedin.trim() || null,
-        siteWeb: b.siteWeb.trim() || null,
-        langues: b.langues,
-        competencesPhares: b.phares,
-        realisations: b.realisations
-          .filter((r) => r.titre.trim() || r.description.trim() || r.url.trim())
-          .map((r) => ({
-            titre: r.titre.trim(),
-            role: r.role.trim() || null,
-            description: r.description.trim() || null,
-            technologies: lireCompetences(r.technologies),
-            url: r.url.trim() || null,
-            annee: r.annee ? Number(r.annee) : null,
-          })),
-        version: profil.value!.version,
-      },
-    })
-    if (data) {
-      profil.value = data
-      edition.value = false
-      message.value = t('profil.modifier.enregistre')
-    } else if (response.status === 409) {
-      message.value = t('profil.modifier.conflit')
-      await charger()
-      edition.value = false
-    } else if (response.status === 400) {
-      const champs = (error as { erreurs?: { champ: string; code: string }[] } | undefined)?.erreurs ?? []
-      // « competencesDeclarees[1] » s'affiche sous le champ entier ; « realisations[0].url » sous le champ de la ligne.
-      erreurs.value = Object.fromEntries(
-        champs.flatMap((e) => [[e.champ, t('profil.modifier.invalide')], [e.champ.replace(/\[\d+\]$/, ''), t('profil.modifier.invalide')]]),
-      )
-    } else {
-      message.value = t('etat.indisponible')
-    }
-  } finally {
-    occupe.value = false
-  }
+async function fermerEdition() {
+  edition.value = false
+  apercu.value = null
+  await nextTick()
+  document.querySelector<HTMLElement>('[data-test="modifier"]')?.focus()
+}
+function enregistre(p: MonProfil) {
+  profil.value = p
+  void fermerEdition()
+  message.value = t('profil.modifier.enregistre')
+}
+async function conflit() {
+  // Le panneau se ferme d'abord : la dernière version s'affiche ensuite, sans mélanger l'ancien brouillon.
+  void fermerEdition()
+  message.value = t('profil.modifier.conflit')
+  await charger()
 }
 </script>
 
@@ -230,173 +142,181 @@ async function enregistrer() {
     </div>
 
     <!-- Pas encore de profil : on propose de le générer, en disant ce qu'on lit. -->
-    <div v-else-if="etat === 'aucun'" class="accueil-profil" data-test="sans-profil">
-      <div class="accueil-profil__texte">
-        <h1>{{ t('profil.generation.titre') }}</h1>
-        <p class="accueil-profil__intro">{{ t('profil.generation.texte') }}</p>
-        <ul class="accueil-profil__lu">
-          <li v-for="cle in ['langages', 'sujets', 'etoiles']" :key="cle">✓ {{ t(`profil.generation.lu.${cle}`) }}</li>
-          <li class="jamais">✕ {{ t('profil.generation.lu.jamais') }}</li>
+    <div v-else-if="etat === 'aucun'" class="accueil" data-test="sans-profil">
+      <div class="accueil__texte">
+        <p class="accueil__surtitre"><i aria-hidden="true" />{{ t('profil.generation.surtitre') }}</p>
+        <h1>{{ t('profil.generation.titre') }}<span>{{ t('profil.generation.accent') }}</span></h1>
+        <p class="accueil__intro">{{ t('profil.generation.texte') }}</p>
+        <ul class="accueil__lu">
+          <li v-for="cle in ['langages', 'sujets', 'etoiles']" :key="cle"><span><IconeProfil nom="coche" :taille="14" /></span>{{ t(`profil.generation.lu.${cle}`) }}</li>
+          <li class="jamais"><span><IconeProfil nom="cadenas" :taille="14" /></span>{{ t('profil.generation.lu.jamais') }}</li>
         </ul>
         <template v-if="sansGithub">
           <p class="texte-discret">{{ t('profil.generation.sansGithub') }}</p>
-          <a :href="lienGithub" class="j-bouton j-bouton--principal" data-test="relier-github">{{ t('profil.generation.relier') }}</a>
+          <a :href="lienGithub" class="accueil__principal" data-test="relier-github"><IconeProfil nom="github" />{{ t('profil.generation.relier') }}</a>
         </template>
         <template v-else>
-          <p v-if="enCours" role="status" class="en-cours" data-test="en-cours">{{ t('profil.generation.enCours') }}</p>
-          <JBouton v-else :occupe="occupe" data-test="generer" @click="generer">{{ t('profil.generation.bouton') }}</JBouton>
-          <p class="texte-discret">{{ t('profil.generation.prive') }}</p>
+          <p v-if="enCours" role="status" class="en-cours" data-test="en-cours"><span class="en-cours__roue" aria-hidden="true" />{{ t('profil.generation.enCours') }}</p>
+          <button v-else type="button" class="accueil__principal" :disabled="occupe" :aria-busy="occupe || undefined" data-test="generer" @click="generer">
+            <IconeProfil nom="github" />{{ t('profil.generation.bouton') }}
+          </button>
+          <p class="texte-discret accueil__prive"><IconeProfil nom="cadenas" :taille="14" />{{ t('profil.generation.prive') }}</p>
         </template>
         <p v-if="githubRelie && !sansGithub" role="status" class="relie" data-test="github-relie">✓ {{ t('profil.generation.relie') }}</p>
         <p v-if="erreurLien" role="alert" class="erreur" data-test="erreur-lien">{{ t(`profil.generation.erreursLien.${erreurLien}`) }}</p>
         <p v-if="echec" role="alert" class="erreur">{{ t(`profil.generation.erreurs.${echec}`) }}</p>
         <p v-if="message" role="alert" class="erreur">{{ message }}</p>
       </div>
-      <div class="accueil-profil__visuel">
+      <div class="accueil__visuel">
         <JIllustration nom="profil-prouve" />
       </div>
     </div>
 
-    <template v-else-if="profil">
-      <FicheProfil :profil="profil" moi>
+    <template v-else-if="profil && affiche">
+      <FicheProfil :profil="affiche" moi @modifier="ouvrirEdition">
         <template #actions>
-          <div class="barre-actions">
-            <p class="visibilite" :class="{ 'visibilite--publie': profil.publie }" data-test="visibilite">
-              {{ profil.publie ? t('profil.visibilite.publie') : t('profil.visibilite.prive') }}
-            </p>
-            <JBouton :variante="profil.publie ? 'secondaire' : 'principal'" :occupe="occupe" data-test="publier" @click="changerVisibilite">
-              {{ profil.publie ? t('profil.visibilite.retirer') : t('profil.visibilite.publier') }}
-            </JBouton>
-            <JBouton v-if="!edition" variante="secondaire" data-test="modifier" @click="ouvrirEdition">{{ t('profil.modifier.bouton') }}</JBouton>
-            <PartagerCarte :profil="profil" :publie="profil.publie" />
-            <RouterLink v-if="profil.publie" :to="`/p/${profil.utilisateurId}`" class="lien-public" data-test="voir-public">
-              {{ t('profil.visibilite.voirPublic') }}</RouterLink>
-            <JBouton variante="discret" :occupe="occupe || enCours" data-test="regenerer" @click="generer">
-              {{ enCours ? t('profil.generation.enCours') : t('profil.generation.regenerer') }}
-            </JBouton>
+          <div class="barre">
+            <button
+              type="button"
+              class="visibilite"
+              :class="{ 'visibilite--publie': profil.publie }"
+              role="switch"
+              :aria-checked="profil.publie"
+              :disabled="occupe"
+              data-test="publier"
+              @click="changerVisibilite"
+            >
+              <span class="visibilite__interrupteur" aria-hidden="true"><i /></span>
+              <span class="visibilite__texte" data-test="visibilite">
+                <strong>{{ profil.publie ? t('profil.visibilite.etatPublie') : t('profil.visibilite.etatPrive') }}</strong>
+                <small>{{ profil.publie ? t('profil.visibilite.aidePublie') : t('profil.visibilite.aidePrive') }}</small>
+              </span>
+            </button>
+            <div class="barre__boutons">
+              <button type="button" class="barre__principal" data-test="modifier" @click="ouvrirEdition()">
+                <IconeProfil nom="crayon" />{{ t('profil.modifier.bouton') }}
+              </button>
+              <PartagerCarte :profil="profil" :publie="profil.publie" />
+              <RouterLink v-if="profil.publie" :to="`/p/${profil.utilisateurId}`" class="barre__lien" data-test="voir-public">
+                <IconeProfil nom="oeil" />{{ t('profil.visibilite.voirPublic') }}</RouterLink>
+              <button
+                type="button"
+                class="barre__icone"
+                :disabled="occupe || enCours"
+                :title="enCours ? t('profil.generation.enCours') : t('profil.generation.regenerer')"
+                data-test="regenerer"
+                @click="generer"
+              >
+                <IconeProfil nom="rafraichir" :class="{ tourne: enCours }" />
+                <span class="visuellement-cache">{{ enCours ? t('profil.generation.enCours') : t('profil.generation.regenerer') }}</span>
+              </button>
+            </div>
           </div>
-          <p v-if="message" role="status" data-test="message">{{ message }}</p>
-          <p v-if="echec" role="alert">{{ t(`profil.generation.erreurs.${echec}`) }}</p>
-
-          <form v-if="edition" class="carte formulaire-profil" data-test="formulaire" @submit.prevent="enregistrer">
-            <h2>{{ t('profil.modifier.titre') }}</h2>
-            <JChamp v-model="brouillon.titre" :libelle="t('profil.modifier.titrePro')" :aide="t('profil.modifier.titreProAide')" :maxlength="80" :erreur="erreurs.titre" data-test="champ-titre" />
-            <JChamp v-model="brouillon.bio" :libelle="t('profil.modifier.bio')" multiligne :maxlength="500" :erreur="erreurs.bio" />
-            <div class="deux-colonnes">
-              <label class="j-champ">
-                <span>{{ t('profil.modifier.pays') }}</span>
-                <select v-model="brouillon.pays" class="selection">
-                  <option value="">{{ t('profil.modifier.paysAucun') }}</option>
-                  <option v-for="code in paysTries" :key="code" :value="code">{{ nomPays(code, locale) }}</option>
-                </select>
-              </label>
-              <JChamp v-model="brouillon.ville" :libelle="t('profil.modifier.ville')" :maxlength="80" :erreur="erreurs.ville" />
-            </div>
-            <div class="deux-colonnes">
-              <label class="j-champ">
-                <span>{{ t('profil.modifier.disponibilite') }}</span>
-                <select v-model="brouillon.disponibilite" class="selection">
-                  <option v-for="d in DISPONIBILITES" :key="d" :value="d">{{ t(`profil.disponibilite.${d}`) }}</option>
-                </select>
-              </label>
-              <JChamp v-model="brouillon.heures" type="number" :libelle="t('profil.modifier.heures')" :erreur="erreurs.heuresParSemaine" />
-            </div>
-            <div class="deux-colonnes">
-              <JChamp v-model="brouillon.linkedin" type="url" :libelle="t('profil.modifier.linkedin')" :aide="t('profil.modifier.linkedinAide')" :maxlength="300" :erreur="erreurs.linkedin" />
-              <JChamp v-model="brouillon.siteWeb" type="url" :libelle="t('profil.modifier.site')" :aide="t('profil.modifier.siteAide')" :maxlength="300" :erreur="erreurs.siteWeb" />
-            </div>
-
-            <fieldset class="choix">
-              <legend>{{ t('profil.modifier.langues') }}</legend>
-              <div class="pastilles">
-                <button v-for="l in languesTriees" :key="l" type="button" class="pastille" :aria-pressed="brouillon.langues.includes(l)" @click="basculer(brouillon.langues, l, 8)">
-                  {{ nomLangue(l, locale) }}</button>
-              </div>
-              <p v-if="erreurs.langues" class="erreur">{{ erreurs.langues }}</p>
-            </fieldset>
-
-            <JChamp
-              v-model="brouillon.competences"
-              :libelle="t('profil.modifier.competences')"
-              :aide="t('profil.modifier.competencesAide')"
-              :erreur="erreurs.competencesDeclarees"
-            />
-            <fieldset v-if="choixPhares.length" class="choix">
-              <legend>{{ t('profil.modifier.phares', { n: PHARES_MAX }) }}</legend>
-              <div class="pastilles">
-                <button v-for="c in choixPhares" :key="c" type="button" class="pastille" :aria-pressed="brouillon.phares.includes(c)" :disabled="!brouillon.phares.includes(c) && brouillon.phares.length >= PHARES_MAX" @click="basculer(brouillon.phares, c, PHARES_MAX)">
-                  {{ c }}</button>
-              </div>
-              <p v-if="erreurs.competencesPhares" class="erreur">{{ erreurs.competencesPhares }}</p>
-            </fieldset>
-
-            <fieldset class="choix" data-test="champ-realisations">
-              <legend>{{ t('profil.modifier.realisations') }}</legend>
-              <p class="texte-discret">{{ t('profil.modifier.realisationsAide') }}</p>
-              <div v-for="(r, i) in brouillon.realisations" :key="i" class="realisation-saisie">
-                <div class="deux-colonnes">
-                  <JChamp v-model="r.titre" :libelle="t('profil.modifier.realisation.titre')" requis :maxlength="80" :erreur="erreurs[`realisations[${i}].titre`]" />
-                  <JChamp v-model="r.role" :libelle="t('profil.modifier.realisation.role')" :maxlength="60" :erreur="erreurs[`realisations[${i}].role`]" />
-                </div>
-                <JChamp v-model="r.description" :libelle="t('profil.modifier.realisation.description')" multiligne :lignes="2" :maxlength="300" :erreur="erreurs[`realisations[${i}].description`]" />
-                <div class="trois-colonnes">
-                  <JChamp v-model="r.technologies" :libelle="t('profil.modifier.realisation.technologies')" :erreur="erreurs[`realisations[${i}].technologies`]" />
-                  <JChamp v-model="r.url" type="url" :libelle="t('profil.modifier.realisation.lien')" :maxlength="300" :erreur="erreurs[`realisations[${i}].url`]" />
-                  <JChamp v-model="r.annee" type="number" :libelle="t('profil.modifier.realisation.annee')" :erreur="erreurs[`realisations[${i}].annee`]" />
-                </div>
-                <JBouton variante="discret" @click="brouillon.realisations.splice(i, 1)">{{ t('profil.modifier.realisation.retirer') }}</JBouton>
-              </div>
-              <JBouton v-if="brouillon.realisations.length < REALISATIONS_MAX" variante="secondaire" data-test="ajouter-realisation" @click="ajouterRealisation">
-                {{ t('profil.modifier.realisation.ajouter') }}</JBouton>
-            </fieldset>
-
-            <div class="barre-actions">
-              <JBouton type="submit" :occupe="occupe" data-test="enregistrer">{{ t('profil.modifier.enregistrer') }}</JBouton>
-              <JBouton variante="discret" @click="edition = false">{{ t('profil.modifier.annuler') }}</JBouton>
-            </div>
-          </form>
         </template>
+
+        <template #apres-entete>
+          <p v-if="message" role="status" class="annonce" data-test="message">{{ message }}</p>
+          <p v-if="echec" role="alert" class="annonce annonce--erreur">{{ t(`profil.generation.erreurs.${echec}`) }}</p>
+
+          <section v-if="jauge && prochaine" class="jauge" :aria-label="t('profil.completude.titre')" data-test="completude">
+            <div class="jauge__anneau" :style="{ '--p': jauge.pourcent }" role="img" :aria-label="t('profil.completude.pourcent', { n: jauge.pourcent })">
+              <span>{{ jauge.pourcent }}<small>%</small></span>
+            </div>
+            <div class="jauge__texte">
+              <strong>{{ t('profil.completude.titre') }}</strong>
+              <p>{{ t(`profil.completude.conseils.${prochaine}`) }}</p>
+            </div>
+            <button type="button" class="jauge__action" data-test="etape-suivante" @click="faireEtape(prochaine)">
+              {{ t(`profil.completude.actions.${prochaine}`) }} <IconeProfil nom="fleche" :taille="14" />
+            </button>
+          </section>
+        </template>
+
         <template #debut>
           <CarteCompetences :profil="profil" @mis-a-jour="(p) => (profil = p)" />
         </template>
       </FicheProfil>
+
+      <EditeurProfil
+        v-if="edition"
+        :profil="profil"
+        :section="sectionEdition"
+        @apercu="(c) => (apercu = c)"
+        @enregistre="enregistre"
+        @conflit="conflit"
+        @fermer="fermerEdition"
+      />
     </template>
   </section>
 </template>
 
 <style scoped>
-.mon-profil { display: grid; gap: var(--space-6); }
-.accueil-profil { display: grid; gap: var(--space-8); grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); align-items: center; padding-top: var(--space-4); }
-@media (max-width: 760px) { .accueil-profil { grid-template-columns: 1fr; } .accueil-profil__visuel { order: -1; max-width: 18rem; } }
-.accueil-profil__texte { display: grid; gap: var(--space-4); justify-items: start; }
-.accueil-profil__texte > * { margin: 0; }
-.accueil-profil h1 { font-size: clamp(2rem, 4.5vw, 2.75rem); line-height: 1.1; letter-spacing: -0.8px; }
-.accueil-profil__intro { font-size: 1.0625rem; color: var(--ink-muted); max-width: 34rem; }
-.accueil-profil__lu { list-style: none; padding: 0; display: grid; gap: var(--space-2); font-weight: 600; }
-.accueil-profil__lu .jamais { color: var(--ink-muted); font-weight: 400; }
-.accueil-profil__visuel { padding: var(--space-8); background: var(--action-soft); border-radius: var(--radius-lg); }
-.en-cours { font-weight: 600; color: var(--action-ink); }
-.erreur { color: var(--danger); font-weight: 600; margin: 0; }
-.visibilite { padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); background: var(--surface-raised); }
-.visibilite--publie { background: var(--action-soft); }
-.barre-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
-.barre-actions .visibilite { margin: 0; }
-.lien-public { font-weight: 600; padding: 0 var(--space-2); }
-.formulaire-profil { display: grid; gap: var(--space-4); }
-.formulaire-profil h2 { font-size: var(--type-h3-size); line-height: var(--type-h3-line); }
-.deux-colonnes { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); }
-.trois-colonnes { display: grid; gap: var(--space-4); grid-template-columns: 2fr 2fr 1fr; }
-@media (max-width: 640px) { .trois-colonnes { grid-template-columns: 1fr; } }
-.j-champ > span { font-size: var(--type-label-size); line-height: var(--type-label-line); font-weight: var(--type-label-weight); }
-.selection { width: 100%; min-height: 44px; padding: var(--space-2) var(--space-3); background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); }
-.choix { border: 0; padding: 0; margin: 0; display: grid; gap: var(--space-2); }
-.choix legend { font-size: var(--type-label-size); line-height: var(--type-label-line); font-weight: var(--type-label-weight); margin-block-end: var(--space-2); padding: 0; }
-.choix > p { margin: 0; }
-.pastilles { display: flex; flex-wrap: wrap; gap: var(--space-2); }
-.pastille { min-height: 36px; padding: 0 var(--space-3); border-radius: var(--radius-pill); border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); font: inherit; cursor: pointer; }
-.pastille[aria-pressed='true'] { background: var(--action-soft); border-color: var(--action); color: var(--action-ink); font-weight: 700; }
-.pastille:disabled { opacity: 0.45; cursor: not-allowed; }
-.realisation-saisie { display: grid; gap: var(--space-3); padding: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-md); justify-items: stretch; }
-.realisation-saisie > :last-child { justify-self: start; }
-.relie { margin: 0; font-weight: 700; color: var(--success, var(--ink)); }
+.mon-profil { display: grid; gap: 24px; }
+
+/* ---------- Pas encore de profil : la même entrée en matière que les pages d'exploration. ---------- */
+.accueil { display: grid; gap: clamp(28px, 5vw, 80px); grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); align-items: center; padding-block: clamp(12px, 3vw, 40px); }
+.accueil__texte { display: grid; gap: 18px; justify-items: start; }
+.accueil__texte > * { margin: 0; }
+.accueil__surtitre { display: flex; align-items: center; gap: 10px; color: var(--ink-muted); font-size: .875rem; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; }
+.accueil__surtitre i { width: 7px; height: 7px; border-radius: 50%; background: var(--proof); }
+.accueil h1 { font-size: clamp(2.5rem, 4.6vw, 4.25rem); line-height: 1.04; letter-spacing: -.05em; max-width: 16ch; }
+.accueil h1 span { display: block; color: var(--action-ink); }
+.accueil__intro { font-size: 1.0625rem; line-height: 1.8; color: var(--ink-muted); max-width: 52ch; }
+.accueil__lu { list-style: none; padding: 0; display: grid; gap: 10px; font-weight: 600; }
+.accueil__lu li { display: flex; align-items: center; gap: 10px; }
+.accueil__lu li > span { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--action-soft); color: var(--action-ink); }
+.accueil__lu .jamais { color: var(--ink-muted); font-weight: 500; }
+.accueil__lu .jamais > span { background: var(--surface-raised); color: var(--ink-muted); }
+.accueil__principal { display: inline-flex; align-items: center; gap: 10px; min-height: 52px; padding: 12px 24px; border: 0; border-radius: 50px; background: var(--proof); color: var(--on-proof); font-weight: 700; font-size: 1rem; text-decoration: none; cursor: pointer; box-shadow: 0 10px 24px color-mix(in srgb, var(--proof) 30%, transparent); }
+.accueil__principal:disabled { opacity: .6; cursor: progress; }
+.accueil__prive { display: flex; align-items: center; gap: 6px; }
+.accueil__visuel { padding: clamp(24px, 4vw, 48px); border: 1px solid var(--line-strong); border-radius: 28px; background: radial-gradient(ellipse at 90% 0, var(--action-soft), transparent 65%), var(--surface); box-shadow: var(--ombre-carte); }
+.en-cours { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--action-ink); }
+.en-cours__roue { width: 20px; height: 20px; border-radius: 50%; border: 3px solid var(--action-soft); border-top-color: var(--action); animation: tourner .8s linear infinite; }
+.erreur { color: var(--danger); font-weight: 600; }
+.relie { font-weight: 700; color: var(--success, var(--ink)); }
+@media (max-width: 760px) { .accueil { grid-template-columns: minmax(0, 1fr); } .accueil__visuel { order: -1; max-width: 20rem; } }
+
+/* ---------- La barre du propriétaire, dans l'en-tête ---------- */
+.barre { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding-top: 18px; border-top: 1px solid var(--line); }
+.visibilite { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 8px 16px 8px 10px; border: 1px solid var(--line-strong); border-radius: 18px; background: var(--surface); color: var(--ink); text-align: start; cursor: pointer; }
+.visibilite:hover { border-color: var(--action); }
+.visibilite:disabled { cursor: progress; }
+.visibilite__interrupteur { position: relative; width: 44px; height: 26px; flex: none; border-radius: 50px; background: var(--line-strong); transition: background var(--motion-fast) var(--ease-out); }
+.visibilite__interrupteur i { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform var(--motion-base) var(--ease-pop); }
+.visibilite--publie .visibilite__interrupteur { background: #1FA35B; }
+.visibilite--publie .visibilite__interrupteur i { transform: translateX(18px); }
+.visibilite__texte { display: grid; line-height: 1.3; }
+.visibilite__texte strong { font-size: .9375rem; }
+.visibilite__texte small { color: var(--ink-muted); font-size: .8125rem; }
+.barre__boutons { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.barre__principal { display: inline-flex; align-items: center; gap: 8px; min-height: 46px; padding: 10px 20px; border: 0; border-radius: 50px; background: var(--proof); color: var(--on-proof); font-weight: 700; cursor: pointer; }
+.barre__principal:hover { filter: brightness(1.05); }
+.barre__lien { display: inline-flex; align-items: center; gap: 8px; min-height: 46px; padding: 0 12px; font-weight: 600; text-decoration: none; }
+.barre__lien:hover { text-decoration: underline; }
+.barre__icone { display: grid; place-items: center; width: 46px; height: 46px; border: 1px solid var(--line-strong); border-radius: 50%; background: var(--surface); color: var(--ink); cursor: pointer; }
+.barre__icone:hover:not(:disabled) { border-color: var(--action); }
+.barre__icone:disabled { opacity: .55; cursor: progress; }
+.tourne { animation: tourner 1s linear infinite; }
+@keyframes tourner { to { transform: rotate(360deg); } }
+
+.annonce { margin: 0; padding: 12px 16px; border-radius: 14px; background: var(--action-soft); color: var(--ink); font-weight: 600; }
+.annonce--erreur { background: color-mix(in srgb, var(--danger) 12%, transparent); color: var(--danger); }
+
+/* ---------- La jauge « profil complet » ---------- */
+.jauge { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 20px; padding: 16px 20px; border: 1px solid var(--line); border-radius: 22px; background: linear-gradient(100deg, var(--action-soft), var(--surface) 55%); }
+.jauge__anneau { --p: 0; display: grid; place-items: center; width: 64px; height: 64px; flex: none; border-radius: 50%; background: conic-gradient(var(--action) calc(var(--p) * 1%), var(--surface-raised) 0); }
+.jauge__anneau span { display: grid; place-items: center; width: 50px; height: 50px; border-radius: 50%; background: var(--surface); font-family: var(--font-display); font-weight: 700; font-size: 1.125rem; }
+.jauge__anneau small { font-size: .625rem; margin-top: -4px; }
+.jauge__anneau span { grid-auto-flow: column; align-items: baseline; }
+.jauge__texte { flex: 1 1 16rem; display: grid; gap: 2px; min-width: 0; }
+.jauge__texte p { margin: 0; color: var(--ink-muted); font-size: .9375rem; }
+.jauge__action { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 18px; border: 1px solid var(--action); border-radius: 50px; background: var(--surface); color: var(--action-ink); font-weight: 700; cursor: pointer; }
+.jauge__action:hover { background: var(--action-soft); }
+
+@media (max-width: 640px) {
+  .barre__boutons { margin-inline-start: 0; }
+  .visibilite { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) { .tourne, .en-cours__roue { animation: none; } .visibilite__interrupteur i { transition: none; } }
 </style>

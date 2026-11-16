@@ -390,7 +390,7 @@
     "titre": "Profil",
     "vide": "Ton profil se remplira avec tes langages et tes projets publics GitHub, et les projets que tu mets en ligne sur Jamii.",
     "generation": {
-      "titre": "Crée ton profil à partir de GitHub",
+      "titre": "Crée ton profil",
       "texte": "Jamii lit tes dépôts publics (langages, sujets, étoiles) pour remplir ton profil. Rien de privé n'est lu, et tu pourras tout compléter ensuite.",
       "bouton": "Générer mon profil depuis GitHub",
       "regenerer": "Mettre à jour depuis GitHub",
@@ -416,7 +416,9 @@
         "refus_github": "Tu as refusé l'accès sur GitHub : rien n'a été relié.",
         "requete_invalide": "La liaison avec GitHub a expiré. Réessaie.",
         "github_indisponible": "GitHub ne répond pas pour le moment. Réessaie dans un instant."
-      }
+      },
+      "surtitre": "Ton profil · prouvé par ton code",
+      "accent": "à partir de GitHub."
     },
     "disponibilite": {
       "disponible": "Disponible",
@@ -429,10 +431,14 @@
       "publie": "✅ Ton profil est publié : il est visible par les membres et par toute personne qui a ton lien.",
       "publier": "Publier mon profil",
       "retirer": "Rendre mon profil privé",
-      "voirPublic": "Voir mon profil public"
+      "voirPublic": "Voir comme un visiteur",
+      "etatPublie": "Ton profil est publié",
+      "etatPrive": "Ton profil est privé",
+      "aidePublie": "Visible par les membres et par qui a ton lien",
+      "aidePrive": "Toi seul le vois. Touche pour le publier."
     },
     "modifier": {
-      "bouton": "Modifier",
+      "bouton": "Modifier mon profil",
       "titre": "Ce que tu déclares toi-même",
       "bio": "Présentation",
       "pays": "Pays",
@@ -475,7 +481,8 @@
     "competences": {
       "titre": "Compétences",
       "declaree": "(déclarée)",
-      "source": "Déduites de tes dépôts GitHub, plus celles que tu ajoutes."
+      "source": "Déduites de tes dépôts GitHub, plus celles que tu ajoutes.",
+      "vide": "Ajoute les compétences que GitHub ne montre pas."
     },
     "projets": {
       "titre": "Projets sur Jamii",
@@ -483,7 +490,8 @@
       "inspiration": "Voir les projets déjà en ligne",
       "equipe": "équipe {pays}",
       "surSystalink": "Hébergé sur Systalink",
-      "enLigne": "En ligne"
+      "enLigne": "En ligne",
+      "aide": "Mis en ligne avec une équipe sur Jamii : le lien est vérifié."
     },
     "depots": {
       "titre": "Dépôts GitHub",
@@ -520,7 +528,10 @@
         "debutant": "Débutant",
         "intermediaire": "Intermédiaire",
         "confirme": "Confirmé"
-      }
+      },
+      "revoir": "Revoir",
+      "replier": "Replier",
+      "resume": "Aucune compétence gardée | {n} compétence gardée sur ton profil, avec ses preuves | {n} compétences gardées sur ton profil, avec leurs preuves"
     },
     "liens": {
       "site": "Site"
@@ -534,7 +545,8 @@
     "realisations": {
       "titre": "Réalisations",
       "declare": "Déclaré",
-      "declareAide": "Ajouté par la personne. Seuls les projets sur Jamii sont vérifiés."
+      "declareAide": "Ajouté par la personne. Seuls les projets sur Jamii sont vérifiés.",
+      "vide": "Ajoute un projet fait hors de Jamii : ton travail, un projet perso, une mission."
     },
     "partage": {
       "bouton": "Partager ma carte",
@@ -551,7 +563,8 @@
       "projetsVerifies": "aucun projet vérifié | {n} projet vérifié sur Jamii | {n} projets vérifiés sur Jamii",
       "realisations": "aucune réalisation | {n} réalisation | {n} réalisations",
       "scanner": "Voir mon profil",
-      "message": "Mon profil sur Jamii : {lien}"
+      "message": "Mon profil sur Jamii : {lien}",
+      "intro": "Une image à envoyer sur WhatsApp ou LinkedIn. Le QR code mène à ton profil."
     },
     "public": {
       "introuvable": "Ce profil n’est pas public",
@@ -561,6 +574,77 @@
       "invitationTexte": "Sur Jamii, tes projets mis en ligne avec une équipe deviennent des preuves.",
       "rejoindre": "Créer mon profil",
       "nonPublie": "{nom} n’a pas encore publié son profil. Vous pouvez déjà lui écrire."
+    },
+    "chiffres": {
+      "titre": "En chiffres",
+      "projets": "projet vérifié | projet vérifié | projets vérifiés",
+      "realisations": "réalisation | réalisation | réalisations",
+      "competences": "compétence | compétence | compétences",
+      "preuves": "preuve | preuve | preuves",
+      "misAJour": "Mis à jour le {date}"
+    },
+    "presentation": {
+      "titre": "À propos de {prenom}",
+      "vide": "Ajoute une présentation : qui tu es, ce que tu aimes construire."
+    },
+    "completude": {
+      "titre": "Ton profil est presque prêt",
+      "pourcent": "Profil complet à {n} %",
+      "conseils": {
+        "titre": "Un titre dit en une ligne ce que tu fais : c’est la première chose qu’on lit.",
+        "bio": "Quelques phrases sur toi rassurent une équipe ou une PME avant de t’écrire.",
+        "lieu": "Ton pays et ta ville aident les équipes proches de toi à te trouver.",
+        "competences": "Ajoute les compétences que GitHub ne montre pas : design, gestion de projet, Mobile Money…",
+        "phares": "Choisis tes 3 compétences phares : elles s’affichent en premier, et sur ta carte.",
+        "langues": "Dis quelles langues tu parles : une équipe se forme plus vite.",
+        "liens": "Un lien LinkedIn ou un portfolio permet d’aller plus loin.",
+        "realisations": "Montre un projet fait hors de Jamii : il apparaîtra comme « Déclaré ».",
+        "publie": "Ton profil est prêt. Publie-le pour qu’on puisse te trouver et t’écrire."
+      },
+      "actions": {
+        "titre": "Ajouter un titre",
+        "bio": "Me présenter",
+        "lieu": "Ajouter mon lieu",
+        "competences": "Ajouter des compétences",
+        "phares": "Choisir mes 3 phares",
+        "langues": "Ajouter mes langues",
+        "liens": "Ajouter un lien",
+        "realisations": "Ajouter une réalisation",
+        "publie": "Publier mon profil"
+      }
+    },
+    "editeur": {
+      "surtitre": "Mon profil",
+      "titre": "Modifier mon profil",
+      "fermer": "Fermer sans enregistrer",
+      "sections": "Sections du profil",
+      "section": {
+        "essentiel": "L'essentiel",
+        "competences": "Compétences",
+        "liens": "Liens",
+        "realisations": "Réalisations"
+      },
+      "bioAide": "Qui tu es, ce que tu aimes construire, pour qui.",
+      "heures": "Combien de temps par semaine ?",
+      "autre": "Autre",
+      "competencesIntro": "GitHub et ta carte de compétences remplissent déjà ton profil. Ajoute ici ce qu’ils ne voient pas.",
+      "competencesAide": "Entrée ou virgule pour ajouter. 20 au plus.",
+      "ajouterEtiquette": "Écris puis Entrée…",
+      "plein": "{n} au plus : retire-en une pour en ajouter",
+      "retirerEtiquette": "Retirer {nom}",
+      "suggestions": "Suggestions :",
+      "technologies": "Technologies",
+      "githubRelie": "relié à ton compte",
+      "githubAbsent": "Pas encore relié : depuis la page de ton profil, « Relier mon GitHub ».",
+      "nouvelleRealisation": "Nouvelle réalisation",
+      "retirer": "Retirer",
+      "apercuDirect": "Aperçu en direct derrière ce panneau",
+      "rienAChanger": "Aucune modification pour l’instant",
+      "nonEnregistre": "Tes modifications ne sont pas enregistrées.",
+      "continuer": "Continuer",
+      "abandonner": "Abandonner",
+      "aCorriger": "Certaines valeurs ne sont pas acceptées : elles sont signalées en rouge.",
+      "heuresCourt": "{n} h"
     }
   },
   "etat": {

@@ -390,7 +390,7 @@
     "titre": "Profile",
     "vide": "Your profile will fill up with your public GitHub languages and projects, and the projects you put online on Jamii.",
     "generation": {
-      "titre": "Create your profile from GitHub",
+      "titre": "Create your profile",
       "texte": "Jamii reads your public repositories (languages, topics, stars) to fill in your profile. Nothing private is read, and you can complete everything afterwards.",
       "bouton": "Generate my profile from GitHub",
       "regenerer": "Update from GitHub",
@@ -416,7 +416,9 @@
         "refus_github": "You declined access on GitHub: nothing was linked.",
         "requete_invalide": "Linking with GitHub expired. Try again.",
         "github_indisponible": "GitHub is not responding right now. Try again in a moment."
-      }
+      },
+      "surtitre": "Your profile · proven by your code",
+      "accent": "from GitHub."
     },
     "disponibilite": {
       "disponible": "Available",
@@ -429,10 +431,14 @@
       "publie": "✅ Your profile is public: members and anyone with your link can see it.",
       "publier": "Publish my profile",
       "retirer": "Make my profile private",
-      "voirPublic": "See my public profile"
+      "voirPublic": "View as a visitor",
+      "etatPublie": "Your profile is published",
+      "etatPrive": "Your profile is private",
+      "aidePublie": "Visible to members and anyone with your link",
+      "aidePrive": "Only you can see it. Tap to publish."
     },
     "modifier": {
-      "bouton": "Edit",
+      "bouton": "Edit my profile",
       "titre": "What you declare yourself",
       "bio": "About you",
       "pays": "Country",
@@ -475,7 +481,8 @@
     "competences": {
       "titre": "Skills",
       "declaree": "(declared)",
-      "source": "Deduced from your GitHub repositories, plus the ones you add."
+      "source": "Deduced from your GitHub repositories, plus the ones you add.",
+      "vide": "Add the skills GitHub does not show."
     },
     "projets": {
       "titre": "Projects on Jamii",
@@ -483,7 +490,8 @@
       "inspiration": "See projects already online",
       "equipe": "team {pays}",
       "surSystalink": "Hosted on Systalink",
-      "enLigne": "Online"
+      "enLigne": "Online",
+      "aide": "Put online with a team on Jamii: the link is verified."
     },
     "depots": {
       "titre": "GitHub repositories",
@@ -520,7 +528,10 @@
         "debutant": "Beginner",
         "intermediaire": "Intermediate",
         "confirme": "Experienced"
-      }
+      },
+      "revoir": "Review",
+      "replier": "Collapse",
+      "resume": "No skill kept | {n} skill kept on your profile, with its proof | {n} skills kept on your profile, with their proof"
     },
     "liens": {
       "site": "Website"
@@ -534,7 +545,8 @@
     "realisations": {
       "titre": "Work",
       "declare": "Self-reported",
-      "declareAide": "Added by the person. Only projects on Jamii are verified."
+      "declareAide": "Added by the person. Only projects on Jamii are verified.",
+      "vide": "Add a project made outside Jamii: your job, a side project, a mission."
     },
     "partage": {
       "bouton": "Share my card",
@@ -551,7 +563,8 @@
       "projetsVerifies": "no verified project | {n} verified project on Jamii | {n} verified projects on Jamii",
       "realisations": "no work | {n} project | {n} projects",
       "scanner": "See my profile",
-      "message": "My profile on Jamii: {lien}"
+      "message": "My profile on Jamii: {lien}",
+      "intro": "An image to send on WhatsApp or LinkedIn. The QR code leads to your profile."
     },
     "public": {
       "introuvable": "This profile is not public",
@@ -561,6 +574,77 @@
       "invitationTexte": "On Jamii, projects you launch with a team become proof.",
       "rejoindre": "Create my profile",
       "nonPublie": "{nom} hasn't published their profile yet. You can already message them."
+    },
+    "chiffres": {
+      "titre": "In numbers",
+      "projets": "verified project | verified project | verified projects",
+      "realisations": "piece of work | piece of work | pieces of work",
+      "competences": "skill | skill | skills",
+      "preuves": "proof | proof | proofs",
+      "misAJour": "Updated on {date}"
+    },
+    "presentation": {
+      "titre": "About {prenom}",
+      "vide": "Add an introduction: who you are, what you love to build."
+    },
+    "completude": {
+      "titre": "Your profile is almost ready",
+      "pourcent": "Profile {n}% complete",
+      "conseils": {
+        "titre": "A headline says in one line what you do: it is the first thing people read.",
+        "bio": "A few sentences about you reassure a team or a small business before they write to you.",
+        "lieu": "Your country and city help nearby teams find you.",
+        "competences": "Add the skills GitHub does not show: design, project management, Mobile Money…",
+        "phares": "Pick your 3 key skills: they show first, and on your card.",
+        "langues": "Say which languages you speak: teams form faster.",
+        "liens": "A LinkedIn link or a portfolio lets people go further.",
+        "realisations": "Show a project made outside Jamii: it will appear as “Self-reported”.",
+        "publie": "Your profile is ready. Publish it so people can find you and write to you."
+      },
+      "actions": {
+        "titre": "Add a headline",
+        "bio": "Introduce myself",
+        "lieu": "Add my location",
+        "competences": "Add skills",
+        "phares": "Pick my 3 key skills",
+        "langues": "Add my languages",
+        "liens": "Add a link",
+        "realisations": "Add a piece of work",
+        "publie": "Publish my profile"
+      }
+    },
+    "editeur": {
+      "surtitre": "My profile",
+      "titre": "Edit my profile",
+      "fermer": "Close without saving",
+      "sections": "Profile sections",
+      "section": {
+        "essentiel": "Essentials",
+        "competences": "Skills",
+        "liens": "Links",
+        "realisations": "Work"
+      },
+      "bioAide": "Who you are, what you love to build, and for whom.",
+      "heures": "How much time per week?",
+      "autre": "Other",
+      "competencesIntro": "GitHub and your skills card already fill your profile. Add here what they cannot see.",
+      "competencesAide": "Enter or comma to add. 20 at most.",
+      "ajouterEtiquette": "Type, then Enter…",
+      "plein": "{n} at most: remove one to add another",
+      "retirerEtiquette": "Remove {nom}",
+      "suggestions": "Suggestions:",
+      "technologies": "Technologies",
+      "githubRelie": "linked to your account",
+      "githubAbsent": "Not linked yet: from your profile page, “Link my GitHub”.",
+      "nouvelleRealisation": "New piece of work",
+      "retirer": "Remove",
+      "apercuDirect": "Live preview behind this panel",
+      "rienAChanger": "No changes yet",
+      "nonEnregistre": "Your changes are not saved.",
+      "continuer": "Keep editing",
+      "abandonner": "Discard",
+      "aCorriger": "Some values are not accepted: they are marked in red.",
+      "heuresCourt": "{n} h"
     }
   },
   "etat": {

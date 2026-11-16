@@ -8,6 +8,7 @@ import { i18n } from '../../i18n'
 import { creerRouteur } from '../../router'
 import { chargerSession } from '../../session'
 import App from '../../App.vue'
+import { completude, ETAPES } from './completude'
 import { competencesPhares, hoteLisible, lienProfil, lireCompetences, pourcentage, urlDrapeau } from './profils'
 
 async function ouvrir(chemin = '/profil') {
@@ -16,7 +17,8 @@ async function ouvrir(chemin = '/profil') {
   const routeur = creerRouteur(createMemoryHistory())
   await routeur.push(chemin)
   const page = mount(App, { global: { plugins: [i18n, routeur] } })
-  await vi.waitFor(() => expect(page.text()).not.toContain('Chargement'))
+  // 3 s : le premier chargement d'une page (import paresseux) peut être lent quand toute la suite tourne en CI.
+  await vi.waitFor(() => expect(page.text()).not.toContain('Chargement'), { timeout: 3000 })
   return page
 }
 
@@ -88,12 +90,48 @@ describe('Mon profil', () => {
     const page = await profilPret()
     await page.get('[data-test="modifier"]').trigger('click')
     const formulaire = page.get('[data-test="formulaire"]')
-    await formulaire.findAll('input')[0]!.setValue('Thiès')
-    await formulaire.findAll('input').at(-1)!.setValue('UX design, Mobile Money')
+    await formulaire.get('[data-test="champ-ville"] input').setValue('Thiès')
+    await formulaire.get('[data-test="champ-competences"]').setValue('UX design, Mobile Money')
     await formulaire.trigger('submit')
     await vi.waitFor(() => expect(page.find('[data-test="message"]').text()).toBe('Ton profil est enregistré.'))
     expect(page.text()).toContain('Thiès')
     expect(page.get('[data-test="competences"]').text()).toContain('Mobile Money')
+  })
+
+  it('le panneau « Modifier » montre le changement tout de suite derrière lui, et demande avant d’abandonner', async () => {
+    const page = await profilPret()
+    await page.get('[data-test="modifier"]').trigger('click')
+    const formulaire = page.get('[data-test="formulaire"]')
+    await formulaire.get('[data-test="champ-titre"] input').setValue('Développeuse Flutter')
+    // Rien n'est enregistré, mais l'en-tête du profil l'affiche déjà.
+    expect(page.get('[data-test="titre"]').text()).toBe('Développeuse Flutter')
+
+    await page.get('[data-test="fermer-editeur"]').trigger('click')
+    expect(page.find('[data-test="confirmer-sortie"]').exists()).toBe(true)
+    await page.get('[data-test="abandonner"]').trigger('click')
+    expect(page.find('[data-test="formulaire"]').exists()).toBe(false)
+    expect(page.find('[data-test="titre"]').exists()).toBe(false)
+  })
+
+  it('les compétences se saisissent comme des étiquettes : Entrée ajoute, Retour arrière retire', async () => {
+    const page = await profilPret()
+    await page.get('[data-test="modifier"]').trigger('click')
+    const champ = page.get('[data-test="champ-competences"]')
+    await champ.setValue('Figma')
+    await champ.trigger('keydown', { key: 'Enter' })
+    await champ.setValue('figma')
+    await champ.trigger('keydown', { key: 'Enter' })
+    expect(page.findAll('.etiquette-saisie').map((e) => e.text())).toEqual(['Figma'])
+    await champ.trigger('keydown', { key: 'Backspace' })
+    expect(page.findAll('.etiquette-saisie')).toHaveLength(0)
+  })
+
+  it('la jauge propose la prochaine étape et ouvre le bon endroit du panneau', async () => {
+    const page = await profilPret()
+    const jauge = page.get('[data-test="completude"]')
+    expect(jauge.text()).toContain('Ajouter un titre')
+    await jauge.get('[data-test="etape-suivante"]').trigger('click')
+    expect(page.find('[data-test="formulaire"]').exists()).toBe(true)
   })
 
   it('si le profil a changé ailleurs (409), recharge la dernière version et le dit', async () => {
@@ -224,6 +262,14 @@ describe('profil professionnel (#159)', () => {
 })
 
 describe('outils', () => {
+  it('la jauge compte chaque étape pareil et donne la première qui manque', () => {
+    const vide = { titre: null, bio: null, pays: null, ville: null, competences: [], competencesPhares: [], langues: [], linkedin: null, siteWeb: null, realisations: [], publie: false }
+    expect(completude(vide)).toEqual({ pourcent: 0, manquantes: ETAPES })
+    const presque = { ...vide, titre: 'Dev', bio: 'x'.repeat(40), ville: 'Dakar', competences: [1, 2, 3].map((n) => ({ competence: `c${n}`, source: 'github' as const })), competencesPhares: ['c1'], langues: ['fr'], siteWeb: 'https://a.dev', realisations: [{ titre: 'A' }] }
+    expect(completude(presque)).toEqual({ pourcent: 89, manquantes: ['publie'] })
+    expect(completude({ ...presque, bio: 'trop court' }).manquantes).toEqual(['bio', 'publie'])
+  })
+
   it('la part d’un langage s’écrit en pourcentage arrondi', () => {
     expect(pourcentage(0.745, 'en')).toBe('75%')
   })
