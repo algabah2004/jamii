@@ -221,4 +221,72 @@ class SalonCercleTest {
 		assertThat(lu).bodyJson().extractingPath("$.decisions[*].texte").asArray().containsExactly("La démo est vendredi", "On part sur Flutter");
 	}
 
+	// ---------------------------------------------------------------- l'appel WebRTC du cercle (#157)
+
+	private static final String SDP = "v=0\\r\\no=- 1 2 IN IP4 127.0.0.1\\r\\ns=-\\r\\n";
+
+	private MvcTestResult presence(Cercle c, UtilisateurConnecte qui) {
+		return envoyer("POST", salon(c) + "/appel/presence", qui, null);
+	}
+
+	private MvcTestResult signal(Cercle c, UtilisateurConnecte de, UtilisateurConnecte a, String type, String sdp) {
+		return envoyer("POST", salon(c) + "/appel/signaux", de, "{\"a\":\"" + a.id() + "\",\"type\":\"" + type + "\",\"sdp\":\"" + sdp + "\"}");
+	}
+
+	@Test
+	void l_appel_du_cercle_relie_les_membres_deux_a_deux_et_se_termine_quand_tous_partent() {
+		Cercle c = cercleTire();
+		UtilisateurConnecte awa = c.createur();
+		UtilisateurConnecte kofi = c.membres().get(1);
+		UtilisateurConnecte fatou = c.membres().get(2);
+		assertThat(presence(c, awa)).hasStatus(HttpStatus.NOT_FOUND).bodyJson().extractingPath("$.code").isEqualTo("pas_d_appel");
+
+		assertThat(envoyer("POST", salon(c) + "/appel", awa, null)).hasStatus(HttpStatus.CREATED);
+		assertThat(presence(c, awa)).hasStatusOk().bodyJson().extractingPath("$.presents.length()").isEqualTo(1);
+		var p = presence(c, kofi);
+		assertThat(p).hasStatusOk().bodyJson().extractingPath("$.presents[0].personne.nom").isEqualTo("Awa");
+		assertThat(p).bodyJson().extractingPath("$.presents[1].personne.nom").isEqualTo("Kofi");
+		assertThat(p.getResponse().getHeader("Cache-Control")).contains("no-store");
+		assertThat(lire(salon(c), fatou)).bodyJson().extractingPath("$.appel.presents").isEqualTo(2);
+
+		// Kofi, arrivé le dernier, envoie l'offre à Awa ; elle la lit une seule fois, puis répond.
+		assertThat(signal(c, kofi, awa, "offre", SDP)).hasStatus(HttpStatus.NO_CONTENT);
+		var boite = presence(c, awa);
+		assertThat(boite).bodyJson().extractingPath("$.signaux[0].de").isEqualTo(kofi.id().toString());
+		assertThat(boite).bodyJson().extractingPath("$.signaux[0].type").isEqualTo("offre");
+		assertThat(presence(c, awa)).bodyJson().extractingPath("$.signaux.length()").isEqualTo(0);
+		assertThat(signal(c, awa, kofi, "reponse", SDP)).hasStatus(HttpStatus.NO_CONTENT);
+		assertThat(presence(c, kofi)).bodyJson().extractingPath("$.signaux[0].type").isEqualTo("reponse");
+
+		// Personne d'autre : ni un signal vers un membre absent de l'appel, ni un SDP qui n'en est pas un, ni un inconnu.
+		assertThat(signal(c, kofi, fatou, "offre", SDP)).hasStatus(HttpStatus.CONFLICT)
+			.bodyJson().extractingPath("$.code").isEqualTo("pas_dans_l_appel");
+		assertThat(signal(c, kofi, awa, "offre", "pas un sdp")).hasStatus(HttpStatus.BAD_REQUEST);
+		assertThat(signal(c, kofi, awa, "autre", SDP)).hasStatus(HttpStatus.BAD_REQUEST);
+		assertThat(presence(c, utilisateur("Curieux"))).hasStatus(HttpStatus.FORBIDDEN);
+
+		// Chacun part : le dernier termine l'appel.
+		assertThat(envoyer("DELETE", salon(c) + "/appel/presence", kofi, null)).hasStatus(HttpStatus.NO_CONTENT);
+		assertThat(lire(salon(c), awa)).bodyJson().extractingPath("$.appel.presents").isEqualTo(1);
+		assertThat(envoyer("DELETE", salon(c) + "/appel/presence", awa, null)).hasStatus(HttpStatus.NO_CONTENT);
+		assertThat(lire(salon(c), awa)).bodyJson().extractingPath("$.appel").isNull();
+	}
+
+	@Test
+	void une_personne_qui_ne_donne_plus_signe_de_vie_quitte_l_appel_et_ses_signaux_partent_avec_elle() {
+		Cercle c = cercleTire();
+		UtilisateurConnecte awa = c.createur();
+		UtilisateurConnecte kofi = c.membres().get(1);
+		envoyer("POST", salon(c) + "/appel", awa, null);
+		presence(c, awa);
+		presence(c, kofi);
+		signal(c, kofi, awa, "offre", SDP);
+		// Kofi ferme son onglet : plus de signe de vie depuis 20 s.
+		base.sql("UPDATE appel_cercle_presence SET vu_le = vu_le - make_interval(secs => 20) WHERE utilisateur_id = :k")
+			.param("k", kofi.id()).update();
+		var p = presence(c, awa);
+		assertThat(p).bodyJson().extractingPath("$.presents.length()").isEqualTo(1);
+		assertThat(p).bodyJson().extractingPath("$.signaux.length()").isEqualTo(0);
+	}
+
 }

@@ -1489,7 +1489,10 @@
         "tropAppels": "Too many calls started in an hour. Try again later."
       },
       "voir": "Show",
-      "masquer": "Hide"
+      "masquer": "Hide",
+      "presents": "person in the call | {n} person in the call | {n} people in the call",
+      "revenirAppel": "Back to the call",
+      "rejoindreVideo": "With camera"
     },
     "tableau": {
       "pasDeTour": "The dashboard opens with the first turn, after the draw."
@@ -1705,6 +1708,22 @@
         "doublon": "This title is already in the CSV.",
         "limite": "The CSV exceeds 100 tasks.",
         "vide": "The CSV contains no tasks."
+      }
+    },
+    "appel": {
+      "titre": "{nom} circle call",
+      "seul": "You are alone for now. Other members see the call in the room.",
+      "moi": "You",
+      "connexion": "Connecting…",
+      "personnes": "person | {n} person | {n} people",
+      "quitter": "Leave the call",
+      "reagit": "{nom} reacts:",
+      "fin": {
+        "termine": "You left the call",
+        "micro_refuse": "Jamii cannot use your microphone. Allow it in your browser, then try again.",
+        "impossible": "The call could not start. Try again.",
+        "trop_de_requetes": "Too many calls started in a short time. Try again in a moment.",
+        "echec": "The connection to Jamii was lost."
       }
     }
   },

@@ -263,13 +263,64 @@ export interface paths {
         put?: never;
         /**
          * Lancer l'appel du cercle, ou rejoindre celui qui est en cours (membres)
-         * @description Un seul appel à la fois : s'il y en a un, `200` avec celui-ci. Sinon une salle neuve est créée (`201`), et un
-         *     message `appel` l'annonce dans le salon. Un appel est « en cours » une heure au plus. Au plus 10 appels lancés
-         *     par heure et par personne (`429`).
+         * @description Un seul appel à la fois : s'il y en a un, `200` avec celui-ci. Sinon un appel neuf est créé (`201`), et un
+         *     message `appel` l'annonce dans le salon. L'appel se passe dans Jamii, en WebRTC (#157) : on y entre ensuite par
+         *     `POST …/appel/presence`. Il se termine quand le dernier présent part, ou une heure après son lancement. Au plus
+         *     10 appels lancés par heure et par personne (`429`).
          */
         post: operations["lancerAppelCercle"];
         /** Terminer l'appel en cours (celui qui l'a lancé, ou le créateur du cercle) */
         delete: operations["terminerAppelCercle"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cercles/{cercleId}/salon/appel/presence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cercleId: components["parameters"]["CercleId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Je suis dans l'appel du cercle (toutes les 1,5 s)
+         * @description L'appel du cercle en WebRTC (#157) : au plus 6 membres, chacun relié directement à chacun (un maillage). Le son
+         *     et l'image ne passent jamais par l'API. Ce signe de vie renvoie qui est là, et les offres ou réponses SDP qui
+         *     m'attendent : lues une seule fois, puis effacées. Pour chaque paire, c'est le dernier arrivé (`arriveLe`, puis
+         *     l'identifiant) qui envoie l'offre. Sans signe de vie pendant 12 s, on a quitté l'appel. Jamais en cache.
+         */
+        post: operations["presenceAppelCercle"];
+        /** Je quitte l'appel ; le dernier à partir le termine */
+        delete: operations["quitterAppelCercle"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cercles/{cercleId}/salon/appel/signaux": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cercleId: components["parameters"]["CercleId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Une offre ou une réponse SDP pour un autre présent
+         * @description Les deux personnes doivent être dans l'appel (`409 pas_dans_l_appel`). Le SDP complet, candidats ICE inclus,
+         *     commence par `v=0` et fait au plus 30 000 caractères. Au plus 6 signaux en attente d'une personne à une autre
+         *     (`429`). Un signal non lu disparaît au bout d'une minute.
+         */
+        post: operations["signalAppelCercle"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -518,9 +569,29 @@ export interface components {
             lanceLe: string;
             /**
              * Format: uri
-             * @description L'adresse de la salle (Jitsi). Une salle neuve à chaque appel.
+             * @description L'ancienne salle Jitsi, gardée pour compatibilité : l'appel se passe désormais dans Jamii (WebRTC, #157).
              */
             url: string;
+            /** @description Combien de membres sont dans l'appel en ce moment. */
+            presents: number;
+        };
+        SalleAppelCercle: {
+            /** Format: uuid */
+            appelId: string;
+            /** @description Les présents, moi compris, du premier arrivé au dernier. */
+            presents: {
+                personne: components["schemas"]["PersonneResume"];
+                /** Format: date-time */
+                arriveLe: string;
+            }[];
+            /** @description Les offres et réponses qui m'attendaient, dans l'ordre d'envoi. Effacées une fois lues. */
+            signaux: {
+                /** Format: uuid */
+                de: string;
+                /** @enum {string} */
+                type: "offre" | "reponse";
+                sdp: string;
+            }[];
         };
         /**
          * @description Base de toute liste paginée. Un contrat l'étend ainsi :
@@ -1035,6 +1106,94 @@ export interface operations {
             403: components["responses"]["Interdit"];
             /** @description Pas d'appel en cours. */
             404: components["responses"]["Introuvable"];
+        };
+    };
+    presenceAppelCercle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cercleId: components["parameters"]["CercleId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description La salle. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SalleAppelCercle"];
+                };
+            };
+            401: components["responses"]["NonConnecte"];
+            /** @description `pas_membre`. */
+            403: components["responses"]["Interdit"];
+            /** @description `pas_d_appel` : aucun appel en cours. */
+            404: components["responses"]["Introuvable"];
+        };
+    };
+    quitterAppelCercle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cercleId: components["parameters"]["CercleId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Parti (sans effet si l'appel est déjà fini). */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["NonConnecte"];
+            /** @description `pas_membre`. */
+            403: components["responses"]["Interdit"];
+            404: components["responses"]["Introuvable"];
+        };
+    };
+    signalAppelCercle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cercleId: components["parameters"]["CercleId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    a: string;
+                    /** @enum {string} */
+                    type: "offre" | "reponse";
+                    sdp: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Déposé. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Invalide"];
+            401: components["responses"]["NonConnecte"];
+            /** @description `pas_membre`. */
+            403: components["responses"]["Interdit"];
+            404: components["responses"]["Introuvable"];
+            409: components["responses"]["Conflit"];
+            429: components["responses"]["TropDeRequetes"];
         };
     };
 }
