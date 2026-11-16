@@ -10,6 +10,7 @@ import CarteCompetences from './CarteCompetences.vue'
 import FicheProfil from './FicheProfil.vue'
 import PartagerCarte from './PartagerCarte.vue'
 import ReglagePresence from '../reseau/ReglagePresence.vue'
+import AbonnesProfil from '../reseau/AbonnesProfil.vue'
 import {
   DISPONIBILITES,
   LANGUES_PROPOSEES,
@@ -234,6 +235,7 @@ async function enregistrer() {
     <div v-else-if="etat === 'aucun'" class="accueil-profil" data-test="sans-profil">
       <div class="accueil-profil__texte">
         <h1>{{ t('profil.generation.titre') }}</h1>
+        <AbonnesProfil v-if="moi" :personne-id="moi.id" />
         <p class="accueil-profil__intro">{{ t('profil.generation.texte') }}</p>
         <ul class="accueil-profil__lu">
           <li v-for="cle in ['langages', 'sujets', 'etoiles']" :key="cle">✓ {{ t(`profil.generation.lu.${cle}`) }}</li>
@@ -261,6 +263,7 @@ async function enregistrer() {
     <template v-else-if="profil">
       <FicheProfil :profil="profil" moi>
         <template #actions>
+          <AbonnesProfil v-if="moi" :personne-id="moi.id" />
           <div class="barre-actions">
             <p class="visibilite" :class="{ 'visibilite--publie': profil.publie }" data-test="visibilite">
               {{ profil.publie ? t('profil.visibilite.publie') : t('profil.visibilite.prive') }}

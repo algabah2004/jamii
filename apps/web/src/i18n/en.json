@@ -1836,7 +1836,10 @@
       "candidature_acceptee": "Your application to a hackathon is accepted.",
       "candidature_refusee": "Your application to a hackathon was not selected.",
       "candidature_attente": "You are on a hackathon's waiting list.",
-      "invitation_equipe": "{nom} added you to their hackathon team."
+      "invitation_equipe": "{nom} added you to their hackathon team.",
+      "nouvel_abonne": "{nom} follows you.",
+      "suivi_cercle": "{nom} opened a circle: {cercle}.",
+      "suivi_publication": "{nom} posted in a community."
     },
     "contacts": {
       "recues": "Requests received",
@@ -3118,5 +3121,19 @@
       "fete": "Party and food",
       "nature": "Nature and animals"
     }
+  },
+  "abonnes": {
+    "suivre": "Follow",
+    "abonne": "Following",
+    "teSuit": "Follows you",
+    "abonnes": "follower | follower | followers",
+    "abonnements": "following | following | following",
+    "titreAbonnes": "Followers",
+    "titreAbonnements": "Following",
+    "fermer": "Close",
+    "chargement": "Loading…",
+    "aucunAbonne": "Nobody follows this profile yet.",
+    "aucunAbonnement": "This profile does not follow anyone yet.",
+    "etDautres": "and {n} more"
   }
 }
