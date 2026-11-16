@@ -46,6 +46,12 @@ let suivant = 1
 const nouvelId = () => `e3f00000-0000-4000-8000-${String(suivant++).padStart(12, '0')}`
 const ilYa = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOString()
 
+function citation(personneId: string, id: string | undefined): Message['reponseA'] {
+  const m = id ? messages.get(personneId)?.find((x) => x.id === id) : undefined
+  if (!m) return null
+  return { id: m.id, deMoi: m.deMoi, texte: m.supprime ? '' : m.texte.slice(0, 140), sorte: m.supprime ? null : (m.piecesJointes[0]?.sorte ?? null), supprime: m.supprime }
+}
+
 export function reinitialiserReseau() {
   invitations.clear()
   messages.clear()
@@ -54,11 +60,11 @@ export function reinitialiserReseau() {
   // Kofi invite Awa dans son cercle d'Abidjan (non lu), Amina lui a répondu hier (lu).
   const abidjan = cerclesDemo().find((c) => c.id === ABIDJAN)
   messages.set(KOFI, [
-    { id: nouvelId(), deMoi: false, texte: 'Salut Awa ! Notre cercle cherche quelqu’un qui connaît Flutter. Tu nous rejoins ?', invitation: abidjan ? { cercle: resumeCercle(abidjan) } : null, envoyeLe: ilYa(12), luLe: null, piecesJointes: [] },
+    { id: nouvelId(), deMoi: false, texte: 'Salut Awa ! Notre cercle cherche quelqu’un qui connaît Flutter. Tu nous rejoins ?', invitation: abidjan ? { cercle: resumeCercle(abidjan) } : null, envoyeLe: ilYa(12), luLe: null, piecesJointes: [], supprime: false, transfere: false },
   ])
   messages.set(PROFILS[1].utilisateurId, [
-    { id: nouvelId(), deMoi: false, texte: 'Avec plaisir, je regarde ton idée ce soir.', invitation: null, envoyeLe: ilYa(60 * 20), luLe: ilYa(60 * 19), piecesJointes: [] },
-    { id: nouvelId(), deMoi: true, texte: 'Bonjour Amina, tu aurais un moment pour relire les écrans de mon appli ?', invitation: null, envoyeLe: ilYa(60 * 22), luLe: ilYa(60 * 21), piecesJointes: [] },
+    { id: nouvelId(), deMoi: false, texte: 'Avec plaisir, je regarde ton idée ce soir.', invitation: null, envoyeLe: ilYa(60 * 20), luLe: ilYa(60 * 19), piecesJointes: [], supprime: false, transfere: false },
+    { id: nouvelId(), deMoi: true, texte: 'Bonjour Amina, tu aurais un moment pour relire les écrans de mon appli ?', invitation: null, envoyeLe: ilYa(60 * 22), luLe: ilYa(60 * 21), piecesJointes: [], supprime: false, transfere: false },
   ])
   // Amina est un contact ; Ibrahima (Saint-Louis) a demandé à en être un.
   const AMINA = PROFILS[1].utilisateurId
@@ -116,7 +122,8 @@ export const handlersReseau = [
     const personneId = String(params.personneId)
     if (personneId === AWA) return erreur('soi_meme')
     if (!personne(personneId)) return erreur('introuvable', 404)
-    const corps = (await request.json()) as { texte?: string; cercleId?: string; pieces?: string[] }
+    const corps = (await request.json()) as { texte?: string; cercleId?: string; pieces?: string[]; reponseA?: string }
+    if (corps.reponseA && !messages.get(personneId)?.some((m) => m.id === corps.reponseA)) return erreur('validation', 400)
     const texte = corps.texte?.trim() ?? ''
     if ((!texte && !corps.pieces?.length) || texte.length > 2000) return erreur('validation', 400)
     let invitation: Message['invitation'] = null
@@ -128,9 +135,43 @@ export const handlersReseau = [
       invitations.set(c.id, (invitations.get(c.id) ?? new Set()).add(personneId))
       invitation = { cercle: resumeCercle(c) }
     }
-    const message: Message = { id: nouvelId(), deMoi: true, texte, invitation, envoyeLe: new Date().toISOString(), luLe: null, piecesJointes: piecesDe(corps.pieces, personneId) }
+    const message: Message = { id: nouvelId(), deMoi: true, texte, invitation, envoyeLe: new Date().toISOString(), luLe: null, piecesJointes: piecesDe(corps.pieces, personneId), reponseA: citation(personneId, corps.reponseA), supprime: false, transfere: false }
     messages.set(personneId, [message, ...(messages.get(personneId) ?? [])])
     return HttpResponse.json(message, { status: 201 })
+  }),
+
+  // Modifier, supprimer, transférer (#157), avec les mêmes règles que l'API.
+  http.patch('/api/conversations/:personneId/messages/:messageId', async ({ params, request }) => {
+    const m = messages.get(String(params.personneId))?.find((x) => x.id === params.messageId && x.deMoi)
+    if (!m) return erreur('introuvable', 404)
+    if (m.supprime) return erreur('message_supprime')
+    if (m.invitation || m.appel) return erreur('non_modifiable')
+    if (Date.now() - Date.parse(m.envoyeLe) > 15 * 60_000) return erreur('delai_depasse')
+    const texte = ((await request.json()) as { texte?: string }).texte?.trim() ?? ''
+    if ((!texte && !m.piecesJointes.length) || texte.length > 2000) return erreur('validation', 400)
+    if (texte !== m.texte) Object.assign(m, { texte, modifieLe: new Date().toISOString() })
+    return HttpResponse.json(m)
+  }),
+  http.delete('/api/conversations/:personneId/messages/:messageId', ({ params }) => {
+    const m = messages.get(String(params.personneId))?.find((x) => x.id === params.messageId && x.deMoi)
+    if (!m) return erreur('introuvable', 404)
+    Object.assign(m, { texte: '', piecesJointes: [], invitation: null, appel: null, supprime: true })
+    return new HttpResponse(null, { status: 204 })
+  }),
+  http.post('/api/conversations/:personneId/messages/:messageId/transfert', async ({ params, request }) => {
+    const m = messages.get(String(params.personneId))?.find((x) => x.id === params.messageId)
+    if (!m) return erreur('introuvable', 404)
+    if (m.supprime) return erreur('message_supprime')
+    if (m.invitation || m.appel) return erreur('non_transferable')
+    const { destinataires = [] } = (await request.json()) as { destinataires?: string[] }
+    const uniques = [...new Set(destinataires)]
+    if (!uniques.length || uniques.length > 5 || uniques.includes(AWA)) return erreur('validation', 400)
+    if (uniques.some((id) => !personne(id))) return erreur('introuvable', 404)
+    for (const id of uniques) {
+      const copie: Message = { ...m, id: nouvelId(), deMoi: true, envoyeLe: new Date().toISOString(), luLe: null, reponseA: null, modifieLe: null, transfere: true }
+      messages.set(id, [copie, ...(messages.get(id) ?? [])])
+    }
+    return new HttpResponse(null, { status: 204 })
   }),
 
   // « … est en train d'écrire » (#157) : en démo, personne n'écrit.
@@ -151,7 +192,7 @@ export const handlersReseau = [
     if (!corps?.offre?.startsWith('v=0')) return erreur('validation', 400)
     const id = nouvelId()
     const video = corps.video === true
-    const message: Message = { id: nouvelId(), deMoi: true, texte: video ? '📹 Appel vidéo' : '📞 Appel vocal', invitation: null, envoyeLe: new Date().toISOString(), luLe: null, appel: { id, enCours: true, statut: 'sonne', video }, piecesJointes: [] }
+    const message: Message = { id: nouvelId(), deMoi: true, texte: video ? '📹 Appel vidéo' : '📞 Appel vocal', invitation: null, envoyeLe: new Date().toISOString(), luLe: null, appel: { id, enCours: true, statut: 'sonne', video }, piecesJointes: [], supprime: false, transfere: false }
     messages.set(personneId, [message, ...(messages.get(personneId) ?? [])])
     appels.set(id, { id, statut: 'sonne', video, deMoi: true, personne: p, creeLe: message.envoyeLe, message })
     return HttpResponse.json(appels.get(id), { status: 201 })

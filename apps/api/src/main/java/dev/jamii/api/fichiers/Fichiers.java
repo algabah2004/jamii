@@ -173,6 +173,39 @@ public class Fichiers {
 		return uniques;
 	}
 
+	/**
+	 * Pour transférer un message (#157) : une copie privée de chacun de ses fichiers, que `lecteur` peut lire, réservée à
+	 * sa conversation avec `destinataire`. Un fichier privé reste lié à une seule conversation : on ne le partage pas.
+	 */
+	@Transactional
+	public List<UUID> copierPrives(Collection<UUID> ids, UUID lecteur, UUID destinataire, Instant maintenant) {
+		List<UUID> copies = new ArrayList<>();
+		for (UUID id : ids) {
+			var contenu = lire(id, lecteur).orElseThrow(() -> new ErreurFichier(400, "piece_inconnue", "Une pièce jointe est introuvable"));
+			var p = contenu.piece();
+			UUID copie = UUID.randomUUID();
+			base.sql("""
+					INSERT INTO fichier (id, proprietaire_id, nom, type_mime, sorte, taille, cree_le, conversation_avec, cercle_id)
+					VALUES (:id, :p, :nom, :mime, :sorte, :taille, :t, :destinataire, NULL)
+					""")
+				.param("id", copie).param("p", lecteur).param("nom", p.nom()).param("mime", p.type()).param("sorte", p.sorte())
+				.param("taille", p.taille()).param("t", Timestamp.from(maintenant)).param("destinataire", destinataire).update();
+			stockage.ecrire(copie, contenu.octets());
+			copies.add(copie);
+		}
+		return copies;
+	}
+
+	/** Efface pour de bon les fichiers privés d'un message supprimé (#157), s'ils ne servent plus à aucun message. */
+	@Transactional
+	public void supprimerPrives(Collection<UUID> ids, UUID proprietaire) {
+		if (ids == null || ids.isEmpty()) return;
+		base.sql("""
+				DELETE FROM fichier f WHERE f.id IN (:ids) AND f.proprietaire_id = :p AND f.conversation_avec IS NOT NULL
+				  AND NOT EXISTS (SELECT 1 FROM message m WHERE f.id = ANY(m.pieces))
+				""").param("ids", ids).param("p", proprietaire).update();
+	}
+
 	/** Décrit des pièces jointes, dans l'ordre demandé (celles qui n'existent plus sont omises). */
 	public List<Piece> decrire(Collection<UUID> ids) {
 		if (ids == null || ids.isEmpty()) {
