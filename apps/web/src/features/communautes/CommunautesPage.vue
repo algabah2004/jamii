@@ -188,7 +188,9 @@ async function rejoindre(c: Communaute) {
 /* Tout est centré, comme le titre : la page reste symétrique quel que soit le nombre de cartes. */
 .groupe h2 { display: flex; align-items: center; justify-content: center; gap: var(--space-2); margin: 0 0 var(--space-4); font-size: var(--type-h3-size); }
 .groupe__nombre { padding: 0 10px; border-radius: var(--radius-pill); background: var(--surface-raised); color: var(--ink-muted); font-size: 0.875rem; }
-.grille { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-5, 1.25rem); grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 23rem)); justify-content: center; }
+/* Quatre cartes par ligne au plus, chacune d'un quart de la largeur ; moins de quatre restent centrées. */
+.grille { --gap: var(--space-5, 1.25rem); list-style: none; margin: 0; padding: 0; display: grid; gap: var(--gap); grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), calc((100% - 3 * var(--gap)) / 4))); justify-content: center; }
+@media (max-width: 640px) { .grille { grid-template-columns: 1fr; } }
 
 .carte {
   position: relative; display: flex; flex-direction: column; overflow: hidden; padding: 0;
