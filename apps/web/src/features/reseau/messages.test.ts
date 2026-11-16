@@ -205,3 +205,82 @@ describe('les messages', () => {
     expect(quand('2026-11-10T09:05:00', 'fr', maintenant)).toBe('10 nov.')
   })
 })
+
+describe('agir sur un message (#157)', () => {
+  const dernier = (page: ReturnType<typeof mount>) => page.findAll('[data-test="fil"] li.ligne').at(-1)!
+  /** Le message d'Amina dans la conversation de démo. */
+  const recu = (page: ReturnType<typeof mount>) => page.findAll('[data-test="fil"] li.ligne').find((l) => l.text().includes('Avec plaisir'))!
+
+  async function ecrire(page: ReturnType<typeof mount>, texte: string) {
+    await page.get('[data-test="form-message"] textarea').setValue(texte)
+    await page.get('[data-test="form-message"]').trigger('submit')
+    await vi.waitFor(() => expect(dernier(page).text()).toContain(texte))
+  }
+
+  it("répond à un message : le bandeau le rappelle, puis la réponse le cite et y ramène", async () => {
+    const { page } = await ouvrir(`/messages/${AMINA}`)
+    await vi.waitFor(() => expect(page.find('[data-test="actions-message"]').exists()).toBe(true))
+    const premier = recu(page)
+    await premier.get('[data-test="actions-message"]').trigger('click')
+    await premier.get('[data-test="action-repondre"]').trigger('click')
+    expect(page.get('[data-test="bandeau-action"]').text()).toContain('Répondre à Amina')
+    expect(page.get('[data-test="bandeau-action"]').text()).toContain('Avec plaisir')
+
+    await ecrire(page, 'Parfait, merci !')
+    expect(page.find('[data-test="bandeau-action"]').exists()).toBe(false)
+    expect(dernier(page).get('[data-test="citation"]').text()).toContain('Amina')
+    expect(dernier(page).get('[data-test="citation"]').text()).toContain('Avec plaisir, je regarde ton idée ce soir.')
+  })
+
+  it('corrige mon message, puis le supprime pour tout le monde', async () => {
+    const { page } = await ouvrir(`/messages/${AMINA}`)
+    await vi.waitFor(() => expect(page.find('[data-test="form-message"]').exists()).toBe(true))
+    await ecrire(page, 'Rendez-vous à 10 h')
+
+    await dernier(page).get('[data-test="actions-message"]').trigger('click')
+    await dernier(page).get('[data-test="action-modifier"]').trigger('click')
+    const zone = page.get<HTMLTextAreaElement>('[data-test="form-message"] textarea')
+    expect(zone.element.value).toBe('Rendez-vous à 10 h')
+    expect(page.get('[data-test="bandeau-action"]').text()).toContain('Modifier le message')
+    await zone.setValue('Rendez-vous à 11 h')
+    await page.get('[data-test="form-message"]').trigger('submit')
+    await vi.waitFor(() => expect(dernier(page).text()).toContain('Rendez-vous à 11 h'))
+    expect(dernier(page).find('[data-test="modifie"]').exists()).toBe(true)
+    expect(page.findAll('[data-test="fil"] li.ligne').filter((l) => l.text().includes('Rendez-vous'))).toHaveLength(1)
+
+    await dernier(page).get('[data-test="actions-message"]').trigger('click')
+    await dernier(page).get('[data-test="action-supprimer"]').trigger('click')
+    await dernier(page).get('[data-test="confirmer-suppression"]').trigger('click')
+    await vi.waitFor(() => expect(dernier(page).find('[data-test="message-supprime"]').exists()).toBe(true))
+    expect(dernier(page).text()).toContain('Tu as supprimé ce message')
+    expect(dernier(page).text()).not.toContain('Rendez-vous')
+    // Un message reçu ne se modifie ni ne se supprime.
+    const sien = recu(page)
+    await sien.get('[data-test="actions-message"]').trigger('click')
+    expect(sien.find('[data-test="action-modifier"]').exists()).toBe(false)
+    expect(sien.find('[data-test="action-supprimer"]').exists()).toBe(false)
+    // Mon message d'hier ne se modifie plus (15 minutes), mais se supprime encore.
+    const ancien = page.findAll('[data-test="fil"] li.ligne').find((l) => l.text().includes('Bonjour Amina'))!
+    await ancien.get('[data-test="actions-message"]').trigger('click')
+    expect(ancien.find('[data-test="action-modifier"]').exists()).toBe(false)
+    expect(ancien.find('[data-test="action-supprimer"]').exists()).toBe(true)
+  })
+
+  it('transfère un message reçu à une autre conversation', async () => {
+    const { page, routeur } = await ouvrir(`/messages/${AMINA}`)
+    await vi.waitFor(() => expect(page.find('[data-test="actions-message"]').exists()).toBe(true))
+    const premier = recu(page)
+    await premier.get('[data-test="actions-message"]').trigger('click')
+    await premier.get('[data-test="action-transferer"]').trigger('click')
+    await vi.waitFor(() => expect(page.findAll('[data-test="choix-transfert"]').length).toBeGreaterThan(0))
+    const kofi = page.findAll('[data-test="transfert"] label').find((l) => l.text().includes('Kofi'))!
+    await kofi.get('input').setValue(true)
+    await page.get('[data-test="envoyer-transfert"]').trigger('click')
+    await vi.waitFor(() => expect(page.get('[data-test="info-action"]').text()).toContain('Message transféré à 1 personne'))
+    expect(page.find('[data-test="transfert"]').exists()).toBe(false)
+
+    await routeur.push(`/messages/${KOFI}`)
+    await vi.waitFor(() => expect(page.find('[data-test="transfere"]').exists()).toBe(true))
+    expect(dernier(page).text()).toContain('Avec plaisir, je regarde ton idée ce soir.')
+  })
+})

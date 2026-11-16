@@ -27,12 +27,43 @@ export async function lireProfilsRecommandes(cercleId: string): Promise<{ compet
 export type Envoi = { ok: true; message: Message } | { ok: false; code: string | null }
 
 /** Écrire à quelqu'un ; avec `cercleId`, le message porte l'invitation à ce cercle. */
-export async function envoyerMessage(personneId: string, texte: string, cercleId?: string, pieces: string[] = []): Promise<Envoi> {
+export async function envoyerMessage(personneId: string, texte: string, cercleId?: string, pieces: string[] = [], reponseA?: string): Promise<Envoi> {
   const { data, error } = await api.POST('/api/conversations/{personneId}/messages', {
     params: { path: { personneId } },
-    body: { texte: texte.trim(), ...(cercleId ? { cercleId } : {}), ...(pieces.length ? { pieces } : {}) },
+    body: { texte: texte.trim(), ...(cercleId ? { cercleId } : {}), ...(pieces.length ? { pieces } : {}), ...(reponseA ? { reponseA } : {}) },
   })
   return data ? { ok: true, message: data } : { ok: false, code: (error as { code?: string } | undefined)?.code ?? null }
+}
+
+// ---------------------------------------------------------------- modifier, supprimer, transférer (#157)
+
+/** On corrige un message pendant 15 minutes (Messagerie.DELAI_MODIFICATION) ; on le transfère à 5 personnes au plus. */
+export const DELAI_MODIFICATION_MS = 15 * 60_000
+export const TRANSFERT_MAX = 5
+
+export const modifiable = (m: Message, maintenant = Date.now()) =>
+  m.deMoi && !m.supprime && !m.appel && !m.invitation && maintenant - Date.parse(m.envoyeLe) < DELAI_MODIFICATION_MS
+export const transferable = (m: Message) => !m.supprime && !m.appel && !m.invitation
+
+export async function modifierMessage(personneId: string, messageId: string, texte: string): Promise<Envoi> {
+  const { data, error } = await api.PATCH('/api/conversations/{personneId}/messages/{messageId}', {
+    params: { path: { personneId, messageId } },
+    body: { texte: texte.trim() },
+  })
+  return data ? { ok: true, message: data } : { ok: false, code: (error as { code?: string } | undefined)?.code ?? null }
+}
+
+export async function supprimerMessage(personneId: string, messageId: string): Promise<boolean> {
+  const { response } = await api.DELETE('/api/conversations/{personneId}/messages/{messageId}', { params: { path: { personneId, messageId } } })
+  return response.ok
+}
+
+export async function transfererMessage(personneId: string, messageId: string, destinataires: string[]): Promise<{ ok: boolean; code: string | null }> {
+  const { response, error } = await api.POST('/api/conversations/{personneId}/messages/{messageId}/transfert', {
+    params: { path: { personneId, messageId } },
+    body: { destinataires },
+  })
+  return { ok: response.ok, code: (error as { code?: string } | undefined)?.code ?? null }
 }
 
 /** Lancer un appel vocal et vidéo avec une personne (#157) : le message qui l'annonce porte la salle. */

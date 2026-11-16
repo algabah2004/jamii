@@ -807,7 +807,8 @@
       "decouvrir": "Découvre les communautés",
       "ou": "ou",
       "creerLaTienneMin": "crée la tienne",
-      "creer": "Créer une communauté"
+      "creer": "Créer une communauté",
+      "intro": "Des développeurs qui s'entraident, par sujet ou par ville. Rejoins-en une, ou crée la tienne."
     },
     "themes": {
       "web": "Web",
@@ -992,7 +993,8 @@
   "pied": {
     "mission": "La plateforme d'échange des développeurs africains : s'entraider, faire équipe et mettre ses projets en ligne.",
     "liens": "Liens utiles",
-    "cadev": "Projet présenté à la CADEV 2026. Jamii fonctionne sur le cloud Systalink."
+    "cadev": "Projet présenté à la CADEV 2026. Jamii fonctionne sur le cloud Systalink.",
+    "charte": "Charte graphique"
   },
   "signaler": {
     "bouton": "Signaler",
@@ -1079,7 +1081,8 @@
       },
       "exempleQui": "Par exemple : mes clientes, mes deux couturières et moi.",
       "exempleProbleme": "Par exemple : je réponds aux mêmes questions sur WhatsApp toute la journée.",
-      "exempleReussite": "Par exemple : je reçois des commandes en ligne chaque semaine."
+      "exempleReussite": "Par exemple : je reçois des commandes en ligne chaque semaine.",
+      "questionsAide": "Réponds en une phrase. Ça aide Jamii à mieux comprendre ton besoin."
     },
     "publication": {
       "titre": "Publier ma demande",
@@ -1849,7 +1852,12 @@
       "soi_meme": "Tu ne peux pas t'écrire à toi-même.",
       "introuvable": "Cette personne n'existe plus.",
       "autre": "L'invitation n'est pas partie. Réessaie.",
-      "autreMessage": "Le message n'est pas parti. Réessaie."
+      "autreMessage": "Le message n'est pas parti. Réessaie.",
+      "delai_depasse": "Un message se modifie pendant 15 minutes après son envoi.",
+      "non_modifiable": "Une invitation ou un appel ne se modifie pas.",
+      "non_transferable": "Une invitation ou un appel ne se transfère pas.",
+      "message_supprime": "Ce message a été supprimé.",
+      "validation": "Le message est vide ou trop long."
     },
     "messages": {
       "titre": "Messages",
@@ -1953,6 +1961,38 @@
         "accepte": "En contact"
       },
       "voir": "Voir le profil de {nom}"
+    },
+    "actions": {
+      "menu": "Actions sur le message",
+      "repondre": "Répondre",
+      "modifier": "Modifier",
+      "transferer": "Transférer",
+      "supprimer": "Supprimer",
+      "annuler": "Annuler",
+      "enregistrer": "Enregistrer",
+      "repondreA": "Répondre à {nom}",
+      "enModification": "Modifier le message",
+      "toi": "Toi",
+      "confirmerSuppression": "Supprimer pour tout le monde ?",
+      "supprime": "Ce message a été supprimé",
+      "tuAsSupprime": "Tu as supprimé ce message",
+      "erreurSuppression": "Le message n’a pas pu être supprimé. Réessaie.",
+      "modifie": "modifié",
+      "transfere": "Transféré",
+      "sortes": {
+        "image": "📷 Photo",
+        "video": "🎬 Vidéo",
+        "document": "📎 Document",
+        "audio": "🎤 Message vocal"
+      },
+      "transfert": {
+        "titre": "Transférer le message",
+        "chercher": "Chercher une conversation",
+        "aucune": "Aucune conversation à qui l’envoyer.",
+        "compte": "{n} sur {max}",
+        "envoyer": "Transférer",
+        "envoye": "Message transféré | Message transféré à {n} personne | Message transféré à {n} personnes"
+      }
     }
   },
   "hackathons": {
@@ -3120,7 +3160,12 @@
       "type_refuse": "Ce navigateur enregistre dans un format que Jamii n’accepte pas.",
       "trop_de_requetes": "Trop de fichiers envoyés en une heure. Réessaie plus tard.",
       "erreur": "Le message vocal n’a pas pu être envoyé. Réessaie."
-    }
+    },
+    "ecouter": "Écouter le message vocal",
+    "pause": "Mettre en pause",
+    "position": "Position dans le {nom}",
+    "vitesse": "Vitesse de lecture : ×{v}",
+    "illisible": "Ce message vocal ne peut pas être lu sur cet appareil."
   },
   "ia": {
     "badge": "IA",
