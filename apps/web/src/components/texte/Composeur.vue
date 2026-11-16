@@ -36,8 +36,10 @@ const props = withDefaults(
     entreeEnvoie?: boolean
     testZone?: string
     testEnvoyer?: string
+    /** Pendant un enregistrement vocal, l'enregistreur (slot `action`) prend la ligne : il a son propre bouton d'envoi, et la mise en forme ne sert à rien. */
+    masquerEnvoi?: boolean
   }>(),
-  { pieces: () => [], envoi: false, erreur: null, accent: 'normal', avecFichiers: true, max: 2000, lignes: 1, entreeEnvoie: true, testZone: undefined, testEnvoyer: 'envoyer' },
+  { pieces: () => [], envoi: false, erreur: null, accent: 'normal', avecFichiers: true, max: 2000, lignes: 1, entreeEnvoie: true, testZone: undefined, testEnvoyer: 'envoyer', masquerEnvoi: false },
 )
 const emit = defineEmits<{ 'update:modelValue': [texte: string]; 'update:pieces': [pieces: PieceJointe[]]; envoyer: [] }>()
 const { t, locale } = useI18n()
@@ -247,7 +249,7 @@ function coller(e: ClipboardEvent) {
     />
 
     <div class="outils">
-      <div class="outils__format" role="toolbar" :aria-label="t('texteRiche.barre')">
+      <div v-show="!masquerEnvoi" class="outils__format" role="toolbar" :aria-label="t('texteRiche.barre')">
         <button
           v-for="b in BOUTONS"
           :key="b.format"
@@ -287,13 +289,20 @@ function coller(e: ClipboardEvent) {
       </div>
       <span v-if="erreur || probleme" role="alert" class="outils__erreur">{{ erreur || probleme }}</span>
       <span v-else class="outils__aide">{{ entreeEnvoie ? t('texteRiche.aide') : t('texteRiche.aideFil') }}</span>
-      <button type="button" class="envoyer" :disabled="!pret" :aria-busy="envoi || undefined" :data-test="testEnvoyer" @click="soumettre">{{ libelleEnvoyer }}</button>
+      <div class="envoi">
+        <slot name="action" />
+        <button v-show="!masquerEnvoi" type="button" class="envoyer" :class="{ 'envoyer--pret': pret }" :disabled="!pret" :aria-busy="envoi || undefined" :data-test="testEnvoyer" @click="soumettre">
+          <span v-if="envoi" class="envoyer__attente" aria-hidden="true" />
+          <svg v-else viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M3.4 9.2 15.6 3.6c.8-.4 1.6.4 1.2 1.2l-5.6 12.2c-.4.8-1.5.7-1.7-.1L8.4 12a.8.8 0 0 0-.5-.5L3.5 10.9c-.8-.2-.9-1.3-.1-1.7ZM8.3 11.7l3.4-3.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          <span class="envoyer__texte">{{ libelleEnvoyer }}</span>
+        </button>
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.composeur { border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); transition: border-color var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out); }
+.composeur { container-type: inline-size; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); transition: border-color var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out); }
 .composeur:focus-within { border-color: var(--ink-muted); }
 .composeur--alerte, .composeur--alerte:focus-within { border-color: var(--proof); }
 .composeur--survol { border-color: var(--action); box-shadow: 0 0 0 3px var(--action-soft); }
@@ -328,16 +337,32 @@ textarea:focus-visible { outline: none; }
 .separateur { width: 1px; height: 18px; margin: 0 var(--space-1); background: var(--line); }
 .outils__aide { flex: 1; min-width: 0; color: var(--ink-muted); font-size: 0.75rem; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .outils__erreur { flex: 1; min-width: 0; color: var(--danger); font-size: 0.8125rem; font-weight: 600; text-align: right; }
-.envoyer { flex: none; margin-inline-start: auto; min-height: 36px; padding: 0 var(--space-4); border: 0; border-radius: var(--radius-pill); background: var(--action); color: var(--on-action); font: inherit; font-size: var(--type-body-sm-size); font-weight: 600; cursor: pointer; }
-.composeur--alerte .envoyer { background: var(--proof); color: #02070A; }
-.envoyer:disabled { opacity: 0.4; cursor: not-allowed; }
+.envoi { flex: none; display: flex; align-items: center; gap: var(--space-2); margin-inline-start: auto; }
+.envoyer {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 0 var(--space-4) 0 14px;
+  border: 1px solid var(--line); border-radius: var(--radius-pill); background: var(--surface-raised); color: var(--ink-muted);
+  font: inherit; font-size: var(--type-body-sm-size); font-weight: 700; cursor: not-allowed;
+  transition: background var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out), border-color var(--motion-fast) var(--ease-out), transform var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out);
+}
+.envoyer svg { transition: transform var(--motion-fast) var(--ease-out); }
+.envoyer--pret { border-color: var(--action); background: var(--action); color: var(--on-action); cursor: pointer; box-shadow: 0 6px 18px -8px var(--action); }
+.envoyer--pret:hover { filter: brightness(1.08); }
+.envoyer--pret:hover svg { transform: translate(1px, -1px); }
+.envoyer--pret:active { transform: scale(0.96); }
+.composeur--alerte .envoyer--pret { border-color: var(--proof); background: var(--proof); color: #02070A; box-shadow: 0 6px 18px -8px var(--proof); }
+.envoyer[aria-busy='true'] { cursor: progress; }
 .envoyer:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.envoyer__attente { width: 16px; height: 16px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: tourne 0.8s linear infinite; }
+/* Une zone étroite (colonne de discussion) : l'aide au clavier coupée en « En… » ne sert à rien, on la retire. */
+@container (max-width: 640px) { .outils__aide { visibility: hidden; } }
 /* Sur un petit écran : les outils sur une ligne, puis l'envoi à droite en dessous. */
 @media (max-width: 720px) {
   .outils { flex-wrap: wrap; }
   .outils__aide { display: none; }
   .outils__format { flex: 1 1 100%; }
   .outils__erreur { flex: 1 1 100%; text-align: left; }
+  .envoyer { width: 40px; padding: 0; }
+  .envoyer__texte { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 }
-@media (prefers-reduced-motion: reduce) { .apercu__icone--envoi { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .apercu__icone--envoi, .envoyer__attente { animation: none; } .envoyer, .envoyer svg { transition: none; } }
 </style>
