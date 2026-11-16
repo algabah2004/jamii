@@ -72,6 +72,8 @@ async function rejoindre(c: Communaute) {
 
 <template>
   <section class="page">
+    <!-- Des taches de dessins tech, en haut, sur les côtés et en bas, qui s'estompent : sur cette page seulement. -->
+    <div class="page__motifs" aria-hidden="true" data-test="motifs-coins" />
     <!-- Comme une page de découverte : un grand titre centré, une grande recherche, les thèmes en pastilles. -->
     <header class="decouvrir">
       <h1>{{ t('communautes.liste.decouvrir') }}</h1>
@@ -158,7 +160,29 @@ async function rejoindre(c: Communaute) {
 </template>
 
 <style scoped>
-.page { display: grid; gap: var(--space-6); padding-top: var(--space-6); }
+.page { position: relative; isolation: isolate; display: grid; gap: var(--space-6); padding-top: var(--space-6); }
+/* Le motif n'apparaît que par taches (en haut, sur les côtés, en bas) qui se fondent dans le fond. */
+.page__motifs {
+  position: absolute; inset: calc(-1 * var(--space-6)) calc(-1 * var(--space-6)) 0; z-index: -1; pointer-events: none;
+  background-color: var(--action-ink); opacity: 0.2;
+  --tache-1: radial-gradient(34rem 26rem at 0% 0%, #000 10%, transparent 72%);
+  --tache-2: radial-gradient(30rem 26rem at 100% 22rem, #000 10%, transparent 70%);
+  --tache-3: radial-gradient(30rem 26rem at 0% 52%, #000 10%, transparent 70%);
+  --tache-4: radial-gradient(30rem 26rem at 100% 78%, #000 10%, transparent 70%);
+  --tache-5: radial-gradient(34rem 24rem at 30% 100%, #000 10%, transparent 72%);
+  -webkit-mask-image: url('../../../../../docs/design/motifs/tech-objets.svg'), var(--tache-1), var(--tache-2), var(--tache-3), var(--tache-4), var(--tache-5);
+  mask-image: url('../../../../../docs/design/motifs/tech-objets.svg'), var(--tache-1), var(--tache-2), var(--tache-3), var(--tache-4), var(--tache-5);
+  -webkit-mask-size: 260px, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+  mask-size: 260px, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+  -webkit-mask-repeat: repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+  mask-repeat: repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+  /* Le motif, gardé seulement là où il y a une tache (l'union des cinq). */
+  -webkit-mask-composite: source-in, source-over, source-over, source-over, source-over;
+  mask-composite: intersect, add, add, add, add;
+}
+:root[data-theme='sombre'] .page__motifs { opacity: 0.26; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme='clair']) .page__motifs { opacity: 0.26; } }
+@media (prefers-contrast: more) { .page__motifs { display: none; } }
 
 .decouvrir { display: grid; justify-items: center; gap: var(--space-3); padding: var(--space-6) 0 var(--space-2); text-align: center; }
 .decouvrir h1 { margin: 0; font-size: clamp(2rem, 5vw, 3.25rem); line-height: 1.05; letter-spacing: -0.03em; }
