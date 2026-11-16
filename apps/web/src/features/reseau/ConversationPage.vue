@@ -15,6 +15,8 @@ import {
   envoyerMessage,
   LONGUEUR_MESSAGE,
   lireConversation,
+  lireEcriture,
+  signalerEcriture,
   lireLien,
   prenom,
   type Message,
@@ -89,7 +91,8 @@ async function relire() {
   }
 }
 const minuterie = setInterval(() => void relire(), 5000)
-onBeforeUnmount(() => { actif = false; clearInterval(minuterie) })
+
+onBeforeUnmount(() => { actif = false; clearInterval(minuterie); clearInterval(minuterieEcriture) })
 
 async function descendre() {
   await nextTick()
@@ -197,6 +200,32 @@ function dureeLisible(secondes: number): string {
   const minutes = Math.round(secondes / 60)
   return minutes < 60 ? t('appels.carte.minutes', { n: minutes }) : t('appels.carte.heures', { h: Math.floor(minutes / 60), m: minutes % 60 })
 }
+
+// ---------------------------------------------------------------- « … est en train d'écrire » (#157)
+/** Pendant la frappe, on le signale au plus toutes les 3 s ; l'autre le lit toutes les 2 s (Ecriture.java le garde 6 s). */
+const SIGNAL_ECRITURE_MS = 3_000
+const LECTURE_ECRITURE_MS = 2_000
+const autreEcrit = ref(false)
+let dernierSignal = 0
+watch(texte, (valeur) => {
+  if (!personne.value || !valeur.trim()) return
+  const maintenant = Date.now()
+  if (maintenant - dernierSignal < SIGNAL_ECRITURE_MS) return
+  dernierSignal = maintenant
+  void signalerEcriture(personne.value.id)
+})
+async function lireSiEcrit() {
+  if (etat.value !== 'pret' || !personne.value || (typeof document !== 'undefined' && document.visibilityState === 'hidden')) return
+  const id = personne.value.id
+  const ecrit = await lireEcriture(id)
+  if (actif && personne.value?.id === id) {
+    const enBas = !fil.value || fil.value.scrollHeight - fil.value.scrollTop - fil.value.clientHeight < 80
+    autreEcrit.value = ecrit
+    if (ecrit && enBas) await descendre()
+  }
+}
+const minuterieEcriture = setInterval(() => void lireSiEcrit(), LECTURE_ECRITURE_MS)
+watch(() => route.params.personneId, () => { autreEcrit.value = false; dernierSignal = 0 })
 
 // Rejoindre depuis l'invitation : la même route que le bouton de la page du cercle (cercles.yaml).
 const rejoint = ref<string | null>(null)
@@ -318,6 +347,12 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
             </li>
           </template>
         </ol>
+        <!-- « … est en train d'écrire » : trois points, annoncés une fois aux lecteurs d'écran. -->
+        <div v-if="autreEcrit" class="ecrit" data-test="en-train-d-ecrire">
+          <JAvatar :nom="personne.nom" :url="personne.avatarUrl" :taille="28" />
+          <span class="ecrit__bulle" aria-hidden="true"><i /><i /><i /></span>
+          <span class="ecrit__texte" role="status">{{ t('reseau.discussion.ecrit', { nom: prenom(personne.nom) }) }}</span>
+        </div>
         <p v-if="erreurInvitation" role="alert" class="erreur">{{ erreurInvitation }}</p>
       </div>
 
@@ -431,4 +466,11 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
   .aide { display: none; }
   .bulle { max-width: 85%; }
 }
+.ecrit { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) 0 var(--space-1); color: var(--ink-muted); font-size: 0.85rem; }
+.ecrit__bulle { display: inline-flex; gap: 4px; padding: 10px 12px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); }
+.ecrit__bulle i { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-muted); animation: points 1.2s ease-in-out infinite; }
+.ecrit__bulle i:nth-child(2) { animation-delay: 0.15s; }
+.ecrit__bulle i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes points { 0%, 60%, 100% { opacity: 0.35; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-3px); } }
+@media (prefers-reduced-motion: reduce) { .ecrit__bulle i { animation: none; } }
 </style>

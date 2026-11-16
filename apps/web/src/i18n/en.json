@@ -1840,7 +1840,8 @@
       "rejoindre": "Join",
       "lu": "Read",
       "envoye": "Sent",
-      "aideClavier": "Enter to send, Shift + Enter for a new line."
+      "aideClavier": "Enter to send, Shift + Enter for a new line.",
+      "ecrit": "{nom} is typing…"
     },
     "profil": {
       "ecrire": "Message {nom}",
