@@ -114,6 +114,46 @@ describe('les salons en direct', () => {
     page.unmount()
   })
 
+  it('sur un message : réagir, répondre, corriger, supprimer ; un modérateur supprime le message d’un autre (#157)', async () => {
+    const { page } = await ouvrir('/communautes/flutter?salon=entraide')
+    await vi.waitFor(() => expect(page.findAll('[data-test="message"]')).toHaveLength(3))
+    const dernier = () => page.findAll('[data-test="message"]').at(-1)!
+    const premier = () => page.findAll('[data-test="message"]')[0]!
+    const zone = page.find('[data-test="ecrire"] textarea')
+
+    // Je réagis au premier message, puis j’y réponds.
+    await premier().get('[data-test="actions-message"]').trigger('click')
+    await premier().findAll('[data-test="reaction-rapide"]').find((b) => b.text() === '🙏')!.trigger('click')
+    await vi.waitFor(() => expect(premier().text()).toContain('🙏'))
+    await premier().get('[data-test="actions-message"]').trigger('click')
+    await premier().get('[data-test="action-repondre"]').trigger('click')
+    expect(page.find('[data-test="bandeau-action"]').exists()).toBe(true)
+    await zone.setValue('Je regarde ça')
+    await zone.trigger('keydown', { key: 'Enter' })
+    await vi.waitFor(() => expect(dernier().find('[data-test="citation"]').exists()).toBe(true))
+
+    // Je corrige ma réponse, puis je la supprime.
+    await dernier().get('[data-test="actions-message"]').trigger('click')
+    await dernier().get('[data-test="action-modifier"]').trigger('click')
+    await zone.setValue('Je regarde ça ce soir')
+    await zone.trigger('keydown', { key: 'Enter' })
+    await vi.waitFor(() => expect(dernier().find('[data-test="modifie"]').exists()).toBe(true))
+    expect(dernier().text()).toContain('Je regarde ça ce soir')
+    await dernier().get('[data-test="actions-message"]').trigger('click')
+    await dernier().get('[data-test="action-supprimer"]').trigger('click')
+    await dernier().get('[data-test="confirmer-suppression"]').trigger('click')
+    await vi.waitFor(() => expect(dernier().find('[data-test="message-supprime"]').exists()).toBe(true))
+
+    // Modératrice de Flutter, je supprime le message de quelqu’un d’autre : tout le monde voit pourquoi.
+    expect(premier().find('[data-test="action-modifier"]').exists()).toBe(false)
+    await premier().get('[data-test="actions-message"]').trigger('click')
+    expect(premier().find('[data-test="action-modifier"]').exists()).toBe(false)
+    await premier().get('[data-test="action-supprimer"]').trigger('click')
+    await premier().get('[data-test="confirmer-suppression"]').trigger('click')
+    await vi.waitFor(() => expect(premier().text()).toContain('Supprimé par un modérateur'))
+    page.unmount()
+  })
+
   it('relit seulement les nouveaux messages toutes les 3 secondes, et arrête en quittant la page', async () => {
     vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] })
     const lectures: (string | null)[] = []
@@ -124,8 +164,8 @@ describe('les salons en direct', () => {
         // La barre et « En direct » lisent aussi les autres salons : on ne compte que la conversation de # entraide.
         if (params.salon === 'entraide' && adresse.searchParams.get('limite') !== '1') lectures.push(apres)
         const elements = apres === null
-          ? [{ id: 'm1', numero: 7, auteur: { id: 'k', nom: 'Koffi Yao', avatarUrl: null }, texte: 'Premier', envoyeLe: new Date().toISOString() }]
-          : [{ id: 'm2', numero: 8, auteur: { id: 'w', nom: 'Wanjiru Kamau', avatarUrl: null }, texte: 'Arrivé en direct', envoyeLe: new Date().toISOString() }]
+          ? [{ id: 'm1', numero: 7, auteur: { id: 'k', nom: 'Koffi Yao', avatarUrl: null }, texte: 'Premier', envoyeLe: new Date().toISOString(), version: 7, reactions: [], reponseA: null, modifieLe: null, supprime: null, appel: null, piecesJointes: [] }]
+          : [{ id: 'm2', numero: 8, auteur: { id: 'w', nom: 'Wanjiru Kamau', avatarUrl: null }, texte: 'Arrivé en direct', envoyeLe: new Date().toISOString(), version: 8, reactions: [], reponseA: null, modifieLe: null, supprime: null, appel: null, piecesJointes: [] }]
         return HttpResponse.json({ elements })
       }),
     )
