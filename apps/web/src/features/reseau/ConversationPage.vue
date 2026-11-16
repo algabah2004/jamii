@@ -292,6 +292,8 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
     </div>
 
     <div v-else-if="personne" class="cadre">
+      <!-- Le fond de la discussion : de petits dessins tech, fixes pendant que les messages défilent. Décoratif. -->
+      <div class="cadre__motif motif fond-discussion" aria-hidden="true" data-test="motif-discussion" />
       <header class="tete verre">
         <RouterLink to="/messages" class="tete__retour" :aria-label="t('reseau.messages.tous')">
           <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M12.5 4.5 7 10l5.5 5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
@@ -439,11 +441,12 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
 .rond--envoyer { background: var(--proof); color: var(--on-proof); }
 
 .fil {
+  grid-row: 2; grid-column: 1; position: relative; z-index: 1;
   min-height: 0; overflow-y: auto; padding: 34px clamp(20px, 4vw, 64px) 40px; overscroll-behavior: contain;
-  background:
-    radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--ink) 3%, transparent) 1px, transparent 0) 0 0 / 22px 22px,
-    var(--bg);
 }
+/* Le motif occupe la place de l'en-tête et du fil (même cellule de grille), derrière les deux. */
+.tete { grid-row: 1; grid-column: 1; }
+.cadre__motif { grid-row: 1 / 3; grid-column: 1; }
 .accueil { display: grid; justify-items: center; gap: var(--space-2); padding: var(--space-8, 3rem) var(--space-4); text-align: center; color: var(--ink-muted); }
 .accueil strong { color: var(--ink); font-size: 1.125rem; }
 .accueil p { margin: 0; }
