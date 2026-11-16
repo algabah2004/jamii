@@ -130,29 +130,6 @@ const echeanceCourte = (iso: string) => new Intl.DateTimeFormat(locale.value, { 
     <p v-else-if="etat === 'erreur'" class="texte-discret" role="alert">{{ t('etat.indisponible') }}</p>
 
     <div v-else class="grille">
-      <aside class="cote">
-        <section class="carte" aria-labelledby="colline-titre">
-          <h3 id="colline-titre">{{ t('cercles.qg.colline') }}</h3>
-          <CollineDuTour v-if="taches.length" :taches="taches" />
-          <p v-else class="texte-discret">{{ t('cercles.qg.aucuneTache') }}</p>
-          <p class="texte-discret legende">{{ t('cercles.qg.collineAide') }}</p>
-        </section>
-
-        <section v-if="moiId && compte.libres" class="carte ayo" data-test="repartition-ayo">
-          <div class="ayo__tete">
-            <AyoAvatar :taille="28" :reflechit="reflechit" />
-            <p>{{ t('cercles.repartition.intro') }}</p>
-          </div>
-          <button v-if="!suggestions || !propositions.length" type="button" class="pilule" :disabled="reflechit" data-test="demander-ayo" @click="demanderAyo">{{ t('cercles.repartition.demander') }}</button>
-          <ul v-if="propositions.length" class="ayo__liste">
-            <li v-for="s in propositions" :key="s.tache.id">
-              <span><strong>{{ s.tache.titre }}</strong> → {{ s.membre.nom }}</span>
-              <button type="button" class="pilule" :disabled="enCours === s.tache.id" data-test="confier" @click="confier(s)">{{ t('cercles.repartition.confier') }}</button>
-            </li>
-          </ul>
-          <p v-else-if="suggestions" class="texte-discret">{{ t('cercles.repartition.rien') }}</p>
-        </section>
-      </aside>
 
       <section class="carte liste-carte" :aria-label="t('cercles.qg.outils.taches')">
         <div class="filtres" role="tablist" :aria-label="t('cercles.tache.filtres')">
@@ -196,6 +173,29 @@ const echeanceCourte = (iso: string) => new Intl.DateTimeFormat(locale.value, { 
         </div>
         <p v-if="erreur" role="alert" class="erreur">{{ erreur }}</p>
       </section>
+      <aside class="cote">
+        <section class="carte" aria-labelledby="colline-titre">
+          <h3 id="colline-titre">{{ t('cercles.qg.colline') }}</h3>
+          <CollineDuTour v-if="taches.length" :taches="taches" />
+          <p v-else class="texte-discret">{{ t('cercles.qg.aucuneTache') }}</p>
+          <p class="texte-discret legende">{{ t('cercles.qg.collineAide') }}</p>
+        </section>
+
+        <section v-if="moiId && compte.libres" class="carte ayo" data-test="repartition-ayo">
+          <div class="ayo__tete">
+            <AyoAvatar :taille="28" :reflechit="reflechit" />
+            <p>{{ t('cercles.repartition.intro') }}</p>
+          </div>
+          <button v-if="!suggestions || !propositions.length" type="button" class="pilule" :disabled="reflechit" data-test="demander-ayo" @click="demanderAyo">{{ t('cercles.repartition.demander') }}</button>
+          <ul v-if="propositions.length" class="ayo__liste">
+            <li v-for="s in propositions" :key="s.tache.id">
+              <span><strong>{{ s.tache.titre }}</strong> → {{ s.membre.nom }}</span>
+              <button type="button" class="pilule" :disabled="enCours === s.tache.id" data-test="confier" @click="confier(s)">{{ t('cercles.repartition.confier') }}</button>
+            </li>
+          </ul>
+          <p v-else-if="suggestions" class="texte-discret">{{ t('cercles.repartition.rien') }}</p>
+        </section>
+      </aside>
     </div>
 
     <DialogueTache
@@ -220,8 +220,13 @@ const echeanceCourte = (iso: string) => new Intl.DateTimeFormat(locale.value, { 
 }
 .nouvelle:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
-.grille { display: grid; gap: var(--space-4); grid-template-columns: minmax(15rem, 20rem) minmax(0, 1fr); align-items: start; }
-.cote { display: grid; gap: var(--space-4); }
+.grille { display: grid; gap: var(--space-4); grid-template-columns: minmax(0, 1fr) 18.5rem; align-items: start; }
+/* La liste d'abord, large ; la colline et Ayo à côté, qui suivent le défilement. */
+.cote { display: grid; gap: var(--space-4); position: sticky; top: var(--space-6); }
+@media (max-width: 1180px) {
+  .grille { grid-template-columns: minmax(0, 1fr); }
+  .cote { position: static; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); align-items: start; }
+}
 .cote h3 { margin: 0 0 var(--space-3); font-size: var(--type-body-size); }
 .legende { margin: var(--space-3) 0 0; font-size: 0.8125rem; }
 

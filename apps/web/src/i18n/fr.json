@@ -47,12 +47,25 @@
     "googleOu": "Ou reçois un lien de connexion par e-mail :",
     "bienvenue": "Bienvenue sur Jamii",
     "accroche": "La plateforme d'échange des développeurs africains, ouverte à toute personne qui a un besoin.",
-    "points": [
-      "Trouve des coéquipiers et crée un cercle.",
-      "Échange dans les communautés.",
-      "Décris ton besoin à Ayo, l'assistant IA."
-    ],
-    "rassurance": "Pas de mot de passe. Rien n'est publié sans ton accord."
+    "rassurance": "Pas de mot de passe. Rien n'est publié sans ton accord.",
+    "accesTitre": "Se connecter ou créer un compte",
+    "sousTitre": "Ton compte est créé à ta première connexion.",
+    "githubPastille": "Pour les développeurs",
+    "emailPastille": "Pour tout le monde",
+    "atouts": {
+      "cercles": {
+        "titre": "Des cercles",
+        "texte": "Trouve des coéquipiers et lancez un projet ou une tontine ensemble."
+      },
+      "communautes": {
+        "titre": "Des communautés",
+        "texte": "Échange avec des développeurs de tout le continent."
+      },
+      "ayo": {
+        "titre": "Ayo, l'assistant IA",
+        "texte": "Décris ton besoin, Ayo t'aide à trouver les bonnes personnes."
+      }
+    }
   },
   "accueil": {
     "titre": "Trouve ton équipe, construis ton projet, mets-le en ligne.",
@@ -1773,7 +1786,22 @@
       "produit": "Planning, priorités, suivi",
       "test": "Tests, qualité, recette"
     },
-    "cherche": "On cherche :"
+    "cherche": "On cherche :",
+    "points": {
+      "ontRepondu": "personne n’a encore répondu | a répondu | ont répondu",
+      "repondu": "a répondu",
+      "pasEncore": "pas encore répondu",
+      "uneFoisParJour": "Un point par jour, visible de tout le cercle.",
+      "aiderAuSalon": "Aider {nom} dans le salon"
+    },
+    "decisions": {
+      "aide": "Ce que l’équipe a tranché, écrit une fois et retrouvé sans fouiller le salon.",
+      "registreTenuPar": "Registre tenu par",
+      "compte": "décision | décision | décisions",
+      "tour": "Tour {n}",
+      "tourAvecTitre": "Tour {n} · {titre}",
+      "horsTour": "Avant les tours"
+    }
   },
   "reseau": {
     "competences": "Compétences",
@@ -3189,5 +3217,9 @@
     "quiEtAutres": "{noms} et {n} autres",
     "pastille": "{emoji} : {n} réaction, {qui} | {emoji} : {n} réaction, {qui} | {emoji} : {n} réactions, {qui}",
     "erreur": "La réaction n’a pas pu être enregistrée. Réessaie."
+  },
+  "langues": {
+    "passerEn": "Passer en anglais",
+    "passerFr": "Passer en français"
   }
 }
