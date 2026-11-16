@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
+import MotifsCoins from '../../components/MotifsCoins.vue'
 import { JBouton } from '../../design-system'
 import { chargerSession } from '../../session'
 import { cheminSur, confirmerLien, type ResultatConfirmation } from './connexion'
@@ -39,7 +40,8 @@ async function confirmer() {
 </script>
 
 <template>
-  <section class="confirmation" aria-labelledby="titre-confirmation">
+  <section class="confirmation avec-motifs" aria-labelledby="titre-confirmation">
+    <MotifsCoins planche="communautes" />
     <div class="confirmation__cadre">
       <!-- Le même bandeau que la page de connexion : on reconnaît la suite du parcours. -->
       <div class="bandeau" aria-hidden="true">
