@@ -4,6 +4,7 @@ import EnregistreurVocal from '../../components/texte/EnregistreurVocal.vue'
 import PiecesJointes from '../../components/texte/PiecesJointes.vue'
 import TexteRiche from '../../components/texte/TexteRiche.vue'
 import TransfertMessage from './TransfertMessage.vue'
+import { textePresence, usePresence } from './presence'
 import { envoyerFichier, type PieceJointe } from '../../components/texte/fichiers'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -387,6 +388,10 @@ function dureeLisible(secondes: number): string {
 const SIGNAL_ECRITURE_MS = 3_000
 const LECTURE_ECRITURE_MS = 2_000
 const autreEcrit = ref(false)
+// « En ligne » ou « Vu il y a … » sous le nom (#157).
+const presences = usePresence(() => (personne.value ? [personne.value.id] : []))
+const presenceAutre = computed(() => (personne.value ? presences.value.get(personne.value.id) : undefined))
+const statutAutre = computed(() => textePresence(presenceAutre.value, t, locale.value))
 let dernierSignal = 0
 watch(texte, (valeur) => {
   if (!personne.value || !valeur.trim()) return
@@ -448,9 +453,13 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
         <RouterLink to="/messages" class="tete__retour" :aria-label="t('reseau.messages.tous')">
           <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M12.5 4.5 7 10l5.5 5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
         </RouterLink>
-        <JAvatar :nom="personne.nom" :url="personne.avatarUrl" :taille="44" />
+        <span class="avatar-presence">
+          <JAvatar :nom="personne.nom" :url="personne.avatarUrl" :taille="44" />
+          <span v-if="presenceAutre?.enLigne" class="point-en-ligne" aria-hidden="true" />
+        </span>
         <div class="tete__qui">
           <h2>{{ personne.nom }}</h2>
+          <p v-if="statutAutre" class="tete__presence" :class="{ 'tete__presence--en-ligne': presenceAutre?.enLigne }" data-test="presence">{{ statutAutre }}</p>
           <p>
             <RouterLink :to="`/p/${personne.id}`" class="tete__profil">{{ t('reseau.messages.voirProfil') }}</RouterLink><span v-if="personne.ville"> · {{ personne.ville }}</span>
             <span v-if="lien && lien !== 'aucun' && lien !== 'recue'" class="tete__lien" data-test="lien-contact">{{ t(`reseau.contacts.statut.${lien}`) }}</span>
@@ -635,6 +644,10 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
 .tete__retour { display: none; place-items: center; width: 36px; height: 36px; border-radius: 50%; color: var(--ink); }
 .tete__retour:hover { background: color-mix(in srgb, var(--ink) 8%, transparent); }
 .tete__qui { flex: 1; min-width: 0; }
+.tete__qui .tete__presence { font-size: 0.8125rem; }
+.tete__presence--en-ligne { color: var(--en-ligne); font-weight: 600; }
+.avatar-presence { position: relative; display: inline-flex; flex: none; }
+.point-en-ligne { position: absolute; right: 0; bottom: 0; width: 12px; height: 12px; border-radius: 50%; background: var(--en-ligne); box-shadow: 0 0 0 2px var(--surface); }
 .tete__qui h2 { margin: 0; font-size: 1.0625rem; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tete__qui p { margin: 0; display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; color: var(--ink-muted); font-size: var(--type-body-sm-size); }
 .tete__profil { color: var(--ink-muted); text-decoration: none; }

@@ -9,6 +9,7 @@ import { nomPays } from '../systalink/calculs'
 import CarteCompetences from './CarteCompetences.vue'
 import FicheProfil from './FicheProfil.vue'
 import PartagerCarte from './PartagerCarte.vue'
+import ReglagePresence from '../reseau/ReglagePresence.vue'
 import {
   DISPONIBILITES,
   LANGUES_PROPOSEES,
@@ -361,6 +362,7 @@ async function enregistrer() {
         </template>
       </FicheProfil>
     </template>
+    <ReglagePresence v-if="etat !== 'chargement'" />
   </section>
 </template>
 
