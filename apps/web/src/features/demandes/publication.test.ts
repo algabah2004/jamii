@@ -8,7 +8,7 @@ import { creerRouteur } from '../../router'
 import { chargerSession } from '../../session'
 import App from '../../App.vue'
 import { orientationDemo } from '../../mocks/demandes'
-import { composerDescription, LIMITES, QUESTIONS, resumeValide, type Demande } from './demandes'
+import { LIMITES, resumeValide, type Demande } from './demandes'
 
 async function ouvrir(adresse: string) {
   ;(i18n.global.locale as unknown as { value: string }).value = 'fr'
@@ -29,75 +29,6 @@ async function demandePrete(): Promise<string> {
   })
   return ((await reponse.json()) as Demande).id
 }
-
-const LIBELLES = { qui: 'Qui :', probleme: 'Problème :', reussite: 'Réussite :' }
-
-type Page = Awaited<ReturnType<typeof ouvrir>>['page']
-
-/** Répond à Ayo dans la zone de saisie (Entrée envoie). */
-async function repondre(page: Page, texte: string) {
-  await vi.waitFor(() => expect((page.get('[data-test="saisie-ayo"]').element as HTMLTextAreaElement).disabled).toBe(false))
-  await page.get('[data-test="saisie-ayo"]').setValue(texte)
-  await page.get('[data-test="saisie-ayo"]').trigger('keydown', { key: 'Enter' })
-}
-
-/** Passe ce qui reste de questions et les précisions, jusqu'au récapitulatif. */
-async function jusquAuRecap(page: Page) {
-  for (let i = 0; i < 3; i++) {
-    await vi.waitFor(() => expect(page.find('[data-test="passer-question"]').exists() || page.find('[data-test="precisions"]').exists()).toBe(true))
-    if (!page.find('[data-test="passer-question"]').exists()) break
-    await page.get('[data-test="passer-question"]').trigger('click')
-  }
-  await page.get('[data-test="continuer-precisions"]').trigger('click')
-  await vi.waitFor(() => expect(page.find('[data-test="envoyer"]').exists()).toBe(true))
-}
-
-describe('les questions guidées', () => {
-  it("n'ajoutent rien quand on ne répond pas", () => {
-    expect(composerDescription('  Une boutique en ligne.  ', {}, LIBELLES)).toBe('Une boutique en ligne.')
-    expect(composerDescription('Une boutique.', { qui: '   ', probleme: '' }, LIBELLES)).toBe('Une boutique.')
-  })
-
-  it('ajoutent chaque réponse sur sa ligne, avec sa question, dans l’ordre', () => {
-    expect(composerDescription('Une boutique.', { reussite: 'Dix commandes par semaine', qui: 'Mes clientes' }, LIBELLES)).toBe(
-      'Une boutique.\n\nQui : Mes clientes\n\nRéussite : Dix commandes par semaine',
-    )
-  })
-
-  it('restent sous la limite de l’API, même au maximum de ce qu’on laisse saisir', () => {
-    const plein = Object.fromEntries(QUESTIONS.map((q) => [q, 'x'.repeat(LIMITES.reponseMax + 100)]))
-    const composee = composerDescription('d'.repeat(LIMITES.descriptionSaisieMax), plein, LIBELLES)
-    expect(composee.length).toBeLessThanOrEqual(LIMITES.descriptionMax)
-  })
-
-  it('partent avec le besoin, dans la langue de la personne', async () => {
-    let envoye = ''
-    serveur.use(
-      http.post('/api/demandes', async ({ request }) => {
-        envoye = ((await request.json()) as { description: string }).description
-        return HttpResponse.json({ id: '0b9e8d7c-6a5f-4e3d-8c2b-1a0f9e8d7c6b' }, { status: 201 })
-      }),
-    )
-    const { page } = await ouvrir('/besoin')
-    await repondre(page, 'Une boutique pour mon atelier')
-    await repondre(page, 'Je vends mes créations et je veux des commandes en ligne.')
-    await repondre(page, 'Mes clientes de Thiès')
-    await jusquAuRecap(page)
-    await page.get('[data-test="envoyer"]').trigger('click')
-    await vi.waitFor(() => expect(envoye).not.toBe(''))
-    expect(envoye).toBe('Je vends mes créations et je veux des commandes en ligne.\n\nQui va s’en servir : Mes clientes de Thiès'.replace('’', "'"))
-  })
-
-  it('restent facultatives : sans elles, on peut quand même lancer l’analyse', async () => {
-    const { page } = await ouvrir('/besoin')
-    await repondre(page, 'Une boutique pour mon atelier')
-    await repondre(page, 'Je vends mes créations et je veux des commandes en ligne.')
-    await vi.waitFor(() => expect(page.find('[data-test="passer-question"]').exists()).toBe(true))
-    await jusquAuRecap(page)
-    expect(page.get('[data-test="envoyer"]').attributes('disabled')).toBeUndefined()
-  })
-
-})
 
 describe('publier sa demande', () => {
   it('valide le résumé : ni trop court, ni trop long', () => {

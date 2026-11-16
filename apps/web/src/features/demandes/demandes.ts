@@ -31,9 +31,6 @@ export type NouvelleDemande = {
   langue?: 'fr' | 'en'
 }
 
-/** Des secteurs à choisir d'un clic (le contrat accepte aussi un texte libre). */
-export const SECTEURS = ['commerce', 'juridique', 'sante', 'education', 'agriculture', 'association', 'autre'] as const
-
 /**
  * L'état de l'analyse : celui de l'orientation, ou celui du plan pour une API plus ancienne.
  * `pret` : l'orientation est là (avec ou sans plan, selon qu'il faut des développeurs).
@@ -56,38 +53,17 @@ export const LIMITES = {
   titreMax: 120,
   descriptionMin: 20,
   descriptionMax: 4000,
-  /** Ce qu'on laisse saisir : la place des réponses guidées est gardée pour que le tout reste sous `descriptionMax`. */
+  /** Ce qu'on laisse saisir pour le premier message, sous `descriptionMax`. */
   descriptionSaisieMax: 3000,
-  reponseMax: 250,
   resumeMin: 20,
   resumeMax: 600,
 } as const
-
-/** Les trois questions guidées, facultatives : elles aident la personne à dire l'essentiel avant l'analyse. */
-export const QUESTIONS = ['qui', 'probleme', 'reussite'] as const
-export type Question = (typeof QUESTIONS)[number]
-export type Reponses = Partial<Record<Question, string>>
-
-/**
- * Le besoin tel qu'il part à l'API : le texte de la personne, puis chaque réponse guidée sur sa ligne, avec sa question.
- * Une réponse vide n'ajoute rien. Les questions sont dites dans la langue de la personne (`libelles`).
- */
-export function composerDescription(description: string, reponses: Reponses, libelles: Record<Question, string>): string {
-  const lignes = QUESTIONS.map((q) => [libelles[q], reponses[q]?.trim() ?? ''] as const)
-    .filter(([, reponse]) => reponse.length > 0)
-    .map(([libelle, reponse]) => `${libelle} ${reponse.slice(0, LIMITES.reponseMax)}`)
-  return [description.trim(), ...lignes].join('\n\n')
-}
 
 /** Le résumé public d'une demande : ni trop court ni trop long (l'API retire en plus e-mails et téléphones). */
 export function resumeValide(resume: string): boolean {
   const n = resume.trim().length
   return n >= LIMITES.resumeMin && n <= LIMITES.resumeMax
 }
-export const DUREES = [2, 4, 8, 12] as const
-/** Des fourchettes de budget en francs CFA, et « je ne sais pas » (par défaut). */
-export const BUDGETS = ['moins_500k', 'de_500k_a_2m', 'de_2m_a_5m', 'plus_5m', 'inconnu'] as const
-
 /** Relire la demande toutes les 2 s tant que le plan se prépare, au plus 1 minute. */
 export const INTERVALLE_PLAN_MS = 2000
 export const ATTENTE_PLAN_MAX_MS = 60_000
@@ -117,11 +93,46 @@ export function jalonsAvecTaches(plan: PlanProjet) {
 
 const adresse = (chemin: string) => new URL(chemin, window.location.origin)
 
-async function envoyer(chemin: string, corps: unknown, methode: 'POST' | 'PUT' = 'POST'): Promise<Response> {
-  const entetes: Record<string, string> = { 'Content-Type': 'application/json' }
+async function envoyer(chemin: string, corps: unknown, methode: 'POST' | 'PUT' | 'DELETE' = 'POST'): Promise<Response> {
+  const entetes: Record<string, string> = corps === undefined ? {} : { 'Content-Type': 'application/json' }
   const jeton = lireJetonCsrf()
   if (jeton) entetes['X-XSRF-TOKEN'] = jeton
-  return globalThis.fetch(adresse(chemin), { method: methode, credentials: 'same-origin', headers: entetes, body: JSON.stringify(corps) })
+  return globalThis.fetch(adresse(chemin), {
+    method: methode,
+    credentials: 'same-origin',
+    headers: entetes,
+    ...(corps === undefined ? {} : { body: JSON.stringify(corps) }),
+  })
+}
+
+/** Le titre d'une conversation : le début du premier message, sur une ligne (le serveur en veut 3 à 120 caractères). */
+export function titreDe(message: string): string {
+  const ligne = message.trim().split('\n')[0]!.replace(/\s+/g, ' ').trim()
+  const base = ligne.length >= LIMITES.titreMin ? ligne : message.replace(/\s+/g, ' ').trim()
+  return base.length > 80 ? `${base.slice(0, 79).trimEnd()}…` : base
+}
+
+/** Les limites d'une conversation avec Ayo (contracts/demandes.yaml v0.4). */
+export const CONVERSATION = { reponseMin: 2, reponseMax: 1000, reponsesMax: 12 } as const
+
+/** DELETE /api/demandes/{id} : supprimer une conversation. Vrai si elle n'existe plus (déjà supprimée comprise). */
+export async function supprimerDemande(id: string): Promise<boolean> {
+  const reponse = await envoyer(`/api/demandes/${encodeURIComponent(id)}`, undefined, 'DELETE')
+  return reponse.status === 204 || reponse.status === 404
+}
+
+/**
+ * Le fil d'une conversation, dans l'ordre : le premier message, puis pour chaque réponse de la personne ce qu'Ayo
+ * venait de dire et sa réponse. La dernière réponse d'Ayo n'en fait pas partie : elle est dans `orientation`.
+ */
+export type Bulle = { qui: 'moi' | 'ayo'; texte: string; question?: boolean }
+export function filDe(d: Demande): Bulle[] {
+  const fil: Bulle[] = [{ qui: 'moi', texte: d.description }]
+  for (const p of d.precisions ?? []) {
+    if (p.ayo) fil.push({ qui: 'ayo', texte: p.ayo, question: p.ayoQuestion })
+    fil.push({ qui: 'moi', texte: p.texte })
+  }
+  return fil
 }
 
 /**
@@ -207,8 +218,8 @@ export async function listerDemandes(): Promise<DemandeResumee[]> {
 }
 
 /**
- * POST /api/demandes/{id}/precisions : « ce n'est pas tout à fait ça ». L'analyse repart avec le besoin complet.
- * `limite` : déjà 5 précisions, il faut décrire un nouveau besoin.
+ * POST /api/demandes/{id}/precisions : répondre à Ayo dans la conversation. Ayo relit toute la conversation.
+ * `limite` : déjà 12 réponses, il faut ouvrir une nouvelle conversation.
  */
 export async function preciserDemande(id: string, texte: string): Promise<Demande | 'limite' | 'quota' | null> {
   const reponse = await envoyer(`/api/demandes/${encodeURIComponent(id)}/precisions`, { texte: texte.trim() })

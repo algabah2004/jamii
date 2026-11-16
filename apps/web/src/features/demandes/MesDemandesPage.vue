@@ -7,7 +7,7 @@ import { JBouton, JSquelette } from '../../design-system'
 import BadgeIa from '../../components/BadgeIa.vue'
 import AyoAvatar from './AyoAvatar.vue'
 import ConversationDemande from './ConversationDemande.vue'
-import { dateCourte, listerDemandes, type DemandeResumee } from './demandes'
+import { dateCourte, listerDemandes, supprimerDemande, type DemandeResumee } from './demandes'
 
 /*
  * « Tes demandes » (#199) : tous les besoins déjà décrits, comme sur un profil. On y revient pour relire une réponse,
@@ -39,6 +39,18 @@ const etatDe = (d: DemandeResumee): Etat => (d.publiee ? 'publiee' : d.resume ? 
 const ETATS: Etat[] = ['preparation', 'prete', 'publiee']
 const filtre = ref<Etat | 'toutes'>('toutes')
 const compte = (e: Etat) => demandes.value.filter((d) => etatDe(d) === e).length
+/** Supprimer une discussion depuis la liste, après confirmation. */
+const suppressionRatee = ref(false)
+async function supprimer(d: DemandeResumee) {
+  if (!window.confirm(t('demandes.discussion.confirmerSuppression'))) return
+  suppressionRatee.value = false
+  try {
+    if (!(await supprimerDemande(d.id))) return void (suppressionRatee.value = true)
+    demandes.value = demandes.value.filter((x) => x.id !== d.id)
+  } catch {
+    suppressionRatee.value = true
+  }
+}
 const affichees = computed(() => (filtre.value === 'toutes' ? demandes.value : demandes.value.filter((d) => etatDe(d) === filtre.value)))
 </script>
 
@@ -69,8 +81,9 @@ const affichees = computed(() => (filtre.value === 'toutes' ? demandes.value : d
           </button>
         </div>
       </div>
+      <p v-if="suppressionRatee" role="alert" class="erreur">{{ t('etat.indisponible') }}</p>
       <ul class="liste" data-test="liste-demandes">
-        <li v-for="d in affichees" :key="d.id">
+        <li v-for="d in affichees" :key="d.id" class="liste__element">
           <RouterLink :to="`/demandes/${d.id}`" class="carte demande" :class="`demande--${etatDe(d)}`" data-test="demande-resumee">
             <span class="demande__tete">
               <span class="etat" :class="`etat--${etatDe(d)}`">{{ t(`demandes.mesDemandes.etats.${etatDe(d)}`) }}</span>
@@ -81,10 +94,13 @@ const affichees = computed(() => (filtre.value === 'toutes' ? demandes.value : d
             <span v-if="d.resume" class="demande__ayo"><AyoAvatar :taille="20" /><span class="demande__resume">{{ d.resume }}</span></span>
             <span v-else class="demande__ayo texte-discret"><AyoAvatar :taille="20" reflechit />{{ t('demandes.mesDemandes.enCours') }}</span>
             <span class="demande__etiquettes">
-              <span v-if="d.precisions" class="etiquette">{{ t('demandes.mesDemandes.precisions', { n: d.precisions }, d.precisions) }}</span>
+              <span v-if="d.precisions" class="etiquette">{{ t('demandes.discussion.messages', { n: d.precisions + 1 }, d.precisions + 1) }}</span>
               <span class="demande__ouvrir">{{ t('demandes.mesDemandes.ouvrir') }} →</span>
             </span>
           </RouterLink>
+          <button type="button" class="supprimer" :aria-label="`${t('demandes.discussion.supprimer')} : ${d.titre}`" :title="t('demandes.discussion.supprimer')" data-test="supprimer-demande" @click="supprimer(d)">
+            <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M4 6h12M8 6V4h4v2M6 6l1 10h6l1-10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          </button>
         </li>
       </ul>
     </section>
@@ -102,6 +118,12 @@ const affichees = computed(() => (filtre.value === 'toutes' ? demandes.value : d
 .historique__tete { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); }
 .historique__tete h2 { margin: 0; font-size: 1.25rem; }
 .liste { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr)); }
+.liste__element { position: relative; }
+.supprimer { position: absolute; top: var(--space-3); inset-inline-end: var(--space-3); display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--ink-muted); cursor: pointer; opacity: 0.6; }
+.supprimer:hover, .supprimer:focus-visible { opacity: 1; color: var(--danger); background: var(--surface-raised); }
+.supprimer:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.demande__tete { padding-inline-end: var(--space-8); }
+.erreur { margin: 0; color: var(--danger); font-weight: 600; }
 .demande { display: grid; gap: var(--space-3); height: 100%; padding: var(--space-6); color: var(--ink); text-decoration: none; transition: border-color var(--motion-fast) var(--ease-out); }
 .demande:hover { border-color: var(--action); }
 .demande:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }

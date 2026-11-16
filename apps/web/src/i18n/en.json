@@ -1030,78 +1030,12 @@
   },
   "demandes": {
     "nouvelle": {
-      "titre": "Describe your need",
-      "intro": "Describe in your own words what your business needs. Jamii shows you what Systalink already offers, and which developers can build the rest.",
-      "champTitre": "In one sentence, what do you need?",
-      "aideTitre": "For example: an online shop for my workshop.",
-      "champDescription": "What it must do, in a few sentences.",
-      "aideDescription": "At least {n} characters. No technical words needed.",
-      "duree": "How soon would you like it?",
       "semaines": "{n} week | {n} weeks",
-      "jeNeSaisPas": "I don't know",
       "envoyer": "Analyse my need",
-      "rassurance": "Free. Nothing is published without your agreement.",
       "erreur": "Your request could not be sent. Try again in a moment.",
-      "exemplesTitre": "For inspiration",
-      "ensuiteTitre": "What happens next?",
-      "ensuite1": "Jamii understands your need and shows you the Systalink services that are enough.",
-      "ensuite2": "If developers are needed, it suggests the right profiles, with the reason for each choice, and a plan.",
-      "ensuite3": "You decide: nothing is published or shared without your consent.",
       "prudence": "Don't write client names or confidential information: just describe the need.",
-      "secteur": "Your sector (optional)",
-      "ville": "Your city (optional)",
-      "questionsTitre": "To help you describe it (optional)",
-      "questionQui": "Who will use it?",
-      "questionProbleme": "What makes you lose time or customers today?",
-      "questionReussite": "If it works, what will have changed in a few months?",
-      "libelleQui": "Who will use it:",
-      "libelleProbleme": "What loses time or customers today:",
-      "libelleReussite": "What will have changed if it works:",
-      "etape": "Step {n} of {total}",
-      "suivant": "Continue",
-      "passer": "Skip",
-      "retour": "Back",
-      "entree": "Enter ↵ to continue",
-      "q": {
-        "besoin": "What do you need?",
-        "details": "Tell me a bit more",
-        "questions": "So I understand you well",
-        "precisions": "A few details",
-        "envoi": "Shall I look at your need?"
-      },
       "encore": "{n} more characters, in your own words.",
-      "assez": "That's enough to start. You can say more.",
-      "precisionsAide": "All optional. It helps find developers near you and estimate the plan.",
-      "recap": "What Ayo understood",
-      "titreAVenir": "Your need in one sentence",
-      "descriptionAVenir": "What you write will appear here.",
-      "precisionsDonnees": "{n} detail | {n} details",
-      "etapes": {
-        "besoin": "Your need",
-        "details": "The details",
-        "questions": "Three questions",
-        "precisions": "Extra details",
-        "envoi": "The analysis"
-      },
-      "budget": "Your budget (a range is enough)",
-      "libelleBudget": "Planned budget:",
-      "note": "Got it:",
-      "modifier": "Edit",
-      "placeholderDetails": "For example: I sell shoes in Dakar and want my customers to see the models and order from their phone…",
-      "assezEntree": "That's great. Enter to continue, Shift + Enter for a new line.",
-      "aideSaisie": "Enter to send, Shift + Enter for a new line",
-      "repondreAyo": "Reply to Ayo",
-      "passee": "Skipped",
-      "placeholders": {
-        "besoin": "For example: an online shop for my workshop",
-        "details": "Tell it in your own words…",
-        "question": "Your answer, or “Skip”",
-        "choix": "Choose above, then continue"
-      },
-      "exempleQui": "For example: my customers, my two tailors and me.",
-      "exempleProbleme": "For example: I answer the same questions on WhatsApp all day.",
-      "exempleReussite": "For example: I get online orders every week.",
-      "questionsAide": "Answer in one sentence. It helps Jamii understand your need."
+      "repondreAyo": "Reply to Ayo"
     },
     "publication": {
       "titre": "Publish my request",
@@ -1237,7 +1171,6 @@
       "videAide": "Explain what you need in your own words: Jamii tells you what already exists and who can do the rest.",
       "enCours": "Answer being prepared…",
       "publiee": "Published",
-      "precisions": "{n} detail | {n} details",
       "ouvrir": "Open",
       "autres": "Your other requests",
       "toutes": "See all your requests",
@@ -1265,14 +1198,7 @@
       "etape2Aide": "It shows you what already exists, prepares a brief and finds the right people.",
       "etape3": "You choose",
       "etape3Aide": "Nothing goes out without you. Review, compare, launch.",
-      "dejaDemande": "What you've already asked"
-    },
-    "discuter": {
-      "titre": "Something doesn’t suit you?",
-      "aide": "Say it in your own words: I’ll go over your need again with what you add.",
-      "exemple": "For example: I don’t want to sell online, only show my items.",
-      "envoyer": "Send",
-      "limite": "You have already added 5 details to this request. Describe a new need to start over."
+      "dejaDemande": "Your conversations with Ayo"
     },
     "quota": "You have used all of today's advice. Ayo will be back tomorrow, and your requests stay in “Your requests”.",
     "ayo": {
@@ -1283,17 +1209,6 @@
       "maintenant": "What now?",
       "autres": "See the other options ({n}) | See the other option | See the other options ({n})",
       "libre": "You don’t have to do anything: take time to compare, and come back whenever you like.",
-      "question": {
-        "repondre": "Answer",
-        "libre": "Or answer in your own words…",
-        "passer": "Skip, give me your advice"
-      },
-      "pasCa": {
-        "titre": "Not quite right?",
-        "cher": "It’s too expensive for me",
-        "complique": "It’s too complicated for me",
-        "autre": "I’m looking for something else"
-      },
       "restants": "No advice left today | 1 piece of advice left today | {n} pieces of advice left today",
       "conversation": "You're talking with Ayo",
       "avertissement": "Ayo is an artificial intelligence: it prepares, you decide. Review its suggestions before launching anything.",
@@ -1309,20 +1224,12 @@
         "publier": "Publish"
       },
       "seul": "Prefer to follow this plan on your own, without forming a circle?",
-      "preciser": "Clarify",
       "genre": {
         "hebergement": "Hosting only",
         "outil": "Ready-to-use tool"
       },
       "hebergementSeul": "This service hosts your project: it puts it online and keeps your data. It doesn’t build it.",
       "hebergementSeulDevs": "Systalink only puts online and stores what the developers will build. It doesn’t develop anything."
-    },
-    "budgets": {
-      "moins_500k": "Under 500,000 CFA francs",
-      "de_500k_a_2m": "500,000 to 2 million CFA francs",
-      "de_2m_a_5m": "2 to 5 million CFA francs",
-      "plus_5m": "Over 5 million CFA francs",
-      "inconnu": "I don't know yet"
     },
     "brief": {
       "titre": "Your project brief",
@@ -1336,6 +1243,19 @@
       "critere": "Criterion",
       "ville": "City",
       "contacter": "Contact"
+    },
+    "discussion": {
+      "nouvelle": "New conversation",
+      "intro": "Tell Ayo in your own words what you want to improve in your business. Ayo asks a question if something is missing, then gives advice.",
+      "placeholder": "For example: I sell fabrics in Thiès and my customers all order on WhatsApp, I lose track…",
+      "question": "Ayo has a question for you",
+      "ouEcris": "Or answer in your own words, below.",
+      "repondre": "Answer Ayo…",
+      "reagir": "Ask Ayo a question, or tell him what doesn't suit you…",
+      "limite": "This conversation is already long. Start a new conversation to go on.",
+      "supprimer": "Delete the conversation",
+      "confirmerSuppression": "Delete this conversation? Your need and all the messages will be erased. A mission already published stays online.",
+      "messages": "{n} message | {n} messages"
     }
   },
   "cercles": {

@@ -16,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -46,7 +47,8 @@ class DemandesController {
 	record NouvellePrecision(String texte) {
 	}
 
-	record Precision(String texte, Instant creeLe) {
+	/** Une réponse de la personne, et ce qu'Ayo lui avait dit juste avant (`null` pour les plus anciennes). */
+	record Precision(String texte, Instant creeLe, String ayo, boolean ayoQuestion) {
 	}
 
 	@JsonInclude(JsonInclude.Include.NON_NULL)
@@ -138,14 +140,14 @@ class DemandesController {
 	}
 
 	/**
-	 * Préciser son besoin après avoir lu la réponse (« ce n'est pas tout à fait ça »). L'analyse repart avec le besoin
-	 * de départ et toutes les précisions. 5 au plus par demande ; elles comptent aussi dans la limite de l'heure.
+	 * Répondre à Ayo dans la conversation : à sa question, ou à son conseil (« et si je n'ai pas de smartphone ? »). Ayo
+	 * relit toute la conversation. 12 réponses au plus par demande ; elles comptent dans les messages du jour.
 	 */
 	@PostMapping("/api/demandes/{demandeId}/precisions")
 	ResponseEntity<?> preciser(@PathVariable UUID demandeId, @RequestBody NouvellePrecision precision,
 			@AuthenticationPrincipal UtilisateurConnecte moi) {
 		String texte = propre(precision.texte());
-		if (texte.length() < 3 || texte.length() > 500) {
+		if (texte.length() < 2 || texte.length() > 1000) {
 			return probleme(HttpStatus.BAD_REQUEST, "validation", "Certains champs sont invalides",
 					List.of(Map.of("champ", "texte", "code", "longueur_invalide")));
 		}
@@ -159,7 +161,7 @@ class DemandesController {
 		return switch (ajout) {
 			case INTROUVABLE -> probleme(HttpStatus.NOT_FOUND, "introuvable", "Ressource introuvable", null);
 			case LIMITE -> probleme(HttpStatus.CONFLICT, "trop_de_precisions",
-					"Cette demande a déjà " + GestionDemandes.PRECISIONS_MAX + " précisions : décris un nouveau besoin", null);
+					"Cette discussion a déjà " + GestionDemandes.PRECISIONS_MAX + " réponses : ouvre une nouvelle discussion", null);
 			case AJOUTEE -> ResponseEntity.ok().cacheControl(CacheControl.noStore())
 				.body(vue(gestion.lire(demandeId, moi.id()).orElseThrow()));
 		};
@@ -171,6 +173,15 @@ class DemandesController {
 		return gestion.lire(demandeId, moi.id())
 			.<ResponseEntity<?>>map(fiche -> ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(vue(fiche)))
 			.orElseGet(() -> probleme(HttpStatus.NOT_FOUND, "introuvable", "Ressource introuvable", null));
+	}
+
+	/** Supprimer une conversation avec Ayo. Pour un autre utilisateur, elle n'existe pas : 404. */
+	@DeleteMapping("/api/demandes/{demandeId}")
+	ResponseEntity<?> supprimer(@PathVariable UUID demandeId, @AuthenticationPrincipal UtilisateurConnecte moi) {
+		if (!gestion.supprimer(demandeId, moi.id())) {
+			return probleme(HttpStatus.NOT_FOUND, "introuvable", "Ressource introuvable", null);
+		}
+		return ResponseEntity.noContent().build();
 	}
 
 	@PutMapping("/api/demandes/{demandeId}/offres-systalink")
@@ -238,7 +249,7 @@ class DemandesController {
 		}
 		return new Demande(fiche.id(), fiche.titre(), fiche.description(), fiche.dureeSemaines(), fiche.secteur(),
 				fiche.ville(), fiche.pays(), fiche.offresSystalink(), fiche.creeLe(), etatDuPlan, orientation, recommandes,
-				fiche.precisions().stream().map(p -> new Precision(p.texte(), p.creeLe())).toList(),
+				fiche.precisions().stream().map(p -> new Precision(p.texte(), p.creeLe(), p.ayo(), p.ayoQuestion())).toList(),
 				fiche.publieeLe() == null ? null : new Publication(fiche.publieeLe(), fiche.publieeResume()),
 				gestion.analysesRestantes(fiche.auteurId(), Instant.now()));
 	}
