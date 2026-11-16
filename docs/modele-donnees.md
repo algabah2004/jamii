@@ -140,7 +140,7 @@ erDiagram
 - `communaute` : `id`, `slug` (unique), `nom`, `description`, `theme`, `pays` (renseigné pour une **antenne locale**, vide sinon), `cree_le`.
 - `adhesion` : `communaute_id`, `utilisateur_id`, `role` (`membre` | `moderateur`), `rejoint_le`.
 - `publication` : `id`, `communaute_id`, `auteur_id`, `type` (`question` | `discussion` | `montre_ton_projet`), `titre`, `contenu`, `projet_id` (pour « Montre ton projet »), `reponse_acceptee_id`, `cree_le`, `version`. Index (`communaute_id`, `cree_le DESC`) pour la pagination par curseur.
-- `reponse` : `id`, `publication_id`, `auteur_id` (vide si elle vient de l'IA), `contenu`, `proposee_par_ia`, `validee_par_id` (le pair qui a validé une réponse de l'IA), `cree_le`.
+- `reponse` : `id`, `publication_id`, `auteur_id` (vide si le compte a été supprimé), `contenu`, `cree_le`. Les réponses viennent des membres seulement : pas d'IA dans les communautés (16/11).
 - `signalement` : `id`, `cible_type`, `cible_id`, `auteur_id`, `motif`, `statut` (`ouvert` | `traite` | `rejete`), `traite_par_id`, `cree_le`.
 
 ### Mise en ligne (#20) — @boubacarsidibe

@@ -128,11 +128,6 @@ jamii:
   # ou simulee (sans réseau : local et tests ; un nom en .invalid ne répond pas).
   verification-lien:
     fournisseur: ${VERIFICATION_LIEN:aucune}
-  # Module communautes (#18) : qui propose une réponse à une question.
-  communautes:
-    # simulee (sans réseau : local, tests, démo) ou aucune (la question reste ouverte aux humains).
-    # L'adaptateur du service IA de l'équipe (#69) s'ajoutera ici.
-    ia: ${COMMUNAUTES_IA:simulee}
 
 # Seule la santé est exposée, sur /health (contrat : contracts/socle.yaml).
 # /health/liveness et /health/readiness servent de sondes à DataCloud.

@@ -1,6 +1,5 @@
 package dev.jamii.api.communautes;
 
-import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -34,18 +33,15 @@ class VuesPublications {
 		var reponses = communautes.reponses(id);
 		Set<UUID> personnes = new HashSet<>();
 		Stream.concat(Stream.of(detail.resume().auteurId()),
-				reponses.stream().flatMap(r -> Stream.of(r.auteurId(), r.valideeParId())))
+				reponses.stream().map(GestionCommunautes.LigneReponse::auteurId))
 			.filter(p -> p != null).forEach(personnes::add);
 		Map<UUID, Compte> comptes = annuaire.lire(personnes);
 		var r = resume(detail.resume(), comptes, fichiers);
 		List<CommunautesController.Reponse> liste = reponses.stream()
-			.map(x -> new CommunautesController.Reponse(x.id(), x.contenu(), personne(x.auteurId(), comptes), x.proposeeParIa(),
-					personne(x.valideeParId(), comptes), x.id().equals(detail.reponseAccepteeId()), x.creeLe()))
+			.map(x -> new CommunautesController.Reponse(x.id(), x.contenu(), personne(x.auteurId(), comptes), x.id().equals(detail.reponseAccepteeId()), x.creeLe()))
 			.toList();
 		return new CommunautesController.Publication(r.id(), r.communaute(), r.type(), r.titre(), r.auteur(), r.nombreReponses(), r.accepteeLe(),
-				r.creeLe(), detail.contenu(), detail.projetId(), detail.reponseAccepteeId(),
-				detail.propositionIa() == null ? null
-						: new CommunautesController.PropositionIa(PropositionsIa.statutAffiche(detail.propositionIa(), r.creeLe(), Instant.now())), liste,
+				r.creeLe(), detail.contenu(), detail.projetId(), detail.reponseAccepteeId(), liste,
 				new CommunautesController.Moi(moi.equals(detail.resume().auteurId()), communautes.estMembre(detail.communauteId(), moi)),
 				r.piecesJointes());
 	}
@@ -53,10 +49,7 @@ class VuesPublications {
 	static CommunautesController.PublicationResume resume(GestionCommunautes.Resume r, Map<UUID, Compte> comptes,
 			dev.jamii.api.fichiers.Fichiers fichiers) {
 		return new CommunautesController.PublicationResume(r.id(), r.communaute(), r.type(), r.titre(), personne(r.auteurId(), comptes),
-				r.nombreReponses(), r.accepteeLe(), r.creeLe(), r.contenu(),
-				r.propositionIa() == null ? null
-						: new CommunautesController.PropositionIa(PropositionsIa.statutAffiche(r.propositionIa(), r.creeLe(), Instant.now())),
-				fichiers.decrire(r.pieces()));
+				r.nombreReponses(), r.accepteeLe(), r.creeLe(), r.contenu(), fichiers.decrire(r.pieces()));
 	}
 
 	static CommunautesController.PersonneResume personne(UUID id, Map<UUID, Compte> comptes) {

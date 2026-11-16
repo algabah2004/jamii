@@ -1,26 +1,19 @@
 openapi: 3.1.0
 info:
   title: Jamii · Communautés et entraide
-  version: 0.7.0
-  summary: Communautés thématiques, questions-réponses où l'IA propose et un pair valide, discussions, signalements.
+  version: 0.8.0
+  summary: Communautés thématiques, questions-réponses entre membres, discussions, signalements.
   description: |
     Responsable : @rev22rse22 (module communautés, #155 ; repris d'@Amar233-ui le 14/11). Règles communes : docs/api-conventions.md. Modèle : docs/modele-donnees.md
     (tables `communaute`, `adhesion`, `publication`, `reponse`, `signalement`). Idées reprises de la proposition 0003.
 
-    **Droits** : il faut être connecté pour tout. Lire est ouvert à tout utilisateur connecté. Publier, répondre et
-    valider demandent d'être **membre** de la communauté (rejoindre se fait en un clic). Les droits sont vérifiés par
+    **Droits** : il faut être connecté pour tout. Lire est ouvert à tout utilisateur connecté. Publier et répondre
+    demandent d'être **membre** de la communauté (rejoindre se fait en un clic). Les droits sont vérifiés par
     le serveur, à chaque route.
 
-    **L'IA propose, l'humain décide** :
-    1. À la création d'une question, l'API demande une réponse au service IA (#20), en tâche de fond. La question
-       est publiée tout de suite, avec `propositionIa.statut = en_attente`.
-    2. Quand l'IA a répondu, une réponse `proposeeParIa: true` apparaît, sans auteur. Le front l'étiquette
-       « Proposée par l'IA · à vérifier par un pair ». Si l'IA ne répond pas, `statut = indisponible` : la question
-       reste ouverte aux réponses humaines, rien n'est bloqué.
-    3. Un **pair** (un membre qui n'est pas l'auteur de la question) la **valide** : elle devient la réponse acceptée.
-    4. Une réponse humaine est acceptée par l'**auteur de la question**. Son auteur reçoit une preuve
-       `reponse_acceptee` sur son profil (événement `ReponseAcceptee`, #19). Une réponse de l'IA ne compte sur le profil
-       de **personne**, même validée.
+    **Entre membres, sans IA (v0.8)** : les questions reçoivent les réponses des membres, et seulement elles.
+    L'**auteur de la question** accepte une réponse. Son auteur reçoit une preuve `reponse_acceptee` sur son profil
+    (événement `ReponseAcceptee`, #19). L'assistant IA de Jamii (Ayo) n'intervient que dans les demandes et le profil.
 
     **Contenus** : texte brut. Le front l'affiche échappé (jamais `v-html`), donc aucun HTML ne s'exécute.
 
@@ -34,9 +27,7 @@ info:
     **CSRF** : toute requête POST ou DELETE envoie l'en-tête `X-XSRF-TOKEN` (socle.yaml, schéma `csrf`).
 
     **Codes d'erreur métier** (champ `code` de `Erreur`) : `pas_membre` (403), `pas_moderateur` (403), `salon_existe` (409), `salon_protege` (409), `pas_auteur_question` (403),
-    `propre_question` (409, valider la réponse de l'IA à sa propre question), `deja_acceptee` (409),
-    `pas_une_question` (409), `pas_proposee_par_ia` (409, valider une réponse humaine), `proposee_par_ia` (409,
-    accepter la réponse de l'IA au lieu de la faire valider), `propre_reponse` (409, accepter sa propre réponse :
+    `deja_acceptee` (409), `pas_une_question` (409), `propre_reponse` (409, accepter sa propre réponse :
     sinon on se donnerait une preuve sur son profil), `deja_signale` (409).
 servers:
   - url: http://localhost:8080
@@ -47,7 +38,7 @@ security:
 tags:
   - { name: communautes, description: 'Trouver, rejoindre et quitter une communauté.' }
   - { name: publications, description: 'Questions, discussions et « Montre ton projet ».' }
-  - { name: reponses, description: 'Répondre, accepter une réponse, valider la réponse proposée par l''IA.' }
+  - { name: reponses, description: 'Répondre et accepter une réponse.' }
   - { name: salons, description: 'Discuter en direct dans un salon, et rejoindre son appel.' }
   - { name: moderation, description: 'Signaler un contenu à un modérateur.' }
 
@@ -194,7 +185,7 @@ paths:
       operationId: publier
       summary: Publier une question, une discussion ou « Montre ton projet »
       description: |
-        Réservé aux membres. Une question déclenche la proposition de l'IA en tâche de fond (`propositionIa`).
+        Réservé aux membres.
         Limité à 10 publications par heure et par personne, contre le spam.
       security:
         - session: []
@@ -414,9 +405,6 @@ paths:
       tags: [publications]
       operationId: lirePublication
       summary: Une publication et toutes ses réponses
-      description: |
-        Le front relit cette route toutes les 3 secondes tant que `propositionIa.statut` vaut `en_attente`
-        (au plus 1 minute), pour afficher la réponse de l'IA dès qu'elle arrive.
       responses:
         '200':
           description: La publication.
@@ -460,42 +448,16 @@ paths:
     post:
       tags: [reponses]
       operationId: accepterReponse
-      summary: L'auteur de la question accepte une réponse humaine
+      summary: L'auteur de la question accepte une réponse
       description: |
         Une seule réponse acceptée par question (`409 deja_acceptee`). L'auteur de la réponse reçoit une preuve
-        `reponse_acceptee` sur son profil. La réponse de l'IA ne s'accepte pas ici (`409 proposee_par_ia`) : elle se
-        **valide** par un pair. On n'accepte pas sa propre réponse (`409 propre_reponse`).
+        `reponse_acceptee` sur son profil. On n'accepte pas sa propre réponse (`409 propre_reponse`).
       security:
         - session: []
           csrf: []
       responses:
         '200':
           description: La question, avec sa réponse acceptée.
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/Publication' }
-        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
-        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
-        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
-        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
-
-  /api/reponses/{reponseId}/valider:
-    parameters:
-      - $ref: '#/components/parameters/ReponseId'
-    post:
-      tags: [reponses]
-      operationId: validerReponseIa
-      summary: Un pair valide la réponse proposée par l'IA
-      description: |
-        Réservé à un membre qui **n'est pas** l'auteur de la question (`409 propre_question`) : un humain se porte
-        garant de la réponse de l'IA. Elle devient la réponse acceptée, et affiche « Validée par <nom> ».
-        Personne ne reçoit de preuve sur son profil pour une réponse de l'IA.
-      security:
-        - session: []
-          csrf: []
-      responses:
-        '200':
-          description: La question, avec la réponse de l'IA validée et acceptée.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Publication' }
@@ -602,8 +564,8 @@ components:
 
     PublicationResume:
       type: object
-      description: 'Dans un fil, une publication se lit en entier (v0.6) : son texte et l''état de la réponse de l''IA.'
-      required: [id, communaute, type, titre, auteur, nombreReponses, accepteeLe, creeLe, contenu, propositionIa, piecesJointes]
+      description: 'Dans un fil, une publication se lit en entier (v0.6), avec son texte.'
+      required: [id, communaute, type, titre, auteur, nombreReponses, accepteeLe, creeLe, contenu, piecesJointes]
       properties:
         id: { type: string, format: uuid }
         communaute: { type: string, description: Slug de la communauté. }
@@ -616,9 +578,6 @@ components:
         accepteeLe: { type: [string, 'null'], format: date-time, description: 'Pour une question : quand une réponse a été acceptée.' }
         creeLe: { type: string, format: date-time }
         contenu: { type: string, description: 'Texte brut, affiché échappé.' }
-        propositionIa:
-          oneOf: [{ $ref: '#/components/schemas/PropositionIa' }, { type: 'null' }]
-          description: 'Pour une question seulement.'
         piecesJointes: { type: array, maxItems: 6, items: { $ref: './fichiers.yaml#/components/schemas/PieceJointe' } }
 
     PagePublications:
@@ -632,17 +591,14 @@ components:
       allOf:
         - $ref: '#/components/schemas/PublicationResume'
         - type: object
-          required: [contenu, projetId, reponseAccepteeId, propositionIa, reponses, moi]
+          required: [contenu, projetId, reponseAccepteeId, reponses, moi]
           properties:
             contenu: { type: string }
             projetId: { type: [string, 'null'], format: uuid, description: 'Le projet montré (`montre_ton_projet`).' }
             reponseAccepteeId: { type: [string, 'null'], format: uuid }
-            propositionIa:
-              oneOf: [{ $ref: '#/components/schemas/PropositionIa' }, { type: 'null' }]
-              description: 'Pour une question seulement. `null` pour une discussion ou « Montre ton projet ».'
             reponses:
               type: array
-              description: La réponse acceptée d'abord, puis la proposition de l'IA, puis les autres, des plus anciennes aux plus récentes.
+              description: La réponse acceptée d'abord, puis les autres, des plus anciennes aux plus récentes.
               items: { $ref: '#/components/schemas/Reponse' }
             moi:
               type: object
@@ -651,15 +607,6 @@ components:
               properties:
                 estAuteur: { type: boolean }
                 estMembre: { type: boolean }
-
-    PropositionIa:
-      type: object
-      required: [statut]
-      properties:
-        statut:
-          type: string
-          enum: [en_attente, prete, indisponible]
-          description: '`indisponible` : l''IA n''a pas répondu à temps. La question reste ouverte aux humains.'
 
     NouvelleReponse:
       type: object
@@ -670,17 +617,13 @@ components:
 
     Reponse:
       type: object
-      required: [id, contenu, auteur, proposeeParIa, valideePar, acceptee, creeLe]
+      required: [id, contenu, auteur, acceptee, creeLe]
       properties:
         id: { type: string, format: uuid }
         contenu: { type: string }
         auteur:
           oneOf: [{ $ref: './projets.yaml#/components/schemas/PersonneResume' }, { type: 'null' }]
-          description: '`null` pour la réponse de l''IA, ou un compte supprimé (alors `proposeeParIa` vaut `false`).'
-        proposeeParIa: { type: boolean }
-        valideePar:
-          oneOf: [{ $ref: './projets.yaml#/components/schemas/PersonneResume' }, { type: 'null' }]
-          description: Le pair qui a validé la réponse de l'IA.
+          description: '`null` : compte supprimé.'
         acceptee: { type: boolean }
         creeLe: { type: string, format: date-time }
 

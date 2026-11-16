@@ -10,7 +10,7 @@ import App from '../../App.vue'
 import { monogramme, motifDe, MOTIFS_COMMUNAUTE } from './communautes'
 
 // Questions des données de démo (src/mocks/communautes.ts).
-const QUESTION_DE_KOFFI = '/publications/7a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d' // l'IA a proposé, personne n'a validé
+const QUESTION_DE_KOFFI = '/publications/7a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d' // Wanjiru a répondu, rien n'est accepté
 const QUESTION_D_AWA = '/publications/8b2c3d4e-5f6a-4b7c-9d8e-0f1a2b3c4d5e' // une réponse humaine à accepter
 
 async function ouvrir(adresse: string) {
@@ -57,7 +57,7 @@ describe('Communautés', () => {
     expect(page.text()).toContain('Toutes les communautés')
   })
 
-  it('publier dans le fil ne change pas de page : la question arrive en haut, et l’IA prépare une réponse', async () => {
+  it('publier dans le fil ne change pas de page : la question arrive en haut', async () => {
     let recu: { type?: string; titre?: string; contenu?: string } = {}
     serveur.use(
       http.post('/api/communautes/:slug/publications', async ({ request }) => {
@@ -65,7 +65,7 @@ describe('Communautés', () => {
         return HttpResponse.json({
           id: 'nouvelle', communaute: 'flutter', type: recu.type, titre: recu.titre, contenu: recu.contenu, auteur: { id: 'a', nom: 'Awa Diop', avatarUrl: null },
           nombreReponses: 0, accepteeLe: null, creeLe: new Date().toISOString(), projetId: null, reponseAccepteeId: null,
-          propositionIa: { statut: 'en_attente' }, reponses: [], moi: { estAuteur: true, estMembre: true },
+          reponses: [], moi: { estAuteur: true, estMembre: true },
         }, { status: 201 })
       }),
     )
@@ -78,7 +78,7 @@ describe('Communautés', () => {
     expect(routeur.currentRoute.value.path).toBe('/communautes/flutter')
     // Le titre, c'est la première ligne ; le texte, tout ce qu'on a écrit.
     expect(recu).toEqual({ type: 'question', titre: 'Comment tester un provider Riverpod ?', contenu: 'Comment tester un provider Riverpod ?\nJe ne sais pas comment simuler le réseau.' })
-    expect(page.findAll('[data-test="publication"]')[0]!.text()).toContain("L'IA prépare une réponse")
+    expect(page.findAll('[data-test="publication"]')[0]!.text()).not.toContain('IA')
     expect((page.get('[data-test="zone-publier"]').element as HTMLTextAreaElement).value).toBe('')
   })
 
@@ -96,43 +96,16 @@ describe('Communautés', () => {
   })
 })
 
-describe('Question : l’IA propose, un pair valide', () => {
-  it('relit la question jusqu’à ce que la réponse de l’IA arrive', async () => {
-    let appels = 0
-    serveur.use(
-      http.get('/api/publications/:id', () => {
-        appels += 1
-        return HttpResponse.json({
-          id: 'q', communaute: 'flutter', type: 'question', titre: 'Une question', contenu: 'Le détail.',
-          auteur: null, nombreReponses: appels > 1 ? 1 : 0, accepteeLe: null, creeLe: new Date().toISOString(),
-          projetId: null, reponseAccepteeId: null, moi: { estAuteur: false, estMembre: true },
-          propositionIa: { statut: appels > 1 ? 'prete' : 'en_attente' },
-          reponses: appels > 1
-            ? [{ id: 'r', contenu: 'Voici une piste.', auteur: null, proposeeParIa: true, valideePar: null, acceptee: false, creeLe: new Date().toISOString() }]
-            : [],
-        })
-      }),
-    )
-    const { page } = await ouvrir('/publications/q')
-    expect(page.find('[data-test="ia-attente"]').exists()).toBe(true)
-    // Vraie minuterie de 3 s (contrat) : pas d'horloge simulée, qui se mélange mal avec MSW.
-    await vi.waitFor(() => expect(page.find('[data-test="etiquette-ia"]').exists()).toBe(true), { timeout: 5000 })
-    expect(page.get('[data-test="etiquette-ia"]').text()).toContain("Proposée par l'IA · à vérifier par un pair")
-    expect(page.find('[data-test="ia-attente"]').exists()).toBe(false)
-  })
-
-  it('un pair valide la réponse de l’IA, qui devient la réponse acceptée', async () => {
+describe('Question : les membres répondent, l’auteur accepte', () => {
+  it('une question ne montre que des réponses de membres, sans bouton « Valider »', async () => {
     const { page } = await ouvrir(QUESTION_DE_KOFFI)
-    await page.get('[data-test="valider"]').trigger('click')
-    await vi.waitFor(() => expect(page.find('[data-test="acceptee"]').exists()).toBe(true))
-    expect(page.get('[data-test="acceptee"]').text()).toContain('Réponse acceptée · validée par Awa Diop')
+    await vi.waitFor(() => expect(page.text()).toContain('Wanjiru Kamau'))
     expect(page.find('[data-test="valider"]').exists()).toBe(false)
-    expect(page.get('[data-test="etiquette-ia"]').text()).not.toContain('à vérifier')
+    expect(page.get('[data-test="reponses"]').text()).not.toMatch(/\bIA\b|l'IA/)
   })
 
-  it("l'auteur d'une question accepte une réponse humaine, mais ne voit jamais « Valider »", async () => {
+  it("l'auteur d'une question accepte une réponse", async () => {
     const { page } = await ouvrir(QUESTION_D_AWA)
-    expect(page.find('[data-test="valider"]').exists()).toBe(false)
     await page.get('[data-test="accepter"]').trigger('click')
     await vi.waitFor(() => expect(page.text()).toContain('Elle apparaît maintenant sur le profil de son auteur'))
     expect(page.find('[data-test="acceptee"]').exists()).toBe(true)
@@ -144,10 +117,10 @@ describe('Question : l’IA propose, un pair valide', () => {
         HttpResponse.json({
           id: 'q', communaute: 'flutter', type: 'question', titre: 'Une question', contenu: 'Le détail.',
           auteur: { id: 'awa', nom: 'Awa Diop', avatarUrl: null }, nombreReponses: 1, accepteeLe: null,
-          creeLe: new Date().toISOString(), projetId: null, reponseAccepteeId: null, propositionIa: { statut: 'indisponible' },
+          creeLe: new Date().toISOString(), projetId: null, reponseAccepteeId: null,
           moi: { estAuteur: true, estMembre: true },
           reponses: [{ id: 'r', contenu: 'Trouvé tout seul.', auteur: { id: 'awa', nom: 'Awa Diop', avatarUrl: null },
-            proposeeParIa: false, valideePar: null, acceptee: false, creeLe: new Date().toISOString() }],
+            acceptee: false, creeLe: new Date().toISOString() }],
         }),
       ),
     )
@@ -157,13 +130,13 @@ describe('Question : l’IA propose, un pair valide', () => {
 
   it('explique un refus du serveur avec des mots simples', async () => {
     serveur.use(
-      http.post('/api/reponses/:id/valider', () =>
-        HttpResponse.json({ code: 'propre_question', status: 409 }, { status: 409, headers: { 'Content-Type': 'application/problem+json' } }),
+      http.post('/api/reponses/:id/accepter', () =>
+        HttpResponse.json({ code: 'deja_acceptee', status: 409 }, { status: 409, headers: { 'Content-Type': 'application/problem+json' } }),
       ),
     )
-    const { page } = await ouvrir(QUESTION_DE_KOFFI)
-    await page.get('[data-test="valider"]').trigger('click')
-    await vi.waitFor(() => expect(page.text()).toContain('Tu ne peux pas valider la réponse à ta propre question'))
+    const { page } = await ouvrir(QUESTION_D_AWA)
+    await page.get('[data-test="accepter"]').trigger('click')
+    await vi.waitFor(() => expect(page.text()).toContain('Cette question a déjà une réponse acceptée.'))
   })
 
   it("affiche le contenu d'un utilisateur comme du texte, sans jamais l'exécuter", async () => {
@@ -172,7 +145,7 @@ describe('Question : l’IA propose, un pair valide', () => {
         HttpResponse.json({
           id: 'q', communaute: 'flutter', type: 'discussion', titre: 'Piège', contenu: '<img src=x onerror="alert(1)">',
           auteur: null, nombreReponses: 0, accepteeLe: null, creeLe: new Date().toISOString(), projetId: null,
-          reponseAccepteeId: null, propositionIa: null, moi: { estAuteur: false, estMembre: true }, reponses: [],
+          reponseAccepteeId: null, moi: { estAuteur: false, estMembre: true }, reponses: [],
         }),
       ),
     )

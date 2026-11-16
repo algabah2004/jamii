@@ -14,8 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 import dev.jamii.api.auth.DonneesPersonnelles;
 
 /**
- * Les communautés d'un compte dans l'export (#114) : ses adhésions, ses publications, ses réponses, et les réponses
- * de l'IA qu'il a validées, ses messages dans les salons. Rien de plus à faire à la suppression (V9__communautes.sql) : les adhésions partent en
+ * Les communautés d'un compte dans l'export (#114) : ses adhésions, ses publications, ses réponses et ses messages
+ * dans les salons. Rien de plus à faire à la suppression (V9__communautes.sql) : les adhésions partent en
  * cascade, les publications et les réponses restent sans auteur pour que les fils des autres restent lisibles, les
  * messages des salons partent avec le compte.
  */
@@ -33,16 +33,12 @@ class DonneesCommunautes implements DonneesPersonnelles {
 	record Reponse(UUID id, UUID publicationId, String contenu, boolean acceptee, Instant creeLe) {
 	}
 
-	/** Une réponse proposée par l'IA que ce compte a validée : son geste, pas le texte de l'IA. */
-	record Validation(UUID reponseId, UUID publicationId) {
-	}
-
 	/** Ses messages dans les salons (#155). */
 	record MessageSalon(UUID id, String communaute, String salon, String texte, Instant envoyeLe) {
 	}
 
 	record Section(List<Adhesion> adhesions, List<Publication> publications, List<Reponse> reponses,
-			List<Validation> validations, List<MessageSalon> messagesSalons) {
+			List<MessageSalon> messagesSalons) {
 	}
 
 	private final JdbcClient base;
@@ -90,14 +86,6 @@ class DonneesCommunautes implements DonneesPersonnelles {
 			.query((rs, n) -> new Reponse(rs.getObject("id", UUID.class), rs.getObject("publication_id", UUID.class),
 					rs.getString("contenu"), rs.getBoolean("acceptee"), instant(rs, "cree_le")))
 			.list();
-		List<Validation> validations = base.sql("""
-				SELECT id, publication_id FROM reponse
-				WHERE validee_par_id = :u
-				ORDER BY cree_le, id
-				""")
-			.param("u", utilisateurId)
-			.query((rs, n) -> new Validation(rs.getObject("id", UUID.class), rs.getObject("publication_id", UUID.class)))
-			.list();
 		List<MessageSalon> messages = base.sql("""
 				SELECT m.id, c.slug AS communaute, s.slug AS salon, m.texte, m.envoye_le
 				FROM message_salon m JOIN salon s ON s.id = m.salon_id JOIN communaute c ON c.id = s.communaute_id
@@ -108,7 +96,7 @@ class DonneesCommunautes implements DonneesPersonnelles {
 			.query((rs, n) -> new MessageSalon(rs.getObject("id", UUID.class), rs.getString("communaute"), rs.getString("salon"),
 					rs.getString("texte"), instant(rs, "envoye_le")))
 			.list();
-		return new Section(adhesions, publications, reponses, validations, messages);
+		return new Section(adhesions, publications, reponses, messages);
 	}
 
 	private static Instant instant(ResultSet rs, String colonne) throws SQLException {

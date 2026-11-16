@@ -119,22 +119,20 @@ class MesDonneesTest {
 	private UUID publication(UUID communaute, UtilisateurConnecte auteur, String titre) {
 		UUID id = UUID.randomUUID();
 		base.sql("""
-				INSERT INTO publication (id, communaute_id, auteur_id, type, titre, contenu, proposition_ia, cree_le)
-				VALUES (:id, :c, :a, 'question', :titre, 'Comment garder les données hors ligne ?', 'prete', :t)
+				INSERT INTO publication (id, communaute_id, auteur_id, type, titre, contenu, cree_le)
+				VALUES (:id, :c, :a, 'question', :titre, 'Comment garder les données hors ligne ?', :t)
 				""").param("id", id).param("c", communaute).param("a", auteur.id()).param("titre", titre)
 			.param("t", ensuite()).update();
 		return id;
 	}
 
-	/** `auteur` vide : une réponse de l'IA, validée par `validePar`. */
-	private UUID reponse(UUID publication, UtilisateurConnecte auteur, UtilisateurConnecte validePar, String contenu) {
+	private UUID reponse(UUID publication, UtilisateurConnecte auteur, String contenu) {
 		UUID id = UUID.randomUUID();
 		base.sql("""
-				INSERT INTO reponse (id, publication_id, auteur_id, contenu, proposee_par_ia, validee_par_id, cree_le)
-				VALUES (:id, :p, :a, :contenu, :ia, :v, :t)
-				""").param("id", id).param("p", publication).param("a", auteur == null ? null : auteur.id())
-			.param("contenu", contenu).param("ia", auteur == null)
-			.param("v", validePar == null ? null : validePar.id()).param("t", ensuite()).update();
+				INSERT INTO reponse (id, publication_id, auteur_id, contenu, cree_le)
+				VALUES (:id, :p, :a, :contenu, :t)
+				""").param("id", id).param("p", publication).param("a", auteur.id())
+			.param("contenu", contenu).param("t", ensuite()).update();
 		return id;
 	}
 
@@ -204,19 +202,18 @@ class MesDonneesTest {
 	}
 
 	@Test
-	void l_export_contient_ses_communautes_ses_publications_ses_reponses_et_ses_validations() throws Exception {
+	void l_export_contient_ses_communautes_ses_publications_et_ses_reponses() throws Exception {
 		UtilisateurConnecte awa = utilisateur("Awa");
 		UtilisateurConnecte kofi = utilisateur("Kofi");
 		UUID flutter = communaute("flutter");
 		adhesion(flutter, awa);
 		adhesion(flutter, kofi);
 		UUID question = publication(flutter, awa, "Hors ligne avec Flutter");
-		UUID deKofi = reponse(question, kofi, null, "Utilise Hive, ça marche sans réseau.");
+		UUID deKofi = reponse(question, kofi, "Utilise Hive, ça marche sans réseau.");
 		accepter(question, deKofi);
 		UUID autre = publication(flutter, kofi, "Paiement mobile en Flutter");
-		UUID dAwa = reponse(autre, awa, null, "Le SDK Wave a un exemple.");
+		UUID dAwa = reponse(autre, awa, "Le SDK Wave a un exemple.");
 		accepter(autre, dAwa);
-		UUID ia = reponse(autre, null, awa, "Proposition de l'IA");
 
 		JsonNode c = corps(exporter(awa)).get("communautes");
 
@@ -229,9 +226,7 @@ class MesDonneesTest {
 		assertThat(c.get("reponses")).hasSize(1);
 		assertThat(c.get("reponses").get(0).get("contenu").asString()).isEqualTo("Le SDK Wave a un exemple.");
 		assertThat(c.get("reponses").get(0).get("acceptee").asBoolean()).isTrue();
-		assertThat(c.get("validations")).hasSize(1);
-		assertThat(c.get("validations").get(0).get("reponseId").asString()).isEqualTo(ia.toString());
-		assertThat(c.toString()).as("ni le texte de Kofi, ni celui de l'IA").doesNotContain("Hive").doesNotContain("Proposition");
+		assertThat(c.toString()).as("pas le texte de Kofi").doesNotContain("Hive");
 	}
 
 	@Test
@@ -240,7 +235,6 @@ class MesDonneesTest {
 		assertThat(c.get("adhesions")).isEmpty();
 		assertThat(c.get("publications")).isEmpty();
 		assertThat(c.get("reponses")).isEmpty();
-		assertThat(c.get("validations")).isEmpty();
 	}
 
 	@Test
@@ -250,7 +244,7 @@ class MesDonneesTest {
 		UUID flutter = communaute("flutter");
 		adhesion(flutter, awa);
 		UUID question = publication(flutter, awa, "Hors ligne avec Flutter");
-		reponse(question, kofi, null, "Utilise Hive.");
+		reponse(question, kofi, "Utilise Hive.");
 
 		assertThat(supprimer(awa)).hasStatus(HttpStatus.ACCEPTED);
 

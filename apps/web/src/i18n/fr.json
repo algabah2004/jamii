@@ -703,7 +703,6 @@
     },
     "champTitre": "Titre (10 caractères au moins)",
     "champContenu": "Explique ton problème (20 caractères au moins)",
-    "aideIa": "Pour une question, l'IA proposera une réponse. Un membre de la communauté devra la vérifier.",
     "publier": "Publier",
     "erreurPublier": "La publication n'a pas pu être envoyée. Réessaie dans un instant.",
     "rejoindrePourPublier": "Rejoins la communauté pour publier et répondre.",
@@ -726,8 +725,7 @@
     "fonctionnement": {
       "titre": "Comment ça marche",
       "poser": "Tu poses ta question à la communauté.",
-      "ia": "L'IA propose une première réponse, marquée « à vérifier ». Elle ne compte sur le profil de personne.",
-      "accepter": "Un membre la vérifie ou répond mieux. Tu acceptes la meilleure réponse : elle compte sur le profil de son auteur."
+      "accepter": "Les membres répondent. Tu acceptes la meilleure réponse : elle compte sur le profil de son auteur."
     },
     "espace": {
       "mesCommunautes": "Mes communautés",
@@ -897,21 +895,14 @@
     "fil": {
       "voirPlus": "Voir plus",
       "voirMoins": "Voir moins",
-      "iaPrepare": "L'IA prépare une réponse…",
-      "iaPropose": "L'IA a proposé une réponse, à vérifier par un membre.",
       "repondre": "Répondre",
       "copierLien": "Copier le lien",
       "lienCopie": "Lien copié",
-      "ia": "Proposition de l'IA",
       "acceptee": "Réponse acceptée",
-      "aVerifier": "À vérifier",
-      "valideePar": "Validée par {nom}",
-      "valider": "Je confirme cette réponse",
       "accepter": "Accepter cette réponse",
       "tonRepondre": "Écris ta réponse…",
       "raccourci": "Ctrl + Entrée pour envoyer",
       "minimum": "10 caractères au moins",
-      "questionIa": "Question (l'IA propose une réponse)",
       "encore": "Encore {n} caractère | Encore {n} caractères",
       "partage": {
         "image": "{prenom} a partagé une image",
@@ -943,25 +934,15 @@
   },
   "question": {
     "retourCommunaute": "Retour à la communauté",
-    "iaPrepare": "L'IA prépare une réponse…",
-    "iaIndisponible": "L'IA n'a pas proposé de réponse. Les membres de la communauté peuvent répondre.",
-    "proposeeParIa": "Proposée par l'IA · à vérifier par un pair",
-    "proposeeParIaVerifiee": "Proposée par l'IA",
-    "attendUnPair": "Un autre membre de la communauté doit vérifier cette réponse.",
-    "valideePar": "validée par {nom}",
-    "valider": "Valider cette réponse",
     "accepter": "Accepter cette réponse",
-    "merciValidation": "Merci ! Ta validation rend cette réponse fiable pour tout le monde.",
     "merciAcceptation": "🎉 Réponse acceptée. Elle apparaît maintenant sur le profil de son auteur.",
     "taReponse": "Ta réponse",
     "repondre": "Répondre",
     "erreurs": {
       "pas_membre": "Rejoins la communauté pour faire ça.",
       "pas_auteur_question": "Seul l'auteur de la question peut accepter une réponse.",
-      "propre_question": "Tu ne peux pas valider la réponse à ta propre question : un autre membre doit le faire.",
       "deja_acceptee": "Cette question a déjà une réponse acceptée.",
       "propre_reponse": "Tu ne peux pas accepter ta propre réponse : seule l'aide d'un autre membre compte sur un profil.",
-      "proposee_par_ia": "La réponse de l'IA ne s'accepte pas : un autre membre doit la vérifier.",
       "autre": "Ça n'a pas marché. Réessaie dans un instant."
     },
     "ouverte": "Question ouverte"

@@ -162,8 +162,8 @@ class DonneesDemoTest {
 				""".formatted(DonneesDemo.id("publication:webhook"), DonneesDemo.KOFI.id()))).as("réponse humaine acceptée").isEqualTo(1);
 		assertThat(compter("""
 				SELECT count(*) FROM publication p JOIN reponse r ON r.id = p.reponse_acceptee_id
-				WHERE p.id = '%s' AND r.proposee_par_ia AND r.validee_par_id IS NOT NULL
-				""".formatted(DonneesDemo.id("publication:apk")))).as("réponse de l'IA validée par un pair").isEqualTo(1);
+				WHERE p.id = '%s' AND r.auteur_id IS NOT NULL
+				""".formatted(DonneesDemo.id("publication:apk")))).as("une autre réponse acceptée").isEqualTo(1);
 		assertThat(compter("SELECT count(*) FROM publication WHERE id = '" + DonneesDemo.id("publication:ussd") + "' AND reponse_acceptee_id IS NULL"))
 			.as("une question encore ouverte").isEqualTo(1);
 	}

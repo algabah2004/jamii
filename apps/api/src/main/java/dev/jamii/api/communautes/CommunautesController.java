@@ -42,17 +42,13 @@ class CommunautesController {
 			int nombreMembres, int questionsOuvertes, boolean membre, boolean moderateur, String couverture) {
 	}
 
-	/** Dans un fil, chaque publication se lit en entier (contrat v0.6) : son texte et l'état de la réponse de l'IA. */
+	/** Dans un fil, chaque publication se lit en entier (contrat v0.6), avec son texte. */
 	record PublicationResume(UUID id, String communaute, String type, String titre, PersonneResume auteur,
-			int nombreReponses, Instant accepteeLe, Instant creeLe, String contenu, PropositionIa propositionIa,
+			int nombreReponses, Instant accepteeLe, Instant creeLe, String contenu,
 			List<dev.jamii.api.fichiers.Fichiers.Piece> piecesJointes) {
 	}
 
-	record PropositionIa(String statut) {
-	}
-
-	record Reponse(UUID id, String contenu, PersonneResume auteur, boolean proposeeParIa, PersonneResume valideePar,
-			boolean acceptee, Instant creeLe) {
+	record Reponse(UUID id, String contenu, PersonneResume auteur, boolean acceptee, Instant creeLe) {
 	}
 
 	record Moi(boolean estAuteur, boolean estMembre) {
@@ -60,7 +56,7 @@ class CommunautesController {
 
 	record Publication(UUID id, String communaute, String type, String titre, PersonneResume auteur, int nombreReponses,
 			Instant accepteeLe, Instant creeLe, String contenu, UUID projetId, UUID reponseAccepteeId,
-			PropositionIa propositionIa, List<Reponse> reponses, Moi moi, List<dev.jamii.api.fichiers.Fichiers.Piece> piecesJointes) {
+			List<Reponse> reponses, Moi moi, List<dev.jamii.api.fichiers.Fichiers.Piece> piecesJointes) {
 	}
 
 	record Page<T>(List<T> elements, String curseurSuivant) {
@@ -77,18 +73,15 @@ class CommunautesController {
 
 	private final VuesPublications vues;
 
-	private final PropositionsIa ia;
-
 	private final dev.jamii.api.fichiers.Fichiers fichiers;
 
 	CommunautesController(GestionCommunautes gestion, Annuaire annuaire, Projets projets, VuesPublications vues,
-			PropositionsIa ia, dev.jamii.api.fichiers.Fichiers fichiers) {
+			dev.jamii.api.fichiers.Fichiers fichiers) {
 		this.fichiers = fichiers;
 		this.gestion = gestion;
 		this.annuaire = annuaire;
 		this.projets = projets;
 		this.vues = vues;
-		this.ia = ia;
 	}
 
 	@org.springframework.web.bind.annotation.ExceptionHandler(dev.jamii.api.fichiers.ErreurFichier.class)
@@ -200,16 +193,10 @@ class CommunautesController {
 		if (attente > 0) {
 			return Problemes.tropDeRequetes(attente, "Trop de publications en peu de temps");
 		}
-		boolean question = "question".equals(demande.type());
 		List<UUID> pieces = fichiers.verifierPieces(demande.pieces(), moi.id());
 		UUID id = gestion.publier(fiche.get().id(), moi.id(), demande.type(), titre, contenu, demande.projetId(),
-				question ? ia.statutInitial() : null, pieces, maintenant);
-		// La réponse est lue avant de lancer l'IA : sinon une IA rapide pouvait répondre avant, et la création annonçait
-		// « prete » au lieu de « en_attente » (contrat). La question est visible tout de suite, la réponse de l'IA suit.
+				pieces, maintenant);
 		var publication = vues.publication(id, moi.id());
-		if (question) {
-			ia.demander(id, new ReponsesIa.Question(titre, contenu, fiche.get().theme()));
-		}
 		return ResponseEntity.created(URI.create("/api/publications/" + id)).body(publication);
 	}
 

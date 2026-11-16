@@ -16,7 +16,7 @@ import dev.jamii.api.auth.Annuaire;
 import dev.jamii.api.auth.UtilisateurConnecte;
 
 /**
- * Répondre, accepter une réponse humaine, valider la réponse de l'IA (contracts/communautes.yaml). Les droits sont
+ * Répondre et accepter une réponse (contracts/communautes.yaml). Les droits sont
  * vérifiés ici, à chaque appel : le front n'affiche les boutons que par confort.
  */
 @RestController
@@ -66,7 +66,7 @@ class ReponsesController {
 		UUID id = reponses.repondre(publicationId, moi.id(), contenu, maintenant);
 		var auteur = annuaire.lire(moi.id()).map(c -> new CommunautesController.PersonneResume(c.id(), c.nom(), c.avatarUrl())).orElse(null);
 		return ResponseEntity.status(HttpStatus.CREATED)
-			.body(new CommunautesController.Reponse(id, contenu, auteur, false, null, false, maintenant));
+			.body(new CommunautesController.Reponse(id, contenu, auteur, false, maintenant));
 	}
 
 	@PostMapping("/api/reponses/{reponseId}/accepter")
@@ -82,9 +82,6 @@ class ReponsesController {
 		if (!"question".equals(r.type())) {
 			return Problemes.conflit("pas_une_question", "Seule une question a une réponse acceptée");
 		}
-		if (r.proposeeParIa()) {
-			return Problemes.conflit("proposee_par_ia", "La réponse de l'IA se valide par un pair, elle ne s'accepte pas");
-		}
 		// Sans cette règle, on gagnerait une preuve sur son profil en répondant à sa propre question.
 		if (moi.id().equals(r.auteurReponse())) {
 			return Problemes.conflit("propre_reponse", "On n'accepte pas sa propre réponse");
@@ -96,30 +93,6 @@ class ReponsesController {
 		if (r.auteurReponse() != null) {
 			evenements.publishEvent(new ReponseAcceptee(reponseId, r.publicationId(), r.auteurReponse(), maintenant));
 		}
-		return ResponseEntity.ok(lecture.publication(r.publicationId(), moi.id()));
-	}
-
-	@PostMapping("/api/reponses/{reponseId}/valider")
-	ResponseEntity<?> valider(@PathVariable UUID reponseId, @AuthenticationPrincipal UtilisateurConnecte moi) {
-		var trouvee = reponses.cible(reponseId);
-		if (trouvee.isEmpty()) {
-			return Problemes.introuvable();
-		}
-		var r = trouvee.get();
-		if (!communautes.estMembre(r.communauteId(), moi.id())) {
-			return Problemes.interdit("pas_membre", "Rejoignez la communauté pour valider une réponse");
-		}
-		if (!r.proposeeParIa()) {
-			return Problemes.conflit("pas_proposee_par_ia", "Seule la réponse de l'IA se valide");
-		}
-		// Un humain qui n'est pas intéressé se porte garant : l'auteur ne valide pas la réponse à sa propre question.
-		if (moi.id().equals(r.auteurQuestion())) {
-			return Problemes.conflit("propre_question", "Un autre membre doit valider la réponse à ta question");
-		}
-		if (!reponses.valider(r.publicationId(), reponseId, moi.id(), Instant.now())) {
-			return Problemes.conflit("deja_acceptee", "Cette question a déjà une réponse acceptée");
-		}
-		// Pas d'événement ReponseAcceptee : une réponse de l'IA ne compte sur le profil de personne.
 		return ResponseEntity.ok(lecture.publication(r.publicationId(), moi.id()));
 	}
 

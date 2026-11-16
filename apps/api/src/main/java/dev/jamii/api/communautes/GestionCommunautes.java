@@ -30,15 +30,13 @@ class GestionCommunautes {
 	}
 
 	record Resume(UUID id, String communaute, String type, String titre, UUID auteurId, int nombreReponses,
-			Instant accepteeLe, Instant creeLe, String contenu, String propositionIa, List<UUID> pieces) {
+			Instant accepteeLe, Instant creeLe, String contenu, List<UUID> pieces) {
 	}
 
-	record Detail(Resume resume, UUID communauteId, String contenu, UUID projetId, UUID reponseAccepteeId,
-			String propositionIa) {
+	record Detail(Resume resume, UUID communauteId, String contenu, UUID projetId, UUID reponseAccepteeId) {
 	}
 
-	record LigneReponse(UUID id, String contenu, UUID auteurId, boolean proposeeParIa, UUID valideeParId,
-			Instant creeLe) {
+	record LigneReponse(UUID id, String contenu, UUID auteurId, Instant creeLe) {
 	}
 
 	/** Curseur opaque pour le front : la clé de tri du dernier élément, en base64 (api-conventions.md §4). */
@@ -154,13 +152,13 @@ class GestionCommunautes {
 
 	@Transactional
 	UUID publier(UUID communaute, UUID auteur, String type, String titre, String contenu, UUID projetId,
-			String propositionIa, List<UUID> pieces, Instant maintenant) {
+			List<UUID> pieces, Instant maintenant) {
 		UUID id = UUID.randomUUID();
 		base.sql("""
-				INSERT INTO publication (id, communaute_id, auteur_id, type, titre, contenu, projet_id, proposition_ia, cree_le, pieces)
-				VALUES (:id, :c, :auteur, :type, :titre, :contenu, :projet, :ia, :t, CAST(:pieces AS UUID[]))
+				INSERT INTO publication (id, communaute_id, auteur_id, type, titre, contenu, projet_id, cree_le, pieces)
+				VALUES (:id, :c, :auteur, :type, :titre, :contenu, :projet, :t, CAST(:pieces AS UUID[]))
 				""").param("id", id).param("c", communaute).param("auteur", auteur).param("type", type)
-			.param("titre", titre).param("contenu", contenu).param("projet", projetId).param("ia", propositionIa)
+			.param("titre", titre).param("contenu", contenu).param("projet", projetId)
 			.param("t", Timestamp.from(maintenant)).param("pieces", dev.jamii.api.fichiers.Fichiers.tableau(pieces)).update();
 		return id;
 	}
@@ -171,28 +169,26 @@ class GestionCommunautes {
 				+ " WHERE p.id = :id")
 			.param("id", id)
 			.query((rs, n) -> new Detail(resume(rs, n), rs.getObject("communaute_id", UUID.class), rs.getString("contenu"),
-					rs.getObject("projet_id", UUID.class), rs.getObject("reponse_acceptee_id", UUID.class),
-					rs.getString("proposition_ia")))
+					rs.getObject("projet_id", UUID.class), rs.getObject("reponse_acceptee_id", UUID.class)))
 			.optional();
 	}
 
-	/** La réponse acceptée d'abord, puis celle de l'IA, puis les autres des plus anciennes aux plus récentes (contrat). */
+	/** La réponse acceptée d'abord, puis les autres des plus anciennes aux plus récentes (contrat). */
 	@Transactional(readOnly = true)
 	List<LigneReponse> reponses(UUID publication) {
 		return base.sql("""
-				SELECT r.id, r.contenu, r.auteur_id, r.proposee_par_ia, r.validee_par_id, r.cree_le
+				SELECT r.id, r.contenu, r.auteur_id, r.cree_le
 				FROM reponse r JOIN publication p ON p.id = r.publication_id
 				WHERE r.publication_id = :p
-				ORDER BY (r.id = p.reponse_acceptee_id) IS TRUE DESC, r.proposee_par_ia DESC, r.cree_le, r.id
+				ORDER BY (r.id = p.reponse_acceptee_id) IS TRUE DESC, r.cree_le, r.id
 				""").param("p", publication)
 			.query((rs, n) -> new LigneReponse(rs.getObject("id", UUID.class), rs.getString("contenu"),
-					rs.getObject("auteur_id", UUID.class), rs.getBoolean("proposee_par_ia"),
-					rs.getObject("validee_par_id", UUID.class), rs.getTimestamp("cree_le").toInstant()))
+					rs.getObject("auteur_id", UUID.class), rs.getTimestamp("cree_le").toInstant()))
 			.list();
 	}
 
 	private static final String RESUME = """
-			SELECT p.id, c.slug, p.type, p.titre, p.auteur_id, p.acceptee_le, p.cree_le, p.contenu, p.proposition_ia, p.pieces,
+			SELECT p.id, c.slug, p.type, p.titre, p.auteur_id, p.acceptee_le, p.cree_le, p.contenu, p.pieces,
 			       (SELECT count(*) FROM reponse r WHERE r.publication_id = p.id) AS nombre_reponses
 			FROM publication p JOIN communaute c ON c.id = p.communaute_id
 			""";
@@ -202,7 +198,7 @@ class GestionCommunautes {
 		return new Resume(rs.getObject("id", UUID.class), rs.getString("slug"), rs.getString("type"), rs.getString("titre"),
 				rs.getObject("auteur_id", UUID.class), rs.getInt("nombre_reponses"),
 				acceptee == null ? null : acceptee.toInstant(), rs.getTimestamp("cree_le").toInstant(), rs.getString("contenu"),
-				rs.getString("proposition_ia"), dev.jamii.api.fichiers.Fichiers.lireTableau(rs, "pieces"));
+				dev.jamii.api.fichiers.Fichiers.lireTableau(rs, "pieces"));
 	}
 
 	private static Fiche fiche(ResultSet rs, int n) throws SQLException {

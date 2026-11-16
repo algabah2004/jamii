@@ -16,7 +16,7 @@ type Reponse = components['schemas']['Reponse']
 
 /*
  * Une publication dans le fil, comme sur un réseau social : le texte en entier, les réponses qui s'ouvrent en dessous,
- * et la réponse qu'on écrit sans quitter le fil. Accepter une réponse ou valider celle de l'IA se fait ici aussi, avec
+ * et la réponse qu'on écrit sans quitter le fil. Accepter une réponse se fait ici aussi, avec
  * les règles du contrat (le serveur les revérifie). Les textes sont affichés échappés (jamais v-html).
  */
 const props = defineProps<{ publication: PublicationResume; membre: boolean }>()
@@ -42,7 +42,7 @@ async function chargerFil() {
     if (!data) throw new Error('fil indisponible')
     detail.value = data
     etat.value = 'repos'
-    emit('maj', { ...p.value, nombreReponses: data.nombreReponses, accepteeLe: data.accepteeLe, propositionIa: data.propositionIa })
+    emit('maj', { ...p.value, nombreReponses: data.nombreReponses, accepteeLe: data.accepteeLe })
   } catch {
     etat.value = 'indisponible'
   }
@@ -85,22 +85,19 @@ function touche(e: KeyboardEvent) {
   }
 }
 
-// Les règles de l'entraide (contrat) : l'auteur de la question accepte une réponse humaine, un autre membre valide
-// celle de l'IA. Le serveur les revérifie de toute façon.
+// Les règles de l'entraide (contrat) : l'auteur de la question accepte une réponse. Le serveur les revérifie de toute façon.
 const dejaAcceptee = computed(() => Boolean(detail.value?.reponseAccepteeId))
-const peutValider = (r: Reponse) => Boolean(detail.value && r.proposeeParIa && !dejaAcceptee.value && detail.value.moi.estMembre && !detail.value.moi.estAuteur)
-const peutAccepter = (r: Reponse) => Boolean(detail.value && !r.proposeeParIa && r.auteur && r.auteur.id !== detail.value.auteur?.id
+const peutAccepter = (r: Reponse) => Boolean(detail.value && r.auteur && r.auteur.id !== detail.value.auteur?.id
   && !dejaAcceptee.value && detail.value.moi.estAuteur && detail.value.type === 'question')
 const message = ref<string | null>(null)
-const ERREURS = new Set(['pas_membre', 'pas_auteur_question', 'propre_question', 'propre_reponse', 'proposee_par_ia', 'deja_acceptee'])
-async function agir(action: 'valider' | 'accepter', reponseId: string) {
+const ERREURS = new Set(['pas_membre', 'pas_auteur_question', 'propre_reponse', 'deja_acceptee'])
+async function accepter(reponseId: string) {
   message.value = null
-  const chemin = action === 'valider' ? '/api/reponses/{reponseId}/valider' : '/api/reponses/{reponseId}/accepter'
-  const { data, error } = await api.POST(chemin, { params: { path: { reponseId } } })
+  const { data, error } = await api.POST('/api/reponses/{reponseId}/accepter', { params: { path: { reponseId } } })
   if (data) {
     detail.value = data
-    emit('maj', { ...p.value, nombreReponses: data.nombreReponses, accepteeLe: data.accepteeLe, propositionIa: data.propositionIa })
-    message.value = t(action === 'valider' ? 'question.merciValidation' : 'question.merciAcceptation')
+    emit('maj', { ...p.value, nombreReponses: data.nombreReponses, accepteeLe: data.accepteeLe })
+    message.value = t('question.merciAcceptation')
     return
   }
   const code = (error as { code?: string } | undefined)?.code ?? ''
@@ -135,8 +132,6 @@ async function copierLien() {
       <button v-if="long" type="button" class="lien" @click="deplie = !deplie">{{ deplie ? t('communautes.fil.voirMoins') : t('communautes.fil.voirPlus') }}</button>
 
       <p v-if="p.accepteeLe" class="statut statut--resolue">✓ {{ t('communautes.reponseAcceptee') }}</p>
-      <p v-else-if="p.propositionIa?.statut === 'en_attente'" class="statut statut--ia">{{ t('communautes.fil.iaPrepare') }}</p>
-      <p v-else-if="p.propositionIa?.statut === 'prete'" class="statut statut--ia">{{ t('communautes.fil.iaPropose') }}</p>
 
       <footer class="actions">
         <button type="button" class="action" :aria-expanded="ouvert" :data-test="`reponses-${p.id}`" @click="basculer">
@@ -158,23 +153,18 @@ async function copierLien() {
         <p v-if="etat === 'chargement' && !detail" class="texte-discret" role="status">{{ t('etat.chargement') }}</p>
         <p v-else-if="etat === 'indisponible'" class="texte-discret" role="alert">{{ t('etat.indisponible') }}</p>
         <ol v-if="detail?.reponses.length" class="reponses">
-          <li v-for="r in detail.reponses" :key="r.id" class="reponse" :class="{ 'reponse--acceptee': r.acceptee, 'reponse--ia': r.proposeeParIa }" data-test="reponse">
-            <span v-if="r.proposeeParIa" class="reponse__ia" aria-hidden="true">IA</span>
-            <LienPersonne v-else :id="r.auteur?.id" doublon><JAvatar :nom="r.auteur?.nom ?? '?'" :url="r.auteur?.avatarUrl" :taille="32" /></LienPersonne>
+          <li v-for="r in detail.reponses" :key="r.id" class="reponse" :class="{ 'reponse--acceptee': r.acceptee }" data-test="reponse">
+            <LienPersonne :id="r.auteur?.id" doublon><JAvatar :nom="r.auteur?.nom ?? '?'" :url="r.auteur?.avatarUrl" :taille="32" /></LienPersonne>
             <div class="reponse__corps">
               <p class="reponse__tete">
-                <strong v-if="r.proposeeParIa">{{ t('communautes.fil.ia') }}</strong>
-                <strong v-else><LienPersonne :id="r.auteur?.id">{{ r.auteur?.nom ?? t('communautes.compteSupprime') }}</LienPersonne></strong>
+                <strong><LienPersonne :id="r.auteur?.id">{{ r.auteur?.nom ?? t('communautes.compteSupprime') }}</LienPersonne></strong>
                 <span class="tete__quand">· {{ ilYa(r.creeLe, locale) }}</span>
                 <span v-if="r.acceptee" class="pastille pastille--acceptee">✓ {{ t('communautes.fil.acceptee') }}</span>
-                <span v-else-if="r.proposeeParIa" class="pastille pastille--ia">{{ t('communautes.fil.aVerifier') }}</span>
               </p>
               <TexteRiche class="reponse__texte" :texte="r.contenu" />
-              <p v-if="r.valideePar" class="texte-discret reponse__validee">{{ t('communautes.fil.valideePar', { nom: r.valideePar.nom }) }}</p>
-              <div v-if="peutValider(r) || peutAccepter(r) || !r.proposeeParIa" class="reponse__commandes">
-                <button v-if="peutValider(r)" type="button" class="petit" :data-test="`valider-${r.id}`" @click="agir('valider', r.id)">{{ t('communautes.fil.valider') }}</button>
-                <button v-if="peutAccepter(r)" type="button" class="petit" :data-test="`accepter-${r.id}`" @click="agir('accepter', r.id)">{{ t('communautes.fil.accepter') }}</button>
-                <BoutonSignaler v-if="!r.proposeeParIa" cible-type="reponse" :cible-id="r.id" integre />
+              <div class="reponse__commandes">
+                <button v-if="peutAccepter(r)" type="button" class="petit" :data-test="`accepter-${r.id}`" @click="accepter(r.id)">{{ t('communautes.fil.accepter') }}</button>
+                <BoutonSignaler cible-type="reponse" :cible-id="r.id" integre />
               </div>
             </div>
           </li>
@@ -215,7 +205,6 @@ async function copierLien() {
 .lien { justify-self: start; padding: 0; border: 0; background: none; color: var(--action-ink); font: inherit; font-size: var(--type-body-sm-size); font-weight: 600; cursor: pointer; }
 .statut { margin: 0; font-size: 0.8125rem; font-weight: 600; }
 .statut--resolue { color: #1a7f45; }
-.statut--ia { color: var(--action-ink); }
 
 .actions { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-6); margin-top: var(--space-1); }
 .action {
@@ -229,15 +218,12 @@ async function copierLien() {
 .fil { display: grid; gap: var(--space-3); margin-top: var(--space-2); padding-top: var(--space-3); border-top: 1px dashed var(--line); }
 .reponses { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-4); }
 .reponse { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: var(--space-3); }
-.reponse__ia { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 10px; background: color-mix(in srgb, var(--electric-blue) 16%, transparent); color: var(--action-ink); font-size: 0.75rem; font-weight: 800; }
 .reponse__corps { display: grid; gap: 4px; min-width: 0; }
 .reponse__tete { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px var(--space-2); font-size: 0.875rem; }
 .reponse__texte { margin: 0; }
-.reponse__validee { margin: 0; font-size: 0.8125rem; }
 .reponse--acceptee .reponse__texte { padding-inline-start: var(--space-3); border-inline-start: 3px solid #23a55a; }
 .pastille { padding: 1px 8px; border-radius: var(--radius-pill); font-size: 0.6875rem; font-weight: 700; }
 .pastille--acceptee { background: color-mix(in srgb, #23a55a 16%, transparent); color: #1a7f45; }
-.pastille--ia { background: var(--surface-raised); color: var(--ink-muted); }
 .reponse__commandes { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin-top: 2px; }
 .petit { min-height: 30px; padding: 0 var(--space-3); border-radius: var(--radius-pill); border: 1px solid var(--line-strong); background: transparent; color: var(--ink); font: inherit; font-size: 0.8125rem; font-weight: 600; cursor: pointer; }
 .petit:hover { background: var(--ink); color: var(--bg); border-color: var(--ink); }

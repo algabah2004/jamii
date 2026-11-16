@@ -109,7 +109,7 @@ export interface paths {
         put?: never;
         /**
          * Publier une question, une discussion ou « Montre ton projet »
-         * @description Réservé aux membres. Une question déclenche la proposition de l'IA en tâche de fond (`propositionIa`).
+         * @description Réservé aux membres.
          *     Limité à 10 publications par heure et par personne, contre le spam.
          */
         post: operations["publier"];
@@ -261,11 +261,7 @@ export interface paths {
             };
             cookie?: never;
         };
-        /**
-         * Une publication et toutes ses réponses
-         * @description Le front relit cette route toutes les 3 secondes tant que `propositionIa.statut` vaut `en_attente`
-         *     (au plus 1 minute), pour afficher la réponse de l'IA dès qu'elle arrive.
-         */
+        /** Une publication et toutes ses réponses */
         get: operations["lirePublication"];
         put?: never;
         post?: never;
@@ -309,36 +305,11 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * L'auteur de la question accepte une réponse humaine
+         * L'auteur de la question accepte une réponse
          * @description Une seule réponse acceptée par question (`409 deja_acceptee`). L'auteur de la réponse reçoit une preuve
-         *     `reponse_acceptee` sur son profil. La réponse de l'IA ne s'accepte pas ici (`409 proposee_par_ia`) : elle se
-         *     **valide** par un pair. On n'accepte pas sa propre réponse (`409 propre_reponse`).
+         *     `reponse_acceptee` sur son profil. On n'accepte pas sa propre réponse (`409 propre_reponse`).
          */
         post: operations["accepterReponse"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/reponses/{reponseId}/valider": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                reponseId: components["parameters"]["ReponseId"];
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Un pair valide la réponse proposée par l'IA
-         * @description Réservé à un membre qui **n'est pas** l'auteur de la question (`409 propre_question`) : un humain se porte
-         *     garant de la réponse de l'IA. Elle devient la réponse acceptée, et affiche « Validée par <nom> ».
-         *     Personne ne reçoit de preuve sur son profil pour une réponse de l'IA.
-         */
-        post: operations["validerReponseIa"];
         delete?: never;
         options?: never;
         head?: never;
@@ -412,7 +383,7 @@ export interface components {
             projetId?: string;
             pieces?: components["schemas"]["Pieces"];
         };
-        /** @description Dans un fil, une publication se lit en entier (v0.6) : son texte et l'état de la réponse de l'IA. */
+        /** @description Dans un fil, une publication se lit en entier (v0.6), avec son texte. */
         PublicationResume: {
             /** Format: uuid */
             id: string;
@@ -432,8 +403,6 @@ export interface components {
             creeLe: string;
             /** @description Texte brut, affiché échappé. */
             contenu: string;
-            /** @description Pour une question seulement. */
-            propositionIa: components["schemas"]["PropositionIa"] | null;
             piecesJointes: components["schemas"]["PieceJointe"][];
         };
         PagePublications: components["schemas"]["Page"] & {
@@ -448,22 +417,13 @@ export interface components {
             projetId: string | null;
             /** Format: uuid */
             reponseAccepteeId: string | null;
-            /** @description Pour une question seulement. `null` pour une discussion ou « Montre ton projet ». */
-            propositionIa: components["schemas"]["PropositionIa"] | null;
-            /** @description La réponse acceptée d'abord, puis la proposition de l'IA, puis les autres, des plus anciennes aux plus récentes. */
+            /** @description La réponse acceptée d'abord, puis les autres, des plus anciennes aux plus récentes. */
             reponses: components["schemas"]["Reponse"][];
             /** @description Ma place, pour afficher les bons boutons. Les droits restent vérifiés par le serveur. */
             moi: {
                 estAuteur: boolean;
                 estMembre: boolean;
             };
-        };
-        PropositionIa: {
-            /**
-             * @description `indisponible` : l'IA n'a pas répondu à temps. La question reste ouverte aux humains.
-             * @enum {string}
-             */
-            statut: "en_attente" | "prete" | "indisponible";
         };
         NouvelleReponse: {
             /** @description Texte brut. */
@@ -473,11 +433,8 @@ export interface components {
             /** Format: uuid */
             id: string;
             contenu: string;
-            /** @description `null` pour la réponse de l'IA, ou un compte supprimé (alors `proposeeParIa` vaut `false`). */
+            /** @description `null` : compte supprimé. */
             auteur: components["schemas"]["PersonneResume"] | null;
-            proposeeParIa: boolean;
-            /** @description Le pair qui a validé la réponse de l'IA. */
-            valideePar: components["schemas"]["PersonneResume"] | null;
             acceptee: boolean;
             /** Format: date-time */
             creeLe: string;
@@ -1278,32 +1235,6 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description La question, avec sa réponse acceptée. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Publication"];
-                };
-            };
-            401: components["responses"]["NonConnecte"];
-            403: components["responses"]["Interdit"];
-            404: components["responses"]["Introuvable"];
-            409: components["responses"]["Conflit"];
-        };
-    };
-    validerReponseIa: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                reponseId: components["parameters"]["ReponseId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description La question, avec la réponse de l'IA validée et acceptée. */
             200: {
                 headers: {
                     [name: string]: unknown;

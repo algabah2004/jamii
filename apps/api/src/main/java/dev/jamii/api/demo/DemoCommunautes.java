@@ -21,8 +21,8 @@ import dev.jamii.api.demo.DonneesDemo.Personne;
 
 /**
  * Les communautés de la démo (#155) : toutes les communautés de départ ont des membres, leurs trois salons ont des
- * conversations, et leur fil a des publications à chaque étape de l'entraide (ouverte, réponse de l'IA validée par un
- * pair, réponse humaine acceptée, sans réponse, « Montre ton projet »).
+ * conversations, et leur fil a des publications à chaque étape de l'entraide (ouverte, avec une réponse, réponse
+ * acceptée, sans réponse, « Montre ton projet »).
  * <p>
  * Écrit directement en base, seulement avec le profil `demo` (jamais en production). Chaque ligne a un identifiant
  * stable et s'insère avec `ON CONFLICT DO NOTHING` : recharger complète ce qui manque, sans doublon ni écrasement.
@@ -211,24 +211,24 @@ final class DemoCommunautes {
 
 	private void questions() {
 		UUID flutter = communaute("flutter");
-		// Une question ouverte : l'IA a proposé une réponse, personne ne l'a encore vérifiée.
+		// Une question ouverte : une réponse est arrivée, l'auteur ne l'a pas encore acceptée.
 		UUID riverpod = publication("riverpod", flutter, KOFI, "question", "Comment tester un provider Riverpod qui appelle le réseau ?",
 				"Mes tests passent en local mais échouent sur la CI : le provider appelle vraiment l'API. Comment le simuler proprement ?",
-				"prete", 3, null);
-		reponse("riverpod-ia", riverpod, null, null,
-				"Remplace le client HTTP par une version simulée avec `overrides` dans `ProviderContainer`. Tes tests ne touchent plus le réseau, et la CI devient stable. À vérifier par un membre.",
+				3, null);
+		reponse("riverpod-yann", riverpod, YANN,
+				"Remplace le client HTTP par une version simulée avec `overrides` dans `ProviderContainer`. Tes tests ne touchent plus le réseau, et la CI devient stable.",
 				Duration.ofHours(3).minusMinutes(1));
 
-		// Une question résolue par la réponse de l'IA, validée par un pair (elle ne compte sur le profil de personne).
+		// Une question résolue : la réponse de Yann est acceptée.
 		UUID apk = publication("apk", flutter, NIA, "question", "Réduire la taille de l'APK pour les téléphones d'entrée de gamme",
-				"Mon APK fait 48 Mo et beaucoup d'utilisateurs ont peu de stockage. Par où commencer ?", "prete", 26, null);
-		UUID apkIa = reponse("apk-ia", apk, null, YANN,
+				"Mon APK fait 48 Mo et beaucoup d'utilisateurs ont peu de stockage. Par où commencer ?", 26, null);
+		UUID apkYann = reponse("apk-yann", apk, YANN,
 				"Publie un App Bundle (un APK par architecture), active `--split-debug-info` et `--obfuscate`, et compresse les images en WebP. On passe souvent sous les 20 Mo.",
 				Duration.ofHours(25));
-		accepter(apk, apkIa, 24);
+		accepter(apk, apkYann, 24);
 
 		publication("demo-vendredi", flutter, FATOU, "discussion", "Qui vient à l'atelier Flutter de samedi ?",
-				"On sera une quinzaine à Dakar, et l'appel du salon sera ouvert pour celles et ceux qui suivent à distance.", null, 20, null);
+				"On sera une quinzaine à Dakar, et l'appel du salon sera ouvert pour celles et ceux qui suivent à distance.", 20, null);
 		montrer("carnet-cacao", flutter, KOFI, "Le carnet des coopératives de cacao, hors ligne d'abord",
 				"Les agents de terrain saisissent les pesées sans réseau ; tout se synchronise au retour en ville. Vos retours sur l'écran de saisie m'intéressent.",
 				30);
@@ -236,51 +236,51 @@ final class DemoCommunautes {
 		// Une question résolue par un humain : la réponse acceptée de Kofi.
 		UUID fintech = communaute("fintech");
 		UUID webhook = publication("webhook", fintech, MOUSSA, "question", "Comment vérifier qu'un webhook de paiement vient bien de l'opérateur ?",
-				"On a reçu un faux « paiement reçu » sur notre boutique. Comment s'assurer qu'un webhook est authentique ?", "indisponible", 50, null);
-		UUID deKofi = reponse("webhook-kofi", webhook, KOFI, null,
+				"On a reçu un faux « paiement reçu » sur notre boutique. Comment s'assurer qu'un webhook est authentique ?", 50, null);
+		UUID deKofi = reponse("webhook-kofi", webhook, KOFI,
 				"Vérifie la signature HMAC de chaque requête avec le secret que l'opérateur te donne, refuse les horodatages de plus de 5 minutes, et ne crois jamais le montant du webhook : relis le paiement auprès de l'API de l'opérateur.",
 				Duration.ofHours(48));
 		accepter(webhook, deKofi, 47);
 		publication("ussd", fintech, YANN, "question", "Une appli USSD peut-elle partager le code de notre API REST ?",
-				"Nos clients sans smartphone passent par l'USSD. Peut-on réutiliser la même logique métier que l'appli mobile ?", "indisponible", 6, null);
+				"Nos clients sans smartphone passent par l'USSD. Peut-on réutiliser la même logique métier que l'appli mobile ?", 6, null);
 		montrer("tisserandes", fintech, AWA, "La boutique des tisserandes accepte Wave",
 				"Premier vrai paiement reçu ce matin. Le parcours tient en trois écrans, je vous montre comment on gère l'attente de confirmation.",
 				26);
 
 		UUID ia = communaute("ia");
 		UUID wolof = publication("wolof", ia, NIA, "question", "Où trouver des données vocales en wolof pour un premier modèle ?",
-				"Je veux transcrire des messages vocaux de commerçants. Quels jeux de données ouverts existent, et sous quelle licence ?", "prete", 30, null);
-		UUID wolofFatou = reponse("wolof-fatou", wolof, FATOU, null,
+				"Je veux transcrire des messages vocaux de commerçants. Quels jeux de données ouverts existent, et sous quelle licence ?", 30, null);
+		UUID wolofFatou = reponse("wolof-fatou", wolof, FATOU,
 				"Commence par les corpus ouverts des universités de Dakar, et vérifie bien la licence de chacun. Enregistre aussi une centaine de phrases avec tes commerçants, avec leur accord écrit.",
 				Duration.ofHours(28));
 		accepter(wolof, wolofFatou, 27);
 		publication("budget-ia", ia, SAMIRA, "discussion", "Combien vous coûte un modèle de langue en production ?",
-				"On partage nos chiffres ? Chez nous, environ 40 000 FCFA par mois pour 2 000 utilisateurs, avec un cache.", null, 9, null);
+				"On partage nos chiffres ? Chez nous, environ 40 000 FCFA par mois pour 2 000 utilisateurs, avec un cache.", 9, null);
 
 		UUID web = communaute("web");
 		UUID troisG = publication("3g", web, CHIDI, "question", "Comment rendre un site rapide en 3G sans tout réécrire ?",
-				"Mon site met 9 secondes à charger à Lagos. Je n'ai pas le temps de tout refaire : quelles sont les trois premières choses à faire ?", "prete", 5, null);
-		reponse("3g-ia", troisG, null, null,
-				"Mesure d'abord avec un test en 3G simulée. Ensuite : images en WebP et à la bonne taille, polices servies par ton serveur avec `font-display: swap`, et cache long sur les fichiers statiques. À vérifier par un membre.",
+				"Mon site met 9 secondes à charger à Lagos. Je n'ai pas le temps de tout refaire : quelles sont les trois premières choses à faire ?", 5, null);
+		reponse("3g-kofi", troisG, KOFI,
+				"Mesure d'abord avec un test en 3G simulée. Ensuite : images en WebP et à la bonne taille, polices servies par ton serveur avec `font-display: swap`, et cache long sur les fichiers statiques.",
 				Duration.ofHours(5).minusMinutes(1));
 		montrer("alerte-eau", web, MOUSSA, "L'alerte coupure d'eau, en ligne sur DataCloud",
 				"Les habitants s'inscrivent avec leur numéro et reçoivent un SMS avant chaque coupure. Déployé en un clic depuis Jamii.", 32);
 
 		UUID cloud = communaute("cloud");
 		publication("sauvegardes", cloud, THABO, "question", "Quelle stratégie de sauvegarde pour une petite base PostgreSQL ?",
-				"Une base de 2 Go, une PME de 10 personnes. Sauvegarde chaque nuit, mais où, et combien de temps on garde ?", "indisponible", 11, null);
+				"Une base de 2 Go, une PME de 10 personnes. Sauvegarde chaque nuit, mais où, et combien de temps on garde ?", 11, null);
 		publication("dockerfile", cloud, AWA, "discussion", "Vos astuces pour un Dockerfile léger ?",
-				"On passe de 900 Mo à combien chez vous ? Je partage le nôtre dans #projets.", null, 15, null);
+				"On passe de 900 Mo à combien chez vous ? Je partage le nôtre dans #projets.", 15, null);
 
 		UUID dakar = communaute("antenne-dakar");
 		publication("rencontre-jeudi", dakar, FATOU, "discussion", "Rencontre de l'antenne jeudi à 19 h",
-				"Au programme : déployer un projet sur le cloud Systalink, puis les projets de chacun. L'appel du salon sera ouvert.", null, 4, null);
+				"Au programme : déployer un projet sur le cloud Systalink, puis les projets de chacun. L'appel du salon sera ouvert.", 4, null);
 		UUID abidjan = communaute("antenne-abidjan");
 		publication("apero-cocody", abidjan, KOFI, "discussion", "Apéro dev vendredi à Cocody",
-				"On se retrouve à 19 h pour parler projets et missions. Ceux qui ne peuvent pas venir : l'appel du salon sera ouvert.", null, 12, null);
+				"On se retrouve à 19 h pour parler projets et missions. Ceux qui ne peuvent pas venir : l'appel du salon sera ouvert.", 12, null);
 		UUID lagos = communaute("antenne-lagos");
 		publication("paystack-ussd", lagos, CHIDI, "question", "Paystack avec repli USSD : quelqu'un l'a fait ?",
-				"Une partie de nos clients n'a pas de carte. Comment proposer un repli USSD sans dupliquer toute la logique de paiement ?", "indisponible", 26, null);
+				"Une partie de nos clients n'a pas de carte. Comment proposer un repli USSD sans dupliquer toute la logique de paiement ?", 26, null);
 		UUID nairobi = communaute("antenne-nairobi");
 		montrer("covoiturage", nairobi, NIA, "Le covoiturage vers le marché tourne à Nakuru",
 				"Une semaine en vrai : 40 trajets partagés. Je cherche quelqu'un pour la partie paiement M-Pesa.", 44);
@@ -380,26 +380,26 @@ final class DemoCommunautes {
 
 		UUID flutter = communaute("flutter");
 		UUID android8 = publication("android8", flutter, MARIAM, "question", "Mon appli plante au démarrage sur Android 8",
-				"Tout marche sur les téléphones récents, mais sur Android 8 l'appli se ferme dès l'ouverture. Par où chercher ?", "indisponible", 1, null);
-		reponse("android8-kwame", android8, KWAME, null,
+				"Tout marche sur les téléphones récents, mais sur Android 8 l'appli se ferme dès l'ouverture. Par où chercher ?", 1, null);
+		reponse("android8-kwame", android8, KWAME,
 				"Regarde d'abord la version minimale du SDK de chaque plugin : un seul plugin trop récent suffit à faire planter les anciens Android.",
 				Duration.ofMinutes(40));
-		UUID android8Ok = reponse("android8-ibrahima", android8, IBRAHIMA, null,
+		UUID android8Ok = reponse("android8-ibrahima", android8, IBRAHIMA,
 				"Lance `flutter run` sur un émulateur Android 8 et lis la première erreur du journal : chez moi c'était le plugin de caméra.",
 				Duration.ofMinutes(30));
 		accepter(android8, android8Ok, 0);
 		montrer("vaccination", flutter, KOFI, "Un carnet de vaccination hors ligne pour les cliniques rurales",
 				"Avec Kwame, Tendai et Mariam, on monte un cercle autour de ce projet. Voici les premiers écrans.", 2);
 		publication("impeller", flutter, TENDAI, "discussion", "Impeller sur les téléphones d'entrée de gamme : vos retours ?",
-				"Chez moi les animations sont enfin fluides sur un vieux Tecno. Et vous ?", null, 1, null);
+				"Chez moi les animations sont enfin fluides sur un vieux Tecno. Et vous ?", 1, null);
 
 		UUID fintech = communaute("fintech");
 		UUID tests = publication("tests-paiement", fintech, AICHA, "question", "Comment tester des paiements sans dépenser de vrai argent ?",
-				"On veut des tests automatiques sur nos paiements Mobile Money. Comment faites-vous ?", "prete", 4, null);
-		reponse("tests-paiement-ia", tests, null, null,
-				"Place l'opérateur derrière une interface et branche une version simulée dans tes tests. Garde un test réel de petit montant, lancé à la main. À vérifier par un membre.",
+				"On veut des tests automatiques sur nos paiements Mobile Money. Comment faites-vous ?", 4, null);
+		reponse("tests-paiement-fatima", tests, FATIMA,
+				"Place l'opérateur derrière une interface et branche une version simulée dans tes tests. Garde un test réel de petit montant, lancé à la main.",
 				Duration.ofHours(4).minusMinutes(1));
-		reponse("tests-paiement-moussa", tests, MOUSSA, null,
+		reponse("tests-paiement-moussa", tests, MOUSSA,
 				"Les opérateurs ont presque tous un bac à sable. On l'utilise pour les tests de bout en bout, et une simulation pour le reste.",
 				Duration.ofHours(3));
 		montrer("qr-commerce", fintech, MOUSSA, "Payer par QR code chez le petit commerçant",
@@ -407,37 +407,37 @@ final class DemoCommunautes {
 
 		UUID ia = communaute("ia");
 		UUID memoire = publication("memoire-modele", ia, JOSEPH, "question", "Mon modèle ne tient pas en mémoire sur le serveur",
-				"Il marche sur mon PC avec 32 Go, mais le serveur n'en a que 8. Que faire sans tout réentraîner ?", "prete", 5, null);
-		UUID memoireIa = reponse("memoire-ia", memoire, null, FATIMA,
+				"Il marche sur mon PC avec 32 Go, mais le serveur n'en a que 8. Que faire sans tout réentraîner ?", 5, null);
+		UUID memoireFatima = reponse("memoire-fatima", memoire, FATIMA,
 				"Quantifie le modèle en 8 bits : la mémoire est divisée par quatre, avec une perte de qualité souvent invisible. Charge-le en paresseux, au premier appel.",
 				Duration.ofHours(5).minusMinutes(1));
-		accepter(memoire, memoireIa, 4);
+		accepter(memoire, memoireFatima, 4);
 		publication("bambara", ia, AICHA, "discussion", "Un correcteur d'orthographe pour le bambara",
-				"On cherche des textes libres de droits et une personne pour l'API. Toutes les idées sont bienvenues.", null, 20, null);
+				"On cherche des textes libres de droits et une personne pour l'API. Toutes les idées sont bienvenues.", 20, null);
 
 		UUID web = communaute("web");
 		UUID traductions = publication("traductions", web, JOSEPH, "question", "Gérer trois langues dans une appli Vue sans s'y perdre",
-				"Français, anglais et kinyarwanda : comment éviter qu'une clé manque dans une langue ?", "indisponible", 3, null);
-		UUID tradYann = reponse("traductions-yann", traductions, YANN, null,
+				"Français, anglais et kinyarwanda : comment éviter qu'une clé manque dans une langue ?", 3, null);
+		UUID tradYann = reponse("traductions-yann", traductions, YANN,
 				"Un fichier par langue avec Vue I18n, et un test qui compare les clés de chaque fichier : il échoue dès qu'une traduction manque.",
 				Duration.ofHours(2));
 		accepter(traductions, tradYann, 1);
 		publication("pwa", web, KWAME, "discussion", "Les PWA en production : vos pièges",
-				"On a servi une vieille version pendant deux jours à cause du cache. Partagez les vôtres !", null, 8, null);
+				"On a servi une vieille version pendant deux jours à cause du cache. Partagez les vôtres !", 8, null);
 
 		UUID cloud = communaute("cloud");
 		UUID https = publication("https", cloud, FATIMA, "question", "Mes certificats HTTPS expirent sans prévenir",
-				"Deux fois ce mois-ci, le site est tombé un dimanche. Comment l'éviter ?", "prete", 2, null);
-		reponse("https-moussa", https, MOUSSA, null,
+				"Deux fois ce mois-ci, le site est tombé un dimanche. Comment l'éviter ?", 2, null);
+		reponse("https-moussa", https, MOUSSA,
 				"Renouvellement automatique par ton hébergeur, et une alerte quinze jours avant l'expiration au cas où le renouvellement échoue.",
 				Duration.ofMinutes(70));
 		publication("latence", cloud, TENDAI, "discussion", "Temps de réponse de DataCloud depuis votre ville",
-				"Partagez vos mesures : on fait une carte des temps de réponse sur le continent.", null, 9, null);
+				"Partagez vos mesures : on fait une carte des temps de réponse sur le continent.", 9, null);
 
 		publication("presentations-dakar", communaute("antenne-dakar"), AICHA, "discussion", "Présentez-vous avant jeudi !",
-				"Un mot sur vous et vos projets, pour qu'on sache qui chercher à la rencontre.", null, 3, null);
+				"Un mot sur vous et vos projets, pour qu'on sache qui chercher à la rencontre.", 3, null);
 		publication("accra-lagos", communaute("antenne-lagos"), KWAME, "discussion", "Une rencontre en ligne Accra et Lagos ?",
-				"Beaucoup de projets en commun entre nos deux villes. Qui serait partant pour un appel le mois prochain ?", null, 45, null);
+				"Beaucoup de projets en commun entre nos deux villes. Qui serait partant pour un appel le mois prochain ?", 45, null);
 	}
 
 	// ---------------------------------------------------------------- des communautés créées par des membres
@@ -524,15 +524,15 @@ final class DemoCommunautes {
 		}
 
 		publication("godot", communaute("gaming-lab-africa"), CHIDI, "question", "Godot ou Unity pour un jeu sur téléphone d'entrée de gamme ?",
-				"Je veux un jeu léger, qui tourne sur 1 Go de RAM, et dont le moteur est libre. Vos retours ?", "prete", 7, null);
+				"Je veux un jeu léger, qui tourne sur 1 Go de RAM, et dont le moteur est libre. Vos retours ?", 7, null);
 		publication("guide-securite", communaute("securite-afrique-ouest"), IBRAHIMA, "discussion", "Un guide de sécurité pour les PME, en français simple",
-				"Mots de passe, sauvegardes, faux paiements : on écrit 10 règles. Ajoutez les vôtres en réponse.", null, 28, null);
+				"Mots de passe, sauvegardes, faux paiements : on écrit 10 règles. Ajoutez les vôtres en réponse.", 28, null);
 		publication("icones-mots", communaute("design-et-produit"), AWA, "question", "Icônes ou mots pour un public qui lit peu ?",
-				"Notre appli s'adresse à des commerçantes qui lisent peu. On met des icônes, des mots, ou les deux ?", "indisponible", 3, null);
+				"Notre appli s'adresse à des commerçantes qui lisent peu. On met des icônes, des mots, ou les deux ?", 3, null);
 		publication("delais-orange", communaute("mobile-money-builders"), AMINA, "question", "Que montrer pendant une confirmation de paiement qui traîne ?",
-				"Les délais d'Orange Money vont de 2 secondes à 2 minutes. Comment éviter que l'utilisateur paie deux fois ?", "prete", 2, null);
+				"Les délais d'Orange Money vont de 2 secondes à 2 minutes. Comment éviter que l'utilisateur paie deux fois ?", 2, null);
 		publication("gtfs-nairobi", communaute("open-data-afrique"), NIA, "discussion", "Les horaires des matatus de Nairobi en données ouvertes",
-				"Un jeu de données GTFS sous licence ouverte. Quelqu'un veut en faire une appli ?", null, 6, null);
+				"Un jeu de données GTFS sous licence ouverte. Quelqu'un veut en faire une appli ?", 6, null);
 	}
 
 	// ---------------------------------------------------------------- écriture, sans doublon
@@ -599,15 +599,15 @@ final class DemoCommunautes {
 	}
 
 	private UUID publication(String cle, UUID communaute, Personne auteur, String type, String titre, String contenu,
-			String propositionIa, int heures, UUID projet) {
+			int heures, UUID projet) {
 		UUID pid = id("publication:" + cle);
 		base.sql("""
-				INSERT INTO publication (id, communaute_id, auteur_id, type, titre, contenu, projet_id, proposition_ia, cree_le)
-				VALUES (:id, :c, :a, :type, :titre, :contenu, :projet, :ia, :t)
+				INSERT INTO publication (id, communaute_id, auteur_id, type, titre, contenu, projet_id, cree_le)
+				VALUES (:id, :c, :a, :type, :titre, :contenu, :projet, :t)
 				ON CONFLICT (id) DO NOTHING
 				""")
 			.param("id", pid).param("c", communaute).param("a", auteur.id()).param("type", type).param("titre", titre)
-			.param("contenu", contenu).param("projet", projet).param("ia", propositionIa).param("t", ilYA(Duration.ofHours(heures)))
+			.param("contenu", contenu).param("projet", projet).param("t", ilYA(Duration.ofHours(heures)))
 			.update();
 		return pid;
 	}
@@ -616,19 +616,18 @@ final class DemoCommunautes {
 	private void montrer(String cle, UUID communaute, Personne auteur, String titre, String contenu, int heures) {
 		Optional<UUID> projet = base.sql("SELECT id FROM projet WHERE porteur_id = :u ORDER BY cree_le, id LIMIT 1")
 			.param("u", auteur.id()).query(UUID.class).optional();
-		projet.ifPresent(p -> publication(cle, communaute, auteur, "montre_ton_projet", titre, contenu, null, heures, p));
+		projet.ifPresent(p -> publication(cle, communaute, auteur, "montre_ton_projet", titre, contenu, heures, p));
 	}
 
-	/** `auteur` vide : la réponse de l'IA, éventuellement validée par `validePar`. */
-	private UUID reponse(String cle, UUID publication, Personne auteur, Personne validePar, String contenu, Duration ilYa) {
+	private UUID reponse(String cle, UUID publication, Personne auteur, String contenu, Duration ilYa) {
 		UUID rid = id("reponse:" + cle);
 		base.sql("""
-				INSERT INTO reponse (id, publication_id, auteur_id, contenu, proposee_par_ia, validee_par_id, cree_le)
-				VALUES (:id, :p, :a, :contenu, :ia, :v, :t)
+				INSERT INTO reponse (id, publication_id, auteur_id, contenu, cree_le)
+				VALUES (:id, :p, :a, :contenu, :t)
 				ON CONFLICT (id) DO NOTHING
 				""")
-			.param("id", rid).param("p", publication).param("a", auteur == null ? null : auteur.id()).param("contenu", contenu)
-			.param("ia", auteur == null).param("v", validePar == null ? null : validePar.id()).param("t", ilYA(ilYa)).update();
+			.param("id", rid).param("p", publication).param("a", auteur.id()).param("contenu", contenu)
+			.param("t", ilYA(ilYa)).update();
 		return rid;
 	}
 
