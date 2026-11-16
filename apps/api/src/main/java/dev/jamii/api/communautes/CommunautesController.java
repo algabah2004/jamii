@@ -39,7 +39,7 @@ class CommunautesController {
 	}
 
 	record Communaute(UUID id, String slug, String nom, String description, String theme, String pays,
-			int nombreMembres, int questionsOuvertes, boolean membre, boolean moderateur) {
+			int nombreMembres, int questionsOuvertes, boolean membre, boolean moderateur, String couverture) {
 	}
 
 	/** Dans un fil, chaque publication se lit en entier (contrat v0.6) : son texte et l'état de la réponse de l'IA. */
@@ -223,7 +223,8 @@ class CommunautesController {
 
 	static Communaute communaute(GestionCommunautes.Fiche f) {
 		return new Communaute(f.id(), f.slug(), f.nom(), f.description(), f.theme(), f.pays(), f.nombreMembres(),
-				f.questionsOuvertes(), f.membre(), f.moderateur());
+				f.questionsOuvertes(), f.membre(), f.moderateur(),
+				f.couvertureId() == null ? null : dev.jamii.api.fichiers.Fichiers.adresse(f.couvertureId()));
 	}
 
 	private static boolean curseurDatee(GestionCommunautes.Curseur c) {

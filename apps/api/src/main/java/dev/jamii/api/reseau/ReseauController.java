@@ -43,7 +43,7 @@ class ReseauController {
 	}
 
 	record CercleResume(UUID id, String nom, String ville, int taille, String statut, int nombreMembres,
-			PersonneResume createur, Instant creeLe) {
+			PersonneResume createur, Instant creeLe, List<String> profilsRecherches) {
 	}
 
 	record CercleRecommande(CercleResume cercle, List<String> raisons, List<String> competences) {
@@ -415,7 +415,7 @@ class ReseauController {
 		return new CercleResume(c.id(), c.nom(), c.ville(), c.taille(), c.statut(), c.membres().size(),
 				createur == null ? new PersonneResume(c.createurId(), "", null)
 						: new PersonneResume(createur.id(), createur.nom(), createur.avatarUrl()),
-				c.creeLe());
+				c.creeLe(), c.profilsRecherches());
 	}
 
 	/** Le réseau ne connaît pas la ville d'une personne sans profil publié : `null` alors. */

@@ -22,7 +22,11 @@ class LectureCercles {
 
 	/** Un cercle et l'identifiant de ses membres, dans l'ordre d'arrivée. */
 	record CercleLu(UUID id, String nom, String ville, int taille, String statut, UUID createurId, Instant creeLe,
-			List<UUID> membres) {
+			List<UUID> membres, List<String> profilsRecherches) {
+
+		CercleLu(UUID id, String nom, String ville, int taille, String statut, UUID createurId, Instant creeLe, List<UUID> membres) {
+			this(id, nom, ville, taille, statut, createurId, creeLe, membres, List.of());
+		}
 
 		boolean accueille() {
 			return "ouvert".equals(statut) && membres.size() < taille;
@@ -68,13 +72,13 @@ class LectureCercles {
 				.add(l.getObject("utilisateur_id", UUID.class)))
 			.list();
 		Map<UUID, CercleLu> lus = new LinkedHashMap<>();
-		base.sql("SELECT id, nom, ville, taille, statut, createur_id, cree_le FROM cercle WHERE id IN (:ids)")
+		base.sql("SELECT id, nom, ville, taille, statut, createur_id, cree_le, profils_recherches FROM cercle WHERE id IN (:ids)")
 			.param("ids", ids)
 			.query((l, i) -> {
 				UUID id = l.getObject("id", UUID.class);
 				return new CercleLu(id, l.getString("nom"), l.getString("ville"), l.getInt("taille"), l.getString("statut"),
 						l.getObject("createur_id", UUID.class), l.getTimestamp("cree_le").toInstant(),
-						List.copyOf(membres.getOrDefault(id, List.of())));
+						List.copyOf(membres.getOrDefault(id, List.of())), List.of((String[]) l.getArray("profils_recherches").getArray()));
 			})
 			.list()
 			.forEach(c -> lus.put(c.id(), c));

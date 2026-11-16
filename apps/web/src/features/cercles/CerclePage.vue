@@ -154,6 +154,11 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
           <h1>{{ cercle.nom }}</h1>
           <p class="cercle-tete__infos">{{ cercle.ville ? t('cercles.sousTitre', { n: cercle.membres.length, ville: cercle.ville }) : t('cercles.sousTitreSansVille', { n: cercle.membres.length }) }}</p>
         </div>
+        <!-- Tant que le cercle se remplit, les profils qu'il cherche : pour que les bonnes personnes le rejoignent. -->
+        <p v-if="cercle.statut === 'ouvert' && cercle.profilsRecherches?.length" class="cercle-tete__profils" data-test="profils-recherches">
+          <span>{{ t('cercles.cherche') }}</span>
+          <span v-for="p in cercle.profilsRecherches" :key="p" class="cercle-tete__profil">{{ t(`cercles.profils.${p}`) }}</span>
+        </p>
       </header>
 
       <div class="espace" :class="{ 'espace--outils': membre }">
@@ -434,4 +439,6 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
 @keyframes apparait { from { opacity: 0; scale: 0.6; } }
 @keyframes remplit { from { transform: scaleX(0); } }
 @media (prefers-reduced-motion: reduce) { .anneau__trace circle { animation: none; } }
+.cercle-tete__profils { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: var(--space-2) 0 0; color: var(--ink-muted); font-size: var(--type-body-sm-size); font-weight: 600; }
+.cercle-tete__profil { padding: 2px 10px; border-radius: var(--radius-pill); background: var(--action-soft); color: var(--action-ink); font-size: 0.75rem; font-weight: 700; }
 </style>

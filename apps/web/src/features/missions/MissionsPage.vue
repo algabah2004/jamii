@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import MotifsCoins from '../../components/MotifsCoins.vue'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
@@ -56,7 +57,9 @@ const budget = (m: MissionResume) => (m.budget ? formaterMontant(m.budget, local
 </script>
 
 <template>
-  <section class="missions exploration">
+  <section class="avec-motifs missions exploration">
+    <!-- Des taches de dessins sur les bords de la page, à son image. -->
+    <MotifsCoins planche="missions" />
     <EnteteExploration :surtitre="t('exploration.missions.surtitre')" :titre="t('exploration.missions.titre')" :accent="t('exploration.missions.accent')" :intro="t('missions.intro')" :statistiques="statistiques">
       <template #actions>
         <RouterLink v-if="connecte" to="/missions/nouvelle" class="exploration__principal" data-test="publier-une-mission"><span aria-hidden="true">＋</span>{{ t('missions.publier') }}</RouterLink>

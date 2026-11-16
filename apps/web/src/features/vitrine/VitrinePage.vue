@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import MotifsCoins from '../../components/MotifsCoins.vue'
 import { JBouton, JFiltres, JIllustration, JSquelette } from '../../design-system'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -66,7 +67,9 @@ function filtrer(datacloud: boolean) {
 </script>
 
 <template>
-  <section class="vitrine exploration">
+  <section class="avec-motifs vitrine exploration">
+    <!-- Des taches de dessins sur les bords de la page, à son image. -->
+    <MotifsCoins planche="vitrine" />
     <EnteteExploration :surtitre="t('exploration.vitrine.surtitre')" :titre="t('exploration.vitrine.titre')" :accent="t('exploration.vitrine.accent')" :intro="t('vitrine.intro')" :statistiques="statistiques">
       <template #actions><a href="#projets-vitrine" class="exploration__principal">{{ t('exploration.vitrine.explorer') }} <span aria-hidden="true">↗</span></a><RouterLink to="/cercles" class="exploration__secondaire">{{ t('exploration.vitrine.creer') }}</RouterLink></template>
       <p class="exploration__surtitre">{{ t('exploration.vitrine.vedette') }}</p>

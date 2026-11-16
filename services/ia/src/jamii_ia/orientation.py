@@ -64,6 +64,9 @@ Règles :
   Un service « pourQui: developpeurs » ne se propose QUE si developpeursNecessaires vaut true.
   pourCeBesoin : ce que ça change concrètement pour CETTE personne, une phrase de 20 mots au plus
   (ex. « Tes clientes voient tes robes et tes prix depuis leur téléphone, sans t'appeler. »).
+  Pour un service « pourQui: developpeurs », pourCeBesoin dit clairement que Systalink ne fait
+  que garder et mettre en ligne ce que les développeurs construiront : il ne construit rien
+  (ex. « Garde en ligne, en sécurité, l'espace que les développeurs vont construire pour toi. »).
 - etapes : 1 à 3 prochaines étapes concrètes qu'elle peut faire cette semaine, dans l'ordre, 12
   mots au plus chacune, commençant par un verbe (ex. « Note tes 10 produits les plus vendus »).
   Pas de prix. Si des développeurs sont nécessaires, une étape peut être d'en contacter un.

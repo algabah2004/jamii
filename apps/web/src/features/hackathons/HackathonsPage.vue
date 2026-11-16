@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import MotifsCoins from '../../components/MotifsCoins.vue'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
@@ -75,7 +76,9 @@ const periode = (debut: string, fin: string) =>
 </script>
 
 <template>
-  <section class="hackathons exploration">
+  <section class="avec-motifs hackathons exploration">
+    <!-- Des taches de dessins sur les bords de la page, à son image. -->
+    <MotifsCoins planche="hackathons" />
     <EnteteExploration :surtitre="t('exploration.hackathons.surtitre')" :titre="t('exploration.hackathons.titre')" :accent="t('exploration.hackathons.accent')" :intro="t('hackathons.intro')" :statistiques="statistiques">
       <template #actions><RouterLink v-if="connecte" to="/hackathons/nouveau" class="exploration__principal" data-test="creer-un-hackathon"><span aria-hidden="true">＋</span>{{ t('hackathons.creer') }}</RouterLink><a href="#hackathons-liste" class="exploration__secondaire">{{ t('exploration.hackathons.explorer') }} <span aria-hidden="true">↓</span></a></template>
       <p class="exploration__surtitre">{{ t('exploration.hackathons.vedette') }}</p>

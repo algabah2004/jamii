@@ -800,13 +800,16 @@
     "rienTrouve": "Rien ne correspond à ta recherche.",
     "ouvrir": "Ouvrir",
     "liste": {
-      "intro": "Des développeurs qui s'entraident, par sujet ou par ville. Rejoins-en une, ou crée la tienne.",
-      "creer": "Créer une communauté",
       "creerLaTienne": "Créer la tienne",
       "chercher": "Chercher une communauté",
       "themes": "Filtrer par thème",
       "toutes": "Toutes",
-      "aucune": "Aucune communauté ne correspond. Et si tu la créais ?"
+      "aucune": "Aucune communauté ne correspond. Et si tu la créais ?",
+      "motsCles": "Mots-clés",
+      "decouvrir": "Découvre les communautés",
+      "ou": "ou",
+      "creerLaTienneMin": "crée la tienne",
+      "creer": "Créer une communauté"
     },
     "themes": {
       "web": "Web",
@@ -924,6 +927,17 @@
       "termine": "Appel terminé",
       "enDirect": "{nom} est en appel dans #{salon}, rejoindre",
       "trop": "Tu as lancé beaucoup d'appels : réessaie dans un moment."
+    },
+    "couverture": {
+      "mettre": "Mettre une image de couverture",
+      "changer": "Changer l’image",
+      "motif": "Revenir au motif",
+      "envoi": "Envoi…",
+      "trop_gros": "Cette image est trop lourde (10 Mo au plus).",
+      "type_refuse": "Choisis une image (PNG, JPEG, WebP ou GIF).",
+      "erreur": "L’image n’a pas pu être envoyée. Réessaie.",
+      "avecMotif": "La communauté garde son motif. Tu peux aussi mettre une image.",
+      "avecImage": "Ton image sert de couverture."
     }
   },
   "question": {
@@ -997,7 +1011,6 @@
   "pied": {
     "mission": "La plateforme d'échange des développeurs africains : s'entraider, faire équipe et mettre ses projets en ligne.",
     "liens": "Liens utiles",
-    "charte": "Charte graphique",
     "cadev": "Projet présenté à la CADEV 2026. Jamii fonctionne sur le cloud Systalink."
   },
   "signaler": {
@@ -1019,7 +1032,7 @@
       "intro": "Explique avec tes mots ce dont ton entreprise a besoin. Jamii te dit ce qui existe déjà chez Systalink, et quels développeurs peuvent faire le reste.",
       "champTitre": "En une phrase, de quoi as-tu besoin ?",
       "aideTitre": "Par exemple : une boutique en ligne pour mon atelier.",
-      "champDescription": "Raconte : qui l’utilisera, ce que ça doit faire, ce qui compte pour toi",
+      "champDescription": "Ce que ça doit faire, en quelques phrases.",
       "aideDescription": "Au moins {n} caractères. Pas besoin de mots techniques.",
       "duree": "En combien de temps aimerais-tu l’avoir ?",
       "semaines": "{n} semaine | {n} semaines",
@@ -1036,13 +1049,12 @@
       "secteur": "Ton secteur (facultatif)",
       "ville": "Ta ville (facultatif)",
       "questionsTitre": "Pour t'aider à bien le décrire (facultatif)",
-      "questionsAide": "Réponds en une phrase. Ça aide Jamii à mieux comprendre ton besoin.",
-      "questionQui": "Qui va s'en servir ?",
-      "questionProbleme": "Qu'est-ce qui ne va pas aujourd'hui ?",
-      "questionReussite": "À quoi verras-tu que c'est réussi ?",
+      "questionQui": "Qui va s’en servir ?",
+      "questionProbleme": "Qu’est-ce qui te fait perdre du temps ou des clients aujourd’hui ?",
+      "questionReussite": "Si ça marche, qu’est-ce qui aura changé dans quelques mois ?",
       "libelleQui": "Qui va s'en servir :",
-      "libelleProbleme": "Ce qui ne va pas aujourd'hui :",
-      "libelleReussite": "Ce sera réussi quand :",
+      "libelleProbleme": "Ce qui fait perdre du temps ou des clients aujourd’hui :",
+      "libelleReussite": "Ce qui aura changé si ça marche :",
       "etape": "Étape {n} sur {total}",
       "suivant": "Continuer",
       "passer": "Passer",
@@ -1050,15 +1062,15 @@
       "entree": "Entrée ↵ pour continuer",
       "q": {
         "besoin": "De quoi as-tu besoin ?",
-        "details": "Raconte-nous un peu plus",
-        "questions": "Pour qu'on te comprenne bien",
+        "details": "Dis-m’en un peu plus",
+        "questions": "Pour que je te comprenne bien",
         "precisions": "Quelques précisions",
-        "envoi": "On regarde ton besoin ?"
+        "envoi": "Je regarde ton besoin ?"
       },
       "encore": "Encore {n} caractères, avec tes mots.",
       "assez": "C'est assez pour commencer. Tu peux en dire plus.",
       "precisionsAide": "Tout est facultatif. Ça aide à trouver des développeurs proches de toi et à estimer le plan.",
-      "recap": "Ton besoin",
+      "recap": "Ce qu’Ayo a compris",
       "titreAVenir": "Ton besoin en une phrase",
       "descriptionAVenir": "Ce que tu racontes apparaîtra ici.",
       "precisionsDonnees": "{n} précision | {n} précisions",
@@ -1068,7 +1080,25 @@
         "questions": "Trois questions",
         "precisions": "Les précisions",
         "envoi": "L'analyse"
-      }
+      },
+      "budget": "Ton budget (une fourchette suffit)",
+      "libelleBudget": "Budget envisagé :",
+      "note": "Noté :",
+      "modifier": "Modifier",
+      "placeholderDetails": "Par exemple : je vends des chaussures à Dakar, je veux que mes clients voient les modèles et commandent depuis leur téléphone…",
+      "assezEntree": "C’est parfait. Entrée pour continuer, Maj + Entrée pour aller à la ligne.",
+      "aideSaisie": "Entrée pour envoyer, Maj + Entrée pour aller à la ligne",
+      "repondreAyo": "Répondre à Ayo",
+      "passee": "Passé",
+      "placeholders": {
+        "besoin": "Par exemple : une boutique en ligne pour mon atelier",
+        "details": "Raconte avec tes mots…",
+        "question": "Ta réponse, ou « Passer »",
+        "choix": "Choisis ci-dessus, puis continue"
+      },
+      "exempleQui": "Par exemple : mes clientes, mes deux couturières et moi.",
+      "exempleProbleme": "Par exemple : je réponds aux mêmes questions sur WhatsApp toute la journée.",
+      "exempleReussite": "Par exemple : je reçois des commandes en ligne chaque semaine."
     },
     "publication": {
       "titre": "Publier ma demande",
@@ -1181,7 +1211,7 @@
       "surMesure": {
         "badge": "Sur mesure",
         "titre": "Le faire construire par des développeurs",
-        "texte": "Des développeurs de Jamii construisent ce qui n’existe pas encore, à partir du projet que j’ai préparé pour toi.",
+        "texte": "Publie ton besoin en mission : les développeurs de Jamii se proposent pour le construire, à partir du projet que j’ai préparé pour toi.",
         "duree": "environ {n} semaine | environ {n} semaine | environ {n} semaines",
         "fonctions": "aucune fonction indispensable | {n} fonction indispensable | {n} fonctions indispensables",
         "devs": "aucun développeur proposé | {n} développeur proposé | {n} développeurs proposés",
@@ -1220,7 +1250,19 @@
         "preparation": "Décrite",
         "prete": "Analysée",
         "publiee": "Publiée"
-      }
+      },
+      "introAyo": "Ayo, l’assistant IA de Jamii, lit ton besoin, te dit ce qui existe déjà et qui peut faire le reste.",
+      "ayoBonjour": "Dis-moi ce dont ton activité a besoin.",
+      "ayoChamp": "Ton besoin, en une phrase",
+      "ayoCommencer": "Commencer",
+      "comment": "Comment ça marche",
+      "etape1": "Tu décris",
+      "etape1Aide": "Avec tes mots, en quelques minutes. Aucune question technique.",
+      "etape2": "Ayo analyse",
+      "etape2Aide": "Il te montre ce qui existe déjà, prépare un brief et trouve les bons profils.",
+      "etape3": "Tu choisis",
+      "etape3Aide": "Rien ne part sans toi. Tu relis, tu compares, tu lances.",
+      "dejaDemande": "Ce que tu as déjà demandé"
     },
     "discuter": {
       "titre": "Quelque chose ne te convient pas ?",
@@ -1249,11 +1291,14 @@
         "complique": "C’est trop compliqué pour moi",
         "autre": "Je cherche autre chose"
       },
-      "restants": "Plus de conseil aujourd’hui | Il te reste 1 conseil aujourd’hui | Il te reste {n} conseils aujourd’hui"
+      "restants": "Plus de conseil aujourd’hui | Il te reste 1 conseil aujourd’hui | Il te reste {n} conseils aujourd’hui",
+      "conversation": "Tu parles avec Ayo",
+      "avertissement": "Ayo est une intelligence artificielle : il prépare, tu décides. Relis ses propositions avant de lancer quoi que ce soit.",
+      "toi": "Toi"
     },
     "reponse": {
       "relire": "Relire ce que j'ai écrit",
-      "conseils": "Ce qu'Ayo te conseille",
+      "conseils": "Mon conseil",
       "suite": "La suite",
       "onglets": {
         "developpeurs": "Développeurs",
@@ -1261,7 +1306,33 @@
         "publier": "Publier"
       },
       "seul": "Tu préfères suivre ce plan seul, sans former de cercle ?",
-      "preciser": "Préciser"
+      "preciser": "Préciser",
+      "genre": {
+        "hebergement": "Hébergement uniquement",
+        "outil": "Outil prêt à l’emploi"
+      },
+      "hebergementSeul": "Ce service héberge ton projet : il le met en ligne et garde tes données. Il ne le crée pas.",
+      "hebergementSeulDevs": "Systalink se charge seulement de mettre en ligne et de garder ce que les développeurs construiront. Il ne développe rien."
+    },
+    "budgets": {
+      "moins_500k": "Moins de 500 000 F CFA",
+      "de_500k_a_2m": "500 000 à 2 millions F CFA",
+      "de_2m_a_5m": "2 à 5 millions F CFA",
+      "plus_5m": "Plus de 5 millions F CFA",
+      "inconnu": "Je ne sais pas encore"
+    },
+    "brief": {
+      "titre": "Le brief de ton projet",
+      "aide": "Préparé par Ayo à partir de ce que tu as écrit. Relis-le : c’est ce que liront les développeurs."
+    },
+    "match": {
+      "libelle": "Correspondance",
+      "competences": "Compétences utiles",
+      "comparer": "Comparer",
+      "comparaison": "Comparer les profils",
+      "critere": "Critère",
+      "ville": "Ville",
+      "contacter": "Contacter"
     }
   },
   "cercles": {
@@ -1341,7 +1412,9 @@
         "nomAide": "Un nom court, que les autres reconnaîtront. Tu pourras inviter des développeurs de tout le continent : le cercle travaille en ligne.",
         "taille": "Combien serez-vous ?",
         "tailleAide": "Toi compris. Chaque membre a son tour : pendant deux semaines, tout le cercle construit son projet.",
-        "apercu": "Prêt à lancer « {nom} » ?"
+        "apercu": "Prêt à lancer « {nom} » ?",
+        "profils": "De quels profils as-tu besoin ?",
+        "profilsAide": "Facultatif. Choisis-en jusqu’à {n}, un par place libre : ils s’affichent sur ton cercle pour attirer les bonnes personnes. | Facultatif. Choisis-en jusqu’à {n}, un par place libre : ils s’affichent sur ton cercle pour attirer les bonnes personnes. | Facultatif. Choisis-en jusqu’à {n}, un par place libre : ils s’affichent sur ton cercle pour attirer les bonnes personnes."
       },
       "duree": "{semaines} semaines en tout",
       "promesses": {
@@ -1356,11 +1429,13 @@
       "etapes": {
         "nom": "Le nom",
         "taille": "Combien vous serez",
-        "apercu": "Comment ça marche"
+        "apercu": "Comment ça marche",
+        "profils": "Les profils"
       },
       "succes": "« {nom} » est créé !",
       "succesAide": "Invite maintenant les {n} autres membres.",
-      "entrer": "Entrer dans le cercle"
+      "entrer": "Entrer dans le cercle",
+      "onCherche": "Tu cherches : {profils}."
     },
     "membresTitre": "Les membres",
     "livrer": "Livrer le tour",
@@ -1725,7 +1800,32 @@
         "trop_de_requetes": "Trop d'appels lancés en peu de temps. Réessaie dans un moment.",
         "echec": "La connexion à Jamii a été perdue."
       }
-    }
+    },
+    "profils": {
+      "front": "Front-end",
+      "back": "Back-end",
+      "mobile": "Mobile",
+      "design": "Design",
+      "data": "Données",
+      "ia": "IA",
+      "devops": "Mise en ligne",
+      "securite": "Sécurité",
+      "produit": "Chef de projet",
+      "test": "Test"
+    },
+    "profilsAide": {
+      "front": "Écrans, web, Vue ou React",
+      "back": "API, serveur, base de données",
+      "mobile": "Android, iOS, Flutter",
+      "design": "Interfaces, maquettes, UX",
+      "data": "Analyse, tableaux, SQL",
+      "ia": "Modèles, données, prompts",
+      "devops": "Serveurs, déploiement, cloud",
+      "securite": "Comptes, failles, bonnes pratiques",
+      "produit": "Planning, priorités, suivi",
+      "test": "Tests, qualité, recette"
+    },
+    "cherche": "On cherche :"
   },
   "reseau": {
     "competences": "Compétences",
@@ -3077,5 +3177,10 @@
       "trop_de_requetes": "Trop de fichiers envoyés en une heure. Réessaie plus tard.",
       "erreur": "Le message vocal n’a pas pu être envoyé. Réessaie."
     }
+  },
+  "ia": {
+    "badge": "IA",
+    "badgeLong": "Assistant IA",
+    "badgeAide": "Proposé par l’intelligence artificielle de Jamii : à relire avant d’agir."
   }
 }

@@ -53,7 +53,7 @@ class GestionDemandes {
 
 	record Fiche(UUID id, UUID auteurId, String titre, String description, Integer dureeSemaines, String secteur,
 			String ville, String pays, boolean offresSystalink, UUID tacheIaId, JsonNode orientation, Instant creeLe,
-			Instant publieeLe, String publieeResume, List<Precision> precisions) {
+			Instant publieeLe, String publieeResume, List<Precision> precisions, String langue) {
 
 		/** Le début de l'analyse en cours : la création, ou la dernière précision. */
 		Instant analyseDepuis() {
@@ -90,7 +90,11 @@ class GestionDemandes {
 	}
 
 	/** Ce que l'auteur ajoute à son besoin, tout facultatif. */
-	record Contexte(String secteur, String ville, String pays, boolean offresSystalink) {
+	record Contexte(String secteur, String ville, String pays, boolean offresSystalink, String langue) {
+
+		Contexte(String secteur, String ville, String pays, boolean offresSystalink) {
+			this(secteur, ville, pays, offresSystalink, "fr");
+		}
 	}
 
 	/** L'état de l'orientation, tel que le service IA le décrit. Les champs absents ne sont pas écrits. */
@@ -158,8 +162,8 @@ class GestionDemandes {
 		UUID id = UUID.randomUUID();
 		base.sql("""
 				INSERT INTO demande (id, auteur_id, titre, description, duree_semaines, secteur, ville, pays,
-				  offres_systalink, offres_accord_le, cree_le)
-				VALUES (:id, :auteur, :titre, :description, :duree, :secteur, :ville, :pays, :offres, :accord, :t)
+				  offres_systalink, offres_accord_le, cree_le, langue)
+				VALUES (:id, :auteur, :titre, :description, :duree, :secteur, :ville, :pays, :offres, :accord, :t, :langue)
 				""")
 			.param("id", id).param("auteur", auteur).param("titre", titre).param("description", description)
 			.param("duree", dureeSemaines, java.sql.Types.SMALLINT)
@@ -168,7 +172,7 @@ class GestionDemandes {
 			.param("pays", contexte.pays(), java.sql.Types.CHAR)
 			.param("offres", contexte.offresSystalink())
 			.param("accord", contexte.offresSystalink() ? Timestamp.from(maintenant) : null, java.sql.Types.TIMESTAMP)
-			.param("t", Timestamp.from(maintenant)).update();
+			.param("t", Timestamp.from(maintenant)).param("langue", contexte.langue()).update();
 		return id;
 	}
 
@@ -177,7 +181,7 @@ class GestionDemandes {
 	Optional<Fiche> lire(UUID id, UUID auteur) {
 		return base.sql("""
 				SELECT id, auteur_id, titre, description, duree_semaines, secteur, ville, pays, offres_systalink,
-				  tache_ia_id, orientation, cree_le, publiee_le, publiee_resume
+				  tache_ia_id, orientation, cree_le, publiee_le, publiee_resume, langue
 				FROM demande WHERE id = :id AND auteur_id = :auteur
 				""")
 			.param("id", id).param("auteur", auteur)
@@ -190,12 +194,12 @@ class GestionDemandes {
 						rs.getString("description"), dureeSemaines, rs.getString("secteur"), rs.getString("ville"),
 						rs.getString("pays"), rs.getBoolean("offres_systalink"), rs.getObject("tache_ia_id", UUID.class),
 						orientation == null ? null : json.readTree(orientation), rs.getTimestamp("cree_le").toInstant(),
-						publiee == null ? null : publiee.toInstant(), rs.getString("publiee_resume"), List.<Precision>of());
+						publiee == null ? null : publiee.toInstant(), rs.getString("publiee_resume"), List.<Precision>of(), rs.getString("langue"));
 			})
 			.optional()
 			.map(f -> new Fiche(f.id(), f.auteurId(), f.titre(), f.description(), f.dureeSemaines(), f.secteur(), f.ville(),
 					f.pays(), f.offresSystalink(), f.tacheIaId(), f.orientation(), f.creeLe(), f.publieeLe(), f.publieeResume(),
-						precisions(f.id())));
+						precisions(f.id()), f.langue()));
 	}
 
 	/**
@@ -206,7 +210,7 @@ class GestionDemandes {
 	Etat orientation(Fiche demande, Instant maintenant) {
 		Duration attente = Duration.between(demande.analyseDepuis(), maintenant);
 		PlansIa.Entree entree = new PlansIa.Entree(demande.titre(), sansCoordonnees(demande.besoinComplet()),
-				demande.dureeSemaines(), demande.secteur(), demande.pays());
+				demande.dureeSemaines(), demande.secteur(), demande.pays(), demande.langue());
 		try {
 			UUID tache = demande.tacheIaId();
 			if (tache == null) {

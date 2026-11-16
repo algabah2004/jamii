@@ -86,21 +86,29 @@ class PlansIaSimules implements PlansIa {
 		ObjectNode cahier = plan.putObject("cahierDesCharges");
 		String description = entree.description().strip().replaceAll("\\s+", " ");
 		cahier.put("resume", description.length() > 400 ? description.substring(0, 399) + "…" : description);
-		cahier.putArray("objectifs").add("Répondre au besoin décrit : « " + entree.titre() + " »")
-			.add("Livrer une première version utilisable rapidement");
+		boolean en = entree.enAnglais();
+		cahier.putArray("objectifs")
+			.add(en ? "Meet the need described: “" + entree.titre() + "”" : "Répondre au besoin décrit : « " + entree.titre() + " »")
+			.add(en ? "Ship a first usable version quickly" : "Livrer une première version utilisable rapidement");
 		ArrayNode fonctions = cahier.putArray("fonctionnalites");
-		fonction(fonctions, "Le cœur du besoin", "Ce que la PME a décrit, dans sa version la plus simple.", "indispensable");
-		fonction(fonctions, "Accès depuis un téléphone", "Un affichage pensé pour un petit écran et une connexion lente.", "indispensable");
-		fonction(fonctions, "Suivi et statistiques", "Voir ce qui marche, une fois en ligne.", "plus_tard");
-		cahier.putArray("horsPerimetre").add("Tout ce qui n'est pas dans la description");
+		fonction(fonctions, en ? "The core of the need" : "Le cœur du besoin",
+				en ? "What the business described, in its simplest form." : "Ce que la PME a décrit, dans sa version la plus simple.", "indispensable");
+		fonction(fonctions, en ? "Works on a phone" : "Accès depuis un téléphone",
+				en ? "Designed for a small screen and a slow connection." : "Un affichage pensé pour un petit écran et une connexion lente.", "indispensable");
+		fonction(fonctions, en ? "Tracking and statistics" : "Suivi et statistiques",
+				en ? "See what works, once it is online." : "Voir ce qui marche, une fois en ligne.", "plus_tard");
+		cahier.putArray("horsPerimetre").add(en ? "Anything not in the description" : "Tout ce qui n'est pas dans la description");
 		ArrayNode jalons = plan.putArray("jalons");
-		jalon(jalons, "Maquette validée", Math.max(1, Math.round(semaines * 0.25f)), "Des écrans que la PME a relus.");
-		jalon(jalons, "Première version", Math.max(1, Math.round(semaines * 0.65f)), "Le besoin principal fonctionne de bout en bout.");
-		jalon(jalons, "Remise à la PME", semaines, "La PME utilise le service sans aide.");
+		jalon(jalons, en ? "Mock-up approved" : "Maquette validée", Math.max(1, Math.round(semaines * 0.25f)),
+				en ? "Screens the business has reviewed." : "Des écrans que la PME a relus.");
+		jalon(jalons, en ? "First version" : "Première version", Math.max(1, Math.round(semaines * 0.65f)),
+				en ? "The main need works end to end." : "Le besoin principal fonctionne de bout en bout.");
+		jalon(jalons, en ? "Handover to the business" : "Remise à la PME", semaines,
+				en ? "The business uses the service on its own." : "La PME utilise le service sans aide.");
 		ArrayNode taches = plan.putArray("taches");
-		tache(taches, "Maquette sur téléphone", 0, "design");
-		tache(taches, "Construire le cœur du besoin", 1, "typescript", "spring");
-		tache(taches, "Tester avec la PME et corriger", 2, "test");
+		tache(taches, en ? "Phone mock-up" : "Maquette sur téléphone", 0, "design");
+		tache(taches, en ? "Build the core of the need" : "Construire le cœur du besoin", 1, "typescript", "spring");
+		tache(taches, en ? "Test with the business and fix" : "Tester avec la PME et corriger", 2, "test");
 		plan.putArray("rolesManquants");
 		plan.putArray("servicesSuggeres");
 		return plan;

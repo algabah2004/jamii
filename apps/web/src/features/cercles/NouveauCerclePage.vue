@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import LienRetour from '../../components/LienRetour.vue'
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRouter } from 'vue-router'
 import { JAvatar, JBouton } from '../../design-system'
 import { useSession } from '../../session'
-import { creerCercle, LIMITES, positionsAnneau, TAILLES, type Cercle } from './cercles'
+import { creerCercle, LIMITES, PROFILS, positionsAnneau, profilsMax, TAILLES, type Cercle, type ProfilRecherche } from './cercles'
 import { lireDuBesoin, prenom } from '../reseau/reseau'
 
 /*
@@ -21,9 +21,10 @@ const { moi } = useSession()
 // Venu de l'orientation d'un besoin : le titre arrive par l'état de la navigation (jamais par l'adresse).
 const depart = (router.options.history.state ?? {}) as { nom?: unknown; duBesoin?: unknown }
 const duBesoin = lireDuBesoin(depart.duBesoin)
+const listeProfils = computed(() => new Intl.ListFormat(locale.value, { type: 'conjunction' }).format(profils.value.map((p) => t(`cercles.profils.${p}`))))
 const nomsDuBesoin = computed(() => new Intl.ListFormat(locale.value, { type: 'conjunction' }).format(duBesoin.map((p) => prenom(p.nom))))
 
-const ETAPES = ['nom', 'taille', 'apercu'] as const
+const ETAPES = ['nom', 'taille', 'profils', 'apercu'] as const
 type Etape = (typeof ETAPES)[number]
 const etape = ref<Etape>('nom')
 const sens = ref<'avant' | 'arriere'>('avant')
@@ -31,11 +32,20 @@ const rang = computed(() => ETAPES.indexOf(etape.value))
 
 const nom = ref(typeof depart.nom === 'string' ? depart.nom.slice(0, LIMITES.nomMax) : '')
 const taille = ref<number | null>(null)
+/** Les profils dont le cercle a besoin : facultatif, au plus un par place libre. */
+const profils = ref<ProfilRecherche[]>([])
+const maxProfils = computed(() => profilsMax(taille.value ?? 6))
+function basculerProfil(p: ProfilRecherche) {
+  if (profils.value.includes(p)) profils.value = profils.value.filter((x) => x !== p)
+  else if (profils.value.length < maxProfils.value) profils.value = [...profils.value, p]
+}
+watch(maxProfils, (m) => (profils.value = profils.value.slice(0, m)))
 const nomPropre = computed(() => nom.value.trim())
 
 const valides: Record<Etape, () => boolean> = {
   nom: () => nomPropre.value.length >= LIMITES.nomMin,
   taille: () => taille.value !== null,
+  profils: () => true,
   apercu: () => true,
 }
 const etapeValide = computed(() => valides[etape.value]())
@@ -83,7 +93,7 @@ async function creer() {
   if (envoi.value === 'envoi' || taille.value === null) return
   envoi.value = 'envoi'
   try {
-    const r = await creerCercle({ nom: nomPropre.value, taille: taille.value })
+    const r = await creerCercle({ nom: nomPropre.value, taille: taille.value, profils: profils.value })
     if (!r.ok) return void (envoi.value = 'erreur')
     envoi.value = 'repos'
     cree.value = r.cercle
@@ -168,8 +178,27 @@ function touche(e: KeyboardEvent) {
             </fieldset>
           </div>
 
-          <div v-else key="apercu" class="etape">
+          <div v-else-if="etape === 'profils'" key="profils" class="etape">
             <p class="etape__numero" aria-hidden="true">03</p>
+            <h1 id="titre-etape" ref="champ" tabindex="-1">{{ t('cercles.nouveau.q.profils') }}</h1>
+            <p class="etape__aide">{{ t('cercles.nouveau.q.profilsAide', { n: maxProfils }, maxProfils) }}</p>
+            <fieldset class="profils" data-test="profils">
+              <legend class="visuellement-cache">{{ t('cercles.nouveau.etapes.profils') }}</legend>
+              <label
+                v-for="p in PROFILS"
+                :key="p"
+                class="profil"
+                :class="{ 'profil--choisi': profils.includes(p), 'profil--plein': !profils.includes(p) && profils.length >= maxProfils }"
+              >
+                <input type="checkbox" :checked="profils.includes(p)" :disabled="!profils.includes(p) && profils.length >= maxProfils" :data-test="`profil-${p}`" @change="basculerProfil(p)" />
+                <span class="profil__nom">{{ t(`cercles.profils.${p}`) }}</span>
+                <span class="profil__aide">{{ t(`cercles.profilsAide.${p}`) }}</span>
+              </label>
+            </fieldset>
+          </div>
+
+          <div v-else key="apercu" class="etape">
+            <p class="etape__numero" aria-hidden="true">04</p>
             <h1 id="titre-etape" ref="champ" tabindex="-1">{{ t('cercles.nouveau.q.apercu', { nom: nomPropre }) }}</h1>
             <ol class="promesses">
               <li><span aria-hidden="true">1</span> {{ t('cercles.nouveau.promesses.membre') }}</li>
@@ -177,6 +206,7 @@ function touche(e: KeyboardEvent) {
               <li><span aria-hidden="true">3</span> {{ t('cercles.nouveau.promesses.tirage') }}</li>
               <li><span aria-hidden="true">4</span> {{ t('cercles.nouveau.promesses.tours', { n: taille ?? 6 }) }}</li>
             </ol>
+            <p v-if="profils.length" class="etape__aide" data-test="profils-choisis">{{ t('cercles.nouveau.onCherche', { profils: listeProfils }) }}</p>
             <p v-if="duBesoin.length" class="etape__aide">{{ t('cercles.nouveau.duBesoin', { noms: nomsDuBesoin }) }}</p>
             <p v-if="envoi === 'erreur'" role="alert" class="erreur">{{ t('cercles.erreurs.autre') }}</p>
           </div>
@@ -201,6 +231,9 @@ function touche(e: KeyboardEvent) {
             <strong class="vivant__nom">{{ nomPropre || t('cercles.nouveau.nomExemple') }}</strong>
           </div>
           <p class="texte-discret">{{ taille ? t('cercles.nouveau.places', { n: taille - 1 }) : t('cercles.nouveau.tailleAVenir') }}</p>
+          <ul v-if="profils.length" class="vivant__profils">
+            <li v-for="p in profils" :key="p">{{ t(`cercles.profils.${p}`) }}</li>
+          </ul>
         </div>
         <ol class="vivant__etapes">
           <li v-for="(e, i) in ETAPES" :key="e" :class="{ fait: i < rang, actuelle: i === rang }">
@@ -349,4 +382,20 @@ function touche(e: KeyboardEvent) {
   .glisse-avant-enter-from, .glisse-avant-leave-to, .glisse-arriere-enter-from, .glisse-arriere-leave-to, .apparait-enter-from { transform: none; }
   .succes__eclats { display: none; }
 }
+.profils { border: 0; margin: 0; padding: 0; display: grid; gap: var(--space-2); grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr)); }
+.profil {
+  position: relative; display: grid; gap: 2px; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md);
+  border: 1px solid var(--line); background: var(--surface); cursor: pointer;
+  transition: border-color var(--motion-fast) var(--ease-out), background var(--motion-fast) var(--ease-out);
+}
+.profil input { position: absolute; opacity: 0; pointer-events: none; }
+.profil:hover { border-color: var(--line-strong); }
+.profil:has(input:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
+.profil--choisi { border-color: var(--action); background: var(--action-soft); }
+.profil--choisi .profil__nom::before { content: '✓ '; color: var(--action-ink); }
+.profil--plein { opacity: 0.5; cursor: not-allowed; }
+.profil__nom { font-weight: 700; }
+.profil__aide { color: var(--ink-muted); font-size: 0.8125rem; }
+.vivant__profils { list-style: none; margin: var(--space-2) 0 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.vivant__profils li { padding: 2px 10px; border-radius: var(--radius-pill); background: var(--action-soft); color: var(--action-ink); font-size: 0.75rem; font-weight: 700; }
 </style>

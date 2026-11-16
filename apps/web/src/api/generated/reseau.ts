@@ -596,6 +596,11 @@ export interface components {
             /** Format: uri */
             avatarUrl?: string | null;
         };
+        /**
+         * @description Un profil recherché : développement front, back ou mobile, design, données, IA, mise en ligne (devops), sécurité, produit (chef de projet), test.
+         * @enum {string}
+         */
+        ProfilRecherche: "front" | "back" | "mobile" | "design" | "data" | "ia" | "devops" | "securite" | "produit" | "test";
         CercleResume: {
             /** Format: uuid */
             id: string;
@@ -608,6 +613,8 @@ export interface components {
             createur: components["schemas"]["PersonneResume"];
             /** Format: date-time */
             creeLe: string;
+            /** @description Les profils dont le cercle a besoin, choisis à sa création. Vide : rien de précisé. */
+            profilsRecherches: components["schemas"]["ProfilRecherche"][];
         };
         /** @description En minuscules, sans espace inutile (`flutter`, `postgresql`, `ux-design`). */
         Competence: string;

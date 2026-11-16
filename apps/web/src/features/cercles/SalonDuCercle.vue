@@ -300,7 +300,7 @@ const contexte = computed(() => {
     <p v-if="etat === 'chargement'" class="salon__etat" role="status">{{ t('etat.chargement') }}</p>
     <p v-else-if="etat === 'indisponible'" class="salon__etat" role="alert">{{ t('etat.indisponible') }}</p>
 
-    <div v-else class="fil-cadre">
+    <div v-else class="fil-cadre motif fond-discussion" data-test="motif-discussion">
       <ol ref="liste" class="fil" aria-live="polite" :aria-label="t('cercles.salon.fil')" @scroll="enBas() && (nonVus = 0)">
         <li v-if="!messages.length" class="vide">{{ t('cercles.salon.vide') }}</li>
         <template v-for="l in lignes" :key="l.cle">

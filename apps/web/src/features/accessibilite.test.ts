@@ -140,8 +140,8 @@ describe('AXE, vitrine des projets', () => {
 })
 
 
-describe('AXE, création guidée d’un besoin', () => {
-  it('la première étape et les exemples', async () => {
-    expect(await violations('/demandes/nouvelle', '[data-test="demande"]')).toEqual([])
+describe('AXE, décrire son besoin à Ayo', () => {
+  it('la conversation, ses exemples et la zone de saisie', async () => {
+    expect(await violations('/demandes', '[data-test="conversation-demande"]')).toEqual([])
   })
 })

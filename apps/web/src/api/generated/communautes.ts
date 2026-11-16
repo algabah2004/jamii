@@ -47,6 +47,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/communautes/{slug}/couverture": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Nom court de la communauté dans l'adresse (`flutter`, `fintech`, `antenne-dakar`). */
+                slug: components["parameters"]["Slug"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** Changer la couverture, ou revenir au motif (modérateurs) */
+        put: operations["changerCouverture"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/communautes/{slug}/adhesion": {
         parameters: {
             query?: never;
@@ -372,6 +392,8 @@ export interface components {
             membre: boolean;
             /** @description Suis-je modérateur ? (pour afficher « Créer un salon »). Vérifié par le serveur. */
             moderateur: boolean;
+            /** @description L'image de couverture (`/api/fichiers/{id}`, à lire avec la session). Vide : la communauté garde son motif. */
+            couverture: string | null;
         };
         PageCommunautes: components["schemas"]["Page"] & {
             elements?: components["schemas"]["Communaute"][];
@@ -468,6 +490,18 @@ export interface components {
             theme: "flutter" | "fintech" | "ia" | "web" | "cloud" | "design" | "data" | "jeux" | "securite" | "antenne" | "autre";
             /** @description Pour une antenne locale. */
             pays?: components["schemas"]["Pays"] | null;
+            /**
+             * Format: uuid
+             * @description Une image envoyée avant par `POST /api/fichiers` (sans conversation ni cercle), par la même personne. Vide : le motif.
+             */
+            couvertureId?: string | null;
+        };
+        ChoixCouverture: {
+            /**
+             * Format: uuid
+             * @description Une image envoyée par le modérateur (sans conversation ni cercle). Vide : la communauté revient à son motif.
+             */
+            fichierId?: string | null;
         };
         /**
          * @description Un appel lancé dans un salon. « En cours » veut dire lancé il y a moins d'une heure et pas terminé : le service
@@ -778,6 +812,39 @@ export interface operations {
                 };
             };
             401: components["responses"]["NonConnecte"];
+            404: components["responses"]["Introuvable"];
+        };
+    };
+    changerCouverture: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Nom court de la communauté dans l'adresse (`flutter`, `fintech`, `antenne-dakar`). */
+                slug: components["parameters"]["Slug"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChoixCouverture"];
+            };
+        };
+        responses: {
+            /** @description La communauté, avec sa nouvelle couverture. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Communaute"];
+                };
+            };
+            /** @description `validation` (`image_invalide`). */
+            400: components["responses"]["Invalide"];
+            401: components["responses"]["NonConnecte"];
+            /** @description `pas_moderateur`. */
+            403: components["responses"]["Interdit"];
             404: components["responses"]["Introuvable"];
         };
     };
