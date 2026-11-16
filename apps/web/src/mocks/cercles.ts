@@ -143,8 +143,14 @@ let suivantNumero = 1
 const ilYaMinutes = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOString()
 const personneDe = (i: number) => PERSONNES[i]!.personne
 
-function poster(cercleId: string, m: Omit<MessageCercle, 'id' | 'numero' | 'auteur' | 'texte' | 'point' | 'evenement' | 'coupDeMain' | 'appel' | 'piecesJointes'> & Partial<MessageCercle>): MessageCercle {
-  const message: MessageCercle = { id: `5a10${String(suivantNumero).padStart(4, '0')}-0000-4000-8000-000000000000`, numero: suivantNumero++, auteur: null, texte: null, point: null, evenement: null, coupDeMain: null, appel: null, piecesJointes: [], ...m }
+let suivanteVersion = 1
+type Defauts = 'id' | 'numero' | 'auteur' | 'texte' | 'point' | 'evenement' | 'coupDeMain' | 'appel' | 'piecesJointes' | 'version' | 'reponseA' | 'modifieLe' | 'supprime' | 'reactions'
+function poster(cercleId: string, m: Omit<MessageCercle, Defauts> & Partial<MessageCercle>): MessageCercle {
+  const numero = suivantNumero++
+  const message: MessageCercle = {
+    id: `5a10${String(numero).padStart(4, '0')}-0000-4000-8000-000000000000`, numero, auteur: null, texte: null, point: null, evenement: null, coupDeMain: null, appel: null,
+    piecesJointes: [], version: suivanteVersion++, reponseA: null, modifieLe: null, supprime: false, reactions: [], ...m,
+  }
   salons.set(cercleId, [...(salons.get(cercleId) ?? []), message])
   return message
 }
@@ -158,7 +164,7 @@ function salonDakar() {
   ev('tour_ouvert', 60 * 24 * 9, personneDe(0), 1)
   ev('tour_livre', 60 * 24 * 3, personneDe(0), 1)
   ev('tour_ouvert', 60 * 24 * 3, personneDe(1), 2)
-  poster(ID_DAKAR, { type: 'texte', auteur: personneDe(1), texte: 'J’ai découpé le projet en 12 tâches, prenez celles qui vous parlent.', envoyeLe: ilYaMinutes(60 * 24 * 3 - 10) })
+  poster(ID_DAKAR, { type: 'texte', auteur: personneDe(1), reactions: [{ emoji: '👍', nombre: 2, deMoi: false, noms: [personneDe(2).nom, personneDe(3).nom] }], texte: 'J’ai découpé le projet en 12 tâches, prenez celles qui vous parlent.', envoyeLe: ilYaMinutes(60 * 24 * 3 - 10) })
   poster(ID_DAKAR, { type: 'point', auteur: personneDe(1), point: { fait: 'La connexion par numéro de téléphone.', prevu: 'Le tableau des pesées du jour.', bloque: null }, envoyeLe: ilYaMinutes(90) })
   poster(ID_DAKAR, { type: 'decision', auteur: personneDe(1), texte: 'On garde Flutter pour l’appli des pesées.', envoyeLe: ilYaMinutes(60 * 24 * 3 - 20) })
   poster(ID_DAKAR, { type: 'coup_de_main', auteur: personneDe(3), texte: 'L’APK ne s’installe pas sur les vieux Android 8. Une idée ?', coupDeMain: { resoluLe: null, resoluPar: null }, envoyeLe: ilYaMinutes(45) })
@@ -170,6 +176,7 @@ export function reinitialiserCercles() {
   cercles = [cercleSaintLouis(), cercleDakar(), cercleAbidjan(), ...cerclesDecouverte()]
   salons.clear()
   suivantNumero = 1
+  suivanteVersion = 1
   appels.clear()
   salonDakar()
 }
@@ -205,7 +212,7 @@ export const handlersCercles = [
     const s = salonDe(params.id)
     if (s.reponse) return s.reponse
     const apres = new URL(request.url).searchParams.get('apres')
-    const elements = apres === null ? s.messages.slice(-100) : s.messages.filter((m) => m.numero > Number(apres))
+    const elements = apres === null ? s.messages.slice(-100) : s.messages.filter((m) => m.version > Number(apres))
     return HttpResponse.json({
       elements,
       coupsDeMain: s.messages.filter((m) => m.type === 'coup_de_main' && !m.coupDeMain?.resoluLe),
@@ -217,7 +224,7 @@ export const handlersCercles = [
   http.post('/api/cercles/:id/salon/messages', async ({ params, request }) => {
     const s = salonDe(params.id)
     if (s.reponse) return s.reponse
-    const corps = (await request.json()) as { type: string; texte?: string; pieces?: string[]; point?: { fait: string; prevu: string; bloque?: string | null } }
+    const corps = (await request.json()) as { type: string; texte?: string; pieces?: string[]; reponseA?: string; point?: { fait: string; prevu: string; bloque?: string | null } }
     const moi = PERSONNES[0]!.personne
     const maintenant = new Date().toISOString()
     if (corps.type === 'point') {
@@ -231,7 +238,49 @@ export const handlersCercles = [
     const chef = s.cercle.tours.find((x) => x.numero === s.cercle.tourEnCours)?.beneficiaire.id ?? s.cercle.createur.id
     if (corps.type === 'decision' && chef !== moi.id) return erreur('pas_chef_de_projet', 403)
     const type = corps.type as 'texte' | 'coup_de_main' | 'decision'
-    return HttpResponse.json(poster(s.cercle.id, { type, auteur: moi, texte: corps.texte?.trim() ?? '', piecesJointes: piecesDe(corps.pieces), coupDeMain: type === 'coup_de_main' ? { resoluLe: null, resoluPar: null } : null, envoyeLe: maintenant }), { status: 201 })
+    const cite = s.messages.find((x) => x.id === corps.reponseA)
+    const reponseA = cite ? { id: cite.id, auteur: cite.auteur, texte: cite.supprime ? '' : (cite.texte ?? '').slice(0, 140), supprime: cite.supprime } : null
+    return HttpResponse.json(poster(s.cercle.id, { type, auteur: moi, texte: corps.texte?.trim() ?? '', piecesJointes: piecesDe(corps.pieces), coupDeMain: type === 'coup_de_main' ? { resoluLe: null, resoluPar: null } : null, envoyeLe: maintenant, reponseA }), { status: 201 })
+  }),
+  // Répondre, modifier, supprimer, réagir (#157).
+  http.patch('/api/cercles/:id/salon/messages/:messageId', async ({ params, request }) => {
+    const s = salonDe(params.id)
+    if (s.reponse) return s.reponse
+    const m = s.messages.find((x) => x.id === params.messageId)
+    if (!m) return erreur('introuvable', 404)
+    if (m.auteur?.id !== PERSONNES[0]!.personne.id || m.type !== 'texte' || m.supprime) return erreur('non_modifiable')
+    const { texte } = (await request.json()) as { texte: string }
+    if (!texte.trim()) return erreur('validation', 400)
+    Object.assign(m, { texte: texte.trim(), modifieLe: new Date().toISOString(), version: suivanteVersion++ })
+    return HttpResponse.json(m)
+  }),
+  http.delete('/api/cercles/:id/salon/messages/:messageId', ({ params }) => {
+    const s = salonDe(params.id)
+    if (s.reponse) return s.reponse
+    const m = s.messages.find((x) => x.id === params.messageId)
+    if (!m) return erreur('introuvable', 404)
+    if (m.auteur?.id !== PERSONNES[0]!.personne.id) return erreur('interdit', 403)
+    Object.assign(m, { texte: null, piecesJointes: [], reactions: [], point: null, supprime: true, version: suivanteVersion++ })
+    return new HttpResponse(null, { status: 204 })
+  }),
+  http.post('/api/cercles/:id/salon/messages/:messageId/reactions', async ({ params, request }) => {
+    const s = salonDe(params.id)
+    if (s.reponse) return s.reponse
+    const m = s.messages.find((x) => x.id === params.messageId)
+    if (!m) return erreur('introuvable', 404)
+    if (m.supprime) return erreur('message_supprime')
+    const { emoji, active } = (await request.json()) as { emoji: string; active: boolean }
+    const existante = m.reactions.find((r) => r.emoji === emoji)
+    if (active && !existante?.deMoi) {
+      if (existante) Object.assign(existante, { nombre: existante.nombre + 1, deMoi: true, noms: [...existante.noms, 'moi'] })
+      else m.reactions = [...m.reactions, { emoji, nombre: 1, deMoi: true, noms: ['moi'] }]
+    } else if (!active && existante?.deMoi) {
+      m.reactions = existante.nombre > 1
+        ? m.reactions.map((r) => (r === existante ? { ...r, nombre: r.nombre - 1, deMoi: false, noms: r.noms.filter((n) => n !== 'moi') } : r))
+        : m.reactions.filter((r) => r !== existante)
+    }
+    m.version = suivanteVersion++
+    return HttpResponse.json(m)
   }),
   http.post('/api/cercles/:id/salon/messages/:messageId/resolu', ({ params }) => {
     const s = salonDe(params.id)
@@ -239,7 +288,7 @@ export const handlersCercles = [
     const m = s.messages.find((x) => x.id === params.messageId)
     if (!m) return erreur('introuvable', 404)
     if (m.type !== 'coup_de_main') return erreur('pas_un_coup_de_main')
-    if (!m.coupDeMain?.resoluLe) m.coupDeMain = { resoluLe: new Date().toISOString(), resoluPar: PERSONNES[0]!.personne }
+    if (!m.coupDeMain?.resoluLe) Object.assign(m, { coupDeMain: { resoluLe: new Date().toISOString(), resoluPar: PERSONNES[0]!.personne }, version: suivanteVersion++ })
     return HttpResponse.json(m)
   }),
   http.post('/api/cercles/:id/salon/appel', ({ params }) => {

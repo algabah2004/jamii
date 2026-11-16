@@ -192,7 +192,7 @@ export interface paths {
         };
         /**
          * Le salon du cercle (membres seulement)
-         * @description Sans `apres` : les `limite` derniers messages. Avec `apres` (un `numero`) : ceux arrivés depuis, pour relire le
+         * @description Sans `apres` : les `limite` derniers messages. Avec `apres` (une `version`) : ceux arrivés ou changés depuis, pour relire le
          *     salon toutes les quelques secondes. Toujours du plus ancien au plus récent. Renvoie aussi, à chaque fois, les
          *     coups de main ouverts, qui a fait son point aujourd'hui (jour UTC) et l'appel en cours.
          */
@@ -244,6 +244,50 @@ export interface paths {
          * @description Idempotent. Le premier qui l'a résolu reste celui qu'on affiche.
          */
         post: operations["resoudreCoupDeMain"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cercles/{cercleId}/salon/messages/{messageId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cercleId: components["parameters"]["CercleId"];
+                messageId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Supprimer son message pour tout le monde
+         * @description Idempotent. Le texte, les fichiers et les réactions sont effacés ; la place reste (« Ce message a été supprimé »).
+         */
+        delete: operations["supprimerMessageCercle"];
+        options?: never;
+        head?: never;
+        /** Corriger son message texte (15 minutes après l'envoi au plus) */
+        patch: operations["modifierMessageCercle"];
+        trace?: never;
+    };
+    "/api/cercles/{cercleId}/salon/messages/{messageId}/reactions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cercleId: components["parameters"]["CercleId"];
+                messageId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ajouter ou retirer ma réaction (un emoji, 10 au plus par personne) */
+        post: operations["reagirMessageCercle"];
         delete?: never;
         options?: never;
         head?: never;
@@ -521,9 +565,14 @@ export interface components {
             id: string;
             /**
              * Format: int64
-             * @description Croissant. Sert de curseur (`apres`).
+             * @description Croissant : l'ordre du salon.
              */
             numero: number;
+            /**
+             * Format: int64
+             * @description Avance à chaque changement du message (écrit, modifié, supprimé, réaction, résolu). Sert de curseur (`apres`).
+             */
+            version: number;
             type: components["schemas"]["TypeMessageCercle"];
             /** @description `null` pour un événement (écrit par Jamii). */
             auteur: components["schemas"]["PersonneResume"] | null;
@@ -546,6 +595,23 @@ export interface components {
             /** Format: date-time */
             envoyeLe: string;
             piecesJointes: components["schemas"]["PieceJointe"][];
+            /** @description Le message auquel celui-ci répond (#157), ou `null`. */
+            reponseA: {
+                /** Format: uuid */
+                id: string;
+                auteur: components["schemas"]["PersonneResume"] | null;
+                /** @description Son début. Vide s'il a été supprimé. */
+                texte: string;
+                supprime: boolean;
+            } | null;
+            /**
+             * Format: date-time
+             * @description Corrigé par son auteur (15 minutes après l'envoi au plus).
+             */
+            modifieLe: string | null;
+            /** @description Supprimé pour tout le monde : texte, fichiers et réactions effacés, la place reste. */
+            supprime: boolean;
+            reactions: components["schemas"]["Reaction"][];
         };
         PointDuJour: {
             /** @description Ce que j'ai fait depuis mon dernier point. */
@@ -569,6 +635,11 @@ export interface components {
             texte?: string;
             point?: components["schemas"]["PointDuJour"];
             pieces?: components["schemas"]["Pieces"];
+            /**
+             * Format: uuid
+             * @description Répondre à un message du salon (pas un événement).
+             */
+            reponseA?: string;
         };
         AppelCercle: {
             /** Format: uuid */
@@ -670,6 +741,14 @@ export interface components {
             taille: number;
             /** @description Où le lire (`/api/fichiers/{id}`), avec la session. */
             url: string;
+        };
+        Reaction: {
+            emoji: string;
+            nombre: number;
+            /** @description J'ai réagi avec cet emoji. */
+            deMoi: boolean;
+            /** @description Qui a réagi (10 au plus), pour le survol. « moi » pour moi. */
+            noms: string[];
         };
         /** @description Les identifiants des fichiers joints (envoyés avant par `POST /api/fichiers`, par la même personne). */
         Pieces: string[];
@@ -1056,6 +1135,104 @@ export interface operations {
             403: components["responses"]["Interdit"];
             404: components["responses"]["Introuvable"];
             /** @description `pas_un_coup_de_main`. */
+            409: components["responses"]["Conflit"];
+        };
+    };
+    supprimerMessageCercle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cercleId: components["parameters"]["CercleId"];
+                messageId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Supprimé. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["NonConnecte"];
+            /** @description `pas_membre`, `interdit` (le message d'un autre). */
+            403: components["responses"]["Interdit"];
+            404: components["responses"]["Introuvable"];
+        };
+    };
+    modifierMessageCercle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cercleId: components["parameters"]["CercleId"];
+                messageId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    texte: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Le message corrigé. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageCercle"];
+                };
+            };
+            400: components["responses"]["Invalide"];
+            401: components["responses"]["NonConnecte"];
+            /** @description `pas_membre`. */
+            403: components["responses"]["Interdit"];
+            404: components["responses"]["Introuvable"];
+            /** @description `non_modifiable`, `delai_depasse`, `message_supprime`. */
+            409: components["responses"]["Conflit"];
+        };
+    };
+    reagirMessageCercle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cercleId: components["parameters"]["CercleId"];
+                messageId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    emoji: string;
+                    active: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Le message, avec ses réactions à jour. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageCercle"];
+                };
+            };
+            400: components["responses"]["Invalide"];
+            401: components["responses"]["NonConnecte"];
+            /** @description `pas_membre`. */
+            403: components["responses"]["Interdit"];
+            404: components["responses"]["Introuvable"];
+            /** @description `trop_de_reactions`, `message_supprime`. */
             409: components["responses"]["Conflit"];
         };
     };

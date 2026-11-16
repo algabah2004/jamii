@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { fusionner, lignesDuSalon, type MessageCercle } from './salon'
 
 const m = (numero: number, auteur: string | null, envoyeLe: string, type: MessageCercle['type'] = 'texte'): MessageCercle => ({
-  id: `m${numero}`, numero, type, auteur: auteur ? { id: auteur, nom: auteur } : null, texte: 'x', point: null, evenement: null, coupDeMain: null, appel: null, envoyeLe, piecesJointes: [],
+  id: `m${numero}`, numero, type, auteur: auteur ? { id: auteur, nom: auteur } : null, texte: 'x', point: null, evenement: null, coupDeMain: null, appel: null, envoyeLe, piecesJointes: [], version: numero, reponseA: null, modifieLe: null, supprime: false, reactions: [],
 })
 
 describe('les lignes du salon', () => {

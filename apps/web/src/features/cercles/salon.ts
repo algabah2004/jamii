@@ -42,6 +42,18 @@ export function lignesDuSalon(messages: MessageCercle[]): Ligne[] {
   return lignes
 }
 
+/** Le curseur de relecture : la plus grande version connue (un message modifié, supprimé ou réagi change de version). */
+export const derniereVersion = (messages: MessageCercle[]) =>
+  messages.reduce<number | undefined>((v, m) => (v === undefined || m.version > v ? m.version : v), undefined)
+
+/** On corrige son message texte pendant 15 minutes (SalonCercle.DELAI_MODIFICATION). */
+export const DELAI_MODIFICATION_MS = 15 * 60_000
+export const estAMoi = (m: MessageCercle, moiId: string | null | undefined) => !!moiId && m.auteur?.id === moiId
+export const modifiable = (m: MessageCercle, moiId: string | null | undefined, maintenant = Date.now()) =>
+  estAMoi(m, moiId) && m.type === 'texte' && !m.supprime && maintenant - Date.parse(m.envoyeLe) < DELAI_MODIFICATION_MS
+/** Les messages sur lesquels on agit : pas les étapes racontées par Jamii ni les annonces d'appel. */
+export const actionnable = (m: MessageCercle) => !m.supprime && m.type !== 'evenement' && m.type !== 'appel'
+
 /** Fusionne sans doublon (un message envoyé revient aussi par la relecture), dans l'ordre des numéros. */
 export function fusionner(avant: MessageCercle[], nouveaux: MessageCercle[]): MessageCercle[] {
   const parId = new Map<string, MessageCercle>()
@@ -67,10 +79,28 @@ export type Envoi = { ok: true; message: MessageCercle } | { ok: false; code: st
 
 export async function envoyer(
   cercleId: string,
-  corps: { type: 'texte' | 'coup_de_main' | 'decision'; texte: string; pieces?: string[] } | { type: 'point'; point: PointDuJour },
+  corps: { type: 'texte' | 'coup_de_main' | 'decision'; texte: string; pieces?: string[]; reponseA?: string } | { type: 'point'; point: PointDuJour },
 ): Promise<Envoi> {
   const { data, error, response } = await api.POST('/api/cercles/{cercleId}/salon/messages', { params: { path: { cercleId } }, body: corps })
   return data ? { ok: true, message: data } : { ok: false, code: code(error), statut: response.status }
+}
+
+export async function modifierMessage(cercleId: string, messageId: string, texte: string): Promise<MessageCercle | null> {
+  const { data } = await api.PATCH('/api/cercles/{cercleId}/salon/messages/{messageId}', { params: { path: { cercleId, messageId } }, body: { texte } })
+  return data ?? null
+}
+
+export async function supprimerMessage(cercleId: string, messageId: string): Promise<boolean> {
+  const { response } = await api.DELETE('/api/cercles/{cercleId}/salon/messages/{messageId}', { params: { path: { cercleId, messageId } } })
+  return response.ok
+}
+
+export async function reagir(cercleId: string, messageId: string, emoji: string, active: boolean): Promise<MessageCercle | null> {
+  const { data } = await api.POST('/api/cercles/{cercleId}/salon/messages/{messageId}/reactions', {
+    params: { path: { cercleId, messageId } },
+    body: { emoji, active },
+  })
+  return data ?? null
 }
 
 export async function resoudre(cercleId: string, messageId: string): Promise<MessageCercle | null> {

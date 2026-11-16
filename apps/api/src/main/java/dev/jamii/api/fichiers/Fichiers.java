@@ -206,6 +206,21 @@ public class Fichiers {
 				""").param("ids", ids).param("p", proprietaire).update();
 	}
 
+	/**
+	 * Efface les fichiers d'un message supprimé dans un salon (#157) : seulement ceux de son auteur, et que plus aucun
+	 * message ni aucune publication ne porte.
+	 */
+	public void supprimerOrphelins(Collection<UUID> ids, UUID proprietaire) {
+		if (ids == null || ids.isEmpty()) return;
+		base.sql("""
+				DELETE FROM fichier f WHERE f.id IN (:ids) AND f.proprietaire_id = :p
+				  AND NOT EXISTS (SELECT 1 FROM message m WHERE f.id = ANY(m.pieces))
+				  AND NOT EXISTS (SELECT 1 FROM message_cercle m WHERE f.id = ANY(m.pieces))
+				  AND NOT EXISTS (SELECT 1 FROM message_salon m WHERE f.id = ANY(m.pieces))
+				  AND NOT EXISTS (SELECT 1 FROM publication p WHERE f.id = ANY(p.pieces))
+				""").param("ids", ids).param("p", proprietaire).update();
+	}
+
 	/** Décrit des pièces jointes, dans l'ordre demandé (celles qui n'existent plus sont omises). */
 	public List<Piece> decrire(Collection<UUID> ids) {
 		if (ids == null || ids.isEmpty()) {

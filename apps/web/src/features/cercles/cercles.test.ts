@@ -402,6 +402,50 @@ describe('le salon du cercle', () => {
     page.unmount()
   })
 
+  it('sur un message : réagir, répondre, corriger puis supprimer (#157)', async () => {
+    const { page } = await ouvrir(`/cercles/${ID_DAKAR}?onglet=salon`)
+    await vi.waitFor(() => expect(page.find('#salon-texte').exists()).toBe(true))
+    const dernier = () => page.findAll('[data-test="message"]').at(-1)!
+
+    // Le message de Kofi a déjà deux 👍 : je réagis avec 🔥 depuis son menu.
+    const kofi = page.findAll('[data-test="message"]').find((m) => m.text().includes('12 tâches'))!
+    expect(kofi.find('[data-test="actions-message"]').exists()).toBe(true)
+    await kofi.get('[data-test="actions-message"]').trigger('click')
+    await kofi.findAll('[data-test="reaction-rapide"]').find((b) => b.text() === '🔥')!.trigger('click')
+    await vi.waitFor(() => expect(page.findAll('[data-test="message"]').find((m) => m.text().includes('12 tâches'))!.text()).toContain('🔥'))
+
+    // Je lui réponds : la réponse cite son message.
+    const kofiApres = page.findAll('[data-test="message"]').find((m) => m.text().includes('12 tâches'))!
+    await kofiApres.get('[data-test="actions-message"]').trigger('click')
+    await kofiApres.get('[data-test="action-repondre"]').trigger('click')
+    expect(page.get('[data-test="bandeau-action"]').text()).toContain('12 tâches')
+    await page.get('#salon-texte').setValue('Je prends les écrans')
+    await page.get('#salon-texte').trigger('keydown', { key: 'Enter' })
+    await vi.waitFor(() => expect(dernier().find('[data-test="citation"]').exists()).toBe(true))
+    expect(dernier().get('[data-test="citation"]').text()).toContain('12 tâches')
+    expect(page.find('[data-test="bandeau-action"]').exists()).toBe(false)
+
+    // Je corrige ma réponse, puis je la supprime.
+    await dernier().get('[data-test="actions-message"]').trigger('click')
+    await dernier().get('[data-test="action-modifier"]').trigger('click')
+    expect((page.get('#salon-texte').element as HTMLTextAreaElement).value).toBe('Je prends les écrans')
+    await page.get('#salon-texte').setValue('Je prends les écrans de connexion')
+    await page.get('#salon-texte').trigger('keydown', { key: 'Enter' })
+    await vi.waitFor(() => expect(dernier().find('[data-test="modifie"]').exists()).toBe(true))
+    expect(dernier().text()).toContain('Je prends les écrans de connexion')
+
+    await dernier().get('[data-test="actions-message"]').trigger('click')
+    await dernier().get('[data-test="action-supprimer"]').trigger('click')
+    await dernier().get('[data-test="confirmer-suppression"]').trigger('click')
+    await vi.waitFor(() => expect(dernier().find('[data-test="message-supprime"]').exists()).toBe(true))
+    expect(dernier().find('[data-test="actions-message"]').exists()).toBe(false)
+    // Le message d'un autre ne se corrige ni ne se supprime.
+    await kofiApres.get('[data-test="actions-message"]').trigger('click')
+    expect(kofiApres.find('[data-test="action-modifier"]').exists()).toBe(false)
+    expect(kofiApres.find('[data-test="action-supprimer"]').exists()).toBe(false)
+    page.unmount()
+  })
+
   it('« Je peux aider » répond à la personne, « C’est réglé » retire le coup de main', async () => {
     const { page } = await ouvrir(`/cercles/${ID_DAKAR}?onglet=salon`)
     await vi.waitFor(() => expect(page.find('[data-test="coup-de-main"]').exists()).toBe(true))

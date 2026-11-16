@@ -288,7 +288,7 @@ paths:
       operationId: lireSalonCercle
       summary: Le salon du cercle (membres seulement)
       description: |
-        Sans `apres` : les `limite` derniers messages. Avec `apres` (un `numero`) : ceux arrivés depuis, pour relire le
+        Sans `apres` : les `limite` derniers messages. Avec `apres` (une `version`) : ceux arrivés ou changés depuis, pour relire le
         salon toutes les quelques secondes. Toujours du plus ancien au plus récent. Renvoie aussi, à chaque fois, les
         coups de main ouverts, qui a fait son point aujourd'hui (jour UTC) et l'appel en cours.
       parameters:
@@ -356,6 +356,86 @@ paths:
         '403': { description: '`pas_membre`.', $ref: './socle.yaml#/components/responses/Interdit' }
         '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
         '409': { description: '`pas_un_coup_de_main`.', $ref: './socle.yaml#/components/responses/Conflit' }
+
+  /api/cercles/{cercleId}/salon/messages/{messageId}:
+    parameters:
+      - $ref: '#/components/parameters/CercleId'
+      - { name: messageId, in: path, required: true, schema: { type: string, format: uuid } }
+    patch:
+      tags: [salon]
+      operationId: modifierMessageCercle
+      summary: Corriger son message texte (15 minutes après l'envoi au plus)
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [texte]
+              properties:
+                texte: { type: string, maxLength: 2000 }
+      responses:
+        '200':
+          description: Le message corrigé.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MessageCercle' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { description: '`pas_membre`.', $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { description: '`non_modifiable`, `delai_depasse`, `message_supprime`.', $ref: './socle.yaml#/components/responses/Conflit' }
+    delete:
+      tags: [salon]
+      operationId: supprimerMessageCercle
+      summary: Supprimer son message pour tout le monde
+      description: Idempotent. Le texte, les fichiers et les réactions sont effacés ; la place reste (« Ce message a été supprimé »).
+      security:
+        - session: []
+          csrf: []
+      responses:
+        '204': { description: Supprimé. }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { description: '`pas_membre`, `interdit` (le message d''un autre).', $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+
+  /api/cercles/{cercleId}/salon/messages/{messageId}/reactions:
+    parameters:
+      - $ref: '#/components/parameters/CercleId'
+      - { name: messageId, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      tags: [salon]
+      operationId: reagirMessageCercle
+      summary: Ajouter ou retirer ma réaction (un emoji, 10 au plus par personne)
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [emoji, active]
+              properties:
+                emoji: { type: string, maxLength: 32 }
+                active: { type: boolean }
+      responses:
+        '200':
+          description: Le message, avec ses réactions à jour.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MessageCercle' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { description: '`pas_membre`.', $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { description: '`trop_de_reactions`, `message_supprime`.', $ref: './socle.yaml#/components/responses/Conflit' }
 
   /api/cercles/{cercleId}/salon/appel:
     parameters:
@@ -715,10 +795,11 @@ components:
     MessageCercle:
       type: object
       description: Les champs propres à un type (`point`, `evenement`, `coupDeMain`, `appel`) valent `null` pour les autres.
-      required: [id, numero, type, auteur, texte, point, evenement, coupDeMain, appel, envoyeLe, piecesJointes]
+      required: [id, numero, type, auteur, texte, point, evenement, coupDeMain, appel, envoyeLe, piecesJointes, version, reponseA, modifieLe, supprime, reactions]
       properties:
         id: { type: string, format: uuid }
-        numero: { type: integer, format: int64, description: 'Croissant. Sert de curseur (`apres`).' }
+        numero: { type: integer, format: int64, description: 'Croissant : l''ordre du salon.' }
+        version: { type: integer, format: int64, description: 'Avance à chaque changement du message (écrit, modifié, supprimé, réaction, résolu). Sert de curseur (`apres`).' }
         type: { $ref: '#/components/schemas/TypeMessageCercle' }
         auteur:
           description: '`null` pour un événement (écrit par Jamii).'
@@ -744,6 +825,20 @@ components:
             - type: 'null'
         envoyeLe: { type: string, format: date-time }
         piecesJointes: { type: array, maxItems: 6, items: { $ref: './fichiers.yaml#/components/schemas/PieceJointe' } }
+        reponseA:
+          description: 'Le message auquel celui-ci répond (#157), ou `null`.'
+          oneOf:
+            - type: object
+              required: [id, auteur, texte, supprime]
+              properties:
+                id: { type: string, format: uuid }
+                auteur: { oneOf: [{ $ref: './projets.yaml#/components/schemas/PersonneResume' }, { type: 'null' }] }
+                texte: { type: string, maxLength: 140, description: 'Son début. Vide s''il a été supprimé.' }
+                supprime: { type: boolean }
+            - type: 'null'
+        modifieLe: { type: [string, 'null'], format: date-time, description: 'Corrigé par son auteur (15 minutes après l''envoi au plus).' }
+        supprime: { type: boolean, description: 'Supprimé pour tout le monde : texte, fichiers et réactions effacés, la place reste.' }
+        reactions: { type: array, items: { $ref: './reseau.yaml#/components/schemas/Reaction' } }
 
     PointDuJour:
       type: object
@@ -773,6 +868,7 @@ components:
         texte: { type: string, minLength: 1, maxLength: 2000, description: 'Pour `texte`, `coup_de_main` et `decision`.' }
         point: { $ref: '#/components/schemas/PointDuJour' }
         pieces: { $ref: './fichiers.yaml#/components/schemas/Pieces' }
+        reponseA: { type: string, format: uuid, description: 'Répondre à un message du salon (pas un événement).' }
 
     AppelCercle:
       type: object

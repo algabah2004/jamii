@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -30,6 +31,7 @@ import dev.jamii.api.cercles.CerclesController.PersonneResume;
 import dev.jamii.api.fichiers.ErreurFichier;
 import dev.jamii.api.fichiers.Fichiers;
 import dev.jamii.api.fichiers.FichiersController;
+import dev.jamii.api.reactions.Reactions;
 
 /**
  * Le salon du cercle (contracts/cercles.yaml v0.2, #157) : réservé aux membres. On y écrit, on y fait son point du
@@ -51,8 +53,30 @@ class SalonCercleController {
 	}
 
 	record MessageCercle(UUID id, long numero, String type, PersonneResume auteur, String texte, Point point,
-			Evenement evenement, CoupDeMain coupDeMain, AppelDuMessage appel, Instant envoyeLe, List<Fichiers.Piece> piecesJointes) {
+			Evenement evenement, CoupDeMain coupDeMain, AppelDuMessage appel, Instant envoyeLe, List<Fichiers.Piece> piecesJointes,
+			long version, Citation reponseA, Instant modifieLe, boolean supprime, List<ReactionVue> reactions) {
 	}
+
+	/** Le message auquel on répond (#157) : qui l'a écrit et son début. */
+	record Citation(UUID id, PersonneResume auteur, String texte, boolean supprime) {
+	}
+
+	/** 👍 3 : l'emoji, combien, si j'en suis, et les prénoms au survol (10 au plus, « moi » pour moi). */
+	record ReactionVue(String emoji, int nombre, boolean deMoi, List<String> noms) {
+	}
+
+	record Modification(String texte) {
+	}
+
+	record NouvelleReaction(String emoji, Boolean active) {
+	}
+
+	/** Ce qu'il faut en plus pour montrer des messages : les réactions et les messages cités. */
+	private record Contexte(Map<UUID, List<ReactionVue>> reactions, Map<UUID, SalonCercle.Message> cites) {
+		static final Contexte VIDE = new Contexte(Map.of(), Map.of());
+	}
+
+	private static final int CITATION_MAX = 140;
 
 	/** `presents` : combien de membres sont dans l'appel WebRTC (#157). `url` : l'ancienne salle Jitsi, plus utilisée. */
 	record AppelCercle(UUID id, PersonneResume lancePar, Instant lanceLe, String url, int presents) {
@@ -62,7 +86,7 @@ class SalonCercleController {
 			AppelCercle appel) {
 	}
 
-	record NouveauMessage(String type, String texte, Point point, List<UUID> pieces) {
+	record NouveauMessage(String type, String texte, Point point, List<UUID> pieces, UUID reponseA) {
 	}
 
 	private static final int TEXTE_MAX = 2000;
@@ -84,6 +108,13 @@ class SalonCercleController {
 	@org.springframework.beans.factory.annotation.Autowired
 	void salleAppel(SalleAppelCercle salleAppel) {
 		this.salleAppel = salleAppel;
+	}
+
+	private Reactions reactions;
+
+	@org.springframework.beans.factory.annotation.Autowired
+	void reactions(Reactions reactions) {
+		this.reactions = reactions;
 	}
 
 	SalonCercleController(GestionCercles gestion, SalonCercle salon, Annuaire annuaire, Fichiers fichiers,
@@ -120,10 +151,11 @@ class SalonCercleController {
 		decisions.forEach(m -> personnes(m, ids));
 		appel.map(SalonCercle.Appel::lancePar).ifPresent(ids::add);
 		ids.remove(null);
+		Contexte contexte = contexte(cercleId, messages, moi.id(), maintenant, ids);
 		Map<UUID, Compte> comptes = annuaire.lire(ids);
 		return ResponseEntity.ok()
 			.cacheControl(CacheControl.noStore())
-			.body(new Salon(messages.stream().map(m -> vue(m, comptes)).toList(), coups.stream().map(m -> vue(m, comptes)).toList(),
+			.body(new Salon(messages.stream().map(m -> vue(m, comptes, contexte, moi.id())).toList(), coups.stream().map(m -> vue(m, comptes)).toList(),
 					decisions.stream().map(m -> vue(m, comptes)).toList(), salon.pointsDuJour(cercleId, maintenant), appel.map(a -> vue(a, comptes)).orElse(null)));
 	}
 
@@ -147,6 +179,10 @@ class SalonCercleController {
 					throw new ErreurCercle(HttpStatus.FORBIDDEN, "pas_chef_de_projet", "Les décisions du tour sont consignées par son chef de projet");
 				}
 				attendre(moi.id(), maintenant);
+				if (demande.reponseA() != null && salon.message(cercleId, demande.reponseA(), maintenant)
+					.filter(m -> !"evenement".equals(m.type())).isEmpty()) {
+					throw validation("reponseA", "inconnu");
+				}
 				message = switch (type) {
 					case "texte" -> salon.ecrire(cercleId, moi.id(), texte, pieces, maintenant);
 					case "decision" -> salon.decision(cercleId, moi.id(), texte, pieces, maintenant);
@@ -176,7 +212,110 @@ class SalonCercleController {
 			}
 			default -> throw validation("type", "valeur_invalide");
 		}
-		return ResponseEntity.status(HttpStatus.CREATED).body(vue(message, annuaire.lire(List.of(moi.id()))));
+		if (demande.reponseA() != null && !"point".equals(type)) {
+			salon.repondA(message.id(), demande.reponseA());
+		}
+		var ecrit = salon.message(cercleId, message.id(), maintenant).orElse(message);
+		Set<UUID> ids = new HashSet<>(List.of(moi.id()));
+		Contexte contexte = contexte(cercleId, List.of(ecrit), moi.id(), maintenant, ids);
+		return ResponseEntity.status(HttpStatus.CREATED).body(vue(ecrit, annuaire.lire(ids), contexte, moi.id()));
+	}
+
+	// ---------------------------------------------------------------- modifier, supprimer, réagir (#157)
+
+	/** Corriger son message texte pendant 15 minutes. */
+	@PatchMapping("/api/cercles/{cercleId}/salon/messages/{messageId}")
+	MessageCercle modifier(@PathVariable UUID cercleId, @PathVariable UUID messageId, @RequestBody(required = false) Modification corps,
+			@AuthenticationPrincipal UtilisateurConnecte moi) {
+		membre(cercleId, moi.id());
+		Instant maintenant = Instant.now();
+		var m = salon.message(cercleId, messageId, maintenant).orElseThrow(ErreurCercle::introuvable);
+		if (m.supprimeLe() != null) {
+			throw ErreurCercle.conflit("message_supprime", "Ce message a été supprimé");
+		}
+		if (!moi.id().equals(m.auteurId()) || !"texte".equals(m.type())) {
+			throw ErreurCercle.conflit("non_modifiable", "On ne corrige que ses propres messages");
+		}
+		if (m.envoyeLe().plus(SalonCercle.DELAI_MODIFICATION).isBefore(maintenant)) {
+			throw ErreurCercle.conflit("delai_depasse", "Un message se corrige pendant 15 minutes");
+		}
+		String texte = propre(corps == null ? null : corps.texte());
+		if ((texte == null && m.pieces().isEmpty()) || (texte != null && texte.length() > TEXTE_MAX)) {
+			throw validation("texte", "longueur_invalide");
+		}
+		salon.modifier(messageId, texte, maintenant);
+		return relire(cercleId, messageId, moi.id(), maintenant);
+	}
+
+	/** Supprimer son message pour tout le monde : texte et fichiers effacés, la place reste. */
+	@DeleteMapping("/api/cercles/{cercleId}/salon/messages/{messageId}")
+	ResponseEntity<Void> supprimer(@PathVariable UUID cercleId, @PathVariable UUID messageId, @AuthenticationPrincipal UtilisateurConnecte moi) {
+		membre(cercleId, moi.id());
+		Instant maintenant = Instant.now();
+		var m = salon.message(cercleId, messageId, maintenant).orElseThrow(ErreurCercle::introuvable);
+		if (m.supprimeLe() == null) {
+			if (!moi.id().equals(m.auteurId()) || "evenement".equals(m.type()) || "appel".equals(m.type())) {
+				throw new ErreurCercle(HttpStatus.FORBIDDEN, "interdit", "On ne supprime que ses propres messages");
+			}
+			var pieces = salon.supprimer(messageId, maintenant);
+			reactions.effacer(Reactions.Table.CERCLE, messageId);
+			fichiers.supprimerOrphelins(pieces, moi.id());
+		}
+		return ResponseEntity.noContent().build();
+	}
+
+	/** Ajouter (`active: true`) ou retirer ma réaction ; renvoie le message à jour. */
+	@PostMapping("/api/cercles/{cercleId}/salon/messages/{messageId}/reactions")
+	MessageCercle reagir(@PathVariable UUID cercleId, @PathVariable UUID messageId, @RequestBody(required = false) NouvelleReaction corps,
+			@AuthenticationPrincipal UtilisateurConnecte moi) {
+		if (corps == null || corps.active() == null) {
+			throw validation(corps == null ? "emoji" : "active", "obligatoire");
+		}
+		if (!Reactions.estUnEmoji(corps.emoji())) {
+			throw validation("emoji", "format_invalide");
+		}
+		membre(cercleId, moi.id());
+		Instant maintenant = Instant.now();
+		var m = salon.message(cercleId, messageId, maintenant).orElseThrow(ErreurCercle::introuvable);
+		if (m.supprimeLe() != null || "evenement".equals(m.type())) {
+			throw ErreurCercle.conflit("message_supprime", "On ne réagit pas à ce message");
+		}
+		if (reactions.changer(Reactions.Table.CERCLE, messageId, moi.id(), corps.emoji(), corps.active(), maintenant) == Reactions.Resultat.TROP) {
+			throw ErreurCercle.conflit("trop_de_reactions", "Dix réactions au plus par message");
+		}
+		salon.toucher(messageId);
+		return relire(cercleId, messageId, moi.id(), maintenant);
+	}
+
+	private MessageCercle relire(UUID cercleId, UUID messageId, UUID moi, Instant maintenant) {
+		var m = salon.message(cercleId, messageId, maintenant).orElseThrow(ErreurCercle::introuvable);
+		Set<UUID> ids = new HashSet<>();
+		personnes(m, ids);
+		Contexte contexte = contexte(cercleId, List.of(m), moi, maintenant, ids);
+		ids.remove(null);
+		return vue(m, annuaire.lire(ids), contexte, moi);
+	}
+
+	/** Les réactions de ces messages et les messages qu'ils citent ; ajoute à `ids` les personnes à lire. */
+	private Contexte contexte(UUID cercleId, List<SalonCercle.Message> messages, UUID moi, Instant maintenant, Set<UUID> ids) {
+		var brutes = reactions.pour(Reactions.Table.CERCLE, messages.stream().map(SalonCercle.Message::id).toList(), moi);
+		Map<UUID, SalonCercle.Message> cites = new java.util.HashMap<>();
+		for (var m : messages) {
+			if (m.reponseA() != null && !cites.containsKey(m.reponseA())) {
+				salon.message(cercleId, m.reponseA(), maintenant).ifPresent(c -> {
+					cites.put(c.id(), c);
+					ids.add(c.auteurId());
+				});
+			}
+		}
+		brutes.values().forEach(l -> l.forEach(r -> ids.addAll(r.personnes())));
+		ids.remove(null);
+		Map<UUID, Compte> comptes = annuaire.lire(ids);
+		Map<UUID, List<ReactionVue>> vues = new java.util.HashMap<>();
+		brutes.forEach((id, liste) -> vues.put(id, liste.stream().map(r -> new ReactionVue(r.emoji(), r.nombre(), r.deMoi(),
+				r.personnes().stream().map(comptes::get).filter(java.util.Objects::nonNull)
+					.map(c -> c.id().equals(moi) ? "moi" : c.nom()).toList())).toList()));
+		return new Contexte(vues, cites);
 	}
 
 	/** Un coup de main est résolu : n'importe quel membre peut le dire (celui qui a aidé, ou celui qui demandait). */
@@ -280,11 +419,25 @@ class SalonCercleController {
 	}
 
 	private MessageCercle vue(SalonCercle.Message m, Map<UUID, Compte> comptes) {
-		return new MessageCercle(m.id(), m.numero(), m.type(), personne(m.auteurId(), comptes), m.texte(),
-				"point".equals(m.type()) ? new Point(m.fait(), m.prevu(), m.bloque()) : null,
+		return vue(m, comptes, Contexte.VIDE, null);
+	}
+
+	private MessageCercle vue(SalonCercle.Message m, Map<UUID, Compte> comptes, Contexte contexte, UUID moi) {
+		Citation citation = null;
+		var cite = m.reponseA() == null ? null : contexte.cites().get(m.reponseA());
+		if (cite != null) {
+			String debut = cite.supprimeLe() != null || cite.texte() == null ? "" : cite.texte();
+			if (debut.length() > CITATION_MAX) debut = debut.substring(0, CITATION_MAX - 1) + "…";
+			citation = new Citation(cite.id(), personne(cite.auteurId(), comptes), debut, cite.supprimeLe() != null);
+		}
+		boolean supprime = m.supprimeLe() != null;
+		return new MessageCercle(m.id(), m.numero(), m.type(), personne(m.auteurId(), comptes), supprime ? null : m.texte(),
+				"point".equals(m.type()) && !supprime ? new Point(m.fait(), m.prevu(), m.bloque()) : null,
 				"evenement".equals(m.type()) ? new Evenement(m.evenement(), m.tour(), personne(m.personneId(), comptes)) : null,
 				"coup_de_main".equals(m.type()) ? new CoupDeMain(m.resoluLe(), personne(m.resoluPar(), comptes)) : null,
-				m.appelId() == null ? null : new AppelDuMessage(m.appelId(), m.appelEnCours()), m.envoyeLe(), fichiers.decrire(m.pieces()));
+				m.appelId() == null ? null : new AppelDuMessage(m.appelId(), m.appelEnCours()), m.envoyeLe(),
+				supprime ? List.of() : fichiers.decrire(m.pieces()), m.version(), citation, m.modifieLe(), supprime,
+				supprime ? List.of() : contexte.reactions().getOrDefault(m.id(), List.of()));
 	}
 
 	private AppelCercle vue(SalonCercle.Appel a, Map<UUID, Compte> comptes) {

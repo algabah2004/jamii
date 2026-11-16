@@ -24,6 +24,7 @@ import org.springframework.test.web.servlet.assertj.MvcTestResult;
 import com.jayway.jsonpath.JsonPath;
 
 import dev.jamii.api.TestcontainersConfiguration;
+import dev.jamii.api.reactions.Reactions;
 import dev.jamii.api.auth.Role;
 import dev.jamii.api.auth.UtilisateurConnecte;
 
