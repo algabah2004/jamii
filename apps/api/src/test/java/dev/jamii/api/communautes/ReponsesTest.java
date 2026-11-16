@@ -8,11 +8,8 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,7 +31,7 @@ import dev.jamii.api.auth.Role;
 import dev.jamii.api.auth.UtilisateurConnecte;
 
 /** Le cœur de la démo : l'IA propose, un pair valide ; l'auteur accepte une réponse humaine. Sur un vrai PostgreSQL. */
-@SpringBootTest(properties = "jamii.communautes.ia-reflexion=0s")
+@SpringBootTest
 @AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)
 @RecordApplicationEvents
@@ -48,9 +45,6 @@ class ReponsesTest {
 
 	@Autowired
 	JdbcClient base;
-
-	@Autowired
-	GestionReponses reponses;
 
 	@Autowired
 	ApplicationEvents evenements;
@@ -88,53 +82,15 @@ class ReponsesTest {
 		return json(post(auteur, "/api/communautes/{s}/publications", QUESTION, slug), "$.id");
 	}
 
-	/** Relit la question jusqu'à l'arrivée de la proposition de l'IA (en arrière-plan), au plus 5 secondes. */
-	private MvcTestResult attendreIa(UtilisateurConnecte qui, String publication) throws Exception {
-		for (int i = 0; i < 50; i++) {
-			MvcTestResult lue = mvc.get().uri("/api/publications/{id}", publication).with(oauth2Login().oauth2User(qui)).exchange();
-			if (!"en_attente".equals(json(lue, "$.propositionIa.statut"))) {
-				return lue;
-			}
-			Thread.sleep(100);
-		}
-		throw new AssertionError("L'IA simulée n'a pas répondu en 5 secondes");
-	}
-
 	@Test
-	void l_ia_propose_une_reponse_sans_auteur_puis_un_pair_la_valide() throws Exception {
-		UtilisateurConnecte koffi = utilisateur("Koffi Yao");
-		UtilisateurConnecte awa = utilisateur("Awa Diop");
-		String slug = communaute(koffi, awa);
-		String id = question(koffi, slug);
-
-		MvcTestResult lue = attendreIa(awa, id);
-		assertThat(lue).bodyJson().extractingPath("$.propositionIa.statut").isEqualTo("prete");
-		assertThat(lue).bodyJson().extractingPath("$.reponses[0].proposeeParIa").isEqualTo(true);
-		assertThat(lue).bodyJson().extractingPath("$.reponses[0].auteur").isNull();
-		String reponseIa = json(lue, "$.reponses[0].id");
-
-		MvcTestResult validee = post(awa, "/api/reponses/{id}/valider", null, reponseIa);
-
-		assertThat(validee).hasStatusOk();
-		assertThat(validee).bodyJson().extractingPath("$.reponseAccepteeId").isEqualTo(reponseIa);
-		assertThat(validee).bodyJson().extractingPath("$.reponses[0].acceptee").isEqualTo(true);
-		assertThat(validee).bodyJson().extractingPath("$.reponses[0].valideePar.nom").isEqualTo("Awa Diop");
-		// Une réponse de l'IA ne compte sur le profil de personne, même validée.
-		assertThat(evenements.stream(ReponseAcceptee.class)).isEmpty();
-		assertThat(post(utilisateur("Chidi Okafor"), "/api/reponses/{id}/valider", null, reponseIa)).hasStatus(HttpStatus.FORBIDDEN);
-	}
-
-	@Test
-	void l_auteur_de_la_question_ne_valide_pas_la_reponse_de_l_ia() throws Exception {
+	void une_question_ne_recoit_que_des_reponses_de_membres() throws Exception {
 		UtilisateurConnecte koffi = utilisateur("Koffi Yao");
 		String id = question(koffi, communaute(koffi));
-		String reponseIa = json(attendreIa(koffi, id), "$.reponses[0].id");
 
-		MvcTestResult refus = post(koffi, "/api/reponses/{id}/valider", null, reponseIa);
+		MvcTestResult lue = mvc.get().uri("/api/publications/{id}", id).with(oauth2Login().oauth2User(koffi)).exchange();
 
-		assertThat(refus).hasStatus(HttpStatus.CONFLICT);
-		assertThat(refus).bodyJson().extractingPath("$.code").isEqualTo("propre_question");
-		assertThat(post(koffi, "/api/reponses/{id}/accepter", null, reponseIa)).bodyJson().extractingPath("$.code").isEqualTo("proposee_par_ia");
+		assertThat(lue).bodyJson().extractingPath("$.reponses.length()").isEqualTo(0);
+		assertThat(lue.getResponse().getContentAsString(StandardCharsets.UTF_8)).doesNotContain("propositionIa").doesNotContain("proposeeParIa");
 	}
 
 	@Test
@@ -185,48 +141,6 @@ class ReponsesTest {
 		String reponse = json(post(chidi, "/api/publications/{id}/reponses", "{\"contenu\":\"Je viens vendredi !\"}", id), "$.id");
 
 		assertThat(post(fatou, "/api/reponses/{id}/accepter", null, reponse)).bodyJson().extractingPath("$.code").isEqualTo("pas_une_question");
-	}
-
-	@Test
-	void si_l_ia_tombe_la_question_reste_ouverte_aux_humains() throws Exception {
-		UtilisateurConnecte koffi = utilisateur("Koffi Yao");
-		String slug = communaute(koffi);
-		// Insérée directement : l'IA simulée de l'application ne doit pas répondre pendant le test.
-		UUID id = UUID.randomUUID();
-		base.sql("""
-				INSERT INTO publication (id, communaute_id, auteur_id, type, titre, contenu, proposition_ia, cree_le)
-				SELECT :id, c.id, :u, 'question', 'Une question', 'Le détail de la question.', 'en_attente', now()
-				FROM communaute c WHERE c.slug = :s
-				""").param("id", id).param("u", koffi.id()).param("s", slug).update();
-		var executeur = Executors.newSingleThreadExecutor();
-		ReponsesIa enPanne = q -> {
-			throw new IllegalStateException("service IA injoignable");
-		};
-
-		new PropositionsIa(enPanne, reponses, executeur).demander(id, new ReponsesIa.Question("t", "c", "flutter"));
-		executeur.shutdown();
-		assertThat(executeur.awaitTermination(5, TimeUnit.SECONDS)).isTrue();
-
-		MvcTestResult lue = mvc.get().uri("/api/publications/{id}", id).with(oauth2Login().oauth2User(koffi)).exchange();
-		assertThat(lue).bodyJson().extractingPath("$.propositionIa.statut").isEqualTo("indisponible");
-		assertThat(lue).bodyJson().extractingPath("$.reponses.length()").isEqualTo(0);
-		// Une IA qui répond trop tard ne fait pas réapparaître de proposition.
-		reponses.propositionPrete(id, "Trop tard", Instant.now());
-		assertThat(base.sql("SELECT count(*) FROM reponse WHERE publication_id = :p").param("p", id).query(Long.class).single()).isZero();
-	}
-
-	@Test
-	void une_proposition_bloquee_plus_de_deux_minutes_s_affiche_indisponible() {
-		Instant maintenant = Instant.now();
-		assertThat(PropositionsIa.statutAffiche("en_attente", maintenant.minus(Duration.ofMinutes(3)), maintenant)).isEqualTo("indisponible");
-		assertThat(PropositionsIa.statutAffiche("en_attente", maintenant.minusSeconds(10), maintenant)).isEqualTo("en_attente");
-		assertThat(PropositionsIa.statutAffiche("prete", maintenant.minus(Duration.ofHours(1)), maintenant)).isEqualTo("prete");
-	}
-
-	@Test
-	void l_ia_simulee_ne_recoit_que_le_texte_et_repond_prudemment() {
-		Optional<String> texte = new ReponsesIaSimulees(Duration.ZERO).proposer(new ReponsesIa.Question("Riverpod hors ligne", "…", "flutter"));
-		assertThat(texte).hasValueSatisfying(t -> assertThat(t).contains("Riverpod hors ligne").contains("doit vérifier"));
 	}
 
 	@Test

@@ -11,16 +11,16 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Répondre, accepter une réponse, valider la réponse de l'IA (contracts/communautes.yaml). */
+/** Répondre et accepter une réponse (contracts/communautes.yaml). */
 @Service
 class GestionReponses {
 
 	/** Contre le spam (contrat) : au plus 30 réponses par heure et par personne. */
 	static final int REPONSES_PAR_HEURE = 30;
 
-	/** Tout ce qu'il faut savoir d'une réponse pour décider qui peut l'accepter ou la valider. */
+	/** Tout ce qu'il faut savoir d'une réponse pour décider qui peut l'accepter. */
 	record Cible(UUID reponseId, UUID publicationId, UUID communauteId, String type, UUID auteurQuestion,
-			UUID auteurReponse, boolean proposeeParIa) {
+			UUID auteurReponse) {
 	}
 
 	private final JdbcClient base;
@@ -33,13 +33,12 @@ class GestionReponses {
 	Optional<Cible> cible(UUID reponseId) {
 		return base.sql("""
 				SELECT r.id, r.publication_id, p.communaute_id, p.type, p.auteur_id AS auteur_question,
-				       r.auteur_id AS auteur_reponse, r.proposee_par_ia
+				       r.auteur_id AS auteur_reponse
 				FROM reponse r JOIN publication p ON p.id = r.publication_id WHERE r.id = :r
 				""").param("r", reponseId)
 			.query((rs, n) -> new Cible(rs.getObject("id", UUID.class), rs.getObject("publication_id", UUID.class),
 					rs.getObject("communaute_id", UUID.class), rs.getString("type"),
-					rs.getObject("auteur_question", UUID.class), rs.getObject("auteur_reponse", UUID.class),
-					rs.getBoolean("proposee_par_ia")))
+					rs.getObject("auteur_question", UUID.class), rs.getObject("auteur_reponse", UUID.class)))
 			.optional();
 	}
 
@@ -75,37 +74,6 @@ class GestionReponses {
 				UPDATE publication SET reponse_acceptee_id = :r, acceptee_le = :t, version = version + 1
 				WHERE id = :p AND reponse_acceptee_id IS NULL
 				""").param("r", reponseId).param("t", Timestamp.from(maintenant)).param("p", publicationId).update() == 1;
-	}
-
-	/** Le pair se porte garant de la réponse de l'IA : elle devient la réponse acceptée, dans la même transaction. */
-	@Transactional
-	boolean valider(UUID publicationId, UUID reponseId, UUID pair, Instant maintenant) {
-		if (!accepter(publicationId, reponseId, maintenant)) {
-			return false;
-		}
-		base.sql("UPDATE reponse SET validee_par_id = :pair WHERE id = :r").param("pair", pair).param("r", reponseId).update();
-		return true;
-	}
-
-	/** La réponse de l'IA arrive. Ignorée si la proposition n'est plus attendue (déjà prête ou abandonnée). */
-	@Transactional
-	void propositionPrete(UUID publicationId, String texte, Instant maintenant) {
-		int attendue = base.sql("UPDATE publication SET proposition_ia = 'prete' WHERE id = :p AND proposition_ia = 'en_attente'")
-			.param("p", publicationId).update();
-		if (attendue == 1) {
-			base.sql("""
-					INSERT INTO reponse (id, publication_id, auteur_id, contenu, proposee_par_ia, cree_le)
-					VALUES (:id, :p, NULL, :c, TRUE, :t)
-					""").param("id", UUID.randomUUID()).param("p", publicationId)
-				.param("c", texte.length() > 10000 ? texte.substring(0, 10000) : texte)
-				.param("t", Timestamp.from(maintenant)).update();
-		}
-	}
-
-	@Transactional
-	void propositionIndisponible(UUID publicationId) {
-		base.sql("UPDATE publication SET proposition_ia = 'indisponible' WHERE id = :p AND proposition_ia = 'en_attente'")
-			.param("p", publicationId).update();
 	}
 
 }

@@ -26,7 +26,7 @@ import dev.jamii.api.auth.Role;
 import dev.jamii.api.auth.UtilisateurConnecte;
 
 /** Les routes des communautés et des publications (contracts/communautes.yaml), sur un vrai PostgreSQL. */
-@SpringBootTest(properties = "jamii.communautes.ia-reflexion=0s")
+@SpringBootTest
 @AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)
 class CommunautesTest {
@@ -148,15 +148,13 @@ class CommunautesTest {
 		assertThat(lue).bodyJson().extractingPath("$.titre").isEqualTo("Comment garder les données <b>hors ligne</b> ?");
 		assertThat(lue).bodyJson().extractingPath("$.auteur.nom").isEqualTo("Awa Diop");
 		assertThat(lue).bodyJson().extractingPath("$.communaute").isEqualTo(slug);
-		// La question est publiée tout de suite ; la réponse de l'IA suit en arrière-plan (ReponsesTest).
-		assertThat(creee).bodyJson().extractingPath("$.propositionIa.statut").isEqualTo("en_attente");
 		assertThat(lue).bodyJson().extractingPath("$.moi.estAuteur").isEqualTo(false);
 		assertThat(lue).bodyJson().extractingPath("$.moi.estMembre").isEqualTo(false);
 		assertThat(get(awa, "/api/communautes/{s}", slug)).bodyJson().extractingPath("$.questionsOuvertes").isEqualTo(1);
 	}
 
 	@Test
-	void le_fil_donne_le_texte_de_chaque_publication_et_l_etat_de_l_ia() {
+	void le_fil_donne_le_texte_de_chaque_publication() {
 		UtilisateurConnecte awa = utilisateur("Awa Diop");
 		String slug = communaute(null);
 		rejoindre(awa, slug);
@@ -165,11 +163,10 @@ class CommunautesTest {
 		MvcTestResult fil = get(awa, "/api/communautes/{s}/publications", slug);
 
 		assertThat(fil).bodyJson().extractingPath("$.elements[0].contenu").isEqualTo("Mon appli perd la liste des commandes quand le réseau coupe.");
-		assertThat(fil).bodyJson().extractingPath("$.elements[0].propositionIa.statut").isNotNull();
 	}
 
 	@Test
-	void une_discussion_n_a_pas_de_proposition_de_l_ia() {
+	void une_discussion_se_publie_comme_une_question() {
 		UtilisateurConnecte qui = utilisateur("Chidi Okafor");
 		String slug = communaute(null);
 		rejoindre(qui, slug);
@@ -177,7 +174,6 @@ class CommunautesTest {
 		MvcTestResult creee = publier(qui, slug, QUESTION.replace("\"question\"", "\"discussion\""));
 
 		assertThat(creee).hasStatus(HttpStatus.CREATED);
-		assertThat(creee).bodyJson().extractingPath("$.propositionIa").isNull();
 		assertThat(creee).bodyJson().extractingPath("$.moi.estAuteur").isEqualTo(true);
 	}
 

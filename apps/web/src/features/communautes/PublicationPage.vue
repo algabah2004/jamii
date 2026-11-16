@@ -2,7 +2,7 @@
 import LienRetour from '../../components/LienRetour.vue'
 import LienPersonne from '../../components/LienPersonne.vue'
 import { JAvatar, JBadgePreuve, JBouton, JChamp, JIllustration, JSquelette } from '../../design-system'
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute } from 'vue-router'
 import { api } from '../../api/client'
@@ -16,9 +16,6 @@ import CarteCercleLien from '../cercles/CarteCercleLien.vue'
 type Publication = components['schemas']['Publication']
 type Reponse = components['schemas']['Reponse']
 
-/** Le contrat : relire toutes les 3 s tant que l'IA prépare sa réponse, au plus 1 minute. */
-const INTERVALLE_IA_MS = 3000
-const ATTENTE_IA_MAX_MS = 60_000
 
 const { t, locale } = useI18n()
 const { moi } = useSession()
@@ -28,13 +25,9 @@ const id = computed(() => String(route.params.id))
 const publication = ref<Publication | null>(null)
 const etat = ref<'chargement' | 'pret' | 'introuvable' | 'indisponible'>('chargement')
 const message = ref<string | null>(null)
-/** La réponse qui vient d'être validée ou acceptée : son badge apparaît avec la célébration de la charte. */
+/** La réponse qui vient d'être acceptée : son badge apparaît avec la célébration de la charte. */
 const vientDEtreAcceptee = ref<string | null>(null)
-/** Vrai quand l'IA n'a pas répondu en une minute : on arrête de relire, et on le dit. */
-const iaTropLongue = ref(false)
 
-let minuterie: ReturnType<typeof setTimeout> | undefined
-let debutAttente = 0
 
 async function charger(silencieux = false) {
   if (!silencieux) etat.value = 'chargement'
@@ -49,51 +42,32 @@ async function charger(silencieux = false) {
   } catch {
     if (!silencieux) etat.value = 'indisponible'
   }
-  surveillerIa()
 }
 
-/** Tant que l'IA prépare sa réponse, on relit la question, sans jamais dépasser une minute. */
-function surveillerIa() {
-  clearTimeout(minuterie)
-  if (publication.value?.propositionIa?.statut !== 'en_attente') return
-  if (!debutAttente) debutAttente = Date.now()
-  if (Date.now() - debutAttente >= ATTENTE_IA_MAX_MS) return void (iaTropLongue.value = true)
-  minuterie = setTimeout(() => void charger(true), INTERVALLE_IA_MS)
-}
-onBeforeUnmount(() => clearTimeout(minuterie))
 watch(id, () => {
-  debutAttente = 0
-  iaTropLongue.value = false
   void charger()
 }, { immediate: true })
 
-/** La réponse acceptée d'abord, puis celle de l'IA, puis les autres (ordre du contrat). */
+/** La réponse acceptée d'abord, puis les autres (ordre du contrat). */
 const reponses = computed(() => publication.value?.reponses ?? [])
 const dejaAcceptee = computed(() => Boolean(publication.value?.reponseAccepteeId))
 
 // Les boutons suivent les règles du contrat. Le serveur les revérifie de toute façon.
-function peutValider(r: Reponse) {
-  const p = publication.value
-  return Boolean(p && r.proposeeParIa && !dejaAcceptee.value && p.moi.estMembre && !p.moi.estAuteur)
-}
 function peutAccepter(r: Reponse) {
   const p = publication.value
   // Pas sur sa propre réponse : on ne se donne pas une preuve à soi-même (409 propre_reponse).
-  return Boolean(p && !r.proposeeParIa && r.auteur && r.auteur.id !== p.auteur?.id && !dejaAcceptee.value
+  return Boolean(p && r.auteur && r.auteur.id !== p.auteur?.id && !dejaAcceptee.value
     && p.moi.estAuteur && p.type === 'question')
 }
 
-const MESSAGES_ERREUR = new Set([
-  'pas_membre', 'pas_auteur_question', 'propre_question', 'propre_reponse', 'proposee_par_ia', 'deja_acceptee',
-])
-async function agir(action: 'valider' | 'accepter', reponseId: string) {
+const MESSAGES_ERREUR = new Set(['pas_membre', 'pas_auteur_question', 'propre_reponse', 'deja_acceptee'])
+async function accepter(reponseId: string) {
   message.value = null
-  const chemin = action === 'valider' ? '/api/reponses/{reponseId}/valider' : '/api/reponses/{reponseId}/accepter'
-  const { data, error } = await api.POST(chemin, { params: { path: { reponseId } } })
+  const { data, error } = await api.POST('/api/reponses/{reponseId}/accepter', { params: { path: { reponseId } } })
   if (data) {
     publication.value = data
     vientDEtreAcceptee.value = reponseId
-    message.value = t(action === 'valider' ? 'question.merciValidation' : 'question.merciAcceptation')
+    message.value = t('question.merciAcceptation')
     return
   }
   const code = (error as { code?: string } | undefined)?.code ?? ''
@@ -165,43 +139,30 @@ async function repondre() {
       </article>
 
       <p v-if="message" role="status" class="annonce">{{ message }}</p>
-      <p v-if="publication.propositionIa?.statut === 'en_attente' && !iaTropLongue" role="status" class="annonce annonce--ia" data-test="ia-attente">
-        <span class="points-attente" aria-hidden="true"><i /><i /><i /></span> {{ t('question.iaPrepare') }}
-      </p>
-      <p v-else-if="publication.propositionIa?.statut === 'indisponible' || iaTropLongue" class="annonce annonce--discrete" data-test="ia-indisponible">
-        {{ t('question.iaIndisponible') }}
-      </p>
-
       <h2 class="separateur">{{ t('communautes.reponses', { n: reponses.length }, reponses.length) }}</h2>
 
       <!-- Le fil : chaque réponse est reliée à la suivante par une ligne, comme une conversation. -->
       <TransitionGroup tag="ol" name="reponse" class="fil" data-test="reponses">
-        <li v-for="r in reponses" :key="r.id" class="reponse" :class="{ acceptee: r.acceptee, ia: r.proposeeParIa }">
-          <span v-if="r.proposeeParIa" class="avatar-ia" aria-hidden="true">✨</span>
-          <LienPersonne v-else :id="r.auteur?.id" doublon><JAvatar :nom="r.auteur?.nom ?? '?'" :url="r.auteur?.avatarUrl" :taille="40" /></LienPersonne>
+        <li v-for="r in reponses" :key="r.id" class="reponse" :class="{ acceptee: r.acceptee }">
+          <LienPersonne :id="r.auteur?.id" doublon><JAvatar :nom="r.auteur?.nom ?? '?'" :url="r.auteur?.avatarUrl" :taille="40" /></LienPersonne>
           <div class="bulle">
             <div class="bulle__tete">
-              <p v-if="r.proposeeParIa" class="etiquette-ia" data-test="etiquette-ia">{{ t(r.valideePar ? 'question.proposeeParIaVerifiee' : 'question.proposeeParIa') }}</p>
-              <p v-else class="auteur__texte">
+              <p class="auteur__texte">
                 <strong>{{ r.auteur?.nom ?? t('communautes.compteSupprime') }}</strong>
                 <span>{{ ilYa(r.creeLe, locale) }}</span>
               </p>
               <p v-if="r.acceptee" class="badge-acceptee" data-test="acceptee">
                 <JBadgePreuve :celebrer="vientDEtreAcceptee === r.id">
-                  ✓ {{ t('communautes.reponseAcceptee') }}<template v-if="r.valideePar"> · {{ t('question.valideePar', { nom: r.valideePar.nom }) }}</template>
+                  ✓ {{ t('communautes.reponseAcceptee') }}
                 </JBadgePreuve>
               </p>
             </div>
             <p class="texte">{{ r.contenu }}</p>
-            <p v-if="r.proposeeParIa && !r.acceptee && publication.moi.estAuteur" class="note">{{ t('question.attendUnPair') }}</p>
             <div class="bulle__actions">
-              <JBouton v-if="peutValider(r)" class="principal" data-test="valider" @click="agir('valider', r.id)">
-                {{ t('question.valider') }}
-              </JBouton>
-              <JBouton v-if="peutAccepter(r)" class="principal" data-test="accepter" @click="agir('accepter', r.id)">
+              <JBouton v-if="peutAccepter(r)" class="principal" data-test="accepter" @click="accepter(r.id)">
                 {{ t('question.accepter') }}
               </JBouton>
-              <BoutonSignaler v-if="!r.proposeeParIa" cible-type="reponse" :cible-id="r.id" />
+              <BoutonSignaler cible-type="reponse" :cible-id="r.id" />
             </div>
           </div>
         </li>
@@ -227,7 +188,6 @@ async function repondre() {
         <h2 id="fonctionnement">{{ t('communautes.fonctionnement.titre') }}</h2>
         <ol class="etapes">
           <li>{{ t('communautes.fonctionnement.poser') }}</li>
-          <li>{{ t('communautes.fonctionnement.ia') }}</li>
           <li>{{ t('communautes.fonctionnement.accepter') }}</li>
         </ol>
       </section>
@@ -260,15 +220,7 @@ async function repondre() {
 .statut-ouvert { padding: 2px var(--space-3); border-radius: var(--radius-pill); background: var(--action-soft); font-size: var(--type-label-size); font-weight: 600; }
 
 .annonce { margin: 0; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--surface-raised); font-weight: 600; }
-.annonce--ia { display: flex; align-items: center; gap: var(--space-3); background: var(--action-soft); }
 .annonce--discrete { background: transparent; padding: 0; color: var(--ink-muted); font-weight: 400; font-size: var(--type-body-sm-size); }
-/* L'IA écrit : trois points qui respirent (immobiles si le mouvement est réduit). */
-.points-attente { display: inline-flex; gap: 4px; }
-.points-attente i { width: 6px; height: 6px; border-radius: 50%; background: var(--action-ink); animation: respire 1.2s var(--ease-out) infinite; }
-.points-attente i:nth-child(2) { animation-delay: 0.15s; }
-.points-attente i:nth-child(3) { animation-delay: 0.3s; }
-@keyframes respire { 50% { opacity: 0.25; transform: translateY(-2px); } }
-@media (prefers-reduced-motion: reduce) { .points-attente i { animation: none; } }
 
 .separateur { display: flex; align-items: center; gap: var(--space-3); margin: var(--space-2) 0 0; font-size: 1rem; color: var(--ink-muted); }
 .separateur::after { content: ''; flex: 1; height: 1px; background: var(--line); }
@@ -277,7 +229,6 @@ async function repondre() {
 .reponse { position: relative; display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: var(--space-3); }
 /* La ligne du fil, d'un avatar au suivant. */
 .reponse:not(:last-child)::before { content: ''; position: absolute; left: 19px; top: 48px; bottom: calc(-1 * var(--space-4)); width: 2px; background: var(--line); border-radius: 2px; }
-.avatar-ia { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--action-soft); border: 1px dashed var(--line-strong); font-size: 1.125rem; }
 .bulle { display: grid; gap: var(--space-2); justify-items: start; padding: var(--space-3) var(--space-4); background: var(--surface-raised); border: 1px solid transparent; border-radius: 4px var(--radius-lg) var(--radius-lg) var(--radius-lg); }
 .bulle > * { margin: 0; }
 .bulle .texte { justify-self: stretch; }
@@ -289,11 +240,8 @@ async function repondre() {
 .reponse-enter-active { transition: opacity var(--motion-base) var(--ease-out), transform calc(var(--motion-base) * 1.4) var(--ease-out); }
 .reponse-enter-from { opacity: 0; transform: translateY(10px) scale(0.98); }
 .reponse-move { transition: transform var(--motion-base) var(--ease-out); }
-/* Charte : la proposition de l'IA est en pointillé, ce n'est pas encore une preuve. */
-.reponse.ia .bulle { border: 1px dashed var(--line-strong); background: var(--action-soft); }
 /* Orange = la preuve : la réponse acceptée. */
 .reponse.acceptee .bulle { border: 2px solid var(--proof); }
-.etiquette-ia { font-weight: 600; font-size: var(--type-body-sm-size); }
 .note { color: var(--ink-muted); font-size: var(--type-body-sm-size); }
 
 .compositeur { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: var(--space-3); padding: var(--space-4) var(--space-6) 0; border-top: 1px solid var(--line); }

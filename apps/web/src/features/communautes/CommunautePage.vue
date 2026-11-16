@@ -152,34 +152,18 @@ async function publier() {
       body: { type: genre.value, titre: titreDe(contenu), contenu, ...(pieces.value.length ? { pieces: pieces.value.map((p) => p.id) } : {}) },
     })
     if (!data) return void (envoi.value = 'erreur')
-    const { id, communaute: c, type, titre, auteur, nombreReponses, accepteeLe, creeLe, propositionIa, piecesJointes } = data
-    publications.value = [{ id, communaute: c, type, titre, auteur, nombreReponses, accepteeLe, creeLe, contenu: data.contenu, propositionIa, piecesJointes }, ...publications.value]
+    const { id, communaute: c, type, titre, auteur, nombreReponses, accepteeLe, creeLe, piecesJointes } = data
+    publications.value = [{ id, communaute: c, type, titre, auteur, nombreReponses, accepteeLe, creeLe, contenu: data.contenu, piecesJointes }, ...publications.value]
     texte.value = ''
     pieces.value = []
     envoi.value = 'repos'
     composeur.value?.rafraichir()
-    if (type === 'question') suivreIa(id)
   } catch {
     envoi.value = 'erreur'
   }
 }
 function remplacer(maj: PublicationResume) {
   publications.value = publications.value.map((x) => (x.id === maj.id ? maj : x))
-}
-/** Une question vient de partir : on relit sa carte jusqu'à ce que l'IA ait proposé sa réponse (une minute au plus). */
-function suivreIa(id: string, essais = 0) {
-  if (essais >= 20) return
-  setTimeout(async () => {
-    try {
-      const { data } = await api.GET('/api/publications/{publicationId}', { params: { path: { publicationId: id } } })
-      if (!data) return
-      const actuelle = publications.value.find((x) => x.id === id)
-      if (actuelle) remplacer({ ...actuelle, nombreReponses: data.nombreReponses, propositionIa: data.propositionIa })
-      if (data.propositionIa?.statut === 'en_attente') suivreIa(id, essais + 1)
-    } catch {
-      // On réessaiera au prochain passage sur la page.
-    }
-  }, 3000)
 }
 const prenom = computed(() => moi.value?.nom.split(' ')[0] ?? '')
 </script>
@@ -223,7 +207,6 @@ const prenom = computed(() => moi.value?.nom.split(' ')[0] ?? '')
         <h2>{{ t('communautes.fonctionnement.titre') }}</h2>
         <ol class="etapes">
           <li>{{ t('communautes.fonctionnement.poser') }}</li>
-          <li>{{ t('communautes.fonctionnement.ia') }}</li>
           <li>{{ t('communautes.fonctionnement.accepter') }}</li>
         </ol>
         <div>
@@ -291,7 +274,7 @@ const prenom = computed(() => moi.value?.nom.split(' ')[0] ?? '')
                       :data-test="`genre-${g}`"
                       @click="genre = g"
                     >
-                      {{ g === 'question' ? t('communautes.fil.questionIa') : t('communautes.types.discussion') }}
+                      {{ g === 'question' ? t('communautes.types.question') : t('communautes.types.discussion') }}
                     </button>
                   </div>
                 </template>
