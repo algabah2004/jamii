@@ -86,7 +86,7 @@ class GestionDemandes {
 			for (Precision p : precisions) {
 				if (p.ayo() != null && !p.ayo().isBlank()) {
 					String ayo = p.ayo().replaceAll("\\s+", " ").strip();
-					suite.append(p.ayoQuestion() ? "\nAyo (question) : " : "\nAyo (conseil) : ")
+					suite.append(p.ayoQuestion() ? "\nAyo (question) : " : "\nAyo : ")
 						.append(ayo.length() > 400 ? ayo.substring(0, 400) + "…" : ayo);
 				}
 				suite.append("\nPersonne : ").append(p.texte().replaceAll("\\s+", " ").strip());
@@ -237,8 +237,8 @@ class GestionDemandes {
 			PlansIa.Etat etat = ia.lire(tache);
 			if ("terminee".equals(etat.statut()) && etat.resultat() != null) {
 				retenirAyo(demande.id(), etat.resultat());
-				// Une question n'est pas encore un conseil : rien ne part vers les tendances ni vers Systalink.
-				if (demande.orientation() == null && !poseUneQuestion(etat.resultat())) {
+				// Une question ou une simple discussion n'est pas un conseil : rien ne part vers les tendances ni vers Systalink.
+				if (demande.orientation() == null && (conseille(etat.resultat()) || "repli".equals(etat.origine()))) {
 					retenirResume(demande.id(), etat.resultat());
 				}
 			}
@@ -365,6 +365,12 @@ class GestionDemandes {
 	}
 
 	/** Ayo pose une question avant de conseiller (contracts/ia.yaml, `Orientation.question`). */
+	/** Ayo conseille : pas de question, et au moins un service, une étape ou des développeurs (ni question ni discussion). */
+	static boolean conseille(JsonNode orientation) {
+		return !poseUneQuestion(orientation) && (!orientation.path("services").isEmpty() || !orientation.path("etapes").isEmpty()
+				|| orientation.path("developpeursNecessaires").asBoolean(false));
+	}
+
 	static boolean poseUneQuestion(JsonNode orientation) {
 		return orientation.path("question").path("texte").asString("").strip().length() > 0;
 	}

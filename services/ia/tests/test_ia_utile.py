@@ -467,7 +467,12 @@ def test_ayo_connait_les_limites_de_chaque_service_et_reste_honnete():
         "lien"
     ) == "https://yokk.ai"
     assert "ne promets rien" in fiches["yokk"]["limites"]
-    for regle in ("Hors sujet", "Ne fais jamais la publicité", "Jamais « tu dois »", "pasPourToi"):
+    for regle in (
+        "illégal, blessant ou dangereux",
+        "Ne fais jamais la publicité",
+        "Jamais « tu dois »",
+        "pasPourToi",
+    ):
         assert regle in orientation.CONSIGNE
 
 
@@ -511,3 +516,30 @@ def test_ayo_repond_dans_la_langue_ecrite_par_la_personne(entree, attendue):
     donnees = json.loads(orientation.demande(entree, Catalogue.charger()).donnees)
     assert donnees["langueReponse"] == attendue
     assert "langue" not in donnees["besoin"]
+
+
+def test_ayo_peut_simplement_discuter_avant_de_conseiller():
+    # « ça va ? » : Ayo répond vraiment et ramène vers l'activité, sans faux conseil.
+    for regle in ("C. Discuter", "Ça va très bien, merci", "ramène gentiment"):
+        assert regle in orientation.CONSIGNE
+    reponse = json.dumps(
+        {
+            "message": "Ça va très bien, merci ! Et toi, tu as une activité à améliorer ?",
+            "resume": "Tu me salues.",
+            "secteur": "autre",
+            "services": [],
+            "etapes": [],
+            "question": None,
+            "developpeursNecessaires": False,
+        }
+    )
+    resultat = orientation.lire(reponse, {**BESOIN_CABINET, "description": "ça va ?"}, CATALOGUE)
+    assert resultat["message"].startswith("Ça va très bien")
+    assert resultat["services"] == [] and resultat["etapes"] == []
+    assert "question" not in resultat
+
+
+def test_un_simple_bonjour_est_accepte():
+    from jamii_ia.modeles import EntreeOrientation
+
+    assert EntreeOrientation(description="yo").description == "yo"

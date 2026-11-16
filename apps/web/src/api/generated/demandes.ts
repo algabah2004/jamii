@@ -137,7 +137,7 @@ export interface components {
     schemas: {
         NouvelleDemande: {
             titre: string;
-            /** @description Le besoin, avec les mots de la PME. Texte brut. */
+            /** @description Le premier message à Ayo, avec les mots de la personne : un besoin, ou juste « bonjour ». Texte brut. */
             description: string;
             /** @description Durée souhaitée, si connue. */
             dureeSemaines?: number | null;

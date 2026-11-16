@@ -160,6 +160,16 @@ const repondre = (texte: string) => void envoyerMessage(texte)
 
 /** Quand Ayo pose une question, il ne conseille pas encore : sa question attend la réponse. */
 const questionOuverte = computed(() => Boolean(orientation.value?.question?.texte))
+/**
+ * Ayo discute simplement (« ça va ? », une question générale) : ni question sur le besoin ni conseil. Sa réponse
+ * s'affiche comme une bulle de discussion, sans les cartes du conseil.
+ */
+const discute = computed(() => {
+  const o = orientation.value
+  return Boolean(o) && !questionOuverte.value && !o!.services.length && !(o!.etapes ?? []).length && !o!.developpeursNecessaires
+})
+/** Pas de conseil dans cette réponse : ni proposition à relire, ni onglets. */
+const sansConseil = computed(() => questionOuverte.value || discute.value)
 
 /** Supprimer la conversation : la demande et tout ce qui a été dit. Une mission déjà publiée reste en ligne. */
 const suppression = ref<'repos' | 'envoi' | 'erreur'>('repos')
@@ -268,7 +278,7 @@ const messageErreur = computed(() =>
     <RouterLink v-if="historique.length > 12" to="/demandes" class="historique__toutes">{{ t('demandes.mesDemandes.toutes') }}</RouterLink>
   </aside>
   <section class="demande fond-verre">
-    <div class="entete">
+    <div class="entete-discussion">
       <p class="retour"><LienRetour to="/demandes">{{ t('demandes.mesDemandes.titre') }}</LienRetour></p>
       <button v-if="demande" type="button" class="lien-discret supprimer" :disabled="suppression === 'envoi'" data-test="supprimer-discussion" @click="supprimer">
         {{ t('demandes.discussion.supprimer') }}
@@ -333,9 +343,9 @@ const messageErreur = computed(() =>
           <div class="ayo-message__bulle">
             <div class="reponse__tete">
               <p class="ayo-message__qui"><strong>{{ t('demandes.ayo.nom') }}</strong> <BadgeIa long /></p>
-              <span class="proposition" data-test="plan-propose">{{ t('demandes.plan.propose') }}</span>
+              <span v-if="!sansConseil" class="proposition" data-test="plan-propose">{{ t('demandes.plan.propose') }}</span>
             </div>
-            <h2 id="compris-titre" :class="questionOuverte ? 'visuellement-cache' : 'reponse__titre'">{{ t(questionOuverte ? 'demandes.discussion.question' : 'demandes.orientation.compris') }}</h2>
+            <h2 id="compris-titre" :class="sansConseil ? 'visuellement-cache' : 'reponse__titre'">{{ t(questionOuverte ? 'demandes.discussion.question' : discute ? 'demandes.discussion.reponse' : 'demandes.orientation.compris') }}</h2>
             <p class="reponse__texte" data-test="ayo-message">{{ orientation ? orientation.message || orientation.resume : plan?.cahierDesCharges.resume }}</p>
             <p v-if="repli" class="reponse__repli" role="status" data-test="plan-repli"><span aria-hidden="true">ⓘ</span> {{ t(orientation ? 'demandes.orientation.repli' : 'demandes.plan.repli') }}</p>
 
@@ -347,7 +357,7 @@ const messageErreur = computed(() =>
               <p class="texte-discret">{{ t('demandes.discussion.ouEcris') }}</p>
             </div>
 
-            <template v-if="orientation && !questionOuverte">
+            <template v-if="orientation && !sansConseil">
               <section class="reponse__partie" aria-labelledby="options" data-test="chemins">
                 <h2 id="options" class="reponse__titre">{{ t('demandes.reponse.conseils') }}</h2>
 
@@ -407,7 +417,7 @@ const messageErreur = computed(() =>
         </section>
 
         <!-- 3. Le reste, rangé : les développeurs, le projet, publier. -->
-        <section v-if="!questionOuverte" id="onglets" class="onglets">
+        <section v-if="!sansConseil" id="onglets" class="onglets">
           <div class="onglets__barre" role="tablist" :aria-label="t('demandes.reponse.suite')">
             <button
               v-for="o in onglets"
@@ -595,7 +605,7 @@ const messageErreur = computed(() =>
           v-model="message"
           rows="1"
           :maxlength="CONVERSATION.reponseMax"
-          :placeholder="t(questionOuverte ? 'demandes.discussion.repondre' : 'demandes.discussion.reagir')"
+          :placeholder="t(sansConseil ? 'demandes.discussion.repondre' : 'demandes.discussion.reagir')"
           data-test="message-ayo"
           @input="zoneMessage && ajusterZone(zoneMessage)"
           @keydown="toucheMessage"
@@ -624,7 +634,7 @@ const messageErreur = computed(() =>
 .historique { display: none; }
 @media (min-width: 1100px) {
   .page-demande { grid-template-columns: 15rem minmax(0, 64rem); }
-  .historique { position: sticky; top: var(--space-6); display: grid; gap: var(--space-3); max-height: calc(100vh - 2 * var(--space-6)); overflow-y: auto; }
+  .historique { position: sticky; top: calc(64px + var(--space-6)); display: grid; gap: var(--space-3); max-height: calc(100vh - 64px - 2 * var(--space-6)); overflow-y: auto; }
 }
 .historique__nouvelle { justify-content: center; }
 .historique__titre { margin: var(--space-2) 0 0; font-size: var(--type-body-sm-size); color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.04em; }
@@ -640,8 +650,8 @@ const messageErreur = computed(() =>
 .assistant__nom strong { color: var(--ink); }
 .question-ayo { display: grid; gap: var(--space-4); border-inline-start: 3px solid var(--action); }
 .question-ayo__texte { margin: 0; font-size: 1.1875rem; }
-.entete { display: flex; justify-content: space-between; align-items: center; gap: var(--space-3); }
-.entete .retour { margin: 0; }
+.entete-discussion { display: flex; justify-content: space-between; align-items: center; gap: var(--space-3); }
+.entete-discussion .retour { margin: 0; }
 .supprimer { color: var(--ink-muted); }
 .supprimer:hover { color: var(--danger); }
 .fil { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
