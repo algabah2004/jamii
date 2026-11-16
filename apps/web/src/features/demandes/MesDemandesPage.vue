@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import MotifsCoins from '../../components/MotifsCoins.vue'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute } from 'vue-router'
@@ -42,7 +43,9 @@ const affichees = computed(() => (filtre.value === 'toutes' ? demandes.value : d
 </script>
 
 <template>
-  <section class="mes-demandes">
+  <section class="avec-motifs mes-demandes">
+    <!-- Des taches de dessins sur les bords de la page, à son image. -->
+    <MotifsCoins planche="demandes" />
     <!-- Le titre reste pour les lecteurs d'écran : à l'écran, la discussion avec Ayo est le point de départ. -->
     <h1 class="visuellement-cache">{{ t('demandes.mesDemandes.titre') }}</h1>
 

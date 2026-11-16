@@ -190,6 +190,8 @@ body::before {
 .motif--reseau { --motif: url('../../../../docs/design/motifs/reseau.svg'); --motif-taille: 96px; }
 .motif--croix { --motif: url('../../../../docs/design/motifs/croix.svg'); --motif-taille: 28px; }
 /* Des petits dessins tech (code, terminal, puce, wifi…), pour le fond des discussions. */
+/* Une page qui accueille des taches de motifs (components/MotifsCoins.vue) : elles restent derrière son contenu. */
+.avec-motifs { position: relative; isolation: isolate; }
 .motif--tech { --motif: url('../../../../docs/design/motifs/tech.svg'); --motif-taille: 240px; }
 /* Le fond des discussions (messages privés, salons des cercles et des communautés) : le motif tech, partout,
    fixe pendant que les messages défilent. Retiré quand le contraste renforcé est demandé. */

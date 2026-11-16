@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import MotifsCoins from '../../components/MotifsCoins.vue'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
@@ -103,7 +104,9 @@ function afficherResultats() {
 </script>
 
 <template>
-  <section class="cercles">
+  <section class="avec-motifs cercles">
+    <!-- Des taches de dessins sur les bords de la page, à son image. -->
+    <MotifsCoins planche="cercles" />
     <header class="tete">
       <div class="tete__texte">
         <span class="surtitre"><span class="point" /> {{ t('cercles.decouverte.signature') }}</span>
