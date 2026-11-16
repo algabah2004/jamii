@@ -36,8 +36,19 @@ class SalonCercle {
 
 	record Message(UUID id, long numero, String type, UUID auteurId, String texte, String fait, String prevu,
 			String bloque, String evenement, Integer tour, UUID personneId, Instant resoluLe, UUID resoluPar,
-			UUID appelId, boolean appelEnCours, Instant envoyeLe, List<UUID> pieces) {
+			UUID appelId, boolean appelEnCours, Instant envoyeLe, List<UUID> pieces, UUID reponseA, Instant modifieLe,
+			Instant supprimeLe, long version) {
+
+		Message(UUID id, long numero, String type, UUID auteurId, String texte, String fait, String prevu, String bloque,
+				String evenement, Integer tour, UUID personneId, Instant resoluLe, UUID resoluPar, UUID appelId,
+				boolean appelEnCours, Instant envoyeLe, List<UUID> pieces) {
+			this(id, numero, type, auteurId, texte, fait, prevu, bloque, evenement, tour, personneId, resoluLe, resoluPar,
+					appelId, appelEnCours, envoyeLe, pieces, null, null, null, numero);
+		}
 	}
+
+	/** On corrige son message texte pendant 15 minutes (comme dans les messages privés). */
+	static final Duration DELAI_MODIFICATION = Duration.ofMinutes(15);
 
 	record Appel(UUID id, UUID lancePar, String salle, Instant lanceLe) {
 	}
@@ -47,6 +58,7 @@ class SalonCercle {
 	private static final String COLONNES = """
 			m.id, m.numero, m.type, m.auteur_id, m.texte, m.point_fait, m.point_prevu, m.point_bloque, m.evenement,
 			m.evenement_tour, m.evenement_personne, m.resolu_le, m.resolu_par, m.appel_id, m.envoye_le, m.pieces,
+			m.reponse_a, m.modifie_le, m.supprime_le, m.version,
 			(a.id IS NOT NULL AND a.termine_le IS NULL AND a.lance_le > :limiteAppel) AS appel_en_cours
 			""";
 
@@ -62,7 +74,8 @@ class SalonCercle {
 	List<Message> messages(UUID cercle, Long apres, int limite, Instant maintenant) {
 		String choix = apres == null
 				? "SELECT * FROM (SELECT * FROM message_cercle WHERE cercle_id = :c ORDER BY numero DESC LIMIT :l) x"
-				: "SELECT * FROM message_cercle WHERE cercle_id = :c AND numero > :apres ORDER BY numero LIMIT :l";
+				// Les nouveaux messages et ceux qui ont changé (modifiés, supprimés, réactions) depuis la version `apres`.
+				: "SELECT * FROM message_cercle WHERE cercle_id = :c AND version > :apres ORDER BY version LIMIT :l";
 		var requete = base.sql("SELECT " + COLONNES + " FROM (" + choix + ") m LEFT JOIN appel_cercle a ON a.id = m.appel_id ORDER BY m.numero")
 			.param("c", cercle).param("l", limite).param("limiteAppel", Timestamp.from(maintenant.minus(DUREE_APPEL)));
 		if (apres != null) {
@@ -81,7 +94,7 @@ class SalonCercle {
 	List<Message> coupsDeMainOuverts(UUID cercle, Instant maintenant) {
 		return base.sql("SELECT " + COLONNES + """
 				 FROM message_cercle m LEFT JOIN appel_cercle a ON a.id = m.appel_id
-				WHERE m.cercle_id = :c AND m.type = 'coup_de_main' AND m.resolu_le IS NULL ORDER BY m.numero LIMIT :l
+				WHERE m.cercle_id = :c AND m.type = 'coup_de_main' AND m.resolu_le IS NULL AND m.supprime_le IS NULL ORDER BY m.numero LIMIT :l
 				""").param("c", cercle).param("l", COUPS_DE_MAIN_MAX)
 			.param("limiteAppel", Timestamp.from(maintenant.minus(DUREE_APPEL)))
 			.query(SalonCercle::message).list();
@@ -91,7 +104,7 @@ class SalonCercle {
 	List<Message> decisions(UUID cercle, Instant maintenant) {
 		return base.sql("SELECT " + COLONNES + """
 				 FROM message_cercle m LEFT JOIN appel_cercle a ON a.id = m.appel_id
-				WHERE m.cercle_id = :c AND m.type = 'decision' ORDER BY m.numero DESC LIMIT 30
+				WHERE m.cercle_id = :c AND m.type = 'decision' AND m.supprime_le IS NULL ORDER BY m.numero DESC LIMIT 30
 				""").param("c", cercle).param("limiteAppel", Timestamp.from(maintenant.minus(DUREE_APPEL)))
 			.query(SalonCercle::message).list();
 	}
@@ -147,8 +160,36 @@ class SalonCercle {
 
 	/** Marque un coup de main résolu. Sans effet s'il l'est déjà (le premier qui l'a résolu reste). */
 	void resoudre(UUID message, UUID par, Instant maintenant) {
-		base.sql("UPDATE message_cercle SET resolu_le = :t, resolu_par = :u WHERE id = :id AND type = 'coup_de_main' AND resolu_le IS NULL")
+		base.sql("UPDATE message_cercle SET resolu_le = :t, resolu_par = :u, version = nextval('message_cercle_version') WHERE id = :id AND type = 'coup_de_main' AND resolu_le IS NULL")
 			.param("t", Timestamp.from(maintenant)).param("u", par).param("id", message).update();
+	}
+
+	// ---------------------------------------------------------------- répondre, modifier, supprimer (#157)
+
+	/** Ce message répond à `reponseA` (un message du même salon, vérifié par l'appelant). */
+	void repondA(UUID message, UUID reponseA) {
+		base.sql("UPDATE message_cercle SET reponse_a = :r WHERE id = :id").param("r", reponseA).param("id", message).update();
+	}
+
+	void modifier(UUID message, String texte, Instant maintenant) {
+		base.sql("UPDATE message_cercle SET texte = :t, modifie_le = :le, version = nextval('message_cercle_version') WHERE id = :id")
+			.param("t", texte).param("le", Timestamp.from(maintenant)).param("id", message).update();
+	}
+
+	/** Supprimé pour tout le monde : il garde sa place, sans texte ni fichiers. Renvoie les fichiers qu'il portait. */
+	List<UUID> supprimer(UUID message, Instant maintenant) {
+		List<UUID> pieces = base.sql("SELECT pieces FROM message_cercle WHERE id = :id").param("id", message)
+			.query((rs, n) -> pieces(rs)).optional().orElse(List.of());
+		base.sql("""
+				UPDATE message_cercle SET texte = NULL, pieces = '{}', supprime_le = :le, version = nextval('message_cercle_version')
+				WHERE id = :id AND supprime_le IS NULL
+				""").param("le", Timestamp.from(maintenant)).param("id", message).update();
+		return pieces;
+	}
+
+	/** Une réaction a changé : le message change de version pour que les autres membres la voient. */
+	void toucher(UUID message) {
+		base.sql("UPDATE message_cercle SET version = nextval('message_cercle_version') WHERE id = :id").param("id", message).update();
 	}
 
 	private Message inserer(UUID cercle, UUID auteur, String type, String texte, String fait, String prevu, String bloque,
@@ -238,7 +279,12 @@ class SalonCercle {
 				rs.getString("point_prevu"), rs.getString("point_bloque"), rs.getString("evenement"), leTour,
 				rs.getObject("evenement_personne", UUID.class), resolu == null ? null : resolu.toInstant(),
 				rs.getObject("resolu_par", UUID.class), rs.getObject("appel_id", UUID.class), rs.getBoolean("appel_en_cours"),
-				rs.getTimestamp("envoye_le").toInstant(), pieces(rs));
+				rs.getTimestamp("envoye_le").toInstant(), pieces(rs), rs.getObject("reponse_a", UUID.class),
+				instant(rs.getTimestamp("modifie_le")), instant(rs.getTimestamp("supprime_le")), rs.getLong("version"));
+	}
+
+	private static Instant instant(Timestamp t) {
+		return t == null ? null : t.toInstant();
 	}
 
 	/** Un tableau PostgreSQL de UUID, écrit en texte (`{a,b}`) : portable quel que soit le pilote. */

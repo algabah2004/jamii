@@ -53,6 +53,7 @@ class SalonCercleTest {
 	private MvcTestResult envoyer(String methode, String uri, UtilisateurConnecte qui, String corps) {
 		var requete = switch (methode) {
 			case "PUT" -> mvc.put().uri(uri);
+			case "PATCH" -> mvc.patch().uri(uri);
 			case "DELETE" -> mvc.delete().uri(uri);
 			default -> mvc.post().uri(uri);
 		};
@@ -121,10 +122,11 @@ class SalonCercleTest {
 		assertThat(envoi).hasStatus(HttpStatus.CREATED);
 		assertThat(envoi).bodyJson().extractingPath("$.texte").isEqualTo("On se partage les écrans ?");
 		assertThat(envoi).bodyJson().extractingPath("$.auteur.nom").isEqualTo("Kofi");
-		long numero = ((Number) com.jayway.jsonpath.JsonPath.read(envoi.getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8), "$.numero")).longValue();
+		// `apres` : la plus grande version connue (#157) : on reçoit les nouveaux messages et ceux qui ont changé.
+		long version = ((Number) com.jayway.jsonpath.JsonPath.read(envoi.getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8), "$.version")).longValue();
 
 		envoyer("POST", salon(c) + "/messages", c.membres().get(2), "{\"type\":\"texte\",\"texte\":\"Je prends la connexion\"}");
-		var nouveaux = lire(salon(c) + "?apres=" + numero, c.createur());
+		var nouveaux = lire(salon(c) + "?apres=" + version, c.createur());
 		assertThat(nouveaux).bodyJson().extractingPath("$.elements.length()").isEqualTo(1);
 		assertThat(nouveaux).bodyJson().extractingPath("$.elements[0].texte").isEqualTo("Je prends la connexion");
 
@@ -132,6 +134,50 @@ class SalonCercleTest {
 			.hasStatus(HttpStatus.BAD_REQUEST);
 		assertThat(envoyer("POST", salon(c) + "/messages", c.createur(), "{\"type\":\"evenement\",\"texte\":\"triche\"}"))
 			.hasStatus(HttpStatus.BAD_REQUEST);
+	}
+
+	private static String champ(MvcTestResult r, String chemin) throws Exception {
+		return String.valueOf((Object) com.jayway.jsonpath.JsonPath.read(r.getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8), chemin));
+	}
+
+	@Test
+	void repondre_modifier_reagir_supprimer_et_les_autres_le_voient_a_la_relecture() throws Exception {
+		Cercle c = cercleTire();
+		var kofi = c.membres().get(1);
+		var fatou = c.membres().get(2);
+		var question = envoyer("POST", salon(c) + "/messages", kofi, "{\"type\":\"texte\",\"texte\":\"Qui prend les écrans ?\"}");
+		String idQuestion = champ(question, "$.id");
+		var reponse = envoyer("POST", salon(c) + "/messages", fatou, "{\"type\":\"texte\",\"texte\":\"Moi\",\"reponseA\":\"" + idQuestion + "\"}");
+		assertThat(reponse).hasStatus(HttpStatus.CREATED);
+		assertThat(reponse).bodyJson().extractingPath("$.reponseA.auteur.nom").isEqualTo("Kofi");
+		assertThat(reponse).bodyJson().extractingPath("$.reponseA.texte").isEqualTo("Qui prend les écrans ?");
+		long vu = Long.parseLong(champ(reponse, "$.version"));
+
+		// Kofi corrige sa question, Fatou y réagit : Awa, qui relit depuis `vu`, reçoit la question à jour.
+		assertThat(envoyer("PATCH", salon(c) + "/messages/" + idQuestion, kofi, "{\"texte\":\"Qui prend les écrans de connexion ?\"}"))
+			.hasStatusOk().bodyJson().extractingPath("$.modifieLe").isNotNull();
+		assertThat(envoyer("POST", salon(c) + "/messages/" + idQuestion + "/reactions", fatou, "{\"emoji\":\"👍\",\"active\":true}"))
+			.hasStatusOk().bodyJson().extractingPath("$.reactions[0].nombre").isEqualTo(1);
+		var relu = lire(salon(c) + "?apres=" + vu, c.createur());
+		assertThat(relu).bodyJson().extractingPath("$.elements.length()").isEqualTo(1);
+		assertThat(relu).bodyJson().extractingPath("$.elements[0].texte").isEqualTo("Qui prend les écrans de connexion ?");
+		assertThat(relu).bodyJson().extractingPath("$.elements[0].reactions[0].noms[0]").isEqualTo("Fatou");
+
+		// Seul l'auteur modifie ou supprime ; un message supprimé garde sa place, sans texte ni réactions.
+		assertThat(envoyer("PATCH", salon(c) + "/messages/" + idQuestion, fatou, "{\"texte\":\"pirate\"}")).hasStatus(HttpStatus.CONFLICT);
+		assertThat(envoyer("DELETE", salon(c) + "/messages/" + idQuestion, fatou, null)).hasStatus(HttpStatus.FORBIDDEN);
+		assertThat(envoyer("DELETE", salon(c) + "/messages/" + idQuestion, kofi, null)).hasStatus(HttpStatus.NO_CONTENT);
+		var apres = lire(salon(c) + "?apres=" + vu, c.createur());
+		assertThat(apres).bodyJson().extractingPath("$.elements[0].supprime").isEqualTo(true);
+		assertThat(apres).bodyJson().extractingPath("$.elements[0].texte").isNull();
+		assertThat(apres).bodyJson().extractingPath("$.elements[0].reactions.length()").isEqualTo(0);
+		assertThat(envoyer("POST", salon(c) + "/messages/" + idQuestion + "/reactions", fatou, "{\"emoji\":\"👍\",\"active\":true}"))
+			.hasStatus(HttpStatus.CONFLICT);
+		assertThat(envoyer("POST", salon(c) + "/messages/" + idQuestion + "/reactions", fatou, "{\"emoji\":\"ok\",\"active\":true}"))
+			.hasStatus(HttpStatus.BAD_REQUEST);
+		// La réponse cite maintenant un message supprimé.
+		var tout = lire(salon(c), c.createur());
+		assertThat(tout).bodyJson().extractingPath("$.elements[-1].reponseA.supprime").isEqualTo(true);
 	}
 
 	@Test

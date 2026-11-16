@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import dev.jamii.api.auth.Annuaire;
+import dev.jamii.api.reactions.Reactions;
 import dev.jamii.api.auth.Compte;
 import dev.jamii.api.auth.UtilisateurConnecte;
 import dev.jamii.api.profils.ProfilsPublies;
@@ -286,7 +287,7 @@ class ReseauController {
 			@PathVariable String messageId) {
 		var pieces = messagerie.supprimer(moi.id(), personne(personneId), personne(messageId));
 		fichiers.supprimerPrives(pieces, moi.id());
-		reactions.effacer(personne(messageId));
+		reactions.effacer(Reactions.Table.MESSAGE, personne(messageId));
 		return ResponseEntity.noContent().build();
 	}
 
@@ -302,12 +303,17 @@ class ReseauController {
 		if (ligne.supprimeLe() != null) {
 			throw ErreurReseau.conflit("message_supprime", "Ce message a été supprimé");
 		}
-		reactions.changer(id, moi.id(), corps.emoji(), corps.active(), Instant.now());
+		if (!Reactions.estUnEmoji(corps.emoji())) {
+			throw ErreurReseau.validation("emoji", "format_invalide");
+		}
+		if (reactions.changer(Reactions.Table.MESSAGE, id, moi.id(), corps.emoji(), corps.active(), Instant.now()) == Reactions.Resultat.TROP) {
+			throw ErreurReseau.conflit("trop_de_reactions", "Dix réactions au plus par message");
+		}
 		return vuesReactions(List.of(id), moi.id()).getOrDefault(id, List.of());
 	}
 
 	private Map<UUID, List<ReactionVue>> vuesReactions(List<UUID> messages, UUID moi) {
-		var brutes = reactions.pour(messages, moi);
+		var brutes = reactions.pour(Reactions.Table.MESSAGE, messages, moi);
 		Map<UUID, Compte> comptes = annuaire.lire(brutes.values().stream().flatMap(List::stream)
 			.flatMap(r -> r.personnes().stream()).distinct().toList());
 		Map<UUID, List<ReactionVue>> vues = new java.util.HashMap<>();
