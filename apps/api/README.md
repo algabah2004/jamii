@@ -74,6 +74,8 @@ Les données ne viennent **jamais** d'une migration : sans le profil `demo`, une
 
 Pour se connecter comme Awa : demander un lien de connexion pour `awa@demo.jamii.test`, puis ouvrir le lien affiché dans la console (`EMAIL_AFFICHER_LIEN=true`, en local seulement).
 
+**Un vrai compte dans la démo** : `JAMII_DEMO_COMPTE=<login GitHub>` (profil `demo` seulement). Au démarrage suivant, ce compte, qui doit s'être connecté une fois, reçoit le **Cercle des bâtisseurs**, où son projet (Jamii) est le tour en cours, au 8ᵉ jour sur 14. Ce cercle a un tour livré, des jalons et des tâches datés pour le calendrier, et un salon animé. Le compte reçoit aussi deux communautés, avec Jamii montré dans « Montre ton projet », des contacts, une demande de contact à accepter, une conversation avec Kofi, une équipe au hackathon ouvert d'Abidjan et une mission publiée avec deux propositions. Le cercle n'est créé qu'une fois : ses dates partent de ce démarrage-là. Pour le remettre au jour 8, supprimer le cercle (`DELETE FROM cercle WHERE nom = 'Cercle des bâtisseurs'`) puis redémarrer l'API.
+
 ## Santé
 
 | Route | Usage |
