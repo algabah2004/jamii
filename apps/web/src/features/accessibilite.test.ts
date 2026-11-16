@@ -31,7 +31,8 @@ async function violations(chemin: string, attendu: string) {
   const routeur = createRouter({ history: createMemoryHistory(), routes })
   await routeur.push(chemin)
   await routeur.isReady()
-  page = mount(RouterView, { global: { plugins: [i18n, routeur] }, attachTo: document.body })
+  // La vraie TransitionGroup : son remplaçant de test glisse une balise entre <ul> et <li>, ce qu'AXE refuse.
+  page = mount(RouterView, { global: { plugins: [i18n, routeur], stubs: { 'transition-group': false } }, attachTo: document.body })
   await vi.waitFor(() => expect(page!.find(attendu).exists()).toBe(true), { timeout: 4000 })
   await flushPromises()
   const resultat = await axe.run(page.element as HTMLElement, {

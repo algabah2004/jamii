@@ -1781,7 +1781,6 @@
     },
     "messages": {
       "titre": "Messages",
-      "intro": "Write to any developer, with or without a circle.",
       "vide": "No conversations yet. Start by messaging one of your contacts.",
       "toi": "You:",
       "invitationRecue": "Invites you to join “{cercle}”",
@@ -1793,7 +1792,6 @@
       "ecrire": "Your message to {nom}",
       "envoyer": "Send",
       "lien": "Messages | Messages, {n} unread | Messages, {n} unread",
-      "espace": "Your conversation space",
       "conversations": "Conversations",
       "nouveau": "New message",
       "rechercher": "Search for someone…",
