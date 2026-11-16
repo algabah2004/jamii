@@ -213,6 +213,39 @@ paths:
         '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
         '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
 
+  /api/conversations/{personneId}/messages/{messageId}/reactions:
+    post:
+      tags: [messages]
+      operationId: reagirAuMessage
+      summary: Ajouter ou retirer ma réaction (un emoji)
+      description: |
+        Une réaction par emoji et par personne (répéter ne change rien) ; 10 emojis différents au plus par personne et par
+        message (409 `trop_de_reactions`). Seul un emoji est accepté (400). 409 `message_supprime`.
+      security: [{ session: [], csrf: [] }]
+      parameters:
+        - $ref: '#/components/parameters/PersonneId'
+        - { name: messageId, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [emoji, active]
+              properties:
+                emoji: { type: string, maxLength: 32 }
+                active: { type: boolean, description: 'true pour ajouter, false pour retirer.' }
+      responses:
+        '200':
+          description: Les réactions à jour du message.
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Reaction' } }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+
   /api/conversations/{personneId}/messages/{messageId}/transfert:
     parameters:
       - $ref: '#/components/parameters/PersonneId'
@@ -860,9 +893,22 @@ components:
         sorte: { type: [string, 'null'], enum: [image, video, document, audio, null], description: 'La sorte de sa première pièce jointe.' }
         supprime: { type: boolean }
 
+    Reaction:
+      type: object
+      required: [emoji, nombre, deMoi, noms]
+      properties:
+        emoji: { type: string, maxLength: 32 }
+        nombre: { type: integer, minimum: 1 }
+        deMoi: { type: boolean, description: "J'ai réagi avec cet emoji." }
+        noms:
+          type: array
+          maxItems: 10
+          description: 'Qui a réagi (10 au plus), pour le survol. « moi » pour moi.'
+          items: { type: string }
+
     Message:
       type: object
-      required: [id, deMoi, texte, envoyeLe, piecesJointes, supprime, transfere]
+      required: [id, deMoi, texte, envoyeLe, piecesJointes, supprime, transfere, reactions]
       properties:
         id: { type: string, format: uuid }
         deMoi: { type: boolean, description: "C'est moi qui l'ai écrit." }
@@ -873,6 +919,10 @@ components:
         modifieLe: { type: [string, 'null'], format: date-time, description: 'Quand il a été corrigé, s''il l''a été.' }
         supprime: { type: boolean, description: 'Supprimé pour tout le monde : texte et pièces jointes vides.' }
         transfere: { type: boolean, description: 'Une copie transférée depuis une autre conversation.' }
+        reactions:
+          type: array
+          description: 'Les réactions, dans l''ordre de la première de chaque emoji. Vide pour un message supprimé.'
+          items: { $ref: '#/components/schemas/Reaction' }
         texte: { type: string, description: 'Texte mis en forme (petit Markdown), affiché échappé.' }
         piecesJointes: { type: array, maxItems: 6, items: { $ref: './fichiers.yaml#/components/schemas/PieceJointe' } }
         invitation:

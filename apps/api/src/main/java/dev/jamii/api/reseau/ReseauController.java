@@ -92,7 +92,14 @@ class ReseauController {
 
 	record Message(UUID id, boolean deMoi, String texte, Invitation invitation, Instant envoyeLe, Instant luLe,
 			Appel appel, List<dev.jamii.api.fichiers.Fichiers.Piece> piecesJointes, Citation reponseA, Instant modifieLe,
-			boolean supprime, boolean transfere) {
+			boolean supprime, boolean transfere, List<ReactionVue> reactions) {
+	}
+
+	/** 👍 3 : l'emoji, combien, si j'en suis, et les prénoms montrés au survol (10 au plus). */
+	record ReactionVue(String emoji, int nombre, boolean deMoi, List<String> noms) {
+	}
+
+	record NouvelleReaction(String emoji, Boolean active) {
 	}
 
 	record Conversation(Personne personne, Message dernierMessage, int nonLus) {
@@ -142,6 +149,14 @@ class ReseauController {
 	@org.springframework.beans.factory.annotation.Autowired
 	void ecriture(Ecriture ecriture) {
 		this.ecriture = ecriture;
+	}
+
+	private Reactions reactions;
+
+	/** Les réactions aux messages (#157). */
+	@org.springframework.beans.factory.annotation.Autowired
+	void reactions(Reactions reactions) {
+		this.reactions = reactions;
 	}
 
 	/** Les appels WebRTC (#157), pour les cartes de la conversation. */
@@ -235,7 +250,8 @@ class ReseauController {
 		var invitations = invitations(page.elements());
 		var appelsDuFil = appelsDe(page.elements());
 		var cites = messagerie.lignes(page.elements().stream().map(Messagerie.Ligne::reponseA).filter(java.util.Objects::nonNull).toList());
-		return new Fil(personne(compte), page.elements().stream().map(m -> message(m, moi.id(), invitations, appelsDuFil, cites)).toList(),
+		var reagi = vuesReactions(page.elements().stream().map(Messagerie.Ligne::id).toList(), moi.id());
+		return new Fil(personne(compte), page.elements().stream().map(m -> message(m, moi.id(), invitations, appelsDuFil, cites, reagi)).toList(),
 				page.curseurSuivant());
 	}
 
@@ -270,7 +286,35 @@ class ReseauController {
 			@PathVariable String messageId) {
 		var pieces = messagerie.supprimer(moi.id(), personne(personneId), personne(messageId));
 		fichiers.supprimerPrives(pieces, moi.id());
+		reactions.effacer(personne(messageId));
 		return ResponseEntity.noContent().build();
+	}
+
+	/** Ajouter (`active: true`) ou retirer une réaction ; renvoie les réactions à jour du message. */
+	@PostMapping("/api/conversations/{personneId}/messages/{messageId}/reactions")
+	List<ReactionVue> reagir(@AuthenticationPrincipal UtilisateurConnecte moi, @PathVariable String personneId,
+			@PathVariable String messageId, @RequestBody(required = false) NouvelleReaction corps) {
+		if (corps == null || corps.active() == null) {
+			throw ErreurReseau.validation(corps == null ? "emoji" : "active", "obligatoire");
+		}
+		UUID id = personne(messageId);
+		var ligne = messagerie.dansLaConversation(id, moi.id(), personne(personneId)).orElseThrow(ErreurReseau::introuvable);
+		if (ligne.supprimeLe() != null) {
+			throw ErreurReseau.conflit("message_supprime", "Ce message a été supprimé");
+		}
+		reactions.changer(id, moi.id(), corps.emoji(), corps.active(), Instant.now());
+		return vuesReactions(List.of(id), moi.id()).getOrDefault(id, List.of());
+	}
+
+	private Map<UUID, List<ReactionVue>> vuesReactions(List<UUID> messages, UUID moi) {
+		var brutes = reactions.pour(messages, moi);
+		Map<UUID, Compte> comptes = annuaire.lire(brutes.values().stream().flatMap(List::stream)
+			.flatMap(r -> r.personnes().stream()).distinct().toList());
+		Map<UUID, List<ReactionVue>> vues = new java.util.HashMap<>();
+		brutes.forEach((id, liste) -> vues.put(id, liste.stream().map(r -> new ReactionVue(r.emoji(), r.nombre(), r.deMoi(),
+				r.personnes().stream().map(comptes::get).filter(java.util.Objects::nonNull)
+					.map(c -> c.id().equals(moi) ? "moi" : c.nom()).toList())).toList()));
+		return vues;
 	}
 
 	@PostMapping("/api/conversations/{personneId}/messages/{messageId}/transfert")
@@ -381,6 +425,11 @@ class ReseauController {
 
 	private Message message(Messagerie.Ligne l, UUID moi, Map<UUID, CercleResume> invitations,
 			Map<UUID, Appels.Appel> appelsParMessage, Map<UUID, Messagerie.Ligne> cites) {
+		return message(l, moi, invitations, appelsParMessage, cites, Map.of());
+	}
+
+	private Message message(Messagerie.Ligne l, UUID moi, Map<UUID, CercleResume> invitations,
+			Map<UUID, Appels.Appel> appelsParMessage, Map<UUID, Messagerie.Ligne> cites, Map<UUID, List<ReactionVue>> reagi) {
 		Citation citation = null;
 		Messagerie.Ligne cite = l.reponseA() == null ? null : cites.get(l.reponseA());
 		if (cite != null) {
@@ -392,7 +441,7 @@ class ReseauController {
 		}
 		if (l.supprimeLe() != null) {
 			return new Message(l.id(), l.expediteurId().equals(moi), "", null, l.envoyeLe(), l.luLe(), null, List.of(), citation,
-					null, true, l.transfere());
+					null, true, l.transfere(), List.of());
 		}
 		CercleResume cercle = l.cercleId() == null ? null : invitations.get(l.cercleId());
 		Appels.Appel webrtc = appelsParMessage.get(l.id());
@@ -407,7 +456,8 @@ class ReseauController {
 					l.envoyeLe().isAfter(Instant.now().minus(Messagerie.DUREE_APPEL)), null, true, null);
 		}
 		return new Message(l.id(), l.expediteurId().equals(moi), l.texte(), cercle == null ? null : new Invitation(cercle),
-				l.envoyeLe(), l.luLe(), appel, fichiers.decrire(l.pieces()), citation, l.modifieLe(), false, l.transfere());
+				l.envoyeLe(), l.luLe(), appel, fichiers.decrire(l.pieces()), citation, l.modifieLe(), false, l.transfere(),
+				reagi.getOrDefault(l.id(), List.of()));
 	}
 
 	private static CercleResume resume(LectureCercles.CercleLu c, Map<UUID, Compte> comptes) {

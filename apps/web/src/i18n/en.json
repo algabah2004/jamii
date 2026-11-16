@@ -3135,5 +3135,15 @@
     "aucunAbonne": "Nobody follows this profile yet.",
     "aucunAbonnement": "This profile does not follow anyone yet.",
     "etDautres": "and {n} more"
+  },
+  "reactions": {
+    "reagir": "React",
+    "avec": "React with {emoji}",
+    "autres": "More emojis",
+    "titre": "Reactions",
+    "toi": "You",
+    "quiEtAutres": "{noms} and {n} others",
+    "pastille": "{emoji}: {n} reaction, {qui} | {emoji}: {n} reaction, {qui} | {emoji}: {n} reactions, {qui}",
+    "erreur": "The reaction could not be saved. Try again."
   }
 }

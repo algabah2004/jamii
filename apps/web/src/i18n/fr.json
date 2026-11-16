@@ -3135,5 +3135,15 @@
     "aucunAbonne": "Personne ne suit encore ce profil.",
     "aucunAbonnement": "Ce profil ne suit encore personne.",
     "etDautres": "et {n} autres"
+  },
+  "reactions": {
+    "reagir": "Réagir",
+    "avec": "Réagir avec {emoji}",
+    "autres": "Plus d’emojis",
+    "titre": "Réactions",
+    "toi": "Toi",
+    "quiEtAutres": "{noms} et {n} autres",
+    "pastille": "{emoji} : {n} réaction, {qui} | {emoji} : {n} réaction, {qui} | {emoji} : {n} réactions, {qui}",
+    "erreur": "La réaction n’a pas pu être enregistrée. Réessaie."
   }
 }
