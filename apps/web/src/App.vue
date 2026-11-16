@@ -25,7 +25,9 @@ watch(etat, (e) => (e === 'connecte' ? suivreAppelsEntrants() : arreterAppelsEnt
 
 <template>
   <a href="#contenu" class="aller-au-contenu">{{ t('menu.allerAuContenu') }}</a>
-  <header class="entete" :class="{ 'entete--scene zone-sombre': $route.name === 'accueil', 'entete--connecte': etat === 'connecte' }">
+  <!-- La capsule de navigation est sombre sur toutes les pages, comme sur l'accueil (zone-sombre), dans les deux thèmes :
+       un repère stable en haut de l'écran, qui tranche sur le contenu clair. -->
+  <header class="entete entete--scene zone-sombre" :class="{ 'entete--connecte': etat === 'connecte' }">
     <div class="entete__interieur verre">
       <RouterLink to="/" class="marque">Jamii<span class="marque__point" aria-hidden="true" /></RouterLink>
       <nav :aria-label="t('menu.principal')">
@@ -169,7 +171,7 @@ main.main--pleine { max-width: none; padding-inline: var(--space-4); }
 .deconnexion { background: none; border: 0; padding: var(--space-2); color: var(--ink-muted); font-size: var(--type-body-sm-size); cursor: pointer; white-space: nowrap; }
 .deconnexion:hover { color: var(--ink); text-decoration: underline; }
 
-/* Sur l'accueil, la capsule prend les couleurs sombres de la scène (classe zone-sombre). */
+/* La capsule prend les couleurs sombres de la scène (classe zone-sombre), sur toutes les pages. */
 .entete.entete--scene { background: transparent; }
 /* Sur la scène, les liens passent au-dessus de lumières vives : texte plus franc. */
 .entete--scene { --ink-muted: color-mix(in srgb, var(--ink) 88%, transparent); }

@@ -136,16 +136,19 @@ img, svg { max-width: 100%; }
     0 12px 40px color-mix(in srgb, var(--midnight) 12%, transparent);
 }
 .verre--teinte { background: color-mix(in srgb, var(--action-soft) 60%, transparent); }
-/* Le fond de toute l'appli : des lueurs aux couleurs de la marque, que l'en-tête de verre floute en défilant.
-   (.fond-verre reste pour compatibilité : le fond est désormais global, sur body.) */
+/* Le fond de toute l'appli : une lueur discrète aux couleurs de la marque, seulement en haut de la page, que l'en-tête
+   de verre floute en défilant. Elle s'efface avant le milieu de l'écran : le contenu reste le sujet, et le contraste
+   des cartes ne baisse pas. (.fond-verre reste pour compatibilité : le fond est désormais global, sur body.) */
 .fond-verre { position: relative; }
 body::before {
   content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
   background:
-    radial-gradient(38% 42% at 12% 18%, color-mix(in srgb, var(--electric-blue) 40%, transparent), transparent 70%),
-    radial-gradient(34% 40% at 88% 28%, color-mix(in srgb, var(--cantaloupe) 34%, transparent), transparent 70%),
-    radial-gradient(40% 40% at 62% 96%, color-mix(in srgb, var(--electric-blue) 20%, transparent), transparent 70%);
+    radial-gradient(42% 36% at 8% 0%, color-mix(in srgb, var(--electric-blue) var(--lueur-bleue, 16%), transparent), transparent 75%),
+    radial-gradient(36% 32% at 96% 0%, color-mix(in srgb, var(--cantaloupe) var(--lueur-orange, 11%), transparent), transparent 75%);
 }
+/* Sur fond clair, la même lueur paraît plus forte : on la baisse encore. */
+:root[data-theme='clair'] { --lueur-bleue: 10%; --lueur-orange: 8%; }
+@media (prefers-color-scheme: light) { :root:not([data-theme='sombre']) { --lueur-bleue: 10%; --lueur-orange: 8%; } }
 /* Transparence réduite : le verre devient opaque. Contraste augmenté : un vrai bord, pas de transparence. */
 @media (prefers-reduced-transparency: reduce) {
   .verre { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
