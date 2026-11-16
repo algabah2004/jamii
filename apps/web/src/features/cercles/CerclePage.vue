@@ -134,7 +134,7 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
 </script>
 
 <template>
-  <section class="cercle-page">
+  <section class="cercle-page" :class="{ 'cercle-page--salon': etat === 'pret' && outil === 'salon' }">
 
     <LienRetour v-if="etat !== 'pret'" to="/cercles">{{ t('cercles.tous') }}</LienRetour>
     <JSquelette v-if="etat === 'chargement'" :nombre="3" />
@@ -148,7 +148,8 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
     </div>
 
     <template v-else-if="cercle">
-      <header class="cercle-tete">
+      <!-- Hors du cercle, un en-tête compact. Dedans, le nom passe en haut de la barre latérale : la place va aux outils. -->
+      <header v-if="!membre" class="cercle-tete">
         <LienRetour to="/cercles">{{ t('cercles.tous') }}</LienRetour>
         <div class="cercle-tete__ligne">
           <h1>{{ cercle.nom }}</h1>
@@ -164,6 +165,15 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
       <div class="espace" :class="{ 'espace--outils': membre }">
       <!-- La barre latérale du cercle : ses outils, puis l'équipe. Sur mobile, une rangée qui défile. -->
       <aside v-if="membre" class="barre-laterale">
+      <header class="identite" data-test="identite-cercle">
+        <RouterLink to="/cercles" class="identite__retour" data-test="tous-les-cercles"><IconeCercle nom="retour" :taille="14" />{{ t('cercles.tous') }}</RouterLink>
+        <h1 class="identite__nom">{{ cercle.nom }}</h1>
+        <p class="identite__infos">{{ cercle.ville ? t('cercles.sousTitre', { n: cercle.membres.length, ville: cercle.ville }) : t('cercles.sousTitreSansVille', { n: cercle.membres.length }) }}</p>
+        <p v-if="cercle.statut === 'ouvert' && cercle.profilsRecherches?.length" class="cercle-tete__profils" data-test="profils-recherches">
+          <span>{{ t('cercles.cherche') }}</span>
+          <span v-for="p in cercle.profilsRecherches" :key="p" class="cercle-tete__profil">{{ t(`cercles.profils.${p}`) }}</span>
+        </p>
+      </header>
       <nav class="outils-nav" :aria-label="t('cercles.onglets.aria')">
         <RouterLink
           v-for="o in OUTILS"
@@ -335,7 +345,9 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
 </template>
 
 <style scoped>
-.cercle-page { display: grid; gap: var(--space-6); width: 100%; max-width: 84rem; margin-inline: auto; }
+.cercle-page { display: grid; gap: var(--space-6); width: 100%; max-width: 96rem; margin-inline: auto; margin-top: calc(-1 * var(--space-4)); }
+/* Même cadre pour toutes les sous-pages (rien ne bouge en passant de l'une à l'autre) ; dans le salon, la discussion
+ * prend toute la hauteur. */
 /* Un en-tête compact : le retour, puis le nom du cercle et ses infos sur une ligne. La place va aux outils. */
 .cercle-tete { display: grid; gap: var(--space-2); padding-top: var(--space-2); }
 .cercle-tete__ligne { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1) var(--space-4); }
@@ -345,7 +357,14 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
 .espace { display: grid; gap: var(--space-6); }
 .espace--outils { grid-template-columns: 14.5rem minmax(0, 1fr); align-items: start; }
 .espace__contenu { display: grid; gap: var(--space-6); min-width: 0; }
-.barre-laterale { position: sticky; top: calc(var(--space-12) + var(--space-8)); display: grid; gap: var(--space-6); }
+/* Le nom du cercle, en haut de la barre latérale : un retour discret vers la liste, le nom, ses infos. */
+.identite { display: grid; gap: 2px; padding: 0 var(--space-3) var(--space-4); border-bottom: 1px solid var(--line); }
+.identite__retour { display: inline-flex; align-items: center; gap: 4px; justify-self: start; margin-bottom: var(--space-2); color: var(--ink-muted); font-size: 0.8125rem; font-weight: 600; text-decoration: none; }
+.identite__retour:hover { color: var(--ink); }
+.identite__retour:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+.identite__nom { margin: 0; font-size: 1.25rem; line-height: 1.2; letter-spacing: -0.3px; overflow-wrap: anywhere; }
+.identite__infos { margin: 0; color: var(--ink-muted); font-size: var(--type-body-sm-size); }
+.barre-laterale { align-content: start; position: sticky; top: calc(var(--space-12) + var(--space-8)); display: grid; gap: var(--space-6); }
 .outils-nav { display: grid; gap: 2px; }
 .outil-lien {
   display: flex; align-items: center; gap: var(--space-3); min-height: 42px; padding: 0 var(--space-3); border-radius: var(--radius-md);

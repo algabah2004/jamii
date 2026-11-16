@@ -5,7 +5,7 @@
  */
 export type NomIcone =
   | 'qg' | 'salon' | 'taches' | 'points' | 'decisions' | 'calendrier' | 'cercle'
-  | 'creation' | 'arrivee' | 'tirage' | 'depart' | 'livre' | 'fin' | 'coche' | 'appel' | 'priorite' | 'fermer' | 'plus'
+  | 'creation' | 'arrivee' | 'tirage' | 'depart' | 'livre' | 'fin' | 'coche' | 'appel' | 'priorite' | 'fermer' | 'plus' | 'retour' | 'bloque' | 'suivant'
 
 withDefaults(defineProps<{ nom: NomIcone; taille?: number }>(), { taille: 18 })
 
@@ -27,6 +27,9 @@ const TRACES: Record<NomIcone, string> = {
   priorite: 'M10 16V4.5M5.5 9 10 4.5 14.5 9',
   fermer: 'M5.5 5.5l9 9M14.5 5.5l-9 9',
   plus: 'M10 4.5v11M4.5 10h11',
+  retour: 'M12.5 4.5 7 10l5.5 5.5',
+  bloque: 'M10 3.5a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13zM10 6.5v4.5M10 13.5v.01',
+  suivant: 'M4 10h11.5M11 5.5l4.5 4.5-4.5 4.5',
   appel: 'M3 6.5A1.5 1.5 0 0 1 4.5 5h7A1.5 1.5 0 0 1 13 6.5v7a1.5 1.5 0 0 1-1.5 1.5h-7A1.5 1.5 0 0 1 3 13.5zM13 9l4-2.5v7L13 11',
 }
 </script>

@@ -1786,7 +1786,22 @@
       "produit": "Planning, priorités, suivi",
       "test": "Tests, qualité, recette"
     },
-    "cherche": "On cherche :"
+    "cherche": "On cherche :",
+    "points": {
+      "ontRepondu": "personne n’a encore répondu | a répondu | ont répondu",
+      "repondu": "a répondu",
+      "pasEncore": "pas encore répondu",
+      "uneFoisParJour": "Un point par jour, visible de tout le cercle.",
+      "aiderAuSalon": "Aider {nom} dans le salon"
+    },
+    "decisions": {
+      "aide": "Ce que l’équipe a tranché, écrit une fois et retrouvé sans fouiller le salon.",
+      "registreTenuPar": "Registre tenu par",
+      "compte": "décision | décision | décisions",
+      "tour": "Tour {n}",
+      "tourAvecTitre": "Tour {n} · {titre}",
+      "horsTour": "Avant les tours"
+    }
   },
   "reseau": {
     "competences": "Compétences",

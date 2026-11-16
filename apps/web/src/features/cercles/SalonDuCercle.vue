@@ -593,7 +593,8 @@ const contexte = computed(() => {
 
 <style scoped>
 /* Une seule carte, à la hauteur de l'écran : la barre, le fil qui défile, la saisie collée en bas. */
-.salon { display: flex; flex-direction: column; height: clamp(28rem, calc(100dvh - 13.5rem), 56rem); padding: 0; overflow: hidden; }
+/* Le salon prend tout l'écran sous la barre du site, comme une messagerie : le fil défile, la saisie reste en bas. */
+.salon { display: flex; flex-direction: column; height: max(28rem, calc(100dvh - var(--salon-marge, 7rem))); padding: 0; overflow: hidden; }
 
 .salon__barre { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-4) var(--space-6); border-bottom: 1px solid var(--line); }
 .salon__titres { display: grid; gap: 2px; min-width: 0; }
