@@ -1320,7 +1320,8 @@
       "cercle_incomplet": "Some members are still missing.",
       "idees_manquantes": "Every member must share an idea first.",
       "autre": "That did not work. Try again in a moment.",
-      "tour_non_en_cours": "This turn is no longer in progress."
+      "tour_non_en_cours": "This turn is no longer in progress.",
+      "backlog_invalide": "Check the document and backlog tasks."
     },
     "nouveau": {
       "titre": "Create a circle",
@@ -1673,6 +1674,38 @@
       "ajouterEtape": "Add",
       "marquerAtteinte": "Mark “{titre}” reached",
       "reserveCalendrier": "The turn's calendar is kept by its project lead."
+    },
+    "dossier": {
+      "titre": "Prepare the project",
+      "cahier": "Project specification",
+      "facultatif": "Optional",
+      "cahierAide": "Share a PDF, Word or text document describing the requirements, up to 10 MB.",
+      "joindre": "Attach a document",
+      "remplacer": "Replace document",
+      "retirer": "Remove",
+      "visibilite": "Available to circle members once your idea is saved.",
+      "backlog": "Project backlog",
+      "backlogAide": "Import a CSV: title, description, priority and due date (YYYY-MM-DD). Commas or semicolons, up to {n} tasks.",
+      "importer": "Upload a CSV",
+      "modele": "Download CSV template",
+      "tachesPretes": "No tasks | 1 task ready | {n} tasks ready",
+      "creationAuTour": "These tasks will be created automatically when your turn starts, with no assignee.",
+      "voir": "View project brief",
+      "csvTaille": "The CSV exceeds 1 MB. Nothing was imported.",
+      "csvLecture": "Unable to read this CSV. Try the provided template.",
+      "ligne": "Line {n}",
+      "ignorer": "Cancel this import",
+      "csvErreurs": {
+        "format": "Check the columns and quotation marks.",
+        "entete": "Add a title (or titre) column.",
+        "titre": "The title must contain 3 to 160 characters.",
+        "description": "The description exceeds 2,000 characters.",
+        "priorite": "Expected priority: high, normal or low.",
+        "echeance": "Expected date: YYYY-MM-DD, with a valid day.",
+        "doublon": "This title is already in the CSV.",
+        "limite": "The CSV exceeds 100 tasks.",
+        "vide": "The CSV contains no tasks."
+      }
     }
   },
   "reseau": {

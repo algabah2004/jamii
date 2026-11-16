@@ -18,10 +18,14 @@ import dev.jamii.api.systalink.ChiffresDesModules;
 @Service
 public class Projets implements ChiffresDesModules.Projets {
 
-	private final JdbcClient base;
+	public record TachePrevue(String titre, String description, String priorite, java.time.LocalDate echeance) {}
 
-	Projets(JdbcClient base) {
+	private final JdbcClient base;
+	private final TachesEtJalons taches;
+
+	Projets(JdbcClient base, TachesEtJalons taches) {
 		this.base = base;
+		this.taches = taches;
 	}
 
 	/**
@@ -64,6 +68,16 @@ public class Projets implements ChiffresDesModules.Projets {
 				.param("projet", id).param("membre", membre).param("t", t).update();
 		}
 		return id;
+	}
+
+	/** Appelé une seule fois à la création du projet d'un tour, dans la même transaction. */
+	@Transactional
+	public void initialiserBacklog(UUID projet, UUID auteur, List<TachePrevue> backlog, Instant maintenant) {
+		for (int i = 0; i < backlog.size(); i++) {
+			var t = backlog.get(i);
+			// La liste des tâches trie par date puis identifiant : préserver l’ordre du CSV à la microseconde.
+			taches.creerTache(projet, auteur, t.titre(), t.description(), t.priorite(), null, null, t.echeance(), maintenant.plusNanos(i * 1000L));
+		}
 	}
 
 	/** Le tour est livré : le projet passe à `livre` (sauf s'il a été abandonné). Renvoie faux si rien n'a changé. */

@@ -1320,7 +1320,8 @@
       "cercle_incomplet": "Il manque encore des membres.",
       "idees_manquantes": "Chaque membre doit d'abord déposer son idée.",
       "autre": "Ça n'a pas marché. Réessaie dans un instant.",
-      "tour_non_en_cours": "Ce tour n'est plus en cours."
+      "tour_non_en_cours": "Ce tour n'est plus en cours.",
+      "backlog_invalide": "Vérifie le document et les tâches du backlog."
     },
     "nouveau": {
       "titre": "Créer un cercle",
@@ -1673,6 +1674,38 @@
       "ajouterEtape": "Ajouter",
       "marquerAtteinte": "Marquer « {titre} » atteinte",
       "reserveCalendrier": "Le calendrier du tour est tenu par son chef de projet."
+    },
+    "dossier": {
+      "titre": "Préparer le projet",
+      "cahier": "Cahier des charges",
+      "facultatif": "Facultatif",
+      "cahierAide": "Décris le besoin dans un document PDF, Word ou texte, jusqu’à 10 Mo.",
+      "joindre": "Joindre un document",
+      "remplacer": "Remplacer le document",
+      "retirer": "Retirer",
+      "visibilite": "Consultable par les membres du cercle après enregistrement de l’idée.",
+      "backlog": "Backlog du projet",
+      "backlogAide": "Importe ton CSV : titre, description, priorité et échéance (AAAA-MM-JJ). Virgule ou point-virgule, jusqu’à {n} tâches.",
+      "importer": "Charger un CSV",
+      "modele": "Télécharger le modèle CSV",
+      "tachesPretes": "Aucune tâche | 1 tâche prête | {n} tâches prêtes",
+      "creationAuTour": "Ces tâches seront créées automatiquement à l’ouverture de ton tour, sans responsable attribué.",
+      "voir": "Voir le dossier du projet",
+      "csvTaille": "Le CSV dépasse 1 Mo. Aucun import effectué.",
+      "csvLecture": "Impossible de lire ce CSV. Réessaie avec le modèle proposé.",
+      "ligne": "Ligne {n}",
+      "ignorer": "Annuler cet import",
+      "csvErreurs": {
+        "format": "Vérifie les colonnes et les guillemets.",
+        "entete": "Ajoute une colonne titre (ou title).",
+        "titre": "Le titre doit contenir entre 3 et 160 caractères.",
+        "description": "La description dépasse 2 000 caractères.",
+        "priorite": "Priorité attendue : haute, normale ou basse.",
+        "echeance": "Date attendue : AAAA-MM-JJ, avec un jour valide.",
+        "doublon": "Ce titre est déjà présent dans le CSV.",
+        "limite": "Le CSV dépasse 100 tâches.",
+        "vide": "Le CSV ne contient aucune tâche."
+      }
     }
   },
   "reseau": {

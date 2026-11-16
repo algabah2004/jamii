@@ -33,7 +33,7 @@ class DonneesFichiers implements DonneesPersonnelles {
 
 	@Override
 	public void avantSuppression(UUID utilisateurId, Instant maintenant) {
-		base.sql("DELETE FROM fichier WHERE conversation_avec IS NOT NULL AND (proprietaire_id = :id OR conversation_avec = :id)")
+		base.sql("DELETE FROM fichier WHERE (conversation_avec IS NOT NULL AND (proprietaire_id = :id OR conversation_avec = :id)) OR (cercle_id IS NOT NULL AND proprietaire_id = :id)")
 			.param("id", utilisateurId).update();
 	}
 

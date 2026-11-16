@@ -19,12 +19,15 @@ import dev.jamii.api.auth.DonneesPersonnelles;
 class DonneesCercles implements DonneesPersonnelles {
 
 	record MonCercle(UUID cercleId, String nom, String ville, String statut, boolean createur, Instant rejointLe,
-			String ideeTitre, String ideeDescription, Integer rang, UUID projetId, Instant livreLe, String depotUrl) {
+			String ideeTitre, String ideeDescription, Integer rang, UUID projetId, Instant livreLe, String depotUrl, List<dev.jamii.api.projets.Projets.TachePrevue> backlog) {
 	}
 
 	private final JdbcClient base;
 
-	DonneesCercles(JdbcClient base) {
+	private final DossiersIdees dossiers;
+
+	DonneesCercles(JdbcClient base, DossiersIdees dossiers) {
+		this.dossiers = dossiers;
 		this.base = base;
 	}
 
@@ -50,7 +53,7 @@ class DonneesCercles implements DonneesPersonnelles {
 				return new MonCercle(rs.getObject("id", UUID.class), rs.getString("nom"), rs.getString("ville"),
 						rs.getString("statut"), rs.getBoolean("createur"), rs.getTimestamp("rejoint_le").toInstant(),
 						rs.getString("idee_titre"), rs.getString("idee_description"), rang,
-						rs.getObject("projet_id", UUID.class), livre == null ? null : livre.toInstant(), rs.getString("depot_url"));
+						rs.getObject("projet_id", UUID.class), livre == null ? null : livre.toInstant(), rs.getString("depot_url"), dossiers.backlog(rs.getObject("id", UUID.class), utilisateurId));
 			})
 			.list();
 	}

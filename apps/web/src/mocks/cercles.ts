@@ -3,6 +3,7 @@ import { piecesDe } from './fichiers'
 import type { components } from '../api/generated/cercles'
 
 type Cercle = components['schemas']['Cercle']
+type TacheBacklog = components['schemas']['TacheBacklog']
 type MembreCercle = components['schemas']['MembreCercle']
 type Tour = components['schemas']['Tour']
 type Personne = MembreCercle['personne']
@@ -42,7 +43,7 @@ const nouvelleTache = (titre: string, statut: TacheMock['statut'], creeLe: strin
 })
 let suivantProjet = 1
 
-function ouvrirTour(t: Tour, depuisJours: number, livrees: number, total: number): Tour {
+function ouvrirTour(t: Tour, depuisJours: number, livrees: number, total: number, backlog?: TacheBacklog[]): Tour {
   const projetId = `b1d2c3a4-0000-4000-8000-${String(suivantProjet++).padStart(12, '0')}`
   const creeLe = ilYa(depuisJours)
   const taches = Array.from({ length: total }, (_, i) => nouvelleTache(`Tâche ${i + 1}`, i < livrees ? 'livree' : 'a_faire', creeLe, true))
@@ -56,6 +57,7 @@ function ouvrirTour(t: Tour, depuisJours: number, livrees: number, total: number
     { id: `${projetId.slice(0, -2)}j2`, titre: 'Démo aux premiers utilisateurs', echeance: dansJours(3), statut: 'prevu', ordre: 1 },
     { id: `${projetId.slice(0, -2)}j3`, titre: 'Revue de code', echeance: dansJours(7), statut: 'prevu', ordre: 2 },
   ]
+  if (backlog) taches.splice(0, taches.length, ...backlog.map((t) => Object.assign(nouvelleTache(t.titre, 'a_faire', creeLe), { description: t.description ?? null, priorite: t.priorite ?? 'normale', echeance: t.echeance ?? null })))
   projets.set(projetId, { creeLe, taches, porteurId: t.beneficiaire.id, jalons })
   const nom = slug(PERSONNES.find((x) => x.personne.id === t.beneficiaire.id)?.idee ?? t.beneficiaire.nom)
   return { ...t, statut: 'en_cours', projetId, depot: { fournisseur: 'gitea', url: `https://code.example.com/cercles/${nom}`, cloneUrl: `https://code.example.com/cercles/${nom}.git` } }
@@ -324,9 +326,12 @@ export const handlersCercles = [
     const moi = c?.membres.find((m) => m.personne.id === AWA)
     if (!c || !moi) return erreur('pas_membre', 403)
     if (c.tirage) return erreur('tirage_deja_fait')
-    moi.idee = (await request.json()) as MembreCercle['idee']
+    const corps = (await request.json()) as components['schemas']['DepotIdee']
+    const document = corps.cahierChargesId ? piecesDe([corps.cahierChargesId], undefined, c.id)[0] : null
+    if (corps.cahierChargesId && !document) return erreur('piece_inconnue', 400)
+    moi.idee = { titre: corps.titre, description: corps.description, cahierCharges: document ?? null, backlog: corps.backlog ?? [] }
     moi.aDeposeIdee = true
-    return HttpResponse.json(c)
+    return HttpResponse.json(moi)
   }),
   http.post('/api/cercles/:id/tirage', ({ params }) => {
     const c = trouver(params.id)
@@ -338,7 +343,7 @@ export const handlersCercles = [
     melanger(c.membres).forEach((m, i) => (m.rang = i + 1))
     c.membres.sort((a, b) => a.rang! - b.rang!)
     c.tours = toursPour(c.membres)
-    c.tours[0] = ouvrirTour(c.tours[0]!, 0, 0, 12)
+    c.tours[0] = ouvrirTour(c.tours[0]!, 0, 0, 0, c.membres.find((m) => m.personne.id === c.tours[0]!.beneficiaire.id)?.idee?.backlog)
     c.tourEnCours = 1
     c.tirage = { effectueLe: new Date().toISOString(), parId: AWA }
     c.statut = 'en_cours'
@@ -354,7 +359,7 @@ export const handlersCercles = [
     c.tours[i] = { ...t, statut: 'livre', livreLe: new Date().toISOString() }
     const suivant = c.tours[i + 1]
     if (suivant) {
-      c.tours[i + 1] = ouvrirTour(suivant, 0, 0, 10)
+      c.tours[i + 1] = ouvrirTour(suivant, 0, 0, 0, c.membres.find((m) => m.personne.id === suivant.beneficiaire.id)?.idee?.backlog)
       c.tourEnCours = suivant.numero
     } else {
       c.tourEnCours = null

@@ -301,6 +301,30 @@ export interface components {
             titre: string;
             /** @description Texte brut, affiché échappé. */
             description: string;
+            cahierCharges?: components["schemas"]["PieceJointe"] | null;
+            backlog?: components["schemas"]["TacheBacklog"][];
+        };
+        TacheBacklog: {
+            titre: string;
+            description?: string | null;
+            /**
+             * @default normale
+             * @enum {string}
+             */
+            priorite: "haute" | "normale" | "basse";
+            /** Format: date */
+            echeance?: string | null;
+        };
+        DepotIdee: {
+            titre: string;
+            description: string;
+            /**
+             * Format: uuid
+             * @description Document téléversé avec le cercleId de ce cercle.
+             */
+            cahierChargesId?: string | null;
+            /** @description Remplace le backlog préparé. Les tâches seront créées une seule fois à l’ouverture du tour. */
+            backlog?: components["schemas"]["TacheBacklog"][];
         };
         CercleResume: {
             /** Format: uuid */
@@ -757,7 +781,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Idee"];
+                "application/json": components["schemas"]["DepotIdee"];
             };
         };
         responses: {

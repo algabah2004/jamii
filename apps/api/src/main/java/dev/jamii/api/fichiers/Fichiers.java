@@ -63,6 +63,18 @@ public class Fichiers {
 
 	@Transactional
 	Piece enregistrer(UUID proprietaire, String nomEnvoye, byte[] octets, Instant maintenant, UUID destinataire) {
+		return enregistrer(proprietaire, nomEnvoye, octets, maintenant, destinataire, null);
+	}
+
+	@Transactional
+	Piece enregistrer(UUID proprietaire, String nomEnvoye, byte[] octets, Instant maintenant, UUID destinataire, UUID cercle) {
+		if (cercle != null) {
+			if (destinataire != null) throw new ErreurFichier(400, "destination_invalide", "Une seule destination est possible");
+			if (!base.sql("SELECT EXISTS (SELECT 1 FROM cercle_membre WHERE cercle_id = :c AND utilisateur_id = :u)")
+				.param("c", cercle).param("u", proprietaire).query(Boolean.class).single()) {
+				throw new ErreurFichier(403, "interdit", "Réservé aux membres du cercle");
+			}
+		}
 		if (destinataire != null && (destinataire.equals(proprietaire) || !base.sql("SELECT EXISTS (SELECT 1 FROM utilisateur WHERE id = :id)")
 				.param("id", destinataire).query(Boolean.class).single())) {
 			throw new ErreurFichier(404, "introuvable", "Destinataire introuvable");
@@ -80,22 +92,24 @@ public class Fichiers {
 		UUID id = UUID.randomUUID();
 		String nom = nomPropre(nomEnvoye);
 		base.sql("""
-				INSERT INTO fichier (id, proprietaire_id, nom, type_mime, sorte, taille, cree_le, conversation_avec)
-				VALUES (:id, :p, :nom, :mime, :sorte, :taille, :t, :destinataire)
+				INSERT INTO fichier (id, proprietaire_id, nom, type_mime, sorte, taille, cree_le, conversation_avec, cercle_id)
+				VALUES (:id, :p, :nom, :mime, :sorte, :taille, :t, :destinataire, :cercle)
 				""")
 			.param("id", id).param("p", proprietaire).param("nom", nom).param("mime", type.mime()).param("sorte", type.sorte())
 			.param("taille", (long) octets.length).param("t", Timestamp.from(maintenant))
-			.param("destinataire", destinataire, java.sql.Types.OTHER).update();
+			.param("destinataire", destinataire, java.sql.Types.OTHER).param("cercle", cercle, java.sql.Types.OTHER).update();
 		stockage.ecrire(id, octets);
 		return new Piece(id, nom, type.mime(), type.sorte(), octets.length, url(id));
 	}
 
 	Optional<Contenu> lire(UUID id, UUID moi) {
 		var acces = base.sql("""
-				SELECT conversation_avec IS NOT NULL AS prive FROM fichier f
-				WHERE f.id = :id AND (f.conversation_avec IS NULL OR f.proprietaire_id = :moi OR
+				SELECT (conversation_avec IS NOT NULL OR cercle_id IS NOT NULL) AS prive FROM fichier f
+				WHERE f.id = :id AND ((f.conversation_avec IS NULL AND f.cercle_id IS NULL) OR f.proprietaire_id = :moi OR
 				  (f.conversation_avec = :moi AND EXISTS (SELECT 1 FROM message m WHERE f.id = ANY(m.pieces)
-				    AND m.expediteur_id = f.proprietaire_id AND m.destinataire_id = f.conversation_avec)))
+				    AND m.expediteur_id = f.proprietaire_id AND m.destinataire_id = f.conversation_avec)) OR
+				  (f.cercle_id IS NOT NULL AND EXISTS (SELECT 1 FROM cercle_membre m WHERE m.cercle_id = f.cercle_id AND m.utilisateur_id = :moi)
+				    AND EXISTS (SELECT 1 FROM cercle_membre m WHERE m.cercle_id = f.cercle_id AND m.cahier_charges_id = f.id)))
 				""").param("id", id).param("moi", moi).query((rs, n) -> rs.getBoolean("prive")).optional();
 		if (acces.isEmpty()) return Optional.empty();
 		return decrire(List.of(id)).stream().findFirst().flatMap(p -> stockage.lire(id).map(o -> new Contenu(p, o, acces.get())));
@@ -116,15 +130,19 @@ public class Fichiers {
 	 * (on ne joint pas le fichier de quelqu'un d'autre). Renvoie les identifiants dans l'ordre, ou lève une erreur 400.
 	 */
 	public List<UUID> verifierPieces(Collection<UUID> ids, UUID auteur) {
-		return verifierPieces(ids, auteur, null);
+		return verifierPieces(ids, auteur, null, null);
 	}
 
 	/** Un fichier privé ne peut ni changer de destinataire, ni être joint à un salon public. */
 	public List<UUID> verifierPiecesPrivees(Collection<UUID> ids, UUID auteur, UUID destinataire) {
-		return verifierPieces(ids, auteur, destinataire);
+		return verifierPieces(ids, auteur, destinataire, null);
 	}
 
-	private List<UUID> verifierPieces(Collection<UUID> ids, UUID auteur, UUID destinataire) {
+	public List<UUID> verifierPiecesCercle(Collection<UUID> ids, UUID auteur, UUID cercle) {
+		return verifierPieces(ids, auteur, null, cercle);
+	}
+
+	private List<UUID> verifierPieces(Collection<UUID> ids, UUID auteur, UUID destinataire, UUID cercle) {
 		if (ids == null || ids.isEmpty()) {
 			return List.of();
 		}
@@ -132,8 +150,8 @@ public class Fichiers {
 		if (uniques.size() > PIECES_MAX) {
 			throw new ErreurFichier(400, "trop_de_pieces", "Au plus " + PIECES_MAX + " pièces jointes");
 		}
-		long miennes = base.sql("SELECT count(*) FROM fichier WHERE id IN (:ids) AND proprietaire_id = :a AND conversation_avec IS NOT DISTINCT FROM :destinataire")
-			.param("ids", uniques).param("a", auteur).param("destinataire", destinataire, java.sql.Types.OTHER).query(Long.class).single();
+		long miennes = base.sql("SELECT count(*) FROM fichier WHERE id IN (:ids) AND proprietaire_id = :a AND conversation_avec IS NOT DISTINCT FROM :destinataire AND cercle_id IS NOT DISTINCT FROM :cercle")
+			.param("ids", uniques).param("a", auteur).param("destinataire", destinataire, java.sql.Types.OTHER).param("cercle", cercle, java.sql.Types.OTHER).query(Long.class).single();
 		if (miennes != uniques.size()) {
 			throw new ErreurFichier(400, "piece_inconnue", "Une pièce jointe est introuvable");
 		}
