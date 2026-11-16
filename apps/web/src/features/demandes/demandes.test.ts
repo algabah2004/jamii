@@ -10,8 +10,8 @@ import App from '../../App.vue'
 import { orientationDemo, planDemo, RECOMMANDES } from '../../mocks/demandes'
 import { dateCourte, demandeValide, etatAnalyse, fonctionnalitesParPriorite, jalonsAvecTaches, type Demande } from './demandes'
 
-async function ouvrir(adresse: string) {
-  ;(i18n.global.locale as unknown as { value: string }).value = 'fr'
+async function ouvrir(adresse: string, langue: 'fr' | 'en' = 'fr') {
+  ;(i18n.global.locale as unknown as { value: string }).value = langue
   await chargerSession()
   const routeur = creerRouteur(createMemoryHistory())
   await routeur.push(adresse)
@@ -20,16 +20,43 @@ async function ouvrir(adresse: string) {
   return { page, routeur }
 }
 
-/** Avance dans « Décris ton besoin » : un clic sur « Continuer » par étape, en attendant que chacune arrive. */
-async function suivre(page: Awaited<ReturnType<typeof ouvrir>>['page'], etapes: string[]) {
-  const reperes: Record<string, string> = {
-    details: '[data-test="champ-description"]', questions: '[data-test="questions"]',
-    precisions: '[data-test="secteur"]', envoi: '[data-test="offres"]',
+type Page = Awaited<ReturnType<typeof ouvrir>>['page']
+
+/** Répond à Ayo dans la zone de saisie, comme dans un chat (Entrée envoie). */
+async function repondre(page: Page, texte: string) {
+  await vi.waitFor(() => expect((page.get('[data-test="saisie-ayo"]').element as HTMLTextAreaElement).disabled).toBe(false))
+  await page.get('[data-test="saisie-ayo"]').setValue(texte)
+  await page.get('[data-test="saisie-ayo"]').trigger('keydown', { key: 'Enter' })
+}
+
+/** Passe les questions guidées, puis les précisions, jusqu'au récapitulatif d'Ayo. */
+async function jusquAuRecap(page: Page, avantDeContinuer?: () => Promise<void>) {
+  for (let i = 0; i < 3; i++) {
+    await vi.waitFor(() => expect(page.find('[data-test="passer-question"]').exists() || page.find('[data-test="precisions"]').exists()).toBe(true))
+    if (!page.find('[data-test="passer-question"]').exists()) break
+    await page.get('[data-test="passer-question"]').trigger('click')
   }
-  for (const e of etapes) {
-    await page.get('[data-test="suivant"]').trigger('click')
-    await vi.waitFor(() => expect(page.find(reperes[e]!).exists()).toBe(true))
-  }
+  await vi.waitFor(() => expect(page.find('[data-test="continuer-precisions"]').exists()).toBe(true))
+  if (avantDeContinuer) await avantDeContinuer()
+  await page.get('[data-test="continuer-precisions"]').trigger('click')
+  await vi.waitFor(() => expect(page.find('[data-test="envoyer"]').exists()).toBe(true))
+}
+
+const DETAILS = 'Je couds des vêtements à Thiès et je veux vendre en ligne, avec les commandes sur WhatsApp.'
+
+/** Un exemple dans la zone de saisie, on l'envoie, on raconte les détails : Ayo enchaîne ses questions. */
+async function exempleEtDetails(page: Page) {
+  await vi.waitFor(() => expect(page.find('[data-test="exemple"]').exists()).toBe(true))
+  await page.get('[data-test="exemple"]').trigger('click')
+  await page.get('[data-test="saisie-ayo"]').trigger('keydown', { key: 'Enter' })
+  await repondre(page, DETAILS)
+}
+
+/** Un exemple, puis tout droit jusqu'à l'envoi. */
+async function exempleJusquAuBout(page: Page) {
+  await exempleEtDetails(page)
+  await jusquAuRecap(page)
+  await page.get('[data-test="envoyer"]').trigger('click')
 }
 
 describe('le plan proposé', () => {
@@ -59,12 +86,14 @@ describe('le plan proposé', () => {
 describe('Une PME décrit son besoin', () => {
   it('reprend un exemple, obtient un plan, puis lance le projet', async () => {
     const { page, routeur } = await ouvrir('/demandes/nouvelle')
-    // Une question à la fois : on ne passe pas la première sans dire son besoin.
-    expect(page.get('[data-test="suivant"]').attributes('disabled')).toBeDefined()
-    await page.get('[data-test="exemple"]').trigger('click')
-    await suivre(page, ['details', 'questions', 'precisions', 'envoi'])
+    // Tout se passe sur « Tes demandes », en parlant à Ayo ; on ne répond pas sans rien dire.
+    await vi.waitFor(() => expect(routeur.currentRoute.value.path).toBe('/demandes'))
+    await vi.waitFor(() => expect(page.find('[data-test="envoyer-reponse"]').exists()).toBe(true))
+    expect(page.get('[data-test="envoyer-reponse"]').attributes('disabled')).toBeDefined()
+    await exempleEtDetails(page)
+    await jusquAuRecap(page)
     expect(page.get('[data-test="envoyer"]').attributes('disabled')).toBeUndefined()
-    await page.get('[data-test="demande"]').trigger('submit')
+    await page.get('[data-test="envoyer"]').trigger('click')
     await vi.waitFor(() => expect(routeur.currentRoute.value.name).toBe('demande'), { timeout: 4000 })
     await vi.waitFor(() => expect(page.find('[data-test="plan-propose"]').exists()).toBe(true), { timeout: 4000 })
     expect(page.findAll('[data-test="priorite"]')).toHaveLength(3)
@@ -92,7 +121,7 @@ describe('Une PME décrit son besoin', () => {
     serveur.use(
       http.get('/api/demandes/:id', ({ params }) =>
         HttpResponse.json({
-          id: params.id, titre: 'Piège', description: '<img src=x onerror="alert(1)"> une description longue',
+          id: params.id, titre: '<img src=x onerror="alert(1)">', description: '<img src=x onerror="alert(1)"> une description longue',
           dureeSemaines: null, creeLe: new Date().toISOString(), plan: { statut: 'echouee', erreurCode: 'delai_depasse' },
         }),
       ),
@@ -105,8 +134,7 @@ describe('Une PME décrit son besoin', () => {
 
   it('propose de publier le plan comme mission, à côté du lancement du projet', async () => {
     const { page, routeur } = await ouvrir('/demandes/nouvelle')
-    await page.get('[data-test="exemple"]').trigger('click')
-    await page.get('[data-test="demande"]').trigger('submit')
+    await exempleJusquAuBout(page)
     await vi.waitFor(() => expect(page.find('[data-test="publier-mission"]').exists()).toBe(true), { timeout: 4000 })
     const id = String(routeur.currentRoute.value.params.id)
     const lien = page.get('[data-test="publier-mission"]')
@@ -118,8 +146,7 @@ describe('Une PME décrit son besoin', () => {
   it('signale qu’une autre équipe a déjà pris la demande', async () => {
     serveur.use(http.post('/api/projets', () => HttpResponse.json({ code: 'demande_deja_prise' }, { status: 409 })))
     const { page } = await ouvrir('/demandes/nouvelle')
-    await page.get('[data-test="exemple"]').trigger('click')
-    await page.get('[data-test="demande"]').trigger('submit')
+    await exempleJusquAuBout(page)
     await vi.waitFor(() => expect(page.find('[data-test="lancer"]').exists()).toBe(true), { timeout: 4000 })
     await page.get('[data-test="lancer"]').trigger('click')
     await vi.waitFor(() => expect(page.text()).toContain('Une équipe a déjà lancé un projet sur cette demande'))
@@ -130,7 +157,7 @@ const ID = '0b9e8d7c-6a5f-4e3d-8c2b-1a0f9e8d7c6b'
 const base = { id: ID, titre: 'Nos dossiers', description: 'Le cabinet perd ses dossiers entre associés.', dureeSemaines: null, creeLe: '2026-11-14T10:00:00Z' }
 
 describe('Décris ton besoin, pas à pas', () => {
-  it('compose le besoin avec les réponses guidées, et le récapitulatif suit chaque frappe', async () => {
+  it('compose le besoin avec les réponses guidées, et chaque réponse s’affiche dans la conversation', async () => {
     let corps: Record<string, unknown> = {}
     serveur.use(
       http.post('/api/demandes', async ({ request }) => {
@@ -138,32 +165,30 @@ describe('Décris ton besoin, pas à pas', () => {
         return HttpResponse.json({ ...base, plan: { statut: 'en_attente' } }, { status: 201 })
       }),
     )
-    const { page } = await ouvrir('/demandes/nouvelle')
-    await page.get('[data-test="champ-titre"]').setValue('Nos dossiers')
-    await page.get('[data-test="champ-titre"]').trigger('keydown', { key: 'Enter' })
-    await vi.waitFor(() => expect(page.find('[data-test="champ-description"]').exists()).toBe(true))
-    await page.get('[data-test="champ-description"]').setValue('court')
-    expect(page.get('[data-test="suivant"]').attributes('disabled')).toBeDefined()
+    const { page } = await ouvrir('/demandes')
+    await repondre(page, 'Nos dossiers')
+    await vi.waitFor(() => expect(page.get('[data-test="moi-besoin"]').text()).toContain('Nos dossiers'))
+    await page.get('[data-test="saisie-ayo"]').setValue('court')
+    expect(page.get('[data-test="envoyer-reponse"]').attributes('disabled')).toBeDefined()
     expect(page.text()).toContain('Encore')
-    await page.get('[data-test="champ-description"]').setValue('Le cabinet perd ses dossiers entre associés.')
-    expect(page.get('.vivant').text()).toContain('Nos dossiers')
-    await suivre(page, ['questions'])
-    expect(page.get('[data-test="suivant"]').text()).toContain('Passer')
-    await page.get('[data-test="question-qui"]').setValue('Les quatre associés')
-    expect(page.get('[data-test="suivant"]').text()).toContain('Continuer')
-    await suivre(page, ['precisions', 'envoi'])
-    await page.get('[data-test="demande"]').trigger('submit')
+    await repondre(page, 'Le cabinet perd ses dossiers entre associés.')
+    await vi.waitFor(() => expect(page.find('[data-test="moi-details"]').exists()).toBe(true))
+    // Chaque question vient avec un exemple : on sait quel genre de réponse donner.
+    expect(page.get('[data-test="exemple-question"]').text()).toContain('Par exemple')
+    await repondre(page, 'Les quatre associés')
+    await vi.waitFor(() => expect(page.get('[data-test="moi-qui"]').text()).toContain('Les quatre associés'))
+    await jusquAuRecap(page)
+    await page.get('[data-test="envoyer"]').trigger('click')
     await vi.waitFor(() => expect(corps.titre).toBe('Nos dossiers'), { timeout: 4000 })
     expect(String(corps.description)).toContain("Qui va s'en servir : Les quatre associés")
   })
 
-  it('revient en arrière sans perdre ce qui est écrit', async () => {
-    const { page } = await ouvrir('/demandes/nouvelle')
-    await page.get('[data-test="champ-titre"]').setValue('Une boutique')
-    await suivre(page, ['details'])
-    await page.get('[data-test="precedent"]').trigger('click')
-    await vi.waitFor(() => expect(page.find('[data-test="champ-titre"]').exists()).toBe(true))
-    expect((page.get('[data-test="champ-titre"]').element as HTMLInputElement).value).toBe('Une boutique')
+  it('on revient sur une réponse sans perdre ce qui est écrit', async () => {
+    const { page } = await ouvrir('/demandes')
+    await repondre(page, 'Une boutique')
+    await vi.waitFor(() => expect(page.find('[data-test="modifier-besoin"]').exists()).toBe(true))
+    await page.get('[data-test="modifier-besoin"]').trigger('click')
+    await vi.waitFor(() => expect((page.get('[data-test="saisie-ayo"]').element as HTMLTextAreaElement).value).toBe('Une boutique'))
   })
 })
 
@@ -185,28 +210,31 @@ describe('l’orientation d’un besoin', () => {
       }),
     )
     const { page, routeur } = await ouvrir('/besoin')
-    expect(routeur.currentRoute.value.name).toBe('nouvelle-demande')
-    await page.get('[data-test="exemple"]').trigger('click')
-    await suivre(page, ['details'])
+    expect(routeur.currentRoute.value.name).toBe('mes-demandes')
+    await exempleEtDetails(page)
     expect(page.find('[data-test="prudence"]').exists()).toBe(true)
-    await suivre(page, ['questions', 'precisions'])
-    await page.get('[data-test="secteur"][value="juridique"]').setValue(true)
-    await suivre(page, ['envoi'])
+    await jusquAuRecap(page, async () => {
+      await page.get('[data-test="secteur"][value="juridique"]').setValue(true)
+    })
     expect((page.get('[data-test="offres"] input').element as HTMLInputElement).checked).toBe(false)
-    await page.get('[data-test="demande"]').trigger('submit')
+    await page.get('[data-test="envoyer"]').trigger('click')
     await vi.waitFor(() => expect(corps.titre).toBeTruthy())
-    expect(corps).toMatchObject({ secteur: 'juridique', offresSystalink: false })
+    expect(corps).toMatchObject({ secteur: 'juridique', offresSystalink: false, langue: 'fr' })
     expect(corps).not.toHaveProperty('ville')
   })
 
   it('montre les services Systalink, les développeurs et leurs raisons, puis enregistre l’accord', async () => {
     const { page } = await ouvrir('/demandes/nouvelle')
-    await page.get('[data-test="exemple"]').trigger('click')
-    await page.get('[data-test="demande"]').trigger('submit')
+    await exempleJusquAuBout(page)
     await vi.waitFor(() => expect(page.find('[data-test="services-systalink"]').exists()).toBe(true), { timeout: 4000 })
     const services = page.findAll('[data-test="service"]')
     expect(services).toHaveLength(2)
     expect(services[0]!.get('a').attributes()).toMatchObject({ href: 'https://systalink.com/fr/stockage-objets', rel: 'noopener noreferrer' })
+    // L'hébergement est annoncé comme tel : Systalink héberge, il ne développe pas.
+    expect(services[0]!.get('[data-test="genre-service"]').text()).toBe('Hébergement uniquement')
+    expect(services[0]!.get('[data-test="hebergement-seul"]').text()).toContain('Il ne développe rien')
+    expect(services[1]!.get('[data-test="genre-service"]').text()).toBe('Outil prêt à l’emploi')
+    expect(services[1]!.find('[data-test="hebergement-seul"]').exists()).toBe(false)
     // Le clic sur « Voir le service » est compté pour le tableau de bord Systalink (#65).
     const clics: string[] = []
     serveur.use(http.post('/api/systalink/moments/:momentId/accepter', ({ params }) => {
@@ -219,7 +247,9 @@ describe('l’orientation d’un besoin', () => {
     expect(recommandes).toHaveLength(3)
     expect(recommandes[0]!.text()).toContain('React, confirmé (3 dépôts)')
     expect(recommandes[0]!.get('a').attributes('href')).toBe('/messages/d2e00000-0000-4000-8000-000000000001')
-    expect(page.find('[data-test="former-cercle"]').exists()).toBe(true)
+    // Le conseil propose de publier le besoin en mission, plus de former un cercle.
+    expect(page.get('[data-test="publier-mission-conseil"]').attributes('href')).toMatch(/^\/missions\/nouvelle\?demande=[0-9a-f-]{36}$/)
+    expect(page.find('[data-test="former-cercle"]').exists()).toBe(false)
 
     // Les deux chemins côte à côte ; le projet technique reste replié jusqu'au clic.
     expect(page.find('[data-test="chemin-developpeurs"]').exists()).toBe(true)
@@ -232,8 +262,9 @@ describe('l’orientation d’un besoin', () => {
     expect(page.get('[data-test="compris"]').text()).toContain('Ton cabinet perd du temps')
     await page.get('#precision').setValue('Je veux seulement un espace client, pas de messagerie.')
     await page.get('[data-test="preciser"]').trigger('submit')
-    await vi.waitFor(() => expect(page.find('[data-test="precision"]').exists()).toBe(true))
-    expect(page.get('[data-test="precision"]').text()).toBe('Je veux seulement un espace client, pas de messagerie.')
+    // Seule la réponse d'Ayo s'affiche : sa nouvelle réponse arrive, sans recopier ce que la personne a écrit.
+    await vi.waitFor(() => expect(page.find('[data-test="plan-attente"]').exists()).toBe(true))
+    expect(page.text()).not.toContain('Je veux seulement un espace client, pas de messagerie.')
     await vi.waitFor(() => expect(page.find('[data-test="compris"]').exists()).toBe(true), { timeout: 4000 })
 
     const caseOffres = page.get('[data-test="offres-resultat"] input')
@@ -292,8 +323,8 @@ describe('l’orientation d’un besoin', () => {
     await vi.waitFor(() => expect(page.find('[data-test="onglet-developpeurs"]').exists()).toBe(true))
     expect(page.get('[data-test="onglet-developpeurs"]').attributes('aria-selected')).toBe('true')
     expect(page.get('[data-test="developpeurs"]').isVisible()).toBe(true)
-    // Une seule façon de lancer le projet avec d'autres : former un cercle. La barre collée en bas a disparu.
-    expect(page.findAll('[data-test="former-cercle"]')).toHaveLength(1)
+    // Le conseil propose de publier en mission ; la barre collée en bas a disparu.
+    expect(page.findAll('[data-test="publier-mission-conseil"]')).toHaveLength(1)
     await page.get('[data-test="onglet-publier"]').trigger('click')
     await vi.waitFor(() => expect(page.get('[data-test="onglet-publier"]').attributes('aria-selected')).toBe('true'))
     expect(page.get('[data-test="developpeurs"]').attributes('style')).toContain('display: none')
@@ -334,7 +365,8 @@ describe('Tes demandes (#199)', () => {
     expect(cartes[0]!.text()).toContain('Publiée')
     expect(cartes[0]!.text()).toContain('2 précisions')
     expect(cartes[1]!.text()).toContain('Réponse en préparation')
-    expect(page.get('[data-test="nouvelle"]').attributes('href')).toBe('/demandes/nouvelle')
+    // On décrit un nouveau besoin ici même, en parlant à Ayo.
+    expect(page.find('[data-test="conversation-demande"]').exists()).toBe(true)
   })
 
   it('filtre les demandes par état : en préparation, réponse prête, publiée', async () => {
@@ -353,37 +385,17 @@ describe('Tes demandes (#199)', () => {
   it('sans demande, invite à décrire un premier besoin', async () => {
     serveur.use(http.get('/api/demandes', () => HttpResponse.json([])))
     const { page } = await ouvrir('/demandes')
-    await vi.waitFor(() => expect(page.find('[data-test="aucune-demande"]').exists()).toBe(true))
+    // Pas de liste vide : l'accueil d'Ayo est l'invitation à commencer.
+    await vi.waitFor(() => expect(page.find('[data-test="conversation-demande"]').exists()).toBe(true))
+    expect(page.find('[data-test="liste-demandes"]').exists()).toBe(false)
   })
 
   it('sur la page d’un besoin, les autres restent à côté pour passer de l’un à l’autre', async () => {
     serveur.use(http.get('/api/demandes', () => HttpResponse.json(resumees)))
     const { page } = await ouvrir('/demandes/nouvelle')
-    await page.get('[data-test="exemple"]').trigger('click')
-    await page.get('[data-test="demande"]').trigger('submit')
+    await exempleJusquAuBout(page)
     await vi.waitFor(() => expect(page.find('[data-test="historique"]').exists()).toBe(true))
     expect(page.get('[data-test="historique"]').text()).toContain('Cabinet sans clé USB')
-  })
-})
-
-describe('du besoin au cercle', () => {
-  it('« Former un cercle avec eux » ouvre la création avec le titre du besoin, sans le mettre dans l’adresse', async () => {
-    serveur.use(
-      http.get('/api/demandes/:id', () =>
-        HttpResponse.json({ ...base, ville: 'Dakar', plan: { statut: 'terminee', origine: 'ia', resultat: planDemo() }, orientation: { statut: 'terminee', origine: 'ia', resultat: orientationDemo() }, recommandations: RECOMMANDES }),
-      ),
-    )
-    const { page, routeur } = await ouvrir(`/demandes/${ID}`)
-    await vi.waitFor(() => expect(page.find('[data-test="former-cercle"]').exists()).toBe(true))
-    await page.get('[data-test="former-cercle"]').trigger('click')
-    await vi.waitFor(() => expect(routeur.currentRoute.value.name).toBe('nouveau-cercle'))
-    expect(routeur.currentRoute.value.fullPath).toBe('/cercles/nouveau')
-    await vi.waitFor(() => expect(page.find('[data-test="nouveau-cercle"]').exists()).toBe(true))
-    // Le titre du besoin devient le nom du cercle ; la ville n'est plus demandée (un cercle travaille en ligne).
-    expect((page.get('[data-test="champ-nom"]').element as HTMLInputElement).value).toBe('Nos dossiers')
-    expect(page.find('[data-test="nouveau-cercle"]').text()).not.toContain('Ville')
-    // Les développeurs recommandés suivent : ils seront invités en un clic une fois le cercle créé.
-    expect(page.find('[data-test="du-besoin"]').text()).toContain('inviter Kwame, Ibrahima et Amina en un clic')
   })
 })
 
@@ -392,4 +404,95 @@ describe('dateCourte', () => {
     expect(dateCourte('2026-11-15T10:00:00Z', 'fr')).toBe('15 nov.')
     expect(dateCourte('2026-11-15T10:00:00Z', 'en')).toBe('Nov 15')
   })
+})
+
+describe('la refonte : on parle à Ayo, une IA, sur la page même', () => {
+  it('Ayo ouvre la conversation, marqué « Assistant IA », et le budget part avec le besoin', async () => {
+    let corps: Record<string, unknown> = {}
+    serveur.use(
+      http.post('/api/demandes', async ({ request }) => {
+        corps = (await request.json()) as Record<string, unknown>
+        return HttpResponse.json({ ...base, plan: { statut: 'en_attente' } }, { status: 201 })
+      }),
+    )
+    const { page } = await ouvrir('/demandes')
+    await vi.waitFor(() => expect(page.find('[data-test="conversation-demande"]').exists()).toBe(true))
+    expect(page.get('[data-test="conversation-demande"] .accueil').text()).toContain('Ayo')
+    expect(page.find('[data-test="conversation-demande"] .badge-ia').exists()).toBe(true)
+    await exempleEtDetails(page)
+    await jusquAuRecap(page, async () => {
+      await page.get('[data-test="budget-de_500k_a_2m"]').setValue(true)
+    })
+    expect(page.get('[data-test="moi-precisions"]').text()).toContain('500 000 à 2 millions F CFA')
+    await page.get('[data-test="envoyer"]').trigger('click')
+    await vi.waitFor(() => expect(String(corps.description)).toContain('Budget envisagé\u202f: 500 000 à 2 millions F CFA'), { timeout: 4000 })
+  })
+
+  it('la réponse dit qu’on parle à une IA, classe les profils par correspondance et permet de les comparer', async () => {
+    const { page } = await ouvrir('/demandes')
+    await exempleJusquAuBout(page)
+    await vi.waitFor(() => expect(page.find('[data-test="plan-propose"]').exists()).toBe(true), { timeout: 4000 })
+    // Seule la réponse d'Ayo : ni la demande recopiée, ni le parcours, ni le bandeau en double.
+    expect(page.find('[data-test="fil"]').exists()).toBe(false)
+    expect(page.find('[data-test="parcours"]').exists()).toBe(false)
+    expect(page.find('[data-test="compris"] .badge-ia').exists()).toBe(true)
+    if (page.find('[data-test="passer"]').exists()) await page.get('[data-test="passer"]').trigger('click')
+    await vi.waitFor(() => expect(page.findAll('[data-test="correspondance"]').length).toBeGreaterThan(1))
+    const scores = page.findAll('[data-test="correspondance"]').map((c) => Number.parseInt(c.text(), 10))
+    expect(scores).toEqual([...scores].sort((a, b) => b - a))
+    expect(page.find('[data-test="comparaison"]').exists()).toBe(false)
+    const cases = page.findAll('[data-test="comparer"]')
+    await cases[0]!.trigger('change')
+    await cases[1]!.trigger('change')
+    await vi.waitFor(() => expect(page.find('[data-test="comparaison"]').exists()).toBe(true))
+    expect(page.get('[data-test="comparaison"]').findAll('thead th')).toHaveLength(3)
+  })
+
+  it('un lien avec un début de besoin : Ayo le reprend et passe aux détails', async () => {
+    const { page, routeur } = await ouvrir('/besoin?titre=Un%20site%20pour%20ma%20boulangerie')
+    expect(routeur.currentRoute.value.path).toBe('/demandes')
+    await vi.waitFor(() => expect(page.find('[data-test="moi-besoin"]').exists()).toBe(true))
+    expect(page.get('[data-test="moi-besoin"]').text()).toContain('Un site pour ma boulangerie')
+    expect(page.find('[data-test="prudence"]').exists()).toBe(true)
+  })
+
+  it('en anglais, la demande part avec la langue de l’écran et Ayo répond en anglais', async () => {
+    let corps: Record<string, unknown> = {}
+    serveur.events.on('request:start', async ({ request }) => {
+      if (request.method === 'POST' && new URL(request.url).pathname === '/api/demandes') corps = (await request.clone().json()) as Record<string, unknown>
+    })
+    try {
+      const { page, routeur } = await ouvrir('/demandes', 'en')
+      await exempleJusquAuBout(page)
+      await vi.waitFor(() => expect(routeur.currentRoute.value.name).toBe('demande'), { timeout: 4000 })
+      expect(corps.langue).toBe('en')
+      await vi.waitFor(() => expect(page.text()).toContain('Your firm loses time'), { timeout: 4000 })
+      expect(page.text()).not.toContain('Ton cabinet')
+    } finally {
+      serveur.events.removeAllListeners()
+      ;(i18n.global.locale as unknown as { value: string }).value = 'fr'
+    }
+  })
+
+  it('les données de démo existent dans les deux langues', () => {
+    const en = JSON.stringify(orientationDemo(8, 'en'))
+    expect(en).not.toMatch(/\b(ton|tes|les|des|une)\b/)
+    expect(JSON.stringify(orientationDemo(8, 'fr'))).toContain('Ton cabinet')
+    expect(planDemo(8, 'en').jalons.map((j) => j.titre)).toEqual(['Catalogue online', 'Orders and payment', 'Handover to the manager'])
+  })
+
+  it('un exemple se met dans la zone de saisie, sans rien envoyer ni ajouter à ma place', async () => {
+    const { page } = await ouvrir('/demandes')
+    await vi.waitFor(() => expect(page.find('[data-test="exemple"]').exists()).toBe(true))
+    const titre = page.get('[data-test="exemple"]').text()
+    await page.get('[data-test="exemple"]').trigger('click')
+    expect((page.get('[data-test="saisie-ayo"]').element as HTMLTextAreaElement).value).toBe(titre)
+    expect(page.find('[data-test="moi-besoin"]').exists()).toBe(false)
+    await page.get('[data-test="saisie-ayo"]').trigger('keydown', { key: 'Enter' })
+    await vi.waitFor(() => expect(page.get('[data-test="moi-besoin"]').text()).toContain(titre))
+    // Les détails, c'est la personne qui les écrit : rien n'est rempli d'avance.
+    expect(page.find('[data-test="moi-details"]').exists()).toBe(false)
+    expect((page.get('[data-test="saisie-ayo"]').element as HTMLTextAreaElement).value).toBe('')
+  })
+
 })

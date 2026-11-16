@@ -997,7 +997,6 @@
   "pied": {
     "mission": "The exchange platform for African developers: help each other, team up and put your projects online.",
     "liens": "Useful links",
-    "charte": "Design system",
     "cadev": "Project presented at CADEV 2026. Jamii runs on the Systalink cloud."
   },
   "signaler": {
@@ -1019,7 +1018,7 @@
       "intro": "Describe in your own words what your business needs. Jamii shows you what Systalink already offers, and which developers can build the rest.",
       "champTitre": "In one sentence, what do you need?",
       "aideTitre": "For example: an online shop for my workshop.",
-      "champDescription": "Tell us: who will use it, what it must do, what matters to you",
+      "champDescription": "What it must do, in a few sentences.",
       "aideDescription": "At least {n} characters. No technical words needed.",
       "duree": "How soon would you like it?",
       "semaines": "{n} week | {n} weeks",
@@ -1036,13 +1035,12 @@
       "secteur": "Your sector (optional)",
       "ville": "Your city (optional)",
       "questionsTitre": "To help you describe it (optional)",
-      "questionsAide": "Answer in one sentence. It helps Jamii understand your need.",
       "questionQui": "Who will use it?",
-      "questionProbleme": "What isn't working today?",
-      "questionReussite": "How will you know it worked?",
+      "questionProbleme": "What makes you lose time or customers today?",
+      "questionReussite": "If it works, what will have changed in a few months?",
       "libelleQui": "Who will use it:",
-      "libelleProbleme": "What isn't working today:",
-      "libelleReussite": "It will be a success when:",
+      "libelleProbleme": "What loses time or customers today:",
+      "libelleReussite": "What will have changed if it works:",
       "etape": "Step {n} of {total}",
       "suivant": "Continue",
       "passer": "Skip",
@@ -1050,15 +1048,15 @@
       "entree": "Enter ↵ to continue",
       "q": {
         "besoin": "What do you need?",
-        "details": "Tell us a bit more",
-        "questions": "So we understand you well",
+        "details": "Tell me a bit more",
+        "questions": "So I understand you well",
         "precisions": "A few details",
-        "envoi": "Shall we look at your need?"
+        "envoi": "Shall I look at your need?"
       },
       "encore": "{n} more characters, in your own words.",
       "assez": "That's enough to start. You can say more.",
       "precisionsAide": "All optional. It helps find developers near you and estimate the plan.",
-      "recap": "Your need",
+      "recap": "What Ayo understood",
       "titreAVenir": "Your need in one sentence",
       "descriptionAVenir": "What you write will appear here.",
       "precisionsDonnees": "{n} detail | {n} details",
@@ -1068,7 +1066,25 @@
         "questions": "Three questions",
         "precisions": "Extra details",
         "envoi": "The analysis"
-      }
+      },
+      "budget": "Your budget (a range is enough)",
+      "libelleBudget": "Planned budget:",
+      "note": "Got it:",
+      "modifier": "Edit",
+      "placeholderDetails": "For example: I sell shoes in Dakar and want my customers to see the models and order from their phone…",
+      "assezEntree": "That's great. Enter to continue, Shift + Enter for a new line.",
+      "aideSaisie": "Enter to send, Shift + Enter for a new line",
+      "repondreAyo": "Reply to Ayo",
+      "passee": "Skipped",
+      "placeholders": {
+        "besoin": "For example: an online shop for my workshop",
+        "details": "Tell it in your own words…",
+        "question": "Your answer, or “Skip”",
+        "choix": "Choose above, then continue"
+      },
+      "exempleQui": "For example: my customers, my two tailors and me.",
+      "exempleProbleme": "For example: I answer the same questions on WhatsApp all day.",
+      "exempleReussite": "For example: I get online orders every week."
     },
     "publication": {
       "titre": "Publish my request",
@@ -1181,7 +1197,7 @@
       "surMesure": {
         "badge": "Custom-built",
         "titre": "Have it built by developers",
-        "texte": "Jamii developers build what doesn’t exist yet, starting from the project I prepared for you.",
+        "texte": "Post your need as a mission: Jamii developers offer to build it, starting from the project I prepared for you.",
         "duree": "about {n} week | about {n} week | about {n} weeks",
         "fonctions": "no must-have feature | {n} must-have feature | {n} must-have features",
         "devs": "no developer suggested | {n} developer suggested | {n} developers suggested",
@@ -1220,7 +1236,19 @@
         "preparation": "Described",
         "prete": "Analysed",
         "publiee": "Published"
-      }
+      },
+      "introAyo": "Ayo, Jamii’s AI assistant, reads your need, shows you what already exists and who can do the rest.",
+      "ayoBonjour": "Tell me what your business needs.",
+      "ayoChamp": "Your need, in one sentence",
+      "ayoCommencer": "Start",
+      "comment": "How it works",
+      "etape1": "You describe",
+      "etape1Aide": "In your own words, in a few minutes. No technical questions.",
+      "etape2": "Ayo analyses",
+      "etape2Aide": "It shows you what already exists, prepares a brief and finds the right people.",
+      "etape3": "You choose",
+      "etape3Aide": "Nothing goes out without you. Review, compare, launch.",
+      "dejaDemande": "What you've already asked"
     },
     "discuter": {
       "titre": "Something doesn’t suit you?",
@@ -1249,11 +1277,14 @@
         "complique": "It’s too complicated for me",
         "autre": "I’m looking for something else"
       },
-      "restants": "No advice left today | 1 piece of advice left today | {n} pieces of advice left today"
+      "restants": "No advice left today | 1 piece of advice left today | {n} pieces of advice left today",
+      "conversation": "You're talking with Ayo",
+      "avertissement": "Ayo is an artificial intelligence: it prepares, you decide. Review its suggestions before launching anything.",
+      "toi": "You"
     },
     "reponse": {
       "relire": "Reread what I wrote",
-      "conseils": "What Ayo suggests",
+      "conseils": "My advice",
       "suite": "Next",
       "onglets": {
         "developpeurs": "Developers",
@@ -1261,7 +1292,33 @@
         "publier": "Publish"
       },
       "seul": "Prefer to follow this plan on your own, without forming a circle?",
-      "preciser": "Clarify"
+      "preciser": "Clarify",
+      "genre": {
+        "hebergement": "Hosting only",
+        "outil": "Ready-to-use tool"
+      },
+      "hebergementSeul": "This service hosts your project: it puts it online and keeps your data. It doesn’t build it.",
+      "hebergementSeulDevs": "Systalink only puts online and stores what the developers will build. It doesn’t develop anything."
+    },
+    "budgets": {
+      "moins_500k": "Under 500,000 CFA francs",
+      "de_500k_a_2m": "500,000 to 2 million CFA francs",
+      "de_2m_a_5m": "2 to 5 million CFA francs",
+      "plus_5m": "Over 5 million CFA francs",
+      "inconnu": "I don't know yet"
+    },
+    "brief": {
+      "titre": "Your project brief",
+      "aide": "Prepared by Ayo from what you wrote. Read it through: it's what developers will read."
+    },
+    "match": {
+      "libelle": "Match",
+      "competences": "Relevant skills",
+      "comparer": "Compare",
+      "comparaison": "Compare profiles",
+      "critere": "Criterion",
+      "ville": "City",
+      "contacter": "Contact"
     }
   },
   "cercles": {
@@ -3040,5 +3097,10 @@
       "trop_de_requetes": "Too many files sent in an hour. Try again later.",
       "erreur": "The voice message could not be sent. Try again."
     }
+  },
+  "ia": {
+    "badge": "AI",
+    "badgeLong": "AI assistant",
+    "badgeAide": "Suggested by Jamii’s artificial intelligence: review before acting."
   }
 }

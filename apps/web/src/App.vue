@@ -100,7 +100,6 @@ watch(etat, (e) => (e === 'connecte' ? suivreAppelsEntrants() : arreterAppelsEnt
         <RouterLink to="/hackathons">{{ t('menu.hackathons') }}</RouterLink>
         <RouterLink to="/vitrine">{{ t('menu.vitrine') }}</RouterLink>
         <RouterLink v-if="accesSystalink" to="/systalink">{{ t('menu.systalink') }}</RouterLink>
-        <RouterLink to="/design-system">{{ t('pied.charte') }}</RouterLink>
       </nav>
       <ReglagesAffichage class="reglages--pied" />
       <p class="pied__cadev">{{ t('pied.cadev') }}</p>

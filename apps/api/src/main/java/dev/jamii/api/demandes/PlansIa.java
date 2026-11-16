@@ -16,7 +16,17 @@ interface PlansIa {
 	 * Ce que reçoit l'IA : le besoin, avec les mots de son auteur, sans e-mail ni téléphone (retirés avant). Aucun nom
 	 * ni identifiant d'utilisateur.
 	 */
-	record Entree(String titre, String description, Integer dureeSemaines, String secteur, String pays) {
+	record Entree(String titre, String description, Integer dureeSemaines, String secteur, String pays, String langue) {
+
+		/** Sans langue précisée : le français, la langue par défaut de Jamii. */
+		Entree(String titre, String description, Integer dureeSemaines, String secteur, String pays) {
+			this(titre, description, dureeSemaines, secteur, pays, "fr");
+		}
+
+		/** `en` en anglais, `fr` sinon. */
+		boolean enAnglais() {
+			return "en".equals(langue);
+		}
 	}
 
 	/** L'état d'une tâche, tel que le service IA le décrit. `resultat` est l'`Orientation` de ia.yaml. */

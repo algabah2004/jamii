@@ -64,8 +64,9 @@ describe('se connecter', () => {
     nonConnecte()
     const { page, routeur } = await ouvrir('/besoin')
     expect(routeur.currentRoute.value.name).toBe('connexion')
-    expect(routeur.currentRoute.value.query.retour).toBe('/demandes/nouvelle')
-    expect(page.find('[data-test="connexion-github"]').attributes('href')).toBe('/api/auth/github?retour=%2Fdemandes%2Fnouvelle')
+    // /besoin mène à « Tes demandes », où l'on décrit son besoin en parlant à Ayo.
+    expect(routeur.currentRoute.value.query.retour).toBe('/demandes')
+    expect(page.find('[data-test="connexion-github"]').attributes('href')).toBe('/api/auth/github?retour=%2Fdemandes')
     // Sur la page de connexion, le bouton de l'en-tête disparaît : il mènerait au même endroit.
     expect(page.find('[data-test="lien-connexion"]').exists()).toBe(false)
   })
@@ -143,7 +144,8 @@ describe('le lien reçu par e-mail', () => {
 
     serveur.use(http.get('/api/me', () => HttpResponse.json(moiDemo)))
     await page.find('[data-test="confirmer-lien"]').trigger('click')
-    await vi.waitFor(() => expect(routeur.currentRoute.value.path).toBe('/demandes/nouvelle'), { timeout: 4000 })
+    // L'ancienne adresse du formulaire mène à la conversation avec Ayo, sur « Tes demandes ».
+    await vi.waitFor(() => expect(routeur.currentRoute.value.path).toBe('/demandes'), { timeout: 4000 })
     expect(appels).toBe(1)
   })
 

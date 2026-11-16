@@ -143,6 +143,12 @@ export interface components {
              * @default false
              */
             offresSystalink: boolean;
+            /**
+             * @description La langue de l'écran. L'IA répond dans la langue du texte, et dans celle-ci quand le texte ne la dit pas clairement.
+             * @default fr
+             * @enum {string}
+             */
+            langue: "fr" | "en";
         };
         ResumePublic: {
             /** @description Le résumé relu par l'auteur, texte brut. Les adresses e-mail et les numéros de téléphone en sont retirés. */
@@ -243,7 +249,7 @@ export interface components {
             avatarUrl?: string | null;
             ville?: string | null;
             pays?: string | null;
-            /** @description Pour trier. Le front affiche les raisons, pas le chiffre. */
+            /** @description La correspondance avec le besoin : le front trie dessus et l'affiche en pourcentage, toujours avec les raisons qui l'expliquent. */
             score: number;
             competencesCouvertes: components["schemas"]["Competence"][];
             /** @description Phrases courtes et vérifiables : « React, confirmé (3 dépôts) », « Disponible », « Dakar ». */
