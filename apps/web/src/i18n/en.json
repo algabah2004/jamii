@@ -1150,7 +1150,7 @@
       "nouvelle": "Describe a new need",
       "vide": "You haven't described any need yet.",
       "videAide": "Explain what you need in your own words: Jamii tells you what already exists and who can do the rest.",
-      "enCours": "Answer being prepared…",
+      "enCours": "Conversation with Ayo in progress",
       "publiee": "Published",
       "ouvrir": "Open",
       "autres": "Your other requests",
@@ -1236,7 +1236,8 @@
       "limite": "This conversation is already long. Start a new conversation to go on.",
       "supprimer": "Delete the conversation",
       "confirmerSuppression": "Delete this conversation? Your need and all the messages will be erased. A mission already published stays online.",
-      "messages": "{n} message | {n} messages"
+      "messages": "{n} message | {n} messages",
+      "reponse": "Ayo answers you"
     }
   },
   "cercles": {

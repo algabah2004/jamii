@@ -55,7 +55,7 @@ class EntreeAnalyseProfil(Entree):
 
 class EntreeOrientation(Entree):
     titre: str | None = Field(default=None, max_length=120)
-    description: str = Field(min_length=20, max_length=8000)
+    description: str = Field(min_length=2, max_length=8000)
     secteur: str | None = Field(default=None, max_length=60)
     pays: Annotated[str, StringConstraints(pattern=r"^[A-Z]{2}$")] | None = None
     langue: Literal["fr", "en"] = "fr"

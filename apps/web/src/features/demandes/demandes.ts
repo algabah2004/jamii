@@ -51,7 +51,7 @@ export function estRepli(d: Demande): boolean {
 export const LIMITES = {
   titreMin: 3,
   titreMax: 120,
-  descriptionMin: 20,
+  descriptionMin: 2,
   descriptionMax: 4000,
   /** Ce qu'on laisse saisir pour le premier message, sous `descriptionMax`. */
   descriptionSaisieMax: 3000,
@@ -108,7 +108,9 @@ async function envoyer(chemin: string, corps: unknown, methode: 'POST' | 'PUT' |
 /** Le titre d'une conversation : le début du premier message, sur une ligne (le serveur en veut 3 à 120 caractères). */
 export function titreDe(message: string): string {
   const ligne = message.trim().split('\n')[0]!.replace(/\s+/g, ' ').trim()
-  const base = ligne.length >= LIMITES.titreMin ? ligne : message.replace(/\s+/g, ' ').trim()
+  const tout = ligne.length >= LIMITES.titreMin ? ligne : message.replace(/\s+/g, ' ').trim()
+  // « ok » ou « yo » : le titre est complété pour rester valide, le message part tel quel.
+  const base = tout.padEnd(LIMITES.titreMin, '…')
   return base.length > 80 ? `${base.slice(0, 79).trimEnd()}…` : base
 }
 

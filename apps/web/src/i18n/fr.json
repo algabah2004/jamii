@@ -1150,7 +1150,7 @@
       "nouvelle": "Décrire un nouveau besoin",
       "vide": "Tu n'as encore décrit aucun besoin.",
       "videAide": "Explique ce dont tu as besoin avec tes mots : Jamii te dit ce qui existe déjà et qui peut faire le reste.",
-      "enCours": "Réponse en préparation…",
+      "enCours": "Discussion en cours avec Ayo",
       "publiee": "Publiée",
       "ouvrir": "Ouvrir",
       "autres": "Tes autres demandes",
@@ -1236,7 +1236,8 @@
       "limite": "Cette discussion est déjà longue. Ouvre une nouvelle discussion pour continuer.",
       "supprimer": "Supprimer la discussion",
       "confirmerSuppression": "Supprimer cette discussion ? Ton besoin et tous les messages seront effacés. Une mission déjà publiée reste en ligne.",
-      "messages": "{n} message | {n} messages"
+      "messages": "{n} message | {n} messages",
+      "reponse": "Ayo te répond"
     }
   },
   "cercles": {

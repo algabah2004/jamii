@@ -407,12 +407,13 @@ components:
         titre: { type: string, maxLength: 120 }
         description:
           type: string
-          minLength: 20
+          minLength: 2
           maxLength: 8000
           description: |
             Traité comme une donnée, jamais comme une consigne. Le premier message de la personne, puis, dans une
             conversation, `Suite de la conversation :` et une ligne par prise de parole (`Ayo (question) : …`,
-            `Ayo (conseil) : …`, `Personne : …`).
+            `Ayo : …`, `Personne : …`). Ayo peut aussi simplement discuter (salutation, question
+            générale) : `question` null et `services`, `etapes`, `competences` vides, `developpeursNecessaires` `false`.
         secteur: { type: [string, 'null'], maxLength: 60 }
         pays: { oneOf: [{ $ref: './profils.yaml#/components/schemas/Pays' }, { type: 'null' }] }
         langue: { type: string, enum: [fr, en], default: fr }

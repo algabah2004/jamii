@@ -98,7 +98,7 @@ class DemandesController {
 		if (titre.length() < 3 || titre.length() > 120) {
 			erreurs.add(Map.of("champ", "titre", "code", "longueur_invalide"));
 		}
-		if (description.length() < 20 || description.length() > 4000) {
+		if (description.length() < 2 || description.length() > 4000) {
 			erreurs.add(Map.of("champ", "description", "code", "longueur_invalide"));
 		}
 		if (demande.dureeSemaines() != null && (demande.dureeSemaines() < 1 || demande.dureeSemaines() > 26)) {

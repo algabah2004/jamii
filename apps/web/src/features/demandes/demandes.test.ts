@@ -62,7 +62,7 @@ describe('le plan proposé', () => {
 
   it('refuse une demande trop courte', () => {
     expect(demandeValide({ titre: 'Ok', description: 'Une description assez longue ici.' })).toBe(false)
-    expect(demandeValide({ titre: 'Une boutique', description: 'Trop court' })).toBe(false)
+    expect(demandeValide({ titre: 'Une boutique', description: ' x ' })).toBe(false)
     expect(demandeValide({ titre: 'Une boutique', description: 'Je vends des tissus et je veux un catalogue.' })).toBe(true)
   })
 })
@@ -149,9 +149,8 @@ describe('Une discussion libre avec Ayo', () => {
       }),
     )
     const { page } = await ouvrir('/demandes')
-    await page.get('[data-test="saisie-ayo"]').setValue('court')
+    await page.get('[data-test="saisie-ayo"]').setValue(' x ')
     expect(page.get('[data-test="envoyer"]').attributes('disabled')).toBeDefined()
-    expect(page.text()).toContain('Encore')
     await ecrire(page, 'Nos dossiers se perdent\nLe cabinet perd ses dossiers entre associés.')
     await vi.waitFor(() => expect(corps.titre).toBe('Nos dossiers se perdent'), { timeout: 4000 })
     expect(corps.description).toBe('Nos dossiers se perdent\nLe cabinet perd ses dossiers entre associés.')
@@ -254,6 +253,37 @@ describe('l’orientation d’un besoin', () => {
     await vi.waitFor(() => expect((caseOffres.element as HTMLInputElement).checked).toBe(true))
   })
 
+  it('Ayo discute simplement : sa réponse est une bulle, sans conseil ni onglets', async () => {
+    const discussion = { ...orientationDemo(), message: 'Ça va très bien, merci ! Et toi, tu as une activité que tu aimerais améliorer ?', services: [], etapes: [], competences: [], developpeursNecessaires: false, plan: null, question: null }
+    serveur.use(
+      http.get('/api/demandes/:id', () =>
+        HttpResponse.json({ ...base, description: 'ça va ?', plan: { statut: 'terminee', origine: 'ia' }, orientation: { statut: 'terminee', origine: 'ia', resultat: discussion }, recommandations: [] }),
+      ),
+    )
+    const { page } = await ouvrir(`/demandes/${ID}`)
+    await vi.waitFor(() => expect(page.find('[data-test="ayo-message"]').exists()).toBe(true))
+    expect(page.get('[data-test="ayo-message"]').text()).toContain('Ça va très bien')
+    expect(page.find('[data-test="plan-propose"]').exists()).toBe(false)
+    expect(page.find('[data-test="chemins"]').exists()).toBe(false)
+    expect(page.find('#onglets').exists()).toBe(false)
+    expect(page.text()).not.toContain('Voici ce que j’ai compris')
+    expect(page.find('[data-test="message-ayo"]').exists()).toBe(true)
+  })
+
+  it('un simple bonjour suffit pour ouvrir la discussion', async () => {
+    let corps: Record<string, unknown> = {}
+    serveur.use(
+      http.post('/api/demandes', async ({ request }) => {
+        corps = (await request.json()) as Record<string, unknown>
+        return HttpResponse.json({ ...base, plan: { statut: 'en_attente' } }, { status: 201 })
+      }),
+    )
+    const { page } = await ouvrir('/demandes')
+    await ecrire(page, 'yo')
+    await vi.waitFor(() => expect(corps.description).toBe('yo'), { timeout: 4000 })
+    expect(corps.titre).toBe('yo…')
+  })
+
   it('quand Ayo pose une question, il ne conseille pas encore ; la zone en bas reste là pour répondre', async () => {
     const question = { ...orientationDemo(), services: [], etapes: [], competences: [], developpeursNecessaires: false, plan: null, question: { texte: 'Combien de personnes travaillent au cabinet ?', suggestions: ['Moins de 5', 'Plus de 5'] } }
     serveur.use(
@@ -341,7 +371,7 @@ describe('Tes demandes (#199)', () => {
     expect(cartes[0]!.attributes('href')).toBe('/demandes/a1')
     expect(cartes[0]!.text()).toContain('Publiée')
     expect(cartes[0]!.text()).toContain('3 messages')
-    expect(cartes[1]!.text()).toContain('Réponse en préparation')
+    expect(cartes[1]!.text()).toContain('Discussion en cours avec Ayo')
     // On décrit un nouveau besoin ici même, en parlant à Ayo.
     expect(page.find('[data-test="conversation-demande"]').exists()).toBe(true)
   })

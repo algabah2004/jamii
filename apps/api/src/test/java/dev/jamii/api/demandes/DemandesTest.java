@@ -192,6 +192,24 @@ class DemandesTest {
 	}
 
 	@Test
+	void ayo_discute_sans_conseiller_et_rien_ne_part_vers_les_tendances_ni_systalink() {
+		UtilisateurConnecte awa = utilisateur("Awa");
+		String id = idCree(creer(awa, "{\"titre\":\"ça va ?\",\"description\":\"ça va ?\"}"));
+		UUID tache = IA.parCle.get(UUID.fromString(id));
+		IA.etats.put(tache, new PlansIa.Etat("terminee", "ia", json.readTree("""
+				{"resume":"Tu me salues.","message":"Ça va très bien, merci ! Et toi, tu as une activité à améliorer ?",
+				 "secteur":"autre","services":[],"etapes":[],"developpeursNecessaires":false,"competences":[],"plan":null,"question":null}
+				"""), null));
+
+		assertThat(lire(awa, id)).bodyJson().extractingPath("$.orientation.resultat.message").asString().startsWith("Ça va très bien");
+		assertThat(base.sql("SELECT orientation IS NULL FROM demande WHERE id = :i").param("i", UUID.fromString(id))
+			.query(Boolean.class).single()).isTrue();
+
+		preciser(awa, id, "{\"texte\":\"Oui, je vends des pagnes.\"}");
+		assertThat(IA.entrees.getLast().description()).contains("\nAyo : Ça va très bien", "Personne : Oui, je vends des pagnes.");
+	}
+
+	@Test
 	void je_supprime_ma_conversation_et_seulement_la_mienne() {
 		UtilisateurConnecte awa = utilisateur("Awa");
 		UtilisateurConnecte autre = utilisateur("Autre");
@@ -282,7 +300,7 @@ class DemandesTest {
 		String[][] cas = {
 				{ "{\"titre\":\"ab\",\"description\":\"" + longue + "\"}", "titre" },
 				{ "{\"titre\":\"" + "t".repeat(121) + "\",\"description\":\"" + longue + "\"}", "titre" },
-				{ "{\"titre\":\"Un titre\",\"description\":\"trop court\"}", "description" },
+				{ "{\"titre\":\"Un titre\",\"description\":\" x \"}", "description" },
 				{ "{\"titre\":\"Un titre\",\"description\":\"" + "d".repeat(4001) + "\"}", "description" },
 				{ "{\"titre\":\"Un titre\",\"description\":\"" + longue + "\",\"dureeSemaines\":0}", "dureeSemaines" },
 				{ "{\"titre\":\"Un titre\",\"description\":\"" + longue + "\",\"dureeSemaines\":27}", "dureeSemaines" },
