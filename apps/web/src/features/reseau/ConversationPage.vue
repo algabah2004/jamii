@@ -9,10 +9,10 @@ import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { JAvatar, JBouton, JSquelette } from '../../design-system'
 import { rejoindreCercle } from '../cercles/cercles'
 import { rafraichirActivite } from './activite'
+import { appeler, useAppel } from './appel'
 import {
   ajouterContact,
   envoyerMessage,
-  lancerAppel,
   LONGUEUR_MESSAGE,
   lireConversation,
   lireLien,
@@ -166,38 +166,36 @@ async function envoyer() {
 }
 
 // ---------------------------------------------------------------- appeler (#157)
-const appel = ref<'repos' | 'envoi' | 'erreur'>('repos')
 watch(() => route.params.personneId, charger, { immediate: true })
-/**
- * L'onglet de l'appel s'ouvre pendant le clic (sinon le navigateur le bloque), puis reçoit l'adresse de la salle quand
- * l'API a répondu. L'appel est annoncé dans la conversation : l'autre personne le rejoint d'un clic.
- */
-async function appeler() {
-  if (!personne.value || appel.value === 'envoi') return
-  appel.value = 'envoi'
+const { etat: etatAppel } = useAppel()
+const occupe = computed(() => etatAppel.phase !== 'repos' && etatAppel.phase !== 'fini')
+
+/** L'appel se passe dans Jamii, en WebRTC (features/reseau/appel.ts) : la fenêtre d'appel s'ouvre par-dessus la page. */
+async function appelerPersonne(video: boolean) {
+  if (!personne.value || occupe.value) return
   erreur.value = null
-  const fenetre = typeof window.open === 'function' ? window.open('', '_blank') : null
-  try {
-    const r = await lancerAppel(personne.value.id)
-    if (!r.ok || !r.message.appel) {
-      fenetre?.close()
-      appel.value = 'erreur'
-      erreur.value = t(`reseau.erreurs.${r.ok ? 'autre' : (r.code ?? 'autre')}`, t('reseau.discussion.appelImpossible'))
-      return
-    }
-    if (fenetre) {
-      fenetre.opener = null
-      fenetre.location.href = r.message.appel.url
-    }
-    messages.value.push(r.message)
-    emit('actualise')
-    appel.value = 'repos'
-    await descendre()
-  } catch {
-    fenetre?.close()
-    appel.value = 'erreur'
-    erreur.value = t('reseau.discussion.appelImpossible')
+  await appeler(personne.value, video)
+  if (etatAppel.phase === 'fini' && etatAppel.fin && ['impossible', 'trop_de_requetes'].includes(etatAppel.fin)) {
+    erreur.value = t(`appels.fin.${etatAppel.fin}`)
   }
+}
+
+/** Ce que dit la carte d'un appel dans le fil. */
+function texteAppel(m: Message): string {
+  const a = m.appel!
+  const nom = personne.value ? prenom(personne.value.nom) : ''
+  if (!a.id) return a.enCours ? t('reseau.discussion.enCours') : t('reseau.discussion.termine')
+  if (a.statut === 'termine' && a.dureeSecondes != null) return t('appels.carte.duree', { duree: dureeLisible(a.dureeSecondes) })
+  if (a.statut === 'manque') return m.deMoi ? t('appels.carte.sansReponse') : t('appels.carte.manque')
+  if (a.statut === 'refuse') return m.deMoi ? t('appels.carte.refuse', { nom }) : t('appels.carte.tuAsRefuse')
+  if (a.statut === 'annule') return t('appels.carte.annule')
+  return a.enCours ? t('reseau.discussion.enCours') : t('reseau.discussion.termine')
+}
+
+function dureeLisible(secondes: number): string {
+  if (secondes < 60) return t('appels.carte.secondes', { n: secondes })
+  const minutes = Math.round(secondes / 60)
+  return minutes < 60 ? t('appels.carte.minutes', { n: minutes }) : t('appels.carte.heures', { h: Math.floor(minutes / 60), m: minutes % 60 })
 }
 
 // Rejoindre depuis l'invitation : la même route que le bouton de la page du cercle (cercles.yaml).
@@ -250,8 +248,11 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
           <JBouton v-if="lien === 'aucun' || lien === 'recue'" :variante="lien === 'recue' ? 'principal' : 'secondaire'" :occupe="ajout" data-test="ajouter-contact" @click="ajouter">
             {{ lien === 'recue' ? t('reseau.contacts.accepter') : t('reseau.contacts.ajouter') }}
           </JBouton>
-          <button type="button" class="rond rond--appel" :disabled="appel === 'envoi'" :aria-label="t('reseau.discussion.appeler', { nom: prenom(personne.nom) })" :title="t('reseau.discussion.appeler', { nom: prenom(personne.nom) })" data-test="appeler" @click="appeler">
+          <button type="button" class="rond rond--appel" :disabled="occupe" :aria-label="t('reseau.discussion.appeler', { nom: prenom(personne.nom) })" :title="t('reseau.discussion.appeler', { nom: prenom(personne.nom) })" data-test="appeler" @click="appelerPersonne(false)">
             <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M6.6 3.5 8.4 7a1 1 0 0 1-.2 1.1L7 9.3a10 10 0 0 0 3.7 3.7l1.2-1.2a1 1 0 0 1 1.1-.2l3.5 1.8a1 1 0 0 1 .5 1.2l-.6 1.9a2 2 0 0 1-2.2 1.4C8.9 17.2 2.8 11.1 2.1 5.8A2 2 0 0 1 3.5 3.6l1.9-.6a1 1 0 0 1 1.2.5Z" fill="currentColor" /></svg>
+          </button>
+          <button type="button" class="rond rond--appel" :disabled="occupe" :aria-label="t('appels.appelVideo', { nom: prenom(personne.nom) })" :title="t('appels.appelVideo', { nom: prenom(personne.nom) })" data-test="appeler-video" @click="appelerPersonne(true)">
+            <svg viewBox="0 0 24 24" width="21" height="21" aria-hidden="true"><path d="M4 7a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2.5l3.4-2.3A1 1 0 0 1 21 8v8a1 1 0 0 1-1.6.8L16 14.5V17a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z" fill="currentColor" /></svg>
           </button>
         </div>
       </header>
@@ -276,18 +277,22 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
                 <JAvatar v-if="!m.deMoi && !suite(j.messages, i)" :nom="personne.nom" :url="personne.avatarUrl" :taille="28" />
               </span>
 
-              <!-- L'annonce d'un appel : une carte, avec « Rejoindre » tant qu'il est en cours. -->
-              <div v-if="m.appel" class="appel-carte" :class="{ 'appel-carte--fini': !m.appel.enCours }" data-test="appel">
+              <!-- La trace d'un appel : qui a appelé, comment ça s'est fini, et « Rappeler ». Les anciens appels Jitsi gardent leur lien. -->
+              <div v-if="m.appel" class="appel-carte" :class="{ 'appel-carte--fini': !m.appel.enCours, 'appel-carte--manque': m.appel.statut === 'manque' && !m.deMoi }" data-test="appel">
                 <span class="appel-carte__icone" aria-hidden="true">
-                  <svg viewBox="0 0 20 20" width="18" height="18"><path d="M6.6 3.5 8.4 7a1 1 0 0 1-.2 1.1L7 9.3a10 10 0 0 0 3.7 3.7l1.2-1.2a1 1 0 0 1 1.1-.2l3.5 1.8a1 1 0 0 1 .5 1.2l-.6 1.9a2 2 0 0 1-2.2 1.4C8.9 17.2 2.8 11.1 2.1 5.8A2 2 0 0 1 3.5 3.6l1.9-.6a1 1 0 0 1 1.2.5Z" fill="currentColor" /></svg>
+                  <svg v-if="m.appel.video" viewBox="0 0 24 24" width="18" height="18"><path d="M4 7a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2.5l3.4-2.3A1 1 0 0 1 21 8v8a1 1 0 0 1-1.6.8L16 14.5V17a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z" fill="currentColor" /></svg>
+                  <svg v-else viewBox="0 0 20 20" width="18" height="18"><path d="M6.6 3.5 8.4 7a1 1 0 0 1-.2 1.1L7 9.3a10 10 0 0 0 3.7 3.7l1.2-1.2a1 1 0 0 1 1.1-.2l3.5 1.8a1 1 0 0 1 .5 1.2l-.6 1.9a2 2 0 0 1-2.2 1.4C8.9 17.2 2.8 11.1 2.1 5.8A2 2 0 0 1 3.5 3.6l1.9-.6a1 1 0 0 1 1.2.5Z" fill="currentColor" /></svg>
                 </span>
                 <span class="appel-carte__texte">
-                  <strong>{{ m.deMoi ? t('reseau.discussion.tuAppelles') : t('reseau.discussion.tAppelle', { nom: prenom(personne.nom) }) }}</strong>
-                  <span>{{ m.appel.enCours ? t('reseau.discussion.enCours') : t('reseau.discussion.termine') }} · {{ heure(m.envoyeLe) }}</span>
+                  <strong>{{ m.deMoi ? t(m.appel.video ? 'appels.carte.tuAppellesVideo' : 'reseau.discussion.tuAppelles') : t(m.appel.video ? 'appels.carte.tAppelleVideo' : 'reseau.discussion.tAppelle', { nom: prenom(personne.nom) }) }}</strong>
+                  <span data-test="appel-statut">{{ texteAppel(m) }} · {{ heure(m.envoyeLe) }}</span>
                 </span>
-                <a v-if="m.appel.enCours" :href="m.appel.url" target="_blank" rel="noopener noreferrer" class="appel-carte__rejoindre" data-test="rejoindre-appel">
+                <a v-if="m.appel.url && m.appel.enCours" :href="m.appel.url" target="_blank" rel="noopener noreferrer" class="appel-carte__rejoindre" data-test="rejoindre-appel">
                   {{ t('reseau.discussion.rejoindre') }}<span class="visuellement-cache"> {{ t('communautes.salons.nouvelOnglet') }}</span>
                 </a>
+                <button v-else-if="m.appel.id && !m.appel.enCours" type="button" class="appel-carte__rejoindre" :disabled="occupe" data-test="rappeler" @click="appelerPersonne(m.appel.video)">
+                  {{ t('appels.rappeler') }}
+                </button>
               </div>
 
               <div v-else class="bulle">
@@ -400,6 +405,7 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
 
 .appel-carte { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-radius: 16px; background: var(--surface); border: 1px solid var(--line); max-width: min(85%, 26rem); }
 .appel-carte__icone { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--success, #1f9d55); color: #fff; flex: none; }
+.appel-carte--manque .appel-carte__icone { background: var(--danger); color: #fff; }
 .appel-carte--fini .appel-carte__icone { background: var(--line-strong); color: var(--ink-muted); }
 .appel-carte__texte { display: grid; flex: 1; line-height: 1.3; }
 .appel-carte__texte span { color: var(--ink-muted); font-size: 0.9375rem; }

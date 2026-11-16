@@ -76,6 +76,12 @@ jamii:
   # Les appels vocaux et vidéo des salons (#155) : un serveur Jitsi. Chaque salon y a sa salle.
   appels:
     url: ${APPELS_URL:https://meet.jit.si}
+    # Les appels WebRTC des discussions privées (#157) : un STUN, et notre relais coturn (identifiants temporaires,
+    # use-auth-secret). Sans TURN_SECRET, STUN seulement : les appels passent sur la plupart des réseaux, pas tous.
+    stun: ${STUN_URLS:stun:stun.l.google.com:19302}
+    turn:
+      urls: ${TURN_URLS:}
+      secret: ${TURN_SECRET:}
   # Adresse du front : on y renvoie l'utilisateur après la connexion.
   web-url: ${WEB_URL:http://localhost:5173}
   email:

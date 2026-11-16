@@ -2920,5 +2920,58 @@
       "erreur": "“{nom}” couldn't be uploaded. Try again.",
       "tropDePieces": "{n} attachments at most."
     }
+  },
+  "appels": {
+    "titre": "Call with {nom}",
+    "appelVideo": "Video call with {nom}",
+    "entrant": "{nom} is calling you",
+    "entrantVocal": "Incoming voice call…",
+    "entrantVideo": "Incoming video call…",
+    "decrocher": "Answer",
+    "decrocherVocal": "Answer without camera",
+    "refuser": "Decline",
+    "preparation": "Getting your microphone…",
+    "sonne": "Ringing {nom}…",
+    "connexion": "Connecting…",
+    "commandes": "Call controls",
+    "couperMicro": "Mute",
+    "activerMicro": "Unmute",
+    "eteindreCamera": "Turn camera off",
+    "allumerCamera": "Turn camera on",
+    "partagerEcran": "Share my screen",
+    "arreterEcran": "Stop sharing",
+    "reagir": "React",
+    "envoyerReaction": "Send {emoji}",
+    "tuReagis": "You react:",
+    "reagit": "{nom} reacts:",
+    "microCoupeDe": "{nom} is muted",
+    "reduire": "Minimise the call",
+    "agrandir": "Expand the call",
+    "raccrocher": "Hang up",
+    "fermer": "Close",
+    "rappeler": "Call back",
+    "fin": {
+      "termine": "Call ended",
+      "refuse": "{nom} is not available",
+      "manque": "No answer",
+      "annule": "Call cancelled",
+      "micro_refuse": "Jamii cannot use your microphone. Allow it in your browser, then try again.",
+      "echec": "The connection was lost.",
+      "impossible": "The call could not be started. Try again.",
+      "trop_de_requetes": "Too many calls and messages in a short time. Try again in a moment."
+    },
+    "carte": {
+      "tuAppellesVideo": "You started a video call",
+      "tAppelleVideo": "{nom} video called you",
+      "duree": "Duration: {duree}",
+      "secondes": "{n} s",
+      "minutes": "{n} min",
+      "heures": "{h} h {m} min",
+      "sansReponse": "No answer",
+      "manque": "Missed call",
+      "refuse": "{nom} did not answer",
+      "tuAsRefuse": "You declined",
+      "annule": "Cancelled"
+    }
   }
 }

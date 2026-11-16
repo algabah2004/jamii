@@ -82,7 +82,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/conversations/{personneId}/appel": {
+    "/api/appels/ice": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Les serveurs STUN et TURN pour un appel (#157)
+         * @description À passer tels quels à `new RTCPeerConnection({ iceServers })`. Le relais TURN (notre coturn) a des identifiants temporaires (4 h), signés par l'API avec un secret partagé avec coturn (`use-auth-secret`) : aucun mot de passe fixe n'arrive au navigateur. `relais` est faux quand aucun TURN n'est configuré : STUN seulement. Jamais en cache.
+         */
+        get: operations["serveursIce"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/conversations/{personneId}/appels": {
         parameters: {
             query?: never;
             header?: never;
@@ -95,10 +115,118 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Lancer un appel vocal et vidéo avec une personne (#157)
-         * @description Crée une salle neuve (le même serveur d'appels que les salons, Jitsi pour la CADEV) et l'annonce dans la conversation par un message qui porte `appel`. Seules les deux personnes lisent ce message, donc la salle. Mêmes règles qu'un message : pas à soi-même, et la même limite anti-spam. Le destinataire reçoit une notification.
+         * Appeler une personne, en audio ou en vidéo, dans Jamii (#157)
+         * @description WebRTC en tête-à-tête : le son et l'image passent directement entre les deux navigateurs (ou par notre relais TURN), jamais par l'API. L'API transmet seulement l'offre SDP complète (candidats ICE inclus) à la personne appelée, qui la lit avec `GET /api/appels/entrant`. Un message de la conversation garde la trace de l'appel. Mêmes règles qu'un message : pas à soi-même, même limite anti-spam. Un appel qui sonnait déjà entre ces deux personnes est annulé. Après 45 secondes sans réponse, l'appel est manqué.
          */
         post: operations["appeler"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/appels/entrant": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * L'appel qui sonne pour moi en ce moment
+         * @description Lu toutes les 2 secondes par le front tant qu'on est connecté et que l'onglet est visible (pas de WebSocket). Porte l'`offre` à passer à `setRemoteDescription`.
+         */
+        get: operations["appelEntrant"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/appels/{appelId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appelId: string;
+            };
+            cookie?: never;
+        };
+        /**
+         * Où en est un appel
+         * @description Pour les deux personnes seulement (sinon 404). L'appelant le lit toutes les secondes tant que ça sonne : il y trouve la `reponse` quand l'autre décroche, ou le refus.
+         */
+        get: operations["lireAppel"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/appels/{appelId}/reponse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appelId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Décrocher
+         * @description Seule la personne appelée, tant que ça sonne. Sa réponse SDP (candidats ICE inclus) part chez l'appelant.
+         */
+        post: operations["decrocher"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/appels/{appelId}/refus": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appelId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refuser un appel qui sonne
+         * @description Seule la personne appelée.
+         */
+        post: operations["refuserAppel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/appels/{appelId}/fin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appelId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Raccrocher
+         * @description Pour l'une ou l'autre personne : un appel qui sonne est annulé, un appel en cours est terminé. Sans effet sur un appel déjà fini. Les SDP (adresses réseau) sont effacées.
+         */
+        post: operations["raccrocher"];
         delete?: never;
         options?: never;
         head?: never;
@@ -259,12 +387,38 @@ export interface components {
              * @description Quand le destinataire l'a lu.
              */
             luLe?: string | null;
-            /** @description Si le message annonce un appel vocal et vidéo (#157) : sa salle, et s'il est encore en cours (lancé il y a moins d'une heure). */
+            /** @description Si le message garde la trace d'un appel (#157). Un appel WebRTC a son `id`, son `statut` et sa durée ; un ancien appel par Jitsi n'a que son `url` (encore en cours pendant une heure). */
             appel?: {
+                /** Format: uuid */
+                id?: string | null;
                 /** Format: uri */
-                url: string;
+                url?: string | null;
                 enCours: boolean;
+                /** @enum {string|null} */
+                statut?: "sonne" | "en_cours" | "termine" | "refuse" | "manque" | "annule" | null;
+                video: boolean;
+                /** @description Pour un appel décroché puis terminé. */
+                dureeSecondes?: number | null;
             } | null;
+        };
+        /** @description Un appel WebRTC vu par l'une des deux personnes. `offre` n'est donnée qu'à la personne appelée tant que ça sonne, `reponse` qu'à l'appelant : chacun ne reçoit que ce dont son navigateur a besoin. */
+        Appel: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            statut: "sonne" | "en_cours" | "termine" | "refuse" | "manque" | "annule";
+            video: boolean;
+            /** @description Vrai si c'est moi qui appelle. */
+            deMoi: boolean;
+            personne: components["schemas"]["Personne"];
+            offre?: string | null;
+            reponse?: string | null;
+            /** Format: date-time */
+            creeLe: string;
+            /** Format: date-time */
+            reponduLe?: string | null;
+            /** Format: date-time */
+            termineLe?: string | null;
         };
         /** @description Le cercle tel qu'il est maintenant, pour savoir s'il reste de la place. */
         InvitationCercle: {
@@ -646,6 +800,34 @@ export interface operations {
             429: components["responses"]["TropDeRequetes"];
         };
     };
+    serveursIce: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Les serveurs ICE. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        iceServers: {
+                            urls: string[];
+                            username?: string | null;
+                            credential?: string | null;
+                        }[];
+                        relais: boolean;
+                    };
+                };
+            };
+            401: components["responses"]["NonConnecte"];
+        };
+    };
     appeler: {
         parameters: {
             query?: never;
@@ -656,21 +838,168 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description La description SDP de l'offre, qui commence par `v=0`. */
+                    offre: string;
+                    /**
+                     * @description Vrai : appel vidéo. Faux : appel vocal (la caméra peut s'allumer ensuite).
+                     * @default false
+                     */
+                    video?: boolean;
+                };
+            };
+        };
         responses: {
-            /** @description L'appel lancé, sous la forme du message qui l'annonce. */
+            /** @description L'appel, qui sonne. */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Message"];
+                    "application/json": components["schemas"]["Appel"];
+                };
+            };
+            400: components["responses"]["Invalide"];
+            401: components["responses"]["NonConnecte"];
+            404: components["responses"]["Introuvable"];
+            409: components["responses"]["Conflit"];
+            429: components["responses"]["TropDeRequetes"];
+        };
+    };
+    appelEntrant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Un appel sonne. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Appel"];
+                };
+            };
+            /** @description Personne n'appelle. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["NonConnecte"];
+        };
+    };
+    lireAppel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appelId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description L'appel. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Appel"];
+                };
+            };
+            401: components["responses"]["NonConnecte"];
+            404: components["responses"]["Introuvable"];
+        };
+    };
+    decrocher: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appelId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    reponse: string;
+                };
+            };
+        };
+        responses: {
+            /** @description L'appel après l'action. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Appel"];
+                };
+            };
+            400: components["responses"]["Invalide"];
+            401: components["responses"]["NonConnecte"];
+            404: components["responses"]["Introuvable"];
+            409: components["responses"]["Conflit"];
+        };
+    };
+    refuserAppel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appelId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description L'appel après l'action. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Appel"];
                 };
             };
             401: components["responses"]["NonConnecte"];
             404: components["responses"]["Introuvable"];
             409: components["responses"]["Conflit"];
-            429: components["responses"]["TropDeRequetes"];
+        };
+    };
+    raccrocher: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appelId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description L'appel après l'action. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Appel"];
+                };
+            };
+            401: components["responses"]["NonConnecte"];
+            404: components["responses"]["Introuvable"];
+            409: components["responses"]["Conflit"];
         };
     };
     listerContacts: {

@@ -10,6 +10,8 @@ import App from '../../App.vue'
 import { ID_ABIDJAN } from '../../mocks/cercles'
 import { rafraichirActivite } from './activite'
 import { quand } from './reseau'
+import { reinitialiserAppel } from './appel'
+import { installerFauxWebrtc } from './fauxWebrtc'
 
 enableAutoUnmount(afterEach)
 
@@ -147,19 +149,20 @@ describe('les messages', () => {
     expect(page.findAll('[data-test="fil"] li').at(-1)!.find('.bulle__lu').exists()).toBe(true)
   })
 
-  it('appelle la personne : la salle s’ouvre dans un nouvel onglet et l’appel est annoncé dans la conversation', async () => {
-    const onglet = { opener: {} as unknown, location: { href: '' }, close: vi.fn() }
-    const ouvrirFenetre = vi.spyOn(window, 'open').mockReturnValue(onglet as unknown as Window)
-    const { page } = await ouvrir(`/messages/${AMINA}`)
-    await vi.waitFor(() => expect(page.find('[data-test="appeler"]').exists()).toBe(true))
-    await page.get('[data-test="appeler"]').trigger('click')
-    await vi.waitFor(() => expect(page.find('[data-test="appel"]').exists()).toBe(true))
-    expect(ouvrirFenetre).toHaveBeenCalledWith('', '_blank')
-    expect(onglet.location.href).toMatch(/^https:\/\/meet\.jit\.si\/jamii-prive-/)
-    expect(onglet.opener).toBeNull()
-    const rejoindre = page.get('[data-test="rejoindre-appel"]')
-    expect(rejoindre.attributes()).toMatchObject({ href: onglet.location.href, target: '_blank', rel: 'noopener noreferrer' })
-    ouvrirFenetre.mockRestore()
+  it("appelle la personne dans Jamii : l'appel sonne dans la fenêtre d'appel, et raccrocher l'annule", async () => {
+    installerFauxWebrtc()
+    try {
+      const { page } = await ouvrir(`/messages/${AMINA}`)
+      await vi.waitFor(() => expect(page.find('[data-test="appeler-video"]').exists()).toBe(true))
+      await page.get('[data-test="appeler-video"]').trigger('click')
+      await vi.waitFor(() => expect(document.querySelector('[data-test="statut-appel"]')?.textContent).toContain('Ça sonne chez Amina'))
+      expect(page.get('[data-test="appeler"]').attributes('disabled')).toBeDefined()
+      ;(document.querySelector('[data-test="raccrocher"]') as HTMLButtonElement).click()
+      await vi.waitFor(() => expect(document.querySelector('[data-test="statut-appel"]')?.textContent).toContain('Appel annulé'))
+    } finally {
+      reinitialiserAppel()
+      vi.unstubAllGlobals()
+    }
   })
 
   it("explique un refus de l'API plutôt que d'échouer en silence", async () => {

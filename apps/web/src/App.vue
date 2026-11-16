@@ -7,6 +7,8 @@ import BoutonTheme from './components/BoutonTheme.vue'
 import { chargerSession, seDeconnecter, useSession } from './session'
 import { JAvatar, JBouton, JSquelette } from './design-system'
 import { arreterActivite, suivreActivite, useActivite } from './features/reseau/activite'
+import { arreterAppelsEntrants, suivreAppelsEntrants } from './features/reseau/appel'
+import FenetreAppel from './features/reseau/FenetreAppel.vue'
 
 const { t } = useI18n()
 const { etat, moi, accesSystalink } = useSession()
@@ -17,6 +19,8 @@ const activite = useActivite()
 const messagesNonLus = computed(() => activite.value?.messagesNonLus ?? 0)
 const nonLus = computed(() => activite.value?.notificationsNonLues ?? 0)
 watch(etat, (e) => (e === 'connecte' ? suivreActivite() : arreterActivite()), { immediate: true })
+// Les appels (#157) : on demande toutes les 2 s si quelqu'un appelle, sur n'importe quelle page (features/reseau/appel.ts).
+watch(etat, (e) => (e === 'connecte' ? suivreAppelsEntrants() : arreterAppelsEntrants()), { immediate: true })
 </script>
 
 <template>
@@ -99,6 +103,8 @@ watch(etat, (e) => (e === 'connecte' ? suivreActivite() : arreterActivite()), { 
       <p class="pied__cadev">{{ t('pied.cadev') }}</p>
     </div>
   </footer>
+
+  <FenetreAppel v-if="etat === 'connecte'" />
 </template>
 
 <style>

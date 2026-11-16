@@ -37,3 +37,27 @@ fournisseur d'IA et le secret de l'OAuth App GitHub. Les variables attendues son
 `docs/deploiement-datacloud.md`. Aucune ne doit rester vide.
 
 L'adresse de retour de l'OAuth App GitHub doit contenir `https://<domaine>/api/auth/github/retour`.
+
+## Le relais des appels (coturn, #157)
+
+Les appels des discussions privées passent directement entre les deux navigateurs (WebRTC). Quand un réseau
+l'empêche (NAT strict, réseau d'entreprise, certaines 4G), ils passent par notre relais TURN : le service `turn` du
+compose, coturn, réglé par `turnserver.conf`. À faire une fois sur le serveur :
+
+```bash
+# 1. Le secret partagé entre l'API et coturn, et l'adresse publique, dans /opt/jamii/.env (jamais dans le dépôt)
+echo "TURN_SECRET=$(openssl rand -hex 32)" >> /opt/jamii/.env
+echo "IP_PUBLIQUE=<l'adresse IP publique du serveur>" >> /opt/jamii/.env
+# Un seul nom, qui pointe vers le serveur (pas DOMAINE, qui liste plusieurs adresses pour Caddy). jamii.dev par défaut.
+echo "TURN_HOTE=jamii.dev" >> /opt/jamii/.env
+# 2. Le pare-feu : le port TURN et la plage de relais
+ufw allow 3478/udp && ufw allow 3478/tcp && ufw allow 49160:49359/udp
+# 3. Copier compose.yml et turnserver.conf à jour dans /opt/jamii, puis
+cd /opt/jamii && docker compose up -d
+```
+
+Si le pare-feu du fournisseur cloud (groupe de sécurité) filtre aussi, y ouvrir les mêmes ports. Sans `TURN_SECRET`,
+l'API ne propose que le STUN : les appels marchent sur la plupart des réseaux, pas tous.
+
+Vérifier : `GET /api/appels/ice` (connecté) renvoie `"relais": true` ; puis l'outil « Trickle ICE » de WebRTC
+(webrtc.github.io/samples) avec ces identifiants doit montrer un candidat `relay`.
