@@ -138,7 +138,10 @@ describe('le message vocal (#157)', () => {
     vi.spyOn(Date, 'now').mockReturnValue(maintenant + 4_000)
     await page.get('[data-test="envoyer-vocal"]').trigger('click')
     await vi.waitFor(() => expect(page.find('[data-test="message-vocal"]').exists()).toBe(true))
-    expect(page.get('[data-test="message-vocal"] audio').attributes('src')).toMatch(/^\/api\/fichiers\//)
+    // Le lecteur maison télécharge le son une fois et le lit en local (blob:) ; s'il ne peut pas le télécharger, il
+    // lit directement l'adresse de l'API. Selon l'environnement de test (jsdom, Node), c'est l'un ou l'autre.
+    await vi.waitFor(() => expect(page.get('[data-test="message-vocal"] audio').attributes('src')).toMatch(/^(blob:|\/api\/fichiers\/)/))
+    expect(page.find('[data-test="jouer-vocal"]').exists()).toBe(true)
     expect(envois).toEqual([{ nom: 'message-vocal.webm', destinataire: 'c1a00000-0000-4000-8000-000000000002', vocal: true }])
   })
 })
