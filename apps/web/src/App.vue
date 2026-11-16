@@ -138,6 +138,31 @@ main.main--pleine { max-width: none; padding-inline: var(--space-4); }
   padding-inline: var(--space-6) var(--space-2);
   border-radius: var(--radius-pill);
 }
+/* En sombre, la surface à 58 % se fond dans le fond : le verre prend un voile clair, un bord et un reflet plus
+   nets, pour que la capsule se détache tout en laissant voir le motif flouté dessous. */
+:root[data-theme='sombre'] .entete__interieur.verre,
+.zone-sombre .entete__interieur.verre {
+  background: color-mix(in srgb, white 9%, color-mix(in srgb, var(--surface-raised) 55%, transparent));
+  border-color: color-mix(in srgb, white 16%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 22%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, black 30%, transparent),
+    0 12px 40px color-mix(in srgb, black 45%, transparent);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='clair']) .entete__interieur.verre {
+    background: color-mix(in srgb, white 9%, color-mix(in srgb, var(--surface-raised) 55%, transparent));
+    border-color: color-mix(in srgb, white 16%, transparent);
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, white 22%, transparent),
+      inset 0 -1px 0 color-mix(in srgb, black 30%, transparent),
+      0 12px 40px color-mix(in srgb, black 45%, transparent);
+  }
+}
+/* Transparence réduite ou contraste augmenté : une capsule pleine, comme le reste du verre. */
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  :root .entete__interieur.verre { background: var(--surface-raised); }
+}
 .entete nav { flex: 1; display: flex; align-items: center; gap: var(--space-1); white-space: nowrap; overflow-x: auto; scrollbar-width: none; }
 /* Pas de barre de défilement dans le menu : il se resserre avant de déborder (voir les paliers plus bas). */
 .entete nav::-webkit-scrollbar { display: none; }
