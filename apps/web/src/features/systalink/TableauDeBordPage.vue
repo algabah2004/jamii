@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import MotifsCoins from '../../components/MotifsCoins.vue'
 import { JBouton, JFiltres, JIllustration, JSquelette } from '../../design-system'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -51,7 +52,9 @@ const paysCercles = computed(() =>
 </script>
 
 <template>
-  <section class="tableau">
+  <section class="avec-motifs tableau">
+    <!-- Des taches de dessins sur les bords de la page, à son image. -->
+    <MotifsCoins planche="systalink" />
     <header class="page-tete motif motif--points">
       <div class="page-tete__texte">
         <h1>{{ t('systalink.titre') }}</h1>

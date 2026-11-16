@@ -236,13 +236,21 @@ describe('du cercle vide au tirage', () => {
     await page.get('[data-test="champ-nom"]').trigger('keydown', { key: 'Enter' })
     await vi.waitFor(() => expect(page.find('[data-test="taille-4"]').exists()).toBe(true))
     await page.get('[data-test="taille-4"]').trigger('change')
+    // Les profils dont le cercle a besoin : facultatifs, un par place libre (3 ici).
+    await vi.waitFor(() => expect(page.find('[data-test="profils"]').exists()).toBe(true), { timeout: 2000 })
+    for (const p of ['mobile', 'design', 'back']) await page.get(`[data-test="profil-${p}"]`).setValue(true)
+    expect((page.get('[data-test="profil-data"]').element as HTMLInputElement).disabled).toBe(true)
+    await page.get('[data-test="profil-back"]').setValue(false)
+    await page.get('[data-test="suivant"]').trigger('click')
     await vi.waitFor(() => expect(page.text()).toContain('Prêt à lancer « Cercle de Thiès » ?'), { timeout: 2000 })
     expect(page.text()).toContain('3 personnes le rejoignent')
+    expect(page.get('[data-test="profils-choisis"]').text()).toContain('Mobile et Design')
     await page.get('[data-test="suivant"]').trigger('click')
     await vi.waitFor(() => expect(page.find('[data-test="succes"]').exists()).toBe(true))
     await page.get('[data-test="entrer"]').trigger('click')
     await vi.waitFor(() => expect(routeur.currentRoute.value.name).toBe('cercle'))
     await vi.waitFor(() => expect(page.find('[data-test="attente-tirage"]').exists()).toBe(true))
+    expect(page.get('[data-test="profils-recherches"]').text()).toContain('Mobile')
 
     // Les 3 autres membres ont déjà déposé leur idée ; le tirage attend la mienne.
     expect(page.find('[data-test="tirer"]').attributes('disabled')).toBeDefined()

@@ -17,6 +17,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
 
@@ -65,6 +66,67 @@ class CreationCommunautesTest {
 
 	private String unique(String prefixe) {
 		return prefixe + " " + UUID.randomUUID().toString().substring(0, 6);
+	}
+
+	private static final byte[] PNG = { (byte) 0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 0x0D };
+
+	private String image(UtilisateurConnecte qui, byte[] octets, String nom, String type) throws Exception {
+		var r = mvc.post().uri("/api/fichiers").multipart().file(new MockMultipartFile("fichier", nom, type, octets))
+			.with(csrf()).with(oauth2Login().oauth2User(qui)).exchange();
+		return corps(r).get("id").asString();
+	}
+
+	private MvcTestResult put(UtilisateurConnecte qui, String uri, String corps, Object... variables) {
+		return mvc.put().uri(uri, variables).contentType(MediaType.APPLICATION_JSON).content(corps).with(csrf())
+			.with(oauth2Login().oauth2User(qui)).exchange();
+	}
+
+	@Test
+	void une_couverture_choisie_a_la_creation_s_affiche_et_sans_elle_le_motif_reste() throws Exception {
+		UtilisateurConnecte awa = utilisateur("Awa");
+		String photo = image(awa, PNG, "couverture.png", "image/png");
+		var avec = post(awa, "/api/communautes", """
+				{"nom":%s,"description":"Des devs qui s'entraident au Sahel.","theme":"web","couvertureId":"%s"}""".formatted(json.writeValueAsString(unique("Couverture")), photo));
+		assertThat(avec).hasStatus(HttpStatus.CREATED);
+		assertThat(corps(avec).get("couverture").asString()).isEqualTo("/api/fichiers/" + photo);
+
+		var sans = creer(awa, unique("Motif"));
+		assertThat(corps(sans).get("couverture").isNull()).isTrue();
+	}
+
+	@Test
+	void la_couverture_doit_etre_une_image_publique_envoyee_par_soi() throws Exception {
+		UtilisateurConnecte awa = utilisateur("Awa");
+		UtilisateurConnecte kofi = utilisateur("Kofi");
+		String deKofi = image(kofi, PNG, "a.png", "image/png");
+		String document = image(awa, "Un simple texte".getBytes(java.nio.charset.StandardCharsets.UTF_8), "notes.txt", "text/plain");
+		for (String id : new String[] { deKofi, document, UUID.randomUUID().toString() }) {
+			var r = post(awa, "/api/communautes", """
+					{"nom":%s,"description":"Des devs qui s'entraident au Sahel.","theme":"web","couvertureId":"%s"}""".formatted(json.writeValueAsString(unique("Refus")), id));
+			assertThat(r).as(id).hasStatus(HttpStatus.BAD_REQUEST);
+			assertThat(r).bodyJson().extractingPath("$.erreurs[0].champ").isEqualTo("couvertureId");
+		}
+	}
+
+	@Test
+	void seul_un_moderateur_change_la_couverture_ou_revient_au_motif() throws Exception {
+		UtilisateurConnecte awa = utilisateur("Awa");
+		UtilisateurConnecte kofi = utilisateur("Kofi");
+		String slug = corps(creer(awa, unique("Sahel"))).get("slug").asString();
+		String photo = image(awa, PNG, "c.png", "image/png");
+
+		assertThat(put(kofi, "/api/communautes/{slug}/couverture", "{\"fichierId\":\"%s\"}".formatted(image(kofi, PNG, "k.png", "image/png")), slug))
+			.hasStatus(HttpStatus.FORBIDDEN);
+		var change = put(awa, "/api/communautes/{slug}/couverture", "{\"fichierId\":\"%s\"}".formatted(photo), slug);
+		assertThat(change).hasStatus(HttpStatus.OK);
+		assertThat(corps(change).get("couverture").asString()).isEqualTo("/api/fichiers/" + photo);
+		// Toute personne connectée voit la couverture (une image publique).
+		assertThat(mvc.get().uri("/api/fichiers/" + photo).with(oauth2Login().oauth2User(kofi)).exchange()).hasStatus(HttpStatus.OK);
+
+		var motif = put(awa, "/api/communautes/{slug}/couverture", "{\"fichierId\":null}", slug);
+		assertThat(motif).hasStatus(HttpStatus.OK);
+		assertThat(corps(motif).get("couverture").isNull()).isTrue();
+		assertThat(put(awa, "/api/communautes/{slug}/couverture", "{}", "inconnue-" + UUID.randomUUID())).hasStatus(HttpStatus.NOT_FOUND);
 	}
 
 	@Test

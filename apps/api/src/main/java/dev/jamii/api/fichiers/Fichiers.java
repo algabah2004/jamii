@@ -201,6 +201,22 @@ public class Fichiers {
 		return java.util.Arrays.stream((Object[]) a.getArray()).map(v -> v instanceof UUID u ? u : UUID.fromString(v.toString())).toList();
 	}
 
+	/** Où lire un fichier, pour un autre module (la couverture d'une communauté). */
+	public static String adresse(UUID id) {
+		return url(id);
+	}
+
+	/**
+	 * Une image qu'on peut montrer à toute personne connectée : envoyée par `auteur`, de sorte `image`, ni réservée à
+	 * une conversation, ni à un cercle. Pour une couverture de communauté.
+	 */
+	public boolean estImagePublique(UUID id, UUID auteur) {
+		return base.sql("""
+				SELECT EXISTS (SELECT 1 FROM fichier WHERE id = :id AND proprietaire_id = :a AND sorte = 'image'
+				  AND conversation_avec IS NULL AND cercle_id IS NULL)
+				""").param("id", id).param("a", auteur).query(Boolean.class).single();
+	}
+
 	static String url(UUID id) {
 		return "/api/fichiers/" + id;
 	}

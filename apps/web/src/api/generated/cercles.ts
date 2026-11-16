@@ -347,7 +347,14 @@ export interface components {
             ville?: string;
             /** @description Nombre de membres, créateur compris. */
             taille: number;
+            /** @description Les profils dont le cercle a besoin. Facultatif : vide, rien de précisé. */
+            profils?: components["schemas"]["ProfilRecherche"][];
         };
+        /**
+         * @description Un profil recherché : développement front, back ou mobile, design, données, IA, mise en ligne (devops), sécurité, produit (chef de projet), test.
+         * @enum {string}
+         */
+        ProfilRecherche: "front" | "back" | "mobile" | "design" | "data" | "ia" | "devops" | "securite" | "produit" | "test";
         Idee: {
             titre: string;
             /** @description Texte brut, affiché échappé. */
@@ -389,6 +396,8 @@ export interface components {
             createur: components["schemas"]["PersonneResume"];
             /** Format: date-time */
             creeLe: string;
+            /** @description Les profils dont le cercle a besoin, choisis à sa création. Vide : rien de précisé. */
+            profilsRecherches: components["schemas"]["ProfilRecherche"][];
         };
         Cercle: components["schemas"]["CercleResume"] & {
             /** @description Dans l'ordre de passage une fois le tirage fait, sinon dans l'ordre d'arrivée. */
