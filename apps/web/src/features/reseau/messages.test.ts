@@ -75,7 +75,7 @@ describe('les messages', () => {
     await page.get('[data-test="form-message"] textarea').setValue('On avance ensemble !')
     await page.get('[data-test="form-message"]').trigger('submit')
     await vi.waitFor(() => expect(page.get('[data-test="fil"]').text()).toContain('On avance ensemble !'))
-    await page.get('.filtres button').trigger('click')
+    await page.get('[data-test="fermer-contacts"]').trigger('click')
     await vi.waitFor(() => expect(page.findAll('[data-test="conversations"] li')[0]!.text()).toContain('On avance ensemble !'))
   })
 

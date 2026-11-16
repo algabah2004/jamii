@@ -46,6 +46,9 @@ const messages = ref<Message[]>([])
 const etat = ref<'chargement' | 'pret' | 'introuvable' | 'indisponible'>('chargement')
 const fil = ref<HTMLElement | null>(null)
 let versionConversation = 0
+/** Les messages présents à l'ouverture : ils sont là, sans animation. Seuls les nouveaux arrivent en glissant. */
+let dejaLa = new Set<string>()
+
 let actif = true
 
 async function charger() {
@@ -63,6 +66,7 @@ async function charger() {
       return
     }
     personne.value = r.personne
+    dejaLa = new Set(r.messages.map((m) => m.id))
     messages.value = r.messages
     etat.value = 'pret'
     const contact = await lireLien(r.personne.id).catch(() => null)
@@ -91,7 +95,7 @@ async function relire() {
     if (r.messages.at(-1)?.id !== dernier) {
       emit('actualise')
       void rafraichirActivite()
-      if (enBas) await descendre()
+      if (enBas) await descendre(true)
     }
   } catch {
     // La prochaine relecture réessaiera.
@@ -101,9 +105,14 @@ const minuterie = setInterval(() => void relire(), 5000)
 
 onBeforeUnmount(() => { actif = false; clearInterval(minuterie); clearInterval(minuterieEcriture) })
 
-async function descendre() {
+/** Descendre en bas du fil : d'un coup à l'ouverture, en douceur ensuite (sauf mouvement réduit). */
+async function descendre(doux = false) {
   await nextTick()
-  if (fil.value) fil.value.scrollTop = fil.value.scrollHeight
+  const f = fil.value
+  if (!f) return
+  const calme = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
+  if (doux && !calme && typeof f.scrollTo === 'function') f.scrollTo({ top: f.scrollHeight, behavior: 'smooth' })
+  else f.scrollTop = f.scrollHeight
 }
 
 /** Le fil groupé par jour : « Aujourd'hui », « Hier », puis la date. */
@@ -172,7 +181,7 @@ async function envoyer() {
       reponse.value = null
       edition.value = null
       composeur.value?.rafraichir()
-      if (!enCours) await descendre()
+      if (!enCours) await descendre(true)
       composeur.value?.focus()
     } else erreur.value = t(`reseau.erreurs.${r.code ?? 'autre'}`, t('reseau.erreurs.autreMessage'))
   } catch {
@@ -341,7 +350,7 @@ async function envoyerVocal(fichier: File) {
       reponse.value = null
       messages.value.push(r.message)
       emit('actualise')
-      await descendre()
+      await descendre(true)
     } else erreur.value = t(`reseau.erreurs.${r.code ?? 'autre'}`, t('reseau.erreurs.autreMessage'))
   } catch {
     if (actif && version === versionConversation) erreur.value = t('etat.indisponible')
@@ -407,7 +416,7 @@ async function lireSiEcrit() {
   if (actif && personne.value?.id === id) {
     const enBas = !fil.value || fil.value.scrollHeight - fil.value.scrollTop - fil.value.clientHeight < 80
     autreEcrit.value = ecrit
-    if (ecrit && enBas) await descendre()
+    if (ecrit && enBas) await descendre(true)
   }
 }
 const minuterieEcriture = setInterval(() => void lireSiEcrit(), LECTURE_ECRITURE_MS)
@@ -457,12 +466,16 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
           <JAvatar :nom="personne.nom" :url="personne.avatarUrl" :taille="44" />
           <span v-if="presenceAutre?.enLigne" class="point-en-ligne" aria-hidden="true" />
         </span>
+        <!-- Deux lignes : le nom (qui mène au profil) et le lien de contact, puis la présence et la ville. -->
         <div class="tete__qui">
-          <h2>{{ personne.nom }}</h2>
-          <p v-if="statutAutre" class="tete__presence" :class="{ 'tete__presence--en-ligne': presenceAutre?.enLigne }" data-test="presence">{{ statutAutre }}</p>
-          <p>
-            <RouterLink :to="`/p/${personne.id}`" class="tete__profil">{{ t('reseau.messages.voirProfil') }}</RouterLink><span v-if="personne.ville"> · {{ personne.ville }}</span>
+          <div class="tete__ligne">
+            <h2><RouterLink :to="`/p/${personne.id}`" class="tete__nom" :title="t('reseau.messages.voirProfil')">{{ personne.nom }}</RouterLink></h2>
             <span v-if="lien && lien !== 'aucun' && lien !== 'recue'" class="tete__lien" data-test="lien-contact">{{ t(`reseau.contacts.statut.${lien}`) }}</span>
+          </div>
+          <p class="tete__sous">
+            <span v-if="statutAutre" class="tete__presence" :class="{ 'tete__presence--en-ligne': presenceAutre?.enLigne }" data-test="presence">{{ statutAutre }}</span>
+            <span v-if="statutAutre && personne.ville" aria-hidden="true">·</span>
+            <span v-if="personne.ville">{{ personne.ville }}</span>
           </p>
         </div>
         <div class="tete__actions">
@@ -492,7 +505,7 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
               v-for="(m, i) in j.messages"
               :key="m.id"
               class="ligne"
-              :class="[m.deMoi ? 'bulle--moi' : 'bulle--autre', { 'ligne--suite': suite(j.messages, i), 'ligne--surlignee': surligne === m.id, 'ligne--menu': menu === m.id }]"
+              :class="[m.deMoi ? 'bulle--moi' : 'bulle--autre', { 'ligne--suite': suite(j.messages, i), 'ligne--surlignee': surligne === m.id, 'ligne--menu': menu === m.id, 'ligne--glisse': glisse?.id === m.id, 'ligne--arrivee': !dejaLa.has(m.id) }]"
               :data-message="m.id"
               @pointerdown="toucher($event, m)"
               @pointermove="bouger"
@@ -640,31 +653,33 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
   background: var(--bg); overflow: hidden;
 }
 
-.tete { display: flex; align-items: center; gap: var(--space-3); min-height: 80px; padding: 16px 20px; margin: 14px 14px -10px; border-radius: 22px; z-index: 2; }
+.tete { display: flex; align-items: center; gap: var(--space-3); min-height: 72px; padding: 12px 16px 12px 18px; margin: 14px 14px -10px; border-radius: 22px; z-index: 2; }
 .tete__retour { display: none; place-items: center; width: 36px; height: 36px; border-radius: 50%; color: var(--ink); }
 .tete__retour:hover { background: color-mix(in srgb, var(--ink) 8%, transparent); }
 .tete__qui { flex: 1; min-width: 0; }
-.tete__qui .tete__presence { font-size: 0.8125rem; }
+.tete__ligne { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.tete__nom { color: inherit; text-decoration: none; border-radius: 6px; transition: color 160ms var(--ease-out); }
+.tete__nom:hover { color: var(--action-ink); }
+.tete__nom:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.tete__sous { margin: 2px 0 0; display: flex; gap: 6px; align-items: center; color: var(--ink-muted); font-size: 0.8125rem; min-width: 0; white-space: nowrap; overflow: hidden; }
 .tete__presence--en-ligne { color: var(--en-ligne); font-weight: 600; }
 .avatar-presence { position: relative; display: inline-flex; flex: none; }
 .point-en-ligne { position: absolute; right: 0; bottom: 0; width: 12px; height: 12px; border-radius: 50%; background: var(--en-ligne); box-shadow: 0 0 0 2px var(--surface); }
-.tete__qui h2 { margin: 0; font-size: 1.0625rem; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tete__qui p { margin: 0; display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; color: var(--ink-muted); font-size: var(--type-body-sm-size); }
-.tete__profil { color: var(--ink-muted); text-decoration: none; }
-.tete__profil:hover { color: var(--action-ink); text-decoration: underline; }
-.tete__lien { padding: 0 8px; border-radius: var(--radius-pill); background: var(--action-soft); color: var(--action-ink); font-weight: 600; font-size: 0.875rem; }
+.tete__qui h2 { margin: 0; min-width: 0; font-size: 1.0625rem; line-height: 1.3; letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tete__lien { flex: none; padding: 1px 9px; border-radius: var(--radius-pill); background: var(--action-soft); color: var(--action-ink); font-weight: 700; font-size: 0.75rem; }
 .tete__actions { display: flex; align-items: center; gap: var(--space-2); }
 
-.rond { display: grid; place-items: center; flex: none; width: 44px; height: 44px; border-radius: 50%; border: 0; cursor: pointer; transition: transform var(--motion-fast, 120ms) ease, background var(--motion-fast, 120ms) ease; }
+.rond { display: grid; place-items: center; flex: none; width: 44px; height: 44px; border-radius: 50%; border: 0; cursor: pointer; transition: transform 260ms var(--ease-pop), background 200ms var(--ease-out), box-shadow 200ms var(--ease-out); }
 .rond:disabled { opacity: 0.45; cursor: default; }
-.rond:not(:disabled):hover { transform: scale(1.06); }
+.rond:not(:disabled):hover { transform: translateY(-1px) scale(1.06); box-shadow: 0 8px 18px -8px color-mix(in srgb, var(--action) 60%, transparent); }
+.rond:not(:disabled):active { transform: scale(0.92); transition-duration: 90ms; }
 .rond:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .rond--appel { background: var(--action-soft); color: var(--action-ink); }
 .rond--envoyer { background: var(--proof); color: var(--on-proof); }
 
 .fil {
   grid-row: 2; grid-column: 1; position: relative; z-index: 1;
-  min-height: 0; overflow-y: auto; padding: 34px clamp(20px, 4vw, 64px) 40px; overscroll-behavior: contain;
+  min-height: 0; overflow-y: auto; padding: 34px clamp(20px, 4vw, 64px) 40px; overscroll-behavior: contain; scrollbar-width: thin;
 }
 /* Le motif occupe la place de l'en-tête et du fil (même cellule de grille), derrière les deux. */
 .tete { grid-row: 1; grid-column: 1; }
@@ -674,23 +689,29 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
 .accueil p { margin: 0; }
 
 .jours { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
-.jour { display: flex; justify-content: center; margin: var(--space-4) 0 var(--space-2); }
-.jour span { padding: 2px 12px; border-radius: var(--radius-pill); background: var(--surface); border: 1px solid var(--line); color: var(--ink-muted); font-size: 0.875rem; font-weight: 600; text-transform: capitalize; }
+/* Le jour reste collé en haut du fil pendant qu'on remonte, sur un verre léger. */
+.jour { position: sticky; top: 4px; z-index: 3; display: flex; justify-content: center; margin: var(--space-4) 0 var(--space-2); pointer-events: none; }
+.jour span { padding: 4px 12px; border-radius: var(--radius-pill); background: color-mix(in srgb, var(--surface) 82%, transparent); backdrop-filter: blur(12px) saturate(1.4); -webkit-backdrop-filter: blur(12px) saturate(1.4); border: 1px solid var(--line); box-shadow: 0 4px 14px -8px color-mix(in srgb, var(--ink) 25%, transparent); color: var(--ink-muted); font-size: 0.8125rem; font-weight: 700; text-transform: capitalize; }
 
-.ligne { display: flex; align-items: flex-end; gap: var(--space-2); margin-top: var(--space-2); animation: arrive 180ms ease-out; }
+.ligne { display: flex; align-items: flex-end; gap: var(--space-2); margin-top: var(--space-2); }
+/* Un nouveau message (pas ceux déjà là à l'ouverture) : la bulle grandit depuis son coin, comme si elle sortait de l'avatar. */
+.ligne--arrivee > .bulle, .ligne--arrivee > .appel-carte { animation: arrive 340ms var(--ease-out) backwards; transform-origin: bottom left; }
+.bulle--moi > .bulle, .bulle--moi > .appel-carte { transform-origin: bottom right; }
+.ligne:not(.ligne--glisse) > .bulle { transition: transform 300ms var(--ease-pop), box-shadow 200ms var(--ease-out); }
 .ligne--suite { margin-top: 0; }
 .ligne__avatar { flex: none; width: 28px; }
 .bulle--moi { flex-direction: row-reverse; }
 .bulle--moi .ligne__avatar { display: none; }
 
-.bulle { display: grid; gap: var(--space-1); max-width: min(75%, 34rem); padding: var(--space-2) var(--space-3); border-radius: 18px; box-shadow: 0 1px 1px color-mix(in srgb, var(--ink) 8%, transparent); }
-.bulle--autre .bulle { background: var(--surface); color: var(--ink); border-bottom-left-radius: 6px; }
-.bulle--moi .bulle { background: var(--proof); color: var(--on-proof); border-bottom-right-radius: 6px; }
+.bulle { display: grid; gap: var(--space-1); max-width: min(75%, 34rem); padding: 9px 14px; border-radius: 20px; line-height: 1.5; box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 7%, transparent); }
+.bulle--autre .bulle { background: var(--surface); color: var(--ink); border: 1px solid color-mix(in srgb, var(--line) 70%, transparent); border-bottom-left-radius: 6px; }
+.bulle--moi .bulle { background: linear-gradient(160deg, color-mix(in srgb, var(--proof) 86%, white), var(--proof) 55%); color: var(--on-proof); border-bottom-right-radius: 6px; box-shadow: 0 6px 16px -10px color-mix(in srgb, var(--proof) 80%, transparent); }
 .ligne--suite.bulle--autre .bulle { border-top-left-radius: 6px; }
 .ligne--suite.bulle--moi .bulle { border-top-right-radius: 6px; }
 .bulle__texte { margin: 0; }
-.bulle__meta { display: inline-flex; justify-self: end; gap: 4px; align-items: center; font-size: 0.8125rem; opacity: 0.85; }
+.bulle__meta { display: inline-flex; justify-self: end; gap: 4px; align-items: center; font-size: 0.75rem; font-variant-numeric: tabular-nums; opacity: 0.8; }
 .bulle__lu { letter-spacing: -2px; }
+.bulle__lu { transition: color 300ms var(--ease-out); }
 .bulle__lu--oui { font-weight: 800; }
 
 .invitation { display: grid; gap: var(--space-1); justify-items: start; margin-top: var(--space-1); padding: var(--space-3); border-radius: 12px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); }
@@ -708,13 +729,13 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
 .appel-carte__rejoindre:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
 .saisie { position: relative; margin: 0 var(--space-6) var(--space-4); z-index: 2; }
-.saisie__info { position: absolute; left: 50%; bottom: calc(100% + 8px); transform: translateX(-50%); margin: 0; padding: 6px 14px; border-radius: var(--radius-pill); background: var(--ink); color: var(--bg); font-size: var(--type-body-sm-size); font-weight: 600; white-space: nowrap; }
+.saisie__info { position: absolute; left: 50%; bottom: calc(100% + 8px); transform: translateX(-50%); margin: 0; padding: 6px 14px; border-radius: var(--radius-pill); background: var(--ink); color: var(--bg); font-size: var(--type-body-sm-size); font-weight: 600; white-space: nowrap; animation: info-entre 280ms var(--ease-pop); }
 
 /* Répondre, modifier, supprimer, transférer (#157). */
 .ligne { position: relative; touch-action: pan-y; }
 .ligne--surlignee .bulle { box-shadow: 0 0 0 3px var(--action); transition: box-shadow 200ms ease-out; }
-.ligne__repondre { position: absolute; left: 4px; top: 50%; display: grid; place-items: center; width: 30px; height: 30px; margin-top: -15px; border-radius: 50%; background: var(--surface); color: var(--ink-muted); opacity: 0.6; transition: opacity 120ms, transform 120ms; }
-.ligne__repondre--pret { opacity: 1; color: var(--action-ink); transform: scale(1.12); }
+.ligne__repondre { position: absolute; left: 4px; top: 50%; display: grid; place-items: center; width: 30px; height: 30px; margin-top: -15px; border-radius: 50%; background: var(--surface); color: var(--ink-muted); opacity: 0.6; transition: opacity 160ms var(--ease-out), transform 260ms var(--ease-pop), background 160ms; animation: apparait 200ms var(--ease-out); }
+.ligne__repondre--pret { opacity: 1; color: var(--on-action, #fff); background: var(--action); transform: scale(1.15); }
 .bulle__transfere { display: inline-flex; align-items: center; gap: 4px; font-size: 0.8125rem; font-style: italic; opacity: 0.75; }
 .bulle__modifie { font-style: italic; }
 .bulle--supprimee { background: transparent !important; color: var(--ink-muted) !important; border: 1px dashed var(--line-strong); box-shadow: none; }
@@ -727,24 +748,27 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
 .citation span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 0.875rem; opacity: 0.85; }
 .citation:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
 
-.actions { position: relative; align-self: center; opacity: 0; transition: opacity 120ms; }
-.ligne:hover .actions, .actions:focus-within, .ligne--menu .actions { opacity: 1; }
-@media (hover: none) { .actions { opacity: 0.55; } }
-.actions__ouvrir { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--ink-muted); cursor: pointer; }
+.actions { position: relative; align-self: center; opacity: 0; transform: scale(0.8); transition: opacity 180ms var(--ease-out), transform 220ms var(--ease-pop); }
+.ligne:hover .actions, .actions:focus-within, .ligne--menu .actions { opacity: 1; transform: none; }
+@media (hover: none) { .actions { opacity: 0.55; transform: none; } }
+.actions__ouvrir { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--ink-muted); cursor: pointer; transition: background 160ms var(--ease-out), color 160ms var(--ease-out); }
 .actions__ouvrir:hover, .actions__ouvrir[aria-expanded="true"] { background: var(--surface); color: var(--ink); }
 .actions__ouvrir:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
 .actions__menu {
   position: absolute; bottom: calc(100% + 4px); z-index: 5; display: grid; min-width: 11rem; padding: 6px; border-radius: 14px;
-  background: var(--surface); color: var(--ink); border: 1px solid var(--line); box-shadow: 0 12px 32px rgb(0 0 0 / 0.18);
+  background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(16px) saturate(1.5); -webkit-backdrop-filter: blur(16px) saturate(1.5);
+  color: var(--ink); border: 1px solid var(--line); box-shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 18px 40px -12px rgb(0 0 0 / 0.28);
+  transform-origin: bottom left; animation: menu-entre 200ms var(--ease-out);
 }
 .bulle--autre .actions__menu { left: 0; }
-.bulle--moi .actions__menu { right: 0; }
-.actions__menu button { padding: 8px 12px; border: 0; border-radius: 8px; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.bulle--moi .actions__menu { right: 0; transform-origin: bottom right; }
+.actions__menu button { padding: 9px 12px; border: 0; border-radius: 9px; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; transition: background 140ms var(--ease-out); }
 .actions__menu button:hover, .actions__menu button:focus-visible { background: var(--surface-raised); outline: none; }
 .actions__menu .danger { color: var(--danger); }
+.actions__menu .danger:hover { background: color-mix(in srgb, var(--danger) 10%, transparent); }
 .actions__question { margin: 4px 12px 6px; font-weight: 600; font-size: var(--type-body-sm-size); }
 
-.bandeau { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-2); padding: 8px 8px 8px 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--action); color: var(--action-ink); }
+.bandeau { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-2); padding: 8px 8px 8px 14px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--action); color: var(--action-ink); box-shadow: 0 10px 24px -16px color-mix(in srgb, var(--ink) 30%, transparent); animation: monte 260ms var(--ease-out); }
 .bandeau__texte { display: grid; flex: 1; min-width: 0; color: var(--ink); }
 .bandeau__texte strong { font-size: 0.875rem; color: var(--action-ink); }
 .bandeau__texte span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-muted); font-size: 0.875rem; }
@@ -753,10 +777,13 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
 @media (prefers-reduced-motion: reduce) { .ligne__repondre, .actions { transition: none; } }
 .erreur { margin: 0; color: var(--danger); font-weight: 600; }
 
-@keyframes arrive { from { opacity: 0; transform: translateY(6px); } }
+@keyframes arrive { from { opacity: 0; transform: translateY(10px) scale(0.94); } }
+@keyframes apparait { from { opacity: 0; transform: scale(0.5); } }
+@keyframes menu-entre { from { opacity: 0; transform: translateY(6px) scale(0.94); } }
+@keyframes monte { from { opacity: 0; transform: translateY(10px); } }
+@keyframes info-entre { from { opacity: 0; transform: translate(-50%, 8px) scale(0.9); } }
 @media (prefers-reduced-motion: reduce) {
-  .ligne { animation: none; }
-  .rond { transition: none; }
+  .discussion *, .discussion *::before, .discussion *::after { animation: none !important; transition-duration: 0ms !important; }
 }
 @media (max-width: 45rem) {
   .tete__retour { display: grid; }
@@ -769,11 +796,11 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
   .aide { display: none; }
   .bulle { max-width: 85%; }
 }
-.ecrit { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) 0 var(--space-1); color: var(--ink-muted); font-size: 0.85rem; }
-.ecrit__bulle { display: inline-flex; gap: 4px; padding: 10px 12px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); }
-.ecrit__bulle i { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-muted); animation: points 1.2s ease-in-out infinite; }
+.ecrit { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) 0 var(--space-1); color: var(--ink-muted); font-size: 0.85rem; animation: monte 260ms var(--ease-out); }
+.ecrit__bulle { display: inline-flex; gap: 4px; padding: 12px 14px; border-radius: 20px; border-bottom-left-radius: 6px; background: var(--surface); border: 1px solid var(--line); }
+.ecrit__bulle i { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-muted); animation: points 1.3s cubic-bezier(.45,0,.55,1) infinite; }
 .ecrit__bulle i:nth-child(2) { animation-delay: 0.15s; }
 .ecrit__bulle i:nth-child(3) { animation-delay: 0.3s; }
-@keyframes points { 0%, 60%, 100% { opacity: 0.35; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-3px); } }
+@keyframes points { 0%, 60%, 100% { opacity: 0.35; transform: translateY(0) scale(0.9); } 30% { opacity: 1; transform: translateY(-4px) scale(1); } }
 @media (prefers-reduced-motion: reduce) { .ecrit__bulle i { animation: none; } }
 </style>
