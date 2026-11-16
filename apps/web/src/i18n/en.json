@@ -3091,5 +3091,17 @@
     "badge": "AI",
     "badgeLong": "AI assistant",
     "badgeAide": "Suggested by Jamii’s artificial intelligence: review before acting."
+  },
+  "presence": {
+    "enLigne": "Online",
+    "instant": "Seen just now",
+    "minutes": "Seen {n} min ago",
+    "aujourdhui": "Seen today at {heure}",
+    "hier": "Seen yesterday at {heure}",
+    "le": "Seen on {date}",
+    "reglage": {
+      "titre": "Show when I'm online",
+      "aide": "People you write to see “Online” or “Seen 5 min ago”. If you hide it, you no longer see when others are online either."
+    }
   }
 }

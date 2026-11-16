@@ -105,7 +105,7 @@ describe('contrastes de la charte (WCAG 2.1 AA)', () => {
   }
   const PAIRES: [string, string, number][] = [
     ['ink', 'bg', 4.5], ['ink-muted', 'surface', 4.5], ['action-ink', 'surface', 4.5], ['action-ink', 'bg', 4.5],
-    ['on-action', 'action', 4.5], ['on-proof', 'proof', 4.5], ['proof-ink', 'surface', 4.5], ['danger', 'surface', 4.5],
+    ['on-action', 'action', 4.5], ['on-proof', 'proof', 4.5], ['proof-ink', 'surface', 4.5], ['danger', 'surface', 4.5], ['en-ligne', 'surface', 4.5],
     ['line-strong', 'surface', 3], ['line-strong', 'bg', 3], ['focus', 'bg', 3],
   ]
   for (const theme of ['clair', 'sombre'] as const) {

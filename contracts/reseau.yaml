@@ -46,6 +46,7 @@ tags:
   - { name: contacts, description: 'Ajouter quelqu''un à ses contacts.' }
   - { name: notifications, description: 'Ce qui s''est passé depuis ma dernière visite.' }
   - { name: appels, description: 'Les appels audio et vidéo en tête-à-tête, en WebRTC (#157).' }
+  - { name: presence, description: '« En ligne » et « Vu il y a … » (#157).' }
 
 paths:
   /api/recommandations/cercles:
@@ -560,6 +561,62 @@ paths:
               schema: { $ref: '#/components/schemas/Activite' }
         '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
 
+  /api/presence:
+    get:
+      tags: [presence]
+      operationId: lirePresence
+      summary: Qui est en ligne, et quand les autres ont été vus
+      description: |
+        Chaque requête d'une personne connectée note son activité (au plus une fois par minute). « En ligne » : active
+        depuis moins de 2 minutes. Sinon `vuLe`, arrondi à la minute, seulement s'il date de moins de 7 jours.
+        Une personne qui cache sa présence apparaît toujours hors ligne, sans date. Réciproque : si je cache la mienne,
+        `masquee` vaut true et je ne vois celle de personne.
+      parameters:
+        - name: personnes
+          in: query
+          required: true
+          description: Les identifiants, séparés par des virgules (50 au plus).
+          schema: { type: string }
+      responses:
+        '200':
+          description: Une présence par personne demandée.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Presences' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+
+  /api/me/presence:
+    get:
+      tags: [presence]
+      operationId: lireMaVisibilite
+      summary: Est-ce que je montre quand je suis en ligne ? (oui par défaut)
+      responses:
+        '200':
+          description: Mon choix.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/VisibilitePresence' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+    put:
+      tags: [presence]
+      operationId: changerMaVisibilite
+      summary: Montrer ou cacher quand je suis en ligne
+      security: [{ session: [], csrf: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/VisibilitePresence' }
+      responses:
+        '200':
+          description: Le choix enregistré.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/VisibilitePresence' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+
   /api/me/notifications:
     get:
       tags: [notifications]
@@ -605,6 +662,30 @@ components:
       schema: { type: string, format: uuid }
 
   schemas:
+    EtatPresence:
+      type: object
+      required: [personneId, enLigne, vuLe]
+      properties:
+        personneId: { type: string, format: uuid }
+        enLigne: { type: boolean }
+        vuLe:
+          type: [string, 'null']
+          format: date-time
+          description: Arrondi à la minute. null si en ligne, caché, jamais vu ou vu il y a plus de 7 jours.
+
+    Presences:
+      type: object
+      required: [masquee, elements]
+      properties:
+        masquee: { type: boolean, description: 'Je cache ma présence : je ne vois pas celle des autres.' }
+        elements: { type: array, items: { $ref: '#/components/schemas/EtatPresence' } }
+
+    VisibilitePresence:
+      type: object
+      required: [visible]
+      properties:
+        visible: { type: boolean }
+
     Personne:
       type: object
       description: Ce que le réseau montre d'une personne. Jamais son e-mail.

@@ -42,6 +42,7 @@ const messages = new Map<string, Message[]>()
 /** Le lien de contact entre Awa et chaque personne (absent : aucun). */
 const contacts = new Map<string, { statut: Exclude<StatutLien, 'aucun'>; depuis: string }>()
 let notifications: Notification[] = []
+let presenceVisible = true
 let suivant = 1
 const nouvelId = () => `e3f00000-0000-4000-8000-${String(suivant++).padStart(12, '0')}`
 const ilYa = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOString()
@@ -57,6 +58,7 @@ export function reinitialiserReseau() {
   messages.clear()
   contacts.clear()
   suivant = 1
+  presenceVisible = true
   // Kofi invite Awa dans son cercle d'Abidjan (non lu), Amina lui a répondu hier (lu).
   const abidjan = cerclesDemo().find((c) => c.id === ABIDJAN)
   messages.set(KOFI, [
@@ -78,6 +80,10 @@ export function reinitialiserReseau() {
   ]
 }
 reinitialiserReseau()
+
+// Présence (#157) : Kofi est en ligne, Amina a été vue il y a 25 minutes. Awa peut cacher la sienne.
+const vuLe = (id: string): { enLigne: boolean; vuLe: string | null } =>
+  id === KOFI ? { enLigne: true, vuLe: null } : id === PROFILS[1].utilisateurId ? { enLigne: false, vuLe: ilYa(25) } : { enLigne: false, vuLe: null }
 
 const nonLus = (liste: Message[]) => liste.filter((m) => !m.deMoi && !m.luLe).length
 
@@ -232,6 +238,21 @@ export const handlersReseau = [
     return HttpResponse.json({ personne: p, elements, curseurSuivant: null })
   }),
 
+  http.get('/api/presence', ({ request }) => {
+    const ids = (new URL(request.url).searchParams.get('personnes') ?? '').split(',').filter(Boolean)
+    if (!ids.length || ids.length > 50) return erreur('validation', 400)
+    return HttpResponse.json({
+      masquee: !presenceVisible,
+      elements: ids.map((personneId) => ({ personneId, ...(presenceVisible ? vuLe(personneId) : { enLigne: false, vuLe: null }) })),
+    })
+  }),
+  http.get('/api/me/presence', () => HttpResponse.json({ visible: presenceVisible })),
+  http.put('/api/me/presence', async ({ request }) => {
+    const corps = (await request.json()) as { visible?: unknown }
+    if (typeof corps.visible !== 'boolean') return erreur('validation', 400)
+    presenceVisible = corps.visible
+    return HttpResponse.json({ visible: presenceVisible })
+  }),
   http.get('/api/me/activite', () => {
     const messagesNonLus = [...messages.values()].reduce((n, liste) => n + nonLus(liste), 0)
     const demandesContact = [...contacts.values()].filter((c) => c.statut === 'recue').length

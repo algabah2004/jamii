@@ -3091,5 +3091,17 @@
     "badge": "IA",
     "badgeLong": "Assistant IA",
     "badgeAide": "Proposé par l’intelligence artificielle de Jamii : à relire avant d’agir."
+  },
+  "presence": {
+    "enLigne": "En ligne",
+    "instant": "Vu à l'instant",
+    "minutes": "Vu il y a {n} min",
+    "aujourdhui": "Vu aujourd'hui à {heure}",
+    "hier": "Vu hier à {heure}",
+    "le": "Vu le {date}",
+    "reglage": {
+      "titre": "Montrer quand je suis en ligne",
+      "aide": "Les personnes à qui tu écris voient « En ligne » ou « Vu il y a 5 min ». Si tu le caches, tu ne vois plus non plus quand les autres sont en ligne."
+    }
   }
 }
