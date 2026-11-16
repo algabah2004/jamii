@@ -94,7 +94,8 @@ export const routes: RouteRecordRaw[] = [
   },
   // Une personne ou une PME décrit son besoin, Jamii l'oriente (étape 1 de la démo). Connexion requise
   // (GitHub ou e-mail : une PME n'a pas besoin de compte GitHub). `/besoin` est l'adresse à donner.
-  { path: '/besoin', redirect: '/demandes/nouvelle' },
+  // On décrit son besoin en parlant à Ayo, sur la page « Tes demandes » : ces adresses y mènent (le début et l'exemple suivent).
+  { path: '/besoin', redirect: (to) => ({ path: '/demandes', query: to.query }) },
   // « Tes demandes » (#199) : tous ses besoins, comme sur un profil. C'est ce qu'ouvre le menu.
   {
     path: '/demandes',
@@ -102,12 +103,7 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('./features/demandes/MesDemandesPage.vue'),
     meta: { connexionRequise: true, pleineLargeur: true },
   },
-  {
-    path: '/demandes/nouvelle',
-    name: 'nouvelle-demande',
-    component: () => import('./features/demandes/NouvelleDemandePage.vue'),
-    meta: { connexionRequise: true, pleineLargeur: true },
-  },
+  { path: '/demandes/nouvelle', name: 'nouvelle-demande', redirect: (to) => ({ path: '/demandes', query: to.query }) },
   {
     path: '/demandes/:id',
     name: 'demande',

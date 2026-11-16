@@ -42,7 +42,8 @@ class PlansIaHttp implements PlansIa {
 		Map<String, Object> corps = new LinkedHashMap<>();
 		corps.put("titre", entree.titre());
 		corps.put("description", entree.description());
-		corps.put("langue", "fr");
+		// La langue de l'écran : l'IA s'en sert quand le texte ne dit pas clairement la sienne.
+		corps.put("langue", entree.enAnglais() ? "en" : "fr");
 		if (entree.secteur() != null) {
 			corps.put("secteur", entree.secteur());
 		}

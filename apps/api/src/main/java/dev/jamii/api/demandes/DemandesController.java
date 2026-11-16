@@ -37,7 +37,7 @@ class DemandesController {
 	private static final Pattern PAYS = Pattern.compile("^[A-Z]{2}$");
 
 	record NouvelleDemande(String titre, String description, Integer dureeSemaines, String secteur, String ville,
-			String pays, Boolean offresSystalink) {
+			String pays, Boolean offresSystalink, String langue) {
 	}
 
 	record ChoixOffres(Boolean accepte) {
@@ -111,11 +111,15 @@ class DemandesController {
 		if (pays != null && !PAYS.matcher(pays).matches()) {
 			erreurs.add(Map.of("champ", "pays", "code", "format_invalide"));
 		}
+		if (demande.langue() != null && !List.of("fr", "en").contains(demande.langue())) {
+			erreurs.add(Map.of("champ", "langue", "code", "valeur_invalide"));
+		}
 		if (!erreurs.isEmpty()) {
 			return probleme(HttpStatus.BAD_REQUEST, "validation", "Certains champs sont invalides", erreurs);
 		}
 		// Jamais vrai par défaut : seulement si la personne a coché la case.
-		var contexte = new GestionDemandes.Contexte(secteur, ville, pays, Boolean.TRUE.equals(demande.offresSystalink()));
+		var contexte = new GestionDemandes.Contexte(secteur, ville, pays, Boolean.TRUE.equals(demande.offresSystalink()),
+				demande.langue() == null ? "fr" : demande.langue());
 		UUID id;
 		try {
 			id = gestion.creer(moi.id(), titre, description, demande.dureeSemaines(), contexte, Instant.now());

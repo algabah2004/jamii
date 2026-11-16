@@ -27,6 +27,8 @@ export type NouvelleDemande = {
   secteur?: string
   ville?: string
   offresSystalink?: boolean
+  /** La langue de l'écran ; `creerDemande` la met d'elle-même. */
+  langue?: 'fr' | 'en'
 }
 
 /** Des secteurs à choisir d'un clic (le contrat accepte aussi un texte libre). */
@@ -83,6 +85,8 @@ export function resumeValide(resume: string): boolean {
   return n >= LIMITES.resumeMin && n <= LIMITES.resumeMax
 }
 export const DUREES = [2, 4, 8, 12] as const
+/** Des fourchettes de budget en francs CFA, et « je ne sais pas » (par défaut). */
+export const BUDGETS = ['moins_500k', 'de_500k_a_2m', 'de_2m_a_5m', 'plus_5m', 'inconnu'] as const
 
 /** Relire la demande toutes les 2 s tant que le plan se prépare, au plus 1 minute. */
 export const INTERVALLE_PLAN_MS = 2000
@@ -134,6 +138,8 @@ export async function creerDemande(d: NouvelleDemande): Promise<Demande | 'quota
     ...(secteur ? { secteur } : {}),
     ...(ville ? { ville } : {}),
     offresSystalink: d.offresSystalink === true,
+    // La langue de l'écran : Ayo répond dans celle-ci quand le texte ne dit pas clairement la sienne.
+    langue: unref(i18n.global.locale) === 'en' ? 'en' : 'fr',
   })
   if (reponse.status === 429) return 'quota'
   return reponse.ok ? ((await reponse.json()) as Demande) : null

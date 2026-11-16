@@ -259,6 +259,11 @@ components:
         ville: { type: [string, 'null'], maxLength: 80 }
         pays: { oneOf: [{ $ref: './profils.yaml#/components/schemas/Pays' }, { type: 'null' }] }
         offresSystalink: { type: boolean, default: false, description: '« Recevoir les offres Systalink adaptées à mon projet ». Jamais pré-cochée.' }
+        langue:
+          type: string
+          enum: [fr, en]
+          default: fr
+          description: 'La langue de l''écran. L''IA répond dans la langue du texte, et dans celle-ci quand le texte ne la dit pas clairement.'
 
     ResumePublic:
       type: object
@@ -380,7 +385,7 @@ components:
         avatarUrl: { type: [string, 'null'], format: uri }
         ville: { type: [string, 'null'] }
         pays: { type: [string, 'null'] }
-        score: { type: integer, minimum: 0, maximum: 100, description: 'Pour trier. Le front affiche les raisons, pas le chiffre.' }
+        score: { type: integer, minimum: 0, maximum: 100, description: 'La correspondance avec le besoin : le front trie dessus et l''affiche en pourcentage, toujours avec les raisons qui l''expliquent.' }
         competencesCouvertes:
           type: array
           items: { $ref: './projets.yaml#/components/schemas/Competence' }

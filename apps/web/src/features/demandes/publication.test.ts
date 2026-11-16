@@ -32,10 +32,24 @@ async function demandePrete(): Promise<string> {
 
 const LIBELLES = { qui: 'Qui :', probleme: 'Problème :', reussite: 'Réussite :' }
 
-/** Un clic sur « Continuer », puis on attend l'étape suivante. */
-async function avancer(page: Awaited<ReturnType<typeof ouvrir>>['page'], repere: string) {
-  await page.get('[data-test="suivant"]').trigger('click')
-  await vi.waitFor(() => expect(page.find(repere).exists()).toBe(true))
+type Page = Awaited<ReturnType<typeof ouvrir>>['page']
+
+/** Répond à Ayo dans la zone de saisie (Entrée envoie). */
+async function repondre(page: Page, texte: string) {
+  await vi.waitFor(() => expect((page.get('[data-test="saisie-ayo"]').element as HTMLTextAreaElement).disabled).toBe(false))
+  await page.get('[data-test="saisie-ayo"]').setValue(texte)
+  await page.get('[data-test="saisie-ayo"]').trigger('keydown', { key: 'Enter' })
+}
+
+/** Passe ce qui reste de questions et les précisions, jusqu'au récapitulatif. */
+async function jusquAuRecap(page: Page) {
+  for (let i = 0; i < 3; i++) {
+    await vi.waitFor(() => expect(page.find('[data-test="passer-question"]').exists() || page.find('[data-test="precisions"]').exists()).toBe(true))
+    if (!page.find('[data-test="passer-question"]').exists()) break
+    await page.get('[data-test="passer-question"]').trigger('click')
+  }
+  await page.get('[data-test="continuer-precisions"]').trigger('click')
+  await vi.waitFor(() => expect(page.find('[data-test="envoyer"]').exists()).toBe(true))
 }
 
 describe('les questions guidées', () => {
@@ -65,27 +79,24 @@ describe('les questions guidées', () => {
       }),
     )
     const { page } = await ouvrir('/besoin')
-    await page.get('[data-test="champ-titre"]').setValue('Une boutique pour mon atelier')
-    await avancer(page, '[data-test="champ-description"]')
-    await page.get('[data-test="champ-description"]').setValue('Je vends mes créations et je veux des commandes en ligne.')
-    await avancer(page, '[data-test="questions"]')
-    await page.get('[data-test="question-qui"]').setValue('Mes clientes de Thiès')
-    await page.get('[data-test="demande"]').trigger('submit')
+    await repondre(page, 'Une boutique pour mon atelier')
+    await repondre(page, 'Je vends mes créations et je veux des commandes en ligne.')
+    await repondre(page, 'Mes clientes de Thiès')
+    await jusquAuRecap(page)
+    await page.get('[data-test="envoyer"]').trigger('click')
     await vi.waitFor(() => expect(envoye).not.toBe(''))
     expect(envoye).toBe('Je vends mes créations et je veux des commandes en ligne.\n\nQui va s’en servir : Mes clientes de Thiès'.replace('’', "'"))
   })
 
-  it('restent facultatives : sans elles, le bouton reste actif', async () => {
+  it('restent facultatives : sans elles, on peut quand même lancer l’analyse', async () => {
     const { page } = await ouvrir('/besoin')
-    await page.get('[data-test="champ-titre"]').setValue('Une boutique pour mon atelier')
-    await avancer(page, '[data-test="champ-description"]')
-    await page.get('[data-test="champ-description"]').setValue('Je vends mes créations et je veux des commandes en ligne.')
-    await avancer(page, '[data-test="questions"]')
-    expect(page.get('[data-test="suivant"]').text()).toContain('Passer')
-    await avancer(page, '[data-test="secteur"]')
-    await avancer(page, '[data-test="offres"]')
+    await repondre(page, 'Une boutique pour mon atelier')
+    await repondre(page, 'Je vends mes créations et je veux des commandes en ligne.')
+    await vi.waitFor(() => expect(page.find('[data-test="passer-question"]').exists()).toBe(true))
+    await jusquAuRecap(page)
     expect(page.get('[data-test="envoyer"]').attributes('disabled')).toBeUndefined()
   })
+
 })
 
 describe('publier sa demande', () => {
