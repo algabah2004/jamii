@@ -77,3 +77,53 @@ export function hoteLisible(lien: string): string {
     return lien
   }
 }
+
+export type Preuve = components['schemas']['Preuve']
+
+/**
+ * La pastille de couleur d'un langage, comme sur GitHub (linguist), pour qu'un développeur s'y retrouve d'un coup
+ * d'œil. Un langage absent de la table prend une teinte stable tirée de son nom.
+ */
+const COULEURS_LANGAGES: Record<string, string> = {
+  dart: '#00B4AB', typescript: '#3178C6', javascript: '#F1E05A', python: '#3572A5', java: '#B07219',
+  kotlin: '#A97BFF', swift: '#F05138', go: '#00ADD8', rust: '#DEA584', php: '#4F5D95', ruby: '#701516',
+  'c#': '#178600', 'c++': '#F34B7D', c: '#555555', html: '#E34C26', css: '#663399', scss: '#C6538C',
+  vue: '#41B883', svelte: '#FF3E00', shell: '#89E051', 'jupyter notebook': '#DA5B0B', r: '#198CE7',
+  elixir: '#6E4A7E', scala: '#C22D40', lua: '#000080', 'objective-c': '#438EFF', solidity: '#AA6746',
+}
+
+export function couleurLangage(nom: string | null | undefined): string {
+  const cle = (nom ?? '').toLowerCase()
+  if (COULEURS_LANGAGES[cle]) return COULEURS_LANGAGES[cle]
+  let somme = 0
+  for (const lettre of cle) somme = (somme * 31 + lettre.charCodeAt(0)) % 360
+  return `hsl(${somme} 55% 50%)`
+}
+
+/** « il y a 3 jours », « 2 months ago » : la date de mise à jour d'un dépôt, dans la langue de l'interface. */
+export function ilYa(date: string | null | undefined, langue: string, maintenant = Date.now()): string | null {
+  if (!date) return null
+  const ecart = (new Date(date).getTime() - maintenant) / 1000
+  if (Number.isNaN(ecart)) return null
+  const format = new Intl.RelativeTimeFormat(langue, { numeric: 'auto' })
+  const unites: [Intl.RelativeTimeFormatUnit, number][] = [
+    ['year', 31_536_000], ['month', 2_592_000], ['week', 604_800], ['day', 86_400], ['hour', 3600], ['minute', 60],
+  ]
+  for (const [unite, secondes] of unites) {
+    if (Math.abs(ecart) >= secondes) return format.format(Math.round(ecart / secondes), unite)
+  }
+  return format.format(0, 'minute')
+}
+
+/** Les chiffres de la bande sous l'en-tête : seulement ceux qui existent, jamais un « 0 » qui dessert. */
+export function chiffresProfil(profil: Pick<Profil, 'depotsGithub' | 'langages' | 'projets' | 'fiabilite'>) {
+  const etoiles = profil.depotsGithub.reduce((total, d) => total + d.etoiles, 0)
+  const point = (type: Preuve['type']) => profil.fiabilite.find((f) => f.type === type)
+  return {
+    etoiles: etoiles || null,
+    langage: profil.langages[0]?.nom ?? null,
+    enLigne: profil.projets.filter((p) => p.enLigne).length || null,
+    aTemps: point('tache_livree_a_temps') ?? null,
+    avis: point('avis_coequipier')?.nombre || null,
+  }
+}

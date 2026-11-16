@@ -496,7 +496,9 @@
     "depots": {
       "titre": "GitHub repositories",
       "etoiles": "no stars | {n} star | {n} stars",
-      "pasUnePreuve": "Repositories show what you code. Only a project that is online and verified counts as proof."
+      "pasUnePreuve": "Repositories show what you code. Only a project that is online and verified counts as proof.",
+      "toutVoir": "See all on GitHub",
+      "misAJour": "updated {quand}"
     },
     "fiabilite": {
       "titre": "Why you can count on {prenom}",
@@ -569,6 +571,20 @@
       "invitationTexte": "On Jamii, projects you launch with a team become proof.",
       "rejoindre": "Create my profile",
       "nonPublie": "{nom} hasn't published their profile yet. You can already message them."
+    },
+    "chiffres": {
+      "enLigne": "verified live project | verified live projects",
+      "aTemps": "tasks delivered on time",
+      "avis": "teammate review | teammate reviews",
+      "etoiles": "GitHub star | GitHub stars",
+      "langage": "main language"
+    },
+    "aPropos": {
+      "titre": "About",
+      "ia": "Summary suggested by AI from public repositories"
+    },
+    "avis": {
+      "titre": "What teammates say"
     }
   },
   "etat": {

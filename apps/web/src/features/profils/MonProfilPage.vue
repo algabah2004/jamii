@@ -262,9 +262,9 @@ async function enregistrer() {
 
     <template v-else-if="profil">
       <FicheProfil :profil="profil" moi>
-        <template #actions>
+        <template #boutons>
           <AbonnesProfil v-if="moi" :personne-id="moi.id" />
-          <div class="barre-actions">
+          <div class="barre-actions barre-actions--entete">
             <p class="visibilite" :class="{ 'visibilite--publie': profil.publie }" data-test="visibilite">
               {{ profil.publie ? t('profil.visibilite.publie') : t('profil.visibilite.prive') }}
             </p>
@@ -279,6 +279,8 @@ async function enregistrer() {
               {{ enCours ? t('profil.generation.enCours') : t('profil.generation.regenerer') }}
             </JBouton>
           </div>
+        </template>
+        <template #actions>
           <p v-if="message" role="status" data-test="message">{{ message }}</p>
           <p v-if="echec" role="alert">{{ t(`profil.generation.erreurs.${echec}`) }}</p>
 
@@ -386,6 +388,8 @@ async function enregistrer() {
 .visibilite--publie { background: var(--action-soft); }
 .barre-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
 .barre-actions .visibilite { margin: 0; }
+.barre-actions--entete { justify-content: flex-end; max-width: 30rem; }
+@media (max-width: 640px) { .barre-actions--entete { justify-content: flex-start; } }
 .lien-public { font-weight: 600; padding: 0 var(--space-2); }
 .formulaire-profil { display: grid; gap: var(--space-4); }
 .formulaire-profil h2 { font-size: var(--type-h3-size); line-height: var(--type-h3-line); }

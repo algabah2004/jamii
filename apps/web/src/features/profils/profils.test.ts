@@ -8,7 +8,7 @@ import { i18n } from '../../i18n'
 import { creerRouteur } from '../../router'
 import { chargerSession } from '../../session'
 import App from '../../App.vue'
-import { competencesPhares, hoteLisible, lienProfil, lireCompetences, pourcentage, urlDrapeau } from './profils'
+import { chiffresProfil, competencesPhares, couleurLangage, hoteLisible, ilYa, lienProfil, lireCompetences, pourcentage, urlDrapeau } from './profils'
 
 async function ouvrir(chemin = '/profil') {
   ;(i18n.global.locale as unknown as { value: string }).value = 'fr'
@@ -214,6 +214,33 @@ describe('profil professionnel (#159)', () => {
     expect(page.find('[data-test="actions-profil"]').exists()).toBe(false)
   })
 
+  it('montre la bande de chiffres, « À propos » avec le résumé de l’IA, et les avis des coéquipiers', async () => {
+    serveur.use(
+      http.get('/api/profils/:id', () =>
+        HttpResponse.json({
+          ...pro, bio: 'Je construis des API.', resumeIa: 'Développeur Java, surtout des API de paiement.',
+          depotsGithub: [{ nom: 'caisse', url: 'https://github.com/kofi/caisse', etoiles: 12, langage: 'Java', misAJourLe: '2026-11-01T10:00:00Z' }],
+          langages: [{ nom: 'Java', part: 1 }],
+          fiabilite: [{ type: 'avis_coequipier', nombre: 1, contestees: 0 }],
+        }),
+      ),
+      http.get('/api/profils/:id/preuves', () =>
+        HttpResponse.json({
+          elements: [{ id: 'a1', type: 'avis_coequipier', source: { module: 'projets', id: 'p1', titre: 'Marché Facile' }, detail: 'Toujours à l’heure.', auteur: { id: 'c3', nom: 'Awa Diop' }, contestee: false, creeLe: '2026-11-10T10:00:00Z' }],
+          curseurSuivant: null,
+        }),
+      ),
+    )
+    const page = await ouvrir('/p/b2c3')
+    await vi.waitFor(() => expect(page.find('[data-test="avis"]').exists()).toBe(true))
+    const chiffres = page.get('[data-test="chiffres"]').text()
+    expect(chiffres).toContain('★ 12')
+    expect(chiffres).toContain('langage principal')
+    expect(page.get('[data-test="a-propos"]').text()).toContain('Résumé proposé par l')
+    expect(page.get('[data-test="avis"]').text()).toContain('Toujours à l’heure.')
+    expect(page.get('[data-test="depots"]').text()).toContain('mis à jour')
+  })
+
   it('le lien public et le drapeau se construisent sans erreur', () => {
     expect(lienProfil('abc', 'https://jamii.exemple')).toBe('https://jamii.exemple/p/abc')
     expect(urlDrapeau('SN')).toContain('sn.svg')
@@ -229,6 +256,28 @@ describe('outils', () => {
   })
   it('les compétences saisies : sans vides ni doublons', () => {
     expect(lireCompetences(' Flutter, ,firebase,Flutter ')).toEqual(['Flutter', 'firebase'])
+  })
+  it('chaque langage a sa couleur, stable même hors de la table', () => {
+    expect(couleurLangage('TypeScript')).toBe('#3178C6')
+    expect(couleurLangage('Zig')).toBe(couleurLangage('zig'))
+    expect(couleurLangage(null)).toMatch(/^hsl\(/)
+  })
+  it('la mise à jour d’un dépôt se dit en temps relatif', () => {
+    const maintenant = Date.parse('2026-11-16T12:00:00Z')
+    expect(ilYa('2026-11-13T12:00:00Z', 'fr', maintenant)).toBe('il y a 3 jours')
+    expect(ilYa('2026-09-01T12:00:00Z', 'en', maintenant)).toBe('3 months ago')
+    expect(ilYa(null, 'fr', maintenant)).toBeNull()
+  })
+  it('la bande de chiffres ne garde que ce qui existe', () => {
+    const vide = chiffresProfil({ depotsGithub: [], langages: [], projets: [], fiabilite: [] })
+    expect(Object.values(vide).every((v) => v === null)).toBe(true)
+    const plein = chiffresProfil({
+      depotsGithub: [{ nom: 'a', url: 'https://github.com/x/a', etoiles: 4 }, { nom: 'b', url: 'https://github.com/x/b', etoiles: 3 }],
+      langages: [{ nom: 'Dart', part: 1 }],
+      projets: [{ projetId: 'p', titre: 'P', role: 'porteur', enLigne: true }],
+      fiabilite: [{ type: 'avis_coequipier', nombre: 2, contestees: 0 }],
+    })
+    expect(plein).toMatchObject({ etoiles: 7, langage: 'Dart', enLigne: 1, aTemps: null, avis: 2 })
   })
 })
 

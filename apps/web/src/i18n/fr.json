@@ -496,7 +496,9 @@
     "depots": {
       "titre": "Dépôts GitHub",
       "etoiles": "aucune étoile | {n} étoile | {n} étoiles",
-      "pasUnePreuve": "Les dépôts montrent ce que tu codes. Seul un projet mis en ligne et vérifié compte comme preuve."
+      "pasUnePreuve": "Les dépôts montrent ce que tu codes. Seul un projet mis en ligne et vérifié compte comme preuve.",
+      "toutVoir": "Tout voir sur GitHub",
+      "misAJour": "mis à jour {quand}"
     },
     "fiabilite": {
       "titre": "Pourquoi on peut compter sur {prenom}",
@@ -569,6 +571,20 @@
       "invitationTexte": "Sur Jamii, tes projets mis en ligne avec une équipe deviennent des preuves.",
       "rejoindre": "Créer mon profil",
       "nonPublie": "{nom} n’a pas encore publié son profil. Vous pouvez déjà lui écrire."
+    },
+    "chiffres": {
+      "enLigne": "projet en ligne vérifié | projets en ligne vérifiés",
+      "aTemps": "tâches livrées à temps",
+      "avis": "avis de coéquipier | avis de coéquipiers",
+      "etoiles": "étoile GitHub | étoiles GitHub",
+      "langage": "langage principal"
+    },
+    "aPropos": {
+      "titre": "À propos",
+      "ia": "Résumé proposé par l'IA à partir des dépôts publics"
+    },
+    "avis": {
+      "titre": "Ce qu’en disent ses coéquipiers"
     }
   },
   "etat": {
