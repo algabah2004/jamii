@@ -8,7 +8,7 @@ import { creerRouteur } from '../../router'
 import { chargerSession } from '../../session'
 import App from '../../App.vue'
 import { orientationDemo, planDemo, RECOMMANDES } from '../../mocks/demandes'
-import { dateCourte, demandeValide, etatAnalyse, fonctionnalitesParPriorite, jalonsAvecTaches, type Demande } from './demandes'
+import { dateCourte, demandeValide, etatAnalyse, filDe, fonctionnalitesParPriorite, jalonsAvecTaches, titreDe, type Demande } from './demandes'
 
 async function ouvrir(adresse: string, langue: 'fr' | 'en' = 'fr') {
   ;(i18n.global.locale as unknown as { value: string }).value = langue
@@ -22,41 +22,25 @@ async function ouvrir(adresse: string, langue: 'fr' | 'en' = 'fr') {
 
 type Page = Awaited<ReturnType<typeof ouvrir>>['page']
 
-/** Répond à Ayo dans la zone de saisie, comme dans un chat (Entrée envoie). */
-async function repondre(page: Page, texte: string) {
-  await vi.waitFor(() => expect((page.get('[data-test="saisie-ayo"]').element as HTMLTextAreaElement).disabled).toBe(false))
+/** Écrit à Ayo dans la zone de saisie, comme dans un chat (Entrée envoie). */
+async function ecrire(page: Page, texte: string) {
+  await vi.waitFor(() => expect(page.find('[data-test="saisie-ayo"]').exists()).toBe(true))
   await page.get('[data-test="saisie-ayo"]').setValue(texte)
   await page.get('[data-test="saisie-ayo"]').trigger('keydown', { key: 'Enter' })
 }
 
-/** Passe les questions guidées, puis les précisions, jusqu'au récapitulatif d'Ayo. */
-async function jusquAuRecap(page: Page, avantDeContinuer?: () => Promise<void>) {
-  for (let i = 0; i < 3; i++) {
-    await vi.waitFor(() => expect(page.find('[data-test="passer-question"]').exists() || page.find('[data-test="precisions"]').exists()).toBe(true))
-    if (!page.find('[data-test="passer-question"]').exists()) break
-    await page.get('[data-test="passer-question"]').trigger('click')
-  }
-  await vi.waitFor(() => expect(page.find('[data-test="continuer-precisions"]').exists()).toBe(true))
-  if (avantDeContinuer) await avantDeContinuer()
-  await page.get('[data-test="continuer-precisions"]').trigger('click')
-  await vi.waitFor(() => expect(page.find('[data-test="envoyer"]').exists()).toBe(true))
-}
-
-const DETAILS = 'Je couds des vêtements à Thiès et je veux vendre en ligne, avec les commandes sur WhatsApp.'
-
-/** Un exemple dans la zone de saisie, on l'envoie, on raconte les détails : Ayo enchaîne ses questions. */
-async function exempleEtDetails(page: Page) {
+/** Un exemple dans la zone de saisie, puis on l'envoie : la discussion s'ouvre sur la page de la demande. */
+async function exempleJusquAuBout(page: Page) {
   await vi.waitFor(() => expect(page.find('[data-test="exemple"]').exists()).toBe(true))
   await page.get('[data-test="exemple"]').trigger('click')
-  await page.get('[data-test="saisie-ayo"]').trigger('keydown', { key: 'Enter' })
-  await repondre(page, DETAILS)
+  await page.get('[data-test="envoyer"]').trigger('submit')
 }
 
-/** Un exemple, puis tout droit jusqu'à l'envoi. */
-async function exempleJusquAuBout(page: Page) {
-  await exempleEtDetails(page)
-  await jusquAuRecap(page)
-  await page.get('[data-test="envoyer"]').trigger('click')
+/** Répond à Ayo sur la page de la demande. */
+async function repondreAyo(page: Page, texte: string) {
+  await vi.waitFor(() => expect(page.find('[data-test="message-ayo"]').exists()).toBe(true))
+  await page.get('[data-test="message-ayo"]').setValue(texte)
+  await page.get('[data-test="message-ayo"]').trigger('keydown', { key: 'Enter' })
 }
 
 describe('le plan proposé', () => {
@@ -88,12 +72,11 @@ describe('Une PME décrit son besoin', () => {
     const { page, routeur } = await ouvrir('/demandes/nouvelle')
     // Tout se passe sur « Tes demandes », en parlant à Ayo ; on ne répond pas sans rien dire.
     await vi.waitFor(() => expect(routeur.currentRoute.value.path).toBe('/demandes'))
-    await vi.waitFor(() => expect(page.find('[data-test="envoyer-reponse"]').exists()).toBe(true))
-    expect(page.get('[data-test="envoyer-reponse"]').attributes('disabled')).toBeDefined()
-    await exempleEtDetails(page)
-    await jusquAuRecap(page)
+    await vi.waitFor(() => expect(page.find('[data-test="envoyer"]').exists()).toBe(true))
+    expect(page.get('[data-test="envoyer"]').attributes('disabled')).toBeDefined()
+    await page.get('[data-test="exemple"]').trigger('click')
     expect(page.get('[data-test="envoyer"]').attributes('disabled')).toBeUndefined()
-    await page.get('[data-test="envoyer"]').trigger('click')
+    await page.get('[data-test="envoyer"]').trigger('submit')
     await vi.waitFor(() => expect(routeur.currentRoute.value.name).toBe('demande'), { timeout: 4000 })
     await vi.waitFor(() => expect(page.find('[data-test="plan-propose"]').exists()).toBe(true), { timeout: 4000 })
     expect(page.findAll('[data-test="priorite"]')).toHaveLength(3)
@@ -156,8 +139,8 @@ describe('Une PME décrit son besoin', () => {
 const ID = '0b9e8d7c-6a5f-4e3d-8c2b-1a0f9e8d7c6b'
 const base = { id: ID, titre: 'Nos dossiers', description: 'Le cabinet perd ses dossiers entre associés.', dureeSemaines: null, creeLe: '2026-11-14T10:00:00Z' }
 
-describe('Décris ton besoin, pas à pas', () => {
-  it('compose le besoin avec les réponses guidées, et chaque réponse s’affiche dans la conversation', async () => {
+describe('Une discussion libre avec Ayo', () => {
+  it('le premier message part tel quel, avec un titre tiré de sa première ligne, et rien de coché d’avance', async () => {
     let corps: Record<string, unknown> = {}
     serveur.use(
       http.post('/api/demandes', async ({ request }) => {
@@ -166,29 +149,47 @@ describe('Décris ton besoin, pas à pas', () => {
       }),
     )
     const { page } = await ouvrir('/demandes')
-    await repondre(page, 'Nos dossiers')
-    await vi.waitFor(() => expect(page.get('[data-test="moi-besoin"]').text()).toContain('Nos dossiers'))
     await page.get('[data-test="saisie-ayo"]').setValue('court')
-    expect(page.get('[data-test="envoyer-reponse"]').attributes('disabled')).toBeDefined()
+    expect(page.get('[data-test="envoyer"]').attributes('disabled')).toBeDefined()
     expect(page.text()).toContain('Encore')
-    await repondre(page, 'Le cabinet perd ses dossiers entre associés.')
-    await vi.waitFor(() => expect(page.find('[data-test="moi-details"]').exists()).toBe(true))
-    // Chaque question vient avec un exemple : on sait quel genre de réponse donner.
-    expect(page.get('[data-test="exemple-question"]').text()).toContain('Par exemple')
-    await repondre(page, 'Les quatre associés')
-    await vi.waitFor(() => expect(page.get('[data-test="moi-qui"]').text()).toContain('Les quatre associés'))
-    await jusquAuRecap(page)
-    await page.get('[data-test="envoyer"]').trigger('click')
-    await vi.waitFor(() => expect(corps.titre).toBe('Nos dossiers'), { timeout: 4000 })
-    expect(String(corps.description)).toContain("Qui va s'en servir : Les quatre associés")
+    await ecrire(page, 'Nos dossiers se perdent\nLe cabinet perd ses dossiers entre associés.')
+    await vi.waitFor(() => expect(corps.titre).toBe('Nos dossiers se perdent'), { timeout: 4000 })
+    expect(corps.description).toBe('Nos dossiers se perdent\nLe cabinet perd ses dossiers entre associés.')
+    expect(corps).toMatchObject({ langue: 'fr' })
+    expect(corps.offresSystalink).not.toBe(true)
   })
 
-  it('on revient sur une réponse sans perdre ce qui est écrit', async () => {
-    const { page } = await ouvrir('/demandes')
-    await repondre(page, 'Une boutique')
-    await vi.waitFor(() => expect(page.find('[data-test="modifier-besoin"]').exists()).toBe(true))
-    await page.get('[data-test="modifier-besoin"]').trigger('click')
-    await vi.waitFor(() => expect((page.get('[data-test="saisie-ayo"]').element as HTMLTextAreaElement).value).toBe('Une boutique'))
+  it('Ayo demande une précision sur un message court, la réponse s’affiche dans le fil, puis il conseille', async () => {
+    const { page, routeur } = await ouvrir('/demandes')
+    await ecrire(page, 'Je veux vendre mes tissus en ligne.')
+    await vi.waitFor(() => expect(routeur.currentRoute.value.name).toBe('demande'), { timeout: 4000 })
+    await vi.waitFor(() => expect(page.find('[data-test="question-ayo"]').exists()).toBe(true), { timeout: 4000 })
+    // Ayo demande avant de conseiller : rien d'autre n'est proposé pour l'instant.
+    expect(page.find('[data-test="services-systalink"]').exists()).toBe(false)
+    expect(page.find('#onglets').exists()).toBe(false)
+    expect(page.get('[data-test="fil"]').text()).toContain('Je veux vendre mes tissus en ligne.')
+    await page.findAll('[data-test="suggestion"]')[0]!.trigger('click')
+    await vi.waitFor(() => expect(page.findAll('[data-test="bulle-ayo"]')).toHaveLength(1))
+    expect(page.get('[data-test="bulle-ayo"]').text()).toContain('Qui sont tes clients')
+    expect(page.get('[data-test="fil"]').text()).toContain('Sur WhatsApp')
+    await vi.waitFor(() => expect(page.find('[data-test="services-systalink"]').exists()).toBe(true), { timeout: 4000 })
+    expect(page.find('[data-test="question-ayo"]').exists()).toBe(false)
+  })
+
+  it('on supprime une discussion après confirmation, et on revient à la liste', async () => {
+    const confirmer = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    try {
+      const { page, routeur } = await ouvrir('/demandes')
+      await exempleJusquAuBout(page)
+      await vi.waitFor(() => expect(page.find('[data-test="supprimer-discussion"]').exists()).toBe(true), { timeout: 4000 })
+      const id = String(routeur.currentRoute.value.params.id)
+      await page.get('[data-test="supprimer-discussion"]').trigger('click')
+      await vi.waitFor(() => expect(routeur.currentRoute.value.path).toBe('/demandes'))
+      const reponse = await fetch(`/api/demandes/${id}`)
+      expect(reponse.status).toBe(404)
+    } finally {
+      confirmer.mockRestore()
+    }
   })
 })
 
@@ -199,28 +200,6 @@ describe('l’orientation d’un besoin', () => {
     expect(etatAnalyse(d)).toBe('pret')
     expect(etatAnalyse({ ...d, orientation: { statut: 'en_cours' } })).toBe('attente')
     expect(etatAnalyse({ ...d, orientation: { statut: 'echouee', erreurCode: 'delai_depasse' } })).toBe('echec')
-  })
-
-  it('envoie le secteur et la ville, et jamais la case Systalink cochée d’avance', async () => {
-    let corps: Record<string, unknown> = {}
-    serveur.use(
-      http.post('/api/demandes', async ({ request }) => {
-        corps = (await request.json()) as Record<string, unknown>
-        return HttpResponse.json({ ...base, plan: { statut: 'en_attente' } }, { status: 201 })
-      }),
-    )
-    const { page, routeur } = await ouvrir('/besoin')
-    expect(routeur.currentRoute.value.name).toBe('mes-demandes')
-    await exempleEtDetails(page)
-    expect(page.find('[data-test="prudence"]').exists()).toBe(true)
-    await jusquAuRecap(page, async () => {
-      await page.get('[data-test="secteur"][value="juridique"]').setValue(true)
-    })
-    expect((page.get('[data-test="offres"] input').element as HTMLInputElement).checked).toBe(false)
-    await page.get('[data-test="envoyer"]').trigger('click')
-    await vi.waitFor(() => expect(corps.titre).toBeTruthy())
-    expect(corps).toMatchObject({ secteur: 'juridique', offresSystalink: false, langue: 'fr' })
-    expect(corps).not.toHaveProperty('ville')
   })
 
   it('montre les services Systalink, les développeurs et leurs raisons, puis enregistre l’accord', async () => {
@@ -245,6 +224,8 @@ describe('l’orientation d’un besoin', () => {
     await vi.waitFor(() => expect(clics).toEqual(['b0a10000-0000-4000-8000-000000000001']))
     const recommandes = page.findAll('[data-test="recommande"]')
     expect(recommandes).toHaveLength(3)
+    // Avec des développeurs proposés, jamais le message « aucun développeur » en même temps.
+    expect(page.find('[data-test="aucun-recommande"]').exists()).toBe(false)
     expect(recommandes[0]!.text()).toContain('React, confirmé (3 dépôts)')
     expect(recommandes[0]!.get('a').attributes('href')).toBe('/messages/d2e00000-0000-4000-8000-000000000001')
     // Le conseil propose de publier le besoin en mission, plus de former un cercle.
@@ -258,13 +239,13 @@ describe('l’orientation d’un besoin', () => {
     await page.get('[data-test="voir-details"]').trigger('click')
     await vi.waitFor(() => expect(details.attributes('style') ?? '').not.toContain('display: none'))
 
-    // L'assistant parle d'abord, puis la personne peut préciser : l'analyse repart avec sa précision.
+    // Ayo parle d'abord, puis la personne réagit dans la zone en bas : Ayo relit toute la conversation.
     expect(page.get('[data-test="compris"]').text()).toContain('Ton cabinet perd du temps')
-    await page.get('#precision').setValue('Je veux seulement un espace client, pas de messagerie.')
-    await page.get('[data-test="preciser"]').trigger('submit')
-    // Seule la réponse d'Ayo s'affiche : sa nouvelle réponse arrive, sans recopier ce que la personne a écrit.
+    await repondreAyo(page, 'Je veux seulement un espace client, pas de messagerie.')
     await vi.waitFor(() => expect(page.find('[data-test="plan-attente"]').exists()).toBe(true))
-    expect(page.text()).not.toContain('Je veux seulement un espace client, pas de messagerie.')
+    // Le fil garde l'échange : ce qu'Ayo avait dit, puis la réponse de la personne.
+    expect(page.get('[data-test="fil"]').text()).toContain('Je veux seulement un espace client, pas de messagerie.')
+    expect(page.get('[data-test="bulle-ayo"]').text()).toContain('Ton cabinet perd du temps')
     await vi.waitFor(() => expect(page.find('[data-test="compris"]').exists()).toBe(true), { timeout: 4000 })
 
     const caseOffres = page.get('[data-test="offres-resultat"] input')
@@ -273,25 +254,21 @@ describe('l’orientation d’un besoin', () => {
     await vi.waitFor(() => expect((caseOffres.element as HTMLInputElement).checked).toBe(true))
   })
 
-  it('Ayo pose sa question d’abord : une réponse d’un clic part comme une précision, ou on passe à son conseil', async () => {
-    const avecQuestion = { ...orientationDemo(), question: { texte: 'Combien de personnes travaillent au cabinet ?', suggestions: ['Moins de 5', 'Plus de 5'] } }
+  it('quand Ayo pose une question, il ne conseille pas encore ; la zone en bas reste là pour répondre', async () => {
+    const question = { ...orientationDemo(), services: [], etapes: [], competences: [], developpeursNecessaires: false, plan: null, question: { texte: 'Combien de personnes travaillent au cabinet ?', suggestions: ['Moins de 5', 'Plus de 5'] } }
     serveur.use(
       http.get('/api/demandes/:id', () =>
-        HttpResponse.json({ ...base, conseilsRestants: 4, plan: { statut: 'terminee', origine: 'ia', resultat: planDemo() }, orientation: { statut: 'terminee', origine: 'ia', resultat: avecQuestion }, recommandations: RECOMMANDES }),
+        HttpResponse.json({ ...base, conseilsRestants: 4, plan: { statut: 'terminee', origine: 'ia' }, orientation: { statut: 'terminee', origine: 'ia', resultat: question }, recommandations: [] }),
       ),
     )
     const { page } = await ouvrir(`/demandes/${ID}`)
     await vi.waitFor(() => expect(page.find('[data-test="question-ayo"]').exists()).toBe(true))
-    // Tant que la question est ouverte, le conseil attend derrière.
+    expect(page.get('[data-test="question-ayo"]').text()).toContain('Combien de personnes')
     expect(page.find('[data-test="services-systalink"]').exists()).toBe(false)
-    await page.get('[data-test="passer"]').trigger('click')
-    await vi.waitFor(() => expect(page.find('[data-test="services-systalink"]').exists()).toBe(true))
-    expect(page.get('[data-test="etapes-ayo"]').findAll('li')).toHaveLength(3)
+    expect(page.find('[data-test="etapes-ayo"]').exists()).toBe(false)
+    expect(page.find('[data-test="passer"]').exists()).toBe(false)
+    expect(page.find('[data-test="message-ayo"]').exists()).toBe(true)
     expect(page.get('[data-test="conseils-restants"]').text()).toContain('Il te reste 4 conseils')
-    expect(page.find('[data-test="libre"]').exists()).toBe(true)
-    // « Ce n'est pas tout à fait ça ? » prépare une raison que la personne peut compléter.
-    await page.get('[data-test="pas-ca-cher"]').trigger('click')
-    expect((page.get('#precision').element as HTMLTextAreaElement).value).toBe('C’est trop cher pour moi.')
   })
 
   it('une suggestion de la question d’Ayo part comme une précision', async () => {
@@ -329,8 +306,8 @@ describe('l’orientation d’un besoin', () => {
     await vi.waitFor(() => expect(page.get('[data-test="onglet-publier"]').attributes('aria-selected')).toBe('true'))
     expect(page.get('[data-test="developpeurs"]').attributes('style')).toContain('display: none')
     expect(page.find('[data-test="publication-formulaire"]').exists()).toBe(true)
-    // « Ce n'est pas tout à fait ça ? » reste replié jusqu'au clic.
-    expect(page.get('#preciser-corps').attributes('style')).toContain('display: none')
+    // Pour réagir au conseil, la zone de saisie reste en bas.
+    expect(page.find('[data-test="message-ayo"]').exists()).toBe(true)
   })
 
   it('n’affiche ni développeurs ni plan quand Systalink suffit, et dit quand l’IA était absente', async () => {
@@ -355,7 +332,7 @@ describe('Tes demandes (#199)', () => {
     { id: 'b2', titre: 'Cabinet sans clé USB', creeLe: '2026-11-13T10:00:00Z', resume: null, precisions: 0, publiee: false },
   ]
 
-  it('le menu ouvre la liste de tous mes besoins, avec leurs précisions et ce qui est publié', async () => {
+  it('le menu ouvre la liste de toutes mes discussions, avec leurs messages et ce qui est publié', async () => {
     serveur.use(http.get('/api/demandes', () => HttpResponse.json(resumees)))
     const { page } = await ouvrir('/demandes')
     await vi.waitFor(() => expect(page.find('[data-test="liste-demandes"]').exists()).toBe(true))
@@ -363,10 +340,33 @@ describe('Tes demandes (#199)', () => {
     expect(cartes).toHaveLength(2)
     expect(cartes[0]!.attributes('href')).toBe('/demandes/a1')
     expect(cartes[0]!.text()).toContain('Publiée')
-    expect(cartes[0]!.text()).toContain('2 précisions')
+    expect(cartes[0]!.text()).toContain('3 messages')
     expect(cartes[1]!.text()).toContain('Réponse en préparation')
     // On décrit un nouveau besoin ici même, en parlant à Ayo.
     expect(page.find('[data-test="conversation-demande"]').exists()).toBe(true)
+  })
+
+  it('supprime une discussion depuis la liste, seulement après confirmation', async () => {
+    const supprimees: string[] = []
+    serveur.use(
+      http.get('/api/demandes', () => HttpResponse.json(resumees)),
+      http.delete('/api/demandes/:id', ({ params }) => {
+        supprimees.push(String(params.id))
+        return new HttpResponse(null, { status: 204 })
+      }),
+    )
+    const confirmer = vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValueOnce(true)
+    try {
+      const { page } = await ouvrir('/demandes')
+      await vi.waitFor(() => expect(page.findAll('[data-test="supprimer-demande"]')).toHaveLength(2))
+      await page.findAll('[data-test="supprimer-demande"]')[1]!.trigger('click')
+      expect(supprimees).toEqual([])
+      await page.findAll('[data-test="supprimer-demande"]')[1]!.trigger('click')
+      await vi.waitFor(() => expect(page.findAll('[data-test="demande-resumee"]')).toHaveLength(1))
+      expect(supprimees).toEqual(['b2'])
+    } finally {
+      confirmer.mockRestore()
+    }
   })
 
   it('filtre les demandes par état : en préparation, réponse prête, publiée', async () => {
@@ -399,6 +399,27 @@ describe('Tes demandes (#199)', () => {
   })
 })
 
+describe('la conversation', () => {
+  it('le titre vient de la première ligne, raccourci', () => {
+    expect(titreDe('  Une boutique\nEt le reste')).toBe('Une boutique')
+    expect(titreDe('ok\nJe vends des tissus')).toBe('ok Je vends des tissus')
+    expect(titreDe('x'.repeat(200))).toHaveLength(80)
+  })
+
+  it('le fil alterne le premier message, puis ce qu’Ayo avait dit et chaque réponse', () => {
+    const d = { ...base, plan: { statut: 'terminee' }, precisions: [
+      { texte: 'Sur WhatsApp', creeLe: '2026-11-16T10:00:00Z', ayo: 'Qui sont tes clients ?', ayoQuestion: true },
+      { texte: 'Et sans smartphone ?', creeLe: '2026-11-16T10:01:00Z', ayo: null, ayoQuestion: false },
+    ] } as Demande
+    expect(filDe(d)).toEqual([
+      { qui: 'moi', texte: base.description },
+      { qui: 'ayo', texte: 'Qui sont tes clients ?', question: true },
+      { qui: 'moi', texte: 'Sur WhatsApp' },
+      { qui: 'moi', texte: 'Et sans smartphone ?' },
+    ])
+  })
+})
+
 describe('dateCourte', () => {
   it('suit la langue de Jamii, pas celle du navigateur', () => {
     expect(dateCourte('2026-11-15T10:00:00Z', 'fr')).toBe('15 nov.')
@@ -407,36 +428,21 @@ describe('dateCourte', () => {
 })
 
 describe('la refonte : on parle à Ayo, une IA, sur la page même', () => {
-  it('Ayo ouvre la conversation, marqué « Assistant IA », et le budget part avec le besoin', async () => {
-    let corps: Record<string, unknown> = {}
-    serveur.use(
-      http.post('/api/demandes', async ({ request }) => {
-        corps = (await request.json()) as Record<string, unknown>
-        return HttpResponse.json({ ...base, plan: { statut: 'en_attente' } }, { status: 201 })
-      }),
-    )
+  it('Ayo ouvre la conversation, marqué « Assistant IA »', async () => {
     const { page } = await ouvrir('/demandes')
     await vi.waitFor(() => expect(page.find('[data-test="conversation-demande"]').exists()).toBe(true))
     expect(page.get('[data-test="conversation-demande"] .accueil').text()).toContain('Ayo')
     expect(page.find('[data-test="conversation-demande"] .badge-ia').exists()).toBe(true)
-    await exempleEtDetails(page)
-    await jusquAuRecap(page, async () => {
-      await page.get('[data-test="budget-de_500k_a_2m"]').setValue(true)
-    })
-    expect(page.get('[data-test="moi-precisions"]').text()).toContain('500 000 à 2 millions F CFA')
-    await page.get('[data-test="envoyer"]').trigger('click')
-    await vi.waitFor(() => expect(String(corps.description)).toContain('Budget envisagé\u202f: 500 000 à 2 millions F CFA'), { timeout: 4000 })
   })
 
   it('la réponse dit qu’on parle à une IA, classe les profils par correspondance et permet de les comparer', async () => {
     const { page } = await ouvrir('/demandes')
     await exempleJusquAuBout(page)
     await vi.waitFor(() => expect(page.find('[data-test="plan-propose"]').exists()).toBe(true), { timeout: 4000 })
-    // Seule la réponse d'Ayo : ni la demande recopiée, ni le parcours, ni le bandeau en double.
-    expect(page.find('[data-test="fil"]').exists()).toBe(false)
+    // Le premier message, puis la réponse d'Ayo, marquée comme venant d'une IA.
+    expect(page.findAll('[data-test="bulle-moi"]')).toHaveLength(1)
     expect(page.find('[data-test="parcours"]').exists()).toBe(false)
     expect(page.find('[data-test="compris"] .badge-ia').exists()).toBe(true)
-    if (page.find('[data-test="passer"]').exists()) await page.get('[data-test="passer"]').trigger('click')
     await vi.waitFor(() => expect(page.findAll('[data-test="correspondance"]').length).toBeGreaterThan(1))
     const scores = page.findAll('[data-test="correspondance"]').map((c) => Number.parseInt(c.text(), 10))
     expect(scores).toEqual([...scores].sort((a, b) => b - a))
@@ -448,12 +454,12 @@ describe('la refonte : on parle à Ayo, une IA, sur la page même', () => {
     expect(page.get('[data-test="comparaison"]').findAll('thead th')).toHaveLength(3)
   })
 
-  it('un lien avec un début de besoin : Ayo le reprend et passe aux détails', async () => {
+  it('un lien avec un début de besoin : il est déjà dans la zone de saisie, rien n’est envoyé', async () => {
     const { page, routeur } = await ouvrir('/besoin?titre=Un%20site%20pour%20ma%20boulangerie')
     expect(routeur.currentRoute.value.path).toBe('/demandes')
-    await vi.waitFor(() => expect(page.find('[data-test="moi-besoin"]').exists()).toBe(true))
-    expect(page.get('[data-test="moi-besoin"]').text()).toContain('Un site pour ma boulangerie')
-    expect(page.find('[data-test="prudence"]').exists()).toBe(true)
+    await vi.waitFor(() => expect(page.find('[data-test="saisie-ayo"]').exists()).toBe(true))
+    expect((page.get('[data-test="saisie-ayo"]').element as HTMLTextAreaElement).value).toBe('Un site pour ma boulangerie')
+    expect(routeur.currentRoute.value.name).toBe('mes-demandes')
   })
 
   it('en anglais, la demande part avec la langue de l’écran et Ayo répond en anglais', async () => {
@@ -481,18 +487,17 @@ describe('la refonte : on parle à Ayo, une IA, sur la page même', () => {
     expect(planDemo(8, 'en').jalons.map((j) => j.titre)).toEqual(['Catalogue online', 'Orders and payment', 'Handover to the manager'])
   })
 
-  it('un exemple se met dans la zone de saisie, sans rien envoyer ni ajouter à ma place', async () => {
+  it('un exemple se met dans la zone de saisie, sans rien envoyer à ma place', async () => {
+    const envoyees: unknown[] = []
+    serveur.use(http.post('/api/demandes', async ({ request }) => {
+      envoyees.push(await request.json())
+      return HttpResponse.json({ ...base, plan: { statut: 'en_attente' } }, { status: 201 })
+    }))
     const { page } = await ouvrir('/demandes')
     await vi.waitFor(() => expect(page.find('[data-test="exemple"]').exists()).toBe(true))
-    const titre = page.get('[data-test="exemple"]').text()
     await page.get('[data-test="exemple"]').trigger('click')
-    expect((page.get('[data-test="saisie-ayo"]').element as HTMLTextAreaElement).value).toBe(titre)
-    expect(page.find('[data-test="moi-besoin"]').exists()).toBe(false)
-    await page.get('[data-test="saisie-ayo"]').trigger('keydown', { key: 'Enter' })
-    await vi.waitFor(() => expect(page.get('[data-test="moi-besoin"]').text()).toContain(titre))
-    // Les détails, c'est la personne qui les écrit : rien n'est rempli d'avance.
-    expect(page.find('[data-test="moi-details"]').exists()).toBe(false)
-    expect((page.get('[data-test="saisie-ayo"]').element as HTMLTextAreaElement).value).toBe('')
+    expect((page.get('[data-test="saisie-ayo"]').element as HTMLTextAreaElement).value).toContain('Thiès')
+    expect(envoyees).toEqual([])
   })
 
 })

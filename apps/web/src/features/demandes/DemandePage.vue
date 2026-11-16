@@ -7,10 +7,12 @@ import { JAvatar, JBouton, JSquelette } from '../../design-system'
 import {
   ATTENTE_PLAN_MAX_MS,
   choisirOffres,
+  CONVERSATION,
   creerProjet,
   dateCourte,
   estRepli,
   etatAnalyse,
+  filDe,
   fonctionnalitesParPriorite,
   INTERVALLE_PLAN_MS,
   jalonsAvecTaches,
@@ -18,12 +20,14 @@ import {
   listerDemandes,
   preciserDemande,
   signalerClicService,
+  supprimerDemande,
   type Demande,
   type DemandeResumee,
 } from './demandes'
 import AyoAvatar from './AyoAvatar.vue'
 import BadgeIa from '../../components/BadgeIa.vue'
 import PublierDemande from './PublierDemande.vue'
+import { ajusterZone } from '../../design-system/zonesDeTexte'
 
 /*
  * L'orientation d'un besoin (étape 1 de la démo) : ce que Systalink offre déjà, les développeurs qui peuvent
@@ -116,48 +120,59 @@ onBeforeUnmount(() => clearInterval(horloge))
 const etapeEnCours = computed(() => Math.min(ETAPES.length - 1, Math.floor(secondes.value / 7)))
 
 /**
- * La conversation : la personne peut dire ce qui ne lui convient pas. L'analyse repart avec son besoin et toutes ses
- * précisions ; le fil montre ce qu'elle a écrit, puis la dernière réponse de l'assistant.
+ * La conversation avec Ayo : la personne lui répond, ou réagit à son conseil, dans la zone en bas. Ayo relit toute la
+ * conversation, puis pose une autre question ou conseille. Le fil montre ce qui a déjà été dit.
  */
-const precision = ref('')
+const fil = computed(() => (demande.value ? filDe(demande.value) : []))
+const message = ref('')
+const zoneMessage = ref<HTMLTextAreaElement | null>(null)
 const envoiPrecision = ref<'repos' | 'envoi' | 'erreur' | 'limite' | 'quota'>('repos')
-async function envoyerPrecision() {
-  if (!demande.value || precision.value.trim().length < 3) return
+const messageValide = computed(() => message.value.trim().length >= CONVERSATION.reponseMin && !enPreparation.value && envoiPrecision.value !== 'envoi')
+async function envoyerMessage(texte = message.value) {
+  if (!demande.value || texte.trim().length < CONVERSATION.reponseMin || enPreparation.value || envoiPrecision.value === 'envoi') return
   envoiPrecision.value = 'envoi'
   try {
-    const r = await preciserDemande(demande.value.id, precision.value)
+    const r = await preciserDemande(demande.value.id, texte.trim())
     if (r === 'limite' || r === 'quota') return void (envoiPrecision.value = r)
     if (!r) return void (envoiPrecision.value = 'erreur')
     demande.value = r
-    precision.value = ''
+    message.value = ''
+    if (zoneMessage.value) ajusterZone(zoneMessage.value)
     envoiPrecision.value = 'repos'
     detailsOuverts.value = false
-    precisionOuverte.value = false
     debut = 0
     tropLong.value = false
     surveiller()
     chargerHistorique()
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    requestAnimationFrame(() => document.getElementById('ayo-maintenant')?.scrollIntoView?.({ behavior: 'smooth', block: 'start' }))
   } catch {
     envoiPrecision.value = 'erreur'
   }
 }
+function toucheMessage(e: KeyboardEvent) {
+  if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+    e.preventDefault()
+    void envoyerMessage()
+  }
+}
+/** Une réponse toute prête à la question d'Ayo : elle part d'un clic, comme si la personne l'avait écrite. */
+const repondre = (texte: string) => void envoyerMessage(texte)
 
-/**
- * Ayo pose au plus une question, seulement si la réponse changerait son conseil et que rien n'a encore été précisé.
- * On peut répondre d'un clic, avec ses mots, ou passer : le conseil est déjà prêt, il attend juste derrière.
- */
-const questionPassee = ref(false)
-watch(id, () => (questionPassee.value = false))
-const questionOuverte = computed(
-  () => Boolean(orientation.value?.question?.texte) && !demande.value?.precisions?.length && !questionPassee.value,
-)
-const reponseLibre = ref('')
-function repondre(texte: string) {
-  if (texte.trim().length < 3) return
-  precision.value = texte
-  reponseLibre.value = ''
-  void envoyerPrecision()
+/** Quand Ayo pose une question, il ne conseille pas encore : sa question attend la réponse. */
+const questionOuverte = computed(() => Boolean(orientation.value?.question?.texte))
+
+/** Supprimer la conversation : la demande et tout ce qui a été dit. Une mission déjà publiée reste en ligne. */
+const suppression = ref<'repos' | 'envoi' | 'erreur'>('repos')
+async function supprimer() {
+  if (!demande.value || !window.confirm(t('demandes.discussion.confirmerSuppression'))) return
+  suppression.value = 'envoi'
+  try {
+    if (!(await supprimerDemande(demande.value.id))) return void (suppression.value = 'erreur')
+    suppression.value = 'repos'
+    await router.push('/demandes')
+  } catch {
+    suppression.value = 'erreur'
+  }
 }
 
 /**
@@ -168,14 +183,6 @@ const services = computed(() =>
   (orientation.value?.services ?? []).map((sv) => ({ ...sv, genre: sv.id.startsWith('datacloud-') ? ('hebergement' as const) : ('outil' as const) })),
 )
 const etapesAyo = computed(() => orientation.value?.etapes ?? [])
-
-/** « Ce n'est pas tout à fait ça ? » : une raison toute prête, que la personne complète si elle veut. */
-const RAISONS = ['cher', 'complique', 'autre'] as const
-function pasCa(raison: (typeof RAISONS)[number]) {
-  precision.value = t(`demandes.ayo.pasCa.${raison}`) + (raison === 'autre' ? ' : ' : '.')
-  precisionOuverte.value = true
-  requestAnimationFrame(() => document.getElementById('precision')?.focus())
-}
 
 /** Le plan technique est écrit pour les développeurs : replié par défaut, ouvert d'un clic. */
 const detailsOuverts = ref(false)
@@ -211,8 +218,6 @@ function voirDeveloppeurs() {
 function voirDetails() {
   ouvrirOnglet('projet')
 }
-/** « Ce n'est pas tout à fait ça ? » : replié, une ligne ; ouvert d'un clic. */
-const precisionOuverte = ref(false)
 
 /** « Recevoir les offres Systalink » : jamais cochée d'avance, modifiable à tout moment. */
 const offres = ref<'repos' | 'envoi' | 'erreur'>('repos')
@@ -250,7 +255,7 @@ const messageErreur = computed(() =>
 <template>
   <div class="page-demande">
   <aside v-if="historique.length" class="historique" :aria-label="t('demandes.mesDemandes.titre')" data-test="historique">
-    <RouterLink to="/demandes" class="j-bouton j-bouton--principal historique__nouvelle">+ {{ t('demandes.mesDemandes.nouvelle') }}</RouterLink>
+    <RouterLink to="/demandes" class="j-bouton j-bouton--principal historique__nouvelle" data-test="nouvelle-discussion">+ {{ t('demandes.discussion.nouvelle') }}</RouterLink>
     <h2 class="historique__titre">{{ t('demandes.mesDemandes.titre') }}</h2>
     <ul>
       <li v-for="d in historique.slice(0, 12)" :key="d.id">
@@ -263,7 +268,13 @@ const messageErreur = computed(() =>
     <RouterLink v-if="historique.length > 12" to="/demandes" class="historique__toutes">{{ t('demandes.mesDemandes.toutes') }}</RouterLink>
   </aside>
   <section class="demande fond-verre">
-    <p class="retour"><LienRetour to="/demandes">{{ t('demandes.mesDemandes.titre') }}</LienRetour></p>
+    <div class="entete">
+      <p class="retour"><LienRetour to="/demandes">{{ t('demandes.mesDemandes.titre') }}</LienRetour></p>
+      <button v-if="demande" type="button" class="lien-discret supprimer" :disabled="suppression === 'envoi'" data-test="supprimer-discussion" @click="supprimer">
+        {{ t('demandes.discussion.supprimer') }}
+      </button>
+    </div>
+    <p v-if="suppression === 'erreur'" role="alert" class="erreur">{{ t('etat.indisponible') }}</p>
 
     <JSquelette v-if="etat === 'chargement' && !demande" :nombre="3" />
     <div v-else-if="etat === 'introuvable'" class="etat-vide">
@@ -278,6 +289,18 @@ const messageErreur = computed(() =>
     <template v-else-if="demande">
       <!-- Seule la réponse d'Ayo occupe la page : le titre reste pour les lecteurs d'écran et l'historique à côté. -->
       <h1 class="visuellement-cache">{{ demande.titre }}</h1>
+
+      <!-- Ce qui a déjà été dit : le premier message, puis chaque échange. Texte brut, affiché échappé. -->
+      <ol class="fil" :aria-label="t('demandes.ayo.conversation')" data-test="fil">
+        <li v-for="(b, i) in fil" :key="i" :class="b.qui === 'moi' ? 'bulle-moi' : 'ayo-message'" :data-test="`bulle-${b.qui}`">
+          <p v-if="b.qui === 'moi'" class="bulle-moi__texte">{{ b.texte }}</p>
+          <template v-else>
+            <AyoAvatar :taille="32" class="ayo-message__avatar" />
+            <p class="ayo-message__bulle bulle-ayo">{{ b.texte }}</p>
+          </template>
+        </li>
+      </ol>
+      <span id="ayo-maintenant" />
 
       <div v-if="enPreparation" class="ayo-message" role="status" data-test="plan-attente">
         <AyoAvatar :taille="44" reflechit class="ayo-message__avatar" />
@@ -312,23 +335,16 @@ const messageErreur = computed(() =>
               <p class="ayo-message__qui"><strong>{{ t('demandes.ayo.nom') }}</strong> <BadgeIa long /></p>
               <span class="proposition" data-test="plan-propose">{{ t('demandes.plan.propose') }}</span>
             </div>
-            <h2 id="compris-titre" class="reponse__titre">{{ t('demandes.orientation.compris') }}</h2>
-            <p class="reponse__texte">{{ orientation ? orientation.message || orientation.resume : plan?.cahierDesCharges.resume }}</p>
+            <h2 id="compris-titre" :class="questionOuverte ? 'visuellement-cache' : 'reponse__titre'">{{ t(questionOuverte ? 'demandes.discussion.question' : 'demandes.orientation.compris') }}</h2>
+            <p class="reponse__texte" data-test="ayo-message">{{ orientation ? orientation.message || orientation.resume : plan?.cahierDesCharges.resume }}</p>
             <p v-if="repli" class="reponse__repli" role="status" data-test="plan-repli"><span aria-hidden="true">ⓘ</span> {{ t(orientation ? 'demandes.orientation.repli' : 'demandes.plan.repli') }}</p>
 
-            <div v-if="orientation?.question && questionOuverte" class="question-ayo" data-test="question-ayo">
+            <div v-if="orientation?.question" class="question-ayo" data-test="question-ayo">
               <p class="question-ayo__texte">{{ orientation.question.texte }}</p>
               <div class="puces">
                 <button v-for="sug in orientation.question.suggestions" :key="sug" type="button" class="puce" :disabled="envoiPrecision === 'envoi'" data-test="suggestion" @click="repondre(sug)">{{ sug }}</button>
               </div>
-              <form class="question-ayo__libre" @submit.prevent="repondre(reponseLibre)">
-                <input v-model="reponseLibre" maxlength="500" :aria-label="t('demandes.ayo.question.libre')" :placeholder="t('demandes.ayo.question.libre')" />
-                <JBouton type="submit" variante="secondaire" :occupe="envoiPrecision === 'envoi'" :disabled="reponseLibre.trim().length < 3">{{ t('demandes.ayo.question.repondre') }}</JBouton>
-              </form>
-              <p v-if="envoiPrecision === 'quota'" role="alert" class="erreur" data-test="quota">{{ t('demandes.quota') }}</p>
-              <p v-else-if="envoiPrecision === 'limite'" role="alert" class="erreur">{{ t('demandes.discuter.limite') }}</p>
-              <p v-else-if="envoiPrecision === 'erreur'" role="alert" class="erreur">{{ t('etat.indisponible') }}</p>
-              <button type="button" class="lien-discret" data-test="passer" @click="questionPassee = true">{{ t('demandes.ayo.question.passer') }} →</button>
+              <p class="texte-discret">{{ t('demandes.discussion.ouEcris') }}</p>
             </div>
 
             <template v-if="orientation && !questionOuverte">
@@ -455,7 +471,7 @@ const messageErreur = computed(() =>
                 </tbody>
               </table>
             </div>
-            <p v-else class="carte vide" data-test="aucun-recommande">{{ t('demandes.orientation.aucun') }}</p>
+            <p v-if="!recommandes.length" class="carte vide" data-test="aucun-recommande">{{ t('demandes.orientation.aucun') }}</p>
           </div>
 
           <div v-if="plan" v-show="onglet === 'projet' || !orientation" id="details-projet" role="tabpanel" aria-labelledby="onglet-projet" class="panneau details brief" data-test="brief">
@@ -568,30 +584,34 @@ const messageErreur = computed(() =>
           </div>
         </section>
 
-        <!-- 4. Une seule porte pour dire « ce n'est pas ça » : repliée, une ligne. -->
-        <form v-if="orientation && !questionOuverte" class="carte preciser" :class="{ 'preciser--ouvert': precisionOuverte }" data-test="preciser" @submit.prevent="envoyerPrecision">
-          <button type="button" class="preciser__ouvrir" :aria-expanded="precisionOuverte" aria-controls="preciser-corps" @click="precisionOuverte = !precisionOuverte">
-            <strong>{{ t('demandes.ayo.pasCa.titre') }}</strong>
-            <span>{{ precisionOuverte ? '▴' : t('demandes.reponse.preciser') + ' →' }}</span>
-          </button>
-          <div v-show="precisionOuverte" id="preciser-corps" class="preciser__corps">
-            <span class="texte-discret">{{ t('demandes.discuter.aide') }}</span>
-            <div class="puces">
-              <button v-for="r in RAISONS" :key="r" type="button" class="puce" :data-test="`pas-ca-${r}`" @click="pasCa(r)">{{ t(`demandes.ayo.pasCa.${r}`) }}</button>
-            </div>
-            <div class="preciser__ligne">
-              <label for="precision" class="visuellement-cache">{{ t('demandes.ayo.pasCa.titre') }}</label>
-              <textarea id="precision" v-model="precision" maxlength="500" rows="2" :placeholder="t('demandes.discuter.exemple')" @keydown.enter.exact.prevent="envoyerPrecision" />
-              <JBouton type="submit" :occupe="envoiPrecision === 'envoi'" :disabled="precision.trim().length < 3" data-test="envoyer-precision">{{ t('demandes.discuter.envoyer') }}</JBouton>
-            </div>
-            <p v-if="envoiPrecision === 'limite'" role="alert" class="erreur">{{ t('demandes.discuter.limite') }}</p>
-            <p v-else-if="envoiPrecision === 'quota'" role="alert" class="erreur" data-test="quota">{{ t('demandes.quota') }}</p>
-            <p v-else-if="envoiPrecision === 'erreur'" role="alert" class="erreur">{{ t('etat.indisponible') }}</p>
-          </div>
-          <p v-if="demande.conseilsRestants !== undefined" class="texte-discret preciser__restants" data-test="conseils-restants">
-            {{ t('demandes.ayo.restants', { n: demande.conseilsRestants }, demande.conseilsRestants) }}</p>
-        </form>
       </template>
+
+      <!-- La zone de saisie, toujours en bas : répondre à Ayo, ou réagir à son conseil. -->
+      <form v-if="etat === 'pret'" class="saisie-ia" data-test="composer" @submit.prevent="envoyerMessage()">
+        <label for="message-ayo" class="visuellement-cache">{{ t('demandes.nouvelle.repondreAyo') }}</label>
+        <textarea
+          id="message-ayo"
+          ref="zoneMessage"
+          v-model="message"
+          rows="1"
+          :maxlength="CONVERSATION.reponseMax"
+          :placeholder="t(questionOuverte ? 'demandes.discussion.repondre' : 'demandes.discussion.reagir')"
+          data-test="message-ayo"
+          @input="zoneMessage && ajusterZone(zoneMessage)"
+          @keydown="toucheMessage"
+        />
+        <div class="saisie-ia__bas">
+          <span class="saisie-ia__aide">
+            <span v-if="envoiPrecision === 'limite'" role="alert" class="erreur">{{ t('demandes.discussion.limite') }}</span>
+            <span v-else-if="envoiPrecision === 'quota'" role="alert" class="erreur" data-test="quota">{{ t('demandes.quota') }}</span>
+            <span v-else-if="envoiPrecision === 'erreur'" role="alert" class="erreur">{{ t('etat.indisponible') }}</span>
+            <span v-else-if="demande.conseilsRestants !== undefined" data-test="conseils-restants">{{ t('demandes.ayo.restants', { n: demande.conseilsRestants }, demande.conseilsRestants) }}</span>
+          </span>
+          <button type="submit" class="saisie-ia__envoyer" :disabled="!messageValide" :aria-busy="envoiPrecision === 'envoi' || undefined" :aria-label="t('demandes.nouvelle.repondreAyo')" data-test="envoyer-message">
+            <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M10 15.5v-11M5.5 9 10 4.5 14.5 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          </button>
+        </div>
+      </form>
 
       <!-- Une API plus ancienne, sans orientation : le plan seul, toujours visible. -->
     </template>
@@ -620,8 +640,28 @@ const messageErreur = computed(() =>
 .assistant__nom strong { color: var(--ink); }
 .question-ayo { display: grid; gap: var(--space-4); border-inline-start: 3px solid var(--action); }
 .question-ayo__texte { margin: 0; font-size: 1.1875rem; }
-.question-ayo__libre { display: flex; flex-wrap: wrap; gap: var(--space-3); }
-.question-ayo__libre input { flex: 1 1 16rem; min-height: 44px; padding: 0 var(--space-3); border: 1px solid var(--line-strong); border-radius: var(--radius-md); background: var(--surface); color: var(--ink); font: inherit; }
+.entete { display: flex; justify-content: space-between; align-items: center; gap: var(--space-3); }
+.entete .retour { margin: 0; }
+.supprimer { color: var(--ink-muted); }
+.supprimer:hover { color: var(--danger); }
+.fil { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
+.bulle-moi { display: grid; justify-items: end; }
+.bulle-moi__texte { margin: 0; max-width: min(36rem, 88%); padding: var(--space-3) var(--space-4); border-radius: 18px 18px 4px 18px; background: var(--surface-raised); border: 1px solid var(--line); white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.5; }
+.bulle-ayo { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.5; color: var(--ink-muted); }
+.saisie-ia {
+  position: sticky; bottom: var(--space-4); z-index: 2;
+  display: grid; gap: var(--space-1); padding: var(--space-3) var(--space-3) var(--space-2) var(--space-4);
+  border: 1px solid var(--line-strong); border-radius: 22px; background: var(--surface-raised);
+  box-shadow: 0 1px 2px rgb(2 7 10 / 0.08), 0 10px 30px rgb(2 7 10 / 0.16);
+}
+.saisie-ia:focus-within { border-color: color-mix(in srgb, var(--ink) 35%, var(--line-strong)); }
+.saisie-ia textarea { width: 100%; min-height: 0; max-height: 40vh; padding: var(--space-1) 0; border: 0; border-radius: 0; background: transparent; color: var(--ink); font: inherit; font-size: 1.0625rem; line-height: 1.5; resize: none; outline: none; box-shadow: none; }
+.saisie-ia textarea::placeholder { color: color-mix(in srgb, var(--ink) 40%, transparent); }
+.saisie-ia__bas { display: flex; align-items: center; gap: var(--space-3); }
+.saisie-ia__aide { flex: 1; min-width: 0; color: var(--ink-muted); font-size: 0.8125rem; }
+.saisie-ia__envoyer { display: grid; place-items: center; flex: none; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 50%; background: var(--ink); color: var(--surface); cursor: pointer; }
+.saisie-ia__envoyer:disabled { opacity: 0.25; cursor: not-allowed; }
+.saisie-ia__envoyer:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .question-ayo__passer { justify-self: start; }
 .puces { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .puce {
@@ -779,7 +819,7 @@ const messageErreur = computed(() =>
 .pile > :not(:first-child) { margin-inline-start: -10px; }
 .pile > * { box-shadow: 0 0 0 2px var(--surface); border-radius: 50%; }
 .choix__action { justify-self: start; display: inline-flex; align-items: center; min-height: 44px; padding: 0 var(--space-5, 1.25rem); border-radius: var(--radius-pill); border: 0; background: var(--action); color: var(--on-action); font: inherit; font-weight: 700; text-decoration: none; cursor: pointer; }
-.choix__action:focus-visible, .lien-discret:focus-visible, .onglet:focus-visible, .preciser__ouvrir:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.choix__action:focus-visible, .lien-discret:focus-visible, .onglet:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .lien-discret { justify-self: start; border: 0; padding: 0; background: none; color: var(--action-ink); font: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 
 .onglets { display: grid; gap: var(--space-4); scroll-margin-top: var(--space-6); }
@@ -795,13 +835,6 @@ const messageErreur = computed(() =>
 .lancer-seul { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-4) var(--space-6); }
 .lancer-seul p { margin: 0; }
 
-.preciser { display: grid; gap: var(--space-3); padding: var(--space-4) var(--space-6); }
-.preciser__ouvrir { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2); width: 100%; padding: 0; border: 0; background: none; color: var(--ink); font: inherit; text-align: start; cursor: pointer; }
-.preciser__ouvrir span { color: var(--action-ink); font-weight: 600; }
-.preciser__corps { display: grid; gap: var(--space-3); }
-.preciser__ligne { display: flex; gap: var(--space-3); align-items: flex-end; flex-wrap: wrap; }
-.preciser textarea { flex: 1 1 16rem; min-height: 3.25rem; padding: var(--space-3); border: 1px solid var(--line-strong); border-radius: var(--radius-md); background: var(--surface); color: var(--ink); font: inherit; resize: vertical; }
-.preciser__restants { margin: 0; font-size: 0.8125rem; }
 @media (prefers-reduced-motion: reduce) { .besoin summary::before { transition: none; } }
 
 /* ---------------------------------------------------------------- la conversation avec Ayo, l'assistant IA */
