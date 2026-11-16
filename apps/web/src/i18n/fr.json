@@ -806,7 +806,8 @@
       "chercher": "Chercher une communauté",
       "themes": "Filtrer par thème",
       "toutes": "Toutes",
-      "aucune": "Aucune communauté ne correspond. Et si tu la créais ?"
+      "aucune": "Aucune communauté ne correspond. Et si tu la créais ?",
+      "motsCles": "Mots-clés"
     },
     "themes": {
       "web": "Web",

@@ -8,7 +8,6 @@ import type { components } from '../../api/generated/communautes'
 import { nomPays } from '../systalink/calculs'
 import { monogramme } from './communautes'
 import { THEMES, etiquettesDe, teinteDe } from './identite'
-import TextureCommunaute from './TextureCommunaute.vue'
 
 type Communaute = components['schemas']['Communaute']
 
@@ -115,18 +114,22 @@ async function rejoindre(c: Communaute) {
       <section v-for="g in groupes" :key="g.cle" class="groupe" :aria-labelledby="`groupe-${g.cle}`">
         <h2 :id="`groupe-${g.cle}`">{{ t(`communautes.groupes.${g.cle}`) }} <span class="groupe__nombre">{{ g.liste.length }}</span></h2>
         <ul class="grille" data-test="communautes">
-          <li v-for="c in g.liste" :key="c.id" class="carte" :style="{ '--fond': teinteDe(c.slug).fond, '--accent': teinteDe(c.slug).accent, '--encre': teinteDe(c.slug).encre }">
-            <div class="carte__bandeau" aria-hidden="true">
-              <TextureCommunaute :slug="c.slug" />
-              <span class="carte__etiquette">{{ etiquettesDe(c.theme)[0] }}</span>
-            </div>
+          <!-- Une carte sobre : la couleur de la communauté ne vit que dans son monogramme. -->
+          <li v-for="c in g.liste" :key="c.id" class="carte" :style="{ '--fond': teinteDe(c.slug).fond, '--encre': teinteDe(c.slug).encre }">
             <div class="carte__corps">
-              <span class="carte__monogramme" aria-hidden="true">{{ monogramme(c.nom) }}</span>
-              <h3><RouterLink :to="`/communautes/${c.slug}`" class="carte__lien">{{ c.nom }}</RouterLink></h3>
-              <p class="carte__meta">
-                {{ t(`communautes.themes.${c.theme}`, c.theme) }}<template v-if="c.pays"> · {{ nomPays(c.pays, locale) }}</template>
-              </p>
+              <div class="carte__tete">
+                <span class="carte__monogramme" aria-hidden="true">{{ monogramme(c.nom) }}</span>
+                <div>
+                  <h3><RouterLink :to="`/communautes/${c.slug}`" class="carte__lien">{{ c.nom }}</RouterLink></h3>
+                  <p class="carte__meta">
+                    {{ t(`communautes.themes.${c.theme}`, c.theme) }}<template v-if="c.pays"> · {{ nomPays(c.pays, locale) }}</template>
+                  </p>
+                </div>
+              </div>
               <p class="carte__description">{{ c.description }}</p>
+              <ul class="carte__mots" :aria-label="t('communautes.liste.motsCles')">
+                <li v-for="m in etiquettesDe(c.theme).slice(0, 2)" :key="m">{{ m }}</li>
+              </ul>
               <div class="carte__pied">
                 <span><strong>{{ c.nombreMembres.toLocaleString(locale) }}</strong> {{ t('communautes.chiffres.membres') }}</span>
                 <span v-if="c.questionsOuvertes" class="a-aider"><strong>{{ c.questionsOuvertes }}</strong> {{ t('communautes.chiffres.questionsOuvertes') }}</span>
@@ -152,17 +155,10 @@ async function rejoindre(c: Communaute) {
 
 <style scoped>
 .page { display: grid; gap: var(--space-6); padding-top: var(--space-4); }
-.tete {
-  display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--space-4);
-  padding: var(--space-8); border-radius: var(--radius-lg); color: #fff;
-  background:
-    radial-gradient(circle at 85% 20%, color-mix(in srgb, var(--cantaloupe) 70%, transparent), transparent 45%),
-    radial-gradient(circle at 10% 110%, color-mix(in srgb, var(--electric-blue) 80%, transparent), transparent 55%),
-    var(--midnight);
-}
-.tete h1 { margin: 0; font-size: clamp(2rem, 4vw, 3rem); line-height: 1.05; letter-spacing: -0.03em; color: #fff; }
-.tete p { margin: var(--space-2) 0 0; max-width: 40rem; color: rgb(255 255 255 / 0.82); }
-.tete .j-bouton { background: #fff; color: var(--midnight); border-color: #fff; }
+/* Un en-tête simple, sur le fond de la page : le titre, une phrase, l'action. */
+.tete { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--space-4); }
+.tete h1 { margin: 0; font-size: clamp(2rem, 4vw, 2.75rem); line-height: 1.05; letter-spacing: -0.03em; }
+.tete p { margin: var(--space-2) 0 0; max-width: 40rem; color: var(--ink-muted); }
 
 .outils { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
 .recherche {
@@ -192,26 +188,23 @@ async function rejoindre(c: Communaute) {
 .carte:hover { transform: translateY(-3px); border-color: var(--line-strong); }
 .carte:has(.carte__lien:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { .carte:hover { transform: none; } }
-.carte__bandeau {
-  position: relative; height: 72px; overflow: hidden;
-  background: radial-gradient(circle at 80% 130%, color-mix(in srgb, var(--accent) 80%, transparent), transparent 60%), var(--fond);
-}
-.carte__etiquette {
-  position: absolute; top: 14px; right: 14px; padding: 3px 10px; border-radius: 10px; transform: rotate(-4deg);
-  background: #fff; color: #02070A; font-family: var(--font-display); font-weight: 700; font-size: 0.75rem;
-}
-.carte__corps { display: flex; flex-direction: column; gap: var(--space-2); flex: 1; padding: 0 var(--space-4) var(--space-4); }
+.carte__corps { display: flex; flex-direction: column; gap: var(--space-3); flex: 1; padding: var(--space-5, 1.25rem); }
+.carte__tete { display: flex; align-items: center; gap: var(--space-3); }
 .carte__monogramme {
-  margin-top: -26px; display: grid; place-items: center; width: 52px; height: 52px; border-radius: 14px; border: 3px solid var(--surface);
-  background: var(--fond); color: var(--encre); font-family: var(--font-display); font-weight: 700; font-size: 1.0625rem; transform: rotate(-4deg);
+  flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px;
+  background: var(--fond); color: var(--encre); font-family: var(--font-display); font-weight: 700; font-size: 1rem;
+  /* Un contour fin : une teinte sombre reste visible sur une carte sombre. */
+  box-shadow: inset 0 0 0 1px var(--line-strong);
 }
+.carte__mots { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.carte__mots li { padding: 2px 10px; border-radius: var(--radius-pill); background: var(--surface-raised); color: var(--ink-muted); font-size: 0.75rem; font-weight: 600; }
 .carte h3 { margin: 0; font-size: 1.125rem; line-height: 1.25; }
 .carte__lien { color: var(--ink); text-decoration: none; }
 .carte__lien::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
 .carte__lien:focus-visible { outline: none; }
-.carte__meta { margin: 0; color: var(--ink-muted); font-size: 0.8125rem; font-weight: 600; }
+.carte__meta { margin: 2px 0 0; color: var(--ink-muted); font-size: 0.8125rem; font-weight: 600; }
 .carte__description { margin: 0; color: var(--ink-muted); font-size: var(--type-body-sm-size); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.carte__pied { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); margin-top: auto; padding-top: var(--space-3); border-top: 1px solid var(--line); font-size: var(--type-body-sm-size); color: var(--ink-muted); }
+.carte__pied { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); margin-top: auto; padding-top: var(--space-3); min-height: 44px; border-top: 1px solid var(--line); font-size: var(--type-body-sm-size); color: var(--ink-muted); }
 .carte__pied strong { color: var(--ink); font-variant-numeric: tabular-nums; }
 .a-aider strong { color: var(--action-ink); }
 .carte__deja { margin-inline-start: auto; color: var(--ink); font-weight: 600; }

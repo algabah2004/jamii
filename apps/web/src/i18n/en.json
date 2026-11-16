@@ -806,7 +806,8 @@
       "chercher": "Search communities",
       "themes": "Filter by topic",
       "toutes": "All",
-      "aucune": "No community matches. Why not create it?"
+      "aucune": "No community matches. Why not create it?",
+      "motsCles": "Keywords"
     },
     "themes": {
       "web": "Web",
