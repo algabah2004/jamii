@@ -3202,5 +3202,9 @@
     "quiEtAutres": "{noms} et {n} autres",
     "pastille": "{emoji} : {n} réaction, {qui} | {emoji} : {n} réaction, {qui} | {emoji} : {n} réactions, {qui}",
     "erreur": "La réaction n’a pas pu être enregistrée. Réessaie."
+  },
+  "langues": {
+    "passerEn": "Passer en anglais",
+    "passerFr": "Passer en français"
   }
 }

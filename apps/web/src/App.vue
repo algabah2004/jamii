@@ -3,6 +3,7 @@ import { computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, RouterView } from 'vue-router'
 import ReglagesAffichage from './components/ReglagesAffichage.vue'
+import BoutonLangue from './components/BoutonLangue.vue'
 import BoutonTheme from './components/BoutonTheme.vue'
 import { chargerSession, seDeconnecter, useSession } from './session'
 import { JAvatar, JBouton, JSquelette } from './design-system'
@@ -43,7 +44,8 @@ watch(etat, (e) => (e === 'connecte' ? suivreAppelsEntrants() : arreterAppelsEnt
         </RouterLink>
       </nav>
       <div class="actions">
-        <!-- Clair ou sombre en un clic, connecté ou non : la langue et « Système » sont dans le pied de page. -->
+        <!-- La langue et le thème en un clic, connecté ou non. Le choix « Système » reste dans le pied de page. -->
+        <BoutonLangue />
         <BoutonTheme />
         <RouterLink
           v-if="etat === 'non_connecte' && !$route.path.startsWith('/connexion')"

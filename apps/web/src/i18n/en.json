@@ -3202,5 +3202,9 @@
     "quiEtAutres": "{noms} and {n} others",
     "pastille": "{emoji}: {n} reaction, {qui} | {emoji}: {n} reaction, {qui} | {emoji}: {n} reactions, {qui}",
     "erreur": "The reaction could not be saved. Try again."
+  },
+  "langues": {
+    "passerEn": "Switch to English",
+    "passerFr": "Switch to French"
   }
 }

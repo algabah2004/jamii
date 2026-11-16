@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { langueInitiale } from '.'
+import { i18n } from '.'
 import fr from './fr.json'
 import en from './en.json'
 
@@ -13,9 +13,7 @@ describe('traductions', () => {
   it("l'anglais a exactement les mêmes clés que le français", () => {
     expect(cles(en).sort()).toEqual(cles(fr).sort())
   })
-  it("choisit le français par défaut, l'anglais si le navigateur le préfère", () => {
-    expect(langueInitiale([])).toBe('fr')
-    expect(langueInitiale(['wo-SN', 'fr'])).toBe('fr')
-    expect(langueInitiale(['en-NG'])).toBe('en')
+  it("entre toujours en français, quelle que soit la langue du navigateur", () => {
+    expect((i18n.global.locale as unknown as { value: string }).value).toBe('fr')
   })
 })
