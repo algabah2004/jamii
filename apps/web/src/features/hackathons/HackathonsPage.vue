@@ -23,24 +23,29 @@ const hackathons = ref<HackathonResume[]>([])
 const suivant = ref<string | null>(null)
 const etat = ref<'chargement' | 'pret' | 'indisponible'>('chargement')
 const plus = ref(false)
+// Changer de statut recharge la liste : on garde l'ancienne, atténuée, plutôt que de la remplacer par un squelette.
+const rafraichit = ref(false)
+// L'en-tête (hackathon à la une, chiffres) reflète tout le catalogue : il ne change pas, donc ne bouge pas, quand on filtre.
+const ensemble = ref<HackathonResume[]>([])
 const connecte = computed(() => session.value === 'connecte')
 const recherche = ref('')
 const lieux = ref<(typeof LIEUX)[number][]>([])
 const duree = ref('tous')
 const tri = ref('debut')
-const vedette = computed(() => hackathons.value.find((h) => h.statut === 'publie' || h.statut === 'en_cours') ?? hackathons.value[0])
+const vedette = computed(() => ensemble.value.find((h) => h.statut === 'publie' || h.statut === 'en_cours') ?? ensemble.value[0])
 const visibles = computed(() => hackathons.value.filter((h) => {
   const jours = Math.max(1, Math.ceil((Date.parse(h.finRendusLe) - Date.parse(h.debutLe)) / 86_400_000))
   return (!lieux.value.length || lieux.value.includes(h.lieu))
     && (duree.value === 'tous' || (duree.value === 'court' ? jours <= 3 : duree.value === 'semaine' ? jours > 3 && jours <= 7 : jours > 7))
     && correspond(recherche.value, [h.titre, h.theme, h.ville, h.organisateur.nom, t(`hackathons.lieux.${h.lieu}`)])
 }).sort((a, b) => tri.value === 'participants' ? b.nombreInscrits - a.nombreInscrits : tri.value === 'titre' ? a.titre.localeCompare(b.titre, locale.value) : Date.parse(a.debutLe) - Date.parse(b.debutLe)))
+const DUREES = ['tous', 'court', 'semaine', 'long'] as const
 const nombreFiltres = computed(() => Number(filtre.value !== 'tous') + lieux.value.length + Number(duree.value !== 'tous'))
 function reinitialiser() { filtre.value = 'tous'; lieux.value = []; duree.value = 'tous'; recherche.value = ''; tri.value = 'debut' }
 const statistiques = computed(() => [
-  { valeur: hackathons.value.length, libelle: t('exploration.hackathons.statDefis', hackathons.value.length) },
-  { valeur: hackathons.value.reduce((total, h) => total + h.nombreInscrits, 0), libelle: t('exploration.hackathons.statInscrits', hackathons.value.reduce((total, h) => total + h.nombreInscrits, 0)) },
-  { valeur: new Set(hackathons.value.map((h) => h.ville).filter(Boolean)).size, libelle: t('exploration.hackathons.statVilles', new Set(hackathons.value.map((h) => h.ville).filter(Boolean)).size) },
+  { valeur: ensemble.value.length, libelle: t('exploration.hackathons.statDefis', ensemble.value.length) },
+  { valeur: ensemble.value.reduce((total, h) => total + h.nombreInscrits, 0), libelle: t('exploration.hackathons.statInscrits', ensemble.value.reduce((total, h) => total + h.nombreInscrits, 0)) },
+  { valeur: new Set(ensemble.value.map((h) => h.ville).filter(Boolean)).size, libelle: t('exploration.hackathons.statVilles', new Set(ensemble.value.map((h) => h.ville).filter(Boolean)).size) },
 ])
 
 // Chaque chargement a son numéro : la réponse d'un ancien filtre, arrivée en retard, n'écrase pas la liste.
@@ -48,20 +53,31 @@ let dernier = 0
 async function charger(curseur?: string) {
   const numero = ++dernier
   if (curseur) plus.value = true
+  else if (etat.value === 'pret') rafraichit.value = true
   else etat.value = 'chargement'
   try {
     const page = await listerHackathons(filtre.value, curseur)
     if (numero !== dernier) return
     hackathons.value = curseur ? [...hackathons.value, ...page.elements] : page.elements
     suivant.value = page.curseurSuivant
+    if (filtre.value === 'tous') ensemble.value = hackathons.value
     etat.value = 'pret'
   } catch {
     if (!curseur && numero === dernier) etat.value = 'indisponible'
   } finally {
-    if (numero === dernier) plus.value = false
+    if (numero === dernier) { plus.value = false; rafraichit.value = false }
   }
 }
 watch(filtre, () => void charger(), { immediate: true })
+
+// Filtrer quand on est descendu dans la liste : la liste raccourcit et le navigateur remonterait la page d'un coup,
+// emportant le panneau. On ramène plutôt le haut des résultats sous la barre : le panneau ne bouge pas.
+const catalogue = ref<HTMLElement | null>(null)
+watch([filtre, lieux, duree], () => {
+  const boite = catalogue.value?.getBoundingClientRect()
+  if (!boite?.height || boite.top >= 100) return
+  window.scrollTo({ top: window.scrollY + boite.top - 100, behavior: 'instant' })
+})
 
 /** Une teinte tirée du titre : toujours la même couleur de bannière pour un hackathon. */
 function teinte(titre: string): number {
@@ -82,7 +98,7 @@ const periode = (debut: string, fin: string) =>
     <EnteteExploration :surtitre="t('exploration.hackathons.surtitre')" :titre="t('exploration.hackathons.titre')" :accent="t('exploration.hackathons.accent')" :intro="t('hackathons.intro')" :statistiques="statistiques">
       <template #actions><RouterLink v-if="connecte" to="/hackathons/nouveau" class="exploration__principal" data-test="creer-un-hackathon"><span aria-hidden="true">＋</span>{{ t('hackathons.creer') }}</RouterLink><a href="#hackathons-liste" class="exploration__secondaire">{{ t('exploration.hackathons.explorer') }} <span aria-hidden="true">↓</span></a></template>
       <p class="exploration__surtitre">{{ t('exploration.hackathons.vedette') }}</p>
-      <template v-if="vedette && etat === 'pret'">
+      <template v-if="vedette">
         <div class="exploration__calendrier" aria-hidden="true"><strong>{{ jour(vedette.debutLe) }}</strong><span>{{ mois(vedette.debutLe) }}</span></div>
         <h2><RouterLink :to="`/hackathons/${vedette.id}`">{{ vedette.titre }}</RouterLink></h2>
         <p>{{ vedette.theme }}</p>
@@ -97,33 +113,34 @@ const periode = (debut: string, fin: string) =>
       <span v-if="suivant" class="texte-discret">{{ t('exploration.dansLaListe') }}</span>
     </div>
 
-    <div class="catalogue">
+    <div ref="catalogue" class="catalogue">
       <aside class="catalogue__filtres" :aria-label="t('hackathons.decouverte.filtres')">
-        <div class="catalogue__filtres-tete"><h2>{{ t('hackathons.decouverte.filtres') }} <span>{{ nombreFiltres }}</span></h2><button type="button" class="exploration__effacer" data-test="reinitialiser-filtres" @click="reinitialiser">{{ t('hackathons.decouverte.effacer') }}</button></div>
-        <fieldset class="catalogue__statuts"><legend>{{ t('hackathons.decouverte.statut') }}</legend>
-        <button
-          v-for="f in FILTRES"
-          :key="f"
-          type="button"
-          class="filtre"
-          :aria-pressed="filtre === f"
-          :data-test="`filtre-${f}`"
-          @click="filtre = f"
-        >{{ t(`hackathons.filtres.${f}`) }}</button>
-        <button
-          v-if="connecte"
-          type="button"
-          class="filtre filtre--miens"
-          :aria-pressed="filtre === 'miens'"
-          data-test="filtre-miens"
-          @click="filtre = 'miens'"
-        >{{ t('hackathons.filtres.miens') }}</button>
+        <div class="catalogue__filtres-tete">
+          <h2>{{ t('hackathons.decouverte.filtres') }}<span v-if="nombreFiltres" class="catalogue__nombre">{{ nombreFiltres }}</span></h2>
+          <button type="button" class="catalogue__effacer" :class="{ 'catalogue__effacer--cache': !nombreFiltres && !recherche }" data-test="reinitialiser-filtres" @click="reinitialiser">{{ t('hackathons.decouverte.effacer') }}</button>
+        </div>
+        <fieldset class="catalogue__statuts">
+          <legend>{{ t('hackathons.decouverte.statut') }}</legend>
+          <button
+            v-for="f in connecte ? [...FILTRES, 'miens' as const] : FILTRES"
+            :key="f"
+            type="button"
+            :aria-pressed="filtre === f"
+            :data-test="`filtre-${f}`"
+            @click="filtre = f"
+          >{{ t(`hackathons.filtres.${f}`) }}<svg aria-hidden="true" viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7" /></svg></button>
         </fieldset>
-        <fieldset class="catalogue__formats"><legend>{{ t('hackathons.nouveau.lieu') }}</legend><label v-for="lieu in LIEUX" :key="lieu"><input v-model="lieux" type="checkbox" :value="lieu" :data-test="`lieu-${lieu}`" />{{ t(`hackathons.lieux.${lieu}`) }}</label></fieldset>
-        <label class="catalogue__duree"><span>{{ t('hackathons.decouverte.duree') }}</span><select v-model="duree" data-test="filtre-duree"><option value="tous">{{ t('hackathons.decouverte.durees.tous') }}</option><option value="court">{{ t('hackathons.decouverte.durees.court') }}</option><option value="semaine">{{ t('hackathons.decouverte.durees.semaine') }}</option><option value="long">{{ t('hackathons.decouverte.durees.long') }}</option></select></label>
+        <fieldset class="catalogue__pastilles">
+          <legend>{{ t('hackathons.nouveau.lieu') }}</legend>
+          <label v-for="lieu in LIEUX" :key="lieu"><input v-model="lieux" type="checkbox" :value="lieu" :data-test="`lieu-${lieu}`" />{{ t(`hackathons.lieux.${lieu}`) }}</label>
+        </fieldset>
+        <fieldset class="catalogue__pastilles">
+          <legend>{{ t('hackathons.decouverte.duree') }}</legend>
+          <label v-for="d in DUREES" :key="d"><input v-model="duree" type="radio" name="duree-hackathon" :value="d" :data-test="`duree-${d}`" />{{ t(`hackathons.decouverte.durees.${d}`) }}</label>
+        </fieldset>
       </aside>
 
-      <div class="catalogue__contenu">
+      <div class="catalogue__contenu" :class="{ 'catalogue__contenu--maj': rafraichit }" :aria-busy="rafraichit">
 
     <JSquelette v-if="etat === 'chargement'" :nombre="3" />
     <p v-else-if="etat === 'indisponible'" role="alert" class="carte message" data-test="indisponible">{{ t('hackathons.indisponible') }}</p>
@@ -211,21 +228,32 @@ const periode = (debut: string, fin: string) =>
 .hackathon__banniere { block-size: 9rem; padding: 24px; }
 .hackathon__titre { font-size: 1.5rem; line-height: 1.3; letter-spacing: -.025em; }
 .catalogue { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 32px; align-items: start; }
-.catalogue__filtres { position: sticky; top: 100px; display: grid; gap: 24px; border: 1px solid var(--line); border-radius: 22px; padding: 22px; background: var(--surface); }
-.catalogue__filtres-tete { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
-.catalogue__filtres-tete h2 { display: flex; gap: 8px; align-items: center; margin: 0; font-size: 1.125rem; }
-.catalogue__filtres-tete h2 span { display: inline-grid; place-items: center; min-width: 24px; height: 24px; font-size: .8125rem; background: var(--action-soft); border-radius: 50%; }
-.catalogue__filtres-tete button { font-size: .875rem; }
-.catalogue fieldset { display: grid; gap: 8px; padding: 20px 0 0; margin: 0; border: 0; border-top: 1px solid var(--line); }
-.catalogue legend { font-weight: 700; font-size: .9375rem; padding-top: 16px; margin-bottom: 10px; }
-.catalogue__statuts button { display: flex; align-items: center; gap: 10px; text-align: start; padding: 9px 12px; min-height: 42px; background: transparent; border: 1px solid transparent; border-radius: 10px; color: var(--ink-muted); cursor: pointer; font-weight: 600; }
-.catalogue__statuts button::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--line-strong); }
-.catalogue__statuts button[aria-pressed='true'] { color: var(--proof-ink); background: var(--proof-soft); border-color: color-mix(in srgb, var(--proof) 30%, var(--line)); }
-.catalogue__statuts button[aria-pressed='true']::before { background: var(--proof); }
-.catalogue__formats label { display: flex; gap: 10px; align-items: center; min-height: 38px; font-size: .9375rem; }
-.catalogue__duree { display: grid; gap: 12px; font-size: .9375rem; font-weight: 700; }
-.catalogue__duree select { width: 100%; font-size: .875rem; font-weight: 400; }
-.catalogue__contenu { display: grid; gap: 24px; min-width: 0; }
+.catalogue__filtres { position: sticky; top: 100px; display: grid; gap: 22px; border: 1px solid var(--line); border-radius: 22px; padding: 20px; background: var(--surface); }
+.catalogue__filtres-tete { display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 32px; }
+.catalogue__filtres-tete h2 { display: flex; gap: 8px; align-items: center; margin: 0; font-size: 1.0625rem; }
+.catalogue__nombre { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0 7px; border-radius: var(--radius-pill); background: var(--action-soft); color: var(--action-ink); font-size: .75rem; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.catalogue__effacer { padding: 4px 8px; margin-inline-end: -8px; border: 0; border-radius: 8px; background: transparent; color: var(--ink-muted); font: inherit; font-size: .8125rem; font-weight: 600; cursor: pointer; transition: color 150ms ease, background-color 150ms ease; }
+.catalogue__effacer--cache { visibility: hidden; }
+.catalogue__effacer:hover { color: var(--ink); background: var(--surface-raised); }
+.catalogue fieldset { display: flex; flex-wrap: wrap; gap: 6px; padding: 0; margin: 0; border: 0; min-width: 0; }
+.catalogue legend { padding: 0; margin-bottom: 10px; line-height: 1.4; color: var(--ink-muted); font-size: .75rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+/* Les statuts : une liste, la ligne choisie est surlignée et cochée. */
+.catalogue__statuts { flex-direction: column; flex-wrap: nowrap; gap: 2px; }
+.catalogue__statuts button { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 10px; min-height: 38px; border: 0; border-radius: 10px; background: transparent; color: var(--ink-muted); font: inherit; font-size: .9375rem; font-weight: 600; text-align: start; cursor: pointer; transition: color 150ms ease, background-color 150ms ease; }
+.catalogue__statuts button:hover { color: var(--ink); background: var(--surface-raised); }
+.catalogue__statuts svg { flex: none; width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
+.catalogue__statuts button[aria-pressed='true'] { color: var(--action-ink); background: var(--action-soft); }
+.catalogue__statuts button[aria-pressed='true'] svg { opacity: 1; }
+.catalogue__statuts button:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+/* Le format et la durée : des pastilles ; la vraie case reste dans la pastille pour le clavier et les lecteurs d'écran. */
+.catalogue__pastilles label { position: relative; display: inline-flex; align-items: center; min-height: 34px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: var(--radius-pill); color: var(--ink-muted); font-size: .875rem; font-weight: 600; cursor: pointer; transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease; }
+.catalogue__pastilles label:hover { color: var(--ink); border-color: var(--ink-muted); }
+.catalogue__pastilles input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
+.catalogue__pastilles label:has(:checked) { color: var(--action-ink); background: var(--action-soft); border-color: color-mix(in srgb, var(--action) 55%, transparent); }
+.catalogue__pastilles label:has(:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .catalogue__statuts button, .catalogue__pastilles label, .catalogue__effacer, .catalogue__contenu { transition: none; } }
+.catalogue__contenu { display: grid; gap: 24px; align-content: start; min-width: 0; min-height: calc(100vh - 120px); min-height: calc(100dvh - 120px); transition: opacity 150ms ease; }
+.catalogue__contenu--maj { opacity: .55; pointer-events: none; }
 .catalogue__tri { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; font-size: .875rem; color: var(--ink-muted); }
 .catalogue__tri select { border-radius: 50px; font-size: .875rem; }
 .catalogue .liste { grid-template-columns: minmax(0, 1fr); }
@@ -233,5 +261,5 @@ const periode = (debut: string, fin: string) =>
 .catalogue .hackathon__banniere { block-size: 100%; min-block-size: 240px; display: grid; align-content: center; justify-items: center; }
 .catalogue .hackathon__corps { padding: 28px; }
 @media (max-width: 900px) { .catalogue { grid-template-columns: 200px minmax(0, 1fr); gap: 20px; } .catalogue__filtres { padding: 16px; top: 125px; } .catalogue .hackathon { grid-template-columns: 100px minmax(0, 1fr); } .catalogue .hackathon__corps { padding: 20px; } .catalogue .hackathon__banniere { padding: 16px; } }
-@media (max-width: 680px) { .catalogue { grid-template-columns: minmax(0, 1fr); } .catalogue__filtres { position: static; grid-template-columns: repeat(2, minmax(0, 1fr)); } .catalogue__filtres-tete, .catalogue__duree { grid-column: 1 / -1; } .catalogue .hackathon { grid-template-columns: minmax(0, 1fr); } .catalogue .hackathon__banniere { min-block-size: 100px; justify-items: start; } }
+@media (max-width: 680px) { .catalogue { grid-template-columns: minmax(0, 1fr); } .catalogue__filtres { position: static; } .catalogue__statuts { flex-direction: row; flex-wrap: wrap; gap: 6px; } .catalogue__statuts button { min-height: 34px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: var(--radius-pill); font-size: .875rem; } .catalogue__statuts button[aria-pressed='true'] { border-color: color-mix(in srgb, var(--action) 55%, transparent); } .catalogue__statuts svg { display: none; } .catalogue .hackathon { grid-template-columns: minmax(0, 1fr); } .catalogue .hackathon__banniere { min-block-size: 100px; justify-items: start; } }
 </style>
