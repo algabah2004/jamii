@@ -800,14 +800,16 @@
     "rienTrouve": "Rien ne correspond à ta recherche.",
     "ouvrir": "Ouvrir",
     "liste": {
-      "intro": "Des développeurs qui s'entraident, par sujet ou par ville. Rejoins-en une, ou crée la tienne.",
-      "creer": "Créer une communauté",
       "creerLaTienne": "Créer la tienne",
       "chercher": "Chercher une communauté",
       "themes": "Filtrer par thème",
       "toutes": "Toutes",
       "aucune": "Aucune communauté ne correspond. Et si tu la créais ?",
-      "motsCles": "Mots-clés"
+      "motsCles": "Mots-clés",
+      "decouvrir": "Découvre les communautés",
+      "ou": "ou",
+      "creerLaTienneMin": "crée la tienne",
+      "creer": "Créer une communauté"
     },
     "themes": {
       "web": "Web",
@@ -925,6 +927,17 @@
       "termine": "Appel terminé",
       "enDirect": "{nom} est en appel dans #{salon}, rejoindre",
       "trop": "Tu as lancé beaucoup d'appels : réessaie dans un moment."
+    },
+    "couverture": {
+      "mettre": "Mettre une image de couverture",
+      "changer": "Changer l’image",
+      "motif": "Revenir au motif",
+      "envoi": "Envoi…",
+      "trop_gros": "Cette image est trop lourde (10 Mo au plus).",
+      "type_refuse": "Choisis une image (PNG, JPEG, WebP ou GIF).",
+      "erreur": "L’image n’a pas pu être envoyée. Réessaie.",
+      "avecMotif": "La communauté garde son motif. Tu peux aussi mettre une image.",
+      "avecImage": "Ton image sert de couverture."
     }
   },
   "question": {

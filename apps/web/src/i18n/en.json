@@ -800,14 +800,16 @@
     "rienTrouve": "Nothing matches your search.",
     "ouvrir": "Open",
     "liste": {
-      "intro": "Developers helping each other, by topic or by city. Join one, or create your own.",
-      "creer": "Create a community",
       "creerLaTienne": "Create yours",
       "chercher": "Search communities",
       "themes": "Filter by topic",
       "toutes": "All",
       "aucune": "No community matches. Why not create it?",
-      "motsCles": "Keywords"
+      "motsCles": "Keywords",
+      "decouvrir": "Discover communities",
+      "ou": "or",
+      "creerLaTienneMin": "create your own",
+      "creer": "Create a community"
     },
     "themes": {
       "web": "Web",
@@ -925,6 +927,17 @@
       "termine": "Call ended",
       "enDirect": "{nom} is on a call in #{salon}, join",
       "trop": "You have started many calls: try again in a moment."
+    },
+    "couverture": {
+      "mettre": "Add a cover image",
+      "changer": "Change the image",
+      "motif": "Back to the pattern",
+      "envoi": "Uploading…",
+      "trop_gros": "This image is too large (10 MB max).",
+      "type_refuse": "Choose an image (PNG, JPEG, WebP or GIF).",
+      "erreur": "The image could not be uploaded. Try again.",
+      "avecMotif": "The community keeps its pattern. You can also add an image.",
+      "avecImage": "Your image is the cover."
     }
   },
   "question": {

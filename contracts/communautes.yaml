@@ -112,6 +112,32 @@ paths:
         '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
         '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
 
+  /api/communautes/{slug}/couverture:
+    parameters:
+      - $ref: '#/components/parameters/Slug'
+    put:
+      tags: [communautes]
+      operationId: changerCouverture
+      summary: Changer la couverture, ou revenir au motif (modérateurs)
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ChoixCouverture' }
+      responses:
+        '200':
+          description: La communauté, avec sa nouvelle couverture.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Communaute' }
+        '400': { description: '`validation` (`image_invalide`).', $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { description: '`pas_moderateur`.', $ref: './socle.yaml#/components/responses/Interdit' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+
   /api/communautes/{slug}/adhesion:
     parameters:
       - $ref: '#/components/parameters/Slug'
@@ -534,7 +560,7 @@ components:
   schemas:
     Communaute:
       type: object
-      required: [id, slug, nom, description, theme, pays, nombreMembres, questionsOuvertes, membre, moderateur]
+      required: [id, slug, nom, description, theme, pays, nombreMembres, questionsOuvertes, membre, moderateur, couverture]
       properties:
         id: { type: string, format: uuid }
         slug: { type: string }
@@ -548,6 +574,9 @@ components:
         questionsOuvertes: { type: integer, minimum: 0, description: Questions sans réponse acceptée. }
         membre: { type: boolean, description: 'Suis-je membre ? (pour afficher « Rejoindre » ou « Quitter »)' }
         moderateur: { type: boolean, description: 'Suis-je modérateur ? (pour afficher « Créer un salon »). Vérifié par le serveur.' }
+        couverture:
+          type: [string, 'null']
+          description: 'L''image de couverture (`/api/fichiers/{id}`, à lire avec la session). Vide : la communauté garde son motif.'
 
     PageCommunautes:
       allOf:
@@ -668,6 +697,19 @@ components:
         pays:
           oneOf: [{ $ref: './profils.yaml#/components/schemas/Pays' }, { type: 'null' }]
           description: Pour une antenne locale.
+        couvertureId:
+          type: [string, 'null']
+          format: uuid
+          description: 'Une image envoyée avant par `POST /api/fichiers` (sans conversation ni cercle), par la même personne. Vide : le motif.'
+
+    ChoixCouverture:
+      type: object
+      additionalProperties: false
+      properties:
+        fichierId:
+          type: [string, 'null']
+          format: uuid
+          description: 'Une image envoyée par le modérateur (sans conversation ni cercle). Vide : la communauté revient à son motif.'
 
     AppelSalon:
       type: object

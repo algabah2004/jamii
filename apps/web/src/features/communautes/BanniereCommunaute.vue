@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { components } from '../../api/generated/communautes'
 import { JBouton } from '../../design-system'
@@ -7,15 +7,29 @@ import { nomPays } from '../systalink/calculs'
 import { monogramme } from './communautes'
 import { etiquettesDe, teinteDe } from './identite'
 import TextureCommunaute from './TextureCommunaute.vue'
+import ChoixCouverture from './ChoixCouverture.vue'
+import { api } from '../../api/client'
+import type { PieceJointe } from '../../components/texte/fichiers'
 
 type Communaute = components['schemas']['Communaute']
 
 /*
- * La bannière d'une communauté : son monogramme en grand, des rubans aux couleurs de la charte et des étiquettes posées
- * comme des autocollants. Tout est dessiné en CSS et SVG (pas d'image à charger, même avec peu de réseau).
+ * La bannière d'une communauté : sa photo de couverture si elle en a une ; sinon son motif, avec son monogramme en
+ * grand, des rubans aux couleurs de la charte et des étiquettes posées comme des autocollants (dessinés en CSS et SVG,
+ * rien à charger). Un modérateur change la couverture ou revient au motif depuis la bannière.
+ * `apercu` : à la création, le choix de la couverture est fait par la page, pas encore enregistré.
  */
-const props = defineProps<{ communaute: Communaute; actifs?: number; adhesionEnCours?: boolean }>()
-const emit = defineEmits<{ adhesion: [] }>()
+const props = defineProps<{ communaute: Communaute; actifs?: number; adhesionEnCours?: boolean; apercu?: boolean }>()
+const emit = defineEmits<{ adhesion: []; maj: [communaute: Communaute] }>()
+
+const echec = ref(false)
+watch(() => props.communaute.couverture, () => (echec.value = false))
+const photo = computed(() => (props.communaute.couverture && !echec.value ? props.communaute.couverture : null))
+
+async function changerCouverture(fichierId: string | null) {
+  const { data } = await api.PUT('/api/communautes/{slug}/couverture', { params: { path: { slug: props.communaute.slug } }, body: { fichierId } })
+  if (data) emit('maj', data)
+}
 const { t, locale } = useI18n()
 
 const teinte = computed(() => teinteDe(props.communaute.slug))
@@ -31,7 +45,10 @@ const POSES = [
 
 <template>
   <header class="banniere" :style="{ '--fond': teinte.fond, '--accent': teinte.accent, '--encre': teinte.encre }" data-test="banniere">
-    <div class="banniere__scene" aria-hidden="true">
+    <div v-if="photo" class="banniere__scene banniere__scene--photo">
+      <img :src="photo" alt="" class="banniere__photo" data-test="banniere-photo" @error="echec = true" />
+    </div>
+    <div v-else class="banniere__scene" aria-hidden="true">
       <TextureCommunaute :slug="communaute.slug" />
       <svg class="banniere__rubans" viewBox="0 0 800 220" preserveAspectRatio="none">
         <path d="M-20 190 C 160 40, 300 260, 470 90 S 760 10, 840 120" fill="none" stroke="var(--accent)" stroke-width="38" stroke-linecap="round" opacity="0.9" />
@@ -46,6 +63,15 @@ const POSES = [
         :style="{ top: POSES[i]?.haut, right: POSES[i]?.droite, transform: `rotate(${POSES[i]?.angle ?? 0}deg)` }"
       >{{ e }}</span>
     </div>
+
+    <ChoixCouverture
+      v-if="communaute.moderateur && !apercu"
+      :couverture="communaute.couverture"
+      discret
+      class="banniere__couverture"
+      @image="(p: PieceJointe) => changerCouverture(p.id)"
+      @motif="changerCouverture(null)"
+    />
 
     <div class="banniere__corps">
       <div class="banniere__texte">
@@ -71,13 +97,16 @@ const POSES = [
 </template>
 
 <style scoped>
-.banniere { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--ombre-carte); overflow: hidden; }
+.banniere { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--ombre-carte); overflow: hidden; }
 .banniere__scene {
   position: relative; height: clamp(150px, 18vw, 220px); overflow: hidden;
   background:
     radial-gradient(circle at 18% 120%, color-mix(in srgb, var(--accent) 45%, transparent), transparent 55%),
     var(--fond);
 }
+.banniere__scene--photo { background: var(--surface-raised); }
+.banniere__photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.banniere__couverture { position: absolute; top: var(--space-3); left: var(--space-3); z-index: 1; }
 .banniere__rubans { position: absolute; inset: 0; width: 100%; height: 100%; }
 .banniere__geant {
   position: absolute; left: 4%; bottom: -0.18em;

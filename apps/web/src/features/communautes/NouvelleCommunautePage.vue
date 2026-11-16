@@ -9,6 +9,8 @@ import { JBouton } from '../../design-system'
 import { nomPays } from '../systalink/calculs'
 import BanniereCommunaute from './BanniereCommunaute.vue'
 import TextureCommunaute from './TextureCommunaute.vue'
+import ChoixCouverture from './ChoixCouverture.vue'
+import type { PieceJointe } from '../../components/texte/fichiers'
 import { monogramme } from './communautes'
 import { PAYS_ANTENNES, THEMES, etiquettesDe, teinteDe, type Theme } from './identite'
 
@@ -32,6 +34,8 @@ const nom = ref('')
 const theme = ref<Theme | null>(null)
 const pays = ref<string>('SN')
 const description = ref('')
+/** La couverture : le motif par défaut, ou une image envoyée à l'étape de l'aperçu. */
+const couverture = ref<PieceJointe | null>(null)
 
 const nomPropre = computed(() => nom.value.trim())
 const adresse = computed(() =>
@@ -95,7 +99,7 @@ const apercu = computed<Communaute>(() => ({
   nom: nomPropre.value || t('communautes.nouvelle.nomExemple'),
   description: description.value.trim() || t('communautes.nouvelle.descriptionExemple'),
   theme: theme.value ?? 'autre', pays: theme.value === 'antenne' ? pays.value : null,
-  nombreMembres: 1, questionsOuvertes: 0, membre: true, moderateur: true,
+  nombreMembres: 1, questionsOuvertes: 0, membre: true, moderateur: true, couverture: couverture.value?.url ?? null,
 }))
 const teinte = computed(() => teinteDe(apercu.value.slug))
 
@@ -110,6 +114,7 @@ async function creer() {
       body: {
         nom: nomPropre.value, description: description.value.trim(), theme: theme.value,
         ...(theme.value === 'antenne' ? { pays: pays.value } : {}),
+        ...(couverture.value ? { couvertureId: couverture.value.id } : {}),
       },
     })
     if (!data) return void (envoi.value = response.status === 429 ? 'trop' : 'erreur')
@@ -236,7 +241,11 @@ function touche(e: KeyboardEvent) {
           <div v-else key="apercu" class="etape">
             <p class="etape__numero" aria-hidden="true">04</p>
             <h1 id="titre-etape" ref="champ" tabindex="-1">{{ t('communautes.nouvelle.q.apercu') }}</h1>
-            <BanniereCommunaute :communaute="apercu" class="etape__banniere" />
+            <BanniereCommunaute :communaute="apercu" apercu class="etape__banniere" />
+            <div class="couverture-choix">
+              <p class="couverture-choix__texte">{{ couverture ? t('communautes.couverture.avecImage') : t('communautes.couverture.avecMotif') }}</p>
+              <ChoixCouverture :couverture="couverture?.url ?? null" @image="(p: PieceJointe) => (couverture = p)" @motif="couverture = null" />
+            </div>
             <ul class="promesses">
               <li><span aria-hidden="true">✓</span> {{ t('communautes.nouvelle.moderateur') }}</li>
               <li><span aria-hidden="true">✓</span> {{ t('communautes.nouvelle.salons') }}</li>
@@ -427,4 +436,6 @@ function touche(e: KeyboardEvent) {
   .succes__monogramme, .succes__eclats span { animation: none; }
   .succes__eclats { display: none; }
 }
+.couverture-choix { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); margin-top: var(--space-3); }
+.couverture-choix__texte { margin: 0; color: var(--ink-muted); font-size: var(--type-body-sm-size); }
 </style>
