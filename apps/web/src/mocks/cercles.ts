@@ -73,7 +73,7 @@ function cercleDakar(): Cercle {
   tours[0] = ouvrirTour(tours[0]!, 2, 7, 12)
   return {
     id: 'a0c1e2c1-0000-4000-8000-00000000da4a', nom: 'Cercle de Dakar', ville: 'Dakar', taille: 6, statut: 'en_cours',
-    nombreMembres: 6, createur: PERSONNES[0]!.personne, creeLe: ilYa(10),
+    nombreMembres: 6, createur: PERSONNES[0]!.personne, creeLe: ilYa(10), profilsRecherches: [],
     membres, tours, tourEnCours: 1, tirage: { effectueLe: ilYa(2), parId: AWA }, moi: { estCreateur: true, estMembre: true },
   }
 }
@@ -82,7 +82,7 @@ function cercleAbidjan(): Cercle {
   const membres = [1, 2, 3].map((i) => membre(i, null))
   return {
     id: 'a0c1e2c1-0000-4000-8000-0000000ab1d1', nom: 'Cercle d’Abidjan', ville: 'Abidjan', taille: 5, statut: 'ouvert',
-    nombreMembres: 3, createur: PERSONNES[1]!.personne, creeLe: ilYa(1),
+    nombreMembres: 3, createur: PERSONNES[1]!.personne, creeLe: ilYa(1), profilsRecherches: ['mobile', 'design'],
     // Awa n'en fait pas partie : elle ne voit ni les idées, ni les boutons du créateur.
     membres: membres.map((m) => ({ ...m, idee: undefined })), tours: [], tourEnCours: null, tirage: null, moi: { estCreateur: false, estMembre: false },
   }
@@ -93,7 +93,7 @@ function cercleSaintLouis(): Cercle {
   const membres = [membre(0, null), membre(2, null)]
   return {
     id: 'a0c1e2c1-0000-4000-8000-0000000051a1', nom: 'Cercle de Saint-Louis', ville: 'Saint-Louis', taille: 4, statut: 'ouvert',
-    nombreMembres: 2, createur: PERSONNES[0]!.personne, creeLe: ilYa(0),
+    nombreMembres: 2, createur: PERSONNES[0]!.personne, creeLe: ilYa(0), profilsRecherches: ['back'],
     membres, tours: [], tourEnCours: null, tirage: null, moi: { estCreateur: true, estMembre: true },
   }
 }
@@ -122,6 +122,7 @@ function cerclesDecouverte(): Cercle[] {
     return {
       id: `a0c1e2c1-0000-4000-8000-${String(100 + i).padStart(12, '0')}`, nom, ville, taille, statut: 'ouvert',
       nombreMembres: membres.length, createur, creeLe: ilYa(i + 2), membres, tours: [], tourEnCours: null, tirage: null,
+      profilsRecherches: [(['front', 'back', 'mobile', 'design', 'data', 'ia'] as const)[i % 6]!, ...(i % 3 === 0 ? (['devops'] as const) : [])],
       moi: { estCreateur: false, estMembre: false },
     }
   })
@@ -180,7 +181,7 @@ reinitialiserCercles()
 const erreur = (code: string, status = 409) =>
   HttpResponse.json({ type: `urn:jamii:erreur:${code}`, title: code, status, code }, { status, headers: { 'Content-Type': 'application/problem+json' } })
 const trouver = (id: unknown) => cercles.find((c) => c.id === id)
-const resume = ({ id, nom, ville, taille, statut, nombreMembres, createur, creeLe }: Cercle) => ({ id, nom, ville, taille, statut, nombreMembres, createur, creeLe })
+const resume = ({ id, nom, ville, taille, statut, nombreMembres, createur, creeLe, profilsRecherches }: Cercle) => ({ id, nom, ville, taille, statut, nombreMembres, createur, creeLe, profilsRecherches })
 
 function melanger<T>(liste: T[]): T[] {
   const copie = [...liste]
@@ -286,7 +287,7 @@ export const handlersCercles = [
     return HttpResponse.json({ elements: liste.map(resume), suivant: null })
   }),
   http.post('/api/cercles', async ({ request }) => {
-    const c = (await request.json()) as { nom: string; ville?: string; taille: number }
+    const c = (await request.json()) as { nom: string; ville?: string; taille: number; profils?: Cercle['profilsRecherches'] }
     // La ville est facultative depuis le 15/11 : le formulaire ne la demande plus.
     if (!c.nom || c.nom.length < 3 || (c.ville != null && c.ville.length < 2) || ![4, 5, 6].includes(c.taille)) return erreur('invalide', 400)
     // En démo, les autres membres rejoignent tout de suite avec leur idée : on peut aller au tirage seule.
@@ -295,6 +296,7 @@ export const handlersCercles = [
       id: `a0c1e2c1-0000-4000-8000-${String(cercles.length + 1).padStart(12, '0')}`, nom: c.nom, ville: c.ville ?? null, taille: c.taille, statut: 'ouvert',
       nombreMembres: membres.length, createur: PERSONNES[0]!.personne, creeLe: new Date().toISOString(),
       membres, tours: [], tourEnCours: null, tirage: null, moi: { estCreateur: true, estMembre: true },
+      profilsRecherches: [...new Set(c.profils ?? [])],
     }
     cercles.unshift(cercle)
     return HttpResponse.json(cercle, { status: 201 })

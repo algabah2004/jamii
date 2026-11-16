@@ -1412,7 +1412,9 @@
         "nomAide": "A short name others will recognise. You can invite developers from all over the continent: the circle works online.",
         "taille": "How many of you will there be?",
         "tailleAide": "Including you. Every member gets a turn: for two weeks, the whole circle builds their project.",
-        "apercu": "Ready to launch “{nom}”?"
+        "apercu": "Ready to launch “{nom}”?",
+        "profils": "Which profiles do you need?",
+        "profilsAide": "Optional. Pick up to {n}, one per open seat: they show on your circle to attract the right people. | Optional. Pick up to {n}, one per open seat: they show on your circle to attract the right people. | Optional. Pick up to {n}, one per open seat: they show on your circle to attract the right people."
       },
       "duree": "{semaines} weeks in total",
       "promesses": {
@@ -1427,11 +1429,13 @@
       "etapes": {
         "nom": "The name",
         "taille": "How many",
-        "apercu": "How it works"
+        "apercu": "How it works",
+        "profils": "The profiles"
       },
       "succes": "“{nom}” is created!",
       "succesAide": "Now invite the {n} other members.",
-      "entrer": "Enter the circle"
+      "entrer": "Enter the circle",
+      "onCherche": "You are looking for: {profils}."
     },
     "membresTitre": "Members",
     "livrer": "Deliver the turn",
@@ -1796,7 +1800,32 @@
         "trop_de_requetes": "Too many calls started in a short time. Try again in a moment.",
         "echec": "The connection to Jamii was lost."
       }
-    }
+    },
+    "profils": {
+      "front": "Front-end",
+      "back": "Back-end",
+      "mobile": "Mobile",
+      "design": "Design",
+      "data": "Data",
+      "ia": "AI",
+      "devops": "DevOps",
+      "securite": "Security",
+      "produit": "Project lead",
+      "test": "Testing"
+    },
+    "profilsAide": {
+      "front": "Screens, web, Vue or React",
+      "back": "APIs, servers, databases",
+      "mobile": "Android, iOS, Flutter",
+      "design": "Interfaces, mock-ups, UX",
+      "data": "Analysis, dashboards, SQL",
+      "ia": "Models, data, prompts",
+      "devops": "Servers, deployment, cloud",
+      "securite": "Accounts, flaws, good practice",
+      "produit": "Planning, priorities, follow-up",
+      "test": "Tests, quality, acceptance"
+    },
+    "cherche": "Looking for:"
   },
   "reseau": {
     "competences": "Skills",

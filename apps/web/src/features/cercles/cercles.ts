@@ -167,8 +167,14 @@ export async function changerTache(projetId: string, tache: Tache, changement: D
   }
 }
 
-export const creerCercle = (c: { nom: string; taille: number }) =>
-  resultat(api.POST('/api/cercles', { body: { nom: c.nom.trim(), taille: c.taille } }))
+export type ProfilRecherche = components['schemas']['ProfilRecherche']
+/** Les profils qu'un cercle peut rechercher, dans l'ordre où on les propose. */
+export const PROFILS: readonly ProfilRecherche[] = ['front', 'back', 'mobile', 'design', 'data', 'ia', 'devops', 'securite', 'produit', 'test']
+/** Au plus un profil par place libre, et 5 en tout. */
+export const profilsMax = (taille: number) => Math.min(5, taille - 1)
+
+export const creerCercle = (c: { nom: string; taille: number; profils?: ProfilRecherche[] }) =>
+  resultat(api.POST('/api/cercles', { body: { nom: c.nom.trim(), taille: c.taille, ...(c.profils?.length ? { profils: c.profils } : {}) } }))
 export const rejoindreCercle = (cercleId: string) => resultat(api.POST('/api/cercles/{cercleId}/membres', { params: { path: { cercleId } } }))
 export async function deposerIdee(cercleId: string, idee: DepotIdee): Promise<Resultat> {
   const { data, error } = await api.PUT('/api/cercles/{cercleId}/membres/moi/idee', {

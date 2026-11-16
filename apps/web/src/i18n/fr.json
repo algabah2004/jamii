@@ -1412,7 +1412,9 @@
         "nomAide": "Un nom court, que les autres reconnaîtront. Tu pourras inviter des développeurs de tout le continent : le cercle travaille en ligne.",
         "taille": "Combien serez-vous ?",
         "tailleAide": "Toi compris. Chaque membre a son tour : pendant deux semaines, tout le cercle construit son projet.",
-        "apercu": "Prêt à lancer « {nom} » ?"
+        "apercu": "Prêt à lancer « {nom} » ?",
+        "profils": "De quels profils as-tu besoin ?",
+        "profilsAide": "Facultatif. Choisis-en jusqu’à {n}, un par place libre : ils s’affichent sur ton cercle pour attirer les bonnes personnes. | Facultatif. Choisis-en jusqu’à {n}, un par place libre : ils s’affichent sur ton cercle pour attirer les bonnes personnes. | Facultatif. Choisis-en jusqu’à {n}, un par place libre : ils s’affichent sur ton cercle pour attirer les bonnes personnes."
       },
       "duree": "{semaines} semaines en tout",
       "promesses": {
@@ -1427,11 +1429,13 @@
       "etapes": {
         "nom": "Le nom",
         "taille": "Combien vous serez",
-        "apercu": "Comment ça marche"
+        "apercu": "Comment ça marche",
+        "profils": "Les profils"
       },
       "succes": "« {nom} » est créé !",
       "succesAide": "Invite maintenant les {n} autres membres.",
-      "entrer": "Entrer dans le cercle"
+      "entrer": "Entrer dans le cercle",
+      "onCherche": "Tu cherches : {profils}."
     },
     "membresTitre": "Les membres",
     "livrer": "Livrer le tour",
@@ -1796,7 +1800,32 @@
         "trop_de_requetes": "Trop d'appels lancés en peu de temps. Réessaie dans un moment.",
         "echec": "La connexion à Jamii a été perdue."
       }
-    }
+    },
+    "profils": {
+      "front": "Front-end",
+      "back": "Back-end",
+      "mobile": "Mobile",
+      "design": "Design",
+      "data": "Données",
+      "ia": "IA",
+      "devops": "Mise en ligne",
+      "securite": "Sécurité",
+      "produit": "Chef de projet",
+      "test": "Test"
+    },
+    "profilsAide": {
+      "front": "Écrans, web, Vue ou React",
+      "back": "API, serveur, base de données",
+      "mobile": "Android, iOS, Flutter",
+      "design": "Interfaces, maquettes, UX",
+      "data": "Analyse, tableaux, SQL",
+      "ia": "Modèles, données, prompts",
+      "devops": "Serveurs, déploiement, cloud",
+      "securite": "Comptes, failles, bonnes pratiques",
+      "produit": "Planning, priorités, suivi",
+      "test": "Tests, qualité, recette"
+    },
+    "cherche": "On cherche :"
   },
   "reseau": {
     "competences": "Compétences",
