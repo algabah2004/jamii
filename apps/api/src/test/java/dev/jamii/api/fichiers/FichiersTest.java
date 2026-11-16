@@ -162,4 +162,46 @@ class FichiersTest {
 		assertThat(message(awa, kofi.id(), "\"" + UUID.randomUUID() + "\"")).hasStatus(HttpStatus.BAD_REQUEST);
 	}
 
+	// ---------------------------------------------------------------- les messages vocaux (#157)
+
+	private static final byte[] WEBM = { 0x1A, 0x45, (byte) 0xDF, (byte) 0xA3, (byte) 0x9F, 0x42, (byte) 0x86, (byte) 0x81, 0x01 };
+
+	private static final byte[] MP4 = { 0, 0, 0, 0x1C, 'f', 't', 'y', 'p', 'M', '4', 'A', ' ', 0, 0, 0, 0 };
+
+	private MvcTestResult envoyerVocal(UtilisateurConnecte qui, UUID a, String nom, byte[] octets) {
+		return mvc.post().uri("/api/fichiers").multipart().file(new MockMultipartFile("fichier", nom, "audio/webm", octets))
+			.param("destinataireId", a.toString()).param("vocal", "true").with(csrf()).with(oauth2Login().oauth2User(qui)).exchange();
+	}
+
+	@Test
+	void un_message_vocal_est_un_son_prive_qui_s_envoie_seul_dans_un_message() throws Exception {
+		var awa = utilisateur("Awa");
+		var kofi = utilisateur("Kofi");
+		var envoi = envoyerVocal(awa, kofi.id(), "message-vocal.webm", WEBM);
+		assertThat(envoi).hasStatus(HttpStatus.CREATED);
+		assertThat(envoi).bodyJson().extractingPath("$.sorte").isEqualTo("audio");
+		assertThat(envoi).bodyJson().extractingPath("$.type").isEqualTo("audio/webm");
+		String id = JsonPath.read(envoi.getResponse().getContentAsString(), "$.id");
+		assertThat(message(awa, kofi.id(), "\"" + id + "\"")).hasStatus(HttpStatus.CREATED)
+			.bodyJson().extractingPath("$.piecesJointes[0].sorte").isEqualTo("audio");
+		var lu = mvc.get().uri("/api/fichiers/" + id).with(oauth2Login().oauth2User(kofi)).exchange();
+		assertThat(lu).hasStatusOk();
+		assertThat(lu.getResponse().getContentType()).isEqualTo("audio/webm");
+		assertThat(lu.getResponse().getHeader("Content-Disposition")).startsWith("inline");
+
+		// Safari enregistre en MP4 ; sans « vocal », le même WebM reste une vidéo.
+		assertThat(envoyerVocal(awa, kofi.id(), "vocal.mp4", MP4)).bodyJson().extractingPath("$.type").isEqualTo("audio/mp4");
+		assertThat(envoyer(awa, "clip.webm", "video/webm", WEBM)).bodyJson().extractingPath("$.sorte").isEqualTo("video");
+	}
+
+	@Test
+	void un_message_vocal_qui_n_est_pas_un_son_ou_trop_long_est_refuse() {
+		var awa = utilisateur("Awa");
+		var kofi = utilisateur("Kofi");
+		assertThat(envoyerVocal(awa, kofi.id(), "vocal.webm", PNG)).hasStatus(HttpStatus.UNSUPPORTED_MEDIA_TYPE);
+		byte[] long_ = java.util.Arrays.copyOf(WEBM, (int) Fichiers.AUDIO_MAX + 1);
+		assertThat(envoyerVocal(awa, kofi.id(), "vocal.webm", long_)).hasStatus(HttpStatus.PAYLOAD_TOO_LARGE)
+			.bodyJson().extractingPath("$.code").isEqualTo("trop_gros");
+	}
+
 }

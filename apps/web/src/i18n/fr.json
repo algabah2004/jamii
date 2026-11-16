@@ -3025,5 +3025,20 @@
       "tuAsRefuse": "Tu as refusé",
       "annule": "Annulé"
     }
+  },
+  "vocal": {
+    "enregistrer": "Enregistrer un message vocal",
+    "enCours": "Enregistrement… {duree}",
+    "annuler": "Annuler",
+    "envoyer": "Envoyer",
+    "message": "Message vocal",
+    "erreurs": {
+      "micro_refuse": "Jamii n’a pas accès à ton micro. Autorise-le dans ton navigateur, puis réessaie.",
+      "trop_court": "Message trop court : maintiens l’enregistrement au moins une seconde.",
+      "trop_gros": "Ce message vocal est trop long.",
+      "type_refuse": "Ce navigateur enregistre dans un format que Jamii n’accepte pas.",
+      "trop_de_requetes": "Trop de fichiers envoyés en une heure. Réessaie plus tard.",
+      "erreur": "Le message vocal n’a pas pu être envoyé. Réessaie."
+    }
   }
 }

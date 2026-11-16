@@ -592,10 +592,13 @@ export interface components {
             id: string;
             /** @description Le nom du fichier, sans chemin. */
             nom: string;
-            /** @description Le type MIME reconnu (image/png, video/mp4, application/pdf…). */
+            /** @description Le type MIME reconnu (image/png, video/mp4, audio/webm, application/pdf…). */
             type: string;
-            /** @enum {string} */
-            sorte: "image" | "video" | "document";
+            /**
+             * @description `audio` : un message vocal.
+             * @enum {string}
+             */
+            sorte: "image" | "video" | "document" | "audio";
             /**
              * Format: int64
              * @description En octets.

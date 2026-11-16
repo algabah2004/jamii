@@ -9,7 +9,8 @@ info:
 
     **Types acceptés**, reconnus d'après les premiers octets du fichier (jamais d'après son nom ni le type annoncé) :
     images PNG, JPEG, GIF, WebP (10 Mo) ; vidéos MP4, MOV, WebM (25 Mo) ; PDF, documents Office (docx, xlsx, pptx),
-    archives ZIP et fichiers texte (txt, md, csv, json, code ; 10 Mo). **Refusés** : tout ce qui pourrait s'exécuter
+    archives ZIP et fichiers texte (txt, md, csv, json, code ; 10 Mo) ; avec `vocal`, messages vocaux WebM, Ogg ou MP4
+    (5 Mo, sorte `audio`). **Refusés** : tout ce qui pourrait s'exécuter
     dans le navigateur (HTML, SVG, JavaScript) et les exécutables (`415 type_refuse`).
 
     **Lire** un fichier demande d'être connecté. Il est servi avec son vrai type, `X-Content-Type-Options: nosniff` et une
@@ -50,6 +51,7 @@ paths:
                 fichier: { type: string, format: binary }
                 cercleId: { type: string, format: uuid, description: 'Document réservé à une idée de ce cercle ; envoi par un membre, consultation par les membres après enregistrement de l’idée. Incompatible avec destinataireId.' }
                 destinataireId: { type: string, format: uuid, description: 'Pour un message privé : réserve ce fichier à cette conversation. Seul son auteur le lit avant envoi ; ensuite, son destinataire aussi.' }
+                vocal: { type: boolean, default: false, description: 'Un message vocal enregistré dans le navigateur (#157) : un son WebM, Ogg ou MP4, de 5 Mo au plus, de sorte `audio`. Sans ce champ, un WebM ou un MP4 est une vidéo.' }
       responses:
         '201':
           description: Fichier reçu.
@@ -90,8 +92,8 @@ components:
       properties:
         id: { type: string, format: uuid }
         nom: { type: string, maxLength: 200, description: 'Le nom du fichier, sans chemin.' }
-        type: { type: string, description: 'Le type MIME reconnu (image/png, video/mp4, application/pdf…).' }
-        sorte: { type: string, enum: [image, video, document] }
+        type: { type: string, description: 'Le type MIME reconnu (image/png, video/mp4, audio/webm, application/pdf…).' }
+        sorte: { type: string, enum: [image, video, document, audio], description: '`audio` : un message vocal.' }
         taille: { type: integer, format: int64, description: En octets. }
         url: { type: string, description: 'Où le lire (`/api/fichiers/{id}`), avec la session.' }
 

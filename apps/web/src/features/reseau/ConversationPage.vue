@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import Composeur from '../../components/texte/Composeur.vue'
+import EnregistreurVocal from '../../components/texte/EnregistreurVocal.vue'
 import PiecesJointes from '../../components/texte/PiecesJointes.vue'
 import TexteRiche from '../../components/texte/TexteRiche.vue'
-import type { PieceJointe } from '../../components/texte/fichiers'
+import { envoyerFichier, type PieceJointe } from '../../components/texte/fichiers'
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
@@ -160,6 +161,36 @@ async function envoyer() {
       composeur.value?.rafraichir()
       await descendre()
       composeur.value?.focus()
+    } else erreur.value = t(`reseau.erreurs.${r.code ?? 'autre'}`, t('reseau.erreurs.autreMessage'))
+  } catch {
+    if (actif && version === versionConversation) erreur.value = t('etat.indisponible')
+  } finally {
+    if (actif && version === versionConversation) envoi.value = false
+  }
+}
+
+// ---------------------------------------------------------------- un message vocal (#157)
+
+/** Le son est envoyé comme un fichier privé de la conversation, puis joint seul à un message. */
+async function envoyerVocal(fichier: File) {
+  if (!personne.value || envoi.value) return
+  const version = versionConversation
+  const destinataire = personne.value.id
+  envoi.value = true
+  erreur.value = null
+  try {
+    const f = await envoyerFichier(fichier, destinataire, undefined, true)
+    if (!actif || version !== versionConversation) return
+    if (!f.ok) {
+      erreur.value = t(`vocal.erreurs.${f.code}`)
+      return
+    }
+    const r = await envoyerMessage(destinataire, '', undefined, [f.piece.id])
+    if (!actif || version !== versionConversation) return
+    if (r.ok) {
+      messages.value.push(r.message)
+      emit('actualise')
+      await descendre()
     } else erreur.value = t(`reseau.erreurs.${r.code ?? 'autre'}`, t('reseau.erreurs.autreMessage'))
   } catch {
     if (actif && version === versionConversation) erreur.value = t('etat.indisponible')
@@ -371,7 +402,11 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
           :max="LONGUEUR_MESSAGE"
           test-envoyer="envoyer-message"
           @envoyer="envoyer"
-        />
+        >
+          <template #outils>
+            <EnregistreurVocal :desactive="envoi" @envoyer="envoyerVocal" @erreur="(code) => (erreur = t(`vocal.erreurs.${code}`))" />
+          </template>
+        </Composeur>
       </form>
     </div>
   </section>

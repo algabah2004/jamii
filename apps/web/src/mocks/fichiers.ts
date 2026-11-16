@@ -32,8 +32,8 @@ export const handlersFichiers = [
     if (!(fichier instanceof Blob)) return HttpResponse.json({ code: 'validation' }, { status: 400 })
     const type = fichier.type || 'application/octet-stream'
     if (/html|svg|javascript/.test(type)) return HttpResponse.json({ code: 'type_refuse' }, { status: 415 })
-    const sorte = sorteDe(type)
-    const max = sorte === 'video' ? 25 : 10
+    const sorte = form.get('vocal') === 'true' ? 'audio' : sorteDe(type)
+    const max = sorte === 'video' ? 25 : sorte === 'audio' ? 5 : 10
     if (fichier.size > max * 1024 * 1024) return HttpResponse.json({ code: 'trop_gros' }, { status: 413 })
     const id = crypto.randomUUID()
     const nom = fichier instanceof File ? fichier.name : 'fichier'
