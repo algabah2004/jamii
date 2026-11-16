@@ -224,6 +224,8 @@ describe('l’orientation d’un besoin', () => {
     await vi.waitFor(() => expect(clics).toEqual(['b0a10000-0000-4000-8000-000000000001']))
     const recommandes = page.findAll('[data-test="recommande"]')
     expect(recommandes).toHaveLength(3)
+    // Avec des développeurs proposés, jamais le message « aucun développeur » en même temps.
+    expect(page.find('[data-test="aucun-recommande"]').exists()).toBe(false)
     expect(recommandes[0]!.text()).toContain('React, confirmé (3 dépôts)')
     expect(recommandes[0]!.get('a').attributes('href')).toBe('/messages/d2e00000-0000-4000-8000-000000000001')
     // Le conseil propose de publier le besoin en mission, plus de former un cercle.

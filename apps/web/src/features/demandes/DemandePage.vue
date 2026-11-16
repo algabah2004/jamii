@@ -471,7 +471,7 @@ const messageErreur = computed(() =>
                 </tbody>
               </table>
             </div>
-            <p v-else class="carte vide" data-test="aucun-recommande">{{ t('demandes.orientation.aucun') }}</p>
+            <p v-if="!recommandes.length" class="carte vide" data-test="aucun-recommande">{{ t('demandes.orientation.aucun') }}</p>
           </div>
 
           <div v-if="plan" v-show="onglet === 'projet' || !orientation" id="details-projet" role="tabpanel" aria-labelledby="onglet-projet" class="panneau details brief" data-test="brief">
