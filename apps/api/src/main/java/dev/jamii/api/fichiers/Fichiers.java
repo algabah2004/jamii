@@ -38,6 +38,9 @@ public class Fichiers {
 
 	static final long VIDEO_MAX = 25L * 1024 * 1024;
 
+	/** Un message vocal : environ 5 minutes en Opus à 128 kbit/s, bien plus que ce que l'enregistreur permet (3 min). */
+	static final long AUDIO_MAX = 5L * 1024 * 1024;
+
 	static final int ENVOIS_PAR_HEURE = 60;
 
 	record Contenu(Piece piece, byte[] octets, boolean prive) {
@@ -68,6 +71,16 @@ public class Fichiers {
 
 	@Transactional
 	Piece enregistrer(UUID proprietaire, String nomEnvoye, byte[] octets, Instant maintenant, UUID destinataire, UUID cercle) {
+		return enregistrer(proprietaire, nomEnvoye, octets, maintenant, destinataire, cercle, false);
+	}
+
+	/**
+	 * Avec {@code vocal}, le fichier est un message vocal enregistré dans le navigateur : WebM ou Ogg (Chrome, Firefox,
+	 * Android) ou MP4 (Safari, iPhone), servi comme un son. Sans lui, un WebM ou un MP4 reste une vidéo.
+	 */
+	@Transactional
+	Piece enregistrer(UUID proprietaire, String nomEnvoye, byte[] octets, Instant maintenant, UUID destinataire, UUID cercle,
+			boolean vocal) {
 		if (cercle != null) {
 			if (destinataire != null) throw new ErreurFichier(400, "destination_invalide", "Une seule destination est possible");
 			if (!base.sql("SELECT EXISTS (SELECT 1 FROM cercle_membre WHERE cercle_id = :c AND utilisateur_id = :u)")
@@ -79,11 +92,13 @@ public class Fichiers {
 				.param("id", destinataire).query(Boolean.class).single())) {
 			throw new ErreurFichier(404, "introuvable", "Destinataire introuvable");
 		}
-		Type type = reconnaitre(octets, nomEnvoye).orElseThrow(() -> new ErreurFichier(415, "type_refuse",
-				"Ce type de fichier n'est pas accepté : images, vidéos, PDF, documents texte, archives ZIP"));
+		Type type = (vocal ? reconnaitreVocal(octets) : reconnaitre(octets, nomEnvoye)).orElseThrow(() -> new ErreurFichier(415, "type_refuse",
+				vocal ? "Ce message vocal n'est pas un son WebM, Ogg ou MP4"
+						: "Ce type de fichier n'est pas accepté : images, vidéos, PDF, documents texte, archives ZIP"));
 		long max = switch (type.sorte()) {
 			case "video" -> VIDEO_MAX;
 			case "image" -> IMAGE_MAX;
+			case "audio" -> AUDIO_MAX;
 			default -> DOCUMENT_MAX;
 		};
 		if (octets.length == 0 || octets.length > max) {
@@ -201,6 +216,18 @@ public class Fichiers {
 	}
 
 	// ---------------------------------------------------------------- le vrai type, d'après les octets
+
+	/** Un message vocal, d'après ses octets : ce que MediaRecorder produit selon le navigateur. */
+	static Optional<Type> reconnaitreVocal(byte[] o) {
+		if (commence(o, 0, 0x1A, 0x45, 0xDF, 0xA3)) return Optional.of(new Type("audio/webm", "audio"));
+		if (commence(o, 0, 'O', 'g', 'g', 'S')) return Optional.of(new Type("audio/ogg", "audio"));
+		if (commence(o, 4, 'f', 't', 'y', 'p')) {
+			String marque = o.length >= 12 ? new String(o, 8, 4, StandardCharsets.US_ASCII) : "";
+			if (marque.startsWith("qt") || marque.startsWith("hei") || marque.startsWith("mif1") || marque.startsWith("avif")) return Optional.empty();
+			return Optional.of(new Type("audio/mp4", "audio"));
+		}
+		return Optional.empty();
+	}
 
 	static Optional<Type> reconnaitre(byte[] o, String nom) {
 		if (commence(o, 0, 0x89, 'P', 'N', 'G')) return Optional.of(new Type("image/png", "image"));

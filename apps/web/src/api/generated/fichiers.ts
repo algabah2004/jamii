@@ -49,10 +49,13 @@ export interface components {
             id: string;
             /** @description Le nom du fichier, sans chemin. */
             nom: string;
-            /** @description Le type MIME reconnu (image/png, video/mp4, application/pdf…). */
+            /** @description Le type MIME reconnu (image/png, video/mp4, audio/webm, application/pdf…). */
             type: string;
-            /** @enum {string} */
-            sorte: "image" | "video" | "document";
+            /**
+             * @description `audio` : un message vocal.
+             * @enum {string}
+             */
+            sorte: "image" | "video" | "document" | "audio";
             /**
              * Format: int64
              * @description En octets.
@@ -167,6 +170,11 @@ export interface operations {
                      * @description Pour un message privé : réserve ce fichier à cette conversation. Seul son auteur le lit avant envoi ; ensuite, son destinataire aussi.
                      */
                     destinataireId?: string;
+                    /**
+                     * @description Un message vocal enregistré dans le navigateur (#157) : un son WebM, Ogg ou MP4, de 5 Mo au plus, de sorte `audio`. Sans ce champ, un WebM ou un MP4 est une vidéo.
+                     * @default false
+                     */
+                    vocal?: boolean;
                 };
             };
         };

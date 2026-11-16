@@ -11,14 +11,16 @@ export const PIECES_MAX = 6
 export const ACCEPTES = 'image/png,image/jpeg,image/gif,image/webp,video/mp4,video/quicktime,video/webm,application/pdf,.zip,.docx,.xlsx,.pptx,.txt,.md,.csv,.json'
 const MO = 1024 * 1024
 
-export function limiteDe(fichier: File) {
+export function limiteDe(fichier: File, vocal = false) {
+  if (vocal) return 5 * MO
   return fichier.type.startsWith('video/') ? 25 * MO : 10 * MO
 }
 
 export type ResultatEnvoi = { ok: true; piece: PieceJointe } | { ok: false; code: 'trop_gros' | 'type_refuse' | 'trop_de_requetes' | 'erreur' }
 
-export async function envoyerFichier(fichier: File, destinataireId?: string, cercleId?: string): Promise<ResultatEnvoi> {
-  if (fichier.size > limiteDe(fichier)) return { ok: false, code: 'trop_gros' }
+/** Avec `vocal`, un message vocal (EnregistreurVocal.vue) : l'API le sert comme un son (sorte `audio`). */
+export async function envoyerFichier(fichier: File, destinataireId?: string, cercleId?: string, vocal = false): Promise<ResultatEnvoi> {
+  if (fichier.size > limiteDe(fichier, vocal)) return { ok: false, code: 'trop_gros' }
   try {
     const { data, error, response } = await api.POST('/api/fichiers', {
       body: { fichier } as unknown as { fichier: string },
@@ -27,6 +29,7 @@ export async function envoyerFichier(fichier: File, destinataireId?: string, cer
         form.append('fichier', (corps as { fichier: File }).fichier)
         if (destinataireId) form.append('destinataireId', destinataireId)
         if (cercleId) form.append('cercleId', cercleId)
+        if (vocal) form.append('vocal', 'true')
         return form
       },
     })

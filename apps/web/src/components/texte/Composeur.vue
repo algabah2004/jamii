@@ -159,7 +159,7 @@ function coller(e: ClipboardEvent) {
     <ul v-if="pieces.length || enCours.length" class="apercus" :aria-label="t('fichiers.joints')">
       <li v-for="p in pieces" :key="p.id" class="apercu" data-test="piece-a-envoyer">
         <img v-if="p.sorte === 'image'" :src="p.url" alt="" class="apercu__image" />
-        <span v-else class="apercu__icone" aria-hidden="true">{{ p.sorte === 'video' ? '▶' : (p.nom.split('.').pop() ?? '').slice(0, 4).toUpperCase() }}</span>
+        <span v-else class="apercu__icone" aria-hidden="true">{{ p.sorte === 'video' ? '▶' : p.sorte === 'audio' ? '♪' : (p.nom.split('.').pop() ?? '').slice(0, 4).toUpperCase() }}</span>
         <span class="apercu__texte"><span class="apercu__nom">{{ p.nom }}</span><span class="apercu__taille">{{ tailleLisible(p.taille, locale) }}</span></span>
         <button type="button" class="apercu__retirer" :aria-label="t('fichiers.retirer', { nom: p.nom })" @click="retirer(p.id)">
           <svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><path d="M5.5 5.5l9 9M14.5 5.5l-9 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>

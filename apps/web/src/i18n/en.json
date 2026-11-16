@@ -3025,5 +3025,20 @@
       "tuAsRefuse": "You declined",
       "annule": "Cancelled"
     }
+  },
+  "vocal": {
+    "enregistrer": "Record a voice message",
+    "enCours": "Recording… {duree}",
+    "annuler": "Cancel",
+    "envoyer": "Send",
+    "message": "Voice message",
+    "erreurs": {
+      "micro_refuse": "Jamii cannot use your microphone. Allow it in your browser, then try again.",
+      "trop_court": "Too short: record for at least one second.",
+      "trop_gros": "This voice message is too long.",
+      "type_refuse": "This browser records in a format Jamii does not accept.",
+      "trop_de_requetes": "Too many files sent in an hour. Try again later.",
+      "erreur": "The voice message could not be sent. Try again."
+    }
   }
 }

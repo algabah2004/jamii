@@ -49,7 +49,7 @@ const minuterie = setInterval(() => {
 }, 30_000)
 onBeforeUnmount(() => clearInterval(minuterie))
 const apercu = (c: Conversation) =>
-  (c.dernierMessage.deMoi ? t('reseau.messages.toi') + ' ' : '') + (c.dernierMessage.invitation && !c.dernierMessage.deMoi ? t('reseau.messages.invitationRecue', { cercle: c.dernierMessage.invitation.cercle.nom }) : c.dernierMessage.texte)
+  (c.dernierMessage.deMoi ? t('reseau.messages.toi') + ' ' : '') + (c.dernierMessage.invitation && !c.dernierMessage.deMoi ? t('reseau.messages.invitationRecue', { cercle: c.dernierMessage.invitation.cercle.nom }) : c.dernierMessage.texte || (c.dernierMessage.piecesJointes?.some((p) => p.sorte === 'audio') ? '🎤 ' + t('vocal.message') : ''))
 </script>
 
 <template>

@@ -43,14 +43,15 @@ public class FichiersController {
 
 	@PostMapping(path = "/api/fichiers", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	ResponseEntity<Fichiers.Piece> envoyer(@RequestParam("fichier") MultipartFile fichier,
-			@RequestParam(required = false) UUID destinataireId, @RequestParam(required = false) UUID cercleId, @AuthenticationPrincipal UtilisateurConnecte moi)
+			@RequestParam(required = false) UUID destinataireId, @RequestParam(required = false) UUID cercleId,
+			@RequestParam(defaultValue = "false") boolean vocal, @AuthenticationPrincipal UtilisateurConnecte moi)
 			throws IOException {
 		Instant maintenant = Instant.now();
 		long attente = fichiers.attenteAvantEnvoi(moi.id(), maintenant);
 		if (attente > 0) {
 			throw new ErreurFichier(429, "trop_de_requetes", "Trop de fichiers envoyés en une heure", attente);
 		}
-		var piece = fichiers.enregistrer(moi.id(), fichier.getOriginalFilename(), fichier.getBytes(), maintenant, destinataireId, cercleId);
+		var piece = fichiers.enregistrer(moi.id(), fichier.getOriginalFilename(), fichier.getBytes(), maintenant, destinataireId, cercleId, vocal);
 		return ResponseEntity.created(URI.create(piece.url())).body(piece);
 	}
 
