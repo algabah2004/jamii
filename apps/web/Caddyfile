@@ -9,6 +9,10 @@
 
 	handle /api/* {
 		reverse_proxy {$API_URL} {
+			# Pendant qu'elle redémarre (à chaque mise à jour du site), l'API n'accepte pas de connexion : on réessaie
+			# pendant 30 s au lieu de renvoyer tout de suite une erreur 502, la page met juste un peu plus à venir.
+			lb_try_duration 30s
+			lb_try_interval 500ms
 			# L'hébergeur route sur le nom de l'API ; l'API retrouve l'adresse publique par X-Forwarded-Host.
 			header_up Host {upstream_hostport}
 			header_up X-Forwarded-Host {host}
