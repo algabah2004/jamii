@@ -1871,7 +1871,12 @@
       "soi_meme": "You can't write to yourself.",
       "introuvable": "This person no longer exists.",
       "autre": "The invitation wasn't sent. Try again.",
-      "autreMessage": "The message wasn't sent. Try again."
+      "autreMessage": "The message wasn't sent. Try again.",
+      "delai_depasse": "A message can be edited for 15 minutes after sending.",
+      "non_modifiable": "An invitation or a call cannot be edited.",
+      "non_transferable": "An invitation or a call cannot be forwarded.",
+      "message_supprime": "This message was deleted.",
+      "validation": "The message is empty or too long."
     },
     "messages": {
       "titre": "Messages",
@@ -1975,6 +1980,38 @@
         "accepte": "Connected"
       },
       "voir": "View {nom}'s profile"
+    },
+    "actions": {
+      "menu": "Message actions",
+      "repondre": "Reply",
+      "modifier": "Edit",
+      "transferer": "Forward",
+      "supprimer": "Delete",
+      "annuler": "Cancel",
+      "enregistrer": "Save",
+      "repondreA": "Replying to {nom}",
+      "enModification": "Edit message",
+      "toi": "You",
+      "confirmerSuppression": "Delete for everyone?",
+      "supprime": "This message was deleted",
+      "tuAsSupprime": "You deleted this message",
+      "erreurSuppression": "The message could not be deleted. Try again.",
+      "modifie": "edited",
+      "transfere": "Forwarded",
+      "sortes": {
+        "image": "📷 Photo",
+        "video": "🎬 Video",
+        "document": "📎 Document",
+        "audio": "🎤 Voice message"
+      },
+      "transfert": {
+        "titre": "Forward message",
+        "chercher": "Search a conversation",
+        "aucune": "No conversation to send it to.",
+        "compte": "{n} of {max}",
+        "envoyer": "Forward",
+        "envoye": "Message forwarded | Message forwarded to {n} person | Message forwarded to {n} people"
+      }
     }
   },
   "hackathons": {

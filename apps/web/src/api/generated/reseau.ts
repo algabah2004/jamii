@@ -82,6 +82,62 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/conversations/{personneId}/messages/{messageId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description L'identifiant de l'autre personne. */
+                personneId: components["parameters"]["PersonneId"];
+                messageId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Supprimer mon message pour tout le monde
+         * @description Le message garde sa place (« Message supprimé », `supprime: true`) ; son texte, son invitation et ses pièces
+         *     jointes sont effacés pour de bon, fichiers compris. Sans effet s'il est déjà supprimé.
+         */
+        delete: operations["supprimerMessage"];
+        options?: never;
+        head?: never;
+        /**
+         * Corriger mon message (pendant 15 minutes)
+         * @description Seulement mon message, pas supprimé, et ni une invitation ni un appel (`409 non_modifiable`). Au-delà de
+         *     15 minutes après l'envoi : `409 delai_depasse`. Le message montre ensuite `modifieLe`.
+         */
+        patch: operations["modifierMessage"];
+        trace?: never;
+    };
+    "/api/conversations/{personneId}/messages/{messageId}/transfert": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description L'identifiant de l'autre personne. */
+                personneId: components["parameters"]["PersonneId"];
+                messageId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Transférer un message de cette conversation à d'autres personnes (5 au plus)
+         * @description Un message envoyé ou reçu, pas supprimé, ni invitation ni appel. Chaque destinataire reçoit une copie marquée
+         *     `transfere`, avec une copie privée de chaque pièce jointe (un fichier privé reste lié à une seule conversation).
+         *     Les limites anti-spam des messages s'appliquent à chaque copie.
+         */
+        post: operations["transfererMessage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/conversations/{personneId}/ecriture": {
         parameters: {
             query?: never;
@@ -397,12 +453,41 @@ export interface components {
              */
             cercleId?: string;
             pieces?: components["schemas"]["Pieces"];
+            /**
+             * Format: uuid
+             * @description Le message auquel je réponds, de la même conversation (#157).
+             */
+            reponseA?: string;
+        };
+        /** @description Le message auquel celui-ci répond, en bref. */
+        Citation: {
+            /** Format: uuid */
+            id: string;
+            deMoi: boolean;
+            /** @description Son début. Vide s'il a été supprimé ou n'a qu'une pièce jointe. */
+            texte: string;
+            /**
+             * @description La sorte de sa première pièce jointe.
+             * @enum {string|null}
+             */
+            sorte?: "image" | "video" | "document" | "audio" | null;
+            supprime: boolean;
         };
         Message: {
             /** Format: uuid */
             id: string;
             /** @description C'est moi qui l'ai écrit. */
             deMoi: boolean;
+            reponseA?: components["schemas"]["Citation"] | null;
+            /**
+             * Format: date-time
+             * @description Quand il a été corrigé, s'il l'a été.
+             */
+            modifieLe?: string | null;
+            /** @description Supprimé pour tout le monde : texte et pièces jointes vides. */
+            supprime: boolean;
+            /** @description Une copie transférée depuis une autre conversation. */
+            transfere: boolean;
             /** @description Texte mis en forme (petit Markdown), affiché échappé. */
             texte: string;
             piecesJointes: components["schemas"]["PieceJointe"][];
@@ -829,6 +914,99 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Message"];
                 };
+            };
+            400: components["responses"]["Invalide"];
+            401: components["responses"]["NonConnecte"];
+            404: components["responses"]["Introuvable"];
+            409: components["responses"]["Conflit"];
+            429: components["responses"]["TropDeRequetes"];
+        };
+    };
+    supprimerMessage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description L'identifiant de l'autre personne. */
+                personneId: components["parameters"]["PersonneId"];
+                messageId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Supprimé. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["NonConnecte"];
+            404: components["responses"]["Introuvable"];
+        };
+    };
+    modifierMessage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description L'identifiant de l'autre personne. */
+                personneId: components["parameters"]["PersonneId"];
+                messageId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description Vide seulement si le message a des pièces jointes. */
+                    texte: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Le message corrigé. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            400: components["responses"]["Invalide"];
+            401: components["responses"]["NonConnecte"];
+            /** @description Pas mon message, ou pas dans cette conversation. */
+            404: components["responses"]["Introuvable"];
+            409: components["responses"]["Conflit"];
+        };
+    };
+    transfererMessage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description L'identifiant de l'autre personne. */
+                personneId: components["parameters"]["PersonneId"];
+                messageId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    destinataires: string[];
+                };
+            };
+        };
+        responses: {
+            /** @description Transféré. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             400: components["responses"]["Invalide"];
             401: components["responses"]["NonConnecte"];

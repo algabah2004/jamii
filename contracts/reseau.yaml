@@ -163,6 +163,86 @@ paths:
         '409': { $ref: './socle.yaml#/components/responses/Conflit' }
         '429': { $ref: './socle.yaml#/components/responses/TropDeRequetes' }
 
+  /api/conversations/{personneId}/messages/{messageId}:
+    parameters:
+      - $ref: '#/components/parameters/PersonneId'
+      - { name: messageId, in: path, required: true, schema: { type: string, format: uuid } }
+    patch:
+      tags: [messages]
+      operationId: modifierMessage
+      summary: Corriger mon message (pendant 15 minutes)
+      description: |
+        Seulement mon message, pas supprimé, et ni une invitation ni un appel (`409 non_modifiable`). Au-delà de
+        15 minutes après l'envoi : `409 delai_depasse`. Le message montre ensuite `modifieLe`.
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [texte]
+              properties:
+                texte: { type: string, maxLength: 2000, description: 'Vide seulement si le message a des pièces jointes.' }
+      responses:
+        '200':
+          description: Le message corrigé.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Message' }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { description: "Pas mon message, ou pas dans cette conversation.", $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+    delete:
+      tags: [messages]
+      operationId: supprimerMessage
+      summary: Supprimer mon message pour tout le monde
+      description: |
+        Le message garde sa place (« Message supprimé », `supprime: true`) ; son texte, son invitation et ses pièces
+        jointes sont effacés pour de bon, fichiers compris. Sans effet s'il est déjà supprimé.
+      security:
+        - session: []
+          csrf: []
+      responses:
+        '204': { description: Supprimé. }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+
+  /api/conversations/{personneId}/messages/{messageId}/transfert:
+    parameters:
+      - $ref: '#/components/parameters/PersonneId'
+      - { name: messageId, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      tags: [messages]
+      operationId: transfererMessage
+      summary: Transférer un message de cette conversation à d'autres personnes (5 au plus)
+      description: |
+        Un message envoyé ou reçu, pas supprimé, ni invitation ni appel. Chaque destinataire reçoit une copie marquée
+        `transfere`, avec une copie privée de chaque pièce jointe (un fichier privé reste lié à une seule conversation).
+        Les limites anti-spam des messages s'appliquent à chaque copie.
+      security:
+        - session: []
+          csrf: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [destinataires]
+              properties:
+                destinataires: { type: array, minItems: 1, maxItems: 5, items: { type: string, format: uuid } }
+      responses:
+        '204': { description: Transféré. }
+        '400': { $ref: './socle.yaml#/components/responses/Invalide' }
+        '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
+        '409': { $ref: './socle.yaml#/components/responses/Conflit' }
+        '429': { $ref: './socle.yaml#/components/responses/TropDeRequetes' }
+
   /api/conversations/{personneId}/ecriture:
     parameters:
       - $ref: '#/components/parameters/PersonneId'
@@ -577,13 +657,32 @@ components:
           format: uuid
           description: Pour inviter la personne à un cercle ouvert dont je suis membre.
         pieces: { $ref: './fichiers.yaml#/components/schemas/Pieces' }
+        reponseA: { type: string, format: uuid, description: 'Le message auquel je réponds, de la même conversation (#157).' }
+
+    Citation:
+      type: object
+      description: Le message auquel celui-ci répond, en bref.
+      required: [id, deMoi, texte, supprime]
+      properties:
+        id: { type: string, format: uuid }
+        deMoi: { type: boolean }
+        texte: { type: string, maxLength: 140, description: 'Son début. Vide s''il a été supprimé ou n''a qu''une pièce jointe.' }
+        sorte: { type: [string, 'null'], enum: [image, video, document, audio, null], description: 'La sorte de sa première pièce jointe.' }
+        supprime: { type: boolean }
 
     Message:
       type: object
-      required: [id, deMoi, texte, envoyeLe, piecesJointes]
+      required: [id, deMoi, texte, envoyeLe, piecesJointes, supprime, transfere]
       properties:
         id: { type: string, format: uuid }
         deMoi: { type: boolean, description: "C'est moi qui l'ai écrit." }
+        reponseA:
+          oneOf:
+            - $ref: '#/components/schemas/Citation'
+            - { type: 'null' }
+        modifieLe: { type: [string, 'null'], format: date-time, description: 'Quand il a été corrigé, s''il l''a été.' }
+        supprime: { type: boolean, description: 'Supprimé pour tout le monde : texte et pièces jointes vides.' }
+        transfere: { type: boolean, description: 'Une copie transférée depuis une autre conversation.' }
         texte: { type: string, description: 'Texte mis en forme (petit Markdown), affiché échappé.' }
         piecesJointes: { type: array, maxItems: 6, items: { $ref: './fichiers.yaml#/components/schemas/PieceJointe' } }
         invitation:

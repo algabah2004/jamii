@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -62,8 +63,21 @@ class ReseauController {
 	record ProfilsRecommandes(List<String> competencesManquantes, List<ProfilRecommande> elements) {
 	}
 
-	record NouveauMessage(String texte, UUID cercleId, List<UUID> pieces) {
+	record NouveauMessage(String texte, UUID cercleId, List<UUID> pieces, UUID reponseA) {
 	}
+
+	/** Le message auquel on répond, en bref : de qui, le début de son texte, ou la sorte de sa pièce jointe. */
+	record Citation(UUID id, boolean deMoi, String texte, String sorte, boolean supprime) {
+	}
+
+	record Modification(String texte) {
+	}
+
+	record Transfert(List<UUID> destinataires) {
+	}
+
+	/** Le début d'un message cité : 140 caractères au plus. */
+	static final int CITATION_MAX = 140;
 
 	record Invitation(CercleResume cercle) {
 	}
@@ -77,7 +91,8 @@ class ReseauController {
 	}
 
 	record Message(UUID id, boolean deMoi, String texte, Invitation invitation, Instant envoyeLe, Instant luLe,
-			Appel appel, List<dev.jamii.api.fichiers.Fichiers.Piece> piecesJointes) {
+			Appel appel, List<dev.jamii.api.fichiers.Fichiers.Piece> piecesJointes, Citation reponseA, Instant modifieLe,
+			boolean supprime, boolean transfere) {
 	}
 
 	record Conversation(Personne personne, Message dernierMessage, int nonLus) {
@@ -219,7 +234,8 @@ class ReseauController {
 		var page = messagerie.lire(moi.id(), autre, limite(limite, 100), curseur);
 		var invitations = invitations(page.elements());
 		var appelsDuFil = appelsDe(page.elements());
-		return new Fil(personne(compte), page.elements().stream().map(m -> message(m, moi.id(), invitations, appelsDuFil)).toList(),
+		var cites = messagerie.lignes(page.elements().stream().map(Messagerie.Ligne::reponseA).filter(java.util.Objects::nonNull).toList());
+		return new Fil(personne(compte), page.elements().stream().map(m -> message(m, moi.id(), invitations, appelsDuFil, cites)).toList(),
 				page.curseurSuivant());
 	}
 
@@ -231,9 +247,44 @@ class ReseauController {
 		}
 		var destinataire = personne(personneId);
 		var pieces = fichiers.verifierPiecesPrivees(corps.pieces(), moi.id(), destinataire);
-		var ligne = messagerie.envoyer(moi.id(), destinataire, corps.texte(), corps.cercleId(), pieces);
+		var ligne = messagerie.envoyer(moi.id(), destinataire, corps.texte(), corps.cercleId(), pieces, corps.reponseA());
 		ecriture.arreter(moi.id(), destinataire);
-		return ResponseEntity.status(HttpStatus.CREATED).body(message(ligne, moi.id(), invitations(List.of(ligne)), Map.of()));
+		var cites = messagerie.lignes(ligne.reponseA() == null ? List.of() : List.of(ligne.reponseA()));
+		return ResponseEntity.status(HttpStatus.CREATED).body(message(ligne, moi.id(), invitations(List.of(ligne)), Map.of(), cites));
+	}
+
+	// ---------------------------------------------------------------- modifier, supprimer, transférer (#157)
+
+	@PatchMapping("/api/conversations/{personneId}/messages/{messageId}")
+	Message modifier(@AuthenticationPrincipal UtilisateurConnecte moi, @PathVariable String personneId,
+			@PathVariable String messageId, @RequestBody(required = false) Modification corps) {
+		UUID autre = personne(personneId);
+		UUID id = personne(messageId);
+		var ligne = messagerie.modifier(moi.id(), autre, id, corps == null ? null : corps.texte(), estUnAppel(id));
+		var cites = messagerie.lignes(ligne.reponseA() == null ? List.of() : List.of(ligne.reponseA()));
+		return message(ligne, moi.id(), Map.of(), Map.of(), cites);
+	}
+
+	@DeleteMapping("/api/conversations/{personneId}/messages/{messageId}")
+	ResponseEntity<Void> supprimer(@AuthenticationPrincipal UtilisateurConnecte moi, @PathVariable String personneId,
+			@PathVariable String messageId) {
+		var pieces = messagerie.supprimer(moi.id(), personne(personneId), personne(messageId));
+		fichiers.supprimerPrives(pieces, moi.id());
+		return ResponseEntity.noContent().build();
+	}
+
+	@PostMapping("/api/conversations/{personneId}/messages/{messageId}/transfert")
+	ResponseEntity<Void> transferer(@AuthenticationPrincipal UtilisateurConnecte moi, @PathVariable String personneId,
+			@PathVariable String messageId, @RequestBody(required = false) Transfert corps) {
+		UUID id = personne(messageId);
+		Instant maintenant = Instant.now();
+		messagerie.transferer(moi.id(), personne(personneId), id, corps == null ? null : corps.destinataires(), estUnAppel(id),
+				(pieces, destinataire) -> fichiers.copierPrives(pieces, moi.id(), destinataire, maintenant));
+		return ResponseEntity.noContent().build();
+	}
+
+	private boolean estUnAppel(UUID messageId) {
+		return !appelsWebrtc.parMessage(List.of(messageId)).isEmpty();
 	}
 
 	@GetMapping("/api/me/activite")
@@ -325,6 +376,24 @@ class ReseauController {
 
 	private Message message(Messagerie.Ligne l, UUID moi, Map<UUID, CercleResume> invitations,
 			Map<UUID, Appels.Appel> appelsParMessage) {
+		return message(l, moi, invitations, appelsParMessage, Map.of());
+	}
+
+	private Message message(Messagerie.Ligne l, UUID moi, Map<UUID, CercleResume> invitations,
+			Map<UUID, Appels.Appel> appelsParMessage, Map<UUID, Messagerie.Ligne> cites) {
+		Citation citation = null;
+		Messagerie.Ligne cite = l.reponseA() == null ? null : cites.get(l.reponseA());
+		if (cite != null) {
+			String debut = cite.supprimeLe() != null ? "" : cite.texte();
+			if (debut.length() > CITATION_MAX) debut = debut.substring(0, CITATION_MAX - 1) + "…";
+			String sorte = cite.supprimeLe() != null || cite.pieces().isEmpty() ? null
+					: fichiers.decrire(cite.pieces().subList(0, 1)).stream().map(dev.jamii.api.fichiers.Fichiers.Piece::sorte).findFirst().orElse(null);
+			citation = new Citation(cite.id(), cite.expediteurId().equals(moi), debut, sorte, cite.supprimeLe() != null);
+		}
+		if (l.supprimeLe() != null) {
+			return new Message(l.id(), l.expediteurId().equals(moi), "", null, l.envoyeLe(), l.luLe(), null, List.of(), citation,
+					null, true, l.transfere());
+		}
 		CercleResume cercle = l.cercleId() == null ? null : invitations.get(l.cercleId());
 		Appels.Appel webrtc = appelsParMessage.get(l.id());
 		Appel appel = null;
@@ -338,7 +407,7 @@ class ReseauController {
 					l.envoyeLe().isAfter(Instant.now().minus(Messagerie.DUREE_APPEL)), null, true, null);
 		}
 		return new Message(l.id(), l.expediteurId().equals(moi), l.texte(), cercle == null ? null : new Invitation(cercle),
-				l.envoyeLe(), l.luLe(), appel, fichiers.decrire(l.pieces()));
+				l.envoyeLe(), l.luLe(), appel, fichiers.decrire(l.pieces()), citation, l.modifieLe(), false, l.transfere());
 	}
 
 	private static CercleResume resume(LectureCercles.CercleLu c, Map<UUID, Compte> comptes) {

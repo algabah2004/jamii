@@ -1871,7 +1871,12 @@
       "soi_meme": "Tu ne peux pas t'écrire à toi-même.",
       "introuvable": "Cette personne n'existe plus.",
       "autre": "L'invitation n'est pas partie. Réessaie.",
-      "autreMessage": "Le message n'est pas parti. Réessaie."
+      "autreMessage": "Le message n'est pas parti. Réessaie.",
+      "delai_depasse": "Un message se modifie pendant 15 minutes après son envoi.",
+      "non_modifiable": "Une invitation ou un appel ne se modifie pas.",
+      "non_transferable": "Une invitation ou un appel ne se transfère pas.",
+      "message_supprime": "Ce message a été supprimé.",
+      "validation": "Le message est vide ou trop long."
     },
     "messages": {
       "titre": "Messages",
@@ -1975,6 +1980,38 @@
         "accepte": "En contact"
       },
       "voir": "Voir le profil de {nom}"
+    },
+    "actions": {
+      "menu": "Actions sur le message",
+      "repondre": "Répondre",
+      "modifier": "Modifier",
+      "transferer": "Transférer",
+      "supprimer": "Supprimer",
+      "annuler": "Annuler",
+      "enregistrer": "Enregistrer",
+      "repondreA": "Répondre à {nom}",
+      "enModification": "Modifier le message",
+      "toi": "Toi",
+      "confirmerSuppression": "Supprimer pour tout le monde ?",
+      "supprime": "Ce message a été supprimé",
+      "tuAsSupprime": "Tu as supprimé ce message",
+      "erreurSuppression": "Le message n’a pas pu être supprimé. Réessaie.",
+      "modifie": "modifié",
+      "transfere": "Transféré",
+      "sortes": {
+        "image": "📷 Photo",
+        "video": "🎬 Vidéo",
+        "document": "📎 Document",
+        "audio": "🎤 Message vocal"
+      },
+      "transfert": {
+        "titre": "Transférer le message",
+        "chercher": "Chercher une conversation",
+        "aucune": "Aucune conversation à qui l’envoyer.",
+        "compte": "{n} sur {max}",
+        "envoyer": "Transférer",
+        "envoye": "Message transféré | Message transféré à {n} personne | Message transféré à {n} personnes"
+      }
     }
   },
   "hackathons": {
