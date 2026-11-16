@@ -74,7 +74,7 @@ async function rejoindre(c: Communaute) {
 <template>
   <section class="page avec-motifs">
     <!-- Des taches de dessins tech, en haut, sur les côtés et en bas, qui s'estompent : sur cette page seulement. -->
-    <MotifsCoins planche="communautes" />
+    <MotifsCoins planche="communautes" orange />
     <!-- Comme une page de découverte : un grand titre centré, une grande recherche, les thèmes en pastilles. -->
     <header class="decouvrir">
       <h1>{{ t('communautes.liste.decouvrir') }}</h1>
