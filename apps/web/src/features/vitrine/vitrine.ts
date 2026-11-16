@@ -30,3 +30,20 @@ export function ilYa(date: string, langue: string, maintenant: Date = new Date()
   }
   return format.format(0, 'minute')
 }
+
+/** Les initiales des deux premiers mots du titre : « Boutique en ligne » → « Be ». Le monogramme du projet. */
+export function initiales(titre: string): string {
+  return titre
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((mot) => mot[0] ?? '')
+    .join('')
+}
+
+/** Une teinte stable par projet (bleu ou orange de la charte), pour que les monogrammes ne se ressemblent pas tous. */
+export function teinte(projetId: string): 'action' | 'preuve' {
+  let somme = 0
+  for (const c of projetId) somme = (somme + c.charCodeAt(0)) % 2
+  return somme === 0 ? 'action' : 'preuve'
+}
