@@ -759,6 +759,7 @@
       "hier": "Hier",
       "bienvenue": "Bienvenue dans #{salon}",
       "debut": "C'est le début du salon #{salon}.",
+      "supprimeModeration": "Supprimé par un modérateur",
       "nouveauxMessages": "{n} nouveau message | {n} nouveaux messages",
       "aideClavier": "Entrée pour envoyer, Maj + Entrée pour aller à la ligne"
     },

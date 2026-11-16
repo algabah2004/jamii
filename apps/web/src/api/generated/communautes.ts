@@ -252,6 +252,56 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/communautes/{slug}/salons/{salon}/messages/{messageId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Nom court de la communauté dans l'adresse (`flutter`, `fintech`, `antenne-dakar`). */
+                slug: components["parameters"]["Slug"];
+                /** @description Nom court du salon (`general`, `entraide`, `projets`). */
+                salon: components["parameters"]["SalonSlug"];
+                messageId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Supprimer un message pour tout le monde (son auteur, ou un modérateur de la communauté)
+         * @description Idempotent. Le texte, les fichiers et les réactions sont effacés ; la place reste.
+         */
+        delete: operations["supprimerMessageSalon"];
+        options?: never;
+        head?: never;
+        /** Corriger son message (15 minutes après l'envoi au plus) */
+        patch: operations["modifierMessageSalon"];
+        trace?: never;
+    };
+    "/api/communautes/{slug}/salons/{salon}/messages/{messageId}/reactions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Nom court de la communauté dans l'adresse (`flutter`, `fintech`, `antenne-dakar`). */
+                slug: components["parameters"]["Slug"];
+                /** @description Nom court du salon (`general`, `entraide`, `projets`). */
+                salon: components["parameters"]["SalonSlug"];
+                messageId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ajouter ou retirer ma réaction (un emoji, 10 au plus par personne ; membres seulement) */
+        post: operations["reagirMessageSalon"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/publications/{publicationId}": {
         parameters: {
             query?: never;
@@ -510,9 +560,14 @@ export interface components {
             id: string;
             /**
              * Format: int64
-             * @description Croissant : sert de curseur à `apres`.
+             * @description Croissant : l'ordre du salon.
              */
             numero: number;
+            /**
+             * Format: int64
+             * @description Avance à chaque changement du message (écrit, corrigé, supprimé, réaction). Sert de curseur à `apres` (#157).
+             */
+            version: number;
             auteur: components["schemas"]["PersonneResume"];
             /** @description Texte mis en forme (petit Markdown), affiché échappé. */
             texte: string;
@@ -525,11 +580,36 @@ export interface components {
                 enCours: boolean;
             } | null;
             piecesJointes: components["schemas"]["PieceJointe"][];
+            /** @description Le message auquel celui-ci répond (#157), ou `null`. */
+            reponseA: {
+                /** Format: uuid */
+                id: string;
+                auteur: components["schemas"]["PersonneResume"] | null;
+                /** @description Son début. Vide s'il a été supprimé. */
+                texte: string;
+                supprime: boolean;
+            } | null;
+            /**
+             * Format: date-time
+             * @description Corrigé par son auteur (15 minutes après l'envoi au plus).
+             */
+            modifieLe: string | null;
+            /**
+             * @description Supprimé pour tout le monde, par son auteur ou par un modérateur : texte, fichiers et réactions effacés, la place reste.
+             * @enum {string|null}
+             */
+            supprime: "auteur" | "moderation" | null;
+            reactions: components["schemas"]["Reaction"][];
         };
         NouveauMessageSalon: {
             /** @description Texte mis en forme (petit Markdown). Vide seulement avec des pièces jointes. */
             texte: string;
             pieces?: components["schemas"]["Pieces"];
+            /**
+             * Format: uuid
+             * @description Répondre à un message du même salon (#157).
+             */
+            reponseA?: string;
         };
         NouveauSignalement: {
             /** @enum {string} */
@@ -614,6 +694,14 @@ export interface components {
         };
         /** @description Les identifiants des fichiers joints (envoyés avant par `POST /api/fichiers`, par la même personne). */
         Pieces: string[];
+        Reaction: {
+            emoji: string;
+            nombre: number;
+            /** @description J'ai réagi avec cet emoji. */
+            deMoi: boolean;
+            /** @description Qui a réagi (10 au plus), pour le survol. « moi » pour moi. */
+            noms: string[];
+        };
     };
     responses: {
         /** @description Pas connecté ou session expirée (`code` = `non_connecte`). */
@@ -1103,7 +1191,7 @@ export interface operations {
     lireMessagesSalon: {
         parameters: {
             query?: {
-                /** @description Le `numero` du dernier message déjà reçu. */
+                /** @description La plus grande `version` déjà reçue : renvoie les messages arrivés ou changés depuis. */
                 apres?: number;
                 limite?: number;
             };
@@ -1166,6 +1254,113 @@ export interface operations {
             403: components["responses"]["Interdit"];
             404: components["responses"]["Introuvable"];
             429: components["responses"]["TropDeRequetes"];
+        };
+    };
+    supprimerMessageSalon: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Nom court de la communauté dans l'adresse (`flutter`, `fintech`, `antenne-dakar`). */
+                slug: components["parameters"]["Slug"];
+                /** @description Nom court du salon (`general`, `entraide`, `projets`). */
+                salon: components["parameters"]["SalonSlug"];
+                messageId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Supprimé. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["NonConnecte"];
+            /** @description `pas_membre`, `interdit` (le message d'un autre sans être modérateur). */
+            403: components["responses"]["Interdit"];
+            404: components["responses"]["Introuvable"];
+        };
+    };
+    modifierMessageSalon: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Nom court de la communauté dans l'adresse (`flutter`, `fintech`, `antenne-dakar`). */
+                slug: components["parameters"]["Slug"];
+                /** @description Nom court du salon (`general`, `entraide`, `projets`). */
+                salon: components["parameters"]["SalonSlug"];
+                messageId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    texte: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Le message corrigé. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageSalon"];
+                };
+            };
+            400: components["responses"]["Invalide"];
+            401: components["responses"]["NonConnecte"];
+            /** @description `pas_membre`. */
+            403: components["responses"]["Interdit"];
+            404: components["responses"]["Introuvable"];
+            /** @description `non_modifiable`, `delai_depasse`, `message_supprime`. */
+            409: components["responses"]["Conflit"];
+        };
+    };
+    reagirMessageSalon: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Nom court de la communauté dans l'adresse (`flutter`, `fintech`, `antenne-dakar`). */
+                slug: components["parameters"]["Slug"];
+                /** @description Nom court du salon (`general`, `entraide`, `projets`). */
+                salon: components["parameters"]["SalonSlug"];
+                messageId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    emoji: string;
+                    active: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Le message, avec ses réactions à jour. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageSalon"];
+                };
+            };
+            400: components["responses"]["Invalide"];
+            401: components["responses"]["NonConnecte"];
+            /** @description `pas_membre`. */
+            403: components["responses"]["Interdit"];
+            404: components["responses"]["Introuvable"];
+            /** @description `trop_de_reactions`, `message_supprime`. */
+            409: components["responses"]["Conflit"];
         };
     };
     lirePublication: {

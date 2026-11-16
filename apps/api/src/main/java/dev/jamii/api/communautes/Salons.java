@@ -35,8 +35,11 @@ class Salons {
 
 	/** `appelId` : le message annonce cet appel ; `appelEnCours` : il l'est encore. */
 	record Message(UUID id, long numero, UUID auteurId, String texte, Instant envoyeLe, UUID appelId, boolean appelEnCours,
-			List<UUID> pieces) {
+			List<UUID> pieces, UUID reponseA, Instant modifieLe, Instant supprimeLe, UUID supprimePar, long version) {
 	}
+
+	/** On corrige son message pendant 15 minutes (comme dans les messages privés et les cercles). */
+	static final Duration DELAI_MODIFICATION = Duration.ofMinutes(15);
 
 	record Appel(UUID id, UUID salonId, UUID lancePar, String salle, Instant lanceLe) {
 	}
@@ -65,9 +68,10 @@ class Salons {
 	List<Message> messages(UUID salon, Long apres, int limite, Instant maintenant) {
 		String choix = apres == null
 				? "SELECT * FROM (SELECT * FROM message_salon WHERE salon_id = :s ORDER BY numero DESC LIMIT :l) m"
-				: "SELECT * FROM message_salon m WHERE salon_id = :s AND numero > :apres";
+				// Les nouveaux messages et ceux qui ont changé (modifiés, supprimés, réactions) depuis la version `apres`.
+				: "SELECT * FROM message_salon m WHERE salon_id = :s AND version > :apres";
 		String sql = "SELECT m.*, (a.id IS NOT NULL AND a.termine_le IS NULL AND a.lance_le > :limiteAppel) AS appel_en_cours"
-				+ " FROM (" + choix + (apres == null ? "" : " ORDER BY numero LIMIT :l") + ") m"
+				+ " FROM (" + choix + (apres == null ? "" : " ORDER BY version LIMIT :l") + ") m"
 				+ " LEFT JOIN appel_salon a ON a.id = m.appel_id ORDER BY m.numero";
 		var requete = base.sql(sql).param("s", salon).param("l", limite)
 			.param("limiteAppel", Timestamp.from(maintenant.minus(DUREE_APPEL)));
@@ -75,6 +79,40 @@ class Salons {
 			requete = requete.param("apres", apres);
 		}
 		return requete.query(Salons::message).list();
+	}
+
+	Optional<Message> message(UUID salon, UUID id, Instant maintenant) {
+		return base.sql("""
+				SELECT m.*, (a.id IS NOT NULL AND a.termine_le IS NULL AND a.lance_le > :limiteAppel) AS appel_en_cours
+				FROM message_salon m LEFT JOIN appel_salon a ON a.id = m.appel_id WHERE m.salon_id = :s AND m.id = :id
+				""").param("s", salon).param("id", id).param("limiteAppel", Timestamp.from(maintenant.minus(DUREE_APPEL)))
+			.query(Salons::message).optional();
+	}
+
+	// ---------------------------------------------------------------- répondre, modifier, supprimer (#157)
+
+	/** Ce message répond à `reponseA` (un message du même salon, vérifié par l'appelant). */
+	void repondA(UUID message, UUID reponseA) {
+		base.sql("UPDATE message_salon SET reponse_a = :r WHERE id = :id").param("r", reponseA).param("id", message).update();
+	}
+
+	void modifier(UUID message, String texte, Instant maintenant) {
+		base.sql("UPDATE message_salon SET texte = :t, modifie_le = :le, version = nextval('message_salon_version') WHERE id = :id")
+			.param("t", texte).param("le", Timestamp.from(maintenant)).param("id", message).update();
+	}
+
+	/** Supprimé pour tout le monde par `par` (l'auteur ou un modérateur) : il garde sa place, sans texte ni fichiers. */
+	void supprimer(UUID message, UUID par, Instant maintenant) {
+		base.sql("""
+				UPDATE message_salon SET texte = '', pieces = '{}', supprime_le = :le, supprime_par = :par,
+				       version = nextval('message_salon_version')
+				WHERE id = :id AND supprime_le IS NULL
+				""").param("le", Timestamp.from(maintenant)).param("par", par).param("id", message).update();
+	}
+
+	/** Une réaction a changé : le message change de version pour que les autres la voient. */
+	void toucher(UUID message) {
+		base.sql("UPDATE message_salon SET version = nextval('message_salon_version') WHERE id = :id").param("id", message).update();
 	}
 
 	Message ecrire(UUID salon, UUID auteur, String texte, Instant maintenant) {
@@ -96,7 +134,8 @@ class Salons {
 			.param("id", id).param("s", salon).param("a", auteur).param("t", texte).param("le", Timestamp.from(maintenant))
 			.param("appel", appel).param("pieces", dev.jamii.api.fichiers.Fichiers.tableau(pieces))
 			.query(Long.class).single();
-		return new Message(id, numero, auteur, texte, maintenant, appel, appel != null, pieces);
+		long version = base.sql("SELECT version FROM message_salon WHERE id = :id").param("id", id).query(Long.class).single();
+		return new Message(id, numero, auteur, texte, maintenant, appel, appel != null, pieces, null, null, null, null, version);
 	}
 
 	/** Secondes à attendre avant d'écrire encore, 0 si c'est possible tout de suite. */
@@ -164,7 +203,13 @@ class Salons {
 	private static Message message(ResultSet rs, int n) throws SQLException {
 		return new Message(rs.getObject("id", UUID.class), rs.getLong("numero"), rs.getObject("auteur_id", UUID.class),
 				rs.getString("texte"), rs.getTimestamp("envoye_le").toInstant(), rs.getObject("appel_id", UUID.class),
-				rs.getBoolean("appel_en_cours"), dev.jamii.api.fichiers.Fichiers.lireTableau(rs, "pieces"));
+				rs.getBoolean("appel_en_cours"), dev.jamii.api.fichiers.Fichiers.lireTableau(rs, "pieces"),
+				rs.getObject("reponse_a", UUID.class), instant(rs.getTimestamp("modifie_le")), instant(rs.getTimestamp("supprime_le")),
+				rs.getObject("supprime_par", UUID.class), rs.getLong("version"));
+	}
+
+	private static Instant instant(Timestamp t) {
+		return t == null ? null : t.toInstant();
 	}
 
 	private static Appel appel(ResultSet rs, int n) throws SQLException {

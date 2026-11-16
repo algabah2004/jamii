@@ -26,7 +26,7 @@ public class Reactions {
 
 	/** Les tables de réactions, jamais un nom venu d'une requête. */
 	public enum Table {
-		MESSAGE("reaction_message"), CERCLE("reaction_message_cercle");
+		MESSAGE("reaction_message"), CERCLE("reaction_message_cercle"), SALON("reaction_message_salon");
 
 		final String nom;
 

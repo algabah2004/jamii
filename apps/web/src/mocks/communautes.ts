@@ -93,12 +93,14 @@ const SALONS = [
   { slug: 'projets', nom: 'projets', sujet: "Montrer ce qu'on construit et trouver des coéquipiers." },
 ]
 let numeroSalon = 0
+let versionSalon = 0
 const message = (auteur: Personne, texte: string, minutes: number, pieces: string[] = []): MessageSalon => ({
   id: crypto.randomUUID(), numero: ++numeroSalon, auteur, texte, envoyeLe: new Date(Date.now() - minutes * 60_000).toISOString(), appel: null,
-  piecesJointes: piecesDe(pieces),
+  piecesJointes: piecesDe(pieces), version: ++versionSalon, reponseA: null, modifieLe: null, supprime: null, reactions: [],
 })
 function messagesInitiaux(): Map<string, MessageSalon[]> {
   numeroSalon = 0
+  versionSalon = 0
   return new Map([
     ['flutter/entraide', [
       message(WANJIRU, "Quelqu'un a déjà gardé des commandes hors ligne avec Flutter ? Mes clients à Nakuru perdent le réseau.", 42),
@@ -138,6 +140,8 @@ let salonsCrees = new Map<string, { slug: string; nom: string; sujet: string }[]
 /** L'appel en cours de chaque salon (v0.7), par « communauté/salon ». */
 let appels = new Map<string, { id: string; lancePar: Personne; lanceLe: string; url: string }>()
 /** L'état d'un message qui annonce un appel : en cours tant que c'est l'appel du salon. */
+const messageDuSalon = (params: Record<string, unknown>) =>
+  (messagesSalons.get(`${String(params.slug)}/${String(params.salon)}`) ?? []).find((m) => m.id === params.id)
 const avecAppel = (cle: string, m: MessageSalon): MessageSalon => (m.appel ? { ...m, appel: { id: m.appel.id, enCours: appels.get(cle)?.id === m.appel.id } } : m)
 
 /** Les salons supprimés pendant la visite (v0.5). */
@@ -325,20 +329,57 @@ export const handlersCommunautes = [
     const apres = Number(new URL(request.url).searchParams.get('apres') ?? -1)
     const cle = `${params.slug}/${params.salon}`
     const tous = (messagesSalons.get(cle) ?? []).map((m) => avecAppel(cle, m))
-    return HttpResponse.json({ elements: apres >= 0 ? tous.filter((m) => m.numero > apres) : tous.slice(-50) })
+    return HttpResponse.json({ elements: apres >= 0 ? tous.filter((m) => m.version > apres) : tous.slice(-50) })
   }),
 
   http.post('/api/communautes/:slug/salons/:salon/messages', async ({ params, request }) => {
     const c = etat.communautes.find((x) => x.slug === params.slug)
     if (!c || !salonsDe(String(params.slug)).some((s) => s.slug === params.salon)) return erreur(404, 'introuvable')
     if (!c.membre) return erreur(403, 'pas_membre')
-    const corps = (await request.json()) as { texte?: string; pieces?: string[] }
+    const corps = (await request.json()) as { texte?: string; pieces?: string[]; reponseA?: string }
     const texte = corps.texte?.trim() ?? ''
     if ((!texte && !corps.pieces?.length) || texte.length > 2000) return erreur(400, 'validation')
     const cle = `${params.slug}/${params.salon}`
-    const m = message(AWA, texte, 0, corps.pieces)
+    const cite = (messagesSalons.get(cle) ?? []).find((x) => x.id === corps.reponseA)
+    const m = { ...message(AWA, texte, 0, corps.pieces), reponseA: cite ? { id: cite.id, auteur: cite.auteur, texte: cite.supprime ? '' : cite.texte.slice(0, 140), supprime: !!cite.supprime } : null }
     messagesSalons.set(cle, [...(messagesSalons.get(cle) ?? []), m])
     return HttpResponse.json(m, { status: 201 })
+  }),
+  // Corriger, supprimer (l'auteur, ou un modérateur), réagir (#157).
+  http.patch('/api/communautes/:slug/salons/:salon/messages/:id', async ({ params, request }) => {
+    const m = messageDuSalon(params)
+    if (!m) return erreur(404, 'introuvable')
+    if (m.auteur.id !== AWA.id || m.supprime) return erreur(409, 'non_modifiable')
+    const { texte } = (await request.json()) as { texte: string }
+    if (!texte.trim()) return erreur(400, 'validation')
+    Object.assign(m, { texte: texte.trim(), modifieLe: new Date().toISOString(), version: ++versionSalon })
+    return HttpResponse.json(m)
+  }),
+  http.delete('/api/communautes/:slug/salons/:salon/messages/:id', ({ params }) => {
+    const c = etat.communautes.find((x) => x.slug === params.slug)
+    const m = messageDuSalon(params)
+    if (!c || !m) return erreur(404, 'introuvable')
+    if (m.auteur.id !== AWA.id && !c.moderateur) return erreur(403, 'interdit')
+    if (!m.supprime) Object.assign(m, { texte: '', piecesJointes: [], reactions: [], supprime: m.auteur.id === AWA.id ? 'auteur' : 'moderation', version: ++versionSalon })
+    return new HttpResponse(null, { status: 204 })
+  }),
+  http.post('/api/communautes/:slug/salons/:salon/messages/:id/reactions', async ({ params, request }) => {
+    const m = messageDuSalon(params)
+    if (!m) return erreur(404, 'introuvable')
+    if (m.supprime) return erreur(409, 'message_supprime')
+    const { emoji, active } = (await request.json()) as { emoji: string; active: boolean }
+    const existante = m.reactions.find((r) => r.emoji === emoji)
+    if (active && !existante?.deMoi) {
+      m.reactions = existante
+        ? m.reactions.map((r) => (r === existante ? { ...r, nombre: r.nombre + 1, deMoi: true, noms: [...r.noms, 'moi'] } : r))
+        : [...m.reactions, { emoji, nombre: 1, deMoi: true, noms: ['moi'] }]
+    } else if (!active && existante?.deMoi) {
+      m.reactions = existante.nombre > 1
+        ? m.reactions.map((r) => (r === existante ? { ...r, nombre: r.nombre - 1, deMoi: false, noms: r.noms.filter((n) => n !== 'moi') } : r))
+        : m.reactions.filter((r) => r !== existante)
+    }
+    m.version = ++versionSalon
+    return HttpResponse.json(m)
   }),
 
   http.get('/api/publications/:id', ({ params }) => {

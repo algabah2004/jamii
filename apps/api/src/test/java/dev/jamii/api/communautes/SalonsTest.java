@@ -193,7 +193,8 @@ class SalonsTest {
 		assertThat(envoye).hasStatus(HttpStatus.CREATED);
 		assertThat(corps(envoye).get("texte").asString()).isEqualTo("Quelqu'un connaît Hive ?");
 		assertThat(corps(envoye).get("auteur").get("nom").asString()).isEqualTo("Awa Diop");
-		long premier = corps(envoye).get("numero").asLong();
+		// `apres` : la plus grande version connue (#157).
+		long premier = corps(envoye).get("version").asLong();
 		ecrire(awa, slug, "Pour garder les commandes hors ligne.");
 
 		MvcTestResult lus = get(kofi, "/api/communautes/{s}/salons/entraide/messages", slug);
@@ -207,6 +208,67 @@ class SalonsTest {
 		assertThat(nouveaux).hasSize(1);
 		assertThat(nouveaux.get(0).get("texte").asString()).isEqualTo("Pour garder les commandes hors ligne.");
 		assertThat(corps(get(kofi, "/api/communautes/{s}/salons/general/messages", slug)).get("elements")).isEmpty();
+	}
+
+	private MvcTestResult agir(String methode, UtilisateurConnecte qui, String uri, String corps) {
+		var requete = switch (methode) {
+			case "PATCH" -> mvc.patch().uri(uri);
+			case "DELETE" -> mvc.delete().uri(uri);
+			default -> mvc.post().uri(uri);
+		};
+		if (corps != null) {
+			requete = requete.contentType(MediaType.APPLICATION_JSON).content(corps);
+		}
+		return requete.with(csrf()).with(oauth2Login().oauth2User(qui)).exchange();
+	}
+
+	@Test
+	void repondre_corriger_reagir_et_un_moderateur_supprime_le_message_d_un_autre() throws Exception {
+		String slug = communaute();
+		UtilisateurConnecte awa = utilisateur("Awa");
+		UtilisateurConnecte kofi = utilisateur("Kofi");
+		UtilisateurConnecte fatou = utilisateur("Fatou");
+		UtilisateurConnecte curieux = utilisateur("Curieux");
+		rejoindre(awa, slug);
+		rejoindre(kofi, slug);
+		rejoindre(fatou, slug);
+		String salon = "/api/communautes/" + slug + "/salons/entraide/messages";
+
+		String question = corps(ecrire(awa, slug, "Qui connaît Hive ?")).get("id").asString();
+		MvcTestResult reponse = agir("POST", kofi, salon, "{\"texte\":\"Moi\",\"reponseA\":\"" + question + "\"}");
+		assertThat(reponse).hasStatus(HttpStatus.CREATED);
+		assertThat(corps(reponse).get("reponseA").get("auteur").get("nom").asString()).isEqualTo("Awa");
+		assertThat(corps(reponse).get("reponseA").get("texte").asString()).isEqualTo("Qui connaît Hive ?");
+		long vu = corps(reponse).get("version").asLong();
+
+		// Awa corrige, Kofi réagit : Fatou, qui relit depuis `vu`, reçoit la question à jour.
+		assertThat(agir("PATCH", awa, salon + "/" + question, "{\"texte\":\"Qui connaît bien Hive ?\"}")).hasStatusOk();
+		assertThat(agir("POST", kofi, salon + "/" + question + "/reactions", "{\"emoji\":\"🙏\",\"active\":true}")).hasStatusOk();
+		JsonNode relus = corps(get(fatou, salon + "?apres={n}", vu)).get("elements");
+		assertThat(relus).hasSize(1);
+		assertThat(relus.get(0).get("texte").asString()).isEqualTo("Qui connaît bien Hive ?");
+		assertThat(relus.get(0).get("reactions").get(0).get("noms").get(0).asString()).isEqualTo("Kofi");
+
+		// Ni corriger ni supprimer le message d'un autre ; il faut être membre pour réagir.
+		assertThat(agir("PATCH", kofi, salon + "/" + question, "{\"texte\":\"pirate\"}")).hasStatus(HttpStatus.CONFLICT);
+		assertThat(agir("DELETE", kofi, salon + "/" + question, null)).hasStatus(HttpStatus.FORBIDDEN);
+		assertThat(agir("POST", curieux, salon + "/" + question + "/reactions", "{\"emoji\":\"👍\",\"active\":true}"))
+			.hasStatus(HttpStatus.FORBIDDEN);
+
+		// Un modérateur supprime le message de Kofi : tout le monde voit qu'il a été modéré.
+		base.sql("UPDATE adhesion SET role = 'moderateur' WHERE utilisateur_id = :u").param("u", fatou.id()).update();
+		String idReponse = corps(reponse).get("id").asString();
+		assertThat(agir("DELETE", fatou, salon + "/" + idReponse, null)).hasStatus(HttpStatus.NO_CONTENT);
+		assertThat(agir("DELETE", awa, salon + "/" + question, null)).hasStatus(HttpStatus.NO_CONTENT);
+		JsonNode tous = corps(get(kofi, salon)).get("elements");
+		assertThat(tous.get(0).get("supprime").asString()).isEqualTo("auteur");
+		assertThat(tous.get(0).get("reactions")).isEmpty();
+		assertThat(tous.get(1).get("supprime").asString()).isEqualTo("moderation");
+		assertThat(tous.get(1).get("texte").asString()).isEmpty();
+		assertThat(agir("POST", kofi, salon + "/" + question + "/reactions", "{\"emoji\":\"👍\",\"active\":true}"))
+			.hasStatus(HttpStatus.CONFLICT);
+		assertThat(agir("POST", kofi, salon + "/" + question + "/reactions", "{\"emoji\":\"bonjour\",\"active\":true}"))
+			.hasStatus(HttpStatus.BAD_REQUEST);
 	}
 
 	@Test

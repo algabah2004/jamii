@@ -759,6 +759,7 @@
       "hier": "Yesterday",
       "bienvenue": "Welcome to #{salon}",
       "debut": "This is the start of the #{salon} channel.",
+      "supprimeModeration": "Removed by a moderator",
       "nouveauxMessages": "{n} new message | {n} new messages",
       "aideClavier": "Enter to send, Shift + Enter for a new line"
     },
