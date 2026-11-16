@@ -68,11 +68,11 @@ describe('les salons en direct', () => {
     const { page } = await ouvrir('/communautes/flutter?salon=general')
     await vi.waitFor(() => expect(page.findAll('[data-test="message"]')).toHaveLength(7))
     // Aya écrit deux fois à quelques minutes d'écart, avec Koffi entre les deux : pas de groupe. Fatou puis Wanjiru puis Fatou non plus.
-    // Les messages de démo s'étalent sur plus d'un jour : au moins deux séparateurs, et le dernier est « Aujourd'hui »
-    // (le libellé des jours précédents dépend de l'heure à laquelle le test tourne).
+    // Les messages de démo s'étalent sur plus d'un jour : au moins deux séparateurs. Ils sont datés « il y a N minutes » :
+    // juste après minuit, le plus récent tombe la veille, d'où « Aujourd'hui » ou « Hier » pour le dernier séparateur.
     const jours = page.findAll('.jour').map((j) => j.text())
     expect(jours.length).toBeGreaterThanOrEqual(2)
-    expect(jours.at(-1)).toBe("Aujourd'hui")
+    expect(["Aujourd'hui", 'Hier']).toContain(jours.at(-1))
     expect(page.findAll('.message--suite')).toHaveLength(0)
     page.unmount()
   })
