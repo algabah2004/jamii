@@ -73,6 +73,10 @@ server:
         same-site: lax
 
 jamii:
+  demo:
+    # Profil demo seulement : le login GitHub d'un vrai compte à placer dans la démo (son cercle, ses communautés…).
+    # Le compte doit s'être connecté une fois. Vide : aucun.
+    compte: ${JAMII_DEMO_COMPTE:}
   # Les appels vocaux et vidéo des salons (#155) : un serveur Jitsi. Chaque salon y a sa salle.
   appels:
     url: ${APPELS_URL:https://meet.jit.si}

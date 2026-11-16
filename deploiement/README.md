@@ -38,6 +38,9 @@ fournisseur d'IA et le secret de l'OAuth App GitHub. Les variables attendues son
 
 L'adresse de retour de l'OAuth App GitHub doit contenir `https://<domaine>/api/auth/github/retour`.
 
+Pour la démo, `api.env` peut contenir `JAMII_DEMO_COMPTE=<login GitHub>` : ce compte rejoint les données de démo
+(voir `apps/api/README.md`). Il prend effet au prochain redémarrage de l'API.
+
 ## Le relais des appels (coturn, #157)
 
 Les appels des discussions privées passent directement entre les deux navigateurs (WebRTC). Quand un réseau

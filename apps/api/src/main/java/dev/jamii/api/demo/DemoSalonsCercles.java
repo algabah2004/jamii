@@ -46,6 +46,11 @@ final class DemoSalonsCercles {
 	private void histoire() {
 		var cercles = new java.util.ArrayList<>(java.util.List.of(DAKAR, ABIDJAN, DonneesDemo.NAIROBI));
 		cercles.addAll(DemoDecouverteCercles.identifiants());
+		histoire(cercles);
+	}
+
+	/** L'histoire de ces cercles, seulement pour ceux dont le salon est encore vide. */
+	void histoire(java.util.List<UUID> cercles) {
 		base.sql("""
 				INSERT INTO message_cercle (id, cercle_id, type, evenement, evenement_tour, evenement_personne, envoye_le)
 				SELECT gen_random_uuid(), h.cercle_id, 'evenement', h.evenement, h.tour, h.personne, h.le
