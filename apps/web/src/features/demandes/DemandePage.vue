@@ -27,6 +27,7 @@ import {
 import AyoAvatar from './AyoAvatar.vue'
 import BadgeIa from '../../components/BadgeIa.vue'
 import PublierDemande from './PublierDemande.vue'
+import ConfirmerSuppression from './ConfirmerSuppression.vue'
 import { ajusterZone } from '../../design-system/zonesDeTexte'
 
 /*
@@ -173,8 +174,9 @@ const sansConseil = computed(() => questionOuverte.value || discute.value)
 
 /** Supprimer la conversation : la demande et tout ce qui a été dit. Une mission déjà publiée reste en ligne. */
 const suppression = ref<'repos' | 'envoi' | 'erreur'>('repos')
+const confirmation = ref<InstanceType<typeof ConfirmerSuppression> | null>(null)
 async function supprimer() {
-  if (!demande.value || !window.confirm(t('demandes.discussion.confirmerSuppression'))) return
+  if (!demande.value || !(await confirmation.value?.demander())) return
   suppression.value = 'envoi'
   try {
     if (!(await supprimerDemande(demande.value.id))) return void (suppression.value = 'erreur')
@@ -626,6 +628,7 @@ const messageErreur = computed(() =>
       <!-- Une API plus ancienne, sans orientation : le plan seul, toujours visible. -->
     </template>
   </section>
+  <ConfirmerSuppression ref="confirmation" />
   </div>
 </template>
 

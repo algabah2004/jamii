@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { http, HttpResponse } from 'msw'
 import { createMemoryHistory } from 'vue-router'
 import { serveur } from '../../test-setup'
@@ -176,19 +176,18 @@ describe('Une discussion libre avec Ayo', () => {
   })
 
   it('on supprime une discussion après confirmation, et on revient à la liste', async () => {
-    const confirmer = vi.spyOn(window, 'confirm').mockReturnValue(true)
-    try {
-      const { page, routeur } = await ouvrir('/demandes')
-      await exempleJusquAuBout(page)
-      await vi.waitFor(() => expect(page.find('[data-test="supprimer-discussion"]').exists()).toBe(true), { timeout: 4000 })
-      const id = String(routeur.currentRoute.value.params.id)
-      await page.get('[data-test="supprimer-discussion"]').trigger('click')
-      await vi.waitFor(() => expect(routeur.currentRoute.value.path).toBe('/demandes'))
-      const reponse = await fetch(`/api/demandes/${id}`)
-      expect(reponse.status).toBe(404)
-    } finally {
-      confirmer.mockRestore()
-    }
+    const { page, routeur } = await ouvrir('/demandes')
+    await exempleJusquAuBout(page)
+    await vi.waitFor(() => expect(page.find('[data-test="supprimer-discussion"]').exists()).toBe(true), { timeout: 4000 })
+    const id = String(routeur.currentRoute.value.params.id)
+    await page.get('[data-test="supprimer-discussion"]').trigger('click')
+    // La boîte de Jamii s'ouvre (pas la fenêtre du navigateur) : on confirme.
+    await vi.waitFor(() => expect(page.get('[data-test="confirmer-suppression"]').attributes('open')).toBeDefined())
+    expect(page.get('[data-test="confirmer-suppression"]').text()).toContain('Supprimer cette discussion ?')
+    await page.get('[data-test="confirmer-suppression"] [data-test="confirmer"]').trigger('click')
+    await vi.waitFor(() => expect(routeur.currentRoute.value.path).toBe('/demandes'))
+    const reponse = await fetch(`/api/demandes/${id}`)
+    expect(reponse.status).toBe(404)
   })
 })
 
@@ -385,18 +384,20 @@ describe('Tes demandes (#199)', () => {
         return new HttpResponse(null, { status: 204 })
       }),
     )
-    const confirmer = vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValueOnce(true)
-    try {
-      const { page } = await ouvrir('/demandes')
-      await vi.waitFor(() => expect(page.findAll('[data-test="supprimer-demande"]')).toHaveLength(2))
-      await page.findAll('[data-test="supprimer-demande"]')[1]!.trigger('click')
-      expect(supprimees).toEqual([])
-      await page.findAll('[data-test="supprimer-demande"]')[1]!.trigger('click')
-      await vi.waitFor(() => expect(page.findAll('[data-test="demande-resumee"]')).toHaveLength(1))
-      expect(supprimees).toEqual(['b2'])
-    } finally {
-      confirmer.mockRestore()
-    }
+    const { page } = await ouvrir('/demandes')
+    await vi.waitFor(() => expect(page.findAll('[data-test="supprimer-demande"]')).toHaveLength(2))
+    // Annuler : rien n'est supprimé.
+    await page.findAll('[data-test="supprimer-demande"]')[1]!.trigger('click')
+    await vi.waitFor(() => expect(page.get('[data-test="confirmer-suppression"]').attributes('open')).toBeDefined())
+    await page.get('[data-test="annuler-suppression"]').trigger('click')
+    await flushPromises()
+    expect(supprimees).toEqual([])
+    // Confirmer : la discussion disparaît de la liste.
+    await page.findAll('[data-test="supprimer-demande"]')[1]!.trigger('click')
+    await vi.waitFor(() => expect(page.get('[data-test="confirmer-suppression"]').attributes('open')).toBeDefined())
+    await page.get('[data-test="confirmer-suppression"] [data-test="confirmer"]').trigger('click')
+    await vi.waitFor(() => expect(page.findAll('[data-test="demande-resumee"]')).toHaveLength(1))
+    expect(supprimees).toEqual(['b2'])
   })
 
   it('filtre les demandes par état : en préparation, réponse prête, publiée', async () => {
