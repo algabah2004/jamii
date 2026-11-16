@@ -809,7 +809,8 @@
       "decouvrir": "Discover communities",
       "ou": "or",
       "creerLaTienneMin": "create your own",
-      "creer": "Create a community"
+      "creer": "Create a community",
+      "intro": "Developers helping each other, by topic or by city. Join one, or create your own."
     },
     "themes": {
       "web": "Web",
@@ -1011,7 +1012,8 @@
   "pied": {
     "mission": "The exchange platform for African developers: help each other, team up and put your projects online.",
     "liens": "Useful links",
-    "cadev": "Project presented at CADEV 2026. Jamii runs on the Systalink cloud."
+    "cadev": "Project presented at CADEV 2026. Jamii runs on the Systalink cloud.",
+    "charte": "Design system"
   },
   "signaler": {
     "bouton": "Report",
@@ -1098,7 +1100,8 @@
       },
       "exempleQui": "For example: my customers, my two tailors and me.",
       "exempleProbleme": "For example: I answer the same questions on WhatsApp all day.",
-      "exempleReussite": "For example: I get online orders every week."
+      "exempleReussite": "For example: I get online orders every week.",
+      "questionsAide": "Answer in one sentence. It helps Jamii understand your need."
     },
     "publication": {
       "titre": "Publish my request",
@@ -3176,7 +3179,12 @@
       "type_refuse": "This browser records in a format Jamii does not accept.",
       "trop_de_requetes": "Too many files sent in an hour. Try again later.",
       "erreur": "The voice message could not be sent. Try again."
-    }
+    },
+    "ecouter": "Play the voice message",
+    "pause": "Pause",
+    "position": "Position in the {nom}",
+    "vitesse": "Playback speed: ×{v}",
+    "illisible": "This voice message cannot be played on this device."
   },
   "ia": {
     "badge": "AI",

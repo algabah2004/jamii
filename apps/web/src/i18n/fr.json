@@ -809,7 +809,8 @@
       "decouvrir": "Découvre les communautés",
       "ou": "ou",
       "creerLaTienneMin": "crée la tienne",
-      "creer": "Créer une communauté"
+      "creer": "Créer une communauté",
+      "intro": "Des développeurs qui s'entraident, par sujet ou par ville. Rejoins-en une, ou crée la tienne."
     },
     "themes": {
       "web": "Web",
@@ -1011,7 +1012,8 @@
   "pied": {
     "mission": "La plateforme d'échange des développeurs africains : s'entraider, faire équipe et mettre ses projets en ligne.",
     "liens": "Liens utiles",
-    "cadev": "Projet présenté à la CADEV 2026. Jamii fonctionne sur le cloud Systalink."
+    "cadev": "Projet présenté à la CADEV 2026. Jamii fonctionne sur le cloud Systalink.",
+    "charte": "Charte graphique"
   },
   "signaler": {
     "bouton": "Signaler",
@@ -1098,7 +1100,8 @@
       },
       "exempleQui": "Par exemple : mes clientes, mes deux couturières et moi.",
       "exempleProbleme": "Par exemple : je réponds aux mêmes questions sur WhatsApp toute la journée.",
-      "exempleReussite": "Par exemple : je reçois des commandes en ligne chaque semaine."
+      "exempleReussite": "Par exemple : je reçois des commandes en ligne chaque semaine.",
+      "questionsAide": "Réponds en une phrase. Ça aide Jamii à mieux comprendre ton besoin."
     },
     "publication": {
       "titre": "Publier ma demande",
@@ -3176,7 +3179,12 @@
       "type_refuse": "Ce navigateur enregistre dans un format que Jamii n’accepte pas.",
       "trop_de_requetes": "Trop de fichiers envoyés en une heure. Réessaie plus tard.",
       "erreur": "Le message vocal n’a pas pu être envoyé. Réessaie."
-    }
+    },
+    "ecouter": "Écouter le message vocal",
+    "pause": "Mettre en pause",
+    "position": "Position dans le {nom}",
+    "vitesse": "Vitesse de lecture : ×{v}",
+    "illisible": "Ce message vocal ne peut pas être lu sur cet appareil."
   },
   "ia": {
     "badge": "IA",
