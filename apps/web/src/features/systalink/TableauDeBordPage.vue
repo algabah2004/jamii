@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import MotifsCoins from '../../components/MotifsCoins.vue'
-import { JBouton, JFiltres, JIllustration, JSquelette } from '../../design-system'
+import { JBouton, JChamp, JFiltres, JIllustration, JSquelette } from '../../design-system'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { api } from '../../api/client'
+import { chargerSession } from '../../session'
 import { PERIODES, libelleService, lignesPays, lirePeriode, momentsTries, pourcentage, type Periode, type TableauDeBord } from './calculs'
 import ListePays from './ListePays.vue'
 import ClientsSuivis from './ClientsSuivis.vue'
@@ -24,8 +25,44 @@ async function charger() {
     const { data, response } = await api.GET('/api/systalink/tableau-de-bord', { params: { query: { periode: periode.value } } })
     tableau.value = data ?? null
     etat.value = data ? 'pret' : response.status === 403 ? 'reserve' : 'indisponible'
+    if (etat.value === 'reserve') await lireCodeJury()
   } catch {
     etat.value = 'indisponible'
+  }
+}
+
+// Le jury de la CADEV entre le code donné avec la soumission (contracts/systalink.yaml v0.4).
+const codeJuryOuvert = ref(false)
+const code = ref('')
+const erreurCode = ref<string | undefined>()
+const envoiCode = ref(false)
+
+async function lireCodeJury() {
+  try {
+    const { data } = await api.GET('/api/systalink/acces')
+    codeJuryOuvert.value = data?.codeJury === true
+  } catch {
+    codeJuryOuvert.value = false
+  }
+}
+
+async function entrerCode() {
+  if (!code.value.trim() || envoiCode.value) return
+  envoiCode.value = true
+  erreurCode.value = undefined
+  try {
+    const { response } = await api.POST('/api/systalink/code-jury', { body: { code: code.value } })
+    if (response.ok) {
+      code.value = ''
+      await chargerSession()
+      await charger()
+    } else {
+      erreurCode.value = t(response.status === 429 ? 'systalink.reserve.tropDEssais' : 'systalink.reserve.codeFaux')
+    }
+  } catch {
+    erreurCode.value = t('etat.indisponible')
+  } finally {
+    envoiCode.value = false
   }
 }
 watch(periode, charger, { immediate: true })
@@ -74,6 +111,11 @@ const paysCercles = computed(() =>
     <div v-else-if="etat === 'reserve'" class="etat-vide" data-test="reserve">
       <h2>{{ t('systalink.reserve.titre') }}</h2>
       <p>{{ t('systalink.reserve.texte') }}</p>
+      <form v-if="codeJuryOuvert" class="code-jury" data-test="code-jury" @submit.prevent="entrerCode">
+        <p>{{ t('systalink.reserve.jury') }}</p>
+        <JChamp v-model="code" :libelle="t('systalink.reserve.code')" :erreur="erreurCode" type="password" requis :maxlength="200" />
+        <JBouton type="submit" :occupe="envoiCode" :desactive="!code.trim()">{{ t('systalink.reserve.entrer') }}</JBouton>
+      </form>
     </div>
     <div v-else-if="etat === 'indisponible'" role="alert" class="etat-vide">
       <p>{{ t('etat.indisponible') }}</p>
@@ -185,6 +227,7 @@ const paysCercles = computed(() =>
 </template>
 
 <style scoped>
+.code-jury { display: grid; gap: var(--space-3); max-width: 24rem; margin: var(--space-5) auto 0; text-align: start; }
 .chiffres { display: grid; gap: var(--space-4); grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.4fr); transition: opacity var(--motion-base) var(--ease-out); }
 .chiffres[aria-busy] { opacity: 0.6; }
 @media (max-width: 860px) { .chiffres { grid-template-columns: 1fr; } }

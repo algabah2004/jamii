@@ -24,6 +24,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/systalink/code-jury": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Un juré de la CADEV entre son code et voit l'espace Systalink
+         * @description Comparaison en temps constant. 5 essais par compte, puis `429`. Déjà autorisé : `204` sans rien changer.
+         */
+        post: operations["entrerCodeJury"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/systalink/tableau-de-bord": {
         parameters: {
             query?: never;
@@ -353,15 +373,6 @@ export interface components {
                 "application/problem+json": components["schemas"]["Erreur"];
             };
         };
-        /** @description Connecté mais sans le droit nécessaire, ou jeton CSRF absent (`code` = `interdit`). */
-        Interdit: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/problem+json": components["schemas"]["Erreur"];
-            };
-        };
         /** @description Ressource inexistante ou que l'utilisateur n'a pas le droit de voir (`code` = `introuvable`). */
         Introuvable: {
             headers: {
@@ -375,6 +386,15 @@ export interface components {
         TropDeRequetes: {
             headers: {
                 "Retry-After": components["headers"]["RetryAfter"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Erreur"];
+            };
+        };
+        /** @description Connecté mais sans le droit nécessaire, ou jeton CSRF absent (`code` = `interdit`). */
+        Interdit: {
+            headers: {
                 [name: string]: unknown;
             };
             content: {
@@ -409,10 +429,40 @@ export interface operations {
                 content: {
                     "application/json": {
                         acces: boolean;
+                        /** @description Vrai si un code d'accès jury est en service : la page propose de l'entrer. */
+                        codeJury: boolean;
                     };
                 };
             };
             401: components["responses"]["NonConnecte"];
+        };
+    };
+    entrerCodeJury: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    code: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Accès accordé. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Invalide"];
+            401: components["responses"]["NonConnecte"];
+            404: components["responses"]["Introuvable"];
+            429: components["responses"]["TropDeRequetes"];
         };
     };
     tableauDeBordSystalink: {
