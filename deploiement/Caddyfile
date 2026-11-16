@@ -1,5 +1,10 @@
 # HTTPS automatique (Let's Encrypt) sur <ip>.sslip.io, puis relais vers le site, qui relaie /api vers l'API.
 {$DOMAINE} {
 	encode zstd gzip
+	header {
+		# HTTPS obligatoire pendant un an, pour le site et l'API (le navigateur refuse ensuite le HTTP).
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
 	reverse_proxy web:8080
 }
