@@ -345,9 +345,9 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
 </template>
 
 <style scoped>
-.cercle-page { display: grid; gap: var(--space-6); width: 100%; max-width: 84rem; margin-inline: auto; }
-/* Dans le salon, la page monte sous la barre du site : la discussion prend toute la hauteur et toute la largeur. */
-.cercle-page--salon { max-width: 96rem; margin-top: calc(-1 * var(--space-4)); }
+.cercle-page { display: grid; gap: var(--space-6); width: 100%; max-width: 96rem; margin-inline: auto; margin-top: calc(-1 * var(--space-4)); }
+/* Même cadre pour toutes les sous-pages (rien ne bouge en passant de l'une à l'autre) ; dans le salon, la discussion
+ * prend toute la hauteur. */
 .cercle-page--salon .espace--outils { align-items: stretch; }
 /* Un en-tête compact : le retour, puis le nom du cercle et ses infos sur une ligne. La place va aux outils. */
 .cercle-tete { display: grid; gap: var(--space-2); padding-top: var(--space-2); }
