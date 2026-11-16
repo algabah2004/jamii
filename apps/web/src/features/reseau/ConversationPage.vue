@@ -3,8 +3,9 @@ import Composeur from '../../components/texte/Composeur.vue'
 import EnregistreurVocal from '../../components/texte/EnregistreurVocal.vue'
 import PiecesJointes from '../../components/texte/PiecesJointes.vue'
 import TexteRiche from '../../components/texte/TexteRiche.vue'
+import TransfertMessage from './TransfertMessage.vue'
 import { envoyerFichier, type PieceJointe } from '../../components/texte/fichiers'
-import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { JAvatar, JBouton, JSquelette } from '../../design-system'
@@ -19,7 +20,11 @@ import {
   lireEcriture,
   signalerEcriture,
   lireLien,
+  modifiable,
+  modifierMessage,
   prenom,
+  supprimerMessage,
+  transferable,
   type Message,
   type Personne,
   type StatutLien,
@@ -143,7 +148,8 @@ const envoi = ref(false)
 const erreur = ref<string | null>(null)
 const pieces = ref<PieceJointe[]>([])
 const composeur = ref<InstanceType<typeof Composeur> | null>(null)
-const valide = computed(() => (texte.value.trim().length > 0 || pieces.value.length > 0) && texte.value.length <= LONGUEUR_MESSAGE)
+const valide = computed(() =>
+  (texte.value.trim().length > 0 || pieces.value.length > 0 || (!!edition.value && edition.value.piecesJointes.length > 0)) && texte.value.length <= LONGUEUR_MESSAGE)
 
 async function envoyer() {
   if (!valide.value || !personne.value || envoi.value) return
@@ -151,15 +157,21 @@ async function envoyer() {
   envoi.value = true
   erreur.value = null
   try {
-    const r = await envoyerMessage(personne.value.id, texte.value, undefined, pieces.value.map((p) => p.id))
+    const enCours = edition.value
+    const r = enCours
+      ? await modifierMessage(personne.value.id, enCours.id, texte.value)
+      : await envoyerMessage(personne.value.id, texte.value, undefined, pieces.value.map((p) => p.id), reponse.value?.id)
     if (!actif || version !== versionConversation) return
     if (r.ok) {
-      messages.value.push(r.message)
+      if (enCours) remplacer(r.message)
+      else messages.value.push(r.message)
       emit('actualise')
       texte.value = ''
       pieces.value = []
+      reponse.value = null
+      edition.value = null
       composeur.value?.rafraichir()
-      await descendre()
+      if (!enCours) await descendre()
       composeur.value?.focus()
     } else erreur.value = t(`reseau.erreurs.${r.code ?? 'autre'}`, t('reseau.erreurs.autreMessage'))
   } catch {
@@ -168,6 +180,143 @@ async function envoyer() {
     if (actif && version === versionConversation) envoi.value = false
   }
 }
+
+// ---------------------------------------------------------------- répondre, modifier, supprimer, transférer (#157)
+
+const reponse = ref<Message | null>(null)
+const edition = ref<Message | null>(null)
+const menu = ref<string | null>(null)
+const aSupprimer = ref<string | null>(null)
+const aTransferer = ref<Message | null>(null)
+const info = ref<string | null>(null)
+const surligne = ref<string | null>(null)
+const maintenant = ref(Date.now())
+const horloge = setInterval(() => (maintenant.value = Date.now()), 30_000)
+
+function remplacer(m: Message) {
+  messages.value = messages.value.map((x) => (x.id === m.id ? m : x))
+}
+function ouvrirMenu(m: Message) {
+  aSupprimer.value = null
+  menu.value = menu.value === m.id ? null : m.id
+}
+function repondre(m: Message) {
+  menu.value = null
+  if (edition.value) texte.value = ''
+  edition.value = null
+  reponse.value = m
+  composeur.value?.focus()
+}
+function modifier(m: Message) {
+  menu.value = null
+  reponse.value = null
+  edition.value = m
+  texte.value = m.texte
+  composeur.value?.focus()
+}
+function annulerBandeau() {
+  if (edition.value) texte.value = ''
+  edition.value = null
+  reponse.value = null
+}
+function transferer(m: Message) {
+  menu.value = null
+  aTransferer.value = m
+}
+function transfere(n: number) {
+  aTransferer.value = null
+  annoncer(t('reseau.actions.transfert.envoye', { n }, n))
+}
+function annoncer(texteInfo: string) {
+  info.value = texteInfo
+  setTimeout(() => {
+    if (info.value === texteInfo) info.value = null
+  }, 3_500)
+}
+async function supprimer(m: Message) {
+  if (!personne.value) return
+  menu.value = null
+  aSupprimer.value = null
+  try {
+    if (!(await supprimerMessage(personne.value.id, m.id))) throw new Error('refus')
+    remplacer({ ...m, texte: '', piecesJointes: [], invitation: null, appel: null, supprime: true })
+    if (edition.value?.id === m.id || reponse.value?.id === m.id) annulerBandeau()
+    emit('actualise')
+  } catch {
+    erreur.value = t('reseau.actions.erreurSuppression')
+  }
+}
+
+/** Ce que montre une citation ou le bandeau : le texte, ou la sorte de la pièce jointe. */
+function apercu(texteMessage: string, sorte: string | null | undefined, supprime: boolean) {
+  if (supprime) return t('reseau.actions.supprime')
+  if (texteMessage) return texteMessage.replace(/[*_`~>#]/g, '').slice(0, 140)
+  return sorte ? t(`reseau.actions.sortes.${sorte}`) : ''
+}
+const apercuMessage = (m: Message) => apercu(m.texte, m.piecesJointes[0]?.sorte, m.supprime)
+const auteur = (deMoi: boolean) => (deMoi ? t('reseau.actions.toi') : prenom(personne.value?.nom ?? ''))
+
+/** Un clic sur une citation remonte au message cité, s'il est dans la page, et le fait briller un instant. */
+async function allerA(id: string) {
+  const cible = fil.value?.querySelector<HTMLElement>(`[data-message="${id}"]`)
+  if (!cible) return
+  cible.scrollIntoView?.({ behavior: 'smooth', block: 'center' })
+  surligne.value = id
+  setTimeout(() => {
+    if (surligne.value === id) surligne.value = null
+  }, 1_400)
+}
+
+// Glisser une bulle vers la droite (au doigt) pour y répondre, comme dans les messageries mobiles.
+const SEUIL_GLISSE = 64 as const
+const glisse = ref<{ id: string; dx: number } | null>(null)
+let depart: { id: string; x: number; y: number; horizontal: boolean | null } | null = null
+function toucher(e: PointerEvent, m: Message) {
+  if (e.pointerType !== 'touch' || m.supprime || m.appel) return
+  depart = { id: m.id, x: e.clientX, y: e.clientY, horizontal: null }
+}
+function bouger(e: PointerEvent) {
+  if (!depart) return
+  const dx = e.clientX - depart.x
+  const dy = e.clientY - depart.y
+  if (depart.horizontal === null && Math.hypot(dx, dy) > 8) depart.horizontal = Math.abs(dx) > Math.abs(dy) && dx > 0
+  if (depart.horizontal) glisse.value = { id: depart.id, dx: Math.max(0, Math.min(dx, SEUIL_GLISSE + 24)) }
+}
+function lacher() {
+  const g = glisse.value
+  const m = g && messages.value.find((x) => x.id === g.id)
+  if (g && m && g.dx >= SEUIL_GLISSE) {
+    repondre(m)
+    navigator.vibrate?.(12)
+  }
+  depart = null
+  glisse.value = null
+}
+
+// Fermer le menu d'un clic ailleurs ou avec Échap.
+function clicAilleurs(e: MouseEvent) {
+  if (menu.value && !(e.target as Element | null)?.closest?.('.actions')) menu.value = null
+}
+function echap(e: KeyboardEvent) {
+  if (e.key !== 'Escape') return
+  if (menu.value) menu.value = null
+  else if (reponse.value || edition.value) annulerBandeau()
+}
+onMounted(() => {
+  document.addEventListener('click', clicAilleurs)
+  document.addEventListener('keydown', echap)
+})
+onBeforeUnmount(() => {
+  clearInterval(horloge)
+  document.removeEventListener('click', clicAilleurs)
+  document.removeEventListener('keydown', echap)
+})
+watch(() => route.params.personneId, () => {
+  reponse.value = null
+  edition.value = null
+  menu.value = null
+  aTransferer.value = null
+})
 
 // ---------------------------------------------------------------- un message vocal (#157)
 
@@ -185,9 +334,10 @@ async function envoyerVocal(fichier: File) {
       erreur.value = t(`vocal.erreurs.${f.code}`)
       return
     }
-    const r = await envoyerMessage(destinataire, '', undefined, [f.piece.id])
+    const r = await envoyerMessage(destinataire, '', undefined, [f.piece.id], reponse.value?.id)
     if (!actif || version !== versionConversation) return
     if (r.ok) {
+      reponse.value = null
       messages.value.push(r.message)
       emit('actualise')
       await descendre()
@@ -331,8 +481,16 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
               v-for="(m, i) in j.messages"
               :key="m.id"
               class="ligne"
-              :class="[m.deMoi ? 'bulle--moi' : 'bulle--autre', { 'ligne--suite': suite(j.messages, i) }]"
+              :class="[m.deMoi ? 'bulle--moi' : 'bulle--autre', { 'ligne--suite': suite(j.messages, i), 'ligne--surlignee': surligne === m.id, 'ligne--menu': menu === m.id }]"
+              :data-message="m.id"
+              @pointerdown="toucher($event, m)"
+              @pointermove="bouger"
+              @pointerup="lacher"
+              @pointercancel="lacher"
             >
+              <span v-if="glisse?.id === m.id" class="ligne__repondre" :class="{ 'ligne__repondre--pret': glisse.dx >= SEUIL_GLISSE }" aria-hidden="true">
+                <svg viewBox="0 0 20 20" width="18" height="18"><path d="M8 5 3.5 9.5 8 14M4 9.5h7.5a5 5 0 0 1 5 5v1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              </span>
               <span class="ligne__avatar" aria-hidden="true">
                 <JAvatar v-if="!m.deMoi && !suite(j.messages, i)" :nom="personne.nom" :url="personne.avatarUrl" :taille="28" />
               </span>
@@ -355,7 +513,23 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
                 </button>
               </div>
 
-              <div v-else class="bulle">
+              <div v-else-if="m.supprime" class="bulle bulle--supprimee" data-test="message-supprime">
+                <span class="bulle__supprime">
+                  <svg viewBox="0 0 20 20" width="15" height="15" aria-hidden="true"><circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" stroke-width="1.6" /><path d="m5.2 14.8 9.6-9.6" stroke="currentColor" stroke-width="1.6" /></svg>
+                  {{ m.deMoi ? t('reseau.actions.tuAsSupprime') : t('reseau.actions.supprime') }}
+                </span>
+                <span class="bulle__meta"><time :datetime="m.envoyeLe">{{ heure(m.envoyeLe) }}</time></span>
+              </div>
+
+              <div v-else class="bulle" :style="glisse?.id === m.id ? { transform: `translateX(${glisse.dx}px)` } : undefined">
+                <span v-if="m.transfere" class="bulle__transfere" data-test="transfere">
+                  <svg viewBox="0 0 20 20" width="13" height="13" aria-hidden="true"><path d="M12 5l4.5 4.5L12 14M16 9.5H8.5a5 5 0 0 0-5 5v1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                  {{ t('reseau.actions.transfere') }}
+                </span>
+                <button v-if="m.reponseA" type="button" class="citation" data-test="citation" @click="allerA(m.reponseA.id)">
+                  <strong>{{ auteur(m.reponseA.deMoi) }}</strong>
+                  <span>{{ apercu(m.reponseA.texte, m.reponseA.sorte, m.reponseA.supprime) }}</span>
+                </button>
                 <TexteRiche v-if="m.texte" class="bulle__texte" :texte="m.texte" />
                 <PiecesJointes :pieces="m.piecesJointes ?? []" />
                 <!-- L'invitation : le cercle tel qu'il est maintenant, et le bouton pour le rejoindre s'il reste de la place. -->
@@ -369,11 +543,32 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
                   </template>
                 </div>
                 <span class="bulle__meta">
+                  <span v-if="m.modifieLe" class="bulle__modifie" data-test="modifie">{{ t('reseau.actions.modifie') }}</span>
                   <time :datetime="m.envoyeLe">{{ heure(m.envoyeLe) }}</time>
                   <span v-if="m.deMoi" class="bulle__lu" :class="{ 'bulle__lu--oui': m.luLe }" :title="m.luLe ? t('reseau.discussion.lu') : t('reseau.discussion.envoye')">
                     {{ m.luLe ? '✓✓' : '✓' }}<span class="visuellement-cache">{{ m.luLe ? t('reseau.discussion.lu') : t('reseau.discussion.envoye') }}</span>
                   </span>
                 </span>
+              </div>
+
+              <!-- Les actions sur un message : un bouton « ⋯ » à côté de la bulle (au survol, au clavier, toujours au doigt). -->
+              <div v-if="!m.supprime && !m.appel" class="actions">
+                <button type="button" class="actions__ouvrir" :aria-expanded="menu === m.id" :aria-label="t('reseau.actions.menu')" data-test="actions-message" @click.stop="ouvrirMenu(m)">
+                  <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><circle cx="4.5" cy="10" r="1.6" fill="currentColor" /><circle cx="10" cy="10" r="1.6" fill="currentColor" /><circle cx="15.5" cy="10" r="1.6" fill="currentColor" /></svg>
+                </button>
+                <div v-if="menu === m.id" class="actions__menu" role="menu">
+                  <template v-if="aSupprimer !== m.id">
+                    <button type="button" role="menuitem" data-test="action-repondre" @click="repondre(m)">{{ t('reseau.actions.repondre') }}</button>
+                    <button v-if="modifiable(m, maintenant)" type="button" role="menuitem" data-test="action-modifier" @click="modifier(m)">{{ t('reseau.actions.modifier') }}</button>
+                    <button v-if="transferable(m)" type="button" role="menuitem" data-test="action-transferer" @click="transferer(m)">{{ t('reseau.actions.transferer') }}</button>
+                    <button v-if="m.deMoi" type="button" role="menuitem" class="danger" data-test="action-supprimer" @click.stop="aSupprimer = m.id">{{ t('reseau.actions.supprimer') }}</button>
+                  </template>
+                  <template v-else>
+                    <p class="actions__question">{{ t('reseau.actions.confirmerSuppression') }}</p>
+                    <button type="button" role="menuitem" class="danger" data-test="confirmer-suppression" @click="supprimer(m)">{{ t('reseau.actions.supprimer') }}</button>
+                    <button type="button" role="menuitem" @click.stop="aSupprimer = null">{{ t('reseau.actions.annuler') }}</button>
+                  </template>
+                </div>
               </div>
             </li>
           </template>
@@ -388,6 +583,19 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
       </div>
 
       <form class="saisie" data-test="form-message" @submit.prevent="envoyer">
+        <p v-if="info" class="saisie__info" role="status" data-test="info-action">{{ info }}</p>
+        <!-- Je réponds à un message, ou j'en corrige un : le bandeau le rappelle au-dessus de la zone de saisie. -->
+        <div v-if="reponse || edition" class="bandeau" data-test="bandeau-action">
+          <svg v-if="edition" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M4 13.5V16h2.5l7.4-7.4-2.5-2.5L4 13.5ZM13 4.5l2.5 2.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" /></svg>
+          <svg v-else viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M8 5 3.5 9.5 8 14M4 9.5h7.5a5 5 0 0 1 5 5v1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          <span class="bandeau__texte">
+            <strong>{{ edition ? t('reseau.actions.enModification') : t('reseau.actions.repondreA', { nom: auteur(reponse!.deMoi) }) }}</strong>
+            <span>{{ apercuMessage((edition ?? reponse)!) }}</span>
+          </span>
+          <button type="button" class="bandeau__fermer" :aria-label="t('reseau.actions.annuler')" data-test="annuler-action" @click="annulerBandeau">
+            <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M5.5 5.5l9 9M14.5 5.5l-9 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+          </button>
+        </div>
         <Composeur
           :key="personne.id"
           :destinataire-id="personne.id"
@@ -396,7 +604,7 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
           v-model:pieces="pieces"
           id-zone="message"
           :placeholder="t('reseau.messages.ecrire', { nom: prenom(personne.nom) })"
-          :libelle-envoyer="t('reseau.messages.envoyer')"
+          :libelle-envoyer="edition ? t('reseau.actions.enregistrer') : t('reseau.messages.envoyer')"
           :envoi="envoi"
           :erreur="erreur"
           :max="LONGUEUR_MESSAGE"
@@ -404,10 +612,11 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
           @envoyer="envoyer"
         >
           <template #outils>
-            <EnregistreurVocal :desactive="envoi" @envoyer="envoyerVocal" @erreur="(code) => (erreur = t(`vocal.erreurs.${code}`))" />
+            <EnregistreurVocal v-if="!edition" :desactive="envoi" @envoyer="envoyerVocal" @erreur="(code) => (erreur = t(`vocal.erreurs.${code}`))" />
           </template>
         </Composeur>
       </form>
+      <TransfertMessage v-if="aTransferer" :personne-id="personne.id" :message="aTransferer" @fermer="aTransferer = null" @transfere="transfere" />
     </div>
   </section>
 </template>
@@ -482,7 +691,50 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
 .appel-carte__rejoindre { padding: 6px 14px; border-radius: var(--radius-pill); background: var(--success, #1f9d55); color: #fff; font-weight: 700; text-decoration: none; white-space: nowrap; }
 .appel-carte__rejoindre:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
-.saisie { margin: 0 var(--space-6) var(--space-4); z-index: 2; }
+.saisie { position: relative; margin: 0 var(--space-6) var(--space-4); z-index: 2; }
+.saisie__info { position: absolute; left: 50%; bottom: calc(100% + 8px); transform: translateX(-50%); margin: 0; padding: 6px 14px; border-radius: var(--radius-pill); background: var(--ink); color: var(--bg); font-size: var(--type-body-sm-size); font-weight: 600; white-space: nowrap; }
+
+/* Répondre, modifier, supprimer, transférer (#157). */
+.ligne { position: relative; touch-action: pan-y; }
+.ligne--surlignee .bulle { box-shadow: 0 0 0 3px var(--action); transition: box-shadow 200ms ease-out; }
+.ligne__repondre { position: absolute; left: 4px; top: 50%; display: grid; place-items: center; width: 30px; height: 30px; margin-top: -15px; border-radius: 50%; background: var(--surface); color: var(--ink-muted); opacity: 0.6; transition: opacity 120ms, transform 120ms; }
+.ligne__repondre--pret { opacity: 1; color: var(--action-ink); transform: scale(1.12); }
+.bulle__transfere { display: inline-flex; align-items: center; gap: 4px; font-size: 0.8125rem; font-style: italic; opacity: 0.75; }
+.bulle__modifie { font-style: italic; }
+.bulle--supprimee { background: transparent !important; color: var(--ink-muted) !important; border: 1px dashed var(--line-strong); box-shadow: none; }
+.bulle__supprime { display: inline-flex; align-items: center; gap: 6px; font-style: italic; }
+.citation {
+  display: grid; gap: 1px; justify-items: start; min-width: 0; max-width: 100%; padding: 6px 10px; border: 0; border-left: 3px solid currentColor;
+  border-radius: 8px; background: color-mix(in srgb, currentColor 10%, transparent); color: inherit; font: inherit; text-align: left; cursor: pointer;
+}
+.citation strong { font-size: 0.8125rem; }
+.citation span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 0.875rem; opacity: 0.85; }
+.citation:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+
+.actions { position: relative; align-self: center; opacity: 0; transition: opacity 120ms; }
+.ligne:hover .actions, .actions:focus-within, .ligne--menu .actions { opacity: 1; }
+@media (hover: none) { .actions { opacity: 0.55; } }
+.actions__ouvrir { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--ink-muted); cursor: pointer; }
+.actions__ouvrir:hover, .actions__ouvrir[aria-expanded="true"] { background: var(--surface); color: var(--ink); }
+.actions__ouvrir:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+.actions__menu {
+  position: absolute; bottom: calc(100% + 4px); z-index: 5; display: grid; min-width: 11rem; padding: 6px; border-radius: 14px;
+  background: var(--surface); color: var(--ink); border: 1px solid var(--line); box-shadow: 0 12px 32px rgb(0 0 0 / 0.18);
+}
+.bulle--autre .actions__menu { left: 0; }
+.bulle--moi .actions__menu { right: 0; }
+.actions__menu button { padding: 8px 12px; border: 0; border-radius: 8px; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.actions__menu button:hover, .actions__menu button:focus-visible { background: var(--surface-raised); outline: none; }
+.actions__menu .danger { color: var(--danger); }
+.actions__question { margin: 4px 12px 6px; font-weight: 600; font-size: var(--type-body-sm-size); }
+
+.bandeau { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-2); padding: 8px 8px 8px 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--action); color: var(--action-ink); }
+.bandeau__texte { display: grid; flex: 1; min-width: 0; color: var(--ink); }
+.bandeau__texte strong { font-size: 0.875rem; color: var(--action-ink); }
+.bandeau__texte span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-muted); font-size: 0.875rem; }
+.bandeau__fermer { display: grid; place-items: center; flex: none; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--ink-muted); cursor: pointer; }
+.bandeau__fermer:hover { background: var(--surface-raised); color: var(--ink); }
+@media (prefers-reduced-motion: reduce) { .ligne__repondre, .actions { transition: none; } }
 .erreur { margin: 0; color: var(--danger); font-weight: 600; }
 
 @keyframes arrive { from { opacity: 0; transform: translateY(6px); } }
