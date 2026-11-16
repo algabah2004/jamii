@@ -12,7 +12,7 @@ import FenetreAppel from './features/reseau/FenetreAppel.vue'
 import FenetreAppelCercle from './features/cercles/FenetreAppelCercle.vue'
 
 const { t } = useI18n()
-const { etat, moi, accesSystalink } = useSession()
+const { etat, moi } = useSession()
 
 // Les pastilles : relues toutes les 30 s tant qu'on est connecté et que l'onglet est visible (features/reseau/activite.ts).
 const activite = useActivite()
@@ -38,7 +38,7 @@ watch(etat, (e) => (e === 'connecte' ? suivreAppelsEntrants() : arreterAppelsEnt
         <RouterLink to="/missions">{{ t('menu.missions') }}</RouterLink>
         <RouterLink to="/hackathons">{{ t('menu.hackathons') }}</RouterLink>
         <RouterLink to="/vitrine">{{ t('menu.vitrine') }}</RouterLink>
-        <RouterLink v-if="accesSystalink" to="/systalink" :aria-label="t('menu.systalink')">
+        <RouterLink to="/systalink" :aria-label="t('menu.systalink')">
           <span class="lien-long" aria-hidden="true">{{ t('menu.systalink') }}</span><span class="lien-court" aria-hidden="true">{{ t('menu.systalinkCourt') }}</span>
         </RouterLink>
       </nav>
@@ -99,7 +99,7 @@ watch(etat, (e) => (e === 'connecte' ? suivreAppelsEntrants() : arreterAppelsEnt
         <RouterLink to="/missions">{{ t('menu.missions') }}</RouterLink>
         <RouterLink to="/hackathons">{{ t('menu.hackathons') }}</RouterLink>
         <RouterLink to="/vitrine">{{ t('menu.vitrine') }}</RouterLink>
-        <RouterLink v-if="accesSystalink" to="/systalink">{{ t('menu.systalink') }}</RouterLink>
+        <RouterLink to="/systalink">{{ t('menu.systalink') }}</RouterLink>
       </nav>
       <ReglagesAffichage class="reglages--pied" />
       <p class="pied__cadev">{{ t('pied.cadev') }}</p>
