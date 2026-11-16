@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { h, type VNode } from 'vue'
 import { blocs, type Morceau } from './miseEnForme'
+import { seulementDesEmojis } from './emojis'
 
 /*
  * Un message mis en forme (miseEnForme.ts) : construit élément par élément avec `h()`, jamais avec `v-html`. Le texte
@@ -38,12 +39,14 @@ const Rendu = () =>
 </script>
 
 <template>
-  <div class="texte-riche"><Rendu /></div>
+  <div class="texte-riche" :class="{ 'texte-riche--emojis': seulementDesEmojis(texte) }"><Rendu /></div>
 </template>
 
 <style>
 .texte-riche { display: grid; gap: var(--space-2); overflow-wrap: anywhere; line-height: 1.55; }
 .texte-riche > * { margin: 0; }
+/* Un message fait seulement de 1 à 3 emojis s'affiche en grand, comme dans les messageries connues. */
+.texte-riche--emojis { font-size: 2.25rem; line-height: 1.2; }
 .texte-riche ul, .texte-riche ol { padding-inline-start: 1.4em; display: grid; gap: 2px; }
 .texte-riche blockquote { padding: 2px 0 2px var(--space-3); border-left: 3px solid var(--line-strong); color: var(--ink-muted); }
 .texte-riche a { color: var(--action-ink); text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; }

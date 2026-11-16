@@ -4,6 +4,8 @@ import { useI18n } from 'vue-i18n'
 import { ajusterZone } from '../../design-system/zonesDeTexte'
 import { ACCEPTES, envoyerFichier, PIECES_MAX, tailleLisible, type PieceJointe } from './fichiers'
 import { appliquerFormat, type Format } from './miseEnForme'
+import SelecteurEmoji from './SelecteurEmoji.vue'
+import { convertirALaFin, convertirEnTapant, type Conversion } from './emojis'
 
 /*
  * La barre d'écriture de Jamii, la même partout où l'on écrit à plusieurs (salons des cercles et des communautés, fil
@@ -12,6 +14,8 @@ import { appliquerFormat, type Format } from './miseEnForme'
  *   (Ctrl/⌘ + B, I, K, E) ; le texte reste un petit Markdown sûr (miseEnForme.ts), jamais du HTML ;
  * - les pièces jointes : bouton, glisser-déposer, ou coller une image ; chacune part tout de suite au serveur, avec un
  *   aperçu et une croix pour la retirer ; 6 au plus ;
+ * - les emojis : un bouton 😊 ouvre le choix, et « :) » devient « 🙂 » dès qu'on tape un espace (Retour arrière juste
+ *   après annule la conversion) ;
  * - Entrée envoie, Maj + Entrée va à la ligne.
  * La zone grandit avec le texte (zonesDeTexte.ts) : pas de barre de défilement avant sa hauteur maximale.
  */
@@ -43,6 +47,7 @@ const choix = ref<HTMLInputElement | null>(null)
 const enCours = ref<{ cle: string; nom: string }[]>([])
 const probleme = ref<string | null>(null)
 const survol = ref(false)
+const emojis = ref(false)
 
 let actif = true
 onBeforeUnmount(() => { actif = false })
@@ -75,7 +80,58 @@ function formater(format: Format) {
   })
 }
 
+// ---------------------------------------------------------------- les emojis
+
+/** La dernière conversion d'un smiley : Retour arrière juste après la défait (« :) » revient). */
+let derniere: Conversion | null = null
+
+function saisir(e: Event) {
+  const z = e.target as HTMLTextAreaElement
+  derniere = null
+  const conversion = (e as InputEvent).inputType?.startsWith('insert') ? convertirEnTapant(z.value, z.selectionStart) : null
+  if (!conversion) return emit('update:modelValue', z.value)
+  derniere = conversion
+  emit('update:modelValue', conversion.texte)
+  void nextTick(() => { z.value = conversion.texte; z.setSelectionRange(conversion.curseur, conversion.curseur) })
+}
+
+function defaireConversion(e: KeyboardEvent): boolean {
+  const z = zone.value
+  const d = derniere
+  derniere = null
+  if (e.key !== 'Backspace' || !z || !d || z.selectionStart !== z.selectionEnd || z.selectionStart !== d.curseur) return false
+  if (props.modelValue.slice(d.debut, d.debut + d.apres.length) !== d.apres) return false
+  e.preventDefault()
+  // On remet le smiley tapé, sans l'espace qui l'avait déclenché.
+  const texte = props.modelValue.slice(0, d.debut) + d.avant + props.modelValue.slice(d.curseur)
+  const curseur = d.debut + d.avant.length
+  emit('update:modelValue', texte)
+  void nextTick(() => { z.setSelectionRange(curseur, curseur); ajusterZone(z) })
+  return true
+}
+
+function insererEmoji(emoji: string) {
+  const z = zone.value
+  const debut = z?.selectionStart ?? props.modelValue.length
+  const fin = z?.selectionEnd ?? props.modelValue.length
+  const texte = props.modelValue.slice(0, debut) + emoji + props.modelValue.slice(fin)
+  if (texte.length > props.max) return
+  emit('update:modelValue', texte)
+  void nextTick(() => {
+    if (!z) return
+    z.focus()
+    z.setSelectionRange(debut + emoji.length, debut + emoji.length)
+    ajusterZone(z)
+  })
+}
+
+function fermerEmojis() {
+  emojis.value = false
+  zone.value?.focus()
+}
+
 function touche(e: KeyboardEvent) {
+  if (defaireConversion(e)) return
   if ((e.metaKey || e.ctrlKey) && !e.altKey) {
     const b = BOUTONS.find((x) => x.raccourci?.toLowerCase() === e.key.toLowerCase())
     if (b) {
@@ -92,7 +148,12 @@ function touche(e: KeyboardEvent) {
 }
 
 function soumettre() {
-  if (pret.value) emit('envoyer')
+  if (!pret.value) return
+  // « Merci :) » envoyé tel quel : le smiley final est converti aussi.
+  const converti = convertirALaFin(props.modelValue)
+  if (converti !== props.modelValue) emit('update:modelValue', converti)
+  emojis.value = false
+  emit('envoyer')
 }
 
 /** Après un envoi, le parent vide le texte : la zone reprend sa hauteur d'une ligne. */
@@ -180,7 +241,7 @@ function coller(e: ClipboardEvent) {
       :maxlength="max"
       :placeholder="placeholder"
       :data-test="testZone"
-      @input="emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)"
+      @input="saisir"
       @keydown="touche"
       @paste="coller"
     />
@@ -200,8 +261,23 @@ function coller(e: ClipboardEvent) {
         >
           <svg viewBox="0 0 20 20" width="17" height="17" aria-hidden="true"><path :d="b.icone" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
         </button>
+        <span class="separateur" aria-hidden="true" />
+        <span class="emojis">
+          <button
+            type="button"
+            class="outil"
+            :aria-label="t('emojis.ouvrir')"
+            :title="t('emojis.ouvrir')"
+            :aria-expanded="emojis"
+            data-test="ouvrir-emojis"
+            @mousedown.prevent
+            @click="emojis = !emojis"
+          >
+            <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" stroke-width="1.6" /><path d="M7 11.5a3.5 3.5 0 0 0 6 0" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /><circle cx="7.6" cy="8" r="1" fill="currentColor" /><circle cx="12.4" cy="8" r="1" fill="currentColor" /></svg>
+          </button>
+          <SelecteurEmoji v-if="emojis" class="emojis__choix" @choisir="insererEmoji" @fermer="fermerEmojis" />
+        </span>
         <template v-if="avecFichiers">
-          <span class="separateur" aria-hidden="true" />
           <button type="button" class="outil" :aria-label="t('fichiers.joindre')" :title="t('fichiers.joindre')" :disabled="pieces.length + enCours.length >= 6" data-test="joindre" @click="choix?.click()">
             <svg viewBox="0 0 20 20" width="17" height="17" aria-hidden="true"><path d="M15.5 9.5 10 15a3.5 3.5 0 0 1-5-5l6-6a2.3 2.3 0 0 1 3.3 3.3l-6 6a1.2 1.2 0 0 1-1.7-1.7L12 6.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
           </button>
@@ -246,6 +322,9 @@ textarea:focus-visible { outline: none; }
 .outil:hover:not(:disabled) { background: var(--surface-raised); color: var(--ink); }
 .outil:disabled { opacity: 0.4; cursor: not-allowed; }
 .outil:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+.emojis { position: relative; display: inline-flex; }
+.emojis__choix { position: absolute; bottom: calc(100% + 8px); left: 0; z-index: 30; }
+@media (max-width: 720px) { .emojis { position: static; } .emojis__choix { left: 8px; right: 8px; width: auto; } .composeur { position: relative; } }
 .separateur { width: 1px; height: 18px; margin: 0 var(--space-1); background: var(--line); }
 .outils__aide { flex: 1; min-width: 0; color: var(--ink-muted); font-size: 0.75rem; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .outils__erreur { flex: 1; min-width: 0; color: var(--danger); font-size: 0.8125rem; font-weight: 600; text-align: right; }
