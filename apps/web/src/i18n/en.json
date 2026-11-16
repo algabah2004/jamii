@@ -3105,6 +3105,23 @@
       "aide": "People you write to see “Online” or “Seen 5 min ago”. If you hide it, you no longer see when others are online either."
     }
   },
+  "emojis": {
+    "ouvrir": "Emojis",
+    "titre": "Pick an emoji",
+    "chercher": "Search: laugh, fire, thanks…",
+    "categories": "Categories",
+    "resultats": "Results",
+    "aucun": "No matching emoji.",
+    "cat": {
+      "recents": "Recent",
+      "visages": "Faces",
+      "gestes": "Gestures",
+      "coeurs": "Hearts and symbols",
+      "tech": "Tech and work",
+      "fete": "Party and food",
+      "nature": "Nature and animals"
+    }
+  },
   "abonnes": {
     "suivre": "Follow",
     "abonne": "Following",
