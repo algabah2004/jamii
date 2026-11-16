@@ -84,16 +84,49 @@ describe('Mon profil', () => {
     await vi.waitFor(() => expect(page.get('[data-test="visibilite"]').text()).toContain('privé'))
   })
 
-  it('modifier ce que je déclare : la ville et les compétences s’ajoutent au profil', async () => {
+  it('modifier ce que je déclare, bloc par bloc : la ville, puis les compétences, s’ajoutent au profil', async () => {
     const page = await profilPret()
-    await page.get('[data-test="modifier"]').trigger('click')
-    const formulaire = page.get('[data-test="formulaire"]')
-    await formulaire.findAll('input')[0]!.setValue('Thiès')
-    await formulaire.findAll('input').at(-1)!.setValue('UX design, Mobile Money')
-    await formulaire.trigger('submit')
+    await page.get('[data-test="crayon-lieu"]').trigger('click')
+    const lieu = page.get('[data-test="formulaire"]')
+    expect(lieu.text()).toContain('Tu modifies : Lieu et disponibilité')
+    await lieu.findAll('input')[0]!.setValue('Thiès')
+    await lieu.trigger('submit')
     await vi.waitFor(() => expect(page.find('[data-test="message"]').text()).toBe('Ton profil est enregistré.'))
     expect(page.text()).toContain('Thiès')
-    expect(page.get('[data-test="competences"]').text()).toContain('Mobile Money')
+    expect(page.find('[data-test="formulaire"]').exists()).toBe(false)
+
+    await page.get('[data-test="crayon-competences"]').trigger('click')
+    const competences = page.get('[data-test="formulaire"]')
+    await competences.findAll('input').at(-1)!.setValue('UX design, Mobile Money')
+    await competences.trigger('submit')
+    await vi.waitFor(() => expect(page.get('[data-test="competences"]').text()).toContain('Mobile Money'))
+  })
+
+  it('un bloc n’envoie que ses propres champs : les autres blocs ne bougent pas', async () => {
+    const page = await profilPret()
+    let corps: Record<string, unknown> = {}
+    serveur.use(
+      http.patch('/api/me/profil', async ({ request }) => {
+        corps = (await request.json()) as Record<string, unknown>
+        return probleme(409, 'modification_concurrente')
+      }),
+    )
+    await page.get('[data-test="crayon-liens"]').trigger('click')
+    await page.get('[data-test="formulaire"]').trigger('submit')
+    await vi.waitFor(() => expect(Object.keys(corps).length).toBeGreaterThan(0))
+    expect(Object.keys(corps).sort()).toEqual(['linkedin', 'siteWeb', 'version'])
+  })
+
+  it('un seul bloc est ouvert à la fois, et « Annuler » le referme sans rien enregistrer', async () => {
+    const page = await profilPret()
+    await page.get('[data-test="crayon-langues"]').trigger('click')
+    expect(page.get('[data-test="formulaire"]').text()).toContain('Tu modifies : Langues')
+    await page.get('[data-test="crayon-liens"]').trigger('click')
+    expect(page.findAll('[data-test="formulaire"]')).toHaveLength(1)
+    expect(page.get('[data-test="formulaire"]').text()).toContain('Tu modifies : Liens')
+    await page.get('[data-test="annuler"]').trigger('click')
+    expect(page.find('[data-test="formulaire"]').exists()).toBe(false)
+    expect(page.find('[data-test="message"]').exists()).toBe(false)
   })
 
   it('si le profil a changé ailleurs (409), recharge la dernière version et le dit', async () => {
@@ -108,9 +141,30 @@ describe('Mon profil', () => {
   it('une valeur refusée par l’API est signalée sur son champ', async () => {
     const page = await profilPret()
     serveur.use(http.patch('/api/me/profil', () => probleme(400, 'validation', [{ champ: 'ville', code: 'trop_long' }])))
-    await page.get('[data-test="modifier"]').trigger('click')
+    await page.get('[data-test="crayon-lieu"]').trigger('click')
     await page.get('[data-test="formulaire"]').trigger('submit')
     await vi.waitFor(() => expect(page.find('[aria-invalid="true"]').exists()).toBe(true))
+  })
+
+  it('l’anneau dit quelles preuves existent, sans jamais donner de note', async () => {
+    serveur.use(
+      http.get('/api/me/profil', () =>
+        HttpResponse.json({
+          utilisateurId: 'x', nom: 'Aïcha Kouassi', disponibilite: 'disponible', langages: [{ nom: 'Dart', part: 1 }],
+          langues: [], competencesPhares: [], realisations: [],
+          competences: [], depotsGithub: [], misAJourLe: '2026-11-11T10:00:00Z', publie: true, afficherResumeIa: true, version: 2,
+          generation: { statut: 'terminee' }, projets: [],
+          fiabilite: [{ type: 'tache_livree_a_temps', nombre: 11, sur: 12, contestees: 0 }],
+        }),
+      ),
+    )
+    const page = await ouvrir()
+    const anneau = page.get('.anneau__svg')
+    expect(anneau.attributes('aria-label')).toContain('tâches livrées à la date prévue')
+    expect(anneau.attributes('aria-label')).not.toContain('réponses acceptées')
+    expect(page.text()).toContain('Trait plein : vérifié par Jamii')
+    expect(page.text()).toContain('Pointillé : déclaré par la personne')
+    expect(page.text()).not.toMatch(/\d+\s?\/\s?100/)
   })
 
   it('montre les projets en ligne avec leur badge, et chaque point de fiabilité sans note globale', async () => {
@@ -180,6 +234,14 @@ describe('profil professionnel (#159)', () => {
     expect(realisations).toContain('Caisse en ligne')
     expect(realisations).toContain('Déclaré')
     expect(page.get('[data-test="phares"]').text()).toContain('spring-boot')
+  })
+
+  it('un visiteur ne voit aucun crayon ni aucune barre de modification', async () => {
+    serveur.use(http.get('/api/profils/:id', () => HttpResponse.json(pro)))
+    const page = await ouvrir('/p/a1b2')
+    await vi.waitFor(() => expect(page.find('[data-test="identite"]').exists()).toBe(true))
+    expect(page.find('.crayon').exists()).toBe(false)
+    expect(page.find('[data-test="barre-proprio"]').exists()).toBe(false)
   })
 
   it('un profil privé ou inconnu le dit, sans rien révéler', async () => {

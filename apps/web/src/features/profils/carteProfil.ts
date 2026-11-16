@@ -1,10 +1,11 @@
 import { encode } from 'uqr'
-import { competencesPhares, nomLangue, urlDrapeau, type Profil } from './profils'
+import { competencesPhares, urlDrapeau, type Profil } from './profils'
 import { nomPays } from '../systalink/calculs'
 
 /**
- * La carte de profil à partager (#159) : une image 1200 × 630, le format des aperçus LinkedIn, WhatsApp et X.
- * Dessinée dans un canvas, sans bibliothèque : photo, nom, titre, pays, 3 compétences, chiffres, QR code du profil.
+ * La carte de profil à partager (#159, #302) : une image 1200 × 630, le format des aperçus LinkedIn, WhatsApp et X.
+ * Dessinée dans un canvas, sans bibliothèque : l'anneau de preuves autour de la photo, le nom, le titre, le pays,
+ * les preuves en chiffres et le QR code du profil. Elle est montrée en petit sur la page : seule l'image est grande.
  */
 export const LARGEUR = 1200
 export const HAUTEUR = 630
@@ -18,15 +19,25 @@ const C = {
   discret: '#9DB0BC',
   action: '#0297DE',
   preuve: '#FC734D',
+  preuveClaire: '#FFB59E',
+  actionClaire: '#8FD3F5',
 }
+
+/** Les quatre preuves, dans l'ordre de l'anneau : la couleur d'un arc est celle du chiffre qui lui correspond. */
+const PREUVES = [
+  { type: 'projet_en_ligne', couleur: C.preuve },
+  { type: 'tache_livree_a_temps', couleur: C.action },
+  { type: 'reponse_acceptee', couleur: C.preuveClaire },
+  { type: 'avis_coequipier', couleur: C.actionClaire },
+] as const
 const TITRE = '"Familjen Grotesk", "Noto Sans", system-ui, sans-serif'
 const TEXTE = '"Noto Sans", system-ui, sans-serif'
 
 export interface TextesCarte {
   langue: string
   competences: string
-  projetsVerifies: (n: number) => string
-  realisations: (n: number) => string
+  /** « projets en ligne vérifiés », « réponses acceptées »… : le libellé d'une preuve, accordé au nombre. */
+  preuve: (type: string, n: number) => string
   scanner: string
 }
 
@@ -52,6 +63,27 @@ function ajuster(ctx: CanvasRenderingContext2D, texte: string, largeur: number):
   let t = texte
   while (t.length > 1 && ctx.measureText(`${t}…`).width > largeur) t = t.slice(0, -1)
   return `${t.trimEnd()}…`
+}
+
+/** Coupe le texte en lignes de la largeur donnée, `max` au plus ; la dernière finit par « … » s'il reste du texte. */
+function lignes(ctx: CanvasRenderingContext2D, texte: string, largeur: number, max: number): string[] {
+  const mots = texte.split(/\s+/).filter(Boolean)
+  const resultat: string[] = []
+  let ligne = ''
+  for (let i = 0; i < mots.length; i++) {
+    const essai = ligne ? `${ligne} ${mots[i]}` : mots[i]!
+    if (ctx.measureText(essai).width <= largeur || !ligne) {
+      ligne = essai
+      continue
+    }
+    if (resultat.length === max - 1) {
+      return [...resultat, ajuster(ctx, [ligne, ...mots.slice(i)].join(' '), largeur)]
+    }
+    resultat.push(ligne)
+    ligne = mots[i]!
+  }
+  if (ligne) resultat.push(ajuster(ctx, ligne, largeur))
+  return resultat
 }
 
 function initiales(nom: string): string {
@@ -93,136 +125,154 @@ export async function dessinerCarte(profil: Profil, lien: string, textes: Textes
   ctx.fillStyle = C.fond
   ctx.fillRect(0, 0, LARGEUR, HAUTEUR)
   const lueur = ctx.createRadialGradient(160, 120, 0, 160, 120, 700)
-  lueur.addColorStop(0, 'rgba(2, 151, 222, 0.22)')
+  lueur.addColorStop(0, 'rgba(2, 151, 222, 0.20)')
   lueur.addColorStop(1, 'rgba(2, 151, 222, 0)')
   ctx.fillStyle = lueur
   ctx.fillRect(0, 0, LARGEUR, HAUTEUR)
-  ctx.fillStyle = C.action
-  ctx.fillRect(0, HAUTEUR - 8, LARGEUR, 8)
-
-  // Marque
   ctx.textBaseline = 'alphabetic'
-  ctx.fillStyle = C.texte
-  ctx.font = `700 34px ${TITRE}`
-  ctx.fillText('jamii', 72, 92)
-  ctx.fillStyle = C.action
-  ctx.beginPath()
-  ctx.arc(72 + ctx.measureText('jamii').width + 10, 86, 6, 0, Math.PI * 2)
-  ctx.fill()
 
-  // Photo ronde, avec un anneau de la couleur d'action.
-  const ax = 72
-  const ay = 150
-  const at = 176
+  // L'anneau de preuves : un arc par type, plein quand la personne en a ; le fond en pointillé dit « pas encore ».
+  const cx = 186
+  const cy = 196
+  const rayon = 112
+  ctx.save()
+  ctx.strokeStyle = C.discret
+  ctx.globalAlpha = 0.5
+  ctx.lineWidth = 3
+  ctx.lineCap = 'round'
+  ctx.setLineDash([1, 12])
+  ctx.beginPath()
+  ctx.arc(cx, cy, rayon, 0, Math.PI * 2)
+  ctx.stroke()
+  ctx.restore()
+  PREUVES.forEach(({ type, couleur }, i) => {
+    if (!(profil.fiabilite.find((f) => f.type === type)?.nombre ?? 0)) return
+    const debut = ((-84 + i * 90) * Math.PI) / 180
+    ctx.strokeStyle = couleur
+    ctx.lineWidth = 10
+    ctx.lineCap = 'round'
+    ctx.beginPath()
+    ctx.arc(cx, cy, rayon, debut, debut + (79 * Math.PI) / 180)
+    ctx.stroke()
+  })
+
+  // Photo ronde, ou les initiales.
+  const at = 184
   ctx.save()
   ctx.beginPath()
-  ctx.arc(ax + at / 2, ay + at / 2, at / 2, 0, Math.PI * 2)
+  ctx.arc(cx, cy, at / 2, 0, Math.PI * 2)
   ctx.clip()
   if (avatar) {
-    ctx.drawImage(avatar, ax, ay, at, at)
+    ctx.drawImage(avatar, cx - at / 2, cy - at / 2, at, at)
   } else {
     ctx.fillStyle = C.surface
-    ctx.fillRect(ax, ay, at, at)
-    ctx.fillStyle = C.texte
-    ctx.font = `700 64px ${TITRE}`
+    ctx.fillRect(cx - at / 2, cy - at / 2, at, at)
+    ctx.fillStyle = C.actionClaire
+    ctx.font = `700 68px ${TITRE}`
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.fillText(initiales(profil.nom), ax + at / 2, ay + at / 2 + 4)
+    ctx.fillText(initiales(profil.nom), cx, cy + 4)
     ctx.textAlign = 'start'
     ctx.textBaseline = 'alphabetic'
   }
   ctx.restore()
-  ctx.strokeStyle = C.action
-  ctx.lineWidth = 5
-  ctx.beginPath()
-  ctx.arc(ax + at / 2, ay + at / 2, at / 2 + 6, 0, Math.PI * 2)
-  ctx.stroke()
 
-  // Identité
-  const tx = 300
-  const largeurTexte = 520
+  // Identité : le nom en grand, avec le point orange de la marque, puis le titre et le lieu.
+  const tx = 360
+  const largeurTexte = 560
   ctx.fillStyle = C.texte
-  ctx.font = `700 60px ${TITRE}`
-  ctx.fillText(ajuster(ctx, profil.nom, largeurTexte), tx, 212)
-  let y = 260
+  ctx.font = `700 64px ${TITRE}`
+  const nom = ajuster(ctx, profil.nom, largeurTexte - 24)
+  ctx.fillText(nom, tx, 190)
+  ctx.fillStyle = C.preuve
+  ctx.fillText('.', tx + ctx.measureText(nom).width, 190)
+  let y = 240
   if (profil.titre) {
-    ctx.fillStyle = C.discret
-    ctx.font = `400 30px ${TEXTE}`
-    ctx.fillText(ajuster(ctx, profil.titre, largeurTexte), tx, y)
-    y += 50
+    ctx.fillStyle = C.texte
+    ctx.font = `500 26px ${TITRE}`
+    for (const ligne of lignes(ctx, profil.titre, largeurTexte, 2)) {
+      ctx.fillText(ligne, tx, y)
+      y += 34
+    }
+    y += 14
   }
   const lieu = [profil.ville, profil.pays && nomPays(profil.pays, textes.langue)].filter(Boolean).join(', ')
   if (lieu) {
     let lx = tx
     if (drapeau) {
       ctx.save()
-      arrondi(ctx, lx, y - 24, 40, 30, 4)
+      arrondi(ctx, lx, y - 22, 36, 27, 4)
       ctx.clip()
-      ctx.drawImage(drapeau, lx, y - 24, 40, 30)
+      ctx.drawImage(drapeau, lx, y - 22, 36, 27)
       ctx.restore()
-      lx += 54
+      lx += 50
     }
-    ctx.fillStyle = C.texte
-    ctx.font = `600 26px ${TEXTE}`
+    ctx.fillStyle = C.discret
+    ctx.font = `600 24px ${TEXTE}`
     ctx.fillText(ajuster(ctx, lieu, largeurTexte - (lx - tx)), lx, y)
   }
 
-  // Compétences mises en avant, en pastilles.
-  const phares = competencesPhares(profil)
-  let cy = 420
-  if (phares.length) {
+  // Les preuves en chiffres. Sans preuve, les compétences mises en avant prennent la place : jamais de case vide.
+  const preuves = PREUVES.map((p) => ({ ...p, nombre: profil.fiabilite.find((f) => f.type === p.type)?.nombre ?? 0 })).filter((p) => p.nombre > 0)
+  ctx.strokeStyle = C.ligne
+  ctx.lineWidth = 2
+  ctx.beginPath()
+  ctx.moveTo(64, 392)
+  ctx.lineTo(LARGEUR - 64, 392)
+  ctx.stroke()
+  if (preuves.length) {
+    const colonne = (LARGEUR - 128) / 4
+    preuves.forEach((p, i) => {
+      const x = 64 + i * colonne
+      ctx.fillStyle = p.couleur
+      ctx.font = `700 76px ${TITRE}`
+      ctx.fillText(String(p.nombre), x, 480)
+      ctx.fillStyle = C.discret
+      ctx.font = `400 20px ${TEXTE}`
+      lignes(ctx, textes.preuve(p.type, p.nombre), colonne - 32, 2).forEach((ligne, k) => ctx.fillText(ligne, x, 516 + k * 26))
+    })
+  } else {
+    const phares = competencesPhares(profil)
     ctx.fillStyle = C.discret
     ctx.font = `600 20px ${TEXTE}`
-    ctx.fillText(textes.competences.toUpperCase(), 72, cy)
-    cy += 22
-    let px = 72
+    ctx.fillText(textes.competences.toUpperCase(), 64, 432)
+    let px = 64
     ctx.font = `600 26px ${TEXTE}`
     for (const c of phares) {
       const l = Math.min(ctx.measureText(c).width + 44, 300)
-      if (px + l > 820) break
+      if (px + l > LARGEUR - 64) break
       ctx.fillStyle = C.surface
-      arrondi(ctx, px, cy, l, 52, 26)
+      arrondi(ctx, px, 452, l, 52, 26)
       ctx.fill()
       ctx.strokeStyle = C.ligne
       ctx.lineWidth = 2
       ctx.stroke()
       ctx.fillStyle = C.texte
-      ctx.fillText(ajuster(ctx, c, l - 44), px + 22, cy + 35)
+      ctx.fillText(ajuster(ctx, c, l - 44), px + 22, 487)
       px += l + 14
     }
   }
 
-  // Ce qui se vérifie : projets en ligne sur Jamii, puis réalisations déclarées et langues.
-  const verifies = profil.projets.filter((p) => p.enLigne).length
-  const faits = [
-    verifies ? textes.projetsVerifies(verifies) : null,
-    profil.realisations.length ? textes.realisations(profil.realisations.length) : null,
-    profil.langues.length ? profil.langues.slice(0, 3).map((l) => nomLangue(l, textes.langue)).join(' · ') : null,
-  ].filter(Boolean) as string[]
-  if (faits.length) {
-    ctx.font = `400 24px ${TEXTE}`
-    ctx.fillStyle = C.discret
-    ctx.fillText(ajuster(ctx, faits.join('   •   '), 760), 72, 568)
-    if (verifies) {
-      ctx.fillStyle = C.preuve
-      ctx.beginPath()
-      ctx.arc(60, 560, 5, 0, Math.PI * 2)
-      ctx.fill()
-    }
-  }
-
-  // QR code vers le profil public.
-  const qx = 880
-  const qy = 150
-  const qt = 248
-  dessinerQr(ctx, lien, qx, qy, qt)
+  // Pied : la marque, puis le lien du profil.
   ctx.fillStyle = C.texte
-  ctx.font = `600 22px ${TEXTE}`
-  ctx.textAlign = 'center'
-  ctx.fillText(textes.scanner, qx + qt / 2, qy + qt + 42)
+  ctx.font = `700 32px ${TITRE}`
+  ctx.fillText('Jamii', 64, 588)
+  ctx.fillStyle = C.preuve
+  ctx.fillText('.', 64 + ctx.measureText('Jamii').width, 588)
   ctx.fillStyle = C.discret
-  ctx.font = `400 18px ${TEXTE}`
-  ctx.fillText(ajuster(ctx, lien.replace(/^https?:\/\//, ''), qt + 40), qx + qt / 2, qy + qt + 70)
+  ctx.font = `400 22px ${TEXTE}`
+  ctx.textAlign = 'right'
+  ctx.fillText(ajuster(ctx, lien.replace(/^https?:\/\//, ''), 560), LARGEUR - 64, 588)
+  ctx.textAlign = 'start'
+
+  // QR code vers le profil public, en haut à droite.
+  const qx = LARGEUR - 64 - 188
+  const qy = 64
+  dessinerQr(ctx, lien, qx, qy, 188)
+  ctx.fillStyle = C.discret
+  ctx.font = `600 20px ${TEXTE}`
+  ctx.textAlign = 'center'
+  ctx.fillText(textes.scanner, qx + 94, qy + 188 + 32)
   ctx.textAlign = 'start'
 
   return canvas

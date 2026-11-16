@@ -114,3 +114,7 @@ export function ilYa(date: string | null | undefined, langue: string, maintenant
   }
   return format.format(0, 'minute')
 }
+
+/** Les blocs que la personne modifie un à un sur « Mon profil » : chacun a son crayon et son propre « Enregistrer ». */
+export const BLOCS_PROFIL = ['identite', 'lieu', 'liens', 'langues', 'competences', 'realisations'] as const
+export type BlocProfil = (typeof BLOCS_PROFIL)[number]

@@ -487,7 +487,37 @@
         "annee": "Année",
         "retirer": "Retirer cette réalisation",
         "ajouter": "Ajouter une réalisation"
-      }
+      },
+      "crayon": "Modifier : {bloc}",
+      "blocs": {
+        "identite": "Titre et présentation",
+        "lieu": "Lieu et disponibilité",
+        "liens": "Liens",
+        "langues": "Langues",
+        "competences": "Compétences",
+        "realisations": "Projets réalisés ailleurs"
+      },
+      "blocEnCours": "Tu modifies : {bloc}",
+      "autresBlocs": "Les autres blocs ne bougent pas",
+      "enregistrerBloc": "Enregistrer ce bloc",
+      "rienPublie": "Rien n'est publié avant que tu enregistres.",
+      "titreVide": "Ajoute un titre : c'est la première chose qu'on lit sous ton nom.",
+      "bioVide": "Dis d'où tu viens et ce que tu aimes construire.",
+      "languesVide": "Ajoute les langues que tu parles.",
+      "liensVide": "Ajoute ton LinkedIn ou ton site.",
+      "titreAide": "C'est la première chose qu'on lit sous ton nom.",
+      "bioAide": "Dis d'où tu viens et ce que tu aimes construire.",
+      "compteur": "{n} sur {max}",
+      "incompletes": "Encore {n} blocs à remplir | Encore {n} bloc à remplir | Encore {n} blocs à remplir",
+      "ajouter": {
+        "identite": "+ Ajouter ton titre et ta présentation",
+        "lieu": "+ Ajouter ton pays et ta ville",
+        "liens": "+ Ajouter tes liens",
+        "langues": "+ Ajouter tes langues",
+        "realisations": "+ Ajouter un projet réalisé ailleurs"
+      },
+      "competencesVide": "Pas encore de compétence : celles de tes dépôts GitHub s'ajoutent toutes seules, et tu peux ajouter les tiennes.",
+      "competencesPointille": "Une compétence que tu déclares s'affiche en pointillé tant qu'aucun dépôt ou projet ne la prouve."
     },
     "langages": {
       "titre": "Langages",
@@ -504,7 +534,9 @@
         "github": "Déduite des dépôts GitHub",
         "declaree": "Ajoutée par la personne",
         "ia": "Proposée par l’IA, validée par la personne"
-      }
+      },
+      "preuvesNombre": "aucun dépôt | prouvée par {n} dépôt | prouvée par {n} dépôts",
+      "sansPreuve": "Sans preuve pour l'instant"
     },
     "projets": {
       "titre": "Projets sur Jamii",
@@ -553,7 +585,8 @@
       }
     },
     "liens": {
-      "site": "Site"
+      "site": "Site",
+      "titre": "Ailleurs"
     },
     "langues": {
       "parle": "Parle :",
@@ -579,10 +612,9 @@
       "copier": "Copier le lien du profil",
       "copie": "Lien copié",
       "competences": "Compétences",
-      "projetsVerifies": "aucun projet vérifié | {n} projet vérifié sur Jamii | {n} projets vérifiés sur Jamii",
-      "realisations": "aucune réalisation | {n} réalisation | {n} réalisations",
       "scanner": "Voir mon profil",
-      "message": "Mon profil sur Jamii : {lien}"
+      "message": "Mon profil sur Jamii : {lien}",
+      "aide": "Elle s'affiche quand tu colles le lien de ton profil."
     },
     "public": {
       "introuvable": "Ce profil n’est pas public",
@@ -594,11 +626,11 @@
       "nonPublie": "{nom} n’a pas encore publié son profil. Vous pouvez déjà lui écrire."
     },
     "aPropos": {
-      "titre": "Infos",
+      "titre": "À propos",
       "ia": "Résumé proposé par l'IA à partir des dépôts publics"
     },
     "avis": {
-      "titre": "Recommandations",
+      "titre": "Ce qu'en disent ses coéquipiers",
       "projet": "Ont travaillé ensemble sur {projet}"
     },
     "experience": {
@@ -611,6 +643,23 @@
       "sousTitre": "Sur GitHub, {'@'}{login}",
       "misAJour": "{nom} a mis à jour ce dépôt · {quand}",
       "depot": "Dépôt de {nom}"
+    },
+    "anneau": {
+      "avec": "Anneau de preuves : {liste}",
+      "sans": "Anneau de preuves : aucune preuve pour l'instant"
+    },
+    "preuves": {
+      "plein": "Trait plein : vérifié par Jamii",
+      "pointille": "Pointillé : déclaré par la personne"
+    },
+    "navigation": "Dans ce profil",
+    "barre": {
+      "titre": "Mon profil",
+      "visibilite": "Visibilité du profil",
+      "publie": "Publié",
+      "prive": "Privé",
+      "publieAide": "Tout le monde peut voir ton profil.",
+      "priveAide": "Toi seul vois ton profil."
     }
   },
   "etat": {

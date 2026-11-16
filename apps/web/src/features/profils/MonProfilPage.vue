@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute } from 'vue-router'
 import { api } from '../../api/client'
@@ -17,6 +17,7 @@ import {
   lireCompetences,
   nomLangue,
   PAYS_AFRIQUE,
+  type BlocProfil,
   type Disponibilite,
   type MonProfil,
 } from './profils'
@@ -100,8 +101,9 @@ async function changerVisibilite() {
   }
 }
 
-// ---------- Modifier ce que je déclare ----------
-const edition = ref(false)
+// ---------- Modifier ce que je déclare, bloc par bloc ----------
+/** Le bloc ouvert : un seul à la fois, à l'endroit où l'on a touché le crayon. `null` : rien n'est en cours de modification. */
+const bloc = ref<BlocProfil | null>(null)
 interface BrouillonRealisation { titre: string; role: string; description: string; technologies: string; url: string; annee: string }
 const brouillon = ref({
   titre: '', bio: '', pays: '', ville: '', disponibilite: 'disponible' as Disponibilite, heures: '', competences: '',
@@ -110,6 +112,7 @@ const brouillon = ref({
 const REALISATIONS_MAX = 6
 const PHARES_MAX = 3
 const erreurs = ref<Record<string, string>>({})
+const formulaire = ref<HTMLFormElement | null>(null)
 
 const competencesDeclarees = computed(() =>
   (profil.value?.competences ?? []).filter((c) => c.source === 'declaree').map((c) => c.competence),
@@ -139,7 +142,20 @@ const paysTries = computed(() =>
   [...PAYS_AFRIQUE].sort((a, b) => nomPays(a, locale.value).localeCompare(nomPays(b, locale.value), locale.value)),
 )
 
-function ouvrirEdition() {
+/** Ce qu'il reste à remplir : chaque case ouvre son bloc. Rien n'est obligatoire. */
+const aRemplir = computed(() => {
+  const p = profil.value
+  if (!p) return []
+  const manquants: BlocProfil[] = []
+  if (!p.titre || !p.bio) manquants.push('identite')
+  if (!p.pays) manquants.push('lieu')
+  if (!p.linkedin && !p.siteWeb) manquants.push('liens')
+  if (!p.langues.length) manquants.push('langues')
+  if (!p.realisations.length) manquants.push('realisations')
+  return manquants
+})
+
+function ouvrirBloc(nom: BlocProfil) {
   const p = profil.value!
   brouillon.value = {
     titre: p.titre ?? '',
@@ -163,29 +179,36 @@ function ouvrirEdition() {
     competences: competencesDeclarees.value.join(', '),
   }
   erreurs.value = {}
-  edition.value = true
+  message.value = null
+  bloc.value = nom
+  // Le bloc s'ouvre sous l'en-tête : le focus y va, pour qu'on écrive tout de suite (clavier et lecteur d'écran).
+  void nextTick(() => {
+    formulaire.value?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' })
+    formulaire.value?.querySelector<HTMLElement>('input, textarea, select')?.focus({ preventScroll: true })
+  })
 }
 
-async function enregistrer() {
+/** Les champs du bloc ouvert, et eux seuls : les autres blocs ne bougent pas (JSON Merge Patch). */
+function champsDuBloc(nom: BlocProfil) {
   const b = brouillon.value
-  occupe.value = true
-  erreurs.value = {}
-  message.value = null
-  try {
-    const { data, error, response } = await api.PATCH('/api/me/profil', {
-      headers: { 'Content-Type': 'application/merge-patch+json' },
-      body: {
-        bio: b.bio.trim() || null,
+  switch (nom) {
+    case 'identite':
+      return { titre: b.titre.trim() || null, bio: b.bio.trim() || null }
+    case 'lieu':
+      return {
         pays: b.pays || null,
         ville: b.ville.trim() || null,
         disponibilite: b.disponibilite,
         heuresParSemaine: b.heures ? Number(b.heures) : null,
-        competencesDeclarees: lireCompetences(b.competences),
-        titre: b.titre.trim() || null,
-        linkedin: b.linkedin.trim() || null,
-        siteWeb: b.siteWeb.trim() || null,
-        langues: b.langues,
-        competencesPhares: b.phares,
+      }
+    case 'liens':
+      return { linkedin: b.linkedin.trim() || null, siteWeb: b.siteWeb.trim() || null }
+    case 'langues':
+      return { langues: b.langues }
+    case 'competences':
+      return { competencesDeclarees: lireCompetences(b.competences), competencesPhares: b.phares }
+    case 'realisations':
+      return {
         realisations: b.realisations
           .filter((r) => r.titre.trim() || r.description.trim() || r.url.trim())
           .map((r) => ({
@@ -196,17 +219,28 @@ async function enregistrer() {
             url: r.url.trim() || null,
             annee: r.annee ? Number(r.annee) : null,
           })),
-        version: profil.value!.version,
-      },
+      }
+  }
+}
+
+async function enregistrer() {
+  if (!bloc.value) return
+  occupe.value = true
+  erreurs.value = {}
+  message.value = null
+  try {
+    const { data, error, response } = await api.PATCH('/api/me/profil', {
+      headers: { 'Content-Type': 'application/merge-patch+json' },
+      body: { ...champsDuBloc(bloc.value), version: profil.value!.version },
     })
     if (data) {
       profil.value = data
-      edition.value = false
+      bloc.value = null
       message.value = t('profil.modifier.enregistre')
     } else if (response.status === 409) {
       message.value = t('profil.modifier.conflit')
       await charger()
-      edition.value = false
+      bloc.value = null
     } else if (response.status === 400) {
       const champs = (error as { erreurs?: { champ: string; code: string }[] } | undefined)?.erreurs ?? []
       // « competencesDeclarees[1] » s'affiche sous le champ entier ; « realisations[0].url » sous le champ de la ligne.
@@ -261,82 +295,113 @@ async function enregistrer() {
     </div>
 
     <template v-else-if="profil">
-      <FicheProfil :profil="profil" moi>
+      <!-- La barre du propriétaire : ce que seule la personne voit. -->
+      <div class="barre-proprio" data-test="barre-proprio">
+        <h2 class="barre-proprio__titre">{{ t('profil.barre.titre') }}</h2>
+        <button
+          type="button" role="switch" class="interrupteur" :class="{ 'interrupteur--publie': profil.publie }" :aria-checked="profil.publie"
+          :disabled="occupe" :aria-label="t('profil.barre.visibilite')" data-test="publier" @click="changerVisibilite"
+        >
+          <span class="interrupteur__etat">{{ profil.publie ? t('profil.barre.publie') : t('profil.barre.prive') }}</span>
+          <span class="interrupteur__action">{{ profil.publie ? t('profil.visibilite.retirer') : t('profil.visibilite.publier') }}</span>
+        </button>
+        <p class="visibilite" :class="{ 'visibilite--publie': profil.publie }" data-test="visibilite">
+          {{ profil.publie ? t('profil.visibilite.publie') : t('profil.visibilite.prive') }}
+        </p>
+        <div class="barre-proprio__actions">
+          <JBouton v-if="!bloc" variante="secondaire" data-test="modifier" @click="ouvrirBloc('identite')">{{ t('profil.modifier.bouton') }}</JBouton>
+          <PartagerCarte :profil="profil" :publie="profil.publie" />
+          <RouterLink v-if="profil.publie" :to="`/p/${profil.utilisateurId}`" class="lien-public" data-test="voir-public">
+            {{ t('profil.visibilite.voirPublic') }}</RouterLink>
+          <JBouton variante="discret" :occupe="occupe || enCours" data-test="regenerer" @click="generer">
+            {{ enCours ? t('profil.generation.enCours') : t('profil.generation.regenerer') }}
+          </JBouton>
+        </div>
+      </div>
+
+      <!-- Ce qu'il reste à remplir : un geste par bloc, pas un formulaire. -->
+      <div v-if="aRemplir.length && !bloc" class="a-remplir" data-test="a-remplir">
+        <p class="a-remplir__titre">{{ t('profil.modifier.incompletes', { n: aRemplir.length }, aRemplir.length) }}</p>
+        <button v-for="nom in aRemplir" :key="nom" type="button" class="a-remplir__ajout" @click="ouvrirBloc(nom)">
+          {{ t(`profil.modifier.ajouter.${nom}`) }}</button>
+      </div>
+
+      <FicheProfil :profil="profil" moi @modifier="ouvrirBloc">
         <template #boutons>
           <AbonnesProfil v-if="moi" :personne-id="moi.id" />
-          <div class="barre-actions">
-            <p class="visibilite" :class="{ 'visibilite--publie': profil.publie }" data-test="visibilite">
-              {{ profil.publie ? t('profil.visibilite.publie') : t('profil.visibilite.prive') }}
-            </p>
-            <JBouton :variante="profil.publie ? 'secondaire' : 'principal'" :occupe="occupe" data-test="publier" @click="changerVisibilite">
-              {{ profil.publie ? t('profil.visibilite.retirer') : t('profil.visibilite.publier') }}
-            </JBouton>
-            <JBouton v-if="!edition" variante="secondaire" data-test="modifier" @click="ouvrirEdition">{{ t('profil.modifier.bouton') }}</JBouton>
-            <PartagerCarte :profil="profil" :publie="profil.publie" />
-            <RouterLink v-if="profil.publie" :to="`/p/${profil.utilisateurId}`" class="lien-public" data-test="voir-public">
-              {{ t('profil.visibilite.voirPublic') }}</RouterLink>
-            <JBouton variante="discret" :occupe="occupe || enCours" data-test="regenerer" @click="generer">
-              {{ enCours ? t('profil.generation.enCours') : t('profil.generation.regenerer') }}
-            </JBouton>
-          </div>
         </template>
         <template #actions>
-          <p v-if="message" role="status" data-test="message">{{ message }}</p>
-          <p v-if="echec" role="alert">{{ t(`profil.generation.erreurs.${echec}`) }}</p>
+          <p v-if="echec" role="alert" class="erreur">{{ t(`profil.generation.erreurs.${echec}`) }}</p>
 
-          <form v-if="edition" class="carte formulaire-profil" data-test="formulaire" @submit.prevent="enregistrer">
-            <h2>{{ t('profil.modifier.titre') }}</h2>
-            <JChamp v-model="brouillon.titre" :libelle="t('profil.modifier.titrePro')" :aide="t('profil.modifier.titreProAide')" :maxlength="80" :erreur="erreurs.titre" data-test="champ-titre" />
-            <JChamp v-model="brouillon.bio" :libelle="t('profil.modifier.bio')" multiligne :maxlength="500" :erreur="erreurs.bio" />
-            <div class="deux-colonnes">
-              <label class="j-champ">
-                <span>{{ t('profil.modifier.pays') }}</span>
-                <select v-model="brouillon.pays" class="selection">
-                  <option value="">{{ t('profil.modifier.paysAucun') }}</option>
-                  <option v-for="code in paysTries" :key="code" :value="code">{{ nomPays(code, locale) }}</option>
-                </select>
-              </label>
-              <JChamp v-model="brouillon.ville" :libelle="t('profil.modifier.ville')" :maxlength="80" :erreur="erreurs.ville" />
-            </div>
-            <div class="deux-colonnes">
-              <label class="j-champ">
-                <span>{{ t('profil.modifier.disponibilite') }}</span>
-                <select v-model="brouillon.disponibilite" class="selection">
-                  <option v-for="d in DISPONIBILITES" :key="d" :value="d">{{ t(`profil.disponibilite.${d}`) }}</option>
-                </select>
-              </label>
-              <JChamp v-model="brouillon.heures" type="number" :libelle="t('profil.modifier.heures')" :erreur="erreurs.heuresParSemaine" />
-            </div>
-            <div class="deux-colonnes">
-              <JChamp v-model="brouillon.linkedin" type="url" :libelle="t('profil.modifier.linkedin')" :aide="t('profil.modifier.linkedinAide')" :maxlength="300" :erreur="erreurs.linkedin" />
-              <JChamp v-model="brouillon.siteWeb" type="url" :libelle="t('profil.modifier.site')" :aide="t('profil.modifier.siteAide')" :maxlength="300" :erreur="erreurs.siteWeb" />
+          <!-- Le bloc ouvert : on écrit là, sous l'en-tête. Les autres blocs ne bougent pas. -->
+          <form v-if="bloc" ref="formulaire" class="bloc-ouvert" data-test="formulaire" aria-labelledby="bloc-titre" @submit.prevent="enregistrer" @keydown.esc="bloc = null">
+            <div class="bloc-ouvert__tete">
+              <h2 id="bloc-titre">{{ t('profil.modifier.blocEnCours', { bloc: t(`profil.modifier.blocs.${bloc}`) }) }}</h2>
+              <span class="texte-discret">{{ t('profil.modifier.autresBlocs') }}</span>
             </div>
 
-            <fieldset class="choix">
+            <template v-if="bloc === 'identite'">
+              <JChamp v-model="brouillon.titre" :libelle="t('profil.modifier.titrePro')" :aide="t('profil.modifier.titreProAide')" :maxlength="80" :erreur="erreurs.titre" data-test="champ-titre" />
+              <JChamp v-model="brouillon.bio" :libelle="t('profil.modifier.bio')" :aide="t('profil.modifier.bioAide')" multiligne :maxlength="500" :erreur="erreurs.bio" />
+            </template>
+
+            <template v-else-if="bloc === 'lieu'">
+              <div class="deux-colonnes">
+                <label class="j-champ">
+                  <span>{{ t('profil.modifier.pays') }}</span>
+                  <select v-model="brouillon.pays" class="selection">
+                    <option value="">{{ t('profil.modifier.paysAucun') }}</option>
+                    <option v-for="code in paysTries" :key="code" :value="code">{{ nomPays(code, locale) }}</option>
+                  </select>
+                </label>
+                <JChamp v-model="brouillon.ville" :libelle="t('profil.modifier.ville')" :maxlength="80" :erreur="erreurs.ville" />
+              </div>
+              <div class="deux-colonnes">
+                <label class="j-champ">
+                  <span>{{ t('profil.modifier.disponibilite') }}</span>
+                  <select v-model="brouillon.disponibilite" class="selection">
+                    <option v-for="d in DISPONIBILITES" :key="d" :value="d">{{ t(`profil.disponibilite.${d}`) }}</option>
+                  </select>
+                </label>
+                <JChamp v-model="brouillon.heures" type="number" :libelle="t('profil.modifier.heures')" :erreur="erreurs.heuresParSemaine" />
+              </div>
+            </template>
+
+            <template v-else-if="bloc === 'liens'">
+              <div class="deux-colonnes">
+                <JChamp v-model="brouillon.linkedin" type="url" :libelle="t('profil.modifier.linkedin')" :aide="t('profil.modifier.linkedinAide')" :maxlength="300" :erreur="erreurs.linkedin" />
+                <JChamp v-model="brouillon.siteWeb" type="url" :libelle="t('profil.modifier.site')" :aide="t('profil.modifier.siteAide')" :maxlength="300" :erreur="erreurs.siteWeb" />
+              </div>
+            </template>
+
+            <fieldset v-else-if="bloc === 'langues'" class="choix">
               <legend>{{ t('profil.modifier.langues') }}</legend>
-              <div class="pastilles">
+              <div class="pastilles-choix">
                 <button v-for="l in languesTriees" :key="l" type="button" class="pastille" :aria-pressed="brouillon.langues.includes(l)" @click="basculer(brouillon.langues, l, 8)">
                   {{ nomLangue(l, locale) }}</button>
               </div>
               <p v-if="erreurs.langues" class="erreur">{{ erreurs.langues }}</p>
             </fieldset>
 
-            <JChamp
-              v-model="brouillon.competences"
-              :libelle="t('profil.modifier.competences')"
-              :aide="t('profil.modifier.competencesAide')"
-              :erreur="erreurs.competencesDeclarees"
-            />
-            <fieldset v-if="choixPhares.length" class="choix">
-              <legend>{{ t('profil.modifier.phares', { n: PHARES_MAX }) }}</legend>
-              <div class="pastilles">
-                <button v-for="c in choixPhares" :key="c" type="button" class="pastille" :aria-pressed="brouillon.phares.includes(c)" :disabled="!brouillon.phares.includes(c) && brouillon.phares.length >= PHARES_MAX" @click="basculer(brouillon.phares, c, PHARES_MAX)">
-                  {{ c }}</button>
-              </div>
-              <p v-if="erreurs.competencesPhares" class="erreur">{{ erreurs.competencesPhares }}</p>
-            </fieldset>
+            <template v-else-if="bloc === 'competences'">
+              <fieldset v-if="choixPhares.length" class="choix">
+                <legend>{{ t('profil.modifier.phares', { n: PHARES_MAX }) }}</legend>
+                <div class="pastilles-choix">
+                  <button v-for="c in choixPhares" :key="c" type="button" class="pastille" :aria-pressed="brouillon.phares.includes(c)" :disabled="!brouillon.phares.includes(c) && brouillon.phares.length >= PHARES_MAX" @click="basculer(brouillon.phares, c, PHARES_MAX)">
+                    {{ c }}</button>
+                </div>
+                <p v-if="erreurs.competencesPhares" class="erreur">{{ erreurs.competencesPhares }}</p>
+              </fieldset>
+              <JChamp
+                v-model="brouillon.competences"
+                :libelle="t('profil.modifier.competences')"
+                :aide="t('profil.modifier.competencesAide')"
+                :erreur="erreurs.competencesDeclarees"
+              />
+              <p class="texte-discret">{{ t('profil.modifier.competencesPointille') }}</p>
+            </template>
 
-            <fieldset class="choix" data-test="champ-realisations">
+            <fieldset v-else-if="bloc === 'realisations'" class="choix" data-test="champ-realisations">
               <legend>{{ t('profil.modifier.realisations') }}</legend>
               <p class="texte-discret">{{ t('profil.modifier.realisationsAide') }}</p>
               <div v-for="(r, i) in brouillon.realisations" :key="i" class="realisation-saisie">
@@ -356,9 +421,10 @@ async function enregistrer() {
                 {{ t('profil.modifier.realisation.ajouter') }}</JBouton>
             </fieldset>
 
-            <div class="barre-actions">
-              <JBouton type="submit" :occupe="occupe" data-test="enregistrer">{{ t('profil.modifier.enregistrer') }}</JBouton>
-              <JBouton variante="discret" @click="edition = false">{{ t('profil.modifier.annuler') }}</JBouton>
+            <div class="bloc-ouvert__actions">
+              <JBouton type="submit" :occupe="occupe" data-test="enregistrer">{{ t('profil.modifier.enregistrerBloc') }}</JBouton>
+              <JBouton variante="secondaire" data-test="annuler" @click="bloc = null">{{ t('profil.modifier.annuler') }}</JBouton>
+              <span class="texte-discret">{{ t('profil.modifier.rienPublie') }}</span>
             </div>
           </form>
         </template>
@@ -366,6 +432,8 @@ async function enregistrer() {
           <CarteCompetences :profil="profil" @mis-a-jour="(p) => (profil = p)" />
         </template>
       </FicheProfil>
+
+      <p v-if="message" role="status" class="toast" data-test="message">{{ message }}</p>
     </template>
     <ReglagePresence v-if="etat !== 'chargement'" />
   </section>
@@ -384,13 +452,30 @@ async function enregistrer() {
 .accueil-profil__visuel { padding: var(--space-8); background: var(--action-soft); border-radius: var(--radius-lg); }
 .en-cours { font-weight: 600; color: var(--action-ink); }
 .erreur { color: var(--danger); font-weight: 600; margin: 0; }
-.visibilite { padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); background: var(--surface-raised); }
-.visibilite--publie { background: var(--action-soft); }
-.barre-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
-.barre-actions .visibilite { margin: 0; }
+
+/* ---------- La barre du propriétaire ---------- */
+.barre-proprio { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3) var(--space-6); padding: var(--space-3) var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface-raised); }
+.barre-proprio__titre { margin: 0; font-size: var(--type-h3-size); line-height: var(--type-h3-line); }
+.barre-proprio__actions { margin-inline-start: auto; display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.interrupteur { display: inline-flex; align-items: center; gap: var(--space-3); min-height: 44px; padding: var(--space-1) var(--space-4) var(--space-1) var(--space-1); border: 1px solid var(--line-strong); border-radius: var(--radius-pill); background: var(--surface); color: var(--ink); font: inherit; cursor: pointer; }
+.interrupteur:disabled { opacity: 0.6; cursor: progress; }
+.interrupteur__etat { padding: var(--space-1) var(--space-4); border-radius: var(--radius-pill); background: var(--line); font-weight: 700; }
+.interrupteur--publie .interrupteur__etat { background: var(--proof); color: var(--midnight); }
+.interrupteur__action { font-size: var(--type-body-sm-size); color: var(--ink-muted); }
+.visibilite { margin: 0; font-size: var(--type-body-sm-size); color: var(--ink-muted); flex: 1 1 18rem; }
 .lien-public { font-weight: 600; padding: 0 var(--space-2); }
-.formulaire-profil { display: grid; gap: var(--space-4); }
-.formulaire-profil h2 { font-size: var(--type-h3-size); line-height: var(--type-h3-line); }
+
+.a-remplir { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); padding: var(--space-4) var(--space-6); border-radius: var(--radius-lg); background: var(--action-soft); }
+.a-remplir__titre { margin: 0; margin-inline-end: var(--space-2); font-family: var(--font-display); font-size: var(--type-h3-size); line-height: var(--type-h3-line); font-weight: 700; }
+.a-remplir__ajout { min-height: 44px; padding: 0 var(--space-4); border: 1px dashed var(--action-ink); border-radius: var(--radius-pill); background: transparent; color: var(--ink); font: inherit; font-weight: 600; cursor: pointer; }
+.a-remplir__ajout:hover { background: var(--surface); }
+
+/* ---------- Le bloc ouvert ---------- */
+.bloc-ouvert { scroll-margin-top: 6rem; display: grid; gap: var(--space-4); padding: var(--space-6); margin-top: var(--space-4); border: 2px solid var(--action); border-radius: var(--radius-lg); background: var(--surface-raised); }
+.bloc-ouvert__tete { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--space-2) var(--space-4); }
+.bloc-ouvert__tete h2 { margin: 0; font-family: var(--font-text); font-size: var(--type-label-size); line-height: var(--type-label-line); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--action-ink); }
+.bloc-ouvert__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+.bloc-ouvert p { margin: 0; }
 .deux-colonnes { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); }
 .trois-colonnes { display: grid; gap: var(--space-4); grid-template-columns: 2fr 2fr 1fr; }
 @media (max-width: 640px) { .trois-colonnes { grid-template-columns: 1fr; } }
@@ -399,11 +484,14 @@ async function enregistrer() {
 .choix { border: 0; padding: 0; margin: 0; display: grid; gap: var(--space-2); }
 .choix legend { font-size: var(--type-label-size); line-height: var(--type-label-line); font-weight: var(--type-label-weight); margin-block-end: var(--space-2); padding: 0; }
 .choix > p { margin: 0; }
-.pastilles { display: flex; flex-wrap: wrap; gap: var(--space-2); }
-.pastille { min-height: 36px; padding: 0 var(--space-3); border-radius: var(--radius-pill); border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); font: inherit; cursor: pointer; }
-.pastille[aria-pressed='true'] { background: var(--action-soft); border-color: var(--action); color: var(--action-ink); font-weight: 700; }
+.pastilles-choix { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.pastille { min-height: 44px; padding: 0 var(--space-4); border-radius: var(--radius-pill); border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); font: inherit; cursor: pointer; }
+.pastille[aria-pressed='true'] { background: var(--proof-soft); border: 2px solid var(--proof); color: var(--ink); font-weight: 700; }
 .pastille:disabled { opacity: 0.45; cursor: not-allowed; }
-.realisation-saisie { display: grid; gap: var(--space-3); padding: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-md); justify-items: stretch; }
+.realisation-saisie { display: grid; gap: var(--space-3); padding: var(--space-4); border: 1px dashed var(--line-strong); border-radius: var(--radius-md); background: var(--surface); justify-items: stretch; }
 .realisation-saisie > :last-child { justify-self: start; }
 .relie { margin: 0; font-weight: 700; color: var(--success, var(--ink)); }
+
+/* Le message d'enregistrement : une pastille en bas de l'écran, qui reste visible pendant qu'on défile. */
+.toast { position: sticky; bottom: var(--space-6); justify-self: center; margin: 0; padding: var(--space-3) var(--space-6); border-radius: var(--radius-pill); background: var(--ink); color: var(--surface); font-weight: 600; box-shadow: 0 8px 24px color-mix(in srgb, var(--midnight) 35%, transparent); z-index: 5; }
 </style>
