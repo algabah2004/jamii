@@ -217,7 +217,7 @@ Ce que tous les écrans partagent. Corrigé ici une fois, pour ne pas l'être di
 
 **À regarder :** les cartes de `/systalink` rognées à 320 px.
 
-### Module 10 — La passe finale ⬜
+### Module 10 — La passe finale ✅ (sauf le vrai téléphone, après déploiement)
 **Sur tous les écrans, d'un bout à l'autre :**
 - téléphone à l'horizontale ;
 - zoom à 200 % ;
@@ -233,7 +233,9 @@ Ce que tous les écrans partagent. Corrigé ici une fois, pour ne pas l'être di
 - ✅ zoom à 200 % : couvert par les largeurs 720 et moins (un écran de 1440 px zoomé à 200 % se lit comme un écran de 720 px) ;
 - ✅ téléphone à l'horizontale (812 × 375) : sous 500 px de haut, l'en-tête n'est plus fixe, la messagerie prend tout l'écran et le composeur passe sur une ligne ;
 - ✅ thème clair et thème sombre vérifiés à 390 px ;
-- 🟡 clavier seul : les anneaux de focus des rangées qui défilent ne sont plus rognés (`outline-offset: -2px`), mais l'ordre du focus n'a pas été parcouru écran par écran ;
+- ✅ onglets organisateur d'un hackathon (gestion, jury, candidatures) et hackathons en évaluation ou avec résultats : tous les onglets mesurés à 320 px, plus aucun défaut (le formulaire du jury et la barre d'action du bas débordaient) ;
+- ✅ aucun texte coupé par « … » à 320 px, sauf les aperçus de messages (voulu) ;
+- ✅ clavier seul, avec la vraie touche Tab à 320 px : chaque élément montre son anneau de focus et reste à l'écran. Un élément qui reçoit le focus ne passe plus sous l'en-tête fixe ni sous la barre du bas (`scroll-margin` au focus, WCAG 2.4.11). La rangée d'onglets d'un hackathon ne glisse plus sous l'en-tête ;
 - ⬜ vrai téléphone Android et captures à 360 px : à faire sur `jamii.dev` après le déploiement.
 
 ## 7. Ce que ce plan ne fait pas

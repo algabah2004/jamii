@@ -138,6 +138,11 @@ main.main--pleine { max-width: none; padding-inline: var(--space-4); }
 .aller-au-contenu:focus { top: var(--space-2); }
 
 .entete { position: sticky; top: 0; z-index: 10; padding: var(--space-3) var(--space-4) 0; pointer-events: none; }
+/* Au clavier, l'élément qui reçoit le focus ne doit jamais finir sous l'en-tête fixe ni sous une barre d'action en bas
+   (WCAG 2.4.11). `:where` : aucune priorité, les ancres qui ont déjà leur marge la gardent. */
+:where(a[href], button, input, select, textarea, summary, [tabindex]):focus { scroll-margin-block: 6rem 1rem; }
+@media (max-width: 960px) { :where(a[href], button, input, select, textarea, summary, [tabindex]):focus { scroll-margin-block: 8rem 6rem; } }
+@media (max-height: 500px) and (orientation: landscape) { :where(a[href], button, input, select, textarea, summary, [tabindex]):focus { scroll-margin-block: 1rem; } }
 /* Téléphone à l'horizontale : l'en-tête fixe prendrait un tiers de l'écran. Il défile avec la page. */
 @media (max-height: 500px) and (orientation: landscape) {
   .entete { position: relative; }
