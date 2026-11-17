@@ -39,6 +39,9 @@ function conteneur(e) {
 /** Mesure le document d'une page déjà chargée. */
 export function mesurer(d, largeur) {
   const vw = d.documentElement.clientWidth
+  // Une scène « pleine largeur » (margin-inline: calc(50% - 50vw)) dépasse de la largeur de la barre de défilement,
+  // qui n'existe pas sur téléphone : on la tolère.
+  const barre = d.defaultView.innerWidth - vw
   const visibles = (e) => {
     const r = e.getBoundingClientRect()
     if (r.width === 0 || r.height === 0) return false
@@ -47,7 +50,7 @@ export function mesurer(d, largeur) {
   }
   const hors = [...d.body.querySelectorAll('*')].filter((e) => {
     const r = e.getBoundingClientRect()
-    return r.width > 0 && (r.right > vw + 1 || r.left < -1) && getComputedStyle(e).position !== 'fixed' && !e.closest('[aria-hidden="true"]')
+    return r.width > 0 && (r.right > vw + 1 + barre || r.left < -1 - barre) && getComputedStyle(e).position !== 'fixed' && !e.closest('[aria-hidden="true"]')
   })
   const rognes = hors
     .filter((e) => !hors.includes(e.parentElement) && conteneur(e) === 'rogne')

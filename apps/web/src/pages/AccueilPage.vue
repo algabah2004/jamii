@@ -255,6 +255,8 @@ void (async () => {
 .apercu--gauche:hover { transform: rotateY(8deg) rotateZ(-2deg) translateY(6px); }
 .apercu--droite:hover { transform: rotateY(-8deg) rotateZ(2deg) translateY(6px); }
 
+/* Petit portable : les deux aperçus inclinés sortaient de l'écran de 11 px. */
+@media (max-width: 1180px) { .apercus { padding-inline: var(--space-6); } }
 @media (max-width: 960px) {
   .apercus { grid-template-columns: 1fr; max-width: 26rem; }
   .apercu--gauche, .apercu--droite { display: none; }

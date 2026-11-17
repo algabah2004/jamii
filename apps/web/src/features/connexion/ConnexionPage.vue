@@ -204,4 +204,16 @@ onMounted(async () => {
 .rassurance { display: flex; align-items: center; justify-content: center; gap: var(--space-2); margin: 0; color: var(--ink-muted); font-size: 0.8125rem; text-align: center; }
 .rassurance svg { flex: none; width: 16px; height: 16px; }
 @media (prefers-reduced-motion: reduce) { .bouton-large { transition: none; } }
+/* Téléphone : le bouton GitHub doit apparaître sans défiler. Le logo est déjà dans l'en-tête, le bandeau se resserre
+   et la voie GitHub perd son cadre (une carte dans une carte coûtait 40 px de marges). */
+@media (max-width: 720px) {
+  .connexion { place-items: start stretch; min-height: 0; padding: var(--space-2) 0 var(--space-6); }
+  .connexion__cadre { border-radius: var(--radius-lg); }
+  .panneau { padding: var(--space-5) var(--space-5); gap: 0; }
+  .panneau__logo { display: none; }
+  .panneau__titre { margin: 0; font-size: var(--type-h2-size); }
+  .acces { gap: var(--space-4); padding: var(--space-5) var(--space-4); }
+  .acces__titre { font-size: var(--type-h3-size); }
+  .voie--github { padding: 0; border: 0; background: none; }
+}
 </style>

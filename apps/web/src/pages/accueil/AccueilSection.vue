@@ -148,4 +148,9 @@ defineProps<{
   .etape { grid-template-columns: 2.5rem 1fr; column-gap: var(--space-4); row-gap: 2px; }
   .etape__numero { grid-row: span 2; margin-bottom: 0; }
 }
+/* Téléphone : la page n'a que 16 px de marge, la section ne rajoute pas 24 px de chaque côté (le texte gardait 240 px). */
+@media (max-width: 480px) {
+  .section { padding: var(--space-6) var(--space-4); gap: var(--space-6); border-radius: var(--radius-lg); }
+  .section__apercu { min-height: 12rem; padding: var(--space-4); }
+}
 </style>
