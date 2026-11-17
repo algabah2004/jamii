@@ -5,6 +5,7 @@ import { RouterLink, RouterView, useRoute } from 'vue-router'
 import ReglagesAffichage from './components/ReglagesAffichage.vue'
 import BoutonLangue from './components/BoutonLangue.vue'
 import BoutonTheme from './components/BoutonTheme.vue'
+import BoutonHaut from './components/BoutonHaut.vue'
 import { garderFocusVisibleDansLesRangees } from './components/rangeeDefilante'
 import { chargerSession, seDeconnecter, useSession } from './session'
 import { JAvatar, JBouton, JSquelette } from './design-system'
@@ -134,6 +135,8 @@ garderFocusVisibleDansLesRangees()
       </Transition>
     </RouterView>
   </main>
+  <!-- Pas dans la messagerie : « Nouveau message » et la zone pour écrire occupent déjà le bas de l'écran. -->
+  <BoutonHaut v-if="!$route.meta.messagerie" />
 
   <footer v-if="!$route.meta.messagerie" class="pied motif motif--ondes motif--haut">
     <div class="pied__interieur">

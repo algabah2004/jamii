@@ -25,6 +25,9 @@ const etat = ref<'chargement' | 'pret' | 'indisponible'>('chargement')
 const chargeLaSuite = ref(false)
 const recherche = ref('')
 const origine = ref<'tous' | 'cercle' | 'demande' | 'idee'>('tous')
+/** Téléphone : les filtres sont repliés au départ (sur ordinateur, ils restent toujours visibles). */
+const filtresOuverts = ref(false)
+const nombreFiltres = computed(() => (seulementSystalink.value ? 1 : 0) + (origine.value === 'tous' ? 0 : 1))
 const vedette = computed(() => projets.value[0])
 const visibles = computed(() => projets.value.filter((p) => (origine.value === 'tous' || p.origine === origine.value) && correspond(recherche.value, [p.titre, p.accroche, ...p.equipe.map((m) => m.nom)])))
 const statistiques = computed(() => [
@@ -93,7 +96,12 @@ function filtrer(datacloud: boolean) {
 
     <div class="exploration__outils" id="projets-vitrine">
       <RechercheExploration v-model="recherche" :libelle="t('exploration.vitrine.recherche')" />
-      <div class="vitrine__filtres">
+      <!-- Téléphone : les filtres se replient derrière ce bouton pour laisser la place aux projets. -->
+      <button type="button" class="vitrine__deplier" :aria-expanded="filtresOuverts" aria-controls="filtres-vitrine" data-test="deplier-filtres" @click="filtresOuverts = !filtresOuverts">
+        {{ t('exploration.filtres') }}<span v-if="nombreFiltres" class="vitrine__nombre">{{ nombreFiltres }}</span>
+        <svg aria-hidden="true" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" /></svg>
+      </button>
+      <div id="filtres-vitrine" class="vitrine__filtres" :class="{ 'vitrine__filtres--ouvert': filtresOuverts }">
         <JFiltres
           :model-value="seulementSystalink ? 'systalink' : 'tous'"
           :libelle="t('vitrine.filtre')"
@@ -135,6 +143,21 @@ function filtrer(datacloud: boolean) {
 
 <style scoped>
 .vitrine__filtres { display: flex; flex-wrap: wrap; gap: 16px 24px; justify-content: space-between; align-items: center; }
+.vitrine__deplier { display: none; }
+/* Téléphone : les filtres se replient derrière un bouton ; dépliés, chaque groupe tient sur une ligne qui défile. */
+@media (max-width: 680px) {
+  .vitrine__deplier { display: inline-flex; align-items: center; gap: 8px; justify-self: start; min-height: 44px; padding: 0 4px; border: 0; background: transparent; color: var(--ink); font: inherit; font-weight: 700; cursor: pointer; }
+  .vitrine__deplier svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform 150ms ease; }
+  .vitrine__deplier[aria-expanded='true'] svg { transform: rotate(180deg); }
+  .vitrine__deplier:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 8px; }
+  .vitrine__nombre { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0 7px; border-radius: var(--radius-pill); background: var(--action-soft); color: var(--action-ink); font-size: .75rem; font-weight: 700; }
+  .vitrine__filtres { display: none; flex-direction: column; align-items: stretch; gap: 12px; }
+  .vitrine__filtres--ouvert { display: flex; }
+  .vitrine__filtres > * { min-width: 0; max-width: 100%; }
+  .vitrine__filtres :deep(.j-filtres) { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .vitrine__filtres :deep(.j-filtres button) { flex: none; white-space: nowrap; }
+}
+@media (max-width: 680px) and (prefers-reduced-motion: reduce) { .vitrine__deplier svg { transition: none; } }
 .grille-cartes { gap: 24px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr)); }
 .grille-cartes > li { min-width: 0; }
 .suite { display: flex; margin: var(--space-8) auto 0; }

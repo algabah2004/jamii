@@ -232,6 +232,37 @@ function ouvrirMenu(m: Message) {
   aSupprimer.value = null
   menu.value = menu.value === m.id ? null : m.id
 }
+
+/**
+ * Le menu « ⋯ » reste dans la zone des messages, quels que soient l'écran, la longueur de la bulle ou la rangée de
+ * réactions : on le mesure une fois ouvert, puis on le décale (et on l'ouvre vers le bas s'il manque de place en haut).
+ * Un positionnement en CSS seul débordait selon la bulle (courte ou longue) et l'appareil.
+ */
+const MARGE_MENU = 8
+const placeMenu = ref<{ left: number; dessous: boolean } | null>(null)
+async function placerMenu() {
+  placeMenu.value = null
+  await nextTick()
+  const el = document.querySelector<HTMLElement>('.actions__menu')
+  const zone = el?.closest<HTMLElement>('.fil')
+  if (!el || !zone) return
+  // Position de mise en page (offsetLeft/Top), pas getBoundingClientRect : le menu et le bouton s'animent en
+  // changeant d'échelle à l'ouverture, ce qui fausserait la mesure.
+  let x = 0
+  let y = 0
+  for (let e: HTMLElement | null = el; e && e !== zone; e = e.offsetParent as HTMLElement | null) {
+    x += e.offsetLeft
+    y += e.offsetTop
+  }
+  let dx = 0
+  if (x + el.offsetWidth > zone.clientWidth - MARGE_MENU) dx = zone.clientWidth - MARGE_MENU - (x + el.offsetWidth)
+  if (x + dx < MARGE_MENU) dx = MARGE_MENU - x
+  placeMenu.value = { left: Math.round(el.offsetLeft + dx), dessous: y - zone.scrollTop < MARGE_MENU }
+}
+watch([menu, aSupprimer], () => {
+  if (menu.value) void placerMenu()
+  else placeMenu.value = null
+})
 function repondre(m: Message) {
   menu.value = null
   if (edition.value) texte.value = ''
@@ -604,7 +635,7 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
                 <button type="button" class="actions__ouvrir" :aria-expanded="menu === m.id" :aria-label="t('reseau.actions.menu')" data-test="actions-message" @click.stop="ouvrirMenu(m)">
                   <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><circle cx="4.5" cy="10" r="1.6" fill="currentColor" /><circle cx="10" cy="10" r="1.6" fill="currentColor" /><circle cx="15.5" cy="10" r="1.6" fill="currentColor" /></svg>
                 </button>
-                <div v-if="menu === m.id" class="actions__menu" role="menu">
+                <div v-if="menu === m.id" class="actions__menu" :class="{ 'actions__menu--dessous': placeMenu?.dessous }" :style="placeMenu ? { left: `${placeMenu.left}px`, right: 'auto' } : undefined" role="menu">
                   <template v-if="aSupprimer !== m.id">
                     <BarreReactions :actives="m.reactions.filter((r) => r.deMoi).map((r) => r.emoji)" @choisir="(e) => reagir(m, e)" />
                     <button type="button" role="menuitem" data-test="action-repondre" @click="repondre(m)">{{ t('reseau.actions.repondre') }}</button>
@@ -725,7 +756,7 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
 
 .fil {
   grid-row: 2; grid-column: 1; position: relative; z-index: 1;
-  min-height: 0; overflow-y: auto; padding: 34px clamp(20px, 4vw, 64px) 40px; overscroll-behavior: contain; scrollbar-width: thin;
+  min-height: 0; overflow-x: hidden; overflow-y: auto; padding: 34px clamp(20px, 4vw, 64px) 40px; overscroll-behavior: contain; scrollbar-width: thin;
 }
 /* Le motif occupe la place de l'en-tête et du fil (même cellule de grille), derrière les deux. */
 .tete { grid-row: 1; grid-column: 1; }
@@ -808,6 +839,7 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
 }
 .bulle--autre .actions__menu { left: 0; }
 .bulle--moi .actions__menu { right: 0; transform-origin: bottom right; }
+.actions__menu--dessous { bottom: auto; top: calc(100% + 4px); }
 .actions__menu button { padding: 9px 12px; border: 0; border-radius: 9px; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; transition: background 140ms var(--ease-out); }
 .actions__menu button:hover, .actions__menu button:focus-visible { background: var(--surface-raised); outline: none; }
 .actions__menu .danger { color: var(--danger); }
@@ -849,6 +881,8 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
   .tete__qui { min-width: 100px; }
   .tete__actions { margin-left: auto; }
   .tete__actions .j-bouton { font-size: 0.8125rem; padding-inline: 8px; }
+  /* Le nom d'abord : « Dans tes contacts » prenait sa place sur un petit écran. */
+  .tete__lien { display: none; }
   .fil { padding: 30px 16px 40px; }
   .saisie { margin: 0 var(--space-3) var(--space-3); }
   .aide { display: none; }

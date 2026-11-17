@@ -306,7 +306,14 @@ void (async () => {
 .etape h3::before { content: counter(etape); color: var(--proof-ink); font-variant-numeric: tabular-nums; }
 .etape p { margin: 0; color: var(--ink-muted); }
 .etape__lien { font-weight: 600; margin-top: var(--space-1); }
-@media (max-width: 760px) { .etapes { grid-template-columns: minmax(0, 1fr); } .etape__illustration { max-width: 10rem; } }
+/* Téléphone : une seule colonne, centrée (titre, illustration, texte et lien), au lieu d'un bloc collé à gauche. */
+@media (max-width: 760px) {
+  .parcours h2 { text-align: center; }
+  .etapes { grid-template-columns: minmax(0, 1fr); }
+  .etape { justify-items: center; text-align: center; max-width: 30rem; margin-inline: auto; }
+  .etape h3 { justify-content: center; }
+  .etape__illustration { max-width: 10rem; }
+}
 
 @keyframes monte { from { opacity: 0; transform: translateY(14px); filter: blur(4px); } }
 </style>

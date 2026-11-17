@@ -73,6 +73,8 @@ watch(filtre, () => void charger(), { immediate: true })
 // Filtrer quand on est descendu dans la liste : la liste raccourcit et le navigateur remonterait la page d'un coup,
 // emportant le panneau. On ramène plutôt le haut des résultats sous la barre : le panneau ne bouge pas.
 const catalogue = ref<HTMLElement | null>(null)
+/** Téléphone : les filtres sont repliés au départ (sur ordinateur, ils restent toujours visibles). */
+const filtresOuverts = ref(false)
 watch([filtre, lieux, duree], () => {
   const boite = catalogue.value?.getBoundingClientRect()
   if (!boite?.height || boite.top >= 100) return
@@ -117,8 +119,14 @@ const periode = (debut: string, fin: string) =>
       <aside class="catalogue__filtres" :aria-label="t('hackathons.decouverte.filtres')">
         <div class="catalogue__filtres-tete">
           <h2>{{ t('hackathons.decouverte.filtres') }}<span v-if="nombreFiltres" class="catalogue__nombre">{{ nombreFiltres }}</span></h2>
+          <!-- Téléphone : les filtres se replient derrière ce bouton pour laisser la place aux hackathons. -->
+          <button type="button" class="catalogue__deplier" :aria-expanded="filtresOuverts" aria-controls="filtres-hackathons" data-test="deplier-filtres" @click="filtresOuverts = !filtresOuverts">
+            {{ t('hackathons.decouverte.filtres') }}<span v-if="nombreFiltres" class="catalogue__nombre">{{ nombreFiltres }}</span>
+            <svg aria-hidden="true" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" /></svg>
+          </button>
           <button type="button" class="catalogue__effacer" :class="{ 'catalogue__effacer--cache': !nombreFiltres && !recherche }" data-test="reinitialiser-filtres" @click="reinitialiser">{{ t('hackathons.decouverte.effacer') }}</button>
         </div>
+        <div id="filtres-hackathons" class="catalogue__corps" :class="{ 'catalogue__corps--ouvert': filtresOuverts }">
         <fieldset class="catalogue__statuts">
           <legend>{{ t('hackathons.decouverte.statut') }}</legend>
           <button
@@ -138,6 +146,7 @@ const periode = (debut: string, fin: string) =>
           <legend>{{ t('hackathons.decouverte.duree') }}</legend>
           <label v-for="d in DUREES" :key="d"><input v-model="duree" type="radio" name="duree-hackathon" :value="d" :data-test="`duree-${d}`" />{{ t(`hackathons.decouverte.durees.${d}`) }}</label>
         </fieldset>
+        </div>
       </aside>
 
       <div class="catalogue__contenu" :class="{ 'catalogue__contenu--maj': rafraichit }" :aria-busy="rafraichit">
@@ -234,6 +243,8 @@ const periode = (debut: string, fin: string) =>
 .catalogue__nombre { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0 7px; border-radius: var(--radius-pill); background: var(--action-soft); color: var(--action-ink); font-size: .75rem; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
 .catalogue__effacer { padding: 4px 8px; margin-inline-end: -8px; border: 0; border-radius: 8px; background: transparent; color: var(--ink-muted); font: inherit; font-size: .8125rem; font-weight: 600; cursor: pointer; transition: color 150ms ease, background-color 150ms ease; }
 .catalogue__effacer--cache { visibility: hidden; }
+.catalogue__corps { display: grid; gap: 22px; }
+.catalogue__deplier { display: none; }
 .catalogue__effacer:hover { color: var(--ink); background: var(--surface-raised); }
 .catalogue fieldset { display: flex; flex-wrap: wrap; gap: 6px; padding: 0; margin: 0; border: 0; min-width: 0; }
 .catalogue legend { padding: 0; margin-bottom: 10px; line-height: 1.4; color: var(--ink-muted); font-size: .75rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
@@ -262,4 +273,19 @@ const periode = (debut: string, fin: string) =>
 .catalogue .hackathon__corps { padding: 28px; }
 @media (max-width: 900px) { .catalogue { grid-template-columns: 200px minmax(0, 1fr); gap: 20px; } .catalogue__filtres { padding: 16px; top: 125px; } .catalogue .hackathon { grid-template-columns: 100px minmax(0, 1fr); } .catalogue .hackathon__corps { padding: 20px; } .catalogue .hackathon__banniere { padding: 16px; } }
 @media (max-width: 680px) { .catalogue { grid-template-columns: minmax(0, 1fr); } .catalogue__filtres { position: static; } .catalogue__statuts { flex-direction: row; flex-wrap: wrap; gap: 6px; } .catalogue__statuts button { min-height: 34px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: var(--radius-pill); font-size: .875rem; } .catalogue__statuts button[aria-pressed='true'] { border-color: color-mix(in srgb, var(--action) 55%, transparent); } .catalogue__statuts svg { display: none; } .catalogue .hackathon { grid-template-columns: minmax(0, 1fr); } .catalogue .hackathon__banniere { min-block-size: 100px; justify-items: start; } }
+/* Téléphone : les filtres se replient derrière un bouton, et chaque groupe tient sur une ligne qui défile. */
+@media (max-width: 680px) {
+  .catalogue__filtres { gap: 0; padding: 6px 12px; border-radius: 18px; }
+  .catalogue__filtres-tete h2 { display: none; }
+  .catalogue__deplier { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 4px; border: 0; background: transparent; color: var(--ink); font: inherit; font-weight: 700; cursor: pointer; }
+  .catalogue__deplier svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform 150ms ease; }
+  .catalogue__deplier[aria-expanded='true'] svg { transform: rotate(180deg); }
+  .catalogue__deplier:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 8px; }
+  .catalogue__corps { display: none; gap: 16px; padding: 8px 0 14px; }
+  .catalogue__corps--ouvert { display: grid; }
+  .catalogue__corps fieldset { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: -12px; padding-inline: 12px; }
+  .catalogue__corps fieldset::-webkit-scrollbar { display: none; }
+  .catalogue__corps fieldset > * { flex: none; white-space: nowrap; }
+}
+@media (max-width: 680px) and (prefers-reduced-motion: reduce) { .catalogue__deplier svg { transition: none; } }
 </style>
