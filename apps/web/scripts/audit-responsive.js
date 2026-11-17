@@ -24,6 +24,47 @@ export const ROUTES = [
 ]
 export const LARGEURS = [320, 360, 390, 768, 1024, 1440]
 
+/** Amène un élément sous l'en-tête, sans défilement doux : pratique avant une capture d'écran. */
+export function voir(selecteur, decalage = 0) {
+  const e = typeof selecteur === 'string' ? document.querySelector(selecteur) : selecteur
+  if (!e) return 'introuvable'
+  window.scrollTo({ top: e.getBoundingClientRect().top + window.scrollY - 70 + decalage, behavior: 'instant' })
+  return Math.round(window.scrollY)
+}
+window.voir = voir
+
+/**
+ * Le profil factice est vide et repart de zéro à chaque rechargement : on le génère et on le remplit de textes longs
+ * (titre, liens, réalisations), le pire cas pour la mise en page. À lancer sur la page, puis rouvrir /profil.
+ */
+export async function remplirProfil() {
+  const xsrf = document.cookie.match(/XSRF-TOKEN=([^;]+)/)
+  const entetes = { 'Content-Type': 'application/merge-patch+json', ...(xsrf ? { 'X-XSRF-TOKEN': decodeURIComponent(xsrf[1]) } : {}) }
+  await fetch('/api/me/profil/generation', { method: 'POST', headers: entetes })
+  let p
+  for (let i = 0; i < 10; i++) {
+    const r = await fetch('/api/me/profil')
+    if (r.ok) { p = await r.json(); if (p.generation?.statut === 'terminee') break }
+    await new Promise((ok) => setTimeout(ok, 500))
+  }
+  const r = await fetch('/api/me/profil', {
+    method: 'PATCH', headers: entetes,
+    body: JSON.stringify({
+      version: p.version,
+      titre: 'Développeuse mobile Flutter, paiements et hors-ligne, à Abidjan',
+      bio: 'Je construis des applications qui marchent même quand le réseau coupe : commandes WhatsApp pour les vendeuses, alertes SMS pour les agriculteurs.',
+      pays: 'CI', ville: 'Abidjan', heuresParSemaine: 15, langues: ['fr', 'en', 'dyu'],
+      linkedin: 'https://www.linkedin.com/in/awa-demo-tres-long-identifiant-pour-tester', siteWeb: 'https://awa-diop-portfolio-exemple.dev',
+      competencesDeclarees: ['figma', 'supabase'], competencesPhares: ['flutter', 'dart', 'firebase'],
+      realisations: [
+        { titre: 'Application de caisse pour une boutique de quartier à Treichville', description: 'Encaissement hors ligne et synchronisation le soir', url: 'https://exemple.dev/caisse' },
+        { titre: "Site vitrine d'une association", description: null, url: null },
+      ],
+    }),
+  })
+  return r.status
+}
+
 const nom = (e) => e.tagName.toLowerCase() + (typeof e.className === 'string' && e.className.trim() ? '.' + e.className.trim().split(/\s+/).slice(0, 2).join('.') : '')
 
 /** Le premier ancêtre qui coupe ou fait défiler en largeur : un élément dans une rangée qui défile n'est pas un défaut. */
@@ -58,7 +99,8 @@ export function mesurer(d, largeur) {
   const cibles = [...d.querySelectorAll('a[href], button, input:not([type=hidden]), select, textarea, [role=button], [role=tab], [role=switch]')]
     .filter(visibles)
     .filter((e) => {
-      const r = e.getBoundingClientRect()
+      // Une case dans son libellé : la cible est le libellé entier (un clic dessus coche la case).
+      const r = (e.tagName === 'INPUT' && e.closest('label')) ? e.closest('label').getBoundingClientRect() : e.getBoundingClientRect()
       // Un lien dans une phrase est exempté par WCAG 2.5.8.
       if (e.tagName === 'A' && getComputedStyle(e).display === 'inline') return false
       return r.height < 24 || r.width < 24

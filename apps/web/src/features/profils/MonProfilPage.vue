@@ -323,8 +323,10 @@ async function enregistrer() {
       <!-- Ce qu'il reste à remplir : un geste par bloc, pas un formulaire. -->
       <div v-if="aRemplir.length && !bloc" class="a-remplir" data-test="a-remplir">
         <p class="a-remplir__titre">{{ t('profil.modifier.incompletes', { n: aRemplir.length }, aRemplir.length) }}</p>
-        <button v-for="nom in aRemplir" :key="nom" type="button" class="a-remplir__ajout" @click="ouvrirBloc(nom)">
-          {{ t(`profil.modifier.ajouter.${nom}`) }}</button>
+        <div class="a-remplir__liste">
+          <button v-for="nom in aRemplir" :key="nom" type="button" class="a-remplir__ajout" @click="ouvrirBloc(nom)">
+            {{ t(`profil.modifier.ajouter.${nom}`) }}</button>
+        </div>
       </div>
 
       <FicheProfil :profil="profil" moi @modifier="ouvrirBloc">
@@ -444,6 +446,8 @@ async function enregistrer() {
 .mon-profil { display: grid; gap: var(--space-6); }
 .accueil-profil { display: grid; gap: var(--space-8); grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); align-items: center; padding-top: var(--space-4); }
 @media (max-width: 760px) { .accueil-profil { grid-template-columns: 1fr; } .accueil-profil__visuel { order: -1; max-width: 18rem; } }
+/* Téléphone : l'illustration passe sous le bouton, sinon « Créer mon profil » tombe sous la ligne de flottaison. */
+@media (max-width: 480px) { .accueil-profil__visuel { order: 1; max-width: 12rem; justify-self: center; } }
 .accueil-profil__texte { display: grid; gap: var(--space-4); justify-items: start; }
 .accueil-profil__texte > * { margin: 0; }
 .accueil-profil h1 { font-size: clamp(2rem, 4.5vw, 2.75rem); line-height: 1.1; letter-spacing: -0.8px; }
@@ -470,6 +474,25 @@ async function enregistrer() {
 .a-remplir__titre { margin: 0; margin-inline-end: var(--space-2); font-family: var(--font-display); font-size: var(--type-h3-size); line-height: var(--type-h3-line); font-weight: 700; }
 .a-remplir__ajout { min-height: 44px; padding: 0 var(--space-4); border: 1px dashed var(--action-ink); border-radius: var(--radius-pill); background: transparent; color: var(--ink); font: inherit; font-weight: 600; cursor: pointer; }
 .a-remplir__ajout:hover { background: var(--surface); }
+.a-remplir__liste { display: contents; }
+
+/* Téléphone : la barre et le bandeau prenaient tout le premier écran avant la fiche. Les actions tiennent sur une
+   rangée, et les blocs à remplir défilent sur une ligne au lieu de s'empiler sur cinq. */
+@media (max-width: 480px) {
+  .barre-proprio { gap: var(--space-2) var(--space-3); }
+  .barre-proprio__actions { margin-inline-start: 0; width: 100%; }
+  .barre-proprio__actions :deep(.j-bouton) { min-height: 40px; padding-inline: var(--space-3); }
+  .a-remplir { display: grid; gap: var(--space-2); padding: var(--space-3) 0; overflow: hidden; }
+  .a-remplir__titre { padding-inline: var(--space-4); font-size: var(--type-body-size); }
+  .a-remplir__liste {
+    display: flex; gap: var(--space-2); overflow-x: auto; scrollbar-width: none; padding-inline: var(--space-4);
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - var(--space-6)), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - var(--space-6)), transparent);
+  }
+  .a-remplir__liste::-webkit-scrollbar { display: none; }
+  .a-remplir__ajout { flex-shrink: 0; white-space: nowrap; min-height: 40px; font-size: var(--type-body-sm-size); }
+  .a-remplir__ajout:focus-visible { outline-offset: -2px; }
+}
 
 /* ---------- Le bloc ouvert ---------- */
 .bloc-ouvert { scroll-margin-top: 6rem; display: grid; gap: var(--space-4); padding: var(--space-6); margin-top: var(--space-4); border: 2px solid var(--action); border-radius: var(--radius-lg); background: var(--surface-raised); }

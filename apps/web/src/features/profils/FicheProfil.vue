@@ -449,7 +449,7 @@ watch(
 /* Les preuves à gagner (la personne seule les voit) : quatre cases en pointillé, chacune de la couleur de son arc. */
 .a-venir { display: grid; gap: var(--space-4); }
 .a-venir > p { margin: 0; color: var(--ink-muted); }
-.a-venir ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: var(--space-3); }
+.a-venir ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr)); gap: var(--space-3); }
 .a-venir a { display: grid; gap: var(--space-3); height: 100%; box-sizing: border-box; padding: var(--space-4); border: 2px dashed var(--line-strong); border-radius: var(--radius-lg); color: var(--ink); font-weight: 600; text-decoration: none; }
 .a-venir a:hover { border-style: solid; border-color: var(--ink); }
 .a-venir__marque { width: 28px; height: 6px; border-radius: var(--radius-pill); background: var(--proof); }
@@ -468,7 +468,9 @@ watch(
 /* ---------- Colonnes et sections ---------- */
 .colonnes { display: grid; gap: var(--space-12) var(--space-12); grid-template-columns: minmax(0, 1fr) minmax(16rem, 20rem); align-items: start; padding-block: var(--space-8) var(--space-6); }
 @media (max-width: 900px) { .colonnes { grid-template-columns: 1fr; } }
-.colonne { display: grid; gap: var(--space-12); min-width: 0; }
+/* minmax(0, 1fr) : sans lui, la piste prend la largeur minimale de son contenu le plus large, et la colonne sortait
+   de l'écran de 22 px à 320 px (docs/responsive.md). */
+.colonne { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-12); min-width: 0; }
 .colonne--laterale { gap: var(--space-8); }
 .section { display: grid; gap: var(--space-4); }
 .section h2, .lateral h2 { margin: 0; }

@@ -99,6 +99,8 @@ img, svg { max-width: 100%; }
   padding: var(--space-6);
   box-shadow: var(--ombre-carte);
 }
+/* Téléphone : 24 px de marge intérieure dans 288 px d'écran utile, c'est un sixième de la largeur perdu. */
+@media (max-width: 480px) { .carte { padding: var(--space-4); } }
 /* Une ombre douce et large : la carte flotte au-dessus des lueurs, sans bord dur. */
 :root { --ombre-carte: 0 1px 2px color-mix(in srgb, var(--midnight) 5%, transparent), 0 10px 30px color-mix(in srgb, var(--midnight) 7%, transparent); }
 
