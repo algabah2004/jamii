@@ -331,4 +331,25 @@ class DonneesDemoTest {
 			.as("les membres retirés ne sont pas réinsérés").isEqualTo(1);
 	}
 
+	@Test
+	void les_profils_de_la_demo_ont_des_preuves_calculees_par_les_modules() {
+		var fatou = mvc.get().uri("/api/profils/" + DonneesDemo.FATOU.id()).exchange();
+		assertThat(fatou).bodyJson().extractingPath("$.fiabilite[*].type").asArray().contains("tache_livree_a_temps", "avis_coequipier");
+		assertThat(fatou).bodyJson().extractingPath("$.projets.length()").asNumber().satisfies(n -> assertThat(n.intValue()).isPositive());
+
+		var demo = mvc.get().uri("/api/profils/" + CompteDemo.ID).exchange();
+		assertThat(demo).bodyJson().extractingPath("$.fiabilite[*].type").asArray().contains("avis_coequipier", "reponse_acceptee");
+		var avis = mvc.get().uri("/api/profils/" + CompteDemo.ID + "/preuves?type=avis_coequipier")
+			.with(oauth2Login().oauth2User(connecte(DonneesDemo.KOFI))).exchange();
+		assertThat(avis).bodyJson().extractingPath("$.elements[0].auteur.nom").isEqualTo("Aïcha Keïta");
+
+		assertThat(compter("SELECT count(*) FROM tache WHERE statut = 'livree' AND echeance IS NULL AND assignee_id = '" + DonneesDemo.AWA.id() + "'"))
+			.as("chaque tâche livrée a son échéance").isZero();
+		assertThat(compter("SELECT count(*) FROM tache WHERE statut = 'livree' AND livree_le::date > echeance AND assignee_id IN ('"
+				+ DonneesDemo.AWA.id() + "', '" + DonneesDemo.KOFI.id() + "', '" + DonneesDemo.FATOU.id() + "')"))
+			.as("quelques retards : un indice parfait ne serait pas crédible").isPositive();
+		assertThat(compter("SELECT count(*) FROM avis_mission WHERE mission_id = '" + DonneesDemo.id("mission:terminee:tontine") + "'"))
+			.isEqualTo(1);
+	}
+
 }
