@@ -1081,6 +1081,7 @@
     "sombre": "Dark"
   },
   "pied": {
+    "haut": "Back to top",
     "mission": "The exchange platform for African developers: help each other, team up and put your projects online.",
     "liens": "Useful links",
     "cadev": "Project presented at CADEV 2026. Jamii runs on the Systalink cloud.",
