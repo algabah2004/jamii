@@ -14,6 +14,7 @@ import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { JAvatar, JBouton, JSquelette } from '../../design-system'
 import { rejoindreCercle } from '../cercles/cercles'
 import { rafraichirActivite } from './activite'
+import { usePleinEcranTelephone } from '../../components/pleinEcran'
 import { appeler, useAppel } from './appel'
 import {
   reagirMessage,
@@ -41,6 +42,8 @@ import {
  */
 const emit = defineEmits<{ actualise: [] }>()
 const { t, locale } = useI18n()
+// Sur téléphone, la conversation ouverte prend tout l'écran : son bandeau, le fil, la zone pour écrire.
+usePleinEcranTelephone(() => true)
 const route = useRoute()
 const routeur = useRouter()
 
@@ -493,8 +496,8 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
           </div>
           <p class="tete__sous">
             <span v-if="statutAutre" class="tete__presence" :class="{ 'tete__presence--en-ligne': presenceAutre?.enLigne }" data-test="presence">{{ statutAutre }}</span>
-            <span v-if="statutAutre && personne.ville" aria-hidden="true">·</span>
-            <span v-if="personne.ville">{{ personne.ville }}</span>
+            <span v-if="statutAutre && personne.ville" class="tete__ville" aria-hidden="true">·</span>
+            <span v-if="personne.ville" class="tete__ville">{{ personne.ville }}</span>
           </p>
         </div>
         <div class="tete__actions">
@@ -703,6 +706,8 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
   .ajout-contact__icone { display: block; }
   .ajout-contact__texte { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .rond { width: 40px; height: 40px; }
+  /* La ville coupée (« Abidj… ») n'apprenait rien : on garde la présence, la ville reste sur le profil. */
+  .tete__ville { display: none; }
 }
 /* Très étroit (téléphone de 320 à 360 px) : l'avatar cède sa place au nom ; « En ligne » reste écrit dessous. */
 @container discussion (max-width: 21rem) {
@@ -826,7 +831,12 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
 @media (prefers-reduced-motion: reduce) {
   .discussion *, .discussion *::before, .discussion *::after { animation: none !important; transition-duration: 0ms !important; }
 }
-@media (max-width: 45rem) { .tete__retour { display: grid; } }
+@media (max-width: 45rem) {
+  .tete__retour { display: grid; }
+  /* Plein écran sur téléphone : le bandeau colle au bord, comme dans une application de messagerie. */
+  .cadre .tete { margin: 0; border-radius: 0; border-width: 0 0 1px; min-height: 60px; }
+  .saisie { margin-bottom: max(var(--space-2), env(safe-area-inset-bottom)); }
+}
 /* Selon la largeur de la conversation, pas de l'écran : à 768 px, la liste est à côté et la conversation n'a que
    400 px ; le nom de la personne disparaissait derrière les boutons. */
 @container discussion (max-width: 45rem) {

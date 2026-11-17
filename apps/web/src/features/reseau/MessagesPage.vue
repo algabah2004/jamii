@@ -246,5 +246,16 @@ const apercu = (c: Conversation) =>
   .messagerie *, .messagerie *::before, .messagerie *::after { animation: none !important; transition-duration: 0ms !important; }
 }
 @media (max-width: 960px) { .messagerie { grid-template-columns: 320px minmax(0, 1fr); } .bienvenue { padding: 24px; } }
-@media (max-width: 720px) { .messagerie { grid-template-columns: minmax(0, 1fr); border-radius: 16px; gap: 0; } .espace-discussion { display: none; } .messagerie--ouverte .boite { display: none; } .messagerie--ouverte .espace-discussion { display: block; } .boite { border-radius: 22px; } .espace-discussion { border-radius: 22px; } .boite__tete { padding: 14px 14px 10px 18px; } }
+@media (max-width: 720px) {
+  .messagerie { grid-template-columns: minmax(0, 1fr); border-radius: 16px; gap: 0; }
+  .espace-discussion { display: none; }
+  .messagerie--ouverte .boite { display: none; }
+  /* La conversation ouverte prend tout l'écran (components/pleinEcran.ts) : plus de cadre ni d'arrondi. */
+  .messagerie--ouverte .espace-discussion { display: block; border: 0; border-radius: 0; box-shadow: none; }
+  .boite { border-radius: 22px; }
+  .boite__tete { padding: 14px 14px 10px 18px; }
+  /* « Nouveau message » descend en bas à droite, sous le pouce. La liste garde de la place pour ne rien cacher. */
+  .nouveau { position: fixed; right: var(--space-4); bottom: calc(var(--space-4) + env(safe-area-inset-bottom)); z-index: 5; width: 56px; height: 56px; }
+  .boite__liste { padding-bottom: 88px; }
+}
 </style>

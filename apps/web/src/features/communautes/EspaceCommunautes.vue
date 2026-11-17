@@ -46,4 +46,9 @@ const { t } = useI18n()
   .espace__barre { position: static; height: auto; }
   .espace__principal { min-height: 0; }
 }
+/* Salon en plein écran sur téléphone : la barre de la communauté s'efface, la flèche du salon y ramène. */
+@media (max-width: 720px) {
+  :root.discussion-plein-ecran .espace { margin-top: 0; gap: 0; }
+  :root.discussion-plein-ecran .espace__barre { display: none; }
+}
 </style>

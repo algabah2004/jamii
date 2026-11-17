@@ -15,6 +15,7 @@ import EnDirect from './EnDirect.vue'
 import EspaceCommunautes from './EspaceCommunautes.vue'
 import MembresCommunaute from './MembresCommunaute.vue'
 import SalonsCommunaute from './SalonsCommunaute.vue'
+import { usePleinEcranTelephone } from '../../components/pleinEcran'
 
 type Communaute = components['schemas']['Communaute']
 type PublicationResume = components['schemas']['PublicationResume']
@@ -38,6 +39,8 @@ const vue = computed(() => {
   if (salon.value) return 'salon'
   return route.query.voir === 'membres' || route.query.voir === 'apropos' ? route.query.voir : 'fil'
 })
+// Sur téléphone, un salon ouvert prend tout l'écran, comme une conversation.
+usePleinEcranTelephone(() => vue.value === 'salon')
 const actif = computed(() => (vue.value === 'salon' ? salon.value! : vue.value))
 const onglet = computed<Onglet>(() => {
   const o = route.query.onglet
@@ -388,5 +391,9 @@ const prenom = computed(() => moi.value?.nom.split(' ')[0] ?? '')
 @media (max-width: 480px) {
   .ecrire { grid-template-columns: minmax(0, 1fr); padding: var(--space-3); }
   .ecrire > :first-child:not(.ecrire__corps) { display: none; }
+}
+/* Salon en plein écran sur téléphone (components/pleinEcran.ts) : tout l'écran, sans cadre. */
+@media (max-width: 720px) {
+  :root.discussion-plein-ecran .cadre-salon { height: 100dvh; border: 0; border-radius: 0; box-shadow: none; }
 }
 </style>
