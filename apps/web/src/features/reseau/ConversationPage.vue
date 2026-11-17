@@ -498,8 +498,9 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
           </p>
         </div>
         <div class="tete__actions">
-          <JBouton v-if="lien === 'aucun' || lien === 'recue'" :variante="lien === 'recue' ? 'principal' : 'secondaire'" :occupe="ajout" data-test="ajouter-contact" @click="ajouter">
-            {{ lien === 'recue' ? t('reseau.contacts.accepter') : t('reseau.contacts.ajouter') }}
+          <JBouton v-if="lien === 'aucun' || lien === 'recue'" class="ajout-contact" :variante="lien === 'recue' ? 'principal' : 'secondaire'" :occupe="ajout" data-test="ajouter-contact" @click="ajouter">
+            <svg class="ajout-contact__icone" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="10" cy="8" r="3.6" fill="none" stroke="currentColor" stroke-width="1.8" /><path d="M3.5 19a6.5 6.5 0 0 1 13 0M19 8v6M16 11h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+            <span class="ajout-contact__texte">{{ lien === 'recue' ? t('reseau.contacts.accepter') : t('reseau.contacts.ajouter') }}</span>
           </JBouton>
           <button type="button" class="rond rond--appel" :disabled="occupe" :aria-label="t('reseau.discussion.appeler', { nom: prenom(personne.nom) })" :title="t('reseau.discussion.appeler', { nom: prenom(personne.nom) })" data-test="appeler" @click="appelerPersonne(false)">
             <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M6.6 3.5 8.4 7a1 1 0 0 1-.2 1.1L7 9.3a10 10 0 0 0 3.7 3.7l1.2-1.2a1 1 0 0 1 1.1-.2l3.5 1.8a1 1 0 0 1 .5 1.2l-.6 1.9a2 2 0 0 1-2.2 1.4C8.9 17.2 2.8 11.1 2.1 5.8A2 2 0 0 1 3.5 3.6l1.9-.6a1 1 0 0 1 1.2.5Z" fill="currentColor" /></svg>
@@ -668,9 +669,10 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
 </template>
 
 <style scoped>
-.discussion { height: 100%; min-width: 0; }
+.discussion { height: 100%; min-width: 0; container: discussion / inline-size; }
 .cadre {
-  display: grid; grid-template-rows: auto 1fr auto auto;
+  /* minmax(0, 1fr) : à 768 px, la colonne prenait la largeur de son contenu et le fil sortait de l'écran. */
+  display: grid; grid-template-rows: auto 1fr auto auto; grid-template-columns: minmax(0, 1fr);
   height: 100%; min-height: 0;
   background: var(--bg); overflow: hidden;
 }
@@ -690,6 +692,23 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
 .tete__qui h2 { margin: 0; min-width: 0; font-size: 1.0625rem; line-height: 1.3; letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tete__lien { flex: none; padding: 1px 9px; border-radius: var(--radius-pill); background: var(--action-soft); color: var(--action-ink); font-weight: 700; font-size: 0.75rem; }
 .tete__actions { display: flex; align-items: center; gap: var(--space-2); }
+.ajout-contact__icone { display: none; }
+/* Conversation étroite (téléphone) : « Ajouter aux contacts » devient un rond à icône, à côté des appels. L'en-tête
+   tient sur une ligne et le fil garde sa place. Le libellé reste lu par les lecteurs d'écran. */
+@container discussion (max-width: 26rem) {
+  .cadre .tete { flex-wrap: nowrap; min-height: 64px; }
+  .cadre .tete__qui { min-width: 0; }
+  .tete__actions { gap: 6px; }
+  .tete__actions .ajout-contact { width: 44px; min-width: 44px; padding: 0; justify-content: center; border-radius: 50%; }
+  .ajout-contact__icone { display: block; }
+  .ajout-contact__texte { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .rond { width: 40px; height: 40px; }
+}
+/* Très étroit (téléphone de 320 à 360 px) : l'avatar cède sa place au nom ; « En ligne » reste écrit dessous. */
+@container discussion (max-width: 21rem) {
+  .cadre .tete .avatar-presence { display: none; }
+  .cadre .tete { gap: 6px; padding-inline: 6px 8px; }
+}
 
 .rond { display: grid; place-items: center; flex: none; width: 44px; height: 44px; border-radius: 50%; border: 0; cursor: pointer; transition: transform 260ms var(--ease-pop), background 200ms var(--ease-out), box-shadow 200ms var(--ease-out); }
 .rond:disabled { opacity: 0.45; cursor: default; }
@@ -807,8 +826,10 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
 @media (prefers-reduced-motion: reduce) {
   .discussion *, .discussion *::before, .discussion *::after { animation: none !important; transition-duration: 0ms !important; }
 }
-@media (max-width: 45rem) {
-  .tete__retour { display: grid; }
+@media (max-width: 45rem) { .tete__retour { display: grid; } }
+/* Selon la largeur de la conversation, pas de l'écran : à 768 px, la liste est à côté et la conversation n'a que
+   400 px ; le nom de la personne disparaissait derrière les boutons. */
+@container discussion (max-width: 45rem) {
   .tete { padding: 10px; margin: 10px 10px -10px; gap: 8px; min-height: 76px; flex-wrap: wrap; }
   .tete__qui { min-width: 100px; }
   .tete__actions { margin-left: auto; }

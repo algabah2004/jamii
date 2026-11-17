@@ -89,7 +89,7 @@ async function garder() {
 </template>
 
 <style scoped>
-.carte-competences { display: grid; gap: var(--space-4); }
+.carte-competences { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
 .tete { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2) var(--space-4); }
 .tete h2 { margin: 0; }
 /* Charte : une proposition de l'IA n'est pas une preuve, d'où le pointillé. */
@@ -105,7 +105,7 @@ async function garder() {
 }
 .ligne--retiree { opacity: 0.55; }
 .ligne--retiree .ligne__nom { text-decoration: line-through; }
-.ligne__case { display: flex; align-items: center; gap: var(--space-3); cursor: pointer; min-height: 32px; }
+.ligne__case { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); cursor: pointer; min-height: 32px; }
 .ligne__case input { width: 20px; height: 20px; margin: 0; flex: none; accent-color: var(--action); }
 .ligne__nom { font-weight: 700; }
 .niveau { margin-inline-start: auto; padding: 1px var(--space-3); border-radius: var(--radius-pill); font-size: var(--type-label-size); font-weight: 600; background: var(--action-soft); color: var(--ink); }

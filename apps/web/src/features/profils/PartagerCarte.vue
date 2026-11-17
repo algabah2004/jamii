@@ -108,7 +108,9 @@ onBeforeUnmount(() => apercu.value && URL.revokeObjectURL(apercu.value))
 
 <style scoped>
 .partage-voile { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: var(--space-4); background: color-mix(in srgb, var(--midnight) 72%, transparent); overflow-y: auto; }
-.partage { display: grid; gap: var(--space-4); width: min(100%, 36rem); max-height: 100%; padding: var(--space-6); border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); color: var(--ink); }
+/* Téléphone à l'horizontale : la fenêtre dépassait la hauteur, son haut (et « Fermer ») devenait inaccessible.
+   Elle défile désormais à l'intérieur. */
+.partage { display: grid; gap: var(--space-4); width: min(100%, 36rem); max-height: 100%; overflow-y: auto; overscroll-behavior: contain; padding: clamp(var(--space-4), 4vw, var(--space-6)); border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); color: var(--ink); }
 .partage__entete { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--space-3); }
 .partage__entete h2 { margin: 0; font-size: var(--type-h3-size); line-height: var(--type-h3-line); }
 .partage__entete p { margin: 0; }

@@ -667,7 +667,7 @@ const messageErreur = computed(() =>
   border: 1px solid var(--line-strong); border-radius: 22px; background: var(--surface-raised);
   box-shadow: 0 1px 2px rgb(2 7 10 / 0.08), 0 10px 30px rgb(2 7 10 / 0.16);
 }
-.saisie-ia:focus-within { border-color: color-mix(in srgb, var(--ink) 35%, var(--line-strong)); }
+.saisie-ia:focus-within { border-color: color-mix(in srgb, var(--ink) 35%, var(--line-strong)); outline: 2px solid var(--focus); outline-offset: 2px; }
 .saisie-ia textarea { width: 100%; min-height: 0; max-height: 40vh; padding: var(--space-1) 0; border: 0; border-radius: 0; background: transparent; color: var(--ink); font: inherit; font-size: 1.0625rem; line-height: 1.5; resize: none; outline: none; box-shadow: none; }
 .saisie-ia textarea::placeholder { color: color-mix(in srgb, var(--ink) 40%, transparent); }
 .saisie-ia__bas { display: flex; align-items: center; gap: var(--space-3); }
@@ -778,7 +778,7 @@ const messageErreur = computed(() =>
 .erreur { margin: 0; color: var(--danger); font-weight: 600; }
 
 /* Systalink : le seul bloc sombre de la page, pour qu'on le voie. Le reste reste calme. */
-.systalink { display: grid; gap: var(--space-6); padding: var(--space-8); border-radius: var(--radius-lg); background: var(--surface); color: var(--ink); }
+.systalink { display: grid; gap: var(--space-6); padding: clamp(var(--space-4), 6vw, var(--space-8)); border-radius: var(--radius-lg); background: var(--surface); color: var(--ink); }
 .systalink__tete h2 { margin: 0; font-size: var(--type-h2-size); line-height: var(--type-h2-line); }
 .systalink__tete p { margin: var(--space-2) 0 0; color: var(--ink-muted); }
 .systalink__services { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); }
@@ -850,6 +850,7 @@ const messageErreur = computed(() =>
 
 @media (prefers-reduced-motion: reduce) { .besoin summary::before { transition: none; } }
 
+
 /* ---------------------------------------------------------------- la conversation avec Ayo, l'assistant IA */
 .ayo-message { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-3); align-items: start; }
 .ayo-message__bulle {
@@ -894,7 +895,7 @@ const messageErreur = computed(() =>
 .comparaison thead th :deep(.j-avatar) { vertical-align: middle; margin-inline-end: 6px; }
 .comparaison tbody th { color: var(--ink-muted); font-weight: 600; white-space: nowrap; }
 .comparaison ul { margin: 0; padding-inline-start: 1em; }
-@media (max-width: 640px) { .ayo-message { grid-template-columns: 1fr; } .ayo-message__avatar { display: none; } .brief__tete { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 640px) { .ayo-message { grid-template-columns: minmax(0, 1fr); } .ayo-message__avatar { display: none; } .brief__tete { grid-template-columns: minmax(0, 1fr); } }
 
 /* La réponse d'Ayo, rangée en sections comme une réponse écrite. */
 .reponse__titre { margin: 0; font-size: 1.0625rem; font-weight: 700; }
@@ -914,4 +915,21 @@ const messageErreur = computed(() =>
 .genre--outil { background: var(--proof-soft); color: var(--proof-ink); }
 .services-ayo { display: grid; gap: var(--space-3); }
 .services-ayo__note { margin: 0; font-size: var(--type-body-sm-size); }
+
+/* Téléphone : trois cartes imbriquées (la réponse d'Ayo, la proposition, une piste) gardaient chacune 24 à 32 px
+   de marge ; le texte n'avait plus que 200 px. Marges ramenées à 12–16 px, onglets qui défilent avec un fondu. */
+@media (max-width: 480px) {
+  .ayo-message__bulle { padding: var(--space-3) var(--space-4) var(--space-4); }
+  .bloc, .priorite, .jalon, .recommande, .offres, .brief, .attente, .vide { padding: var(--space-4); }
+  .piste { padding: var(--space-3); }
+  .lancer-seul { padding: var(--space-3) var(--space-4); }
+  .onglets__barre {
+    scrollbar-width: none; padding-inline-end: var(--space-6);
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - var(--space-8)), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - var(--space-8)), transparent);
+  }
+  .onglets__barre::-webkit-scrollbar { display: none; }
+  .onglet { padding-inline: var(--space-3); }
+  .onglet:focus-visible { outline-offset: -2px; }
+}
 </style>

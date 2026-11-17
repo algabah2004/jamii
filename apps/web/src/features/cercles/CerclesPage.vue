@@ -232,9 +232,11 @@ function afficherResultats() {
 .visages__un { display: flex; border-radius: 50%; margin-left: -7px; box-shadow: 0 0 0 2px var(--surface); }
 .aucun { padding: 50px 24px; }
 @media (max-width: 960px) { .tete { gap: 24px; } .tete h1 { font-size: 2.8rem; } .exploration { top: 126px; } .chiffres { gap: 20px; } }
-@media (max-width: 700px) { .tete { grid-template-columns: 1fr; } .tete h1 { font-size: 2.75rem; } .vedette__visuel { height: 85px; } .creer { --action: var(--proof); --on-action: var(--on-proof); }
+@media (max-width: 700px) { .tete { grid-template-columns: minmax(0, 1fr); } .tete h1 { font-size: 2.75rem; } .vedette__visuel { height: 85px; } .creer { --action: var(--proof); --on-action: var(--on-proof); }
 .tete__actions .j-bouton { flex: 1; } .exploration { position: static; padding: 12px; border-radius: 20px; } .recherche { gap: 8px; padding-left: 10px; } .recherche .j-bouton { padding-inline: 14px; } .recherche input { font-size: .875rem; } .filtres { width: 100%; justify-content: space-between; gap: 0; } .filtres button { padding: 8px 10px; font-size: .8125rem; } .selecteurs { width: 100%; } .selecteurs > label { flex: 1; min-width: 0; } .selecteurs select { max-width: none; width: 100%; } .resultats__aide { display: none; } }
 @media (prefers-reduced-motion: reduce) { .resume { transition: none; } .resume:hover { transform: none; } }
+/* Téléphone à l'horizontale : la recherche ne reste pas collée, elle prendrait la moitié de l'écran. */
+@media (max-height: 500px) and (orientation: landscape) { .exploration { position: static; } }
 .resume__profils { display: flex; flex-wrap: wrap; gap: 6px; }
 .resume__profils > span:not(.visuellement-cache) { padding: 2px 10px; border-radius: var(--radius-pill); background: var(--action-soft); color: var(--action-ink); font-size: 0.75rem; font-weight: 700; }
 </style>

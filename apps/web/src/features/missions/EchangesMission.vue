@@ -113,7 +113,7 @@ async function envoyer() {
 </template>
 
 <style scoped>
-.echanges { display: grid; gap: var(--space-4); padding: var(--space-8); }
+.echanges { display: grid; gap: var(--space-4); padding: clamp(var(--space-4), 6vw, var(--space-8)); }
 .echanges h2, .echanges p { margin: 0; }
 .echanges h2 { font-size: 1.25rem; }
 .tete { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: baseline; justify-content: space-between; }
@@ -123,7 +123,7 @@ async function envoyer() {
 }
 .fil:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .fil li { display: grid; grid-template-columns: auto 1fr; gap: var(--space-1) var(--space-2); align-items: end; justify-items: start; }
-.fil li.de-moi { grid-template-columns: 1fr; justify-items: end; }
+.fil li.de-moi { grid-template-columns: minmax(0, 1fr); justify-items: end; }
 .bulle {
   max-inline-size: 36rem; padding: var(--space-2) var(--space-3); border-radius: var(--radius-md); white-space: pre-line;
   background: var(--surface-raised, var(--surface)); border: 1px solid var(--line-strong);
@@ -131,7 +131,7 @@ async function envoyer() {
 .de-moi .bulle { background: var(--action); border-color: var(--action); color: var(--on-action); }
 .heure { grid-column: 1 / -1; font-size: 0.75rem; }
 .fil li:not(.de-moi) .heure { padding-inline-start: 28px; }
-.saisie { display: grid; grid-template-columns: 1fr auto; gap: var(--space-3); align-items: end; }
+.saisie { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-3); align-items: end; }
 textarea {
   inline-size: 100%; padding: var(--space-3); border: 1px solid var(--line-strong); border-radius: var(--radius-md);
   background: var(--surface); color: var(--ink); font: inherit; resize: vertical;

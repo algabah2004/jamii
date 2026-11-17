@@ -125,7 +125,7 @@ async function envoyer() {
 </template>
 
 <style scoped>
-.devis { display: grid; gap: var(--space-4); padding: var(--space-8); }
+.devis { display: grid; gap: var(--space-4); padding: clamp(var(--space-4), 6vw, var(--space-8)); }
 .devis h2 { margin: 0; font-size: 1.25rem; }
 .texte-discret { margin: 0; }
 .devise { display: grid; gap: var(--space-1); max-width: 12rem; }

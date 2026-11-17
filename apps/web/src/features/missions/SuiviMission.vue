@@ -91,7 +91,7 @@ function demarrer() {
 </template>
 
 <style scoped>
-.suivi { display: grid; gap: var(--space-6); padding: var(--space-8); }
+.suivi { display: grid; gap: var(--space-6); padding: clamp(var(--space-4), 6vw, var(--space-8)); }
 .suivi h2 { margin: 0; font-size: 1.25rem; }
 .suivi h3 { margin: 0 0 var(--space-2); font-size: 1rem; }
 .faits { margin: 0; display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); }

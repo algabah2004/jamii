@@ -283,7 +283,7 @@ async function agir(appel: (id: string, version: number) => Promise<Resultat<Mis
   .resume { position: sticky; top: 6rem; max-block-size: calc(100vh - 7rem); overflow-y: auto; overscroll-behavior: contain; }
 }
 
-.contenu { display: grid; gap: var(--space-8); padding: var(--space-8); }
+.contenu { display: grid; gap: var(--space-8); padding: clamp(var(--space-4), 6vw, var(--space-8)); }
 @media (max-width: 600px) { .contenu { padding: var(--space-4); } }
 .contenu h2 { margin: 0 0 var(--space-3); font-size: 1.0625rem; }
 .besoin { margin: 0; white-space: pre-line; line-height: 1.6; }
@@ -300,7 +300,7 @@ async function agir(appel: (id: string, version: number) => Promise<Resultat<Mis
 .competences { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .competences li { padding: 2px var(--space-3); border-radius: var(--radius-pill); border: 1px solid var(--line-strong); font-size: var(--type-body-sm-size); font-weight: 600; }
 
-.resume { display: grid; gap: var(--space-4); padding: var(--space-6); }
+.resume { display: grid; gap: var(--space-4); padding: clamp(var(--space-4), 5vw, var(--space-6)); }
 .resume p { margin: 0; }
 .resume__prochaine { display: grid; gap: var(--space-2); padding-block-end: var(--space-4); border-block-end: 1px solid var(--line-strong); }
 .resume__etape { font-weight: 800; font-size: 1.125rem; }

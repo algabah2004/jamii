@@ -246,5 +246,5 @@ const apercu = (c: Conversation) =>
   .messagerie *, .messagerie *::before, .messagerie *::after { animation: none !important; transition-duration: 0ms !important; }
 }
 @media (max-width: 960px) { .messagerie { grid-template-columns: 320px minmax(0, 1fr); } .bienvenue { padding: 24px; } }
-@media (max-width: 720px) { .messagerie { grid-template-columns: 1fr; border-radius: 16px; gap: 0; } .espace-discussion { display: none; } .messagerie--ouverte .boite { display: none; } .messagerie--ouverte .espace-discussion { display: block; } .boite { border-radius: 22px; } .espace-discussion { border-radius: 22px; } .boite__tete { padding: 14px 14px 10px 18px; } }
+@media (max-width: 720px) { .messagerie { grid-template-columns: minmax(0, 1fr); border-radius: 16px; gap: 0; } .espace-discussion { display: none; } .messagerie--ouverte .boite { display: none; } .messagerie--ouverte .espace-discussion { display: block; } .boite { border-radius: 22px; } .espace-discussion { border-radius: 22px; } .boite__tete { padding: 14px 14px 10px 18px; } }
 </style>

@@ -131,7 +131,7 @@ async function retoucher() {
 </template>
 
 <style scoped>
-.jalon { display: grid; gap: var(--space-4); padding: var(--space-6); border: 1px solid var(--line-strong); border-radius: var(--radius-md); }
+.jalon { display: grid; gap: var(--space-4); padding: clamp(var(--space-4), 5vw, var(--space-6)); border: 1px solid var(--line-strong); border-radius: var(--radius-md); }
 .jalon[data-statut='accepte'] { border-color: var(--action); }
 .tete { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: baseline; justify-content: space-between; }
 .tete h3 { margin: 0; font-size: 1rem; }

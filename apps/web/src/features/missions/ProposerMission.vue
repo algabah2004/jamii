@@ -117,7 +117,7 @@ async function envoyer() {
 </template>
 
 <style scoped>
-.proposer { display: grid; gap: var(--space-4); padding: var(--space-8); }
+.proposer { display: grid; gap: var(--space-4); padding: clamp(var(--space-4), 6vw, var(--space-8)); }
 .proposer h2 { margin: 0; font-size: 1.25rem; }
 .texte-discret { margin: 0; }
 .ligne { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); align-items: start; }

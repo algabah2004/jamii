@@ -191,9 +191,9 @@ const MEMBRES = ['AD', 'KY', 'FS', 'NW', 'MT'] as const
 .visuellement-cache { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
 @media (max-width: 900px) {
-  .chapitres { grid-template-columns: 1fr; gap: var(--space-6); }
+  .chapitres { grid-template-columns: minmax(0, 1fr); gap: var(--space-6); }
   .comparaison__entete { display: none; }
-  .ligne { grid-template-columns: 1fr; gap: var(--space-3); padding: var(--space-6); }
+  .ligne { grid-template-columns: minmax(0, 1fr); gap: var(--space-3); padding: var(--space-6); }
   .ligne__ou { display: block; margin-bottom: 2px; }
   .ligne__fleche { transform: rotate(90deg); width: 2rem; height: 2rem; }
   .ligne:hover .ligne__fleche { transform: rotate(90deg); }

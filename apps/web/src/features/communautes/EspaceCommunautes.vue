@@ -42,7 +42,7 @@ const { t } = useI18n()
   .espace__cote { display: none; }
 }
 @media (max-width: 860px) {
-  .espace, .espace--cote { grid-template-columns: 1fr; margin-top: var(--space-2); }
+  .espace, .espace--cote { grid-template-columns: minmax(0, 1fr); margin-top: var(--space-2); }
   .espace__barre { position: static; height: auto; }
   .espace__principal { min-height: 0; }
 }

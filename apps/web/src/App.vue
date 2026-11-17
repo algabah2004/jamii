@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { RouterLink, RouterView } from 'vue-router'
+import { RouterLink, RouterView, useRoute } from 'vue-router'
 import ReglagesAffichage from './components/ReglagesAffichage.vue'
 import BoutonLangue from './components/BoutonLangue.vue'
 import BoutonTheme from './components/BoutonTheme.vue'
+import { garderFocusVisibleDansLesRangees } from './components/rangeeDefilante'
 import { chargerSession, seDeconnecter, useSession } from './session'
 import { JAvatar, JBouton, JSquelette } from './design-system'
 import { arreterActivite, suivreActivite, useActivite } from './features/reseau/activite'
@@ -23,16 +24,39 @@ const nonLus = computed(() => activite.value?.notificationsNonLues ?? 0)
 watch(etat, (e) => (e === 'connecte' ? suivreActivite() : arreterActivite()), { immediate: true })
 // Les appels (#157) : on demande toutes les 2 s si quelqu'un appelle, sur n'importe quelle page (features/reseau/appel.ts).
 watch(etat, (e) => (e === 'connecte' ? suivreAppelsEntrants() : arreterAppelsEntrants()), { immediate: true })
+
+/*
+ * Sur téléphone et tablette (960 px et moins), le menu se replie derrière un bouton « Menu » : toutes les rubriques
+ * se voient d'un coup quand on l'ouvre, au lieu d'une rangée qui défile où la moitié restait cachée.
+ * Motif « disclosure » de l'ARIA : le bouton porte aria-expanded, le focus reste sur lui. Le menu se referme quand on
+ * change de page, avec Échap (le focus revient au bouton) ou en touchant ailleurs.
+ */
+const route = useRoute()
+const menuOuvert = ref(false)
+const boutonMenu = ref<HTMLButtonElement | null>(null)
+const capsule = ref<HTMLElement | null>(null)
+watch(() => route.fullPath, () => (menuOuvert.value = false))
+function fermerAuClavier(e: KeyboardEvent) {
+  if (e.key !== 'Escape' || !menuOuvert.value) return
+  menuOuvert.value = false
+  boutonMenu.value?.focus()
+}
+function fermerAilleurs(e: PointerEvent) {
+  if (menuOuvert.value && e.target instanceof Node && !capsule.value?.contains(e.target)) menuOuvert.value = false
+}
+onMounted(() => document.addEventListener('pointerdown', fermerAilleurs))
+onBeforeUnmount(() => document.removeEventListener('pointerdown', fermerAilleurs))
+garderFocusVisibleDansLesRangees()
 </script>
 
 <template>
   <a href="#contenu" class="aller-au-contenu">{{ t('menu.allerAuContenu') }}</a>
   <!-- La capsule de navigation est sombre sur toutes les pages, comme sur l'accueil (zone-sombre), dans les deux thèmes :
        un repère stable en haut de l'écran, qui tranche sur le contenu clair. -->
-  <header class="entete entete--scene zone-sombre" :class="{ 'entete--connecte': etat === 'connecte' }">
-    <div class="entete__interieur verre">
+  <header class="entete entete--scene zone-sombre" :class="{ 'entete--connecte': etat === 'connecte', 'entete--menu-ouvert': menuOuvert }" @keydown="fermerAuClavier">
+    <div ref="capsule" class="entete__interieur verre">
       <RouterLink to="/" class="marque">Jamii<span class="marque__point" aria-hidden="true" /></RouterLink>
-      <nav :aria-label="t('menu.principal')">
+      <nav id="menu-principal" :aria-label="t('menu.principal')">
         <RouterLink v-if="etat === 'connecte'" to="/communautes">{{ t('menu.communautes') }}</RouterLink>
         <RouterLink v-if="etat === 'connecte'" to="/cercles">{{ t('menu.cercles') }}</RouterLink>
         <RouterLink v-if="etat === 'connecte'" to="/demandes" :class="{ 'router-link-active': $route.path.startsWith('/demandes') }">{{ t('menu.demandes') }}</RouterLink>
@@ -42,6 +66,8 @@ watch(etat, (e) => (e === 'connecte' ? suivreAppelsEntrants() : arreterAppelsEnt
         <RouterLink to="/systalink" :aria-label="t('menu.systalink')">
           <span class="lien-long" aria-hidden="true">{{ t('menu.systalink') }}</span><span class="lien-court" aria-hidden="true">{{ t('menu.systalinkCourt') }}</span>
         </RouterLink>
+        <!-- Sur téléphone, « Se déconnecter » n'a pas la place dans l'en-tête : il est au bas du menu ouvert. -->
+        <button v-if="etat === 'connecte'" type="button" class="menu__deconnexion" data-test="deconnexion-menu" @click="seDeconnecter">{{ t('connexion.deconnexion') }}</button>
       </nav>
       <div class="actions">
         <!-- La langue et le thème en un clic, connecté ou non. Le choix « Système » reste dans le pied de page. -->
@@ -72,6 +98,21 @@ watch(etat, (e) => (e === 'connecte' ? suivreAppelsEntrants() : arreterAppelsEnt
           </RouterLink>
           <button type="button" class="deconnexion" @click="seDeconnecter">{{ t('connexion.deconnexion') }}</button>
         </template>
+        <button
+          ref="boutonMenu"
+          type="button"
+          class="bouton-menu"
+          aria-controls="menu-principal"
+          :aria-expanded="menuOuvert"
+          data-test="bouton-menu"
+          @click="menuOuvert = !menuOuvert"
+        >
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+            <path v-if="menuOuvert" d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            <path v-else d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+          <span class="bouton-menu__texte">{{ t('menu.bouton') }}</span>
+        </button>
       </div>
     </div>
   </header>
@@ -103,6 +144,8 @@ watch(etat, (e) => (e === 'connecte' ? suivreAppelsEntrants() : arreterAppelsEnt
         <RouterLink to="/systalink">{{ t('menu.systalink') }}</RouterLink>
       </nav>
       <ReglagesAffichage class="reglages--pied" />
+      <!-- Sur téléphone, « Se déconnecter » n'a plus la place dans l'en-tête : il vit ici, à côté des réglages. -->
+      <button v-if="etat === 'connecte'" type="button" class="deconnexion pied__deconnexion" data-test="deconnexion-pied" @click="seDeconnecter">{{ t('connexion.deconnexion') }}</button>
       <p class="pied__cadev">{{ t('pied.cadev') }}</p>
     </div>
   </footer>
@@ -130,6 +173,18 @@ main.main--pleine { max-width: none; padding-inline: var(--space-4); }
 .aller-au-contenu:focus { top: var(--space-2); }
 
 .entete { position: sticky; top: 0; z-index: 10; padding: var(--space-3) var(--space-4) 0; pointer-events: none; }
+/* Au clavier, l'élément qui reçoit le focus ne doit jamais finir sous l'en-tête fixe ni sous une barre d'action en bas
+   (WCAG 2.4.11). `:where` : aucune priorité, les ancres qui ont déjà leur marge la gardent. */
+:where(a[href], button, input, select, textarea, summary, [tabindex]):focus { scroll-margin-block: 6rem 1rem; }
+@media (max-width: 960px) { :where(a[href], button, input, select, textarea, summary, [tabindex]):focus { scroll-margin-block: 8rem 6rem; } }
+@media (max-height: 500px) and (orientation: landscape) { :where(a[href], button, input, select, textarea, summary, [tabindex]):focus { scroll-margin-block: 1rem; } }
+/* Téléphone à l'horizontale : l'en-tête fixe prendrait un tiers de l'écran. Il défile avec la page. */
+@media (max-height: 500px) and (orientation: landscape) {
+  .entete { position: relative; }
+  /* La messagerie prend alors tout l'écran sous l'en-tête, qu'on a fait défiler : la conversation garde de la place. */
+  #app:has(.main--messagerie) { height: auto; }
+  main.main--messagerie { flex: none; height: 100dvh; padding-block: var(--space-2); }
+}
 /* La capsule de navigation : du verre, parce que le contenu défile dessous (couche d'interface). */
 .entete__interieur {
   pointer-events: auto;
@@ -215,26 +270,54 @@ main.main--pleine { max-width: none; padding-inline: var(--space-4); }
   .lien-long { display: none; }
   .lien-court { display: inline; }
 }
-/* Écran étroit : la marque et les réglages sur la première ligne, le menu entier sur la seconde. */
+/* Le bouton « Menu » et la déconnexion du menu n'existent que sur écran étroit. */
+.bouton-menu, .menu__deconnexion { display: none; }
+.bouton-menu {
+  align-items: center; gap: var(--space-2); min-height: 40px; padding: 0 var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-pill);
+  background: transparent; color: var(--ink); font: inherit; font-weight: 600; font-size: var(--type-body-sm-size); cursor: pointer;
+}
+.bouton-menu:hover, .bouton-menu[aria-expanded='true'] { background: color-mix(in srgb, var(--action) 16%, transparent); }
+.bouton-menu:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* Écran étroit (téléphone, tablette) : une seule ligne, la marque à gauche, les boutons et « Menu » à droite.
+   Le menu se replie : la rangée qui défile cachait la moitié des rubriques et l'en-tête prenait deux lignes (114 px). */
 @media (max-width: 960px) {
   .entete { padding: var(--space-2) var(--space-2) 0; }
   .entete__interieur { padding-block: var(--space-2); padding-inline: var(--space-4) var(--space-2); border-radius: var(--radius-lg); }
   .actions { margin-inline-start: auto; }
-  .entete nav { order: 3; flex: 1 1 100%; min-height: 40px; gap: 0; scrollbar-width: none; }
-  .entete nav a { padding: 0 var(--space-2); font-size: var(--type-body-sm-size); }
   .lien-long { display: none; }
   .lien-court { display: inline; }
   .moi__nom { display: none; }
   .moi { padding: 2px; }
+  .bouton-menu { display: inline-flex; }
+
+  .entete nav { display: none; order: 3; flex: 1 1 100%; }
+  /* Ouvert : toutes les rubriques d'un coup, en grille, avec de grandes cibles. Il défile s'il est plus haut que l'écran. */
+  .entete.entete--menu-ouvert nav {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 10rem), 1fr)); gap: var(--space-1);
+    padding-block: var(--space-2) var(--space-1); border-top: 1px solid var(--line);
+    white-space: normal; overflow: visible auto; max-height: calc(100dvh - 6rem);
+  }
+  .entete nav a { min-height: 48px; padding: 0 var(--space-4); font-size: var(--type-body-size); border-radius: var(--radius-md); }
+  .entete nav a:focus-visible { outline-offset: -2px; }
 }
-/* Téléphone : les 6 entrées du menu passent sur deux lignes plutôt que d'en cacher une hors de l'écran. */
+/* Téléphone : la marque et les boutons tiennent sur une seule ligne. */
 @media (max-width: 480px) {
-  /* La marque et les boutons tiennent sur une seule ligne : l'en-tête mange moins l'écran. */
   .entete__interieur { column-gap: var(--space-2); padding-inline: var(--space-3) var(--space-1); }
   .actions { gap: 2px; }
-  .deconnexion { padding: var(--space-1); }
-  .entete nav { flex-wrap: wrap; justify-content: center; row-gap: 2px; padding-block: 2px; }
-  .entete nav a { min-height: 36px; }
+  /* « Se déconnecter » n'a pas la place dans l'en-tête : il est au bas du menu ouvert, et dans le pied de page. */
+  .entete .deconnexion { display: none; }
+  .pied .pied__deconnexion { display: inline-flex; }
+  .entete.entete--menu-ouvert .menu__deconnexion {
+    display: flex; align-items: center; grid-column: 1 / -1; min-height: 48px; padding: 0 var(--space-4);
+    border: 0; border-top: 1px solid var(--line); background: none; color: var(--ink-muted); font: inherit; font-weight: 600; cursor: pointer;
+  }
+  .menu__deconnexion:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+  /* À 320 px, le mot « Menu » ne tient plus à côté des icônes : l'icône seule, le nom accessible reste « Menu ». */
+  .bouton-menu { width: 40px; padding: 0; justify-content: center; }
+  /* Langue et thème restent dans le pied de page et dans les réglages : la ligne de l'en-tête tient dans 320 px. */
+  .entete .actions > button:not(.bouton-menu):not(.deconnexion) { display: none; }
+  .bouton-menu__texte { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 }
 
 main { flex: 1; padding-block: var(--space-8) var(--space-12); }
@@ -252,5 +335,6 @@ main:focus { outline: none; }
 .pied nav { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-6); }
 .pied nav a { color: var(--ink); text-decoration: none; font-weight: 600; }
 .pied nav a:hover { color: var(--action-ink); text-decoration: underline; }
+.pied__deconnexion { display: none; min-height: 44px; align-items: center; padding-inline: 0; color: var(--ink); font-weight: 600; text-decoration: underline; }
 .pied__cadev { flex-basis: 100%; margin: 0; color: var(--ink-muted); font-size: var(--type-body-sm-size); }
 </style>

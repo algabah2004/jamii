@@ -94,7 +94,7 @@ async function inviter(personne: Inscription) {
 </template>
 
 <style scoped>
-.equipes { display: grid; gap: var(--space-4); padding: var(--space-8); }
+.equipes { display: grid; gap: var(--space-4); padding: clamp(var(--space-4), 6vw, var(--space-8)); }
 .equipes h2 { margin: 0; font-size: 1.25rem; }
 .equipes h3 { margin: 0 0 var(--space-2); font-size: 1rem; }
 .liste, .membres, .seuls { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--space-2); }

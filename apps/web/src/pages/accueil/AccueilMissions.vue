@@ -148,7 +148,7 @@ const JALONS = [
 }
 
 @media (max-width: 760px) {
-  .cotes { grid-template-columns: 1fr; }
+  .cotes { grid-template-columns: minmax(0, 1fr); }
   .devis { transform: none; }
 }
 </style>
