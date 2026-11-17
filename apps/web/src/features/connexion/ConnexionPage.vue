@@ -4,8 +4,8 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { adresseConnexionGithub, adresseConnexionGoogle } from '../../api/client'
 import MotifsCoins from '../../components/MotifsCoins.vue'
-import { useSession } from '../../session'
-import { cheminSur, erreurGithub, lireFournisseurs } from './connexion'
+import { chargerSession, useSession } from '../../session'
+import { cheminSur, entrerEnDemo, erreurGithub, lireFournisseurs } from './connexion'
 
 /*
  * Se connecter : avec GitHub (les développeurs), ou avec Google (une PME, une association, toute personne sans compte
@@ -29,9 +29,24 @@ watchEffect(() => {
 })
 
 const google = ref(false)
+const demo = ref(false)
 onMounted(async () => {
-  google.value = (await lireFournisseurs()).google
+  const f = await lireFournisseurs()
+  google.value = f.google
+  demo.value = f.demo
 })
+
+// Le compte démo (#157) : un compte déjà rempli, pour explorer Jamii sans créer de compte. Une fois la session ouverte,
+// on recharge la session : le watchEffect plus haut mène alors à la page demandée.
+const entreeDemo = ref<'repos' | 'envoi' | 'erreur'>('repos')
+async function explorer() {
+  if (entreeDemo.value === 'envoi') return
+  entreeDemo.value = 'envoi'
+  if (await entrerEnDemo()) {
+    await chargerSession()
+    entreeDemo.value = 'repos'
+  } else entreeDemo.value = 'erreur'
+}
 
 </script>
 
@@ -96,6 +111,18 @@ onMounted(async () => {
             </svg>
             {{ t('connexion.google') }}
           </a>
+        </div>
+
+        <!-- Sans compte : le compte démo, déjà rempli. Seulement si le serveur le propose (profil demo). -->
+        <div v-if="demo" class="voie voie--demo" data-test="voie-demo">
+          <p class="voie__pastille voie__pastille--demo">{{ t('connexion.demoPastille') }}</p>
+          <h3 class="voie__titre">{{ t('connexion.demoTitre') }}</h3>
+          <p class="voie__aide">{{ t('connexion.demoTexte') }}</p>
+          <button type="button" class="bouton-large bouton-demo" :disabled="entreeDemo === 'envoi'" :aria-busy="entreeDemo === 'envoi' || undefined" data-test="connexion-demo" @click="explorer">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="m15.5 8.5-2 5-5 2 2-5Z" /></svg>
+            {{ t('connexion.demo') }}
+          </button>
+          <p v-if="entreeDemo === 'erreur'" role="alert" class="alerte" data-test="erreur-demo">{{ t('connexion.demoErreur') }}</p>
         </div>
 
         <p class="rassurance">
@@ -173,6 +200,8 @@ onMounted(async () => {
   background: var(--ink); color: var(--surface); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.02em;
 }
 .voie__pastille--tous { background: var(--proof-soft); color: var(--proof-ink); }
+.voie__pastille--demo { background: var(--action-soft); color: var(--action); }
+.voie--demo { padding-top: var(--space-4); border-top: 1px dashed var(--line); }
 .voie__titre { margin: 0; font-size: 1.0625rem; }
 .voie__aide { margin: 0; color: var(--ink-muted); font-size: var(--type-body-sm-size); line-height: 1.5; }
 .bouton-large {
@@ -187,6 +216,10 @@ onMounted(async () => {
 /* Le bouton Google suit les consignes de Google : fond clair, logo en couleurs, texte « Continuer avec Google ». */
 .bouton-google { border: 1px solid #747775; background: #fff; color: #1f1f1f; }
 .bouton-google:hover { background: #f2f2f2; }
+.bouton-demo { border: 1px solid var(--action); background: var(--surface); color: var(--action); cursor: pointer; }
+.bouton-demo:hover:not(:disabled) { background: var(--action-soft); }
+.bouton-demo:disabled { opacity: 0.7; cursor: progress; }
+.bouton-demo svg { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
 .separateur, .sous-separateur { display: flex; align-items: center; gap: var(--space-3); margin: 0; color: var(--ink-muted); font-size: var(--type-body-sm-size); }
 .separateur::before, .separateur::after, .sous-separateur::before, .sous-separateur::after { content: ''; flex: 1; border-top: 1px solid var(--line); }
 .separateur span { padding: 2px 10px; border: 1px solid var(--line); border-radius: var(--radius-pill); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.75rem; font-weight: 700; }

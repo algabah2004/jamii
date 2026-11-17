@@ -77,6 +77,9 @@ jamii:
     # Profil demo seulement : le login GitHub d'un vrai compte à placer dans la démo (son cercle, ses communautés…).
     # Le compte doit s'être connecté une fois. Par défaut, celui de Fadel ; JAMII_DEMO_COMPTE= (vide) : aucun.
     compte: ${JAMII_DEMO_COMPTE:rev22rse22}
+    # Profil demo seulement : le bouton « Explorer avec le compte démo » de la page de connexion, ouvert à tout visiteur.
+    # JAMII_DEMO_CONNEXION=false le retire (le compte démo reste rempli, mais plus personne ne peut l'ouvrir).
+    connexion: ${JAMII_DEMO_CONNEXION:true}
   # Les appels vocaux et vidéo des salons (#155) : un serveur Jitsi. Chaque salon y a sa salle.
   appels:
     url: ${APPELS_URL:https://meet.jit.si}

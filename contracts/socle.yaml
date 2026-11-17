@@ -117,11 +117,28 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [github, google, email]
+                required: [github, google, email, demo]
                 properties:
                   github: { type: boolean }
                   google: { type: boolean }
                   email: { type: boolean }
+                  demo: { type: boolean, description: 'Vrai si `POST /api/auth/demo` est ouvert (profil demo de l''API).' }
+
+  /api/auth/demo:
+    post:
+      tags: [connexion]
+      operationId: entrerEnDemo
+      summary: Ouvre une session sur le compte démo, sans compte ni mot de passe (#157)
+      description: |
+        Pour explorer Jamii déjà rempli : un cercle dont c'est le tour, des communautés, des contacts, un hackathon et une
+        mission. Le compte est partagé par tous les visiteurs, donc remis à zéro à chaque démarrage de l'API. Il n'écrit
+        et n'appelle que les personnes de la démo (`403 compte_demo` sinon), et ne peut pas être supprimé. N'existe
+        qu'avec le profil `demo` et `JAMII_DEMO_CONNEXION` vrai (`404` sinon).
+      security:
+        - csrf: []
+      responses:
+        '204': { description: 'Session ouverte : cookie de session posé.' }
+        '404': { $ref: '#/components/responses/Introuvable' }
 
   /api/auth/lien-email:
     post:
@@ -218,6 +235,7 @@ paths:
       responses:
         '202': { description: Suppression lancée. }
         '401': { $ref: '#/components/responses/NonConnecte' }
+        '403': { description: '`compte_demo` : le compte démo, partagé par tous les visiteurs, ne peut pas être supprimé.', $ref: '#/components/responses/Interdit' }
 
   /api/me/export:
     get:
