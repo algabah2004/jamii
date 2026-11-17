@@ -32,7 +32,10 @@ class MonProfilController {
 
 	private final Clock horloge = Clock.systemUTC();
 
-	MonProfilController(ProfilRepository profils, Annuaire comptes, GenerationProfils generation) {
+	private final Preuves preuves;
+
+	MonProfilController(ProfilRepository profils, Annuaire comptes, GenerationProfils generation, Preuves preuves) {
+		this.preuves = preuves;
 		this.profils = profils;
 		this.comptes = comptes;
 		this.generation = generation;
@@ -80,7 +83,7 @@ class MonProfilController {
 
 	private Vues.MonProfil vue(Profil profil) {
 		Compte compte = comptes.lire(profil.utilisateurId()).orElseThrow(ErreurProfil::introuvable);
-		return Vues.MonProfil.depuis(profil, compte);
+		return Vues.MonProfil.depuis(profil, compte, preuves.resume(profil.utilisateurId()));
 	}
 
 }

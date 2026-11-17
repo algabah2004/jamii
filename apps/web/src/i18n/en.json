@@ -545,6 +545,7 @@
       "inspiration": "See projects already online",
       "equipe": "team {pays}",
       "surSystalink": "Hosted on Systalink",
+      "roles": { "porteur": "Project lead", "membre": "Team member" },
       "enLigne": "Online"
     },
     "depots": {
