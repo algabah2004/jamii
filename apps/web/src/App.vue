@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { RouterLink, RouterView } from 'vue-router'
+import { RouterLink, RouterView, useRoute } from 'vue-router'
 import ReglagesAffichage from './components/ReglagesAffichage.vue'
 import BoutonLangue from './components/BoutonLangue.vue'
 import BoutonTheme from './components/BoutonTheme.vue'
@@ -23,6 +23,21 @@ const nonLus = computed(() => activite.value?.notificationsNonLues ?? 0)
 watch(etat, (e) => (e === 'connecte' ? suivreActivite() : arreterActivite()), { immediate: true })
 // Les appels (#157) : on demande toutes les 2 s si quelqu'un appelle, sur n'importe quelle page (features/reseau/appel.ts).
 watch(etat, (e) => (e === 'connecte' ? suivreAppelsEntrants() : arreterAppelsEntrants()), { immediate: true })
+
+// Sur téléphone, le menu défile sur une ligne : la page active est ramenée au centre, sans toucher au défilement de la page.
+const route = useRoute()
+const menu = ref<HTMLElement | null>(null)
+watch(
+  [() => route.path, etat],
+  async () => {
+    await nextTick()
+    const nav = menu.value
+    const actif = nav?.querySelector<HTMLElement>('a.router-link-active')
+    if (!nav || !actif || nav.scrollWidth <= nav.clientWidth) return
+    nav.scrollLeft = actif.offsetLeft - (nav.clientWidth - actif.offsetWidth) / 2
+  },
+  { flush: 'post' },
+)
 </script>
 
 <template>
@@ -32,7 +47,7 @@ watch(etat, (e) => (e === 'connecte' ? suivreAppelsEntrants() : arreterAppelsEnt
   <header class="entete entete--scene zone-sombre" :class="{ 'entete--connecte': etat === 'connecte' }">
     <div class="entete__interieur verre">
       <RouterLink to="/" class="marque">Jamii<span class="marque__point" aria-hidden="true" /></RouterLink>
-      <nav :aria-label="t('menu.principal')">
+      <nav ref="menu" :aria-label="t('menu.principal')">
         <RouterLink v-if="etat === 'connecte'" to="/communautes">{{ t('menu.communautes') }}</RouterLink>
         <RouterLink v-if="etat === 'connecte'" to="/cercles">{{ t('menu.cercles') }}</RouterLink>
         <RouterLink v-if="etat === 'connecte'" to="/demandes" :class="{ 'router-link-active': $route.path.startsWith('/demandes') }">{{ t('menu.demandes') }}</RouterLink>
@@ -103,6 +118,8 @@ watch(etat, (e) => (e === 'connecte' ? suivreAppelsEntrants() : arreterAppelsEnt
         <RouterLink to="/systalink">{{ t('menu.systalink') }}</RouterLink>
       </nav>
       <ReglagesAffichage class="reglages--pied" />
+      <!-- Sur téléphone, « Se déconnecter » n'a plus la place dans l'en-tête : il vit ici, à côté des réglages. -->
+      <button v-if="etat === 'connecte'" type="button" class="deconnexion pied__deconnexion" data-test="deconnexion-pied" @click="seDeconnecter">{{ t('connexion.deconnexion') }}</button>
       <p class="pied__cadev">{{ t('pied.cadev') }}</p>
     </div>
   </footer>
@@ -227,14 +244,25 @@ main.main--pleine { max-width: none; padding-inline: var(--space-4); }
   .moi__nom { display: none; }
   .moi { padding: 2px; }
 }
-/* Téléphone : les 6 entrées du menu passent sur deux lignes plutôt que d'en cacher une hors de l'écran. */
+/* Écran étroit : le menu tient sur une seule ligne qui défile. Sur trois lignes, l'en-tête collant mangeait 30 % d'un
+   téléphone. Un fondu sur les bords montre qu'il y a d'autres entrées, et la page active est amenée dans le champ. */
+@media (max-width: 960px) {
+  .entete nav {
+    padding-inline: var(--space-3);
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--space-3), #000 calc(100% - var(--space-6)), transparent);
+    mask-image: linear-gradient(to right, transparent, #000 var(--space-3), #000 calc(100% - var(--space-6)), transparent);
+  }
+  .entete nav a:last-child { margin-inline-end: var(--space-4); }
+}
+/* Téléphone : la marque et les boutons tiennent sur une seule ligne. */
 @media (max-width: 480px) {
-  /* La marque et les boutons tiennent sur une seule ligne : l'en-tête mange moins l'écran. */
   .entete__interieur { column-gap: var(--space-2); padding-inline: var(--space-3) var(--space-1); }
   .actions { gap: 2px; }
-  .deconnexion { padding: var(--space-1); }
-  .entete nav { flex-wrap: wrap; justify-content: center; row-gap: 2px; padding-block: 2px; }
-  .entete nav a { min-height: 36px; }
+  /* Six boutons, la marque et les marges ne tiennent pas dans 320 px : « Se déconnecter » passe dans le pied de page. */
+  .entete .deconnexion { display: none; }
+  .pied .pied__deconnexion { display: inline-flex; }
+  .entete nav { margin-inline: calc(-1 * var(--space-3)) calc(-1 * var(--space-1)); }
+  .entete nav a { min-height: 40px; }
 }
 
 main { flex: 1; padding-block: var(--space-8) var(--space-12); }
@@ -252,5 +280,6 @@ main:focus { outline: none; }
 .pied nav { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-6); }
 .pied nav a { color: var(--ink); text-decoration: none; font-weight: 600; }
 .pied nav a:hover { color: var(--action-ink); text-decoration: underline; }
+.pied__deconnexion { display: none; min-height: 44px; align-items: center; padding-inline: 0; color: var(--ink); font-weight: 600; text-decoration: underline; }
 .pied__cadev { flex-basis: 100%; margin: 0; color: var(--ink-muted); font-size: var(--type-body-sm-size); }
 </style>
