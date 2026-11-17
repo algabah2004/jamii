@@ -32,24 +32,19 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('./features/communautes/NouvelleCommunautePage.vue'),
     meta: { connexionRequise: true, pleineLargeur: true },
   },
-  {
-    path: '/communautes/:slug/salons/nouveau',
-    name: 'nouveau-salon',
-    component: () => import('./features/communautes/NouveauSalonPage.vue'),
-    meta: { connexionRequise: true, pleineLargeur: true },
-  },
+  /*
+   * L'espace d'une communauté remplit l'écran (#155). Le cadre (la barre à gauche, le côté à droite) est une route parente :
+   * passer du fil à un salon, à une publication ou à « Nouveau salon » ne change que le centre, la barre reste en place.
+   */
   {
     path: '/communautes/:slug',
-    name: 'communaute',
-    component: () => import('./features/communautes/CommunautePage.vue'),
-    // L'espace d'une communauté remplit l'écran (#155).
-    meta: { connexionRequise: true, pleineLargeur: true },
-  },
-  {
-    path: '/publications/:id',
-    name: 'publication',
-    component: () => import('./features/communautes/PublicationPage.vue'),
-    meta: { connexionRequise: true, pleineLargeur: true },
+    component: () => import('./features/communautes/CadreCommunaute.vue'),
+    meta: { connexionRequise: true, pleineLargeur: true, espaceCommunaute: true },
+    children: [
+      { path: '', name: 'communaute', component: () => import('./features/communautes/CommunautePage.vue') },
+      { path: 'salons/nouveau', name: 'nouveau-salon', component: () => import('./features/communautes/NouveauSalonPage.vue') },
+      { path: '/publications/:id', name: 'publication', component: () => import('./features/communautes/PublicationPage.vue') },
+    ],
   },
   // La Tech Tontine (docs/priorites.md) : les cercles et leurs tours. Connexion requise.
   {
