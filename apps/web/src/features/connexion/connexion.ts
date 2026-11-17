@@ -56,7 +56,7 @@ export async function lireFournisseurs(): Promise<{ google: boolean; demo: boole
   }
 }
 
-/** Ouvre une session sur le compte démo (#157), partagé par tous les visiteurs. Vrai si c'est fait. */
+/** Ouvre une session sur un compte démo à soi (#157), créé pour ce visiteur. Vrai si c'est fait. */
 export async function entrerEnDemo(): Promise<boolean> {
   try {
     const { response } = await api.POST('/api/auth/demo')

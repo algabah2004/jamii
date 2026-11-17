@@ -113,11 +113,13 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Ouvre une session sur le compte démo, sans compte ni mot de passe (#157)
-         * @description Pour explorer Jamii déjà rempli : un cercle dont c'est le tour, des communautés, des contacts, un hackathon et une
-         *     mission. Le compte est partagé par tous les visiteurs, donc remis à zéro à chaque démarrage de l'API. Il n'écrit
-         *     et n'appelle que les personnes de la démo (`403 compte_demo` sinon), et ne peut pas être supprimé. N'existe
-         *     qu'avec le profil `demo` et `JAMII_DEMO_CONNEXION` vrai (`404` sinon).
+         * Ouvre une session sur un compte démo à soi, sans compte ni mot de passe (#157)
+         * @description Pour explorer Jamii déjà rempli : un cercle dont c'est le tour, des communautés, des contacts, un hackathon, une
+         *     mission publiée et une mission terminée. Chaque visiteur reçoit son propre compte, jetable : ce qu'il y fait, les
+         *     autres ne le voient pas. Le compte est effacé après 24 heures. Un visiteur déjà dans son compte démo y reste.
+         *     Il n'écrit et n'appelle que les personnes de la démo (`403 compte_demo` sinon), et ne peut pas être supprimé
+         *     (il s'efface seul). Au plus 5 comptes par adresse IP et par heure (`429`), et 50 visiteurs en même temps
+         *     (`503 demo_complete`). N'existe qu'avec le profil `demo` et `JAMII_DEMO_CONNEXION` vrai (`404` sinon).
          */
         post: operations["entrerEnDemo"];
         delete?: never;
@@ -577,6 +579,14 @@ export interface operations {
                 content?: never;
             };
             404: components["responses"]["Introuvable"];
+            429: components["responses"]["TropDeRequetes"];
+            /** @description `demo_complete` : trop de visiteurs en même temps, réessayer dans un moment. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     demanderLienEmail: {
@@ -693,7 +703,7 @@ export interface operations {
                 content?: never;
             };
             401: components["responses"]["NonConnecte"];
-            /** @description `compte_demo` : le compte démo, partagé par tous les visiteurs, ne peut pas être supprimé. */
+            /** @description `compte_demo` : un compte de la démo ne se supprime pas (celui d'un visiteur s'efface seul après 24 heures). */
             403: components["responses"]["Interdit"];
         };
     };

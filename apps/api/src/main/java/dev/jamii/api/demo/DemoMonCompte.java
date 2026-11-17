@@ -45,11 +45,6 @@ final class DemoMonCompte {
 
 	static final UUID MISSION = id("mission:jamii-mobile");
 
-	/** Le même parcours pour le compte démo ({@link CompteDemo}), avec ses propres identifiants : aucune collision. */
-	static final UUID CERCLE_DEMO = id("cercle:pionniers");
-
-	static final UUID MISSION_DEMO = id("mission:jamii-mobile:compte-demo");
-
 	private static final String LIVREE = "livree";
 
 	/** Une tâche du tour : échéance en jours après le début du tour ; `qui` null pour le compte, sinon un membre de démo. */
@@ -66,7 +61,7 @@ final class DemoMonCompte {
 
 	private UUID moi;
 
-	/** Ce qui distingue le vrai compte et le compte démo : préfixe des identifiants, cercle, mission, coéquipière. */
+	/** Ce qui distingue le vrai compte et un visiteur : préfixe des identifiants, cercle, mission, coéquipière. */
 	private final String cle;
 
 	private final UUID cercleId;
@@ -79,12 +74,21 @@ final class DemoMonCompte {
 
 	private final DonneesDemo.Personne equipiere;
 
+	/**
+	 * Un visiteur de la démo ({@link VisiteursDemo}) : ils sont nombreux, alors rien de son parcours ne s'affiche
+	 * ailleurs que chez lui. Pas de publication ni de message dans les communautés, une mission sur invitation, et une
+	 * inscription au hackathon sans équipe (ni coéquipière, que les visiteurs se disputeraient).
+	 */
+	private final boolean visiteur;
+
 	DemoMonCompte(JdbcClient base, Projets projets, Instant maintenant, String login) {
-		this(base, projets, maintenant, login, null, "mon-compte", CERCLE, MISSION, "Cercle des bâtisseurs", "L'application mobile de Jamii", AWA);
+		this(base, projets, maintenant, login, null, "mon-compte", CERCLE, MISSION, "Cercle des bâtisseurs", "L'application mobile de Jamii", AWA,
+				false);
 	}
 
 	private DemoMonCompte(JdbcClient base, Projets projets, Instant maintenant, String login, UUID moi, String cle, UUID cercleId,
-			UUID missionId, String nomCercle, String titreMission, DonneesDemo.Personne equipiere) {
+			UUID missionId, String nomCercle, String titreMission, DonneesDemo.Personne equipiere, boolean visiteur) {
+		this.visiteur = visiteur;
 		this.base = base;
 		this.projets = projets;
 		this.maintenant = maintenant;
@@ -98,19 +102,20 @@ final class DemoMonCompte {
 		this.equipiere = equipiere;
 	}
 
-	/** Le parcours du compte démo : un autre cercle, une autre mission, et Fatou (pas Awa) dans l'équipe du hackathon. */
-	static DemoMonCompte pourCompteDemo(JdbcClient base, Projets projets, Instant maintenant) {
-		return new DemoMonCompte(base, projets, maintenant, null, CompteDemo.ID, "compte-demo", CERCLE_DEMO, MISSION_DEMO,
-				"Cercle des pionniers", "Jamii sur téléphone : le salon et le calendrier du cercle", FATOU);
+	/** Le parcours d'un visiteur : son cercle et sa mission, à lui seul (`cle` est unique). */
+	static DemoMonCompte pourVisiteur(JdbcClient base, Projets projets, Instant maintenant, UUID visiteur, String cle) {
+		return new DemoMonCompte(base, projets, maintenant, null, visiteur, cle, id("cercle:pionniers:" + cle),
+				id("mission:jamii-mobile:" + cle), "Cercle des pionniers", "Jamii sur téléphone : le salon et le calendrier du cercle",
+				FATOU, true);
 	}
 
-	/** Pour le compte démo, qui existe déjà ({@link CompteDemo#creer}). */
+	/** Pour un compte qui existe déjà (un visiteur, créé par {@link VisiteursDemo}). */
 	void completer() {
 		if (!base.sql("SELECT EXISTS (SELECT 1 FROM utilisateur WHERE id = :id)").param("id", moi).query(Boolean.class).single()) {
 			return;
 		}
 		remplir();
-		journal.info("Données de démo complétées pour le compte démo");
+		journal.debug("Parcours de démo rempli pour {}", cle);
 	}
 
 	/** Vrai si le compte a été trouvé (et complété). */
@@ -321,6 +326,9 @@ final class DemoMonCompte {
 					ON CONFLICT (communaute_id, utilisateur_id) DO NOTHING
 					""").param("c", c).param("u", moi).param("t", ilYA(jours(20))).update());
 		}
+		if (visiteur) {
+			return;
+		}
 		salon("web", "general", 1, moi, "Bonjour à tous ! Je construis Jamii avec mon cercle, on cherche des retours sur le salon du cercle.", heures(26));
 		salon("web", "general", 2, YANN.id(), "Bienvenue ! Montre-le dans #projets, on testera.", heures(25));
 		salon("antenne-dakar", "general", 1, moi, "Qui vient à la démo de Jamii samedi ? On montre les cercles en direct.", heures(6));
@@ -419,6 +427,14 @@ final class DemoMonCompte {
 		if (!possible) {
 			return;
 		}
+		if (visiteur) {
+			base.sql("""
+					INSERT INTO inscription (id, hackathon_id, utilisateur_id, statut, cherche_equipe, competences, cree_le)
+					VALUES (:id, :h, :u, 'acceptee', FALSE, :c, :t)
+					""").param("id", id("hackathon:abidjan-sante:inscription:" + moi)).param("h", h).param("u", moi)
+				.param("c", new String[] { "vue", "spring" }).param("t", ilYA(heures(20))).update();
+			return;
+		}
 		UUID equipe = id("hackathon:abidjan-sante:equipe:" + cle);
 		base.sql("INSERT INTO equipe (id, hackathon_id, nom, chef_id, cree_le) VALUES (:id, :h, 'Les bâtisseurs', :c, :t)")
 			.param("id", equipe).param("h", h).param("c", moi).param("t", ilYA(heures(20))).update();
@@ -440,10 +456,10 @@ final class DemoMonCompte {
 				INSERT INTO mission (id, client_id, titre, besoin, competences, budget_centimes, devise, date_souhaitee, visibilite,
 					ville, pays, a_distance, statut, version, cree_le, publiee_le)
 				VALUES (:id, :moi, :titre, :besoin, ARRAY['flutter', 'spring'], 600000, 'XOF', :souhaitee,
-					'publique', 'Dakar', 'SN', TRUE, 'publiee', 2, :t, :t)
+					:visibilite, 'Dakar', 'SN', TRUE, 'publiee', 2, :t, :t)
 				ON CONFLICT (id) DO NOTHING
 				""")
-			.param("id", missionId).param("moi", moi).param("titre", titreMission)
+			.param("id", missionId).param("moi", moi).param("titre", titreMission).param("visibilite", visiteur ? "invitation" : "publique")
 			.param("besoin", "Jamii a besoin d'une application mobile : le salon du cercle, le point du jour et le calendrier du tour, "
 					+ "avec des notifications. Elle doit marcher sur un téléphone d'entrée de gamme et avec peu de réseau.")
 			.param("souhaitee", date(maintenant, 45)).param("t", ilYA(jours(3))).update();

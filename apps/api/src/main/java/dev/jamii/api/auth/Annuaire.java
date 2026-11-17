@@ -59,8 +59,14 @@ public class Annuaire {
 	public static final String DOMAINE_DEMO = "@demo.jamii.test";
 
 	/**
-	 * Vrai pour un compte de la démo : ses personnes fictives et le compte démo que tout visiteur peut ouvrir. Ce
-	 * dernier n'écrit qu'aux comptes de la démo et ne peut pas être supprimé : un visiteur anonyme n'importune personne.
+	 * Motif SQL (LIKE) des comptes jetables qu'ouvre « Entrer en démo » : un par visiteur, effacé après 24 heures. Leur
+	 * parcours mêle les personnes de la démo ; les autres modules s'en servent pour ne pas le compter chez elles.
+	 */
+	public static final String VISITEURS_DEMO = "visiteur-%" + DOMAINE_DEMO;
+
+	/**
+	 * Vrai pour un compte de la démo : ses personnes fictives et les comptes jetables des visiteurs ({@link #VISITEURS_DEMO}).
+	 * Ces derniers n'écrivent qu'aux comptes de la démo : un visiteur anonyme n'importune personne.
 	 */
 	@Transactional(readOnly = true)
 	public boolean estDeDemonstration(UUID id) {

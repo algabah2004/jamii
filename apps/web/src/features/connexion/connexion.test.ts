@@ -103,9 +103,28 @@ describe('se connecter', () => {
     nonConnecte()
     const { page, routeur } = await ouvrir('/connexion?retour=/cercles')
     await vi.waitFor(() => expect(page.find('[data-test="connexion-demo"]').exists()).toBe(true))
-    expect(page.get('[data-test="voie-demo"]').text()).toContain('effacé au prochain redémarrage')
+    expect(page.get('[data-test="voie-demo"]').text()).toContain('effacé après 24 heures')
     await page.get('[data-test="connexion-demo"]').trigger('click')
     await vi.waitFor(() => expect(routeur.currentRoute.value.path).toBe('/cercles'))
+  })
+
+  it("le compte démo est aussi sur l'accueil, juste sous le bouton GitHub", async () => {
+    nonConnecte()
+    const { page, routeur } = await ouvrir('/')
+    await vi.waitFor(() => expect(page.find('[data-test="accueil-demo"]').exists()).toBe(true))
+    const actions = page.get('.scene__actions').findAll('a, button').map((e) => e.attributes('data-test'))
+    expect(actions.indexOf('accueil-demo')).toBe(actions.indexOf('connexion') + 1)
+    await page.get('[data-test="accueil-demo"]').trigger('click')
+    await vi.waitFor(() => expect(routeur.currentRoute.value.path).toBe('/profil'))
+  })
+
+  it("sans compte démo sur le serveur, l'accueil n'en parle pas", async () => {
+    nonConnecte()
+    serveur.use(http.get('/api/auth/fournisseurs', () => HttpResponse.json({ github: true, google: true, email: true, demo: false })))
+    const { page } = await ouvrir('/')
+    await vi.waitFor(() => expect(page.find('[data-test="connexion"]').exists()).toBe(true))
+    await new Promise((r) => setTimeout(r, 50))
+    expect(page.find('[data-test="accueil-demo"]').exists()).toBe(false)
   })
 
   it("sans compte démo sur le serveur, pas de bouton ; s'il ne répond pas, on le dit", async () => {

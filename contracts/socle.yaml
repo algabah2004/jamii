@@ -128,17 +128,21 @@ paths:
     post:
       tags: [connexion]
       operationId: entrerEnDemo
-      summary: Ouvre une session sur le compte démo, sans compte ni mot de passe (#157)
+      summary: Ouvre une session sur un compte démo à soi, sans compte ni mot de passe (#157)
       description: |
-        Pour explorer Jamii déjà rempli : un cercle dont c'est le tour, des communautés, des contacts, un hackathon et une
-        mission. Le compte est partagé par tous les visiteurs, donc remis à zéro à chaque démarrage de l'API. Il n'écrit
-        et n'appelle que les personnes de la démo (`403 compte_demo` sinon), et ne peut pas être supprimé. N'existe
-        qu'avec le profil `demo` et `JAMII_DEMO_CONNEXION` vrai (`404` sinon).
+        Pour explorer Jamii déjà rempli : un cercle dont c'est le tour, des communautés, des contacts, un hackathon, une
+        mission publiée et une mission terminée. Chaque visiteur reçoit son propre compte, jetable : ce qu'il y fait, les
+        autres ne le voient pas. Le compte est effacé après 24 heures. Un visiteur déjà dans son compte démo y reste.
+        Il n'écrit et n'appelle que les personnes de la démo (`403 compte_demo` sinon), et ne peut pas être supprimé
+        (il s'efface seul). Au plus 5 comptes par adresse IP et par heure (`429`), et 50 visiteurs en même temps
+        (`503 demo_complete`). N'existe qu'avec le profil `demo` et `JAMII_DEMO_CONNEXION` vrai (`404` sinon).
       security:
         - csrf: []
       responses:
         '204': { description: 'Session ouverte : cookie de session posé.' }
         '404': { $ref: '#/components/responses/Introuvable' }
+        '429': { $ref: '#/components/responses/TropDeRequetes' }
+        '503': { description: '`demo_complete` : trop de visiteurs en même temps, réessayer dans un moment.' }
 
   /api/auth/lien-email:
     post:
@@ -235,7 +239,7 @@ paths:
       responses:
         '202': { description: Suppression lancée. }
         '401': { $ref: '#/components/responses/NonConnecte' }
-        '403': { description: '`compte_demo` : le compte démo, partagé par tous les visiteurs, ne peut pas être supprimé.', $ref: '#/components/responses/Interdit' }
+        '403': { description: '`compte_demo` : un compte de la démo ne se supprime pas (celui d''un visiteur s''efface seul après 24 heures).', $ref: '#/components/responses/Interdit' }
 
   /api/me/export:
     get:
