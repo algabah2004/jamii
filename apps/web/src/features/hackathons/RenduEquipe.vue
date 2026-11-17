@@ -142,7 +142,7 @@ async function envoyer() {
 
 <style scoped>
 .rendu, .formulaire { display: grid; gap: var(--space-4); }
-.rendu { padding: var(--space-8); }
+.rendu { padding: clamp(var(--space-4), 6vw, var(--space-8)); }
 .rendu h2 { margin: 0; font-size: 1.25rem; }
 .texte-discret { margin: 0; }
 .etat-lien { margin: 0; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); border-inline-start: 3px solid var(--line-strong); font-weight: 600; }

@@ -122,7 +122,7 @@ function creer() {
 </template>
 
 <style scoped>
-.participer { display: grid; gap: var(--space-4); padding: var(--space-8); }
+.participer { display: grid; gap: var(--space-4); padding: clamp(var(--space-4), 6vw, var(--space-8)); }
 .participer h2 { margin: 0; font-size: 1.25rem; }
 .participer h3 { margin: 0; font-size: 1rem; }
 .texte-discret { margin: 0; }

@@ -107,7 +107,7 @@ async function publier() {
 
 <style scoped>
 .confirmation, .formulaire { display: grid; gap: var(--space-4); }
-.confirmation { padding: var(--space-8); }
+.confirmation { padding: clamp(var(--space-4), 6vw, var(--space-8)); }
 .confirmation h2 { margin: 0; font-size: 1.25rem; }
 .texte-discret { margin: 0; }
 fieldset { margin: 0; padding: 0; border: 0; display: grid; gap: var(--space-3); }

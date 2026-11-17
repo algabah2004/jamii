@@ -778,7 +778,7 @@ const messageErreur = computed(() =>
 .erreur { margin: 0; color: var(--danger); font-weight: 600; }
 
 /* Systalink : le seul bloc sombre de la page, pour qu'on le voie. Le reste reste calme. */
-.systalink { display: grid; gap: var(--space-6); padding: var(--space-8); border-radius: var(--radius-lg); background: var(--surface); color: var(--ink); }
+.systalink { display: grid; gap: var(--space-6); padding: clamp(var(--space-4), 6vw, var(--space-8)); border-radius: var(--radius-lg); background: var(--surface); color: var(--ink); }
 .systalink__tete h2 { margin: 0; font-size: var(--type-h2-size); line-height: var(--type-h2-line); }
 .systalink__tete p { margin: var(--space-2) 0 0; color: var(--ink-muted); }
 .systalink__services { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); }

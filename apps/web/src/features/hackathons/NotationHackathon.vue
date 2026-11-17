@@ -128,7 +128,7 @@ async function envoyer(rendu: Rendu) {
 
 <style scoped>
 .notation, .formulaire { display: grid; gap: var(--space-4); }
-.notation { padding: var(--space-8); }
+.notation { padding: clamp(var(--space-4), 6vw, var(--space-8)); }
 .notation h2 { margin: 0; font-size: 1.25rem; }
 .notation h3 { margin: 0; font-size: 1rem; }
 .rendu { display: grid; gap: var(--space-3); padding: var(--space-4); border: 1px solid var(--line-strong); border-radius: var(--radius-md); }

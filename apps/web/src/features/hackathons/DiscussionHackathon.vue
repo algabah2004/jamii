@@ -284,7 +284,7 @@ async function ouvrir() {
 </template>
 
 <style scoped>
-.discussion { display: grid; gap: var(--space-8); padding: var(--space-8); }
+.discussion { display: grid; gap: var(--space-8); padding: clamp(var(--space-4), 6vw, var(--space-8)); }
 .discussion h2, .discussion h3, .discussion p { margin: 0; }
 .discussion h2 { font-size: 1.25rem; }
 .discussion__tete { display: grid; gap: var(--space-1); }

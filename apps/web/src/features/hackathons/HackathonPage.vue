@@ -25,6 +25,7 @@ import TriCandidatures from './TriCandidatures.vue'
 import PilotageHackathon from './PilotageHackathon.vue'
 import GalerieHackathon from './GalerieHackathon.vue'
 import { useSession } from '../../session'
+import { centrerActif } from '../../components/rangeeDefilante'
 
 /*
  * Un hackathon : son défi, son calendrier, ses critères et ses prix, et ce que la personne qui le lit peut en faire.
@@ -152,6 +153,9 @@ const onglets = computed<Onglet[]>(() => {
   return liste
 })
 const onglet = computed<Onglet>(() => onglets.value.find((o) => o === route.query.onglet) ?? (hackathon.value?.statut === 'resultats' ? 'resultats' : 'presentation'))
+/** Sur téléphone, la rangée défile : l'onglet ouvert reste visible au milieu. */
+const rangeeOnglets = ref<HTMLElement | null>(null)
+centrerActif(rangeeOnglets, '.onglet[aria-selected="true"]', [onglet, () => onglets.value.length])
 /** Les liens internes (#jury, #equipes…) ouvrent l'onglet qui contient leur section. */
 const ONGLET_DE: Record<string, Onglet> = {
   participer: 'presentation', noter: 'presentation', candidatures: 'gestion', jury: 'gestion', equipes: 'equipes', discussion: 'discussion', calendrier: 'calendrier', criteres: 'reglement', prix: 'reglement', code: 'reglement', questions: 'reglement', projets: 'projets',
@@ -240,7 +244,7 @@ const annuler = () => (raisonValide.value ? agir(() => annulerHackathon(hackatho
       </header>
 
     <!-- Des onglets plutôt qu'une page de 5 000 px : chacun a son adresse (?onglet=…) pour être partagé. -->
-    <div v-if="onglets.length > 1" class="onglets" role="tablist" :aria-label="t('hackathons.onglets.titre')" @keydown="clavierOnglets">
+    <div v-if="onglets.length > 1" ref="rangeeOnglets" class="onglets" role="tablist" :aria-label="t('hackathons.onglets.titre')" @keydown="clavierOnglets">
       <button
         v-for="o in onglets"
         :id="`onglet-${o}`"
@@ -486,7 +490,7 @@ const annuler = () => (raisonValide.value ? agir(() => annulerHackathon(hackatho
   .resume { position: sticky; top: 6rem; max-block-size: calc(100vh - 7rem); overflow-y: auto; overscroll-behavior: contain; }
 }
 
-.contenu { display: grid; gap: var(--space-8); padding: var(--space-8); }
+.contenu { display: grid; gap: var(--space-8); padding: clamp(var(--space-4), 6vw, var(--space-8)); }
 @media (max-width: 600px) { .contenu { padding: var(--space-4); } }
 .contenu h2 { margin: 0 0 var(--space-3); font-size: 1.0625rem; }
 .texte { margin: 0; white-space: pre-line; line-height: 1.6; }
@@ -578,4 +582,9 @@ const annuler = () => (raisonValide.value ? agir(() => annulerHackathon(hackatho
 @media (min-width: 960px) { .disposition { grid-template-columns: minmax(0, 1fr) 330px; gap: 28px; } .resume { top: 154px; max-block-size: calc(100dvh - 170px); } }
 @media (max-width: 960px) { .onglets { top: 120px; } .evenement__banniere { grid-template-columns: minmax(0, 1fr) 200px; gap: 28px; } .evenement__affiche { min-height: 240px; padding: 20px; } .evenement__parcours { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 680px) { .evenement__banniere { grid-template-columns: minmax(0, 1fr); padding: 28px 24px; } .evenement__affiche { display: none; } .onglets { top: 76px; } }
+/* Téléphone : la rangée d'onglets défile, un fondu à droite le signale. */
+@media (max-width: 720px) {
+  .onglets { padding-inline-end: var(--space-6); -webkit-mask-image: linear-gradient(to right, #000 calc(100% - var(--space-8)), transparent); mask-image: linear-gradient(to right, #000 calc(100% - var(--space-8)), transparent); }
+  .onglet:focus-visible { outline-offset: -2px; }
+}
 </style>

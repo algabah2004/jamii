@@ -115,9 +115,9 @@ async function creer() {
 <style scoped>
 .carte-espace { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--ombre-carte); }
 .etat-vide { margin-top: var(--space-6); }
-.refus { padding: var(--space-8); display: grid; gap: var(--space-3); }
+.refus { padding: clamp(var(--space-4), 6vw, var(--space-8)); display: grid; gap: var(--space-3); }
 .refus h1, .refus p { margin: 0; }
-.creation { display: grid; gap: var(--space-6); grid-template-columns: minmax(0, 30rem) minmax(0, 1fr); padding: var(--space-8); align-items: start; }
+.creation { display: grid; gap: var(--space-6); grid-template-columns: minmax(0, 30rem) minmax(0, 1fr); padding: clamp(var(--space-4), 6vw, var(--space-8)); align-items: start; }
 @media (max-width: 1100px) { .creation { grid-template-columns: minmax(0, 1fr); } }
 .formulaire { display: grid; gap: var(--space-4); }
 .formulaire h1 { margin: 0; font-size: 1.5rem; }

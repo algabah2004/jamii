@@ -114,7 +114,7 @@ const affichees = computed(() => (filtre.value === 'toutes' ? demandes.value : d
 .mes-demandes { display: grid; gap: var(--space-8); min-width: 0; }
 
 
-.vide { display: grid; gap: var(--space-3); justify-items: start; padding: var(--space-8); }
+.vide { display: grid; gap: var(--space-3); justify-items: start; padding: clamp(var(--space-4), 6vw, var(--space-8)); }
 .vide p { margin: 0; }
 
 .historique { display: grid; gap: var(--space-4); }

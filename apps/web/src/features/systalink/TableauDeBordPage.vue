@@ -233,7 +233,7 @@ const paysCercles = computed(() =>
 @media (max-width: 860px) { .chiffres { grid-template-columns: minmax(0, 1fr); } }
 
 /* Le chiffre qui compte pour Systalink, sur fond sombre ; l'orange de la jauge dit « en ligne, vérifié ». */
-.principal { display: grid; gap: var(--space-2); align-content: center; padding: var(--space-8); border-radius: var(--radius-lg); }
+.principal { display: grid; gap: var(--space-2); align-content: center; padding: clamp(var(--space-4), 6vw, var(--space-8)); border-radius: var(--radius-lg); }
 .principal p { margin: 0; }
 .principal__libelle { color: var(--ink-muted); font-weight: 600; }
 .chiffre { font-family: var(--font-display); font-size: clamp(3.5rem, 8vw, 5.5rem); font-weight: 700; line-height: 1; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }

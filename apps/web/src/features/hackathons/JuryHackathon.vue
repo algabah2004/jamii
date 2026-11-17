@@ -167,7 +167,7 @@ async function inviter() {
 .choix select { min-height: 44px; padding: 0 var(--space-3); border: 1px solid var(--line-strong); border-radius: var(--radius-md); background: var(--surface); color: var(--ink); font: inherit; }
 .choix select:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .choix p { margin: 0; }
-.jury { padding: var(--space-8); }
+.jury { padding: clamp(var(--space-4), 6vw, var(--space-8)); }
 .jury h2 { margin: 0; font-size: 1.25rem; }
 .jury h3 { margin: 0 0 var(--space-2); font-size: 1rem; }
 .liste { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--space-2); }
