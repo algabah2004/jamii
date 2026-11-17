@@ -11,10 +11,11 @@ import { marquerLu } from './lus'
 import SupprimerSalon from './SupprimerSalon.vue'
 import BarreReactions from '../../components/texte/BarreReactions.vue'
 import Composeur from '../../components/texte/Composeur.vue'
+import EnregistreurVocal from '../../components/texte/EnregistreurVocal.vue'
 import PastillesReactions from '../../components/texte/PastillesReactions.vue'
 import PiecesJointes from '../../components/texte/PiecesJointes.vue'
 import TexteRiche from '../../components/texte/TexteRiche.vue'
-import type { PieceJointe } from '../../components/texte/fichiers'
+import { envoyerFichier, type PieceJointe } from '../../components/texte/fichiers'
 
 /*
  * Un salon d'une communauté, sur toute la hauteur (contracts/communautes.yaml v0.2, #155) :
@@ -253,6 +254,7 @@ async function envoyer() {
   const salon = actuel.value
   if (!salon || !valide.value || envoi.value === 'envoi') return
   envoi.value = 'envoi'
+  erreurVocal.value = null
   try {
     if (edition.value) {
       const { data } = await api.PATCH('/api/communautes/{slug}/salons/{salon}/messages/{messageId}', {
@@ -278,6 +280,38 @@ async function envoyer() {
     envoi.value = 'repos'
     ajouter([...messages.value, data], true)
     composeur.value?.rafraichir()
+  } catch {
+    envoi.value = 'erreur'
+  }
+}
+
+// ---------------------------------------------------------------- un message vocal (#157)
+// Comme dans une discussion privée : le son part seul, en message, sans toucher au texte en cours d'écriture.
+
+const vocalEnCours = ref(false)
+const erreurVocal = ref<string | null>(null)
+async function envoyerVocal(fichier: File) {
+  const salon = actuel.value
+  if (!salon || envoi.value === 'envoi') return
+  envoi.value = 'envoi'
+  erreurVocal.value = null
+  try {
+    const f = await envoyerFichier(fichier, undefined, undefined, true)
+    if (!f.ok) {
+      envoi.value = 'repos'
+      erreurVocal.value = t(`vocal.erreurs.${f.code}`)
+      return
+    }
+    const { data, response } = await api.POST('/api/communautes/{slug}/salons/{salon}/messages', {
+      params: { path: { slug: props.slug, salon: salon.slug } },
+      body: { texte: '', pieces: [f.piece.id], ...(reponse.value ? { reponseA: reponse.value.id } : {}) },
+    })
+    if (!data) return void (envoi.value = response.status === 429 ? 'trop' : 'erreur')
+    envoi.value = 'repos'
+    // On a changé de salon entre-temps : le message est bien parti, il apparaîtra en y revenant.
+    if (actuel.value?.slug !== salon.slug) return
+    reponse.value = null
+    ajouter([...messages.value, data], true)
   } catch {
     envoi.value = 'erreur'
   }
@@ -570,10 +604,15 @@ function teinte(id: string) {
           :placeholder="t('communautes.salons.ecrireDans', { salon: actuel.nom })"
           :libelle-envoyer="edition ? t('reseau.actions.enregistrer') : t('communautes.salons.envoyer')"
           :envoi="envoi === 'envoi'"
-          :erreur="envoi === 'trop' ? t('communautes.salons.trop') : envoi === 'erreur' ? t('etat.indisponible') : null"
+          :erreur="envoi === 'trop' ? t('communautes.salons.trop') : envoi === 'erreur' ? t('etat.indisponible') : erreurVocal"
           :max="LONGUEUR"
+          :masquer-envoi="vocalEnCours && !edition"
           @envoyer="envoyer"
-        />
+        >
+          <template v-if="!edition" #action>
+            <EnregistreurVocal :desactive="envoi === 'envoi'" @envoyer="envoyerVocal" @en-cours="(actif) => (vocalEnCours = actif)" @erreur="(code) => (erreurVocal = t(`vocal.erreurs.${code}`))" />
+          </template>
+        </Composeur>
       </form>
       <div v-else class="rejoindre">
         <p>{{ t('communautes.salons.rejoindre') }}</p>

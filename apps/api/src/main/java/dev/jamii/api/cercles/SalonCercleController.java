@@ -169,7 +169,7 @@ class SalonCercleController {
 			case "texte", "coup_de_main", "decision" -> {
 				String texte = propre(demande.texte());
 				var cercle = membre(cercleId, moi.id());
-				List<UUID> pieces = fichiers.verifierPieces(demande.pieces(), moi.id());
+				List<UUID> pieces = fichiers.verifierPiecesSalonCercle(demande.pieces(), moi.id(), cercleId);
 				// Un message peut n'être qu'une pièce jointe ; une demande d'aide ou une décision s'écrit toujours.
 				boolean texteRequis = !"texte".equals(type) || pieces.isEmpty();
 				if ((texte == null && texteRequis) || (texte != null && texte.length() > TEXTE_MAX)) {

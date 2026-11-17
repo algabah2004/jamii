@@ -1,5 +1,5 @@
 import { http, HttpResponse } from 'msw'
-import { piecesDe } from './fichiers'
+import { piecesDe, piecesDuSalonCercle } from './fichiers'
 import type { components } from '../api/generated/cercles'
 
 type Cercle = components['schemas']['Cercle']
@@ -240,7 +240,7 @@ export const handlersCercles = [
     const type = corps.type as 'texte' | 'coup_de_main' | 'decision'
     const cite = s.messages.find((x) => x.id === corps.reponseA)
     const reponseA = cite ? { id: cite.id, auteur: cite.auteur, texte: cite.supprime ? '' : (cite.texte ?? '').slice(0, 140), supprime: cite.supprime } : null
-    return HttpResponse.json(poster(s.cercle.id, { type, auteur: moi, texte: corps.texte?.trim() ?? '', piecesJointes: piecesDe(corps.pieces), coupDeMain: type === 'coup_de_main' ? { resoluLe: null, resoluPar: null } : null, envoyeLe: maintenant, reponseA }), { status: 201 })
+    return HttpResponse.json(poster(s.cercle.id, { type, auteur: moi, texte: corps.texte?.trim() ?? '', piecesJointes: piecesDuSalonCercle(corps.pieces, s.cercle.id), coupDeMain: type === 'coup_de_main' ? { resoluLe: null, resoluPar: null } : null, envoyeLe: maintenant, reponseA }), { status: 201 })
   }),
   // Répondre, modifier, supprimer, réagir (#157).
   http.patch('/api/cercles/:id/salon/messages/:messageId', async ({ params, request }) => {

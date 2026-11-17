@@ -335,4 +335,58 @@ class SalonCercleTest {
 		assertThat(p).bodyJson().extractingPath("$.signaux.length()").isEqualTo(0);
 	}
 
+	// ---------------------------------------------------------------- les fichiers du salon (#157)
+
+	private static final byte[] WEBM = { 0x1A, 0x45, (byte) 0xDF, (byte) 0xA3, (byte) 0x9F, 0x42, (byte) 0x86, (byte) 0x81, 0x01 };
+
+	/** Un message vocal, réservé au cercle `cercleId` s'il est donné. */
+	private String vocal(UtilisateurConnecte qui, String cercleId) throws Exception {
+		var requete = mvc.post().uri("/api/fichiers").multipart()
+			.file(new org.springframework.mock.web.MockMultipartFile("fichier", "message-vocal.webm", "audio/webm", WEBM)).param("vocal", "true");
+		if (cercleId != null) requete = requete.param("cercleId", cercleId);
+		var envoi = requete.with(csrf()).with(oauth2Login().oauth2User(qui)).exchange();
+		assertThat(envoi).hasStatus(HttpStatus.CREATED);
+		return com.jayway.jsonpath.JsonPath.read(envoi.getResponse().getContentAsString(), "$.id");
+	}
+
+	private MvcTestResult message(Cercle c, UtilisateurConnecte qui, String piece) {
+		return envoyer("POST", salon(c) + "/messages", qui, "{\"type\":\"texte\",\"texte\":\"\",\"pieces\":[\"" + piece + "\"]}");
+	}
+
+	@Test
+	void un_fichier_du_salon_ne_se_lit_que_par_les_membres_actuels_du_cercle() throws Exception {
+		Cercle c = cercleTire();
+		var awa = c.createur();
+		var kofi = c.membres().get(1);
+		var tiers = utilisateur("Tiers");
+		String id = vocal(awa, c.id()), fichier = "/api/fichiers/" + id;
+		// Avant l'envoi du message, seule son autrice l'écoute.
+		assertThat(lire(fichier, awa)).hasStatusOk();
+		assertThat(lire(fichier, kofi)).hasStatus(HttpStatus.NOT_FOUND);
+
+		assertThat(message(c, awa, id)).hasStatus(HttpStatus.CREATED).bodyJson().extractingPath("$.piecesJointes[0].sorte").isEqualTo("audio");
+		var lu = lire(fichier, kofi);
+		assertThat(lu).hasStatusOk();
+		assertThat(lu.getResponse().getHeader("Cache-Control")).isEqualTo("no-store");
+		assertThat(lire(fichier, tiers)).hasStatus(HttpStatus.NOT_FOUND);
+		// Un membre qui quitte le cercle perd l'accès, même avec l'adresse du fichier.
+		base.sql("DELETE FROM cercle_membre WHERE cercle_id = :c AND utilisateur_id = :u")
+			.param("c", UUID.fromString(c.id())).param("u", kofi.id()).update();
+		assertThat(lire(fichier, kofi)).hasStatus(HttpStatus.NOT_FOUND);
+	}
+
+	@Test
+	void le_salon_refuse_le_fichier_d_un_autre_cercle_mais_accepte_un_fichier_sans_destination() throws Exception {
+		Cercle c = cercleTire();
+		Cercle autre = cercleTire();
+		var awa = c.createur();
+		// Un fichier d'Awa réservé à un autre cercle ne peut pas passer dans celui-ci.
+		String ailleurs = vocal(awa, c.id());
+		base.sql("UPDATE fichier SET cercle_id = :autre WHERE id = :id")
+			.param("autre", UUID.fromString(autre.id())).param("id", UUID.fromString(ailleurs)).update();
+		assertThat(message(c, awa, ailleurs)).hasStatus(HttpStatus.BAD_REQUEST);
+		// Envoyé sans cercleId (une version plus ancienne de l'application) : toujours accepté, et lisible comme avant.
+		assertThat(message(c, awa, vocal(awa, null))).hasStatus(HttpStatus.CREATED);
+	}
+
 }

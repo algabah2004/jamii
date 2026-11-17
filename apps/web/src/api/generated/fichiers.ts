@@ -162,7 +162,7 @@ export interface operations {
                     fichier: string;
                     /**
                      * Format: uuid
-                     * @description Document réservé à une idée de ce cercle ; envoi par un membre, consultation par les membres après enregistrement de l’idée. Incompatible avec destinataireId.
+                     * @description Fichier réservé à ce cercle (document d’une idée, ou pièce jointe de son salon, dont les messages vocaux) ; envoi par un membre, puis lecture par les membres actuels une fois l’idée enregistrée ou le message envoyé. Un ancien membre n’y a plus accès. Incompatible avec destinataireId.
                      */
                     cercleId?: string;
                     /**

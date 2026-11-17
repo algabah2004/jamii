@@ -14,13 +14,18 @@ export function reinitialiserFichiers() {
 }
 
 /** Pour les tests : une pièce jointe connue du serveur simulé, sans passer par un envoi. */
-export function enregistrerPieceFactice(piece: Piece, destinataire?: string) {
-  fichiers.set(piece.id, { piece, contenu: new Blob([]), destinataire })
+export function enregistrerPieceFactice(piece: Piece, destinataire?: string, cercle?: string) {
+  fichiers.set(piece.id, { piece, contenu: new Blob([]), destinataire, cercle })
 }
 
 /** Les pièces jointes connues, dans l'ordre demandé (pour les messages et publications des mocks). */
 export function piecesDe(ids: string[] | undefined, destinataire?: string, cercle?: string): Piece[] {
   return (ids ?? []).map((id) => fichiers.get(id)?.destinataire === destinataire && fichiers.get(id)?.cercle === cercle ? fichiers.get(id)?.piece : undefined).filter((p): p is Piece => !!p)
+}
+
+/** Le salon d'un cercle (#157) : ses fichiers à lui, ou ceux sans destination (envoyés par une version plus ancienne). */
+export function piecesDuSalonCercle(ids: string[] | undefined, cercle: string): Piece[] {
+  return (ids ?? []).map((id) => fichiers.get(id)).filter((f) => !!f && !f.destinataire && (!f.cercle || f.cercle === cercle)).map((f) => f!.piece)
 }
 
 const sorteDe = (type: string): Piece['sorte'] => (type.startsWith('image/') ? 'image' : type.startsWith('video/') ? 'video' : 'document')
