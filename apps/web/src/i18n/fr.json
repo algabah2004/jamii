@@ -1848,6 +1848,21 @@
       "horsTour": "Avant les tours"
     }
   },
+  "developpeurs": {
+    "titre": "Développeurs",
+    "intro": "Trouve quelqu'un par son nom ou par une compétence, puis écris-lui. Seuls les profils publiés apparaissent.",
+    "lien": "Trouver un développeur",
+    "rechercher": "Rechercher un développeur",
+    "nom": "Nom ou login GitHub",
+    "nomCourt": "Tape au moins {n} lettres pour chercher un nom.",
+    "competence": "Compétence (ex. flutter)",
+    "competences": "Compétences",
+    "disponibles": "Disponibles seulement",
+    "aucun": "Aucun profil publié ne correspond. Essaie un autre nom ou une autre compétence.",
+    "resultats": "{n} profil trouvé | {n} profils trouvés",
+    "ecrire": "Écrire à {nom}",
+    "plus": "Voir plus de profils"
+  },
   "reseau": {
     "competences": "Compétences",
     "heures": "{n} h par semaine",

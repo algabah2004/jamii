@@ -3,10 +3,13 @@ package dev.jamii.api.auth;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +40,16 @@ public class Annuaire {
 		}
 		utilisateurs.findAllById(ids).forEach(u -> comptes.put(u.id(), enCompte(u)));
 		return comptes;
+	}
+
+	/**
+	 * Les comptes dont le nom ou le login GitHub contient `texte` (majuscules ignorées), `max` au plus. Pour la recherche
+	 * de profils : le module profils filtre ensuite sur les profils publiés. Ne renvoie que des identifiants.
+	 */
+	@Transactional(readOnly = true)
+	public List<UUID> chercherParNom(String texte, int max) {
+		String echappe = texte.strip().toLowerCase(Locale.ROOT).replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
+		return utilisateurs.idsDontLeNomContient("%" + echappe + "%", PageRequest.of(0, max));
 	}
 
 	/** Comptes créés à partir de `depuis` (tous si `depuis` est null), pour le tableau de bord Systalink. */

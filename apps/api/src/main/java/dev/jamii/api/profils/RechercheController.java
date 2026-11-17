@@ -22,6 +22,9 @@ class RechercheController {
 
 	private static final Set<String> CODES_PAYS = Set.of(Locale.getISOCountries());
 
+	/** Au-delà, la personne doit préciser le nom : la liste des identifiants reste courte. */
+	private static final int NOMS_MAX = 500;
+
 	private final Annuaire comptes;
 
 	private final RechercheProfils recherche;
@@ -35,7 +38,8 @@ class RechercheController {
 	Vues.Page<Vues.ProfilResume> chercher(@AuthenticationPrincipal UtilisateurConnecte moi,
 			@RequestParam(name = "competence", required = false) List<String> competences,
 			@RequestParam(required = false) List<String> pays, @RequestParam(required = false) String disponibilite,
-			@RequestParam(defaultValue = "20") String limite, @RequestParam(required = false) String curseur) {
+			@RequestParam(required = false) String q, @RequestParam(defaultValue = "20") String limite,
+			@RequestParam(required = false) String curseur) {
 		List<ErreurProfil.Champ> erreurs = new ArrayList<>();
 		List<String> competencesPropres = new ArrayList<>();
 		List<String> brutes = competences == null ? List.of() : competences;
@@ -53,6 +57,10 @@ class RechercheController {
 		if (disponibilite != null && !ModificationProfil.DISPONIBILITES.contains(disponibilite)) {
 			erreurs.add(new ErreurProfil.Champ("disponibilite", "format_invalide"));
 		}
+		String nom = q == null || q.isBlank() ? null : q.strip();
+		if (nom != null && (nom.length() < 2 || nom.length() > 50)) {
+			erreurs.add(new ErreurProfil.Champ("q", "hors_limites"));
+		}
 		int taille = 0;
 		try {
 			taille = Integer.parseInt(limite);
@@ -67,8 +75,13 @@ class RechercheController {
 			throw ErreurProfil.validation(erreurs);
 		}
 
+		// Le nom est dans le module des comptes : on lui demande les identifiants, sans lire ses tables.
+		List<UUID> parmi = nom == null ? null : comptes.chercherParNom(nom, NOMS_MAX);
+		if (parmi != null && parmi.isEmpty()) {
+			return new Vues.Page<>(List.of(), null);
+		}
 		var criteres = new RechercheProfils.Criteres(competencesPropres.stream().distinct().toList(), paysPropres,
-				disponibilite, moi.id(), taille, curseur == null ? null : RechercheProfils.Curseur.decoder(curseur));
+				disponibilite, parmi, moi.id(), taille, curseur == null ? null : RechercheProfils.Curseur.decoder(curseur));
 		List<RechercheProfils.Ligne> lignes = recherche.chercher(criteres);
 		boolean suite = lignes.size() > taille;
 		List<RechercheProfils.Ligne> page = suite ? lignes.subList(0, taille) : lignes;

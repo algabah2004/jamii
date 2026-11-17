@@ -22,8 +22,9 @@ import org.springframework.stereotype.Component;
 @Component
 class RechercheProfils {
 
-	record Criteres(List<String> competences, List<String> pays, String disponibilite, UUID sauf, int limite,
-			Curseur apres) {
+	/** `parmi` : null sans recherche par nom ; sinon, les seuls comptes dont le nom correspond. */
+	record Criteres(List<String> competences, List<String> pays, String disponibilite, List<UUID> parmi, UUID sauf,
+			int limite, Curseur apres) {
 	}
 
 	record Curseur(int rang, Instant misAJourLe, UUID id) {
@@ -76,6 +77,10 @@ class RechercheProfils {
 		if (!c.pays().isEmpty()) {
 			sql.append(" AND p.pays IN (:pays)");
 			params.addValue("pays", c.pays());
+		}
+		if (c.parmi() != null) {
+			sql.append(" AND p.utilisateur_id IN (:parmi)");
+			params.addValue("parmi", c.parmi());
 		}
 		if (c.disponibilite() != null) {
 			sql.append(" AND p.disponibilite = :disponibilite");

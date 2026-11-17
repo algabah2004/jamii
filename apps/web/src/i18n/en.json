@@ -1848,6 +1848,21 @@
       "horsTour": "Before the rounds"
     }
   },
+  "developpeurs": {
+    "titre": "Developers",
+    "intro": "Find someone by name or by skill, then write to them. Only published profiles appear.",
+    "lien": "Find a developer",
+    "rechercher": "Search for a developer",
+    "nom": "Name or GitHub login",
+    "nomCourt": "Type at least {n} letters to search for a name.",
+    "competence": "Skill (e.g. flutter)",
+    "competences": "Skills",
+    "disponibles": "Available only",
+    "aucun": "No published profile matches. Try another name or skill.",
+    "resultats": "{n} profile found | {n} profiles found",
+    "ecrire": "Write to {nom}",
+    "plus": "Show more profiles"
+  },
   "reseau": {
     "competences": "Skills",
     "heures": "{n} h per week",
