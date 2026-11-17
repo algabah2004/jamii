@@ -252,7 +252,9 @@ const apercu = (c: Conversation) =>
   .messagerie--ouverte .boite { display: none; }
   /* La conversation ouverte prend tout l'écran (components/pleinEcran.ts) : plus de cadre ni d'arrondi. */
   .messagerie--ouverte .espace-discussion { display: block; border: 0; border-radius: 0; box-shadow: none; }
-  .boite { border-radius: 22px; }
+  /* La liste va bord à bord, comme une application de messagerie : plus de marge, de cadre ni d'arrondi. */
+  .messagerie { border-radius: 0; }
+  .boite { margin-inline: calc(-1 * var(--space-4)); border-radius: 0; border-width: 0 0 1px; box-shadow: none; }
   .boite__tete { padding: 14px 14px 10px 18px; }
   /* « Nouveau message » descend en bas à droite, sous le pouce. La liste garde de la place pour ne rien cacher. */
   .nouveau { position: fixed; right: var(--space-4); bottom: calc(var(--space-4) + env(safe-area-inset-bottom)); z-index: 5; width: 56px; height: 56px; }
