@@ -132,6 +132,8 @@ class DonneesDemo implements ApplicationRunner {
 		// En dernier : le vrai compte rejoint des personnes, des communautés et un hackathon qui existent déjà.
 		transaction.executeWithoutResult(statut -> new DemoMonCompte(base, projets, maintenant, compte).charger());
 		transaction.executeWithoutResult(statut -> DemoMonCompte.pourCompteDemo(base, projets, maintenant).completer());
+		// Après tout le reste : les preuves des profils (tâches à temps, missions terminées, réponse acceptée).
+		transaction.executeWithoutResult(statut -> new DemoPreuves(base, maintenant).charger());
 		journal.info(Boolean.TRUE.equals(charge) ? "Données de démo chargées (profil demo)" : "Données de démo déjà présentes");
 		return Boolean.TRUE.equals(charge);
 	}
