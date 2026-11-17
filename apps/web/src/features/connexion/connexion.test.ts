@@ -103,7 +103,7 @@ describe('se connecter', () => {
     nonConnecte()
     const { page, routeur } = await ouvrir('/connexion?retour=/cercles')
     await vi.waitFor(() => expect(page.find('[data-test="connexion-demo"]').exists()).toBe(true))
-    expect(page.get('[data-test="voie-demo"]').text()).toContain('effacé au prochain redémarrage')
+    expect(page.get('[data-test="voie-demo"]').text()).toContain('effacé après 24 heures')
     await page.get('[data-test="connexion-demo"]').trigger('click')
     await vi.waitFor(() => expect(routeur.currentRoute.value.path).toBe('/cercles'))
   })

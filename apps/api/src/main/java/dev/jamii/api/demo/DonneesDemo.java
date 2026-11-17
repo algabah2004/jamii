@@ -114,24 +114,19 @@ class DonneesDemo implements ApplicationRunner {
 		// Les nouveaux cercles se complètent aussi sur la base distante déjà chargée, sans réinitialisation.
 		transaction.executeWithoutResult(statut -> new DemoDecouverteCercles(base, maintenant).charger());
 		transaction.executeWithoutResult(statut -> new DemoDecouverteHackathons(base, maintenant).charger());
-		// Le compte démo, partagé par tous les visiteurs : effacé puis recréé à chaque démarrage (CompteDemo).
-		// Si la remise à zéro échoue (une donnée qu'on n'avait pas prévue), l'API démarre quand même avec l'ancien compte.
+		// L'ancien compte démo, partagé par tous les visiteurs, laisse place à un compte par visiteur (VisiteursDemo).
+		// S'il ne peut pas être effacé (une donnée qu'on n'avait pas prévue), l'API démarre quand même.
 		try {
-			transaction.executeWithoutResult(statut -> {
-				var compteDemo = new CompteDemo(base, maintenant);
-				compteDemo.reinitialiser();
-				compteDemo.creer();
-			});
+			transaction.executeWithoutResult(statut -> new CompteDemo(base).retirerAncien());
 		}
 		catch (org.springframework.dao.DataAccessException e) {
-			journal.warn("Le compte démo n'a pas pu être remis à zéro : il garde ses données", e);
+			journal.warn("L'ancien compte démo n'a pas pu être effacé", e);
 		}
 		// Après les communautés : leurs personnes existent alors toutes. Un profil publié pour chacune.
 		transaction.executeWithoutResult(statut -> new DemoProfils(base, maintenant).charger());
 		transaction.executeWithoutResult(statut -> new DemoSalonsCercles(base, maintenant).charger());
 		// En dernier : le vrai compte rejoint des personnes, des communautés et un hackathon qui existent déjà.
 		transaction.executeWithoutResult(statut -> new DemoMonCompte(base, projets, maintenant, compte).charger());
-		transaction.executeWithoutResult(statut -> DemoMonCompte.pourCompteDemo(base, projets, maintenant).completer());
 		// Après tout le reste : les preuves des profils (tâches à temps, missions terminées, réponse acceptée).
 		transaction.executeWithoutResult(statut -> new DemoPreuves(base, maintenant).charger());
 		journal.info(Boolean.TRUE.equals(charge) ? "Données de démo chargées (profil demo)" : "Données de démo déjà présentes");

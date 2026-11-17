@@ -20,13 +20,13 @@ import dev.jamii.api.auth.Annuaire;
  * <ul>
  * <li>les tâches livrées des cercles reçoivent l'échéance qu'elles avaient : la plupart livrées à temps, une sur cinq
  * en retard (un indice parfait ne serait pas crédible) ;</li>
- * <li>trois missions terminées, avec l'avis du client : Fatou, Yann et le compte démo ;</li>
- * <li>une réponse du compte démo acceptée dans une communauté.</li>
+ * <li>deux missions terminées, avec l'avis du client : Fatou et Yann ;</li>
+ * <li>pour chaque visiteur ({@link #pourVisiteur}), sa propre mission terminée, sur invitation : personne d'autre ne la
+ * voit.</li>
  * </ul>
  * Aucun projet « en ligne » : ce badge dit qu'une vraie adresse a répondu à la vérification, la démo ne l'invente pas.
  * <p>
- * Rejoué à chaque démarrage, sans doublon : le compte démo est recréé avec le même identifiant, et ses missions (sans
- * clé étrangère vers lui) le retrouvent. Sa réponse, elle, perd son auteur à la remise à zéro : on le lui rend.
+ * Rejoué à chaque démarrage, sans doublon.
  */
 final class DemoPreuves {
 
@@ -49,10 +49,14 @@ final class DemoPreuves {
 		mission("site-couturieres", DemoCommunautes.AICHA.id(), YANN.id(), "Le site de l'association des couturières de Bamako",
 				"Une page par couturière, avec ses modèles et son numéro WhatsApp. Facile à mettre à jour depuis un téléphone.", 25, 5,
 				"Livré avant la date, et Yann a formé deux couturières pour qu'elles ajoutent leurs modèles elles-mêmes.");
-		mission("tontine", DemoCommunautes.AICHA.id(), CompteDemo.ID, "Le carnet en ligne de la tontine du marché de Médina",
+	}
+
+	/** La mission terminée d'un visiteur : un avis de 4 sur 5, honnête sur un jalon en retard. */
+	void pourVisiteur(UUID visiteur, String cle) {
+		mission("tontine:" + cle, DemoCommunautes.AICHA.id(), visiteur, "Le carnet en ligne de la tontine du marché de Médina",
 				"Noter qui a cotisé chaque semaine et qui reçoit la cagnotte, sans cahier qui se perd.", 15, 4,
-				"Le carnet marche bien et les membres le consultent chaque semaine. Un jalon a pris deux jours de plus que prévu.");
-		reponseAcceptee();
+				"Le carnet marche bien et les membres le consultent chaque semaine. Un jalon a pris deux jours de plus que prévu.",
+				"invitation");
 	}
 
 	/** Les tâches livrées des personnes de la démo, sans échéance : celle qu'elles avaient, à 2 jours près. */
@@ -67,6 +71,11 @@ final class DemoPreuves {
 
 	/** Une mission terminée : proposition retenue, devis accepté, deux jalons acceptés et payés, l'avis du client. */
 	private void mission(String cle, UUID client, UUID developpeur, String titre, String besoin, int ilYaJours, int note, String avis) {
+		mission(cle, client, developpeur, titre, besoin, ilYaJours, note, avis, "publique");
+	}
+
+	private void mission(String cle, UUID client, UUID developpeur, String titre, String besoin, int ilYaJours, int note, String avis,
+			String visibilite) {
 		UUID mission = id("mission:terminee:" + cle);
 		Timestamp publiee = ilYA(Duration.ofDays(ilYaJours + 6));
 		Timestamp demarree = ilYA(Duration.ofDays(ilYaJours + 3));
@@ -74,11 +83,11 @@ final class DemoPreuves {
 		base.sql("""
 				INSERT INTO mission (id, client_id, titre, besoin, competences, budget_centimes, devise, visibilite, a_distance,
 					statut, version, cree_le, publiee_le, developpeur_id, demarre_le)
-				VALUES (:id, :client, :titre, :besoin, ARRAY['web'], :prix, 'XOF', 'publique', TRUE, 'terminee', 6, :publiee,
+				VALUES (:id, :client, :titre, :besoin, ARRAY['web'], :prix, 'XOF', :visibilite, TRUE, 'terminee', 6, :publiee,
 					:publiee, :dev, :demarree)
 				ON CONFLICT (id) DO NOTHING
 				""").param("id", mission).param("client", client).param("titre", titre).param("besoin", besoin).param("prix", PRIX_XOF)
-			.param("publiee", publiee).param("dev", developpeur).param("demarree", demarree).update();
+			.param("visibilite", visibilite).param("publiee", publiee).param("dev", developpeur).param("demarree", demarree).update();
 		UUID proposition = id("mission:terminee:" + cle + ":proposition");
 		base.sql("""
 				INSERT INTO proposition (id, mission_id, developpeur_id, message, prix_centimes, devise, delai_jours, statut, cree_le)
@@ -106,35 +115,6 @@ final class DemoPreuves {
 				VALUES (:m, 'client', :client, :note, :texte, :t)
 				ON CONFLICT (mission_id, auteur) DO NOTHING
 				""").param("m", mission).param("client", client).param("note", note).param("texte", avis).param("t", terminee).update();
-	}
-
-	/** Une question de Samira, à laquelle le compte démo a répondu ; elle a accepté sa réponse. */
-	private void reponseAcceptee() {
-		UUID web = base.sql("SELECT id FROM communaute WHERE slug = 'web'").query(UUID.class).optional().orElse(null);
-		if (web == null) {
-			return;
-		}
-		UUID question = id("publication:compte-demo:question-cache");
-		UUID reponse = id("reponse:compte-demo:question-cache");
-		base.sql("""
-				INSERT INTO publication (id, communaute_id, auteur_id, type, titre, contenu, cree_le)
-				VALUES (:id, :c, :a, 'question', :titre, :contenu, :t)
-				ON CONFLICT (id) DO NOTHING
-				""").param("id", question).param("c", web).param("a", DemoCommunautes.SAMIRA.id())
-			.param("titre", "Mon appli Vue se recharge mal après une mise à jour")
-			.param("contenu", "Après chaque mise en ligne, certains utilisateurs voient une page blanche jusqu'à ce qu'ils vident le cache. "
-					+ "Comment éviter ça ?")
-			.param("t", ilYA(Duration.ofDays(6))).update();
-		base.sql("""
-				INSERT INTO reponse (id, publication_id, auteur_id, contenu, cree_le)
-				VALUES (:id, :p, :a, :contenu, :t)
-				ON CONFLICT (id) DO UPDATE SET auteur_id = EXCLUDED.auteur_id
-				""").param("id", reponse).param("p", question).param("a", CompteDemo.ID)
-			.param("contenu", "Le fichier index.html reste en cache et pointe vers d'anciens fichiers JS. Sers index.html avec "
-					+ "« Cache-Control: no-cache » et garde le cache long seulement pour les fichiers dont le nom contient une empreinte.")
-			.param("t", ilYA(Duration.ofDays(5))).update();
-		base.sql("UPDATE publication SET reponse_acceptee_id = :r, acceptee_le = :t WHERE id = :p AND reponse_acceptee_id IS NULL")
-			.param("r", reponse).param("t", ilYA(Duration.ofDays(5).minusHours(3))).param("p", question).update();
 	}
 
 	private Timestamp ilYA(Duration duree) {

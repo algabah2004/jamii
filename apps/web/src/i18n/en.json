@@ -47,7 +47,7 @@
     "google": "Continue with Google",
     "demoPastille": "No account",
     "demoTitre": "Explore Jamii with the demo account",
-    "demoTexte": "An account that is already filled in: a circle where it is your turn, communities, contacts, a hackathon and a mission. It is shared: whatever you do there is erased at the next restart.",
+    "demoTexte": "An account of your own, already filled in: a circle whose turn it is, communities, contacts, a hackathon and missions. Nobody else sees it, and it is deleted after 24 hours.",
     "demo": "Explore with the demo account",
     "demoErreur": "The demo account is not available right now. Please try again in a moment.",
     "googleOu": "Or get a sign-in link by email:",
