@@ -355,11 +355,24 @@ textarea:focus-visible { outline: none; }
 .envoyer__attente { width: 16px; height: 16px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: tourne 0.8s linear infinite; }
 /* Une zone étroite (colonne de discussion) : l'aide au clavier coupée en « En… » ne sert à rien, on la retire. */
 @container (max-width: 640px) { .outils__aide { visibility: hidden; } }
-/* Sur un petit écran : les outils sur une ligne, puis l'envoi à droite en dessous. */
+/* Sur un petit écran : une seule ligne. Les outils défilent (fondu à droite), l'envoi reste à portée du pouce.
+   Sur deux ou trois lignes, le composeur prenait 170 px d'un téléphone et le fil n'avait plus de place.
+   Le choix d'émojis est placé par rapport au composeur, pas à la rangée : il n'est pas rogné. */
 @media (max-width: 720px) {
   .outils { flex-wrap: wrap; }
   .outils__aide { display: none; }
-  .outils__format { flex: 1 1 100%; }
+  .outils__format {
+    flex: 1 1 0; min-width: 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-inline-end: var(--space-4);
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - var(--space-6)), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - var(--space-6)), transparent);
+  }
+  .outils__format::-webkit-scrollbar { display: none; }
+  .outils__format > * { flex-shrink: 0; }
+  /* Sur téléphone, on envoie plus souvent un émoji ou une photo que du gras : ils passent en tête de la rangée. */
+  .emojis { order: -3; }
+  .outils__format > [data-test='joindre'] { order: -2; }
+  .separateur { order: -1; }
+  .outil:focus-visible { outline-offset: -2px; }
   .outils__erreur { flex: 1 1 100%; text-align: left; }
   .envoyer { width: 40px; padding: 0; }
   .envoyer__texte { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

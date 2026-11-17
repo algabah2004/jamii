@@ -201,6 +201,8 @@ async function rejoindre(c: Communaute) {
 .carte:has(.carte__lien:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { .carte:hover { transform: none; } }
 .carte__couverture { aspect-ratio: 16 / 8; }
+/* Téléphone : une seule colonne, la couverture devient un bandeau (deux cartes par écran au lieu d'une). */
+@media (max-width: 640px) { .carte__couverture { aspect-ratio: 16 / 5; } }
 .carte__corps { display: flex; flex-direction: column; gap: var(--space-3); flex: 1; padding: var(--space-4) var(--space-5, 1.25rem) var(--space-5, 1.25rem); }
 .carte__tete { display: flex; align-items: center; gap: var(--space-3); }
 .carte__titres { min-width: 0; }

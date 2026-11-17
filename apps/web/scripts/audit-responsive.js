@@ -112,7 +112,21 @@ export function mesurer(d, largeur) {
         .filter((e) => parseFloat(getComputedStyle(e).fontSize) < 16)
         .map((e) => `${nom(e)} ${getComputedStyle(e).fontSize}`)
     : []
-  return { rognes, cibles, champs, url: d.defaultView.location.pathname }
+  // Un élément qui dépasse du bord intérieur de sa carte (piste de grille « auto », texte insécable) : invisible
+  // pour `rognes` tant que la carte reste dans l'écran, mais le texte touche ou franchit le bord.
+  const internes = [...d.querySelectorAll('.carte, [class*="carte"], section, li, article, dialog, [role=dialog]')]
+    .filter(visibles)
+    .flatMap((boite) => {
+      const s = getComputedStyle(boite)
+      if (s.overflowX !== 'visible') return []
+      const bord = boite.getBoundingClientRect().right - parseFloat(s.borderRightWidth) + 1
+      return [...boite.children].filter((e) => {
+        const p = getComputedStyle(e).position
+        // Une marge négative est un débord voulu (un motif ou une bande pleine largeur).
+        return p !== 'absolute' && p !== 'fixed' && parseFloat(getComputedStyle(e).marginRight) >= 0 && e.getBoundingClientRect().width > 0 && e.getBoundingClientRect().right > bord
+      }).map((e) => `${nom(boite)} > ${nom(e)} +${Math.round(e.getBoundingClientRect().right - bord)}px`)
+    })
+  return { rognes, internes, cibles, champs, url: d.defaultView.location.pathname }
 }
 
 export async function auditer(routes = ROUTES, largeurs = LARGEURS, attente = 2000) {
@@ -148,6 +162,7 @@ export function resumer(resultat = window.__audit) {
       const defauts = []
       if (m.url !== route) defauts.push(`→ ${m.url}`)
       if (m.rognes.length) defauts.push(`ROGNÉ ${m.rognes.slice(0, 4).join(', ')}`)
+      if (m.internes.length) defauts.push(`DÉBORDE ${m.internes.slice(0, 4).join(', ')}`)
       if (m.cibles.length) defauts.push(`cibles<24 (${m.cibles.length}) ${m.cibles.slice(0, 4).join(', ')}`)
       if (m.champs.length) defauts.push(`champs<16px (${m.champs.length}) ${m.champs.slice(0, 2).join(', ')}`)
       if (defauts.length) lignes.push(`${route} @${largeur} : ${defauts.join(' | ')}`)
