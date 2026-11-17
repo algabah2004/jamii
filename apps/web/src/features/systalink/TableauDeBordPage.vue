@@ -252,7 +252,7 @@ const paysCercles = computed(() =>
 
 .details { display: grid; gap: var(--space-4); grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); align-items: start; margin-top: var(--space-6); }
 @media (max-width: 860px) { .details { grid-template-columns: minmax(0, 1fr); } }
-.bloc { display: grid; gap: var(--space-3); }
+.bloc { display: grid; gap: var(--space-3); grid-template-columns: minmax(0, 1fr); }
 .bloc h2 { margin: 0; font-size: var(--type-h3-size); line-height: var(--type-h3-line); }
 .bloc > p { margin: 0; }
 .note { color: var(--ink-muted); font-size: var(--type-body-sm-size); }
@@ -263,7 +263,7 @@ const paysCercles = computed(() =>
 @media (max-width: 860px) { .cercles { grid-template-columns: minmax(0, 1fr); } }
 .cercles__texte { display: grid; gap: var(--space-3); }
 .cercles__texte > p { margin: 0; }
-.cercles__chiffres { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); margin: 0; }
+.cercles__chiffres { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr)); margin: 0; }
 .cercles__chiffres dt { color: var(--ink-muted); font-size: var(--type-body-sm-size); font-weight: 600; }
 .cercles__chiffres dd { margin: 0; }
 .cercles__pays { display: grid; gap: var(--space-3); }
@@ -280,5 +280,11 @@ thead th { color: var(--ink-muted); font-size: var(--type-body-sm-size); font-we
 /* Orange = la preuve (tokens.json) : un projet en ligne sur DataCloud. */
 .jauge--preuve > span { background: var(--proof); }
 /* Sur téléphone, la jauge du taux serait illisible : le pourcentage écrit suffit. */
-@media (max-width: 30rem) { .avec-jauge .jauge { display: none; } }
+@media (max-width: 30rem) {
+  .avec-jauge .jauge { display: none; }
+  /* Et des cellules plus serrées : les quatre colonnes tiennent dans 320 px sans défiler. */
+  th, td { padding-inline: var(--space-1); }
+  th:last-child, td:last-child { padding-inline-start: var(--space-3); }
+  .taux { min-width: 0; }
+}
 </style>
