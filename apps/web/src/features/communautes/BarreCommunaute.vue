@@ -15,7 +15,7 @@ type Salon = components['schemas']['Salon']
 
 /*
  * La barre d'une communauté : passer d'une communauté à l'autre, le fil, les membres, « À propos », les salons en direct
- * (un point quand il y a du nouveau, relu toutes les 20 s), des raccourcis, et « Bien démarrer » pour les nouveaux.
+ * (un point quand il y a du nouveau, relu toutes les 20 s) et des raccourcis.
  */
 const props = defineProps<{ slug: string; actif: string; communaute?: Communaute | null }>()
 const { t } = useI18n()
@@ -26,8 +26,6 @@ const fiche = computed(() => props.communaute ?? chargee.value)
 const miennes = ref<Communaute[]>([])
 const salons = ref<Salon[]>([])
 const derniers = ref<Record<string, number>>({})
-const presente = ref(false)
-const aPublie = ref(false)
 
 async function charger() {
   try {
@@ -39,7 +37,7 @@ async function charger() {
     if (c?.data) chargee.value = c.data
     salons.value = s.data?.elements ?? []
     miennes.value = m.data?.elements ?? []
-    await Promise.all([relireDerniers(), lirePremiersPas()])
+    await relireDerniers()
   } catch {
     // La barre aide à naviguer ; sans elle, le centre reste utilisable.
   }
@@ -62,22 +60,6 @@ async function relireDerniers() {
   derniers.value = Object.fromEntries(lus.filter(([, n]) => n !== undefined)) as Record<string, number>
 }
 
-/** « Bien démarrer » : s'est-on présenté dans # général, a-t-on déjà publié ici ? */
-async function lirePremiersPas() {
-  const id = moi.value?.id
-  if (!id) return
-  try {
-    const [g, p] = await Promise.all([
-      api.GET('/api/communautes/{slug}/salons/{salon}/messages', { params: { path: { slug: props.slug, salon: 'general' }, query: { limite: 100 } } }),
-      api.GET('/api/communautes/{slug}/publications', { params: { path: { slug: props.slug }, query: { limite: 100 } } }),
-    ])
-    presente.value = (g.data?.elements ?? []).some((m) => m.auteur.id === id)
-    aPublie.value = (p.data?.elements ?? []).some((x) => x.auteur?.id === id)
-  } catch {
-    // Sans ces lectures, la carte montre simplement les étapes à faire.
-  }
-}
-
 let minuterie: ReturnType<typeof setInterval> | null = null
 watch(() => props.slug, () => {
   chargee.value = null
@@ -94,13 +76,6 @@ onBeforeUnmount(() => {
 const nouveau = (s: Salon) => s.slug !== props.actif && aDuNouveau(props.slug, s.slug, derniers.value[s.slug])
 const teinte = computed(() => teinteDe(props.slug))
 const autres = computed(() => miennes.value.filter((c) => c.slug !== props.slug))
-
-const etapes = computed(() => [
-  { cle: 'rejoindre', fait: !!fiche.value?.membre, lien: { path: `/communautes/${props.slug}`, query: { voir: 'apropos' } } },
-  { cle: 'presenter', fait: presente.value, lien: { path: `/communautes/${props.slug}`, query: { salon: 'general' } } },
-  { cle: 'publier', fait: aPublie.value, lien: { path: `/communautes/${props.slug}`, query: {} } },
-])
-const faites = computed(() => etapes.value.filter((e) => e.fait).length)
 </script>
 
 <template>
@@ -185,20 +160,6 @@ const faites = computed(() => etapes.value.filter((e) => e.fait).length)
         <li><RouterLink to="/cercles" class="lien"><span class="lien__icone" aria-hidden="true">◎</span><span class="lien__nom">{{ t('menu.cercles') }}</span><span class="lien__fleche" aria-hidden="true">↗</span></RouterLink></li>
         <li><RouterLink to="/vitrine" class="lien"><span class="lien__icone" aria-hidden="true">▣</span><span class="lien__nom">{{ t('menu.vitrine') }}</span><span class="lien__fleche" aria-hidden="true">↗</span></RouterLink></li>
       </ul>
-
-      <section v-if="moi && faites < etapes.length" class="debut" aria-labelledby="bien-demarrer" data-test="bien-demarrer">
-        <header class="debut__tete">
-          <h2 id="bien-demarrer">{{ t('communautes.barre.debut') }}</h2>
-          <span class="debut__anneau" :style="{ '--part': faites / etapes.length }" role="img" :aria-label="t('communautes.barre.progression', { n: faites, total: etapes.length })" />
-        </header>
-        <ol>
-          <li v-for="e in etapes" :key="e.cle" :class="{ fait: e.fait }">
-            <span class="debut__case" aria-hidden="true">{{ e.fait ? '✓' : '' }}</span>
-            <RouterLink v-if="!e.fait" :to="e.lien">{{ t(`communautes.barre.etapes.${e.cle}`) }}</RouterLink>
-            <span v-else>{{ t(`communautes.barre.etapes.${e.cle}`) }}</span>
-          </li>
-        </ol>
-      </section>
     </div>
 
     <RouterLink v-if="moi" to="/profil" class="barre__moi" :title="t('menu.profil')">
@@ -262,21 +223,6 @@ const faites = computed(() => etapes.value.filter((e) => e.fait).length)
 .lien__fleche { opacity: 0.6; font-size: 0.8125rem; }
 .lien--decouvrir { color: var(--action-ink); font-weight: 600; }
 
-.debut { margin-top: var(--space-6); padding: var(--space-4); border-radius: var(--radius-md); background: var(--surface-raised); display: grid; gap: var(--space-3); }
-.debut__tete { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
-.debut h2 { margin: 0; font-size: 0.9375rem; }
-.debut__anneau {
-  width: 22px; height: 22px; border-radius: 50%;
-  background: conic-gradient(var(--cantaloupe) calc(var(--part) * 360deg), var(--line) 0);
-  -webkit-mask: radial-gradient(circle, transparent 6px, #000 7px); mask: radial-gradient(circle, transparent 6px, #000 7px);
-}
-.debut ol { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); font-size: var(--type-body-sm-size); }
-.debut li { display: flex; align-items: center; gap: var(--space-2); }
-.debut li a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
-.debut li.fait { color: var(--ink-muted); text-decoration: line-through; }
-.debut__case { flex-shrink: 0; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--line-strong); font-size: 0.6875rem; font-weight: 700; }
-.fait .debut__case { background: var(--ink); border-color: var(--ink); color: var(--bg); }
-
 .barre__moi {
   display: flex; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-4);
   border-top: 1px solid var(--line); color: var(--ink); text-decoration: none;
@@ -296,7 +242,7 @@ const faites = computed(() => etapes.value.filter((e) => e.fait).length)
     -webkit-mask-image: linear-gradient(to right, #000 calc(100% - var(--space-8)), transparent);
     mask-image: linear-gradient(to right, #000 calc(100% - var(--space-8)), transparent); }
   .barre__corps :focus-visible { outline-offset: -2px; }
-  .barre__section, .debut, .barre__moi { display: none; }
+  .barre__section, .barre__moi { display: none; }
   .groupe { display: flex; gap: var(--space-1); }
   .groupe:last-of-type { display: none; }
   .lien { white-space: nowrap; border: 1px solid var(--line); border-radius: var(--radius-pill); }
