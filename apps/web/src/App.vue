@@ -291,16 +291,29 @@ main.main--pleine { max-width: none; padding-inline: var(--space-4); }
   .moi { padding: 2px; }
   .bouton-menu { display: inline-flex; }
 
-  .entete nav { display: none; order: 3; flex: 1 1 100%; }
-  /* Ouvert : toutes les rubriques d'un coup, en grille, avec de grandes cibles. Il défile s'il est plus haut que l'écran. */
+  .entete__interieur { position: relative; }
+  .entete nav { display: none; }
+  /* Ouvert : un panneau qui flotte sous la capsule, par-dessus la page, sans la faire descendre. Fond plein (le verre,
+     en thème clair, laissait passer la page claire : texte blanc sur gris, sous le contraste AA). Toutes les rubriques
+     d'un coup, en grille, avec de grandes cibles ; il défile s'il est plus haut que l'écran. */
   .entete.entete--menu-ouvert nav {
+    position: absolute; top: calc(100% + var(--space-2)); left: 0; right: 0; z-index: 1;
     display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 10rem), 1fr)); gap: var(--space-1);
-    padding-block: var(--space-2) var(--space-1); border-top: 1px solid var(--line);
-    white-space: normal; overflow: visible auto; max-height: calc(100dvh - 6rem);
+    padding: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-lg);
+    background: var(--surface-raised); box-shadow: 0 18px 48px color-mix(in srgb, black 45%, transparent);
+    white-space: normal; overflow: visible auto; max-height: calc(100dvh - 7rem);
+    animation: menu-apparait var(--motion-fast) var(--ease-out);
+  }
+  /* La page derrière s'assombrit. Toucher ce voile ferme le menu (fermerAilleurs) sans rien ouvrir dessous. */
+  .entete.entete--menu-ouvert::after {
+    content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: auto;
+    background: color-mix(in srgb, black 45%, transparent);
   }
   .entete nav a { min-height: 48px; padding: 0 var(--space-4); font-size: var(--type-body-size); border-radius: var(--radius-md); }
   .entete nav a:focus-visible { outline-offset: -2px; }
 }
+@keyframes menu-apparait { from { opacity: 0; transform: translateY(-6px); } }
+@media (prefers-reduced-motion: reduce) { .entete.entete--menu-ouvert nav { animation: none; } }
 /* Téléphone : la marque et les boutons tiennent sur une seule ligne. */
 @media (max-width: 480px) {
   .entete__interieur { column-gap: var(--space-2); padding-inline: var(--space-3) var(--space-1); }
