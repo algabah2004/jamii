@@ -81,6 +81,15 @@ public class Annuaire {
 	 * Vrai pour un compte de la démo : ses personnes fictives et les comptes jetables des visiteurs ({@link #VISITEURS_DEMO}).
 	 * Ces derniers n'écrivent qu'aux comptes de la démo : un visiteur anonyme n'importune personne.
 	 */
+	/** La personne de la démo qu'on propose au visiteur pour essayer la messagerie, quand il vise un vrai compte (#157). */
+	public static final String CONTACT_DEMO = "kofi" + DOMAINE_DEMO;
+
+	/** Le compte de {@link #CONTACT_DEMO}, absent hors démo. */
+	@Transactional(readOnly = true)
+	public Optional<Compte> contactDeDemo() {
+		return utilisateurs.findByEmailIgnoreCase(CONTACT_DEMO).map(Annuaire::enCompte);
+	}
+
 	@Transactional(readOnly = true)
 	public boolean estDeDemonstration(UUID id) {
 		return utilisateurs.findById(id).map(Utilisateur::email).filter(e -> e != null && e.endsWith(DOMAINE_DEMO)).isPresent();

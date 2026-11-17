@@ -2,7 +2,8 @@
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
-import { ajouterContact, lireLien, retirerContact, type StatutLien } from './reseau'
+import AvisCompteDemo from './AvisCompteDemo.vue'
+import { demanderContact, lireLien, retirerContact, type EcrireA, type StatutLien } from './reseau'
 
 /*
  * Ce qu'on peut faire depuis le profil de quelqu'un (connecté, et pas le sien) : lui écrire, et se mettre en contact.
@@ -14,6 +15,8 @@ const { t } = useI18n()
 const lien = ref<StatutLien | null>(null)
 const occupe = ref(false)
 const erreur = ref(false)
+/** Le compte démo vise un vrai membre (#157) : `ecrireA` propose une personne de la démo à la place. */
+const refusDemo = ref<{ ecrireA: EcrireA | null } | null>(null)
 
 onMounted(async () => {
   try {
@@ -26,13 +29,15 @@ onMounted(async () => {
 async function contact() {
   occupe.value = true
   erreur.value = false
+  refusDemo.value = null
   try {
     if (lien.value === 'envoyee') {
       if (await retirerContact(props.personneId)) lien.value = 'aucun'
       else erreur.value = true
     } else {
-      const statut = await ajouterContact(props.personneId)
-      if (statut) lien.value = statut
+      const r = await demanderContact(props.personneId)
+      if (r.ok) lien.value = r.statut
+      else if (r.code === 'compte_demo') refusDemo.value = { ecrireA: r.ecrireA }
       else erreur.value = true
     }
   } catch {
@@ -65,6 +70,7 @@ async function contact() {
       {{ t(`reseau.profil.contact.${lien}`) }}
     </button>
     <p v-if="erreur" role="alert" class="erreur">{{ t('etat.indisponible') }}</p>
+    <AvisCompteDemo v-if="refusDemo" class="avis" :ecrire-a="refusDemo.ecrireA" />
   </div>
 </template>
 
@@ -72,5 +78,6 @@ async function contact() {
 .actions-profil { justify-self: start; display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
 .action { justify-content: center; display: inline-flex; align-items: center; gap: var(--space-2); min-height: 44px; text-decoration: none; }
 .statut { display: inline-flex; align-items: center; gap: var(--space-1); margin: 0; color: var(--ink-muted); font-weight: 600; }
+.avis { width: 100%; }
 .erreur { width: 100%; margin: 0; color: var(--danger); font-weight: 600; }
 </style>

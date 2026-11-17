@@ -2,6 +2,7 @@ import { reactive, readonly, shallowRef } from 'vue'
 import { api, lireJetonCsrf } from '../../api/client'
 import { appelCercleActif } from '../cercles/appelCercle'
 import type { components } from '../../api/generated/reseau'
+import type { EcrireA } from './reseau'
 
 /*
  * Les appels en tête-à-tête dans Jamii (#157), en WebRTC : le son et l'image passent directement entre les deux
@@ -20,7 +21,7 @@ export type Appel = components['schemas']['Appel']
 type Personne = Pick<components['schemas']['Personne'], 'id' | 'nom' | 'avatarUrl'>
 
 export type Phase = 'repos' | 'preparation' | 'sonne_chez_lautre' | 'sonne_chez_moi' | 'connexion' | 'en_cours' | 'fini'
-export type Fin = 'termine' | 'refuse' | 'manque' | 'annule' | 'micro_refuse' | 'echec' | 'impossible' | 'trop_de_requetes'
+export type Fin = 'termine' | 'refuse' | 'manque' | 'annule' | 'micro_refuse' | 'echec' | 'impossible' | 'trop_de_requetes' | 'compte_demo'
 
 export const REACTIONS = ['👍', '❤️', '😂', '👏', '🎉', '🙏'] as const
 
@@ -53,6 +54,8 @@ interface Etat {
   cameraDistante: boolean
   reactions: Reaction[]
   fin: Fin | null
+  /** Avec la fin `compte_demo` : la personne de la démo à qui écrire à la place (#157). */
+  ecrireA: EcrireA | null
   debut: number | null
   relais: boolean
   reduit: boolean
@@ -80,7 +83,7 @@ let compteurReactions = 0
 function etatInitial(): Etat {
   return {
     phase: 'repos', id: null, personne: null, video: false, deMoi: false, micro: true, camera: false, ecran: false,
-    microDistant: true, cameraDistante: false, reactions: [], fin: null, debut: null, relais: false, reduit: false,
+    microDistant: true, cameraDistante: false, reactions: [], fin: null, ecrireA: null, debut: null, relais: false, reduit: false,
   }
 }
 
@@ -121,8 +124,13 @@ export async function appeler(personne: Personne, video: boolean): Promise<void>
     })
     if (s !== session) return
     if (!data) {
-      const code = (error as { code?: string } | undefined)?.code
-      return finir(code === 'trop_de_requetes' ? 'trop_de_requetes' : 'impossible')
+      const e = error as { code?: string; ecrireA?: EcrireA } | undefined
+      if (e?.code === 'compte_demo') {
+        finir('compte_demo')
+        etat.ecrireA = e.ecrireA ?? null
+        return
+      }
+      return finir(e?.code === 'trop_de_requetes' ? 'trop_de_requetes' : 'impossible')
     }
     etat.id = data.id
     etat.phase = 'sonne_chez_lautre'

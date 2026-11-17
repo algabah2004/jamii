@@ -199,6 +199,48 @@ describe('les messages', () => {
     await vi.waitFor(() => expect(page.find('[data-test="form-message"] [role="alert"]').text()).toBe("Le message n'est pas parti. Réessaie."))
   })
 
+  describe('le compte démo vers un vrai membre (#157)', () => {
+    const refusDemo = () => HttpResponse.json({ code: 'compte_demo', ecrireA: { id: KOFI, nom: 'Kofi Mensah' } }, { status: 403 })
+
+    it("dit pourquoi le message ne part pas, et propose d'écrire à une personne de la démo", async () => {
+      serveur.use(http.post(`/api/conversations/${AMINA}/messages`, refusDemo))
+      const { page, routeur } = await ouvrir(`/messages/${AMINA}`)
+      await vi.waitFor(() => expect(page.find('[data-test="form-message"]').exists()).toBe(true))
+      await page.find('[data-test="form-message"] textarea').setValue('Bonjour')
+      await page.find('[data-test="form-message"]').trigger('submit')
+      await vi.waitFor(() => expect(page.find('[data-test="avis-compte-demo"]').exists()).toBe(true))
+      const avis = page.get('[data-test="avis-compte-demo"]').text()
+      expect(avis).toContain('seulement avec les personnes de la démo')
+      expect(avis).not.toContain('Réessaie')
+      await page.get('[data-test="ecrire-a-demo"]').trigger('click')
+      await vi.waitFor(() => expect(routeur.currentRoute.value.path).toBe(`/messages/${KOFI}`))
+      await vi.waitFor(() => expect(page.find('[data-test="avis-compte-demo"]').exists()).toBe(false))
+    })
+
+    it('le dit aussi pour une demande de contact', async () => {
+      serveur.use(http.put(`/api/contacts/${KOFI}`, refusDemo))
+      const { page } = await ouvrir(`/messages/${KOFI}`)
+      await vi.waitFor(() => expect(page.find('[data-test="ajouter-contact"]').exists()).toBe(true))
+      await page.get('[data-test="ajouter-contact"]').trigger('click')
+      await vi.waitFor(() => expect(page.get('[data-test="ecrire-a-demo"]').text()).toBe('Pour essayer, écris à Kofi Mensah.'))
+    })
+
+    it('et pour un appel', async () => {
+      installerFauxWebrtc()
+      serveur.use(http.post(`/api/conversations/${AMINA}/appels`, refusDemo))
+      try {
+        const { page } = await ouvrir(`/messages/${AMINA}`)
+        await vi.waitFor(() => expect(page.find('[data-test="appeler"]').exists()).toBe(true))
+        await page.get('[data-test="appeler"]').trigger('click')
+        await vi.waitFor(() => expect(page.get('[data-test="avis-compte-demo"]').text()).toContain('tu appelles seulement les personnes de la démo'))
+        expect(page.find('[data-test="ecrire-a-demo"]').exists()).toBe(true)
+      } finally {
+        reinitialiserAppel()
+        vi.unstubAllGlobals()
+      }
+    })
+  })
+
   it("dit l'heure pour un message du jour, et la date sinon", () => {
     const maintenant = new Date('2026-11-13T15:00:00')
     expect(quand('2026-11-13T09:05:00', 'fr', maintenant)).toBe('09:05')
