@@ -15,6 +15,8 @@ export const routes: RouteRecordRaw[] = [
     meta: { connexionRequise: true },
   },
   // Le profil publié de quelqu'un : la page du lien partagé et du QR code, lisible sans compte (#159).
+  // Trouver un développeur par son nom ou une compétence (contracts/profils.yaml) : la loupe de l'en-tête y mène.
+  { path: '/profils', name: 'developpeurs', component: () => import('./features/profils/DeveloppeursPage.vue'), meta: { connexionRequise: true } },
   { path: '/p/:id', name: 'profil-public', component: () => import('./features/profils/ProfilPublicPage.vue') },
   // Communautés : connexion requise (contracts/communautes.yaml).
   {

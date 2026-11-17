@@ -111,7 +111,21 @@ const nonLus = (liste: Message[]) => liste.filter((m) => !m.deMoi && !m.luLe).le
 const erreur = (code: string, status = 409) =>
   HttpResponse.json({ type: `urn:jamii:erreur:${code}`, title: code, status, code }, { status, headers: { 'Content-Type': 'application/problem+json' } })
 
+/** La recherche de profils (contracts/profils.yaml) : les profils de démo, filtrés comme le fait l'API. */
+const sansAccents = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+function chercherProfilsDemo(url: URL) {
+  const q = sansAccents(url.searchParams.get('q')?.trim() ?? '')
+  const competences = url.searchParams.getAll('competence')
+  const dispo = url.searchParams.get('disponibilite')
+  return PROFILS.filter((p) => !q || sansAccents(p.nom).includes(q))
+    .filter((p) => competences.every((c) => (p.competences as readonly string[]).includes(c)))
+    .filter((p) => !dispo || p.disponibilite === dispo)
+    .sort((a, b) => Number(b.disponibilite === 'disponible') - Number(a.disponibilite === 'disponible'))
+    .map((p) => ({ ...p, competences: [...p.competences] }))
+}
+
 export const handlersReseau = [
+  http.get('/api/profils', ({ request }) => HttpResponse.json({ elements: chercherProfilsDemo(new URL(request.url)), curseurSuivant: null })),
   http.get('/api/recommandations/cercles', ({ request }) => {
     const elements = cerclesDemo()
       .filter((c) => c.statut === 'ouvert' && !c.tirage && !c.moi.estMembre && c.nombreMembres < c.taille)

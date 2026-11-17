@@ -104,6 +104,7 @@ const apercu = (c: Conversation) =>
         </ul>
         <div v-else class="liste-vide"><p>{{ recherche ? t('reseau.messages.aucunResultat') : t('reseau.contacts.vide') }}</p><RouterLink to="/communautes">{{ t('menu.communautes') }}</RouterLink></div>
         <RouterLink to="/contacts" class="tous-contacts">{{ t('reseau.contacts.mes') }} <span aria-hidden="true">↗</span></RouterLink>
+        <RouterLink to="/profils" class="tous-contacts" data-test="trouver-developpeur">{{ t('developpeurs.lien') }} <span aria-hidden="true">↗</span></RouterLink>
       </div>
       <div v-else key="liste" class="boite__liste" :class="{ 'entree-gauche': revenu }">
         <JSquelette v-if="etat === 'chargement'" :nombre="4" />

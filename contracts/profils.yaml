@@ -167,6 +167,10 @@ paths:
           explode: true
           schema: { type: array, maxItems: 10, items: { $ref: '#/components/schemas/Pays' } }
         - { name: disponibilite, in: query, schema: { $ref: '#/components/schemas/Disponibilite' } }
+        - name: q
+          in: query
+          description: 'Une partie du nom ou du login GitHub, sans tenir compte des majuscules (2 à 50 caractères). Ex. : `?q=awa`.'
+          schema: { type: string, minLength: 2, maxLength: 50 }
       responses:
         '200':
           description: Une page de profils publiés.

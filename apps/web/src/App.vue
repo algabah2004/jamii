@@ -83,6 +83,10 @@ garderFocusVisibleDansLesRangees()
         </RouterLink>
         <template v-else-if="etat === 'connecte' && moi">
           <!-- Le profil se reconnaît à son visage : l'avatar mène au profil, le nom reste lisible par tous. -->
+          <!-- Trouver un développeur par son nom ou une compétence (features/profils/DeveloppeursPage.vue). -->
+          <RouterLink to="/profils" class="icone-entete" data-test="lien-developpeurs" :aria-label="t('developpeurs.lien')" :title="t('developpeurs.lien')">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8" /><path d="m16 16 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+          </RouterLink>
           <RouterLink to="/messages" class="acces-messages icone-entete" :class="{ 'router-link-active': $route.path.startsWith('/messages') }" data-test="lien-messages" :aria-label="t('reseau.messages.lien', { n: messagesNonLus }, messagesNonLus)" :title="t('reseau.messages.titre')">
             <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 4h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-6 4V6a2 2 0 0 1 2-2Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M7 9h10M7 13h6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
             <span class="acces-messages__texte">{{ t('reseau.messages.titre') }}</span>
