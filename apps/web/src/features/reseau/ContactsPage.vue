@@ -49,7 +49,10 @@ async function agir(personneId: string, appel: () => Promise<unknown>) {
 <template>
   <section class="reseau-page">
     <header class="tete">
-      <h1>{{ t('reseau.onglets.contacts') }}</h1>
+      <div class="tete__titre">
+        <h1>{{ t('reseau.onglets.contacts') }}</h1>
+        <RouterLink to="/profils" class="j-bouton j-bouton--secondaire" data-test="trouver-developpeur">{{ t('developpeurs.lien') }}</RouterLink>
+      </div>
       <OngletsReseau />
     </header>
     <p v-if="erreur" role="alert" class="erreur">{{ erreur }}</p>
@@ -111,6 +114,7 @@ async function agir(personneId: string, appel: () => Promise<unknown>) {
 .reseau-page { display: grid; gap: var(--space-6); max-width: 60rem; }
 .tete { display: grid; gap: var(--space-4); }
 .tete h1 { margin: 0; }
+.tete__titre { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); }
 .groupe { display: grid; gap: var(--space-3); }
 .groupe h2 { margin: 0; }
 .liste { list-style: none; margin: 0; padding: var(--space-2); display: grid; }

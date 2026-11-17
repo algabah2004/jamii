@@ -334,6 +334,19 @@ class ProfilsTest {
 	}
 
 	@Test
+	void cherche_par_nom_sans_tenir_compte_des_majuscules() {
+		String marque = "nom-" + UUID.randomUUID().toString().substring(0, 8);
+		UUID fatou = profilPublie("Fatou " + marque, "SN", "disponible", marque);
+		profilPublie("Kofi Yao", "CI", "disponible", marque);
+		var moi = compte("chercheur-" + marque);
+
+		assertThat(chercher(moi, "competence=" + marque + "&q=FATOU")).containsExactly(fatou.toString());
+		assertThat(chercher(moi, "competence=" + marque + "&q=personne")).isEmpty();
+		assertThat(chercher(moi, "competence=" + marque + "&q=%25")).as("% n'est pas un joker").isEmpty();
+		assertThat(mvc.get().uri("/api/profils?q=a").with(moi)).hasStatus(HttpStatus.BAD_REQUEST);
+	}
+
+	@Test
 	void le_tableau_de_bord_compte_les_inscrits_par_pays_declare() {
 		long avant = paysDesInscrits.parPays().getOrDefault("GH", 0L);
 		String marque = "pays-" + UUID.randomUUID().toString().substring(0, 8);

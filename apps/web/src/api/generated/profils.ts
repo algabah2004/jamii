@@ -682,6 +682,8 @@ export interface operations {
                 /** @description Code ISO 3166-1 alpha-2. Plusieurs pays : `?pays=SN&pays=KE`. */
                 pays?: components["schemas"]["Pays"][];
                 disponibilite?: components["schemas"]["Disponibilite"];
+                /** @description Une partie du nom ou du login GitHub, sans tenir compte des majuscules (2 à 50 caractères). Ex. : `?q=awa`. */
+                q?: string;
             };
             header?: never;
             path?: never;
