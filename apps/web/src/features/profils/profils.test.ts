@@ -276,6 +276,15 @@ describe('profil professionnel (#159)', () => {
     expect(page.find('[data-test="actions-profil"]').exists()).toBe(false)
   })
 
+  it('sur sa propre page publique, un crayon mène à « Mon profil » au lieu de ne rien faire', async () => {
+    serveur.use(http.get('/api/profils/:id', () => HttpResponse.json({ ...pro, utilisateurId: '6f1c2a4e-8b7d-4c3e-9a10-2b5d7e9f0a11' })))
+    const page = await ouvrir('/p/6f1c2a4e-8b7d-4c3e-9a10-2b5d7e9f0a11')
+    await vi.waitFor(() => expect(page.find('[data-test="crayon-lieu"]').exists()).toBe(true))
+    const routeur = page.vm.$router
+    await page.get('[data-test="crayon-lieu"]').trigger('click')
+    await vi.waitFor(() => expect(routeur.currentRoute.value.path).toBe('/profil'))
+  })
+
   it('montre « Infos » avec le résumé de l’IA, l’activité GitHub et les recommandations des coéquipiers', async () => {
     serveur.use(
       http.get('/api/profils/:id', () =>
