@@ -63,7 +63,8 @@ class CompteDemoTest {
 
 		var entree = mvc.post().uri("/api/auth/demo").with(csrf()).exchange();
 		assertThat(entree).hasStatus(HttpStatus.NO_CONTENT);
-		assertThat(entree.getResponse().getHeader("Set-Cookie")).contains("JAMII_SESSION=");
+		// Le cookie s'appelle JAMII_SESSION en production, SESSION dans les tests.
+		assertThat(entree.getResponse().getHeader("Set-Cookie")).contains("SESSION=");
 		assertThat(base.sql("SELECT count(*) FROM SPRING_SESSION WHERE PRINCIPAL_NAME = :p").param("p", CompteDemo.ID.toString())
 			.query(Long.class).single()).isPositive();
 	}
