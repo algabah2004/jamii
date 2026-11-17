@@ -5,7 +5,7 @@ import { RouterLink, RouterView, useRoute } from 'vue-router'
 import ReglagesAffichage from './components/ReglagesAffichage.vue'
 import BoutonLangue from './components/BoutonLangue.vue'
 import BoutonTheme from './components/BoutonTheme.vue'
-import { centrerActif } from './components/rangeeDefilante'
+import { centrerActif, garderFocusVisibleDansLesRangees } from './components/rangeeDefilante'
 import { chargerSession, seDeconnecter, useSession } from './session'
 import { JAvatar, JBouton, JSquelette } from './design-system'
 import { arreterActivite, suivreActivite, useActivite } from './features/reseau/activite'
@@ -29,6 +29,7 @@ watch(etat, (e) => (e === 'connecte' ? suivreAppelsEntrants() : arreterAppelsEnt
 const route = useRoute()
 const menu = ref<HTMLElement | null>(null)
 centrerActif(menu, 'a.router-link-active', [() => route.path, etat])
+garderFocusVisibleDansLesRangees()
 </script>
 
 <template>

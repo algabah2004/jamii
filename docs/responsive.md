@@ -235,7 +235,7 @@ Ce que tous les écrans partagent. Corrigé ici une fois, pour ne pas l'être di
 - ✅ thème clair et thème sombre vérifiés à 390 px ;
 - ✅ onglets organisateur d'un hackathon (gestion, jury, candidatures) et hackathons en évaluation ou avec résultats : tous les onglets mesurés à 320 px, plus aucun défaut (le formulaire du jury et la barre d'action du bas débordaient) ;
 - ✅ aucun texte coupé par « … » à 320 px, sauf les aperçus de messages (voulu) ;
-- ✅ clavier seul, avec la vraie touche Tab à 320 px : chaque élément montre son anneau de focus et reste à l'écran. Un élément qui reçoit le focus ne passe plus sous l'en-tête fixe ni sous la barre du bas (`scroll-margin` au focus, WCAG 2.4.11). La rangée d'onglets d'un hackathon ne glisse plus sous l'en-tête ;
+- ✅ clavier seul à 320 px, sur les 19 écrans (environ 520 éléments) : chaque élément qui reçoit le focus montre un indicateur, reste à l'écran, ne passe ni sous l'en-tête fixe ni sous la barre du bas (`scroll-margin` au focus, WCAG 2.4.11). Corrigé en route : un lien à moitié visible dans une rangée qui défile (« Missions » dans le menu) n'était pas ramené par le navigateur, une écoute globale le fait (`garderFocusVisibleDansLesRangees`) ; la zone d'écriture d'Ayo et le composeur des messages ont maintenant un vrai anneau de 2 px ; la rangée d'onglets d'un hackathon ne glisse plus sous l'en-tête ;
 - ✅ émulation Android (Chrome Android, tactile, `pointer: coarse`, `hover: none`) : 17 routes à 360 px sans défaut ; les actions des messages, cachées au survol sur ordinateur, restent visibles au toucher ; un message s'écrit et s'envoie au doigt, le champ garde le focus ;
 - ⬜ vrai téléphone Android et captures à 360 px : à faire sur `jamii.dev` après le déploiement.
 

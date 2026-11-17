@@ -667,7 +667,7 @@ const messageErreur = computed(() =>
   border: 1px solid var(--line-strong); border-radius: 22px; background: var(--surface-raised);
   box-shadow: 0 1px 2px rgb(2 7 10 / 0.08), 0 10px 30px rgb(2 7 10 / 0.16);
 }
-.saisie-ia:focus-within { border-color: color-mix(in srgb, var(--ink) 35%, var(--line-strong)); }
+.saisie-ia:focus-within { border-color: color-mix(in srgb, var(--ink) 35%, var(--line-strong)); outline: 2px solid var(--focus); outline-offset: 2px; }
 .saisie-ia textarea { width: 100%; min-height: 0; max-height: 40vh; padding: var(--space-1) 0; border: 0; border-radius: 0; background: transparent; color: var(--ink); font: inherit; font-size: 1.0625rem; line-height: 1.5; resize: none; outline: none; box-shadow: none; }
 .saisie-ia textarea::placeholder { color: color-mix(in srgb, var(--ink) 40%, transparent); }
 .saisie-ia__bas { display: flex; align-items: center; gap: var(--space-3); }

@@ -304,6 +304,9 @@ function coller(e: ClipboardEvent) {
 <style scoped>
 .composeur { container-type: inline-size; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); transition: border-color var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out); }
 .composeur:focus-within { border-color: var(--ink-muted); }
+/* Le champ lui-même n'a pas d'anneau : c'est le cadre qui le porte, comme ailleurs dans Jamii (2 px, couleur du focus).
+   Seulement quand on écrit : les boutons d'outils ont déjà leur propre anneau. */
+.composeur:has(textarea:focus) { outline: 2px solid var(--focus); outline-offset: 2px; }
 .composeur--alerte, .composeur--alerte:focus-within { border-color: var(--proof); }
 .composeur--survol { border-color: var(--action); box-shadow: 0 0 0 3px var(--action-soft); }
 
