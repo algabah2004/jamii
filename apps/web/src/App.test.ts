@@ -29,18 +29,19 @@ describe("le cadre de l'application", () => {
     await vi.waitFor(() => expect(deconnecte).toBe(true))
   })
 
-  it('ramène la page active dans le champ quand le menu défile', async () => {
+  it('ouvre et referme le menu replié (téléphone) : bouton, Échap, changement de page', async () => {
     const { page, routeur } = await ouvrir('/missions')
-    const nav = page.get('nav[aria-label]').element as HTMLElement
-    // jsdom ne calcule pas la mise en page : on simule un menu plus large que l'écran.
-    Object.defineProperty(nav, 'scrollWidth', { configurable: true, value: 900 })
-    Object.defineProperty(nav, 'clientWidth', { configurable: true, value: 300 })
-    await routeur.push('/systalink')
-    const actif = nav.querySelector<HTMLElement>('a.router-link-active')!
-    Object.defineProperty(actif, 'offsetLeft', { configurable: true, value: 760 })
-    Object.defineProperty(actif, 'offsetWidth', { configurable: true, value: 100 })
+    const bouton = page.get('[data-test="bouton-menu"]')
+    expect(bouton.attributes('aria-controls')).toBe('menu-principal')
+    expect(bouton.attributes('aria-expanded')).toBe('false')
+    await bouton.trigger('click')
+    expect(bouton.attributes('aria-expanded')).toBe('true')
+    expect(page.get('header').classes()).toContain('entete--menu-ouvert')
+    await page.get('header').trigger('keydown', { key: 'Escape' })
+    expect(bouton.attributes('aria-expanded')).toBe('false')
+    expect(document.activeElement).toBe(bouton.element)
+    await bouton.trigger('click')
     await routeur.push('/vitrine')
-    await routeur.push('/systalink')
-    await vi.waitFor(() => expect(nav.scrollLeft).toBe(660))
+    await vi.waitFor(() => expect(bouton.attributes('aria-expanded')).toBe('false'))
   })
 })
