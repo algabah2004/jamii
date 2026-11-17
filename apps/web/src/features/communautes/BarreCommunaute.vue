@@ -17,7 +17,7 @@ type Salon = components['schemas']['Salon']
  * La barre d'une communauté : passer d'une communauté à l'autre, le fil, les membres, « À propos », les salons en direct
  * (un point quand il y a du nouveau, relu toutes les 20 s) et des raccourcis.
  */
-const props = defineProps<{ slug: string; actif: string; communaute?: Communaute | null }>()
+const props = defineProps<{ slug: string; actif: string; communaute?: Communaute | null; recharge?: number }>()
 const { t } = useI18n()
 const { moi } = useSession()
 
@@ -66,6 +66,8 @@ watch(() => props.slug, () => {
   salons.value = []
   void charger()
 }, { immediate: true })
+// Après « Rejoindre » ou un salon supprimé : relire sans rien effacer, la barre ne bouge pas.
+watch(() => props.recharge, () => void charger())
 minuterie = setInterval(() => {
   if (typeof document === 'undefined' || document.visibilityState !== 'hidden') void relireDerniers()
 }, 20_000)

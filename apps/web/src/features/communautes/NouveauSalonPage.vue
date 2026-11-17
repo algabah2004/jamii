@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import LienRetour from '../../components/LienRetour.vue'
-import { computed, ref, watch } from 'vue'
+import { computed, inject, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { api } from '../../api/client'
 import type { components } from '../../api/generated/communautes'
 import { JBouton, JChamp, JSquelette } from '../../design-system'
 import EspaceCommunautes from './EspaceCommunautes.vue'
+import { CLE_ESPACE } from './espace'
 
 type Communaute = components['schemas']['Communaute']
 
@@ -17,6 +18,7 @@ type Communaute = components['schemas']['Communaute']
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
+const espace = inject(CLE_ESPACE, null)
 const slug = computed(() => String(route.params.slug))
 
 const communaute = ref<Communaute | null>(null)
@@ -53,7 +55,11 @@ async function creer() {
       params: { path: { slug: slug.value } },
       body: { nom: nom.value.trim(), sujet: sujet.value.trim() },
     })
-    if (data) return void (await router.push({ path: `/communautes/${slug.value}`, query: { salon: data.slug } }))
+    if (data) {
+      // La barre reste en place : elle relit ses salons pour montrer le nouveau.
+      if (espace) espace.recharge++
+      return void (await router.push({ path: `/communautes/${slug.value}`, query: { salon: data.slug } }))
+    }
     const code = (error as { code?: string } | undefined)?.code
     envoi.value = code === 'salon_existe' ? 'existe' : code === 'pas_moderateur' ? 'interdit' : code === 'trop_de_salons' ? 'trop' : response.status === 403 ? 'interdit' : 'erreur'
   } catch {
@@ -63,7 +69,7 @@ async function creer() {
 </script>
 
 <template>
-  <EspaceCommunautes :actuelle="etat === 'introuvable' ? undefined : slug" actif="nouveau-salon" :communaute="communaute">
+  <EspaceCommunautes :actuelle="etat === 'introuvable' ? null : slug" actif="nouveau-salon" :communaute="communaute">
     <JSquelette v-if="etat === 'chargement'" :nombre="2" />
     <div v-else-if="etat === 'introuvable'" class="etat-vide">
       <h1>{{ t('introuvable.titre') }}</h1>

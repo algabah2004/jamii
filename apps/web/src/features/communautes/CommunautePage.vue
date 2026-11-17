@@ -172,7 +172,7 @@ const prenom = computed(() => moi.value?.nom.split(' ')[0] ?? '')
 </script>
 
 <template>
-  <EspaceCommunautes :actuelle="etat === 'introuvable' ? undefined : slug" :actif="actif" :communaute="communaute" :recharge="cleRecharge">
+  <EspaceCommunautes :actuelle="etat === 'introuvable' ? null : slug" :actif="actif" :communaute="communaute" :recharge="cleRecharge">
     <JSquelette v-if="etat === 'chargement' && !communaute" :nombre="4" />
     <div v-else-if="etat === 'introuvable'" class="etat-vide">
       <h1>{{ t('introuvable.titre') }}</h1>

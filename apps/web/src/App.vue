@@ -127,10 +127,11 @@ garderFocusVisibleDansLesRangees()
       <p>{{ t('etat.indisponible') }}</p>
       <JBouton variante="secondaire" @click="chargerSession">{{ t('etat.reessayer') }}</JBouton>
     </div>
-    <!-- Passage d'une page à l'autre : un fondu court, sans rien remonter quand seul le filtre change. -->
+    <!-- Passage d'une page à l'autre : un fondu court, sans rien remonter quand seul le filtre change.
+         Dans l'espace d'une communauté, le cadre reste : seul son centre change (CadreCommunaute). -->
     <RouterView v-else v-slot="{ Component, route: courante }">
       <Transition name="page" mode="out-in">
-        <component :is="Component" :key="courante.meta.messagerie ? 'messagerie' : courante.path" />
+        <component :is="Component" :key="courante.meta.messagerie ? 'messagerie' : courante.meta.espaceCommunaute ? 'espace-communaute' : courante.path" />
       </Transition>
     </RouterView>
   </main>

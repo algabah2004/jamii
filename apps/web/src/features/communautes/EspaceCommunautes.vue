@@ -1,56 +1,41 @@
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n'
+import { inject, watch, watchEffect } from 'vue'
 import type { components } from '../../api/generated/communautes'
-import BarreCommunaute from './BarreCommunaute.vue'
+import { CLE_ESPACE } from './espace'
 
 type Communaute = components['schemas']['Communaute']
 
 /**
- * Le cadre de l'espace d'une communauté, sur toute la largeur de l'écran :
- * - à gauche, la barre de la communauté (changer de communauté, le fil, les membres, les salons, « bien démarrer ») ;
- * - au centre, ce qu'on regarde ;
- * - à droite, sur grand écran, ce qui se passe en direct.
- * Sur téléphone : une colonne, la barre devient une rangée qui défile en haut.
+ * Le centre d'une page de l'espace d'une communauté. Le cadre (la barre à gauche, le côté à droite) appartient à la
+ * route parente (CadreCommunaute) et reste en place d'une page à l'autre ; la page lui dit seulement :
+ * - `actuelle` : la communauté de la barre (absente pendant un chargement : la barre garde la sienne ; `null` : pas de barre) ;
+ * - `actif` : le lien actif de la barre ; `communaute` : la fiche déjà lue ;
+ * - `recharge` : un nombre qui augmente quand la barre doit relire ses salons ;
+ * - son `#contexte` part dans la colonne de droite.
  */
-defineProps<{ actuelle?: string; actif?: string; communaute?: Communaute | null; recharge?: number }>()
-const { t } = useI18n()
+const props = defineProps<{ actuelle?: string | null; actif?: string; communaute?: Communaute | null; recharge?: number }>()
+const espace = inject(CLE_ESPACE, null)
+
+watchEffect(() => {
+  if (!espace) return
+  if (props.actuelle !== undefined) espace.actuelle = props.actuelle
+  espace.actif = props.actif ?? 'fil'
+  if (props.communaute) espace.communaute = props.communaute
+})
+watch(() => props.recharge, () => {
+  if (espace) espace.recharge++
+})
 </script>
 
 <template>
-  <div class="espace" :class="{ 'espace--cote': $slots.contexte }">
-    <BarreCommunaute v-if="actuelle" :key="`${actuelle}-${recharge ?? 0}`" :slug="actuelle" :actif="actif ?? 'fil'" :communaute="communaute" class="espace__barre" />
-    <div class="espace__principal" :aria-label="t('communautes.espace.fil')"><slot /></div>
-    <aside v-if="$slots.contexte" class="espace__cote"><slot name="contexte" /></aside>
+  <div class="espace-centre">
+    <slot />
+    <Teleport v-if="$slots.contexte && espace?.cote" :to="espace.cote">
+      <slot name="contexte" />
+    </Teleport>
   </div>
 </template>
 
 <style scoped>
-.espace {
-  --haut-espace: calc(64px + var(--space-6));
-  display: grid; gap: var(--space-4); align-items: start;
-  grid-template-columns: 17rem minmax(0, 1fr);
-  margin-top: var(--space-4);
-}
-.espace--cote { grid-template-columns: 17rem minmax(0, 1fr) 20rem; }
-.espace > * { min-width: 0; }
-.espace__barre { position: sticky; top: var(--haut-espace); height: calc(100dvh - var(--haut-espace) - var(--space-4)); }
-.espace__principal { display: grid; gap: var(--space-4); min-height: calc(100dvh - var(--haut-espace) - var(--space-4)); align-content: start; }
-.espace__cote { position: sticky; top: var(--haut-espace); display: grid; gap: var(--space-4); max-height: calc(100dvh - var(--haut-espace) - var(--space-4)); overflow-y: auto; scrollbar-width: thin; }
-
-@media (max-width: 1360px) {
-  .espace--cote { grid-template-columns: 17rem minmax(0, 1fr); }
-  .espace__cote { display: none; }
-}
-@media (max-width: 860px) {
-  .espace, .espace--cote { grid-template-columns: minmax(0, 1fr); margin-top: var(--space-2); }
-  .espace__barre { position: static; height: auto; }
-  .espace__principal { min-height: 0; }
-}
-/* Salon en plein écran sur téléphone : la barre de la communauté s'efface, la flèche du salon y ramène. */
-@media (max-width: 720px) {
-  :root.discussion-plein-ecran .espace { margin-top: 0; gap: 0; }
-  :root.discussion-plein-ecran .espace__barre { display: none; }
-  /* La barre de la communauté va bord à bord, comme le fil. */
-  .espace__barre { margin-inline: calc(-1 * var(--space-4)); border-radius: 0; border-width: 1px 0; box-shadow: none; }
-}
+.espace-centre { display: grid; gap: var(--space-4); align-content: start; }
 </style>
