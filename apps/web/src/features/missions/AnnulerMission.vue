@@ -33,7 +33,7 @@ async function annuler() {
 
 <template>
   <div class="annuler">
-    <p v-if="demandeePar && mission.statut !== 'annulee'" class="note" data-test="annulation-demandee">
+    <p v-if="demandeePar && mission.statut !== 'annulee'" class="note m-note" data-test="annulation-demandee">
       {{ parAutre ? t(`missions.fin.annulation.demandeePar.${demandeePar}`) : t('missions.fin.annulation.enAttente') }}
     </p>
     <template v-if="peutAnnuler">
@@ -59,6 +59,5 @@ async function annuler() {
 <style scoped>
 .annuler, .formulaire { display: grid; gap: var(--space-4); }
 .texte-discret { margin: 0; }
-.note { margin: 0; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); border-inline-start: 3px solid var(--cantaloupe); background: color-mix(in srgb, var(--surface) 60%, transparent); font-weight: 600; }
 .erreur { margin: 0; color: var(--danger); font-weight: 600; }
 </style>

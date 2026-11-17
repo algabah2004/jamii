@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import IconeMission from './IconeMission.vue'
 import { computed, nextTick, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
@@ -72,11 +73,14 @@ async function envoyer() {
 </script>
 
 <template>
-  <section class="carte echanges" aria-labelledby="echanges-titre" data-test="echanges">
+  <section class="carte echanges m-bloc" aria-labelledby="echanges-titre" data-test="echanges">
     <header class="tete">
-      <h2 id="echanges-titre">
-        {{ avec ? t('missions.echanges.titreAvec', { nom: avec.nom }) : t('missions.echanges.titre') }}
-      </h2>
+      <div class="m-tete">
+        <IconeMission nom="echanges" />
+        <div><h2 id="echanges-titre">
+          {{ avec ? t('missions.echanges.titreAvec', { nom: avec.nom }) : t('missions.echanges.titre') }}
+        </h2></div>
+      </div>
       <RouterLink v-if="avec" :to="`/messages/${avec.id}`" class="texte-discret" data-test="ouvrir-messages">{{ t('missions.echanges.toutVoir') }}</RouterLink>
     </header>
 
@@ -113,29 +117,32 @@ async function envoyer() {
 </template>
 
 <style scoped>
-.echanges { display: grid; gap: var(--space-4); padding: clamp(var(--space-4), 6vw, var(--space-8)); }
-.echanges h2, .echanges p { margin: 0; }
-.echanges h2 { font-size: 1.25rem; }
-.tete { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: baseline; justify-content: space-between; }
+.echanges { display: grid; gap: var(--space-4); }
+.echanges p { margin: 0; }
+.tete { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; justify-content: space-between; }
 .fil {
-  margin: 0; padding: var(--space-2); list-style: none; display: grid; gap: var(--space-3); max-block-size: 22rem; overflow-y: auto;
-  border: 1px solid var(--line-strong); border-radius: var(--radius-md);
+  margin: 0; padding: var(--space-4); list-style: none; display: grid; gap: var(--space-3); max-block-size: 22rem; overflow-y: auto;
+  border-radius: 16px; background: var(--surface-raised);
 }
 .fil:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .fil li { display: grid; grid-template-columns: auto 1fr; gap: var(--space-1) var(--space-2); align-items: end; justify-items: start; }
 .fil li.de-moi { grid-template-columns: minmax(0, 1fr); justify-items: end; }
 .bulle {
-  max-inline-size: 36rem; padding: var(--space-2) var(--space-3); border-radius: var(--radius-md); white-space: pre-line;
-  background: var(--surface-raised, var(--surface)); border: 1px solid var(--line-strong);
+  max-inline-size: 36rem; padding: 10px 14px; border-radius: 18px 18px 18px 6px; white-space: pre-line; line-height: 1.5;
+  background: var(--surface); border: 1px solid var(--line);
 }
-.de-moi .bulle { background: var(--action); border-color: var(--action); color: var(--on-action); }
+.de-moi .bulle { border-radius: 18px 18px 6px 18px; background: var(--action); border-color: var(--action); color: var(--on-action); }
 .heure { grid-column: 1 / -1; font-size: 0.75rem; }
 .fil li:not(.de-moi) .heure { padding-inline-start: 28px; }
-.saisie { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-3); align-items: end; }
+.saisie {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-3); align-items: end;
+  padding: 6px 6px 6px var(--space-2); border: 1px solid var(--line-strong); border-radius: 18px; background: var(--surface);
+}
+.saisie:focus-within { border-color: var(--action); box-shadow: 0 0 0 3px color-mix(in srgb, var(--action) 20%, transparent); }
 textarea {
-  inline-size: 100%; padding: var(--space-3); border: 1px solid var(--line-strong); border-radius: var(--radius-md);
+  inline-size: 100%; padding: var(--space-2); border: 0; border-radius: 12px;
   background: var(--surface); color: var(--ink); font: inherit; resize: vertical;
 }
-textarea:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+textarea:focus-visible { outline: none; }
 .erreur { color: var(--danger); font-weight: 600; }
 </style>

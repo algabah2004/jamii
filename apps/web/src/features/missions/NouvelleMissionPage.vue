@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import './missions.css'
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
@@ -122,7 +123,7 @@ async function creer() {
 
 <template>
   <AssistantCreation v-model:etape="etape" :titre="t('missions.nouvelle.titre')" :etapes="etapes" :valides="valides" retour="/missions" :retour-libelle="t('missions.detail.retour')" :action="t('missions.nouvelle.creer')" test-formulaire="nouvelle-mission" test-action="creer" :occupe="envoi === 'envoi'" @terminer="creer">
-    <p v-if="demandeId" class="note" role="status" data-test="depuis-demande">{{ t('missions.nouvelle.depuisDemande.note', { titre: demandeTitre }) }}</p>
+    <p v-if="demandeId" class="note m-note" role="status" data-test="depuis-demande">{{ t('missions.nouvelle.depuisDemande.note', { titre: demandeTitre }) }}</p>
     <div v-if="etape === 0" class="question-principale"><JChamp v-model="titre" :libelle="t('missions.nouvelle.champTitre')" :aide="t('missions.nouvelle.aideTitre')" :erreur="erreur('titre')" :maxlength="LIMITES.titreMax" requis /><div class="pastilles"><button v-for="exemple in (['site', 'appli', 'design'] as const)" :key="exemple" type="button" class="pastille" @click="titre = t(`creationGuidee.mission.exemples.${exemple}`)">{{ t(`creationGuidee.mission.exemples.${exemple}`) }}</button></div></div>
     <div v-else-if="etape === 1" class="question-principale"><JChamp v-model="besoin" :libelle="t('missions.nouvelle.champBesoin')" :aide="t('missions.nouvelle.aideBesoin', { n: LIMITES.besoinMin })" :erreur="erreur('besoin')" multiligne :lignes="5" :maxlength="LIMITES.besoinMax" requis /></div>
     <div v-else-if="etape === 2" class="question-principale"><JChamp v-model="competences" :libelle="t('missions.nouvelle.champCompetences')" :aide="t('missions.nouvelle.aideCompetences')" :erreur="erreur('competences')" requis /><div class="pastilles"><button v-for="c in ['Vue, TypeScript', 'Flutter, Firebase', 'UX design, Figma']" :key="c" type="button" class="pastille" @click="competences = c">{{ c }}</button></div></div>
@@ -148,8 +149,19 @@ async function creer() {
 .devise select, .date input { min-height: 44px; padding: 0 var(--space-3); border: 1px solid var(--line-strong); border-radius: var(--radius-md); background: var(--surface); color: inherit; font: inherit; }
 .choix label { display: flex; gap: var(--space-3); align-items: center; font-weight: 400; }
 .erreur { margin: 0; color: var(--danger); font-weight: 600; }
-.note { margin: 0; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); border-inline-start: 3px solid var(--cantaloupe); background: color-mix(in srgb, var(--surface) 60%, transparent); font-weight: 600; }
-.questionnaire { padding: var(--space-4); border-radius: var(--radius-md); border: 1px solid var(--line-strong); }
+.questionnaire { padding: var(--space-4); border-radius: 14px; border: 1px solid var(--line); background: var(--surface-raised); }
+/* La visibilité : deux grandes options cliquables plutôt que deux petits boutons radio. */
+.choix label {
+  padding: var(--space-4); border-radius: 14px; border: 1px solid var(--line-strong); background: var(--surface); cursor: pointer; font-weight: 600;
+}
+.choix label:has(input:checked) { border-color: var(--action); background: color-mix(in srgb, var(--action) 8%, var(--surface)); box-shadow: 0 0 0 1px var(--action); }
+.choix input { accent-color: var(--action); }
+/* Le récapitulatif avant d'enregistrer : des lignes nettes, l'intitulé en petit au-dessus. */
+.recap { margin: 0; display: grid; gap: 0; border-radius: 14px; border: 1px solid var(--line); overflow: hidden; }
+.recap > div { display: grid; gap: 2px; padding: var(--space-3) var(--space-4); }
+.recap > div:nth-child(odd) { background: var(--surface-raised); }
+.recap dt { font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .02em; color: var(--ink-muted); }
+.recap dd { margin: 0; font-weight: 600; white-space: pre-line; }
 .erreurs-champs { margin: 0; padding-left: 18px; color: var(--danger); }
 .erreurs-champs button { background: transparent; border: 0; padding: 4px 0; color: inherit; text-align: left; text-decoration: underline; cursor: pointer; }
 </style>

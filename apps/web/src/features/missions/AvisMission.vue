@@ -24,11 +24,11 @@ function envoyer() {
 </script>
 
 <template>
-  <section v-if="avis.length || peutDonner" class="avis" aria-labelledby="avis-titre" data-test="avis">
+  <section v-if="avis.length || peutDonner" class="avis m-encart-avis" aria-labelledby="avis-titre" data-test="avis">
     <h3 id="avis-titre">{{ t('missions.fin.avis.titre') }}</h3>
     <ul v-if="avis.length" class="liste">
       <li v-for="a in avis" :key="a.auteur" data-test="un-avis">
-        <p class="tete">{{ t(`missions.fin.avis.par.${a.auteur}`) }} · <span data-test="note">{{ t('missions.fin.avis.note', { n: a.note }) }}</span></p>
+        <p class="tete">{{ t(`missions.fin.avis.par.${a.auteur}`) }} · <span class="etoiles" aria-hidden="true">{{ '★'.repeat(a.note) }}<span class="etoiles__vides">{{ '★'.repeat(5 - a.note) }}</span></span> <span data-test="note">{{ t('missions.fin.avis.note', { n: a.note }) }}</span></p>
         <p v-if="a.texte" class="texte">{{ a.texte }}</p>
       </li>
     </ul>
@@ -37,7 +37,7 @@ function envoyer() {
       <fieldset>
         <legend>{{ t('missions.fin.avis.question') }}</legend>
         <div class="notes">
-          <label v-for="n in 5" :key="n"><input v-model="note" type="radio" name="note" :value="n" /> {{ n }}</label>
+          <label v-for="n in 5" :key="n" :data-plein="note !== null && note >= n"><input v-model="note" type="radio" name="note" :value="n" /><span aria-hidden="true">★</span> {{ n }}</label>
         </div>
         <small class="texte-discret">{{ t('missions.fin.avis.echelle') }}</small>
       </fieldset>
@@ -52,6 +52,10 @@ function envoyer() {
 
 <style scoped>
 .avis, .formulaire { display: grid; gap: var(--space-4); }
+.m-encart-avis { padding: var(--space-5, 20px); border-radius: 16px; background: color-mix(in srgb, var(--cantaloupe) 6%, var(--surface-raised)); }
+.liste > li { padding: var(--space-3) var(--space-4); border-radius: 12px; background: var(--surface); display: grid; gap: var(--space-1); }
+.etoiles { color: var(--cantaloupe); letter-spacing: 2px; }
+.etoiles__vides { color: var(--line-strong); }
 .avis h3 { margin: 0; font-size: 1rem; }
 .liste { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--space-3); }
 .liste p { margin: 0; }
@@ -59,7 +63,15 @@ function envoyer() {
 .texte { white-space: pre-line; }
 fieldset { margin: 0; padding: 0; border: 0; display: grid; gap: var(--space-2); }
 legend { font-weight: 600; margin-bottom: var(--space-2); }
-.notes { display: flex; flex-wrap: wrap; gap: var(--space-4); }
-.notes label { display: inline-flex; gap: var(--space-1); align-items: center; min-height: 44px; }
+.notes { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.notes label {
+  display: inline-flex; gap: 6px; align-items: center; min-height: 44px; padding: 0 var(--space-4); border-radius: var(--radius-pill);
+  border: 1px solid var(--line-strong); background: var(--surface); font-weight: 700; cursor: pointer;
+}
+.notes label span { color: var(--line-strong); font-size: 1.125rem; }
+.notes label[data-plein='true'] { border-color: var(--cantaloupe); background: color-mix(in srgb, var(--cantaloupe) 14%, var(--surface)); }
+.notes label[data-plein='true'] span { color: var(--cantaloupe); }
+.notes label:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
+.notes input { position: absolute; opacity: 0; inline-size: 1px; block-size: 1px; }
 .erreur { margin: 0; color: var(--danger); font-weight: 600; }
 </style>
