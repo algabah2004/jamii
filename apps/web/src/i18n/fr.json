@@ -545,6 +545,7 @@
       "inspiration": "Voir les projets déjà en ligne",
       "equipe": "équipe {pays}",
       "surSystalink": "Hébergé sur Systalink",
+      "roles": { "porteur": "Porteur du projet", "membre": "Membre de l'équipe" },
       "enLigne": "En ligne"
     },
     "depots": {

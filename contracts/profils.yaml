@@ -205,6 +205,13 @@ paths:
       tags: [fiabilite]
       operationId: listerPreuves
       summary: Le détail d'un point de l'indice (« Voir le détail »), les plus récentes d'abord
+      description: |
+        Calculé à la lecture, à partir de ce qui s'est passé sur Jamii (#157) :
+        - `tache_livree_a_temps` : une tâche attribuée à la personne, livrée au plus tard à son échéance (module projets) ;
+        - `reponse_acceptee` : sa réponse acceptée par l'auteur de la question, sauf la sienne (module communautes) ;
+        - `avis_coequipier` : un avis de 4 ou 5 sur 5 laissé par le client d'une mission terminée (module missions) ;
+        - `projet_en_ligne` : un de ses projets qui a répondu à la dernière vérification (modules projets et deploiement).
+        `curseurSuivant` est le nombre de preuves déjà lues.
       parameters:
         - $ref: './socle.yaml#/components/parameters/Curseur'
         - $ref: './socle.yaml#/components/parameters/Limite'
@@ -363,7 +370,7 @@ components:
           items: { $ref: '#/components/schemas/DepotGithub' }
         fiabilite:
           type: array
-          description: Un point par type de preuve ayant au moins une preuve. Pas de note globale.
+          description: Un point par type de preuve ayant au moins une preuve, calculé à la lecture (voir `listerPreuves`). Pas de note globale.
           items: { $ref: '#/components/schemas/PointFiabilite' }
         misAJourLe: { type: string, format: date-time }
 
@@ -458,7 +465,7 @@ components:
       properties:
         projetId: { type: string, format: uuid }
         titre: { type: string }
-        role: { type: string, description: 'Le rôle tenu dans l''équipe (`porteur` ou titre du rôle).' }
+        role: { type: string, description: '`porteur` (le projet est le sien) ou `membre` (de son équipe). Le front le traduit.' }
         paysEquipe: { type: array, items: { $ref: '#/components/schemas/Pays' }, description: Pays des membres de l'équipe. }
         enLigne: { type: boolean, description: '`true` si un déploiement a répondu lors de la dernière vérification.' }
         url: { type: [string, 'null'], format: uri }
@@ -499,7 +506,7 @@ components:
           description: D'où vient la preuve, pour la vérifier en un clic.
           required: [module, id]
           properties:
-            module: { type: string, enum: [projets, communautes, deploiement] }
+            module: { type: string, enum: [projets, communautes, deploiement, missions] }
             id: { type: string, format: uuid }
             titre: { type: [string, 'null'], description: 'Titre de la tâche, de la question ou du projet.' }
         detail:

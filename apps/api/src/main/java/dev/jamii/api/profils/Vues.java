@@ -46,9 +46,15 @@ final class Vues {
 			String resumeIa, String pays, String ville, String disponibilite, Integer heuresParSemaine,
 			String linkedin, String siteWeb, List<String> langues, List<String> competencesPhares,
 			List<Realisation> realisations, List<Langage> langages, List<CompetenceProfil> competences,
-			List<Object> projets, List<DepotGithub> depotsGithub, List<Object> fiabilite, Instant misAJourLe) {
+			List<ProjetDuProfil> projets, List<DepotGithub> depotsGithub, List<PointFiabilite> fiabilite, Instant misAJourLe) {
 
+		/** Sans projets ni preuves (l'export des données personnelles : ce sont des données d'autres modules). */
 		static ProfilPublic depuis(dev.jamii.api.profils.Profil p, Compte compte) {
+			return depuis(p, compte, Preuves.Resume.VIDE);
+		}
+
+		/** Avec ses projets Jamii et ses preuves, calculés par les modules ({@link Preuves}). */
+		static ProfilPublic depuis(dev.jamii.api.profils.Profil p, Compte compte, Preuves.Resume travail) {
 			return new ProfilPublic(p.utilisateurId(), compte.nom(), compte.avatarUrl(), compte.loginGithub(), p.titre(),
 					p.bio(),
 					p.afficherResumeIa() ? p.resumeIa() : null, p.pays(), p.ville(), p.disponibilite(),
@@ -59,13 +65,12 @@ final class Vues {
 								r.annee()))
 						.toList(),
 					p.langages().stream().map(l -> new Langage(l.nom(), l.part())).toList(),
-					competences(p), List.of(),
+					competences(p), travail.projets(),
 					p.depots().stream()
 						.map(d -> new DepotGithub(d.nom(), d.url(), d.description(), d.langage(), d.etoiles(),
 								d.misAJourLe()))
 						.toList(),
-					// Projets et preuves arrivent avec les événements des modules projets et deploiement (PR suivante).
-					List.of(), p.misAJourLe());
+					travail.fiabilite(), p.misAJourLe());
 		}
 
 		/**
@@ -98,7 +103,11 @@ final class Vues {
 			List<CartesIa.Proposee> competencesProposees, Generation generation, int version) {
 
 		static MonProfil depuis(dev.jamii.api.profils.Profil p, Compte compte) {
-			return new MonProfil(ProfilPublic.depuis(p, compte), p.publie(), p.afficherResumeIa(), p.resumeIa(),
+			return depuis(p, compte, Preuves.Resume.VIDE);
+		}
+
+		static MonProfil depuis(dev.jamii.api.profils.Profil p, Compte compte, Preuves.Resume travail) {
+			return new MonProfil(ProfilPublic.depuis(p, compte, travail), p.publie(), p.afficherResumeIa(), p.resumeIa(),
 					p.competencesProposees(), Generation.depuis(p), p.version());
 		}
 
@@ -106,6 +115,30 @@ final class Vues {
 
 	record ProfilResume(UUID utilisateurId, String nom, String avatarUrl, String pays, String ville,
 			String disponibilite, Integer heuresParSemaine, List<String> competences, int projetsEnLigne) {
+	}
+
+	/** Schéma ProjetDuProfil : un projet Jamii de la personne, en ligne ou non. */
+	record ProjetDuProfil(UUID projetId, String titre, String role, List<String> paysEquipe, boolean enLigne, String url,
+			String hebergeur, Instant verifieLe) {
+	}
+
+	/** Schéma PointFiabilite. `contestees` : toujours 0 tant que la contestation n'existe pas. */
+	record PointFiabilite(String type, int nombre, Integer sur, int contestees) {
+	}
+
+	record SourcePreuve(String module, UUID id, String titre) {
+	}
+
+	record PersonneResume(UUID id, String nom, String avatarUrl) {
+
+		static PersonneResume depuis(Compte c) {
+			return new PersonneResume(c.id(), c.nom(), c.avatarUrl());
+		}
+	}
+
+	/** Schéma Preuve. */
+	record Preuve(UUID id, String type, SourcePreuve source, String detail, PersonneResume auteur, boolean contestee,
+			Instant creeLe) {
 	}
 
 	record Page<T>(List<T> elements, String curseurSuivant) {

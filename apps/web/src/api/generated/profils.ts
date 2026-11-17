@@ -142,7 +142,15 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** Le détail d'un point de l'indice (« Voir le détail »), les plus récentes d'abord */
+        /**
+         * Le détail d'un point de l'indice (« Voir le détail »), les plus récentes d'abord
+         * @description Calculé à la lecture, à partir de ce qui s'est passé sur Jamii (#157) :
+         *     - `tache_livree_a_temps` : une tâche attribuée à la personne, livrée au plus tard à son échéance (module projets) ;
+         *     - `reponse_acceptee` : sa réponse acceptée par l'auteur de la question, sauf la sienne (module communautes) ;
+         *     - `avis_coequipier` : un avis de 4 ou 5 sur 5 laissé par le client d'une mission terminée (module missions) ;
+         *     - `projet_en_ligne` : un de ses projets qui a répondu à la dernière vérification (modules projets et deploiement).
+         *     `curseurSuivant` est le nombre de preuves déjà lues.
+         */
         get: operations["listerPreuves"];
         put?: never;
         post?: never;
@@ -258,7 +266,7 @@ export interface components {
             projets: components["schemas"]["ProjetDuProfil"][];
             /** @description Les dépôts publics les plus récents ou les plus suivis. Un lien de site déclaré sur GitHub n'est **pas** une preuve de mise en ligne. */
             depotsGithub: components["schemas"]["DepotGithub"][];
-            /** @description Un point par type de preuve ayant au moins une preuve. Pas de note globale. */
+            /** @description Un point par type de preuve ayant au moins une preuve, calculé à la lecture (voir `listerPreuves`). Pas de note globale. */
             fiabilite: components["schemas"]["PointFiabilite"][];
             /** Format: date-time */
             misAJourLe: string;
@@ -337,7 +345,7 @@ export interface components {
             /** Format: uuid */
             projetId: string;
             titre: string;
-            /** @description Le rôle tenu dans l'équipe (`porteur` ou titre du rôle). */
+            /** @description `porteur` (le projet est le sien) ou `membre` (de son équipe). Le front le traduit. */
             role: string;
             /** @description Pays des membres de l'équipe. */
             paysEquipe?: components["schemas"]["Pays"][];
@@ -384,7 +392,7 @@ export interface components {
             /** @description D'où vient la preuve, pour la vérifier en un clic. */
             source: {
                 /** @enum {string} */
-                module: "projets" | "communautes" | "deploiement";
+                module: "projets" | "communautes" | "deploiement" | "missions";
                 /** Format: uuid */
                 id: string;
                 /** @description Titre de la tâche, de la question ou du projet. */

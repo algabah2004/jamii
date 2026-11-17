@@ -216,7 +216,7 @@ watch(
               <a v-if="p.url" :href="p.url" rel="noopener noreferrer" target="_blank">{{ p.titre }}</a>
               <template v-else>{{ p.titre }}</template>
             </h3>
-            <p class="projet__role">{{ p.role }} · {{ t('profil.experience.surJamii') }}</p>
+            <p class="projet__role">{{ p.role === 'porteur' || p.role === 'membre' ? t(`profil.projets.roles.${p.role}`) : p.role }} · {{ t('profil.experience.surJamii') }}</p>
             <p v-if="p.paysEquipe?.length" class="texte-discret">{{ t('profil.projets.equipe', { pays: p.paysEquipe.map((c) => nomPays(c, locale)).join(' · ') }) }}</p>
           </li>
         </ul>
