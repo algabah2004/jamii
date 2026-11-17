@@ -58,7 +58,7 @@ async function explorer() {
       <div class="panneau">
         <span class="panneau__motif" aria-hidden="true" />
         <p class="panneau__logo" aria-hidden="true">Jamii<span class="panneau__point" /></p>
-        <h1 id="titre-connexion" class="panneau__titre">{{ t('connexion.bienvenue') }}</h1>
+        <p class="panneau__titre">{{ t('connexion.bienvenue') }}</p>
         <p class="panneau__accroche">{{ t('connexion.accroche') }}</p>
         <ul class="atouts">
           <li v-for="a in atouts" :key="a" class="atout" :class="`atout--${a}`">
@@ -77,32 +77,24 @@ async function explorer() {
 
       <div class="acces">
         <header class="acces__entete">
-          <h2 class="acces__titre">{{ t('connexion.accesTitre') }}</h2>
+          <h1 id="titre-connexion" class="acces__titre">{{ t('connexion.accesTitre') }}</h1>
           <p class="acces__aide">{{ t('connexion.sousTitre') }}</p>
         </header>
 
         <p v-if="erreur" role="alert" class="alerte" data-test="erreur-github">{{ t(`connexion.erreurs.${erreur}`) }}</p>
 
-        <!-- Les développeurs : GitHub, d'un clic. -->
-        <div class="voie voie--github">
-          <p class="voie__pastille">{{ t('connexion.githubPastille') }}</p>
-          <h3 class="voie__titre">{{ t('connexion.githubTitre') }}</h3>
-          <p class="voie__aide">{{ t('connexion.githubTexte') }}</p>
-          <a :href="adresseConnexionGithub(retour)" class="bouton-large bouton-github" data-test="connexion-github">
+        <!-- Une ligne sous chaque bouton dit pour qui il est : on choisit sans lire de paragraphe. -->
+        <div class="voie">
+          <a :href="adresseConnexionGithub(retour)" class="bouton-large bouton-github" aria-describedby="aide-github" data-test="connexion-github">
             <svg viewBox="0 0 16 16" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" /></svg>
             {{ t('connexion.github') }}
           </a>
+          <p id="aide-github" class="voie__aide">{{ t('connexion.githubTitre') }}</p>
         </div>
 
-        <p class="separateur" aria-hidden="true"><span>{{ t('connexion.ou') }}</span></p>
-
         <!-- Tout le monde : Google, si le serveur le permet. Jamais de mot de passe. -->
-        <div class="voie">
-          <p class="voie__pastille voie__pastille--tous">{{ t('connexion.emailPastille') }}</p>
-          <h3 class="voie__titre">{{ t('connexion.emailTitre') }}</h3>
-          <p class="voie__aide">{{ t('connexion.emailTexte') }}</p>
-
-          <a v-if="google" :href="adresseConnexionGoogle(retour)" class="bouton-large bouton-google" data-test="connexion-google">
+        <div v-if="google" class="voie">
+          <a :href="adresseConnexionGoogle(retour)" class="bouton-large bouton-google" aria-describedby="aide-google" data-test="connexion-google">
             <svg viewBox="0 0 48 48" width="20" height="20" aria-hidden="true">
               <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.9 6.1C12.5 13.6 17.8 9.5 24 9.5z" />
               <path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 7l7.2 5.6c4.2-3.9 7.1-9.6 7.1-17.1z" />
@@ -111,19 +103,21 @@ async function explorer() {
             </svg>
             {{ t('connexion.google') }}
           </a>
+          <p id="aide-google" class="voie__aide">{{ t('connexion.emailTitre') }}</p>
         </div>
 
         <!-- Sans compte : le compte démo, déjà rempli. Seulement si le serveur le propose (profil demo). -->
-        <div v-if="demo" class="voie voie--demo" data-test="voie-demo">
-          <p class="voie__pastille voie__pastille--demo">{{ t('connexion.demoPastille') }}</p>
-          <h3 class="voie__titre">{{ t('connexion.demoTitre') }}</h3>
-          <p class="voie__aide">{{ t('connexion.demoTexte') }}</p>
-          <button type="button" class="bouton-large bouton-demo" :disabled="entreeDemo === 'envoi'" :aria-busy="entreeDemo === 'envoi' || undefined" data-test="connexion-demo" @click="explorer">
-            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="m15.5 8.5-2 5-5 2 2-5Z" /></svg>
-            {{ t('connexion.demo') }}
-          </button>
-          <p v-if="entreeDemo === 'erreur'" role="alert" class="alerte" data-test="erreur-demo">{{ t('connexion.demoErreur') }}</p>
-        </div>
+        <template v-if="demo">
+          <p class="separateur" aria-hidden="true"><span>{{ t('connexion.ou') }}</span></p>
+          <div class="voie" data-test="voie-demo">
+            <button type="button" class="bouton-large bouton-demo" :disabled="entreeDemo === 'envoi'" :aria-busy="entreeDemo === 'envoi' || undefined" aria-describedby="aide-demo" data-test="connexion-demo" @click="explorer">
+              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="m15.5 8.5-2 5-5 2 2-5Z" /></svg>
+              {{ t('connexion.demo') }}
+            </button>
+            <p id="aide-demo" class="voie__aide">{{ t('connexion.demoTitre') }}</p>
+            <p v-if="entreeDemo === 'erreur'" role="alert" class="alerte" data-test="erreur-demo">{{ t('connexion.demoErreur') }}</p>
+          </div>
+        </template>
 
         <p class="rassurance">
           <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
@@ -186,24 +180,12 @@ async function explorer() {
 @media (max-width: 899px) { .atouts, .panneau__accroche { display: none; } }
 
 /* À droite : les deux façons d'entrer. */
-.acces { display: grid; align-content: center; gap: var(--space-5); padding: clamp(1.5rem, 5vw, 3.5rem); }
-.acces__entete { display: grid; gap: var(--space-1); }
-.acces__titre { margin: 0; font-family: var(--font-display); font-size: 1.5rem; letter-spacing: -0.02em; }
+.acces { display: grid; align-content: center; gap: var(--space-5); width: 100%; max-width: 28rem; margin-inline: auto; padding: clamp(1.5rem, 5vw, 3.5rem); }
+.acces__entete { display: grid; gap: var(--space-1); text-align: center; }
+.acces__titre { margin: 0; font-family: var(--font-display); font-size: 1.5rem; line-height: 1.2; letter-spacing: -0.02em; }
 .acces__aide { margin: 0; color: var(--ink-muted); }
-.voie { display: grid; gap: var(--space-3); }
-.voie--github {
-  padding: var(--space-5); border: 1px solid var(--line); border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--action-soft) 55%, var(--surface));
-}
-.voie__pastille {
-  justify-self: start; margin: 0; padding: 2px 10px; border-radius: var(--radius-pill);
-  background: var(--ink); color: var(--surface); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.02em;
-}
-.voie__pastille--tous { background: var(--proof-soft); color: var(--proof-ink); }
-.voie__pastille--demo { background: var(--action-soft); color: var(--action); }
-.voie--demo { padding-top: var(--space-4); border-top: 1px dashed var(--line); }
-.voie__titre { margin: 0; font-size: 1.0625rem; }
-.voie__aide { margin: 0; color: var(--ink-muted); font-size: var(--type-body-sm-size); line-height: 1.5; }
+.voie { display: grid; gap: var(--space-2); }
+.voie__aide { margin: 0; padding-inline: var(--space-2); color: var(--ink-muted); font-size: 0.8125rem; line-height: 1.45; text-align: center; }
 .bouton-large {
   display: flex; align-items: center; justify-content: center; gap: var(--space-3); width: 100%; min-height: 48px; padding: 0 var(--space-4);
   border-radius: var(--radius-pill); font: inherit; font-weight: 700; text-decoration: none;
@@ -237,16 +219,15 @@ async function explorer() {
 .rassurance { display: flex; align-items: center; justify-content: center; gap: var(--space-2); margin: 0; color: var(--ink-muted); font-size: 0.8125rem; text-align: center; }
 .rassurance svg { flex: none; width: 16px; height: 16px; }
 @media (prefers-reduced-motion: reduce) { .bouton-large { transition: none; } }
-/* Téléphone : le bouton GitHub doit apparaître sans défiler. Le logo est déjà dans l'en-tête, le bandeau se resserre
-   et la voie GitHub perd son cadre (une carte dans une carte coûtait 40 px de marges). */
+/* Téléphone : rien que l'essentiel. Le logo est déjà dans l'en-tête, le panneau sombre disparaît : le titre et les
+   boutons tiennent dans le premier écran, sans carte autour. */
 @media (max-width: 720px) {
-  .connexion { place-items: start stretch; min-height: 0; padding: var(--space-2) 0 var(--space-6); }
-  .connexion__cadre { border-radius: var(--radius-lg); }
-  .panneau { padding: var(--space-5) var(--space-5); gap: 0; }
-  .panneau__logo { display: none; }
-  .panneau__titre { margin: 0; font-size: var(--type-h2-size); }
-  .acces { gap: var(--space-4); padding: var(--space-5) var(--space-4); }
-  .acces__titre { font-size: var(--type-h3-size); }
-  .voie--github { padding: 0; border: 0; background: none; }
+  .connexion { place-items: start stretch; min-height: 0; padding: var(--space-4) 0 var(--space-8); }
+  .connexion__cadre { border-radius: var(--radius-lg); box-shadow: none; }
+  .panneau { display: none; }
+  .acces { gap: var(--space-4); padding: var(--space-6) var(--space-4); }
+  .acces__titre { font-size: var(--type-h2-size); }
+  .bouton-large { gap: var(--space-2); padding: 0 var(--space-3); font-size: 0.9375rem; }
+  .rassurance { text-align: start; }
 }
 </style>

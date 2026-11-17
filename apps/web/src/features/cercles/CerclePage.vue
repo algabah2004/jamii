@@ -464,6 +464,18 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
 .ordre__ligne--en_cours { border-color: var(--proof); }
 .ordre__ligne--en_cours .ordre__statut { background: var(--proof); color: var(--on-proof); }
 .ordre__ligne--livre .ordre__statut { background: var(--action-soft); color: var(--action-ink); }
+/* Téléphone : le nom, l'idée et le statut s'empilent à côté de l'avatar, et le dossier du projet se déplie sur toute
+   la largeur de la carte. Avant, ils se partageaient une colonne de 150 px et le dossier tenait un mot par ligne. */
+@media (max-width: 560px) {
+  .ordre__ligne { display: grid; grid-template-columns: auto 40px minmax(0, 1fr); column-gap: var(--space-3); row-gap: 2px; align-items: center; padding: var(--space-3); }
+  .ordre__numero { grid-column: 1; grid-row: 1 / span 2; width: 1.25rem; }
+  .ordre__ligne > :not(.ordre__numero, .ordre__qui, .ordre__statut) { grid-column: 2; grid-row: 1 / span 2; }
+  .ordre__qui { display: contents; }
+  .ordre__qui > strong { grid-column: 3; grid-row: 1; min-width: 0; }
+  .ordre__qui > span { grid-column: 3; grid-row: 2; }
+  .ordre__statut { grid-column: 3; grid-row: 3; justify-self: start; margin-top: var(--space-1); }
+  .ordre__qui > .dossier-membre { grid-column: 1 / -1; grid-row: 4; margin-top: var(--space-2); }
+}
 @keyframes apparait { from { opacity: 0; scale: 0.6; } }
 @keyframes remplit { from { transform: scaleX(0); } }
 @media (prefers-reduced-motion: reduce) { .anneau__trace circle { animation: none; } }

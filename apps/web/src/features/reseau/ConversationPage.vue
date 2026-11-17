@@ -849,6 +849,11 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
   .tete__qui { min-width: 100px; }
   .tete__actions { margin-left: auto; }
   .tete__actions .j-bouton { font-size: 0.8125rem; padding-inline: 8px; }
+  /* Le nom d'abord : « Dans tes contacts » prenait sa place sur un petit écran. */
+  .tete__lien { display: none; }
+  /* Le menu « ⋯ » s'ouvre par-dessus la bulle, vers l'intérieur de l'écran : vers l'extérieur, il sortait de l'écran. */
+  .bulle--moi .actions__menu { left: 0; right: auto; transform-origin: bottom left; }
+  .bulle--autre .actions__menu { left: auto; right: 0; transform-origin: bottom right; }
   .fil { padding: 30px 16px 40px; }
   .saisie { margin: 0 var(--space-3) var(--space-3); }
   .aide { display: none; }
