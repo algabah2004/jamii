@@ -50,5 +50,7 @@ const { t } = useI18n()
 @media (max-width: 720px) {
   :root.discussion-plein-ecran .espace { margin-top: 0; gap: 0; }
   :root.discussion-plein-ecran .espace__barre { display: none; }
+  /* La barre de la communauté va bord à bord, comme le fil. */
+  .espace__barre { margin-inline: calc(-1 * var(--space-4)); border-radius: 0; border-width: 1px 0; box-shadow: none; }
 }
 </style>

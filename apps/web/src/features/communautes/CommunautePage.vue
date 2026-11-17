@@ -396,6 +396,6 @@ const prenom = computed(() => moi.value?.nom.split(' ')[0] ?? '')
 @media (max-width: 720px) {
   :root.discussion-plein-ecran .cadre-salon { height: 100dvh; border: 0; border-radius: 0; box-shadow: none; }
   /* Le fil va bord à bord : plus de marge, de cadre ni d'arrondi autour des publications. */
-  .fil { margin-inline: calc(-1 * var(--space-4)); border-radius: 0; border-width: 1px 0; box-shadow: none; }
+  .fil, .banniere { margin-inline: calc(-1 * var(--space-4)); border-radius: 0; border-width: 1px 0; box-shadow: none; }
 }
 </style>
