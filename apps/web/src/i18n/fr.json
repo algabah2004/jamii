@@ -1895,6 +1895,8 @@
     },
     "erreurs": {
       "cercle_ferme": "Le cercle est complet, ou l'ordre est déjà tiré.",
+      "compte_demo": "Avec le compte démo, tu échanges seulement avec les personnes de la démo, pas avec les vrais membres de Jamii.",
+      "ecrireADemo": "Pour essayer, écris à {nom}.",
       "pas_membre_du_cercle": "Seuls les membres du cercle peuvent inviter.",
       "soi_meme": "Tu ne peux pas t'écrire à toi-même.",
       "introuvable": "Cette personne n'existe plus.",
@@ -3187,7 +3189,8 @@
       "micro_refuse": "Jamii n'a pas accès à ton micro. Autorise-le dans ton navigateur, puis réessaie.",
       "echec": "La connexion a été perdue.",
       "impossible": "L'appel n'a pas pu partir. Réessaie.",
-      "trop_de_requetes": "Trop d'appels et de messages en peu de temps. Réessaie dans un moment."
+      "trop_de_requetes": "Trop d'appels et de messages en peu de temps. Réessaie dans un moment.",
+      "compte_demo": "Avec le compte démo, tu appelles seulement les personnes de la démo, pas les vrais membres de Jamii."
     },
     "carte": {
       "tuAppellesVideo": "Tu as lancé un appel vidéo",

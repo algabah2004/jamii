@@ -545,6 +545,9 @@ class ReseauController {
 		if (e.erreurs != null) {
 			probleme.setProperty("erreurs", e.erreurs);
 		}
+		if (e.ecrireA != null) {
+			probleme.setProperty("ecrireA", e.ecrireA);
+		}
 		var reponse = ResponseEntity.status(e.statut);
 		if (e.attenteSecondes > 0) {
 			reponse = reponse.header(HttpHeaders.RETRY_AFTER, String.valueOf(e.attenteSecondes));

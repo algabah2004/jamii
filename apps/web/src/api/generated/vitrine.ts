@@ -116,6 +116,15 @@ export interface components {
             /** @description Identifiant à retrouver dans les journaux. */
             traceId?: string;
             erreurs?: components["schemas"]["ErreurChamp"][];
+            /**
+             * @description Seulement avec `compte_demo` : la personne de la démo à qui le visiteur peut écrire à la place (Kofi Mensah),
+             *     pour que l'interface propose un lien au lieu d'une erreur qui ressemble à une panne.
+             */
+            ecrireA?: {
+                /** Format: uuid */
+                id: string;
+                nom: string;
+            };
         };
     };
     responses: {

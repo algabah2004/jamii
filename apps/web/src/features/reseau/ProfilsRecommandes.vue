@@ -50,12 +50,15 @@ const duBesoin = ref(lireDuBesoin((routeur.options.history.state as { duBesoin?:
 const enAttente = computed(() => duBesoin.value.filter((p) => !invites.value.includes(p.id)))
 const invites = ref<string[]>([])
 const echecs = ref<string[]>([])
+/** Le compte démo n'invite que les personnes de la démo (#157) : on le dit plutôt que « Réessaie ». */
+const refusDemo = ref(false)
 const envoiGroupe = ref(false)
 const noms = (personnes: readonly RecommandeDuBesoin[]) => liste(personnes.map((p) => prenom(p.nom)))
 
 async function inviterDuBesoin() {
   envoiGroupe.value = true
   echecs.value = []
+  refusDemo.value = false
   const competences = liste(manquantes.value.slice(0, 2))
   for (const p of enAttente.value) {
     const texteInvitation = competences
@@ -64,7 +67,10 @@ async function inviterDuBesoin() {
     try {
       const r = await envoyerMessage(p.id, texteInvitation, props.cercleId)
       if (r.ok) invites.value.push(p.id)
-      else echecs.value.push(p.id)
+      else {
+        echecs.value.push(p.id)
+        if (r.code === 'compte_demo') refusDemo.value = true
+      }
     } catch {
       echecs.value.push(p.id)
     }
@@ -105,7 +111,8 @@ async function inviter(p: ProfilRecommande) {
       <p v-if="invites.length" role="status" class="succes" data-test="invites-du-besoin">
         {{ t('reseau.profils.invitesDuBesoin', { noms: noms(duBesoin.filter((p) => invites.includes(p.id))) }) }}
       </p>
-      <p v-if="echecs.length" role="alert" class="erreur">{{ t('reseau.profils.echecsDuBesoin', { noms: noms(duBesoin.filter((p) => echecs.includes(p.id))) }) }}</p>
+      <p v-if="refusDemo" role="alert" class="erreur" data-test="refus-compte-demo">{{ t('reseau.erreurs.compte_demo') }}</p>
+      <p v-else-if="echecs.length" role="alert" class="erreur">{{ t('reseau.profils.echecsDuBesoin', { noms: noms(duBesoin.filter((p) => echecs.includes(p.id))) }) }}</p>
     </div>
     <p v-if="envoye" role="status" class="succes" data-test="invitation-envoyee">{{ envoye }}</p>
 

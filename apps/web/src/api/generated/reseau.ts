@@ -824,6 +824,15 @@ export interface components {
             /** @description Identifiant à retrouver dans les journaux. */
             traceId?: string;
             erreurs?: components["schemas"]["ErreurChamp"][];
+            /**
+             * @description Seulement avec `compte_demo` : la personne de la démo à qui le visiteur peut écrire à la place (Kofi Mensah),
+             *     pour que l'interface propose un lien au lieu d'une erreur qui ressemble à une panne.
+             */
+            ecrireA?: {
+                /** Format: uuid */
+                id: string;
+                nom: string;
+            };
         };
         /** @description Code ISO 3166-1 alpha-2 (`SN`, `CI`, `KE`). */
         Pays: string;
@@ -1092,6 +1101,7 @@ export interface operations {
             };
             400: components["responses"]["Invalide"];
             401: components["responses"]["NonConnecte"];
+            403: components["responses"]["Interdit"];
             404: components["responses"]["Introuvable"];
             409: components["responses"]["Conflit"];
             429: components["responses"]["TropDeRequetes"];
@@ -1221,6 +1231,7 @@ export interface operations {
             };
             400: components["responses"]["Invalide"];
             401: components["responses"]["NonConnecte"];
+            403: components["responses"]["Interdit"];
             404: components["responses"]["Introuvable"];
             409: components["responses"]["Conflit"];
             429: components["responses"]["TropDeRequetes"];
@@ -1338,6 +1349,7 @@ export interface operations {
             };
             400: components["responses"]["Invalide"];
             401: components["responses"]["NonConnecte"];
+            403: components["responses"]["Interdit"];
             404: components["responses"]["Introuvable"];
             409: components["responses"]["Conflit"];
             429: components["responses"]["TropDeRequetes"];
@@ -1554,6 +1566,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["NonConnecte"];
+            403: components["responses"]["Interdit"];
             404: components["responses"]["Introuvable"];
             409: components["responses"]["Conflit"];
             429: components["responses"]["TropDeRequetes"];

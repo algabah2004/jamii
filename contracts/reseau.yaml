@@ -7,7 +7,8 @@ info:
     Responsable : @rev22rse22 (bloc #19). Règles communes : docs/api-conventions.md. Plan : docs/priorites.md.
 
     **Le compte démo** (`socle.yaml`, `POST /api/auth/demo`), ouvert à tout visiteur, n'écrit, ne transfère, n'appelle et
-    ne demande en contact que les personnes de la démo : vers un vrai compte, `403` avec le code `compte_demo`.
+    ne demande en contact que les personnes de la démo : vers un vrai compte, `403` avec le code `compte_demo` et, dans
+    `ecrireA`, la personne de la démo à qui écrire à la place.
 
     **Les recommandations** relient un cercle et des profils publiés (`profils.yaml`) :
     - à un développeur, les cercles **ouverts** dont les membres n'ont pas encore ses compétences, ceux de sa ville d'abord ;
@@ -164,6 +165,7 @@ paths:
               schema: { $ref: '#/components/schemas/Message' }
         '400': { $ref: './socle.yaml#/components/responses/Invalide' }
         '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
         '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
         '409': { $ref: './socle.yaml#/components/responses/Conflit' }
         '429': { $ref: './socle.yaml#/components/responses/TropDeRequetes' }
@@ -277,6 +279,7 @@ paths:
         '204': { description: Transféré. }
         '400': { $ref: './socle.yaml#/components/responses/Invalide' }
         '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
         '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
         '409': { $ref: './socle.yaml#/components/responses/Conflit' }
         '429': { $ref: './socle.yaml#/components/responses/TropDeRequetes' }
@@ -384,6 +387,7 @@ paths:
               schema: { $ref: '#/components/schemas/Appel' }
         '400': { $ref: './socle.yaml#/components/responses/Invalide' }
         '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
         '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
         '409': { $ref: './socle.yaml#/components/responses/Conflit' }
         '429': { $ref: './socle.yaml#/components/responses/TropDeRequetes' }
@@ -571,6 +575,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/LienContact' }
         '401': { $ref: './socle.yaml#/components/responses/NonConnecte' }
+        '403': { $ref: './socle.yaml#/components/responses/Interdit' }
         '404': { $ref: './socle.yaml#/components/responses/Introuvable' }
         '409': { $ref: './socle.yaml#/components/responses/Conflit' }
         '429': { $ref: './socle.yaml#/components/responses/TropDeRequetes' }

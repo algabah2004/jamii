@@ -24,7 +24,15 @@ export async function lireProfilsRecommandes(cercleId: string): Promise<{ compet
   return data
 }
 
-export type Envoi = { ok: true; message: Message } | { ok: false; code: string | null }
+/** Avec le code `compte_demo` : la personne de la démo à qui le visiteur peut écrire à la place (#157). */
+export type EcrireA = { id: string; nom: string }
+export type Refus = { ok: false; code: string | null; ecrireA: EcrireA | null }
+export type Envoi = { ok: true; message: Message } | Refus
+
+function refus(error: unknown): Refus {
+  const e = error as { code?: string; ecrireA?: EcrireA } | undefined
+  return { ok: false, code: e?.code ?? null, ecrireA: e?.ecrireA ?? null }
+}
 
 /** Écrire à quelqu'un ; avec `cercleId`, le message porte l'invitation à ce cercle. */
 export async function envoyerMessage(personneId: string, texte: string, cercleId?: string, pieces: string[] = [], reponseA?: string): Promise<Envoi> {
@@ -32,7 +40,7 @@ export async function envoyerMessage(personneId: string, texte: string, cercleId
     params: { path: { personneId } },
     body: { texte: texte.trim(), ...(cercleId ? { cercleId } : {}), ...(pieces.length ? { pieces } : {}), ...(reponseA ? { reponseA } : {}) },
   })
-  return data ? { ok: true, message: data } : { ok: false, code: (error as { code?: string } | undefined)?.code ?? null }
+  return data ? { ok: true, message: data } : refus(error)
 }
 
 // ---------------------------------------------------------------- modifier, supprimer, transférer (#157)
@@ -50,7 +58,7 @@ export async function modifierMessage(personneId: string, messageId: string, tex
     params: { path: { personneId, messageId } },
     body: { texte: texte.trim() },
   })
-  return data ? { ok: true, message: data } : { ok: false, code: (error as { code?: string } | undefined)?.code ?? null }
+  return data ? { ok: true, message: data } : refus(error)
 }
 
 export async function supprimerMessage(personneId: string, messageId: string): Promise<boolean> {
@@ -152,8 +160,14 @@ export async function lireLien(personneId: string): Promise<StatutLien> {
 
 /** Demander le contact, ou accepter si la personne l'a déjà demandé. `null` si l'API refuse. */
 export async function ajouterContact(personneId: string): Promise<StatutLien | null> {
-  const { data } = await api.PUT('/api/contacts/{personneId}', { params: { path: { personneId } } })
-  return data?.statut ?? null
+  const r = await demanderContact(personneId)
+  return r.ok ? r.statut : null
+}
+
+/** Comme {@link ajouterContact}, avec la raison du refus (le compte démo vers un vrai compte, par exemple). */
+export async function demanderContact(personneId: string): Promise<{ ok: true; statut: StatutLien } | Refus> {
+  const { data, error } = await api.PUT('/api/contacts/{personneId}', { params: { path: { personneId } } })
+  return data ? { ok: true, statut: data.statut } : refus(error)
 }
 
 export async function retirerContact(personneId: string): Promise<boolean> {

@@ -1895,6 +1895,8 @@
     },
     "erreurs": {
       "cercle_ferme": "The circle is full, or the order has already been drawn.",
+      "compte_demo": "With the demo account, you can only talk to the demo people, not to real Jamii members.",
+      "ecrireADemo": "To try it, write to {nom}.",
       "pas_membre_du_cercle": "Only members of the circle can invite.",
       "soi_meme": "You can't write to yourself.",
       "introuvable": "This person no longer exists.",
@@ -3187,7 +3189,8 @@
       "micro_refuse": "Jamii cannot use your microphone. Allow it in your browser, then try again.",
       "echec": "The connection was lost.",
       "impossible": "The call could not be started. Try again.",
-      "trop_de_requetes": "Too many calls and messages in a short time. Try again in a moment."
+      "trop_de_requetes": "Too many calls and messages in a short time. Try again in a moment.",
+      "compte_demo": "With the demo account, you can only call the demo people, not real Jamii members."
     },
     "carte": {
       "tuAppellesVideo": "You started a video call",

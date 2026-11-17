@@ -4,6 +4,7 @@ import EnregistreurVocal from '../../components/texte/EnregistreurVocal.vue'
 import PiecesJointes from '../../components/texte/PiecesJointes.vue'
 import TexteRiche from '../../components/texte/TexteRiche.vue'
 import TransfertMessage from './TransfertMessage.vue'
+import AvisCompteDemo from './AvisCompteDemo.vue'
 import BarreReactions from '../../components/texte/BarreReactions.vue'
 import PastillesReactions from '../../components/texte/PastillesReactions.vue'
 import { textePresence, usePresence } from './presence'
@@ -18,7 +19,7 @@ import { usePleinEcranTelephone } from '../../components/pleinEcran'
 import { appeler, useAppel } from './appel'
 import {
   reagirMessage,
-  ajouterContact,
+  demanderContact,
   envoyerMessage,
   LONGUEUR_MESSAGE,
   lireConversation,
@@ -30,6 +31,7 @@ import {
   prenom,
   supprimerMessage,
   transferable,
+  type EcrireA,
   type Message,
   type Personne,
   type StatutLien,
@@ -63,6 +65,7 @@ async function charger() {
   pieces.value = []
   envoi.value = false
   erreur.value = null
+  refusDemo.value = null
   etat.value = 'chargement'
   try {
     const r = await lireConversation(String(route.params.personneId))
@@ -151,7 +154,9 @@ async function ajouter() {
   if (!personne.value) return
   ajout.value = true
   try {
-    lien.value = (await ajouterContact(personne.value.id)) ?? lien.value
+    const r = await demanderContact(personne.value.id)
+    if (r.ok) lien.value = r.statut
+    else if (r.code === 'compte_demo') refusDemo.value = { ecrireA: r.ecrireA, appel: false }
     void rafraichirActivite()
   } finally {
     ajout.value = false
@@ -162,6 +167,8 @@ async function ajouter() {
 const texte = ref('')
 const envoi = ref(false)
 const erreur = ref<string | null>(null)
+/** Le compte démo vise un vrai membre : on le dit, avec la personne de la démo à qui écrire à la place (#157). */
+const refusDemo = ref<{ ecrireA: EcrireA | null; appel: boolean } | null>(null)
 /** Pendant un message vocal, le bouton d’envoi du composeur laisse la place à celui de l’enregistreur. */
 const vocalEnCours = ref(false)
 const pieces = ref<PieceJointe[]>([])
@@ -191,7 +198,8 @@ async function envoyer() {
       composeur.value?.rafraichir()
       if (!enCours) await descendre(true)
       composeur.value?.focus()
-    } else erreur.value = t(`reseau.erreurs.${r.code ?? 'autre'}`, t('reseau.erreurs.autreMessage'))
+    } else if (r.code === 'compte_demo') refusDemo.value = { ecrireA: r.ecrireA, appel: false }
+    else erreur.value = t(`reseau.erreurs.${r.code ?? 'autre'}`, t('reseau.erreurs.autreMessage'))
   } catch {
     if (actif && version === versionConversation) erreur.value = t('etat.indisponible')
   } finally {
@@ -404,7 +412,8 @@ async function envoyerVocal(fichier: File) {
       messages.value.push(r.message)
       emit('actualise')
       await descendre(true)
-    } else erreur.value = t(`reseau.erreurs.${r.code ?? 'autre'}`, t('reseau.erreurs.autreMessage'))
+    } else if (r.code === 'compte_demo') refusDemo.value = { ecrireA: r.ecrireA, appel: false }
+    else erreur.value = t(`reseau.erreurs.${r.code ?? 'autre'}`, t('reseau.erreurs.autreMessage'))
   } catch {
     if (actif && version === versionConversation) erreur.value = t('etat.indisponible')
   } finally {
@@ -422,7 +431,8 @@ async function appelerPersonne(video: boolean) {
   if (!personne.value || occupe.value) return
   erreur.value = null
   await appeler(personne.value, video)
-  if (etatAppel.phase === 'fini' && etatAppel.fin && ['impossible', 'trop_de_requetes'].includes(etatAppel.fin)) {
+  if (etatAppel.phase === 'fini' && etatAppel.fin === 'compte_demo') refusDemo.value = { ecrireA: etatAppel.ecrireA, appel: true }
+  else if (etatAppel.phase === 'fini' && etatAppel.fin && ['impossible', 'trop_de_requetes'].includes(etatAppel.fin)) {
     erreur.value = t(`appels.fin.${etatAppel.fin}`)
   }
 }
@@ -664,6 +674,7 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
 
       <form class="saisie" data-test="form-message" @submit.prevent="envoyer">
         <p v-if="info" class="saisie__info" role="status" data-test="info-action">{{ info }}</p>
+        <AvisCompteDemo v-if="refusDemo" :ecrire-a="refusDemo.ecrireA" :appel="refusDemo.appel" />
         <!-- Je réponds à un message, ou j'en corrige un : le bandeau le rappelle au-dessus de la zone de saisie. -->
         <div v-if="reponse || edition" class="bandeau" data-test="bandeau-action">
           <svg v-if="edition" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M4 13.5V16h2.5l7.4-7.4-2.5-2.5L4 13.5ZM13 4.5l2.5 2.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" /></svg>

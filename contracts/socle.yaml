@@ -342,6 +342,15 @@ components:
         erreurs:
           type: array
           items: { $ref: '#/components/schemas/ErreurChamp' }
+        ecrireA:
+          type: object
+          description: |
+            Seulement avec `compte_demo` : la personne de la démo à qui le visiteur peut écrire à la place (Kofi Mensah),
+            pour que l'interface propose un lien au lieu d'une erreur qui ressemble à une panne.
+          required: [id, nom]
+          properties:
+            id: { type: string, format: uuid }
+            nom: { type: string }
 
     ErreurChamp:
       type: object

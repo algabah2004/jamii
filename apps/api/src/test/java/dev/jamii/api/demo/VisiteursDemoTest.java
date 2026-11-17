@@ -182,7 +182,12 @@ class VisiteursDemoTest {
 			assertThat(mvc.post().uri("/api/conversations/" + vrai + "/messages").contentType(MediaType.APPLICATION_JSON)
 				.content("{\"texte\":\"Bonjour\"}").with(csrf()).with(connecte(moi))).hasStatus(HttpStatus.FORBIDDEN)
 				.bodyJson().extractingPath("$.code").isEqualTo("compte_demo");
-			assertThat(mvc.put().uri("/api/contacts/" + vrai).with(csrf()).with(connecte(moi))).hasStatus(HttpStatus.FORBIDDEN);
+			// L'erreur propose une personne de la démo à qui écrire, pour que le visiteur essaie quand même.
+			assertThat(mvc.post().uri("/api/conversations/" + vrai + "/messages").contentType(MediaType.APPLICATION_JSON)
+				.content("{\"texte\":\"Bonjour\"}").with(csrf()).with(connecte(moi))).bodyJson().extractingPath("$.ecrireA.id")
+				.isEqualTo(DonneesDemo.KOFI.id().toString());
+			assertThat(mvc.put().uri("/api/contacts/" + vrai).with(csrf()).with(connecte(moi))).hasStatus(HttpStatus.FORBIDDEN)
+				.bodyJson().extractingPath("$.ecrireA.nom").isEqualTo("Kofi Mensah");
 			assertThat(mvc.delete().uri("/api/me").with(csrf()).with(connecte(moi))).hasStatus(HttpStatus.FORBIDDEN);
 			assertThat(compter("SELECT count(*) FROM utilisateur WHERE id = :moi", moi)).isEqualTo(1);
 		}
