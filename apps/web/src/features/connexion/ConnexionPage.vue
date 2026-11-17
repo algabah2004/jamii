@@ -4,13 +4,13 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { adresseConnexionGithub, adresseConnexionGoogle } from '../../api/client'
 import MotifsCoins from '../../components/MotifsCoins.vue'
-import { JBouton, JChamp } from '../../design-system'
 import { useSession } from '../../session'
-import { cheminSur, demanderLien, erreurGithub, lireFournisseurs, type ResultatDemande } from './connexion'
+import { cheminSur, erreurGithub, lireFournisseurs } from './connexion'
 
 /*
- * Se connecter : avec GitHub (les développeurs), ou avec Google ou un lien reçu par e-mail (une PME, une association,
- * toute personne sans compte GitHub). Google n'apparaît que si le serveur l'a configuré (#260). L'API renvoie aussi
+ * Se connecter : avec GitHub (les développeurs), ou avec Google (une PME, une association, toute personne sans compte
+ * GitHub). Google n'apparaît que si le serveur l'a configuré (#260). Le lien par e-mail n'est plus proposé ici : l'envoi
+ * d'e-mails n'est pas fiable en production. L'API le garde, et un lien déjà reçu marche toujours. L'API renvoie aussi
  * ici quand une connexion échoue (`?erreur=…`).
  */
 const { t } = useI18n()
@@ -33,20 +33,6 @@ onMounted(async () => {
   google.value = (await lireFournisseurs()).google
 })
 
-const email = ref('')
-const envoi = ref(false)
-const resultat = ref<ResultatDemande | null>(null)
-
-async function envoyer() {
-  if (envoi.value) return
-  envoi.value = true
-  resultat.value = await demanderLien(email.value, retour.value)
-  envoi.value = false
-}
-
-function autreAdresse() {
-  resultat.value = null
-}
 </script>
 
 <template>
@@ -95,7 +81,7 @@ function autreAdresse() {
 
         <p class="separateur" aria-hidden="true"><span>{{ t('connexion.ou') }}</span></p>
 
-        <!-- Tout le monde : Google si le serveur le permet, et un lien par e-mail. Jamais de mot de passe. -->
+        <!-- Tout le monde : Google, si le serveur le permet. Jamais de mot de passe. -->
         <div class="voie">
           <p class="voie__pastille voie__pastille--tous">{{ t('connexion.emailPastille') }}</p>
           <h3 class="voie__titre">{{ t('connexion.emailTitre') }}</h3>
@@ -110,34 +96,6 @@ function autreAdresse() {
             </svg>
             {{ t('connexion.google') }}
           </a>
-          <p v-if="google" class="sous-separateur">{{ t('connexion.googleOu') }}</p>
-
-          <div v-if="resultat?.etat === 'envoye'" role="status" class="envoye" data-test="lien-envoye">
-            <span class="envoye__icone" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m4 7 8 6 8-6" /></svg>
-            </span>
-            <div>
-              <i18n-t keypath="connexion.envoye" tag="p" class="envoye__texte" scope="global">
-                <template #email><strong>{{ email.trim() }}</strong></template>
-              </i18n-t>
-              <p class="voie__aide">{{ t('connexion.envoyeAide') }}</p>
-            </div>
-            <JBouton variante="secondaire" @click="autreAdresse">{{ t('connexion.autreAdresse') }}</JBouton>
-          </div>
-
-          <form v-else class="formulaire" data-test="formulaire-email" @submit.prevent="envoyer">
-            <JChamp
-              v-model="email"
-              type="email"
-              :libelle="t('connexion.email')"
-              :maxlength="254"
-              :erreur="resultat?.etat === 'invalide' ? t('connexion.emailInvalide') : undefined"
-              requis
-            />
-            <p v-if="resultat?.etat === 'trop'" role="alert" class="alerte">{{ t('connexion.trop', { n: resultat.minutes }, resultat.minutes) }}</p>
-            <p v-else-if="resultat?.etat === 'indisponible'" role="alert" class="alerte">{{ t('etat.indisponible') }}</p>
-            <JBouton type="submit" variante="principal" :occupe="envoi" class="formulaire__envoyer" data-test="envoyer-lien">{{ t('connexion.recevoirLien') }}</JBouton>
-          </form>
         </div>
 
         <p class="rassurance">
