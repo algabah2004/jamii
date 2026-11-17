@@ -18,7 +18,7 @@
 | | |
 |---|---|
 | **Le produit en ligne** | **https://jamii.dev**, hébergé sur un serveur cloud **DataCloud de Systalink**, en HTTPS |
-| **Se connecter** | GitHub ou Google (développeurs), ou un **lien reçu par e-mail**, sans mot de passe (PME, associations). Aucun compte Systalink n'est demandé |
+| **Se connecter** | **GitHub** (développeurs) ou **Google** (PME, associations), sans mot de passe. Aucun compte Systalink n'est demandé |
 | **L'espace Systalink** | Lien **Systalink** dans le menu. Réservé à l'équipe Systalink : le **code d'accès jury** est donné dans le formulaire de soumission |
 | **Le code** | Ce dépôt : une API Java, un front Vue, un service IA Python, 15 contrats OpenAPI, une CI à chaque PR |
 | **Ce qui est vérifiable** | Chaque chiffre de ce README se recompte dans le dépôt ou sur le site |
@@ -126,7 +126,7 @@ flowchart LR
 | | |
 |---|---|
 | **Accès** | API **fermée par défaut** : chaque route publique est ouverte explicitement. Protection CSRF, cookie de session `HttpOnly`, `Secure`, `SameSite` |
-| **Connexion** | OAuth2 (GitHub, Google) ou lien par e-mail **à usage unique**, stocké en empreinte, avec expiration. Aucun mot de passe stocké. Aucune redirection ouverte |
+| **Connexion** | OAuth2 (GitHub, Google). Aucun mot de passe stocké. Aucune redirection ouverte. L'API sait aussi envoyer un lien par e-mail **à usage unique**, stocké en empreinte, avec expiration (pas encore proposé sur le site) |
 | **Navigateur** | Politique de contenu (CSP) stricte : seuls les scripts de Jamii s'exécutent. HSTS, `Permissions-Policy` (caméra et micro pour les appels seulement), `X-Frame-Options`, `nosniff` |
 | **Fichiers envoyés** | Type reconnu **sur le contenu réel**, droits de lecture vérifiés, servis dans un bac à sable (CSP `sandbox`) |
 | **Réseau** | Appels sortants interdits vers les adresses internes (SSRF) ; le relais TURN refuse les réseaux privés. Seuls les ports 22, 80, 443 et 3478 sont ouverts |
