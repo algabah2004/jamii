@@ -10,14 +10,14 @@ import dev.jamii.api.profils.SourcePreuves;
 
 /**
  * Ce que les communautés prouvent (profils.SourcePreuves) : les réponses d'une personne acceptées par l'auteur de la
- * question. Accepter sa propre réponse ne compte pas, et une réponse proposée par l'IA n'appartient à personne.
+ * question. Accepter sa propre réponse ne compte pas.
  */
 @Component
 class PreuvesCommunautes implements SourcePreuves {
 
 	private static final String ACCEPTEES = """
 			FROM reponse r JOIN publication p ON p.reponse_acceptee_id = r.id
-			WHERE r.auteur_id = :u AND NOT r.proposee_par_ia AND p.auteur_id IS DISTINCT FROM r.auteur_id
+			WHERE r.auteur_id = :u AND p.auteur_id IS DISTINCT FROM r.auteur_id
 			""";
 
 	private final JdbcClient base;
