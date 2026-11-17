@@ -860,14 +860,7 @@
     "barre": {
       "fil": "Feed",
       "membres": "Members",
-      "raccourcis": "Shortcuts",
-      "debut": "Getting started",
-      "progression": "{n} step of {total} | {n} steps of {total}",
-      "etapes": {
-        "rejoindre": "Join the community",
-        "presenter": "Introduce yourself in #général",
-        "publier": "Ask your first question"
-      }
+      "raccourcis": "Shortcuts"
     },
     "banniere": {
       "actifs": "active this week | active this week",

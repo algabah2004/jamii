@@ -860,14 +860,7 @@
     "barre": {
       "fil": "Le fil",
       "membres": "Membres",
-      "raccourcis": "Raccourcis",
-      "debut": "Bien démarrer",
-      "progression": "{n} étape sur {total} | {n} étapes sur {total}",
-      "etapes": {
-        "rejoindre": "Rejoindre la communauté",
-        "presenter": "Te présenter dans #général",
-        "publier": "Poser ta première question"
-      }
+      "raccourcis": "Raccourcis"
     },
     "banniere": {
       "actifs": "actif cette semaine | actifs cette semaine",
