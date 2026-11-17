@@ -92,10 +92,7 @@ final class DemoProfils {
 					List.of("python", "fastapi", "selenium")),
 			new Fiche(MARIAM, "Designer UI", "Douala", "CM", "fr,en", "disponible", 6,
 					"Interfaces colorées et lisibles, design systems pour les startups d'Afrique centrale.",
-					List.of("figma", "design-system", "illustration")),
-			new Fiche(CompteDemo.PERSONNE, "Développeur full-stack · Vue et Spring", "Dakar", "SN", "fr,wo,en", "disponible", 10,
-					"Le compte de démonstration de Jamii : explore librement. Tout ce que tu y fais est effacé au prochain redémarrage.",
-					List.of("vue", "spring", "postgresql", "typescript")));
+					List.of("figma", "design-system", "illustration")));
 
 	private final JdbcClient base;
 

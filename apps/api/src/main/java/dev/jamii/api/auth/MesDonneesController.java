@@ -71,7 +71,7 @@ class MesDonneesController {
 	@DeleteMapping("/api/me")
 	ResponseEntity<?> supprimer(@AuthenticationPrincipal UtilisateurConnecte moi, HttpServletRequest requete)
 			throws ServletException {
-		// Le compte démo est partagé par tous les visiteurs : un seul d'entre eux ne peut pas l'effacer pour les autres.
+		// Un compte de la démo s'efface tout seul (le compte d'un visiteur, après 24 heures) : ses personnes fictives, jamais.
 		if (annuaire.estDeDemonstration(moi.id())) {
 			ProblemDetail erreur = ProblemDetail.forStatus(HttpStatus.FORBIDDEN);
 			erreur.setType(URI.create("urn:jamii:erreur:compte_demo"));

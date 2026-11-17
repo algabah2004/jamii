@@ -39,7 +39,7 @@ class ErreurReseau extends RuntimeException {
 		return new ErreurReseau(HttpStatus.FORBIDDEN, "interdit", "Accès refusé", null, 0);
 	}
 
-	/** Le compte démo, ouvert à tout visiteur, n'écrit et n'appelle que les personnes de la démo (#157). */
+	/** Un compte démo de visiteur n'écrit et n'appelle que les personnes de la démo (#157). */
 	static ErreurReseau compteDemo() {
 		return new ErreurReseau(HttpStatus.FORBIDDEN, "compte_demo", "Le compte démo ne peut écrire qu'aux personnes de la démo", null, 0);
 	}

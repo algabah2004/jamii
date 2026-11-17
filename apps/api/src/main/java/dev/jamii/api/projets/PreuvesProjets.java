@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
 
+import dev.jamii.api.auth.Annuaire;
 import dev.jamii.api.deploiement.DeploiementsEnLigne;
 import dev.jamii.api.profils.SourcePreuves;
 
@@ -29,13 +30,23 @@ class PreuvesProjets implements SourcePreuves {
 
 	private static final DateTimeFormatter JOUR = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
+	/**
+	 * Les projets du parcours d'un visiteur de la démo (auth.Annuaire.VISITEURS_DEMO) : ils ne comptent que pour lui.
+	 * Sinon, chaque visiteur ajouterait un projet et des tâches aux personnes de la démo qui sont dans son cercle.
+	 */
+	private static final String SANS_VISITEUR_TIERS = """
+			  AND NOT EXISTS (SELECT 1 FROM utilisateur w WHERE w.email LIKE :visiteurs AND w.id <> :u
+			                  AND (w.id = p.porteur_id OR EXISTS (SELECT 1 FROM membre_equipe v
+			                                                      WHERE v.projet_id = p.id AND v.utilisateur_id = w.id)))
+			""";
+
 	/** Ses projets : ceux qu'elle porte et ceux de son équipe actuelle. Ni recrutement, ni abandonnés. */
 	private static final String SES_PROJETS = """
 			SELECT p.id, p.titre, p.porteur_id, p.derniere_activite_le FROM projet p
 			WHERE p.statut IN ('en_cours', 'en_pause', 'livre')
 			  AND (p.porteur_id = :u OR EXISTS (SELECT 1 FROM membre_equipe m
 			                                    WHERE m.projet_id = p.id AND m.utilisateur_id = :u AND m.parti_le IS NULL))
-			""";
+			""" + SANS_VISITEUR_TIERS;
 
 	private record Ligne(UUID id, String titre, UUID porteur, Instant activite) {
 	}
@@ -74,9 +85,10 @@ class PreuvesProjets implements SourcePreuves {
 	public List<Point> points(UUID personne) {
 		List<Point> points = new ArrayList<>();
 		base.sql("""
-				SELECT count(*) FILTER (WHERE livree_le::date <= echeance) AS a_temps, count(*) AS livrees FROM tache
-				WHERE assignee_id = :u AND statut = 'livree' AND echeance IS NOT NULL
-				""").param("u", personne).query((rs, n) -> new Point(TACHE_LIVREE_A_TEMPS, rs.getInt("a_temps"), rs.getInt("livrees")))
+				SELECT count(*) FILTER (WHERE t.livree_le::date <= t.echeance) AS a_temps, count(*) AS livrees
+				FROM tache t JOIN projet p ON p.id = t.projet_id
+				WHERE t.assignee_id = :u AND t.statut = 'livree' AND t.echeance IS NOT NULL
+				""" + SANS_VISITEUR_TIERS).param("u", personne).param("visiteurs", Annuaire.VISITEURS_DEMO).query((rs, n) -> new Point(TACHE_LIVREE_A_TEMPS, rs.getInt("a_temps"), rs.getInt("livrees")))
 			.optional().ifPresent(points::add);
 		points.add(new Point(PROJET_EN_LIGNE, enLigne(sesProjets(personne)).size(), null));
 		return points;
@@ -86,10 +98,10 @@ class PreuvesProjets implements SourcePreuves {
 	public List<Preuve> preuves(UUID personne, String type, int limite) {
 		if (TACHE_LIVREE_A_TEMPS.equals(type)) {
 			return base.sql("""
-					SELECT t.id, t.titre, t.livree_le, t.echeance FROM tache t
+					SELECT t.id, t.titre, t.livree_le, t.echeance FROM tache t JOIN projet p ON p.id = t.projet_id
 					WHERE t.assignee_id = :u AND t.statut = 'livree' AND t.echeance IS NOT NULL AND t.livree_le::date <= t.echeance
-					ORDER BY t.livree_le DESC LIMIT :n
-					""").param("u", personne).param("n", limite)
+					""" + SANS_VISITEUR_TIERS + " ORDER BY t.livree_le DESC LIMIT :n")
+				.param("u", personne).param("n", limite).param("visiteurs", Annuaire.VISITEURS_DEMO)
 				.query((rs, n) -> {
 					Instant livree = rs.getTimestamp("livree_le").toInstant();
 					LocalDate prevue = rs.getObject("echeance", LocalDate.class);
@@ -110,7 +122,7 @@ class PreuvesProjets implements SourcePreuves {
 	}
 
 	private List<Ligne> sesProjets(UUID personne) {
-		return base.sql(SES_PROJETS).param("u", personne)
+		return base.sql(SES_PROJETS).param("u", personne).param("visiteurs", Annuaire.VISITEURS_DEMO)
 			.query((rs, n) -> new Ligne(rs.getObject("id", UUID.class), rs.getString("titre"), rs.getObject("porteur_id", UUID.class),
 					instant(rs.getTimestamp("derniere_activite_le"))))
 			.list();
