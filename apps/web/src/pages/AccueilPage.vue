@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { RouterLink, useRoute } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { adresseConnexionGithub, api } from '../api/client'
 import { JIllustration } from '../design-system'
 import CarteProjet from '../features/vitrine/CarteProjet.vue'
@@ -12,13 +12,29 @@ import AccueilFaq from './accueil/AccueilFaq.vue'
 import AccueilFonctionnalites from './accueil/AccueilFonctionnalites.vue'
 import AccueilMissions from './accueil/AccueilMissions.vue'
 import type { ProjetEnVitrine } from '../features/vitrine/vitrine'
-import { useSession } from '../session'
+import { entrerEnDemo, lireFournisseurs } from '../features/connexion/connexion'
+import { chargerSession, useSession } from '../session'
 
 const { t } = useI18n()
 const { etat, moi } = useSession()
 const route = useRoute()
 // Après une redirection du garde (« connexion requise »), on revient là où la personne voulait aller.
 const retour = typeof route.query.retour === 'string' ? route.query.retour : '/profil'
+const router = useRouter()
+
+// Le compte démo (#157), sous le bouton GitHub : seulement si le serveur le propose (profil demo de l'API).
+const demo = ref(false)
+void lireFournisseurs().then((f) => (demo.value = f.demo))
+const entreeDemo = ref<'repos' | 'envoi' | 'erreur'>('repos')
+async function explorer() {
+  if (entreeDemo.value === 'envoi') return
+  entreeDemo.value = 'envoi'
+  if (await entrerEnDemo()) {
+    await chargerSession()
+    entreeDemo.value = 'repos'
+    await router.push(retour)
+  } else entreeDemo.value = 'erreur'
+}
 
 /** Le parcours d'un développeur sur Jamii : c'est une suite, d'où la numérotation. */
 const ETAPES = [
@@ -61,6 +77,18 @@ void (async () => {
           <a v-else :href="adresseConnexionGithub(retour)" class="bouton-scene" data-test="connexion">
             <span class="bouton-scene__point" aria-hidden="true" />{{ t('accueil.scene.commencer') }}
           </a>
+          <button
+            v-if="etat !== 'connecte' && demo"
+            type="button"
+            class="bouton-scene bouton-scene--demo"
+            :disabled="entreeDemo === 'envoi'"
+            :aria-busy="entreeDemo === 'envoi' || undefined"
+            data-test="accueil-demo"
+            @click="explorer"
+          >
+            {{ t('connexion.demo') }}
+          </button>
+          <p v-if="entreeDemo === 'erreur'" role="alert" class="scene__rassurance" data-test="accueil-erreur-demo">{{ t('connexion.demoErreur') }}</p>
           <RouterLink :to="etat === 'connecte' ? '/communautes' : '/vitrine'" class="scene__lien">
             {{ etat === 'connecte' ? t('accueil.voirCommunautes') : t('accueil.voirVitrine') }}
           </RouterLink>
@@ -208,6 +236,13 @@ void (async () => {
 .bouton-scene:hover { transform: translateY(-2px); box-shadow: 0 14px 36px color-mix(in srgb, var(--midnight) 40%, transparent), 0 0 0 8px color-mix(in srgb, #fff 18%, transparent); }
 .bouton-scene:active { transform: scale(0.97); }
 .bouton-scene:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
+/* Le compte démo : la même capsule, en creux, pour rester sous l'action principale. */
+.bouton-scene--demo {
+  background: color-mix(in srgb, #fff 12%, transparent); color: #fff;
+  border: 1px solid color-mix(in srgb, #fff 70%, transparent); font: inherit; font-weight: 600; cursor: pointer;
+  padding: 0 var(--space-8);
+}
+.bouton-scene--demo:disabled { opacity: 0.7; cursor: progress; }
 .bouton-scene__point { width: 8px; height: 8px; border-radius: 50%; background: var(--cantaloupe); box-shadow: 0 0 0 4px color-mix(in srgb, var(--cantaloupe) 22%, transparent); }
 .scene__lien { color: var(--ink); font-weight: 600; text-underline-offset: 0.25em; text-shadow: var(--ombre-texte); }
 /* Petit texte posé sur l'orange : il a sa propre pastille sombre, sinon il disparaît. */
