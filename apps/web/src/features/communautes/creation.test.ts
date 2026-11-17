@@ -146,9 +146,9 @@ describe('supprimer un salon', () => {
     await page.get('[data-test="supprimer-salon"]').trigger('click')
     await page.get('[data-test="confirmer"]').trigger('click')
     await vi.waitFor(() => expect(routeur.currentRoute.value.query.salon).toBe('general'))
-    // La barre se recharge après la suppression : on attend qu'elle ait relu ses salons.
-    await vi.waitFor(() => expect(page.find('[data-test="barre-salon-entraide"]').exists()).toBe(true))
-    expect(page.find('[data-test="barre-salon-projets"]').exists()).toBe(false)
+    // La barre reste en place et relit ses salons après la suppression : on attend que #projets en soit parti.
+    await vi.waitFor(() => expect(page.find('[data-test="barre-salon-projets"]').exists()).toBe(false))
+    expect(page.find('[data-test="barre-salon-entraide"]').exists()).toBe(true)
     // Dans # général, pas de bouton de suppression.
     await vi.waitFor(() => expect(page.find('[data-test="salons"] h1').text()).toBe('# général'))
     expect(page.find('[data-test="supprimer-salon"]').exists()).toBe(false)
