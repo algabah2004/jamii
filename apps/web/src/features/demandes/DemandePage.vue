@@ -894,7 +894,7 @@ const messageErreur = computed(() =>
 .comparaison thead th :deep(.j-avatar) { vertical-align: middle; margin-inline-end: 6px; }
 .comparaison tbody th { color: var(--ink-muted); font-weight: 600; white-space: nowrap; }
 .comparaison ul { margin: 0; padding-inline-start: 1em; }
-@media (max-width: 640px) { .ayo-message { grid-template-columns: 1fr; } .ayo-message__avatar { display: none; } .brief__tete { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 640px) { .ayo-message { grid-template-columns: minmax(0, 1fr); } .ayo-message__avatar { display: none; } .brief__tete { grid-template-columns: minmax(0, 1fr); } }
 
 /* La réponse d'Ayo, rangée en sections comme une réponse écrite. */
 .reponse__titre { margin: 0; font-size: 1.0625rem; font-weight: 700; }

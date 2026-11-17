@@ -190,7 +190,7 @@ async function rejoindre(c: Communaute) {
 .groupe__nombre { padding: 0 10px; border-radius: var(--radius-pill); background: var(--surface-raised); color: var(--ink-muted); font-size: 0.875rem; }
 /* Quatre cartes par ligne au plus, chacune d'un quart de la largeur ; moins de quatre restent centrées. */
 .grille { --gap: var(--space-5, 1.25rem); list-style: none; margin: 0; padding: 0; display: grid; gap: var(--gap); grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), calc((100% - 3 * var(--gap)) / 4))); justify-content: center; }
-@media (max-width: 640px) { .grille { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .grille { grid-template-columns: minmax(0, 1fr); } }
 
 .carte {
   position: relative; display: flex; flex-direction: column; overflow: hidden; padding: 0;

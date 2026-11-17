@@ -311,6 +311,6 @@ const echeance = computed(() => etatEcheance(props.tache?.echeance))
 
 @media (max-width: 640px) {
   .fiche, .formulaire { padding: var(--space-4); }
-  .deux, .priorites, .fiche__infos { grid-template-columns: 1fr; }
+  .deux, .priorites, .fiche__infos { grid-template-columns: minmax(0, 1fr); }
 }
 </style>

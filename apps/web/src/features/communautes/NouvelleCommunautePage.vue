@@ -303,7 +303,7 @@ function touche(e: KeyboardEvent) {
 
 .assistant__scene { display: grid; gap: var(--space-6); grid-template-columns: minmax(0, 1fr) 20rem; align-items: start; }
 .assistant__scene--fin { grid-template-columns: minmax(0, 1fr); }
-@media (max-width: 1000px) { .assistant__scene { grid-template-columns: 1fr; } .vivant { display: none; } }
+@media (max-width: 1000px) { .assistant__scene { grid-template-columns: minmax(0, 1fr); } .vivant { display: none; } }
 
 .carte {
   position: relative; display: grid; grid-template-rows: minmax(0, 1fr) auto; min-height: min(36rem, calc(100dvh - 15rem));

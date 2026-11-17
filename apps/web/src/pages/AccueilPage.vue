@@ -258,7 +258,7 @@ void (async () => {
 /* Petit portable : les deux aperçus inclinés sortaient de l'écran de 11 px. */
 @media (max-width: 1180px) { .apercus { padding-inline: var(--space-6); } }
 @media (max-width: 960px) {
-  .apercus { grid-template-columns: 1fr; max-width: 26rem; }
+  .apercus { grid-template-columns: minmax(0, 1fr); max-width: 26rem; }
   .apercu--gauche, .apercu--droite { display: none; }
 }
 
@@ -271,7 +271,7 @@ void (async () => {
 .etape h3::before { content: counter(etape); color: var(--proof-ink); font-variant-numeric: tabular-nums; }
 .etape p { margin: 0; color: var(--ink-muted); }
 .etape__lien { font-weight: 600; margin-top: var(--space-1); }
-@media (max-width: 760px) { .etapes { grid-template-columns: 1fr; } .etape__illustration { max-width: 10rem; } }
+@media (max-width: 760px) { .etapes { grid-template-columns: minmax(0, 1fr); } .etape__illustration { max-width: 10rem; } }
 
 @keyframes monte { from { opacity: 0; transform: translateY(14px); filter: blur(4px); } }
 </style>

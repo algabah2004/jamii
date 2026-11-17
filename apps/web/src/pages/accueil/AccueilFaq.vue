@@ -67,7 +67,7 @@ const QUESTIONS = ['quoi', 'connexion', 'pasDev', 'cercle', 'paiement', 'hackath
 .question p { margin: 0; padding: 0 var(--space-6) var(--space-6); color: var(--ink-muted); line-height: 1.65; }
 
 @media (max-width: 860px) {
-  .faq { grid-template-columns: 1fr; }
+  .faq { grid-template-columns: minmax(0, 1fr); }
   .faq__entete { position: static; }
 }
 @media (prefers-reduced-motion: reduce) { .question, .question__signe::before, .question__signe::after { transition: none; } }

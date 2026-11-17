@@ -46,10 +46,10 @@ const extension = (nom: string) => (nom.includes('.') ? nom.split('.').pop()!.sl
 <style scoped>
 .pieces { display: grid; gap: var(--space-2); max-width: 36rem; }
 .pieces__images { display: grid; gap: 4px; border-radius: var(--radius-md); overflow: hidden; }
-.pieces__images--2 { grid-template-columns: 1fr 1fr; }
+.pieces__images--2 { grid-template-columns: minmax(0, 1fr) 1fr; }
 .pieces__images--3 { grid-template-columns: 2fr 1fr; grid-template-rows: 1fr 1fr; }
 .pieces__images--3 .pieces__image:first-child { grid-row: span 2; }
-.pieces__images--4 { grid-template-columns: 1fr 1fr; }
+.pieces__images--4 { grid-template-columns: minmax(0, 1fr) 1fr; }
 .pieces__image { position: relative; display: block; background: var(--surface-raised); min-height: 0; }
 .pieces__image img { display: block; width: 100%; height: 100%; max-height: 22rem; object-fit: cover; }
 .pieces__images--1 .pieces__image img { height: auto; max-height: 26rem; object-fit: contain; background: var(--surface-raised); }

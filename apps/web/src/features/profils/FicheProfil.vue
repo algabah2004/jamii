@@ -467,7 +467,7 @@ watch(
 
 /* ---------- Colonnes et sections ---------- */
 .colonnes { display: grid; gap: var(--space-12) var(--space-12); grid-template-columns: minmax(0, 1fr) minmax(16rem, 20rem); align-items: start; padding-block: var(--space-8) var(--space-6); }
-@media (max-width: 900px) { .colonnes { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { .colonnes { grid-template-columns: minmax(0, 1fr); } }
 /* minmax(0, 1fr) : sans lui, la piste prend la largeur minimale de son contenu le plus large, et la colonne sortait
    de l'écran de 22 px à 320 px (docs/responsive.md). */
 .colonne { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-12); min-width: 0; }
@@ -513,7 +513,7 @@ watch(
 .competence h3 { font-size: var(--type-body-size); line-height: var(--type-body-line); font-weight: 700; }
 .competence__source { font-size: var(--type-body-sm-size); }
 .competence__preuves { display: flex; flex-wrap: wrap; gap: var(--space-2); }
-@media (max-width: 760px) { .competence { grid-template-columns: 1fr; } }
+@media (max-width: 760px) { .competence { grid-template-columns: minmax(0, 1fr); } }
 .depot { padding: 0 var(--space-2); border: 1px solid var(--ink); border-radius: var(--radius-sm); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.8125rem; }
 .langages-bloc { display: grid; gap: var(--space-3); margin-top: var(--space-2); }
 .langages-bloc h3 { margin: 0; }

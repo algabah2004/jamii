@@ -114,7 +114,7 @@ onMounted(async () => {
   border: 1px solid var(--line); border-radius: 28px; background: var(--surface);
   box-shadow: 0 1px 2px rgb(2 7 10 / 0.06), 0 24px 60px rgb(2 7 10 / 0.12);
 }
-@media (min-width: 900px) { .connexion__cadre { grid-template-columns: 1fr 1.1fr; } }
+@media (min-width: 900px) { .connexion__cadre { grid-template-columns: minmax(0, 1fr) 1.1fr; } }
 
 /* À gauche : Jamii, sur un fond profond, avec un halo des deux couleurs de la marque et un réseau au trait. */
 .panneau {

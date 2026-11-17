@@ -79,6 +79,6 @@ const cle = 'accueil.appel'
 .porte__texte { color: #3d4a52; line-height: 1.55; }
 .porte__action { margin-top: var(--space-2); color: var(--porte-ink); font-weight: 700; }
 
-@media (max-width: 700px) { .portes { grid-template-columns: 1fr; } }
+@media (max-width: 700px) { .portes { grid-template-columns: minmax(0, 1fr); } }
 @media (prefers-reduced-motion: reduce) { .porte { transition: none; } .porte:hover { transform: none; } }
 </style>

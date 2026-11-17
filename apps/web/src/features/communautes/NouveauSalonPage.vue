@@ -118,7 +118,7 @@ async function creer() {
 .refus { padding: var(--space-8); display: grid; gap: var(--space-3); }
 .refus h1, .refus p { margin: 0; }
 .creation { display: grid; gap: var(--space-6); grid-template-columns: minmax(0, 30rem) minmax(0, 1fr); padding: var(--space-8); align-items: start; }
-@media (max-width: 1100px) { .creation { grid-template-columns: 1fr; } }
+@media (max-width: 1100px) { .creation { grid-template-columns: minmax(0, 1fr); } }
 .formulaire { display: grid; gap: var(--space-4); }
 .formulaire h1 { margin: 0; font-size: 1.5rem; }
 .formulaire header p { margin: var(--space-2) 0 0; }

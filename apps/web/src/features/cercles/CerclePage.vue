@@ -22,6 +22,7 @@ import OutilDecisions from './OutilDecisions.vue'
 import OutilCalendrier from './OutilCalendrier.vue'
 import { outilDepuis, OUTILS } from './qg'
 import IconeCercle from './IconeCercle.vue'
+import { centrerActif } from '../../components/rangeeDefilante'
 import { avancement, avantTirage, chefDeProjet, deposerIdee, LIMITES, lireAvancement, lireCercle, livrerTour, ordreDePassage, positionsAnneau, pourcentage, rejoindreCercle, tirerAuSort, titreDuTour, tourEnCours, type Avancement, type Cercle, type Resultat, type Tache } from './cercles'
 
 /*
@@ -78,6 +79,9 @@ const membre = computed(() => !!cercle.value?.moi.estMembre)
 // Le QG du cercle, à la façon d'un projet Basecamp : des outils (salon, tâches, point du soir, décisions, calendrier,
 // le cercle), chacun à son adresse (`?outil=`) pour qu'un lien mène droit à l'un d'eux. Les autres voient le cercle.
 const outil = computed(() => outilDepuis(route.query, membre.value, !!cercle.value?.tirage))
+// Sur téléphone, les onglets défilent : l'outil ouvert (par un lien, par exemple) est ramené dans le champ.
+const ongletsOutils = ref<HTMLElement | null>(null)
+centrerActif(ongletsOutils, '.outil-lien.actif', [outil, etat])
 const createur = computed(() => !!cercle.value?.moi.estCreateur)
 const preparation = computed(() => (cercle.value ? avantTirage(cercle.value) : null))
 const monIdee = computed(() => cercle.value?.membres.find((m) => m.personne.id === moi.value?.id)?.idee ?? null)
@@ -174,7 +178,7 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
           <span v-for="p in cercle.profilsRecherches" :key="p" class="cercle-tete__profil">{{ t(`cercles.profils.${p}`) }}</span>
         </p>
       </header>
-      <nav class="outils-nav" :aria-label="t('cercles.onglets.aria')">
+      <nav ref="ongletsOutils" class="outils-nav" :aria-label="t('cercles.onglets.aria')">
         <RouterLink
           v-for="o in OUTILS"
           :key="o"
@@ -385,16 +389,21 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
 @media (max-width: 900px) {
   .espace--outils { grid-template-columns: minmax(0, 1fr); margin-top: 0; }
   .barre-laterale { position: static; }
-  .outils-nav { display: flex; gap: var(--space-1); overflow-x: auto; scrollbar-width: none; margin-inline: calc(-1 * var(--space-4)); padding-inline: var(--space-4); }
+  .outils-nav { display: flex; gap: var(--space-1); overflow-x: auto; scrollbar-width: none; margin-inline: calc(-1 * var(--space-4)); padding-inline: var(--space-4) var(--space-8);
+    /* Un fondu au bord droit : les autres outils (calendrier, décisions, points) sont plus loin. */
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - var(--space-8)), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - var(--space-8)), transparent); }
+  .outils-nav::-webkit-scrollbar { display: none; }
   .outil-lien { flex: none; min-height: 40px; }
+  .outil-lien:focus-visible { outline-offset: -2px; }
   .equipe { display: none; }
 }
 .mise-en-page { display: grid; gap: var(--space-6); grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); align-items: start; }
-@media (max-width: 860px) { .mise-en-page { grid-template-columns: 1fr; } }
+@media (max-width: 860px) { .mise-en-page { grid-template-columns: minmax(0, 1fr); } }
 
 .mise-en-page--edition { grid-template-columns: minmax(0, 1fr); }
 .idee-champs { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.2fr); gap: var(--space-4); align-items: start; }
-@media (max-width: 760px) { .idee-champs { grid-template-columns: 1fr; } }
+@media (max-width: 760px) { .idee-champs { grid-template-columns: minmax(0, 1fr); } }
 
 .anneau { margin: 0; padding: var(--space-6); }
 .anneau__scene { position: relative; aspect-ratio: 1; max-width: 30rem; margin: 0 auto; }
@@ -435,8 +444,8 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
 .confirmation p { margin: 0; }
 .livre { display: grid; gap: var(--space-1); margin: 0; padding: var(--space-4) var(--space-6); border-left: 4px solid var(--proof); animation: apparait var(--motion-celebrate) var(--ease-pop) both; }
 
-.cote { display: grid; gap: var(--space-4); }
-.tour { display: grid; gap: var(--space-3); padding: var(--space-6); }
+.cote { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
+.tour { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-3); padding: clamp(var(--space-4), 4vw, var(--space-6)); }
 .tour h2 { margin: 0; font-size: 1.375rem; }
 .tour__surtitre { margin: 0; color: var(--proof-ink); font-weight: 700; font-size: var(--type-body-sm-size); }
 .avancement { display: grid; gap: var(--space-2); }

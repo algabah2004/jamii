@@ -159,7 +159,7 @@ const points = (f: string) => (tm(`${cle}.${f}.points`) as string[]).map((p) => 
 .rond--tour { background: var(--teinte); color: var(--midnight); animation: halo 2.4s var(--ease-out) infinite; }
 
 /* L'assistant : un texte libre à gauche, un plan coché à droite. */
-.mini--plan { grid-template-columns: 1fr auto 1fr; align-items: center; gap: var(--space-3); padding: var(--space-4); border-radius: var(--radius-md); background: var(--surface); box-shadow: 0 8px 20px color-mix(in srgb, var(--ink) 12%, transparent); }
+.mini--plan { grid-template-columns: minmax(0, 1fr) auto 1fr; align-items: center; gap: var(--space-3); padding: var(--space-4); border-radius: var(--radius-md); background: var(--surface); box-shadow: 0 8px 20px color-mix(in srgb, var(--ink) 12%, transparent); }
 .fleche { color: var(--teinte-ink); font-size: 1.25rem; }
 .liste { display: grid; gap: 6px; }
 .liste > i { display: flex; align-items: center; gap: 6px; font-style: normal; }

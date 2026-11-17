@@ -230,7 +230,7 @@ const paysCercles = computed(() =>
 .code-jury { display: grid; gap: var(--space-3); max-width: 24rem; margin: var(--space-5) auto 0; text-align: start; }
 .chiffres { display: grid; gap: var(--space-4); grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.4fr); transition: opacity var(--motion-base) var(--ease-out); }
 .chiffres[aria-busy] { opacity: 0.6; }
-@media (max-width: 860px) { .chiffres { grid-template-columns: 1fr; } }
+@media (max-width: 860px) { .chiffres { grid-template-columns: minmax(0, 1fr); } }
 
 /* Le chiffre qui compte pour Systalink, sur fond sombre ; l'orange de la jauge dit « en ligne, vérifié ». */
 .principal { display: grid; gap: var(--space-2); align-content: center; padding: var(--space-8); border-radius: var(--radius-lg); }
@@ -251,7 +251,7 @@ const paysCercles = computed(() =>
 .espace { margin-top: var(--space-6); }
 
 .details { display: grid; gap: var(--space-4); grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); align-items: start; margin-top: var(--space-6); }
-@media (max-width: 860px) { .details { grid-template-columns: 1fr; } }
+@media (max-width: 860px) { .details { grid-template-columns: minmax(0, 1fr); } }
 .bloc { display: grid; gap: var(--space-3); }
 .bloc h2 { margin: 0; font-size: var(--type-h3-size); line-height: var(--type-h3-line); }
 .bloc > p { margin: 0; }
@@ -260,7 +260,7 @@ const paysCercles = computed(() =>
 
 /* Les cercles de la Tech Tontine : les chiffres à gauche, d'où viennent leurs membres à droite. */
 .cercles { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); align-items: start; gap: var(--space-6); margin-top: var(--space-6); }
-@media (max-width: 860px) { .cercles { grid-template-columns: 1fr; } }
+@media (max-width: 860px) { .cercles { grid-template-columns: minmax(0, 1fr); } }
 .cercles__texte { display: grid; gap: var(--space-3); }
 .cercles__texte > p { margin: 0; }
 .cercles__chiffres { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); margin: 0; }

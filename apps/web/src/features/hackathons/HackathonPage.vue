@@ -507,7 +507,7 @@ const annuler = () => (raisonValide.value ? agir(() => annulerHackathon(hackatho
 
 /* Les critères : leur part de la note, en barre. */
 .criteres { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-4); }
-.criteres li { display: grid; grid-template-columns: 1fr auto; gap: var(--space-2) var(--space-3); }
+.criteres li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-2) var(--space-3); }
 .criteres__nom { font-weight: 600; }
 .criteres__part { font-variant-numeric: tabular-nums; color: var(--ink-muted); font-size: var(--type-body-sm-size); }
 .criteres__barre { grid-column: 1 / -1; block-size: 0.5rem; border-radius: var(--radius-pill); background: color-mix(in srgb, var(--line-strong) 60%, transparent); overflow: hidden; }

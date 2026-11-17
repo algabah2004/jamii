@@ -212,7 +212,7 @@ const echeanceCourte = (iso: string) => new Intl.DateTimeFormat(locale.value, { 
 </template>
 
 <style scoped>
-.outil-taches { display: grid; gap: var(--space-6); }
+.outil-taches { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-6); }
 .tete { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--space-4); }
 .nouvelle {
   display: inline-flex; align-items: center; gap: var(--space-2); min-height: 44px; padding: 0 var(--space-6); border: 0; border-radius: var(--radius-pill);
@@ -225,7 +225,7 @@ const echeanceCourte = (iso: string) => new Intl.DateTimeFormat(locale.value, { 
 .cote { display: grid; gap: var(--space-4); position: sticky; top: var(--space-6); }
 @media (max-width: 1180px) {
   .grille { grid-template-columns: minmax(0, 1fr); }
-  .cote { position: static; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); align-items: start; }
+  .cote { position: static; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); align-items: start; }
 }
 .cote h3 { margin: 0 0 var(--space-3); font-size: var(--type-body-size); }
 .legende { margin: var(--space-3) 0 0; font-size: 0.8125rem; }
@@ -236,8 +236,11 @@ const echeanceCourte = (iso: string) => new Intl.DateTimeFormat(locale.value, { 
 .ayo__liste { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); font-size: var(--type-body-sm-size); }
 .ayo__liste li { display: flex; justify-content: space-between; align-items: center; gap: var(--space-2); }
 
-.liste-carte { display: grid; gap: var(--space-3); padding-bottom: var(--space-4); }
-.filtres { display: flex; gap: var(--space-1); padding: 4px; border-radius: var(--radius-pill); background: var(--surface-raised); justify-self: start; }
+.liste-carte { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-3); padding-bottom: var(--space-4); }
+/* Les trois filtres défilent s'ils ne tiennent pas (320 px) au lieu d'élargir la carte. */
+.filtres { display: flex; gap: var(--space-1); padding: 4px; border-radius: var(--radius-pill); background: var(--surface-raised); justify-self: start; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.filtres::-webkit-scrollbar { display: none; }
+.filtre { flex-shrink: 0; white-space: nowrap; }
 .filtre { display: inline-flex; align-items: center; gap: var(--space-2); min-height: 36px; padding: 0 var(--space-4); border: 0; border-radius: var(--radius-pill); background: transparent; color: var(--ink-muted); font: inherit; font-size: var(--type-body-sm-size); font-weight: 600; cursor: pointer; }
 .filtre.actif { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgb(2 7 10 / 0.15); }
 .filtre:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
@@ -280,7 +283,8 @@ const echeanceCourte = (iso: string) => new Intl.DateTimeFormat(locale.value, { 
 .ligne-move { transition: transform var(--motion-base) var(--ease-out); }
 @media (prefers-reduced-motion: reduce) { .ligne-move { transition: none; } }
 @media (max-width: 900px) {
-  .grille { grid-template-columns: 1fr; }
+  /* minmax(0, 1fr) et non 1fr : « 1fr » ne descend pas sous la largeur du contenu, et l'outil sortait de l'écran. */
+  .grille { grid-template-columns: minmax(0, 1fr); }
   .cote { order: 2; }
 }
 @media (max-width: 560px) {

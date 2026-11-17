@@ -135,5 +135,5 @@ const lien = (outil: string) => ({ query: { outil } })
 .outil__etat { font-weight: 600; font-size: var(--type-body-sm-size); color: var(--action-ink); }
 .apercu { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); font-size: var(--type-body-sm-size); }
 .apercu li { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-@media (max-width: 640px) { .bandeau { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .bandeau { grid-template-columns: minmax(0, 1fr); } }
 </style>

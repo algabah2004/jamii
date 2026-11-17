@@ -128,6 +128,6 @@ function avancer() {
 .glisse-avant-enter-from, .glisse-arriere-leave-to { opacity: 0; transform: translateX(18px); }
 .glisse-arriere-enter-from, .glisse-avant-leave-to { opacity: 0; transform: translateX(-18px); }
 @media (max-width: 960px) { .scene { grid-template-columns: minmax(0, 1.4fr) minmax(250px, 1fr); gap: 18px; } .panneau { padding: 28px; } .etape h1 { scroll-margin-top: 180px; } .vivant { top: 142px; } }
-@media (max-width: 760px) { .scene { grid-template-columns: 1fr; } .panneau { min-height: 500px; padding: 24px; } .vivant { position: static; } .vivant .etapes { display: none; } .apercu__illustration { height: 72px; } .contenu :deep(.grille-champs) { grid-template-columns: 1fr; } .assistant__haut { align-items: start; } }
+@media (max-width: 760px) { .scene { grid-template-columns: minmax(0, 1fr); } .panneau { min-height: 500px; padding: 24px; } .vivant { position: static; } .vivant .etapes { display: none; } .apercu__illustration { height: 72px; } .contenu :deep(.grille-champs) { grid-template-columns: minmax(0, 1fr); } .assistant__haut { align-items: start; } }
 @media (prefers-reduced-motion: reduce) { .progression span, .glisse-avant-enter-active, .glisse-arriere-enter-active, .glisse-avant-leave-active, .glisse-arriere-leave-active { transition: none; } }
 </style>

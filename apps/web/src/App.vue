@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import ReglagesAffichage from './components/ReglagesAffichage.vue'
 import BoutonLangue from './components/BoutonLangue.vue'
 import BoutonTheme from './components/BoutonTheme.vue'
+import { centrerActif } from './components/rangeeDefilante'
 import { chargerSession, seDeconnecter, useSession } from './session'
 import { JAvatar, JBouton, JSquelette } from './design-system'
 import { arreterActivite, suivreActivite, useActivite } from './features/reseau/activite'
@@ -27,17 +28,7 @@ watch(etat, (e) => (e === 'connecte' ? suivreAppelsEntrants() : arreterAppelsEnt
 // Sur téléphone, le menu défile sur une ligne : la page active est ramenée au centre, sans toucher au défilement de la page.
 const route = useRoute()
 const menu = ref<HTMLElement | null>(null)
-watch(
-  [() => route.path, etat],
-  async () => {
-    await nextTick()
-    const nav = menu.value
-    const actif = nav?.querySelector<HTMLElement>('a.router-link-active')
-    if (!nav || !actif || nav.scrollWidth <= nav.clientWidth) return
-    nav.scrollLeft = actif.offsetLeft - (nav.clientWidth - actif.offsetWidth) / 2
-  },
-  { flush: 'post' },
-)
+centrerActif(menu, 'a.router-link-active', [() => route.path, etat])
 </script>
 
 <template>

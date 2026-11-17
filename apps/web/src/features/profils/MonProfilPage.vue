@@ -445,7 +445,7 @@ async function enregistrer() {
 <style scoped>
 .mon-profil { display: grid; gap: var(--space-6); }
 .accueil-profil { display: grid; gap: var(--space-8); grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); align-items: center; padding-top: var(--space-4); }
-@media (max-width: 760px) { .accueil-profil { grid-template-columns: 1fr; } .accueil-profil__visuel { order: -1; max-width: 18rem; } }
+@media (max-width: 760px) { .accueil-profil { grid-template-columns: minmax(0, 1fr); } .accueil-profil__visuel { order: -1; max-width: 18rem; } }
 /* Téléphone : l'illustration passe sous le bouton, sinon « Créer mon profil » tombe sous la ligne de flottaison. */
 @media (max-width: 480px) { .accueil-profil__visuel { order: 1; max-width: 12rem; justify-self: center; } }
 .accueil-profil__texte { display: grid; gap: var(--space-4); justify-items: start; }
@@ -502,7 +502,7 @@ async function enregistrer() {
 .bloc-ouvert p { margin: 0; }
 .deux-colonnes { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); }
 .trois-colonnes { display: grid; gap: var(--space-4); grid-template-columns: 2fr 2fr 1fr; }
-@media (max-width: 640px) { .trois-colonnes { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .trois-colonnes { grid-template-columns: minmax(0, 1fr); } }
 .j-champ > span { font-size: var(--type-label-size); line-height: var(--type-label-line); font-weight: var(--type-label-weight); }
 .selection { width: 100%; min-height: 44px; padding: var(--space-2) var(--space-3); background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); }
 .choix { border: 0; padding: 0; margin: 0; display: grid; gap: var(--space-2); }

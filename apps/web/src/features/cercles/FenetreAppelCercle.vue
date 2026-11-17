@@ -154,12 +154,12 @@ function clavier(e: KeyboardEvent) {
 .tete__infos { color: rgb(255 255 255 / 0.7); font-variant-numeric: tabular-nums; font-size: 0.9rem; }
 .fin { align-self: center; justify-self: center; margin: 0; padding: var(--space-4); text-align: center; font-weight: 600; }
 
-.mosaique { display: grid; gap: var(--space-2); margin: 0; padding: var(--space-3); list-style: none; min-height: 0; grid-template-columns: 1fr; grid-auto-rows: 1fr; }
+.mosaique { display: grid; gap: var(--space-2); margin: 0; padding: var(--space-3); list-style: none; min-height: 0; grid-template-columns: minmax(0, 1fr); grid-auto-rows: 1fr; }
 .mosaique--2 { grid-template-columns: repeat(2, 1fr); }
 .mosaique--3, .mosaique--4 { grid-template-columns: repeat(2, 1fr); }
 .mosaique--5, .mosaique--6 { grid-template-columns: repeat(3, 1fr); }
 @media (max-width: 640px) {
-  .mosaique--2 { grid-template-columns: 1fr; }
+  .mosaique--2 { grid-template-columns: minmax(0, 1fr); }
   .mosaique--5, .mosaique--6 { grid-template-columns: repeat(2, 1fr); }
 }
 .vignette { position: relative; display: grid; place-items: center; min-height: 0; overflow: hidden; border-radius: 16px; background: #1b1e26; }
@@ -170,7 +170,7 @@ function clavier(e: KeyboardEvent) {
 .vignette__muet { margin-left: 4px; }
 .vignette__etat { color: rgb(255 255 255 / 0.7); }
 .seul { display: grid; place-items: center; padding: var(--space-4); color: rgb(255 255 255 / 0.75); text-align: center; }
-.mosaique--1 { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+.mosaique--1 { grid-template-columns: minmax(0, 1fr); grid-template-rows: 1fr auto; }
 
 .reactions { position: fixed; left: 0; right: 0; bottom: 5rem; height: 55%; margin: 0; padding: 0; list-style: none; pointer-events: none; z-index: 81; }
 .reaction { position: absolute; bottom: 0; left: 35%; display: grid; justify-items: center; font-size: 2.4rem; animation: envol 2.6s ease-out forwards; }

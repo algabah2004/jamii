@@ -139,10 +139,10 @@ defineProps<{
 .etape__texte { color: var(--ink-muted); line-height: 1.55; font-size: var(--type-body-sm-size); }
 
 @media (max-width: 900px) {
-  .section__haut { grid-template-columns: 1fr; }
+  .section__haut { grid-template-columns: minmax(0, 1fr); }
   .section--inverse .section__texte { order: 0; }
   .section__apercu { min-height: 15rem; }
-  .etapes { grid-template-columns: 1fr; gap: var(--space-5, 1.25rem); }
+  .etapes { grid-template-columns: minmax(0, 1fr); gap: var(--space-5, 1.25rem); }
   .etapes::before { top: 1.25rem; bottom: 1.25rem; left: 1.25rem; right: auto; width: 2px; height: auto;
     background: linear-gradient(180deg, var(--teinte), color-mix(in srgb, var(--teinte) 15%, transparent)); }
   .etape { grid-template-columns: 2.5rem 1fr; column-gap: var(--space-4); row-gap: 2px; }
