@@ -501,10 +501,6 @@
       "autresBlocs": "Les autres blocs ne bougent pas",
       "enregistrerBloc": "Enregistrer ce bloc",
       "rienPublie": "Rien n'est publié avant que tu enregistres.",
-      "titreVide": "Ajoute un titre : c'est la première chose qu'on lit sous ton nom.",
-      "bioVide": "Dis d'où tu viens et ce que tu aimes construire.",
-      "languesVide": "Ajoute les langues que tu parles.",
-      "liensVide": "Ajoute ton LinkedIn ou ton site.",
       "titreAide": "C'est la première chose qu'on lit sous ton nom.",
       "bioAide": "Dis d'où tu viens et ce que tu aimes construire.",
       "compteur": "{n} sur {max}",
@@ -514,9 +510,9 @@
         "lieu": "+ Ajouter ton pays et ta ville",
         "liens": "+ Ajouter tes liens",
         "langues": "+ Ajouter tes langues",
-        "realisations": "+ Ajouter un projet réalisé ailleurs"
+        "realisations": "+ Ajouter un projet réalisé ailleurs",
+        "competences": "+ Ajouter tes compétences"
       },
-      "competencesVide": "Pas encore de compétence : celles de tes dépôts GitHub s'ajoutent toutes seules, et tu peux ajouter les tiennes.",
       "competencesPointille": "Une compétence que tu déclares s'affiche en pointillé tant qu'aucun dépôt ou projet ne la prouve."
     },
     "langages": {
@@ -535,8 +531,7 @@
         "declaree": "Ajoutée par la personne",
         "ia": "Proposée par l’IA, validée par la personne"
       },
-      "preuvesNombre": "aucun dépôt | prouvée par {n} dépôt | prouvée par {n} dépôts",
-      "sansPreuve": "Sans preuve pour l'instant"
+      "preuvesNombre": "aucun dépôt | prouvée par {n} dépôt | prouvée par {n} dépôts"
     },
     "projets": {
       "titre": "Projets sur Jamii",
@@ -562,14 +557,9 @@
         "projet_en_ligne": "projet en ligne vérifié | projets en ligne vérifiés"
       },
       "contestees": "dont {n} en cours de vérification | dont {n} en cours de vérification",
-      "vide": "Pas encore de preuve. Elles s'ajoutent toutes seules, à mesure que tu participes :",
-      "comment": {
-        "projet_en_ligne": "un projet mis en ligne avec ton équipe, et qui répond ;",
-        "tache_livree_a_temps": "une tâche livrée à la date prévue ;",
-        "reponse_acceptee": "une réponse acceptée dans une communauté ;",
-        "avis_coequipier": "un coéquipier qui referait équipe avec toi."
-      },
-      "sansNote": "Pas de note globale : chaque point se vérifie, et se conteste s'il est faux."
+      "vide": "Elles s'ajoutent toutes seules, à mesure que tu participes.",
+      "sansNote": "Pas de note globale : chaque point se vérifie, et se conteste s'il est faux.",
+      "titreAVenir": "Les preuves que tu vas gagner"
     },
     "carte": {
       "titre": "Ta carte de compétences",

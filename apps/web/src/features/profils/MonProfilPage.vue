@@ -151,6 +151,7 @@ const aRemplir = computed(() => {
   if (!p.pays) manquants.push('lieu')
   if (!p.linkedin && !p.siteWeb) manquants.push('liens')
   if (!p.langues.length) manquants.push('langues')
+  if (!p.competences.length) manquants.push('competences')
   if (!p.realisations.length) manquants.push('realisations')
   return manquants
 })

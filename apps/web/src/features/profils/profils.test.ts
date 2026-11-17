@@ -37,7 +37,10 @@ describe('Mon profil', () => {
     expect(page.get('[data-test="langages"]').text()).toMatch(/75\s?%/)
     expect(page.get('[data-test="depots"]').text()).toContain('marche-facile')
     expect(page.get('[data-test="visibilite"]').text()).toContain('privé')
-    expect(page.find('[data-test="projets-vide"]').exists()).toBe(true)
+    // Pas de section vide : la bande « à remplir » propose les blocs, et les preuves à gagner s'affichent pour la personne.
+    expect(page.find('[data-test="projets"]').exists()).toBe(false)
+    expect(page.find('[data-test="a-remplir"]').exists()).toBe(true)
+    expect(page.findAll('[data-test="fiabilite-vide"] li')).toHaveLength(4)
   })
 
   it('sans GitHub relié, propose « Relier mon GitHub », puis dit quand c’est fait ou pourquoi ça a échoué', async () => {
@@ -119,7 +122,8 @@ describe('Mon profil', () => {
 
   it('un seul bloc est ouvert à la fois, et « Annuler » le referme sans rien enregistrer', async () => {
     const page = await profilPret()
-    await page.get('[data-test="crayon-langues"]').trigger('click')
+    // Sans langue, pas de section « Langues » : c'est la bande « à remplir » qui ouvre le bloc.
+    await page.findAll('[data-test="a-remplir"] button').find((b) => b.text().includes('langues'))!.trigger('click')
     expect(page.get('[data-test="formulaire"]').text()).toContain('Tu modifies : Langues')
     await page.get('[data-test="crayon-liens"]').trigger('click')
     expect(page.findAll('[data-test="formulaire"]')).toHaveLength(1)
@@ -236,6 +240,27 @@ describe('profil professionnel (#159)', () => {
     expect(page.get('[data-test="phares"]').text()).toContain('spring-boot')
   })
 
+  it('un profil sans preuve ne montre aucun message « vide » à un visiteur', async () => {
+    serveur.use(http.get('/api/profils/:id', () => HttpResponse.json({ ...pro, fiabilite: [], projets: [], realisations: [], langues: [], depotsGithub: [] })))
+    const page = await ouvrir('/p/a1b2')
+    await vi.waitFor(() => expect(page.find('[data-test="identite"]').exists()).toBe(true))
+    expect(page.find('[data-test="fiabilite"]').exists()).toBe(false)
+    expect(page.find('[data-test="fiabilite-vide"]').exists()).toBe(false)
+    expect(page.text()).not.toMatch(/Pas encore de preuve|Sans preuve|Elles s.ajoutent|Ajoute /)
+  })
+
+  it('une compétence déclarée n’affiche pas de mention « sans preuve »', async () => {
+    serveur.use(
+      http.get('/api/profils/:id', () =>
+        HttpResponse.json({ ...pro, competences: [{ competence: 'vue', source: 'declaree' }], competencesPhares: [] }),
+      ),
+    )
+    const page = await ouvrir('/p/a1b2')
+    await vi.waitFor(() => expect(page.find('[data-test="competences"]').exists()).toBe(true))
+    expect(page.get('[data-test="competences"]').text()).toContain('Ajoutée par la personne')
+    expect(page.text()).not.toContain('Sans preuve')
+  })
+
   it('un visiteur ne voit aucun crayon ni aucune barre de modification', async () => {
     serveur.use(http.get('/api/profils/:id', () => HttpResponse.json(pro)))
     const page = await ouvrir('/p/a1b2')
@@ -274,6 +299,15 @@ describe('profil professionnel (#159)', () => {
     const page = await ouvrir('/p/6f1c2a4e-8b7d-4c3e-9a10-2b5d7e9f0a11')
     await vi.waitFor(() => expect(page.find('[data-test="identite"]').exists()).toBe(true))
     expect(page.find('[data-test="actions-profil"]').exists()).toBe(false)
+  })
+
+  it('sur sa propre page publique, un crayon mène à « Mon profil » au lieu de ne rien faire', async () => {
+    serveur.use(http.get('/api/profils/:id', () => HttpResponse.json({ ...pro, utilisateurId: '6f1c2a4e-8b7d-4c3e-9a10-2b5d7e9f0a11' })))
+    const page = await ouvrir('/p/6f1c2a4e-8b7d-4c3e-9a10-2b5d7e9f0a11')
+    await vi.waitFor(() => expect(page.find('[data-test="crayon-lieu"]').exists()).toBe(true))
+    const routeur = page.vm.$router
+    await page.get('[data-test="crayon-lieu"]').trigger('click')
+    await vi.waitFor(() => expect(routeur.currentRoute.value.path).toBe('/profil'))
   })
 
   it('montre « Infos » avec le résumé de l’IA, l’activité GitHub et les recommandations des coéquipiers', async () => {

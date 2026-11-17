@@ -501,10 +501,6 @@
       "autresBlocs": "The other blocks do not change",
       "enregistrerBloc": "Save this block",
       "rienPublie": "Nothing is published until you save.",
-      "titreVide": "Add a title: it is the first thing people read under your name.",
-      "bioVide": "Say where you come from and what you like to build.",
-      "languesVide": "Add the languages you speak.",
-      "liensVide": "Add your LinkedIn or your website.",
       "titreAide": "It is the first thing people read under your name.",
       "bioAide": "Say where you come from and what you like to build.",
       "compteur": "{n} of {max}",
@@ -514,9 +510,9 @@
         "lieu": "+ Add your country and city",
         "liens": "+ Add your links",
         "langues": "+ Add your languages",
-        "realisations": "+ Add a project done elsewhere"
+        "realisations": "+ Add a project done elsewhere",
+        "competences": "+ Add your skills"
       },
-      "competencesVide": "No skills yet: the ones from your GitHub repositories are added by themselves, and you can add your own.",
       "competencesPointille": "A skill you declare is shown dashed until a repository or a project proves it."
     },
     "langages": {
@@ -535,8 +531,7 @@
         "declaree": "Added by the person",
         "ia": "Suggested by AI, confirmed by the person"
       },
-      "preuvesNombre": "no repository | backed by {n} repository | backed by {n} repositories",
-      "sansPreuve": "No proof yet"
+      "preuvesNombre": "no repository | backed by {n} repository | backed by {n} repositories"
     },
     "projets": {
       "titre": "Projects on Jamii",
@@ -562,14 +557,9 @@
         "projet_en_ligne": "verified project online | verified projects online"
       },
       "contestees": "including {n} being checked | including {n} being checked",
-      "vide": "No proof yet. It adds up on its own as you take part:",
-      "comment": {
-        "projet_en_ligne": "a project put online with your team, that responds;",
-        "tache_livree_a_temps": "a task delivered on the planned date;",
-        "reponse_acceptee": "an answer accepted in a community;",
-        "avis_coequipier": "a teammate who would work with you again."
-      },
-      "sansNote": "No overall score: each point can be checked, and disputed if it is wrong."
+      "vide": "They add themselves as you take part.",
+      "sansNote": "No overall score: each point can be checked, and disputed if it is wrong.",
+      "titreAVenir": "The proofs you are going to earn"
     },
     "carte": {
       "titre": "Your skills map",

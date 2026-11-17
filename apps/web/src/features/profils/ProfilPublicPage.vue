@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { RouterLink, useRoute } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { api } from '../../api/client'
 import { JAvatar, JBouton, JSquelette } from '../../design-system'
 import { useSession } from '../../session'
@@ -16,6 +16,7 @@ import type { Profil } from './profils'
  * encore publié son profil, on montre au moins qui elle est (lu via la conversation) et les mêmes actions.
  */
 const route = useRoute()
+const routeur = useRouter()
 const { t } = useI18n()
 const { moi } = useSession()
 
@@ -81,7 +82,7 @@ watch(() => String(route.params.id), (id) => void charger(id), { immediate: true
       <JBouton variante="secondaire" @click="charger(String(route.params.id))">{{ t('etat.reessayer') }}</JBouton>
     </div>
     <template v-else-if="profil">
-      <FicheProfil :profil="profil" :moi="moi?.id === profil.utilisateurId">
+      <FicheProfil :profil="profil" :moi="moi?.id === profil.utilisateurId" @modifier="routeur.push('/profil')">
         <template v-if="moi" #boutons>
           <AbonnesProfil :personne-id="profil.utilisateurId" :peut-suivre="autre" />
           <ActionsProfil v-if="autre" :personne-id="profil.utilisateurId" :prenom="prenom(profil.nom)" />
