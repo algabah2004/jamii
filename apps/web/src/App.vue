@@ -309,9 +309,17 @@ main.main--pleine { max-width: none; padding-inline: var(--space-4); }
     padding-block: var(--space-2) var(--space-1); border-top: 1px solid var(--line);
     white-space: normal; overflow: visible auto; max-height: calc(100dvh - 6rem);
   }
+  /* En pop-up : l'en-tête garde sa hauteur fermée (8 px + la capsule de 58 px), la capsule ouverte déborde par-dessus
+     la page au lieu de la faire descendre (433 px de saut sur téléphone). Même verre, mêmes couleurs. */
+  .entete.entete--menu-ouvert { height: calc(var(--space-2) + 58px); }
+  .entete.entete--menu-ouvert nav { animation: menu-apparait var(--motion-fast) var(--ease-out); }
+  /* Toucher à côté ferme le menu (fermerAilleurs) sans ouvrir ce qui est dessous : une zone invisible, sans couleur. */
+  .entete.entete--menu-ouvert::after { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: auto; }
   .entete nav a { min-height: 48px; padding: 0 var(--space-4); font-size: var(--type-body-size); border-radius: var(--radius-md); }
   .entete nav a:focus-visible { outline-offset: -2px; }
 }
+@keyframes menu-apparait { from { opacity: 0; transform: translateY(-6px); } }
+@media (prefers-reduced-motion: reduce) { .entete.entete--menu-ouvert nav { animation: none; } }
 /* Téléphone : la marque et les boutons tiennent sur une seule ligne. */
 @media (max-width: 480px) {
   .entete__interieur { column-gap: var(--space-2); padding-inline: var(--space-3) var(--space-1); }
