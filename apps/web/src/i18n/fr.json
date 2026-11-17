@@ -17,11 +17,9 @@
     "github": "Se connecter avec GitHub",
     "deconnexion": "Se déconnecter",
     "titre": "Se connecter à Jamii",
-    "githubTitre": "Tu es développeur ou développeuse",
-    "githubTexte": "Connecte-toi avec GitHub. Ta carte de compétences se construit à partir de tes dépôts publics.",
+    "githubTitre": "Pour les développeurs : ton profil se construit à partir de tes dépôts.",
     "ou": "ou",
-    "emailTitre": "Tu as un besoin, sans compte GitHub",
-    "emailTexte": "PME, association ou particulier : pas besoin de GitHub, ni de mot de passe.",
+    "emailTitre": "Pour tout le monde : PME, association ou particulier, sans compte GitHub.",
     "email": "Ton adresse e-mail",
     "emailInvalide": "Cette adresse e-mail n'est pas valide.",
     "recevoirLien": "Recevoir un lien de connexion",
@@ -45,9 +43,7 @@
     },
     "seConnecter": "Se connecter",
     "google": "Continuer avec Google",
-    "demoPastille": "Sans compte",
-    "demoTitre": "Explorer Jamii avec le compte démo",
-    "demoTexte": "Un compte à toi, déjà rempli : un cercle dont c'est le tour, des communautés, des contacts, un hackathon et des missions. Personne d'autre ne le voit, et il est effacé après 24 heures.",
+    "demoTitre": "Pour essayer : un compte déjà rempli, effacé après 24 heures.",
     "demo": "Explorer avec le compte démo",
     "demoErreur": "Le compte démo n'est pas disponible pour l'instant. Réessaie dans un moment.",
     "googleOu": "Ou reçois un lien de connexion par e-mail :",
@@ -56,8 +52,6 @@
     "rassurance": "Pas de mot de passe. Rien n'est publié sans ton accord.",
     "accesTitre": "Se connecter ou créer un compte",
     "sousTitre": "Ton compte est créé à ta première connexion.",
-    "githubPastille": "Pour les développeurs",
-    "emailPastille": "Pour tout le monde",
     "atouts": {
       "cercles": {
         "titre": "Des cercles",
@@ -1087,6 +1081,7 @@
     "sombre": "Sombre"
   },
   "pied": {
+    "haut": "Revenir en haut",
     "mission": "La plateforme d'échange des développeurs africains : s'entraider, faire équipe et mettre ses projets en ligne.",
     "liens": "Liens utiles",
     "cadev": "Projet présenté à la CADEV 2026. Jamii fonctionne sur le cloud Systalink.",
@@ -3057,6 +3052,7 @@
   },
   "exploration": {
     "effacer": "Effacer la recherche",
+    "filtres": "Filtres",
     "reinitialiser": "Réinitialiser les filtres",
     "ouvrir": "Ouvrir : {titre}",
     "resultats": "Aucun résultat | {n} résultat | {n} résultats",

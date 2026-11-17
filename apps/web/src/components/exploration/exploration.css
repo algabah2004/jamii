@@ -61,6 +61,11 @@
   .exploration__hero h1 { max-width: 20ch; font-size: clamp(2.4rem, 10vw, 3.5rem); }
   .exploration__intro { margin-block: 20px; }
   .exploration__vedette { padding: 24px; }
-  .exploration__outils { padding: 14px; }
+  .exploration__outils { padding: 14px; gap: 14px; grid-template-columns: minmax(0, 1fr); }
+  .exploration__outils > * { min-width: 0; }
+  /* Une ligne de pastilles qui défile, au lieu de trois lignes empilées. */
+  .exploration__filtres { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .exploration__filtres::-webkit-scrollbar { display: none; }
+  .exploration__filtres > * { flex: none; white-space: nowrap; }
   .exploration__recherche { padding-inline: 14px; }
 }
