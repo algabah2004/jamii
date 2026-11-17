@@ -23,6 +23,8 @@ const props = withDefaults(
   defineProps<{
     modelValue: string
     destinataireId?: string
+    /** Le salon d'un cercle : ses fichiers sont réservés aux membres du cercle (#157). */
+    cercleId?: string
     pieces?: PieceJointe[]
     placeholder: string
     libelleEnvoyer: string
@@ -177,7 +179,7 @@ async function joindre(fichiers: FileList | File[] | null) {
     liste.slice(0, Math.max(0, place)).map(async (f) => {
       const cle = `${f.name}-${f.size}-${Math.random()}`
       enCours.value = [...enCours.value, { cle, nom: f.name }]
-      const r = await envoyerFichier(f, props.destinataireId)
+      const r = await envoyerFichier(f, props.destinataireId, props.cercleId)
       if (!actif) return
       enCours.value = enCours.value.filter((x) => x.cle !== cle)
       if (r.ok) {

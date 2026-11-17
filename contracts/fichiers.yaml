@@ -17,6 +17,7 @@ info:
     politique de contenu qui interdit tout script ; les vidéos se lisent par morceaux (`Range`). Les documents autres que
     PDF et texte se téléchargent. Avec `destinataireId`, le fichier est privé : son auteur peut le prévisualiser,
     puis le destinataire peut le lire après l'envoi du message. Les autres reçoivent 404, même avec son identifiant.
+    Avec `cercleId`, de même : seuls les membres actuels du cercle le lisent, une fois posé dans le cercle.
     Ces réponses utilisent `Cache-Control: no-store`. Un fichier privé ne peut changer de destinataire ni être joint
     à une publication ou à un salon. La suppression d'un des comptes efface ces fichiers et leurs octets.
 
@@ -49,7 +50,7 @@ paths:
               required: [fichier]
               properties:
                 fichier: { type: string, format: binary }
-                cercleId: { type: string, format: uuid, description: 'Document réservé à une idée de ce cercle ; envoi par un membre, consultation par les membres après enregistrement de l’idée. Incompatible avec destinataireId.' }
+                cercleId: { type: string, format: uuid, description: 'Fichier réservé à ce cercle (document d’une idée, ou pièce jointe de son salon, dont les messages vocaux) ; envoi par un membre, puis lecture par les membres actuels une fois l’idée enregistrée ou le message envoyé. Un ancien membre n’y a plus accès. Incompatible avec destinataireId.' }
                 destinataireId: { type: string, format: uuid, description: 'Pour un message privé : réserve ce fichier à cette conversation. Seul son auteur le lit avant envoi ; ensuite, son destinataire aussi.' }
                 vocal: { type: boolean, default: false, description: 'Un message vocal enregistré dans le navigateur (#157) : un son WebM, Ogg ou MP4, de 5 Mo au plus, de sorte `audio`. Sans ce champ, un WebM ou un MP4 est une vidéo.' }
       responses:

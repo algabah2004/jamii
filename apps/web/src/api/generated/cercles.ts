@@ -634,6 +634,7 @@ export interface components {
             /** @description Pour `texte`, `coup_de_main` et `decision`. */
             texte?: string;
             point?: components["schemas"]["PointDuJour"];
+            /** @description Envoyés avec le `cercleId` de ce cercle (réservés à ses membres, #157), ou sans destination. Ceux d'un autre cercle ou d'une conversation : 400 `piece_inconnue`. */
             pieces?: components["schemas"]["Pieces"];
             /**
              * Format: uuid

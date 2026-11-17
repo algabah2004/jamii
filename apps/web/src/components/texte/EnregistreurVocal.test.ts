@@ -6,21 +6,22 @@ import { creerRouteur } from '../../router'
 import { chargerSession } from '../../session'
 import App from '../../App.vue'
 import EnregistreurVocal from './EnregistreurVocal.vue'
+import { ID_DAKAR } from '../../mocks/cercles'
 
 enableAutoUnmount(afterEach)
 
 // jsdom ne sait pas envoyer un FormData par fetch (« Premature close ») : l'envoi est simulé ici, comme dans
 // cercles.test.ts. Le parcours réel (`vocal`, sorte `audio`) est vérifié par l'API (FichiersTest).
-const envois = vi.hoisted(() => [] as { nom: string; destinataire?: string; vocal: boolean }[])
+const envois = vi.hoisted(() => [] as { nom: string; destinataire?: string; cercle?: string; vocal: boolean }[])
 vi.mock('./fichiers', async (original) => {
   const vrai = await original<typeof import('./fichiers')>()
   return {
     ...vrai,
-    envoyerFichier: async (f: File, destinataire?: string, _cercle?: string, vocal = false) => {
-      envois.push({ nom: f.name, destinataire, vocal })
+    envoyerFichier: async (f: File, destinataire?: string, cercle?: string, vocal = false) => {
+      envois.push({ nom: f.name, destinataire, ...(cercle ? { cercle } : {}), vocal })
       const id = crypto.randomUUID()
       const piece = { id, nom: f.name, type: f.type, sorte: vocal ? 'audio' : 'document', taille: f.size, url: `/api/fichiers/${id}` } as const
-      ;(await import('../../mocks/fichiers')).enregistrerPieceFactice(piece, destinataire)
+      ;(await import('../../mocks/fichiers')).enregistrerPieceFactice(piece, destinataire, cercle)
       return { ok: true, piece }
     },
   }
@@ -155,5 +156,38 @@ describe('le message vocal (#157)', () => {
     await vi.waitFor(() => expect(page.get('[data-test="message-vocal"] audio').attributes('src')).toMatch(/^(blob:|\/api\/fichiers\/)/))
     expect(page.find('[data-test="jouer-vocal"]').exists()).toBe(true)
     expect(envois).toEqual([{ nom: 'message-vocal.webm', destinataire: 'c1a00000-0000-4000-8000-000000000002', vocal: true }])
+  })
+  /** Ouvre une page, enregistre plus d'une seconde et envoie : le vocal doit apparaître dans le fil, seul et lisible. */
+  async function envoyerUnVocal(adresse: string, zone: string, cercle?: string) {
+    vi.useRealTimers()
+    installer()
+    envois.length = 0
+    ;(i18n.global.locale as unknown as { value: string }).value = 'fr'
+    await chargerSession()
+    const routeur = creerRouteur(createMemoryHistory())
+    await routeur.push(adresse)
+    const page = mount(App, { global: { plugins: [i18n, routeur] } })
+    await vi.waitFor(() => expect(page.find(`${zone} [data-test="enregistrer-vocal"]`).exists()).toBe(true))
+    const avant = page.findAll(`${zone} [data-test="message-vocal"]`).length
+    await page.get(`${zone} [data-test="enregistrer-vocal"]`).trigger('click')
+    await vi.waitFor(() => expect(page.find('[data-test="envoyer-vocal"]').exists()).toBe(true))
+    const maintenant = Date.now()
+    vi.spyOn(Date, 'now').mockReturnValue(maintenant + 4_000)
+    await page.get('[data-test="envoyer-vocal"]').trigger('click')
+    await vi.waitFor(() => expect(page.findAll(`${zone} [data-test="message-vocal"]`)).toHaveLength(avant + 1))
+    // Dans un cercle, le fichier est réservé à ses membres ; dans une communauté, il est lisible comme le salon.
+    expect(envois).toEqual([{ nom: 'message-vocal.webm', destinataire: undefined, ...(cercle ? { cercle } : {}), vocal: true }])
+    return page
+  }
+
+  it("dans le salon d'un cercle : le vocal part comme un message", async () => {
+    const page = await envoyerUnVocal(`/cercles/${ID_DAKAR}?outil=salon`, '[data-test="salon-cercle"]', ID_DAKAR)
+    // Une demande d'aide (« Je bloque ») s'écrit : pas de micro dans ce mode.
+    await page.get('[data-test="mode-bloque"]').trigger('click')
+    expect(page.find('[data-test="salon-cercle"] [data-test="enregistrer-vocal"]').exists()).toBe(false)
+  })
+
+  it("dans le salon d'une communauté : le vocal part comme un message", async () => {
+    await envoyerUnVocal('/communautes/flutter?salon=general', '[data-test="salons"]')
   })
 })

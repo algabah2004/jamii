@@ -867,7 +867,9 @@ components:
         type: { type: string, enum: [texte, point, coup_de_main, decision] }
         texte: { type: string, minLength: 1, maxLength: 2000, description: 'Pour `texte`, `coup_de_main` et `decision`.' }
         point: { $ref: '#/components/schemas/PointDuJour' }
-        pieces: { $ref: './fichiers.yaml#/components/schemas/Pieces' }
+        pieces:
+          $ref: './fichiers.yaml#/components/schemas/Pieces'
+          description: 'Envoyés avec le `cercleId` de ce cercle (réservés à ses membres, #157), ou sans destination. Ceux d''un autre cercle ou d''une conversation : 400 `piece_inconnue`.'
         reponseA: { type: string, format: uuid, description: 'Répondre à un message du salon (pas un événement).' }
 
     AppelCercle:

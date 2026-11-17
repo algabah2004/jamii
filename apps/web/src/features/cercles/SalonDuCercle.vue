@@ -7,10 +7,11 @@ import { JAvatar } from '../../design-system'
 import IconeCercle, { type NomIcone } from './IconeCercle.vue'
 import BarreReactions from '../../components/texte/BarreReactions.vue'
 import Composeur from '../../components/texte/Composeur.vue'
+import EnregistreurVocal from '../../components/texte/EnregistreurVocal.vue'
 import PastillesReactions from '../../components/texte/PastillesReactions.vue'
 import PiecesJointes from '../../components/texte/PiecesJointes.vue'
 import TexteRiche from '../../components/texte/TexteRiche.vue'
-import type { PieceJointe } from '../../components/texte/fichiers'
+import { envoyerFichier, type PieceJointe } from '../../components/texte/fichiers'
 import { useSession } from '../../session'
 import { ilYa } from '../vitrine/vitrine'
 import type { Avancement, Cercle } from './cercles'
@@ -191,6 +192,38 @@ async function soumettre() {
     bloque.value = false
     reponse.value = null
     composeur.value?.rafraichir()
+    allerEnBas()
+  } catch {
+    erreur.value = t('cercles.salon.erreurs.envoi')
+  } finally {
+    envoi.value = false
+  }
+}
+
+// ---------------------------------------------------------------- un message vocal (#157)
+// Comme dans une discussion privée : le son part seul, en message, sans toucher au texte en cours d'écriture. Comme
+// les images du salon, c'est un fichier du cercle : seuls ses membres actuels peuvent le lire.
+
+const vocalEnCours = ref(false)
+async function envoyerVocal(fichier: File) {
+  if (envoi.value) return
+  const cercleId = props.cercle.id
+  envoi.value = true
+  erreur.value = null
+  try {
+    const f = await envoyerFichier(fichier, undefined, cercleId, true)
+    if (!f.ok) {
+      erreur.value = t(`vocal.erreurs.${f.code}`)
+      return
+    }
+    const r = await envoyer(cercleId, { type: 'texte', texte: '', pieces: [f.piece.id], ...(reponse.value ? { reponseA: reponse.value.id } : {}) })
+    if (cercleId !== props.cercle.id) return
+    if (!r.ok) {
+      erreur.value = t(r.statut === 429 ? 'cercles.salon.erreurs.trop' : 'cercles.salon.erreurs.envoi')
+      return
+    }
+    messages.value = fusionner(messages.value, [r.message])
+    reponse.value = null
     allerEnBas()
   } catch {
     erreur.value = t('cercles.salon.erreurs.envoi')
@@ -572,12 +605,14 @@ const contexte = computed(() => {
         v-model="texte"
         v-model:pieces="pieces"
         id-zone="salon-texte"
+        :cercle-id="cercle.id"
         :placeholder="t(bloque ? 'cercles.salon.bloquePlaceholder' : 'cercles.salon.placeholder')"
         :libelle-envoyer="edition ? t('reseau.actions.enregistrer') : t(bloque ? 'cercles.salon.envoyerBloque' : 'cercles.salon.envoyer')"
         :envoi="envoi"
         :erreur="erreur"
         :accent="bloque ? 'alerte' : 'normal'"
         :max="LIMITES_SALON.texte"
+        :masquer-envoi="vocalEnCours && !edition && !bloque"
         @envoyer="soumettre"
       >
         <template v-if="!edition" #outils>
@@ -585,6 +620,10 @@ const contexte = computed(() => {
           <button type="button" class="bascule" :aria-pressed="bloque" data-test="mode-bloque" @click="basculerBloque">
             <IconeCercle nom="priorite" :taille="14" />{{ t('cercles.salon.modeBloque') }}
           </button>
+        </template>
+        <!-- Pas de vocal pour une demande d'aide (« Je bloque ») : elle doit pouvoir se lire d'un coup d'œil. -->
+        <template v-if="!edition && !bloque" #action>
+          <EnregistreurVocal :desactive="envoi" @envoyer="envoyerVocal" @en-cours="(actif) => (vocalEnCours = actif)" @erreur="(code) => (erreur = t(`vocal.erreurs.${code}`))" />
         </template>
       </Composeur>
     </form>
