@@ -110,7 +110,7 @@ On les ouvre à la main dans leur module.
 
 L'ordre suit le parcours d'un visiteur : d'abord ce qui est partout, puis l'arrivée, puis chaque espace.
 
-### Module 0 — Le socle commun ⬜
+### Module 0 — Le socle commun ✅
 Ce que tous les écrans partagent. Corrigé ici une fois, pour ne pas l'être dix fois.
 
 **Fichiers :**
@@ -129,7 +129,7 @@ Ce que tous les écrans partagent. Corrigé ici une fois, pour ne pas l'être di
 - liste des paliers dans `tokens.css` ;
 - script de mesure rangé.
 
-### Module 1 — L'arrivée ⬜
+### Module 1 — L'arrivée ✅
 **Écrans :**
 - `/` : l'accueil et ses sections (`pages/accueil/*`) ;
 - `/connexion` et `/connexion/email` ;
@@ -137,7 +137,7 @@ Ce que tous les écrans partagent. Corrigé ici une fois, pour ne pas l'être di
 
 **Attention :** c'est le premier écran du jury et des visiteurs. La scène et les illustrations doivent rester légères sur un téléphone d'entrée de gamme.
 
-### Module 2 — Le profil ⬜
+### Module 2 — Le profil ✅
 **Écrans :**
 - `/profil` et `/p/:id` (`FicheProfil`, `MonProfilPage`, `ProfilPublicPage`) ;
 - la fenêtre « Partager ma carte » ;
@@ -148,7 +148,7 @@ Ce que tous les écrans partagent. Corrigé ici une fois, pour ne pas l'être di
 - l'anneau de preuves à 320 px ;
 - la carte en petit dans sa fenêtre.
 
-### Module 3 — Les communautés ⬜
+### Module 3 — Les communautés ✅
 **Écrans :**
 - `/communautes` ;
 - `/communautes/nouvelle` ;
@@ -161,7 +161,7 @@ Ce que tous les écrans partagent. Corrigé ici une fois, pour ne pas l'être di
 - l'espace a trois colonnes sur ordinateur, et il faut décider ce que devient chacune sur téléphone ;
 - un salon avec le composeur et le clavier ouvert.
 
-### Module 4 — Les cercles ⬜
+### Module 4 — Les cercles ✅
 **Écrans :**
 - `/cercles` ;
 - `/cercles/nouveau` ;
@@ -172,7 +172,7 @@ Ce que tous les écrans partagent. Corrigé ici une fois, pour ne pas l'être di
 **À regarder :**
 - le tableau des tâches (des colonnes sur ordinateur) et le calendrier sur 320 px : ce sont les écrans les plus denses de l'application.
 
-### Module 5 — Messages et réseau ⬜
+### Module 5 — Messages et réseau ✅
 **Écrans :**
 - `/messages` et `/messages/:id` ;
 - `/notifications` et `/contacts` ;
@@ -184,14 +184,14 @@ Ce que tous les écrans partagent. Corrigé ici une fois, pour ne pas l'être di
 - liste ou conversation sur téléphone : on en affiche une seule à la fois, et le retour est évident ;
 - le message vocal, les réactions au toucher, les pièces jointes.
 
-### Module 6 — Les demandes (Ayo) ⬜
+### Module 6 — Les demandes (Ayo) ✅
 **Écrans :**
 - `/demandes` ;
 - `/demandes/:id` : la conversation avec Ayo, la publication de la demande, la confirmation de suppression.
 
 **À regarder :** c'est l'écran du **commerçant non technique**, souvent sur téléphone. Il doit pouvoir tout faire d'une main.
 
-### Module 7 — Les missions ⬜
+### Module 7 — Les missions ✅
 **Écrans :**
 - `/missions` et `/missions/nouvelle` ;
 - `/missions/:id` : le suivi, les jalons, le devis proposé ou à envoyer, le tiroir des échanges, l'avis, le désaccord, l'annulation, la livraison d'un jalon.
@@ -200,7 +200,7 @@ Ce que tous les écrans partagent. Corrigé ici une fois, pour ne pas l'être di
 - les montants et les dates sur 320 px ;
 - le tiroir des échanges au-dessus du clavier.
 
-### Module 8 — Les hackathons ⬜
+### Module 8 — Les hackathons ✅
 **Écrans :**
 - `/hackathons` et `/hackathons/nouveau` ;
 - `/hackathons/:id` et ses onglets : les équipes, la galerie, la discussion, le rendu d'une équipe, le tri des candidatures, le jury, la notation, les résultats et leur confirmation, le pilotage ;
@@ -210,7 +210,7 @@ Ce que tous les écrans partagent. Corrigé ici une fois, pour ne pas l'être di
 - la grille de notation du jury sur téléphone ;
 - les tableaux de candidatures et de réponses, qui doivent devenir des cartes et non défiler en largeur.
 
-### Module 9 — Vitrine et Espace Systalink ⬜
+### Module 9 — Vitrine et Espace Systalink ✅
 **Écrans :**
 - `/vitrine` (`CarteProjet`) ;
 - `/systalink` : le tableau de bord, les clients suivis, la liste des pays.
@@ -227,6 +227,14 @@ Ce que tous les écrans partagent. Corrigé ici une fois, pour ne pas l'être di
 **Sur un vrai téléphone Android d'entrée de gamme :** l'appareil d'un membre de l'équipe, sur `jamii.dev` après le déploiement.
 
 **Conclusion :** une capture de chaque écran à 360 px, réunies dans la PR.
+
+**Fait le 17/11 (mode factice) :**
+- ✅ audit de 19 routes × 6 largeurs (320, 360, 390, 768, 1024, 1440) : aucun élément rogné, aucune cible ni aucun champ trop petit ;
+- ✅ zoom à 200 % : couvert par les largeurs 720 et moins (un écran de 1440 px zoomé à 200 % se lit comme un écran de 720 px) ;
+- ✅ téléphone à l'horizontale (812 × 375) : sous 500 px de haut, l'en-tête n'est plus fixe, la messagerie prend tout l'écran et le composeur passe sur une ligne ;
+- ✅ thème clair et thème sombre vérifiés à 390 px ;
+- 🟡 clavier seul : les anneaux de focus des rangées qui défilent ne sont plus rognés (`outline-offset: -2px`), mais l'ordre du focus n'a pas été parcouru écran par écran ;
+- ⬜ vrai téléphone Android et captures à 360 px : à faire sur `jamii.dev` après le déploiement.
 
 ## 7. Ce que ce plan ne fait pas
 - **Pas de refonte visuelle.** On rend juste et confortable ce qui existe. Une idée de refonte devient une proposition à part.

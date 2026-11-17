@@ -358,7 +358,7 @@ textarea:focus-visible { outline: none; }
 /* Sur un petit écran : une seule ligne. Les outils défilent (fondu à droite), l'envoi reste à portée du pouce.
    Sur deux ou trois lignes, le composeur prenait 170 px d'un téléphone et le fil n'avait plus de place.
    Le choix d'émojis est placé par rapport au composeur, pas à la rangée : il n'est pas rogné. */
-@media (max-width: 720px) {
+@media (max-width: 720px), (max-height: 500px) and (orientation: landscape) {
   .outils { flex-wrap: wrap; }
   .outils__aide { display: none; }
   .outils__format {

@@ -138,6 +138,13 @@ main.main--pleine { max-width: none; padding-inline: var(--space-4); }
 .aller-au-contenu:focus { top: var(--space-2); }
 
 .entete { position: sticky; top: 0; z-index: 10; padding: var(--space-3) var(--space-4) 0; pointer-events: none; }
+/* Téléphone à l'horizontale : l'en-tête fixe prendrait un tiers de l'écran. Il défile avec la page. */
+@media (max-height: 500px) and (orientation: landscape) {
+  .entete { position: relative; }
+  /* La messagerie prend alors tout l'écran sous l'en-tête, qu'on a fait défiler : la conversation garde de la place. */
+  #app:has(.main--messagerie) { height: auto; }
+  main.main--messagerie { flex: none; height: 100dvh; padding-block: var(--space-2); }
+}
 /* La capsule de navigation : du verre, parce que le contenu défile dessous (couche d'interface). */
 .entete__interieur {
   pointer-events: auto;

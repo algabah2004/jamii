@@ -583,8 +583,10 @@ const annuler = () => (raisonValide.value ? agir(() => annulerHackathon(hackatho
 @media (max-width: 960px) { .onglets { top: 120px; } .evenement__banniere { grid-template-columns: minmax(0, 1fr) 200px; gap: 28px; } .evenement__affiche { min-height: 240px; padding: 20px; } .evenement__parcours { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 680px) { .evenement__banniere { grid-template-columns: minmax(0, 1fr); padding: 28px 24px; } .evenement__affiche { display: none; } .onglets { top: 76px; } }
 /* Téléphone : la rangée d'onglets défile, un fondu à droite le signale. */
-@media (max-width: 720px) {
+@media (max-width: 960px) {
   .onglets { padding-inline-end: var(--space-6); -webkit-mask-image: linear-gradient(to right, #000 calc(100% - var(--space-8)), transparent); mask-image: linear-gradient(to right, #000 calc(100% - var(--space-8)), transparent); }
   .onglet:focus-visible { outline-offset: -2px; }
 }
+/* À l'horizontale, l'en-tête ne reste plus en haut : les onglets prennent sa place. */
+@media (max-height: 500px) and (orientation: landscape) { .onglets { top: var(--space-2); } }
 </style>
