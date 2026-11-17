@@ -168,6 +168,13 @@ main.main--messagerie { display: flex; flex-direction: column; min-height: 0; pa
 .acces-messages.icone-entete.router-link-active { background: var(--proof-soft); color: var(--proof-ink); border-color: color-mix(in srgb, var(--proof) 40%, var(--line)); }
 @media (max-width: 480px) { .acces-messages__texte { display: none; } .acces-messages.icone-entete { width: 40px; padding: 0; justify-content: center; } }
 main.main--pleine { max-width: none; padding-inline: var(--space-4); }
+/* Téléphone : une conversation ou un salon ouvert prend tout l'écran (components/pleinEcran.ts). La discussion a sa
+   flèche retour ; l'en-tête et le pied du site reviennent dès qu'on la quitte. */
+@media (max-width: 720px) {
+  html.discussion-plein-ecran .entete, html.discussion-plein-ecran .pied { display: none; }
+  html.discussion-plein-ecran #app { height: 100dvh; min-height: 0; }
+  html.discussion-plein-ecran main#contenu { flex: 1; height: auto; min-height: 0; padding: 0; }
+}
 
 .aller-au-contenu { position: absolute; left: var(--space-4); top: -4rem; z-index: 20; padding: var(--space-2) var(--space-4); background: var(--action); color: var(--on-action); border-radius: var(--radius-md); font-weight: 600; }
 .aller-au-contenu:focus { top: var(--space-2); }

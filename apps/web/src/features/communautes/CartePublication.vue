@@ -245,5 +245,11 @@ async function copierLien() {
 .erreur { margin: 0; color: var(--danger); font-weight: 600; }
 :root[data-theme='sombre'] .statut--resolue, :root[data-theme='sombre'] .pastille--acceptee { color: #57d68d; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme='clair']) .statut--resolue, :root:not([data-theme='clair']) .pastille--acceptee { color: #57d68d; } }
-@media (max-width: 640px) { .publication { padding: var(--space-4); } }
+/* Téléphone : l'avatar reste à côté du nom, mais le texte reprend toute la largeur au lieu de rester décalé sous lui. */
+@media (max-width: 640px) {
+  .publication { grid-template-columns: minmax(0, 1fr); padding: var(--space-4); }
+  .publication__avatar { grid-area: 1 / 1; position: relative; z-index: 1; align-self: start; justify-self: start; }
+  .publication__corps { grid-area: 1 / 1; }
+  .tete { min-height: 44px; align-content: center; padding-inline-start: calc(44px + var(--space-3)); }
+}
 </style>

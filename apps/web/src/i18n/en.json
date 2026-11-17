@@ -837,6 +837,7 @@
       "fil": "Community feed"
     },
     "salons": {
+      "retour": "Back to the community",
       "titre": "Live channels",
       "liste": "The community's channels",
       "appel": "Join the call",
