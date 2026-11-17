@@ -75,7 +75,7 @@ const score = (n: number) => new Intl.NumberFormat(locale.value, { minimumFracti
 </template>
 
 <style scoped>
-.resultats { display: grid; gap: var(--space-4); padding: var(--space-8); }
+.resultats { display: grid; gap: var(--space-4); padding: clamp(var(--space-4), 6vw, var(--space-8)); }
 @media (max-width: 600px) { .resultats { padding: var(--space-4); } }
 .resultats h2 { margin: 0; font-size: 1.25rem; }
 .resultats h3 { margin: var(--space-2) 0 0; font-size: 1rem; }

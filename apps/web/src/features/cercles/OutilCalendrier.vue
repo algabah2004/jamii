@@ -189,9 +189,9 @@ h3 { margin: 0 0 var(--space-3); font-size: var(--type-body-size); }
 .planning__ligne--en_cours .planning__numero { background: var(--ink); border-color: var(--ink); color: var(--surface); }
 .planning__ligne--en_cours .planning__statut { color: var(--ink); }
 .planning__ligne--livre { opacity: 0.7; }
-@media (max-width: 1000px) { .deux { grid-template-columns: 1fr; } }
+@media (max-width: 1000px) { .deux { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 720px) {
   .jours { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .ajout { grid-template-columns: 1fr; }
+  .ajout { grid-template-columns: minmax(0, 1fr); }
 }
 </style>

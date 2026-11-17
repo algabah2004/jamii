@@ -291,7 +291,11 @@ const faites = computed(() => etapes.value.filter((e) => e.fait).length)
 @media (max-width: 860px) {
   /* Téléphone : la communauté, puis une rangée de liens qui défile. Le reste est sur la page. */
   .barre { grid-template-rows: auto auto; }
-  .barre__corps { display: flex; align-items: center; gap: var(--space-1); overflow-x: auto; overflow-y: hidden; padding: var(--space-2); scrollbar-width: none; }
+  .barre__corps { display: flex; align-items: center; gap: var(--space-1); overflow-x: auto; overflow-y: hidden; padding: var(--space-2) var(--space-6) var(--space-2) var(--space-2); scrollbar-width: none;
+    /* Un fondu sur le bord droit : il y a d'autres liens plus loin (docs/responsive.md, point 2). */
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - var(--space-8)), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - var(--space-8)), transparent); }
+  .barre__corps :focus-visible { outline-offset: -2px; }
   .barre__section, .debut, .barre__moi { display: none; }
   .groupe { display: flex; gap: var(--space-1); }
   .groupe:last-of-type { display: none; }

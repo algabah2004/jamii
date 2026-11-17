@@ -12,6 +12,7 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -75,10 +76,14 @@ class DonneesDemo implements ApplicationRunner {
 
 	private final TransactionTemplate transaction;
 
-	DonneesDemo(JdbcClient base, Projets projets, TransactionTemplate transaction) {
+	/** Le login GitHub d'un vrai compte à placer dans la démo ({@link DemoMonCompte}) ; vide : aucun. */
+	private final String compte;
+
+	DonneesDemo(JdbcClient base, Projets projets, TransactionTemplate transaction, @Value("${jamii.demo.compte:}") String compte) {
 		this.base = base;
 		this.projets = projets;
 		this.transaction = transaction;
+		this.compte = compte;
 	}
 
 	@Override
@@ -112,6 +117,8 @@ class DonneesDemo implements ApplicationRunner {
 		// Après les communautés : leurs personnes existent alors toutes. Un profil publié pour chacune.
 		transaction.executeWithoutResult(statut -> new DemoProfils(base, maintenant).charger());
 		transaction.executeWithoutResult(statut -> new DemoSalonsCercles(base, maintenant).charger());
+		// En dernier : le vrai compte rejoint des personnes, des communautés et un hackathon qui existent déjà.
+		transaction.executeWithoutResult(statut -> new DemoMonCompte(base, projets, maintenant, compte).charger());
 		journal.info(Boolean.TRUE.equals(charge) ? "Données de démo chargées (profil demo)" : "Données de démo déjà présentes");
 		return Boolean.TRUE.equals(charge);
 	}

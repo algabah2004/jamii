@@ -89,7 +89,7 @@ async function decider(inscription: Inscription, statut: (typeof DECISIONS)[numb
 </template>
 
 <style scoped>
-.tri { display: grid; gap: var(--space-4); padding: var(--space-8); }
+.tri { display: grid; gap: var(--space-4); padding: clamp(var(--space-4), 6vw, var(--space-8)); }
 .tri h2 { margin: 0; font-size: 1.25rem; }
 .texte-discret, .statut { margin: 0; }
 .statut { font-weight: 600; }

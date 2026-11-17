@@ -30,6 +30,50 @@ describe('Tableau de bord Systalink', () => {
     expect(page.find('[data-test="datacloud"]').exists()).toBe(false)
   })
 
+  it('laisse un juré de la CADEV entrer son code, puis montre le tableau de bord', async () => {
+    let jure = false
+    const essais: string[] = []
+    serveur.use(
+      http.get('/api/systalink/tableau-de-bord', () =>
+        jure
+          ? HttpResponse.json(tableauDemo)
+          : HttpResponse.json({ code: 'interdit' }, { status: 403, headers: { 'Content-Type': 'application/problem+json' } }),
+      ),
+      http.get('/api/systalink/acces', () => HttpResponse.json({ acces: jure, codeJury: true })),
+      http.post('/api/systalink/code-jury', async ({ request }) => {
+        const { code } = (await request.json()) as { code: string }
+        essais.push(code)
+        if (code !== 'bon-code-jury') {
+          return HttpResponse.json({ code: 'validation' }, { status: 400, headers: { 'Content-Type': 'application/problem+json' } })
+        }
+        jure = true
+        return new HttpResponse(null, { status: 204 })
+      }),
+    )
+    const { page } = await monter()
+    await vi.waitFor(() => expect(page.find('[data-test="code-jury"]').exists()).toBe(true))
+
+    await page.get('[data-test="code-jury"] input').setValue('faux')
+    await page.get('[data-test="code-jury"]').trigger('submit')
+    await vi.waitFor(() => expect(page.text()).toContain('Ce code n’est pas le bon'))
+
+    await page.get('[data-test="code-jury"] input').setValue('bon-code-jury')
+    await page.get('[data-test="code-jury"]').trigger('submit')
+    await vi.waitFor(() => expect(page.find('[data-test="datacloud"]').exists()).toBe(true))
+    expect(essais).toEqual(['faux', 'bon-code-jury'])
+  })
+
+  it('ne propose pas de code quand aucun code jury n’est en service', async () => {
+    serveur.use(
+      http.get('/api/systalink/tableau-de-bord', () =>
+        HttpResponse.json({ code: 'interdit' }, { status: 403, headers: { 'Content-Type': 'application/problem+json' } }),
+      ),
+    )
+    const { page } = await monter()
+    expect(page.find('[data-test="reserve"]').exists()).toBe(true)
+    expect(page.find('[data-test="code-jury"]').exists()).toBe(false)
+  })
+
   it('met en avant les projets sur DataCloud et leur part parmi les projets en ligne', async () => {
     const { page } = await monter()
     const bloc = page.get('[data-test="datacloud"]').text()

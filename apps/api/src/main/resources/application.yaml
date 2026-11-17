@@ -73,6 +73,10 @@ server:
         same-site: lax
 
 jamii:
+  demo:
+    # Profil demo seulement : le login GitHub d'un vrai compte à placer dans la démo (son cercle, ses communautés…).
+    # Le compte doit s'être connecté une fois. Par défaut, celui de Fadel ; JAMII_DEMO_COMPTE= (vide) : aucun.
+    compte: ${JAMII_DEMO_COMPTE:rev22rse22}
   # Les appels vocaux et vidéo des salons (#155) : un serveur Jitsi. Chaque salon y a sa salle.
   appels:
     url: ${APPELS_URL:https://meet.jit.si}
@@ -98,6 +102,8 @@ jamii:
   clients-systalink:
     # Logins GitHub ou e-mails, séparés par des virgules, qui ont accès aux clients suivis (en plus des admins).
     acces: ${SYSTALINK_ACCES:}
+    # Code donné au jury de la CADEV avec la soumission (8 caractères au moins). Vide : pas d'accès par code.
+    code-jury: ${SYSTALINK_CODE_JURY:}
     # Webhook signé vers l'outil de suivi de Systalink. Vide : rien n'est envoyé.
     webhook-url: ${SYSTALINK_WEBHOOK_URL:}
     webhook-secret: ${SYSTALINK_WEBHOOK_SECRET:}

@@ -8,7 +8,7 @@ import { i18n } from '../../i18n'
 import { creerRouteur } from '../../router'
 import { chargerSession } from '../../session'
 import App from '../../App.vue'
-import { competencesPhares, hoteLisible, lienProfil, lireCompetences, pourcentage, urlDrapeau } from './profils'
+import { competencesPhares, couleurLangage, hoteLisible, ilYa, lienProfil, lireCompetences, pourcentage, urlDrapeau } from './profils'
 
 async function ouvrir(chemin = '/profil') {
   ;(i18n.global.locale as unknown as { value: string }).value = 'fr'
@@ -37,7 +37,10 @@ describe('Mon profil', () => {
     expect(page.get('[data-test="langages"]').text()).toMatch(/75\s?%/)
     expect(page.get('[data-test="depots"]').text()).toContain('marche-facile')
     expect(page.get('[data-test="visibilite"]').text()).toContain('privé')
-    expect(page.find('[data-test="projets-vide"]').exists()).toBe(true)
+    // Pas de section vide : la bande « à remplir » propose les blocs, et les preuves à gagner s'affichent pour la personne.
+    expect(page.find('[data-test="projets"]').exists()).toBe(false)
+    expect(page.find('[data-test="a-remplir"]').exists()).toBe(true)
+    expect(page.findAll('[data-test="fiabilite-vide"] li')).toHaveLength(4)
   })
 
   it('sans GitHub relié, propose « Relier mon GitHub », puis dit quand c’est fait ou pourquoi ça a échoué', async () => {
@@ -84,16 +87,50 @@ describe('Mon profil', () => {
     await vi.waitFor(() => expect(page.get('[data-test="visibilite"]').text()).toContain('privé'))
   })
 
-  it('modifier ce que je déclare : la ville et les compétences s’ajoutent au profil', async () => {
+  it('modifier ce que je déclare, bloc par bloc : la ville, puis les compétences, s’ajoutent au profil', async () => {
     const page = await profilPret()
-    await page.get('[data-test="modifier"]').trigger('click')
-    const formulaire = page.get('[data-test="formulaire"]')
-    await formulaire.findAll('input')[0]!.setValue('Thiès')
-    await formulaire.findAll('input').at(-1)!.setValue('UX design, Mobile Money')
-    await formulaire.trigger('submit')
+    await page.get('[data-test="crayon-lieu"]').trigger('click')
+    const lieu = page.get('[data-test="formulaire"]')
+    expect(lieu.text()).toContain('Tu modifies : Lieu et disponibilité')
+    await lieu.findAll('input')[0]!.setValue('Thiès')
+    await lieu.trigger('submit')
     await vi.waitFor(() => expect(page.find('[data-test="message"]').text()).toBe('Ton profil est enregistré.'))
     expect(page.text()).toContain('Thiès')
-    expect(page.get('[data-test="competences"]').text()).toContain('Mobile Money')
+    expect(page.find('[data-test="formulaire"]').exists()).toBe(false)
+
+    await page.get('[data-test="crayon-competences"]').trigger('click')
+    const competences = page.get('[data-test="formulaire"]')
+    await competences.findAll('input').at(-1)!.setValue('UX design, Mobile Money')
+    await competences.trigger('submit')
+    await vi.waitFor(() => expect(page.get('[data-test="competences"]').text()).toContain('Mobile Money'))
+  })
+
+  it('un bloc n’envoie que ses propres champs : les autres blocs ne bougent pas', async () => {
+    const page = await profilPret()
+    let corps: Record<string, unknown> = {}
+    serveur.use(
+      http.patch('/api/me/profil', async ({ request }) => {
+        corps = (await request.json()) as Record<string, unknown>
+        return probleme(409, 'modification_concurrente')
+      }),
+    )
+    await page.get('[data-test="crayon-liens"]').trigger('click')
+    await page.get('[data-test="formulaire"]').trigger('submit')
+    await vi.waitFor(() => expect(Object.keys(corps).length).toBeGreaterThan(0))
+    expect(Object.keys(corps).sort()).toEqual(['linkedin', 'siteWeb', 'version'])
+  })
+
+  it('un seul bloc est ouvert à la fois, et « Annuler » le referme sans rien enregistrer', async () => {
+    const page = await profilPret()
+    // Sans langue, pas de section « Langues » : c'est la bande « à remplir » qui ouvre le bloc.
+    await page.findAll('[data-test="a-remplir"] button').find((b) => b.text().includes('langues'))!.trigger('click')
+    expect(page.get('[data-test="formulaire"]').text()).toContain('Tu modifies : Langues')
+    await page.get('[data-test="crayon-liens"]').trigger('click')
+    expect(page.findAll('[data-test="formulaire"]')).toHaveLength(1)
+    expect(page.get('[data-test="formulaire"]').text()).toContain('Tu modifies : Liens')
+    await page.get('[data-test="annuler"]').trigger('click')
+    expect(page.find('[data-test="formulaire"]').exists()).toBe(false)
+    expect(page.find('[data-test="message"]').exists()).toBe(false)
   })
 
   it('si le profil a changé ailleurs (409), recharge la dernière version et le dit', async () => {
@@ -108,9 +145,30 @@ describe('Mon profil', () => {
   it('une valeur refusée par l’API est signalée sur son champ', async () => {
     const page = await profilPret()
     serveur.use(http.patch('/api/me/profil', () => probleme(400, 'validation', [{ champ: 'ville', code: 'trop_long' }])))
-    await page.get('[data-test="modifier"]').trigger('click')
+    await page.get('[data-test="crayon-lieu"]').trigger('click')
     await page.get('[data-test="formulaire"]').trigger('submit')
     await vi.waitFor(() => expect(page.find('[aria-invalid="true"]').exists()).toBe(true))
+  })
+
+  it('l’anneau dit quelles preuves existent, sans jamais donner de note', async () => {
+    serveur.use(
+      http.get('/api/me/profil', () =>
+        HttpResponse.json({
+          utilisateurId: 'x', nom: 'Aïcha Kouassi', disponibilite: 'disponible', langages: [{ nom: 'Dart', part: 1 }],
+          langues: [], competencesPhares: [], realisations: [],
+          competences: [], depotsGithub: [], misAJourLe: '2026-11-11T10:00:00Z', publie: true, afficherResumeIa: true, version: 2,
+          generation: { statut: 'terminee' }, projets: [],
+          fiabilite: [{ type: 'tache_livree_a_temps', nombre: 11, sur: 12, contestees: 0 }],
+        }),
+      ),
+    )
+    const page = await ouvrir()
+    const anneau = page.get('.anneau__svg')
+    expect(anneau.attributes('aria-label')).toContain('tâches livrées à la date prévue')
+    expect(anneau.attributes('aria-label')).not.toContain('réponses acceptées')
+    expect(page.text()).toContain('Trait plein : vérifié par Jamii')
+    expect(page.text()).toContain('Pointillé : déclaré par la personne')
+    expect(page.text()).not.toMatch(/\d+\s?\/\s?100/)
   })
 
   it('montre les projets en ligne avec leur badge, et chaque point de fiabilité sans note globale', async () => {
@@ -182,6 +240,35 @@ describe('profil professionnel (#159)', () => {
     expect(page.get('[data-test="phares"]').text()).toContain('spring-boot')
   })
 
+  it('un profil sans preuve ne montre aucun message « vide » à un visiteur', async () => {
+    serveur.use(http.get('/api/profils/:id', () => HttpResponse.json({ ...pro, fiabilite: [], projets: [], realisations: [], langues: [], depotsGithub: [] })))
+    const page = await ouvrir('/p/a1b2')
+    await vi.waitFor(() => expect(page.find('[data-test="identite"]').exists()).toBe(true))
+    expect(page.find('[data-test="fiabilite"]').exists()).toBe(false)
+    expect(page.find('[data-test="fiabilite-vide"]').exists()).toBe(false)
+    expect(page.text()).not.toMatch(/Pas encore de preuve|Sans preuve|Elles s.ajoutent|Ajoute /)
+  })
+
+  it('une compétence déclarée n’affiche pas de mention « sans preuve »', async () => {
+    serveur.use(
+      http.get('/api/profils/:id', () =>
+        HttpResponse.json({ ...pro, competences: [{ competence: 'vue', source: 'declaree' }], competencesPhares: [] }),
+      ),
+    )
+    const page = await ouvrir('/p/a1b2')
+    await vi.waitFor(() => expect(page.find('[data-test="competences"]').exists()).toBe(true))
+    expect(page.get('[data-test="competences"]').text()).toContain('Ajoutée par la personne')
+    expect(page.text()).not.toContain('Sans preuve')
+  })
+
+  it('un visiteur ne voit aucun crayon ni aucune barre de modification', async () => {
+    serveur.use(http.get('/api/profils/:id', () => HttpResponse.json(pro)))
+    const page = await ouvrir('/p/a1b2')
+    await vi.waitFor(() => expect(page.find('[data-test="identite"]').exists()).toBe(true))
+    expect(page.find('.crayon').exists()).toBe(false)
+    expect(page.find('[data-test="barre-proprio"]').exists()).toBe(false)
+  })
+
   it('un profil privé ou inconnu le dit, sans rien révéler', async () => {
     serveur.use(http.get('/api/profils/:id', () => probleme(404, 'introuvable')))
     const page = await ouvrir('/p/inconnu')
@@ -214,6 +301,41 @@ describe('profil professionnel (#159)', () => {
     expect(page.find('[data-test="actions-profil"]').exists()).toBe(false)
   })
 
+  it('sur sa propre page publique, un crayon mène à « Mon profil » au lieu de ne rien faire', async () => {
+    serveur.use(http.get('/api/profils/:id', () => HttpResponse.json({ ...pro, utilisateurId: '6f1c2a4e-8b7d-4c3e-9a10-2b5d7e9f0a11' })))
+    const page = await ouvrir('/p/6f1c2a4e-8b7d-4c3e-9a10-2b5d7e9f0a11')
+    await vi.waitFor(() => expect(page.find('[data-test="crayon-lieu"]').exists()).toBe(true))
+    const routeur = page.vm.$router
+    await page.get('[data-test="crayon-lieu"]').trigger('click')
+    await vi.waitFor(() => expect(routeur.currentRoute.value.path).toBe('/profil'))
+  })
+
+  it('montre « Infos » avec le résumé de l’IA, l’activité GitHub et les recommandations des coéquipiers', async () => {
+    serveur.use(
+      http.get('/api/profils/:id', () =>
+        HttpResponse.json({
+          ...pro, bio: 'Je construis des API.', resumeIa: 'Développeur Java, surtout des API de paiement.',
+          depotsGithub: [{ nom: 'caisse', url: 'https://github.com/kofi/caisse', etoiles: 12, langage: 'Java', misAJourLe: '2026-11-01T10:00:00Z' }],
+          langages: [{ nom: 'Java', part: 1 }],
+          fiabilite: [{ type: 'avis_coequipier', nombre: 1, contestees: 0 }],
+        }),
+      ),
+      http.get('/api/profils/:id/preuves', () =>
+        HttpResponse.json({
+          elements: [{ id: 'a1', type: 'avis_coequipier', source: { module: 'projets', id: 'p1', titre: 'Marché Facile' }, detail: 'Toujours à l’heure.', auteur: { id: 'c3', nom: 'Awa Diop' }, contestee: false, creeLe: '2026-11-10T10:00:00Z' }],
+          curseurSuivant: null,
+        }),
+      ),
+    )
+    const page = await ouvrir('/p/b2c3')
+    await vi.waitFor(() => expect(page.find('[data-test="avis"]').exists()).toBe(true))
+    expect(page.get('[data-test="liens"]').text()).toContain('★ 12 étoiles')
+    expect(page.get('[data-test="a-propos"]').text()).toContain('Résumé proposé par l')
+    expect(page.get('[data-test="avis"]').text()).toContain('Toujours à l’heure.')
+    expect(page.get('[data-test="depots"]').text()).toContain('Kofi a mis à jour ce dépôt')
+    expect(page.get('[data-test="avis"]').text()).toContain('Ont travaillé ensemble sur Marché Facile')
+  })
+
   it('le lien public et le drapeau se construisent sans erreur', () => {
     expect(lienProfil('abc', 'https://jamii.exemple')).toBe('https://jamii.exemple/p/abc')
     expect(urlDrapeau('SN')).toContain('sn.svg')
@@ -229,6 +351,17 @@ describe('outils', () => {
   })
   it('les compétences saisies : sans vides ni doublons', () => {
     expect(lireCompetences(' Flutter, ,firebase,Flutter ')).toEqual(['Flutter', 'firebase'])
+  })
+  it('chaque langage a sa couleur, stable même hors de la table', () => {
+    expect(couleurLangage('TypeScript')).toBe('#3178C6')
+    expect(couleurLangage('Zig')).toBe(couleurLangage('zig'))
+    expect(couleurLangage(null)).toMatch(/^hsl\(/)
+  })
+  it('la mise à jour d’un dépôt se dit en temps relatif', () => {
+    const maintenant = Date.parse('2026-11-16T12:00:00Z')
+    expect(ilYa('2026-11-13T12:00:00Z', 'fr', maintenant)).toBe('il y a 3 jours')
+    expect(ilYa('2026-09-01T12:00:00Z', 'en', maintenant)).toBe('3 months ago')
+    expect(ilYa(null, 'fr', maintenant)).toBeNull()
   })
 })
 

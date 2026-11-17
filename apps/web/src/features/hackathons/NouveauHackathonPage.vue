@@ -244,7 +244,7 @@ legend { font-size: var(--type-label-size); font-weight: var(--type-label-weight
 .date input, .poids input, .poids select { min-height: 44px; padding: 0 var(--space-3); border: 1px solid var(--line-strong); border-radius: var(--radius-md); background: var(--surface); color: inherit; font: inherit; }
 .ligne { display: grid; gap: var(--space-3); grid-template-columns: minmax(0, 1fr) 8rem auto; align-items: end; }
 .ligne--prix { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-@media (max-width: 640px) { .ligne { grid-template-columns: 1fr; } .taille { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .ligne { grid-template-columns: minmax(0, 1fr); } .taille { grid-template-columns: minmax(0, 1fr); } }
 .lien { justify-self: start; background: none; border: 0; padding: var(--space-2) 0; color: var(--ink); font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer; }
 .lien:disabled { opacity: 0.5; cursor: default; }
 .lien:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }

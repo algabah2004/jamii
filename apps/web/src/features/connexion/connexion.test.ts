@@ -71,31 +71,12 @@ describe('se connecter', () => {
     expect(page.find('[data-test="lien-connexion"]').exists()).toBe(false)
   })
 
-  it("demande un lien par e-mail avec le chemin de retour et le jeton CSRF, puis dit d'aller voir sa boîte", async () => {
+  it("ne propose plus le lien par e-mail : GitHub et Google seulement", async () => {
     nonConnecte()
-    document.cookie = 'XSRF-TOKEN=jeton-de-test'
-    let recu: { corps: unknown; csrf: string | null } | null = null
-    serveur.use(
-      http.post('/api/auth/lien-email', async ({ request }) => {
-        recu = { corps: await request.json(), csrf: request.headers.get('X-XSRF-TOKEN') }
-        return new HttpResponse(null, { status: 202 })
-      }),
-    )
-    const { page } = await ouvrir('/connexion?retour=/demandes/nouvelle')
-    await page.find('input[type="email"]').setValue('  awa@cabinet.sn ')
-    await page.find('[data-test="formulaire-email"]').trigger('submit')
-    await vi.waitFor(() => expect(page.find('[data-test="lien-envoye"]').exists()).toBe(true))
-    expect(recu).toEqual({ corps: { email: 'awa@cabinet.sn', retour: '/demandes/nouvelle' }, csrf: 'jeton-de-test' })
-    expect(page.text()).toContain("Si l'adresse awa@cabinet.sn est valide")
-  })
-
-  it('dit combien de minutes attendre sur un 429', async () => {
-    nonConnecte()
-    serveur.use(http.post('/api/auth/lien-email', () => new HttpResponse(null, { status: 429, headers: { 'Retry-After': '300' } })))
     const { page } = await ouvrir('/connexion')
-    await page.find('input[type="email"]').setValue('awa@cabinet.sn')
-    await page.find('[data-test="formulaire-email"]').trigger('submit')
-    await vi.waitFor(() => expect(page.text()).toContain('Réessaie dans 5 minutes'))
+    await vi.waitFor(() => expect(page.find('[data-test="connexion-google"]').exists()).toBe(true))
+    expect(page.find('[data-test="formulaire-email"]').exists()).toBe(false)
+    expect(page.find('input[type="email"]').exists()).toBe(false)
   })
 
   it('propose « Continuer avec Google » quand le serveur le permet, avec le chemin de retour', async () => {
@@ -109,7 +90,7 @@ describe('se connecter', () => {
     nonConnecte()
     serveur.use(http.get('/api/auth/fournisseurs', () => HttpResponse.json({ github: true, google: false, email: true })))
     const { page } = await ouvrir('/connexion')
-    await vi.waitFor(() => expect(page.find('[data-test="formulaire-email"]').exists()).toBe(true))
+    await vi.waitFor(() => expect(page.find('[data-test="connexion-github"]').exists()).toBe(true))
     await new Promise((r) => setTimeout(r, 50))
     expect(page.find('[data-test="connexion-google"]').exists()).toBe(false)
   })

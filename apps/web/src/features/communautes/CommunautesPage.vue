@@ -190,7 +190,7 @@ async function rejoindre(c: Communaute) {
 .groupe__nombre { padding: 0 10px; border-radius: var(--radius-pill); background: var(--surface-raised); color: var(--ink-muted); font-size: 0.875rem; }
 /* Quatre cartes par ligne au plus, chacune d'un quart de la largeur ; moins de quatre restent centrées. */
 .grille { --gap: var(--space-5, 1.25rem); list-style: none; margin: 0; padding: 0; display: grid; gap: var(--gap); grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), calc((100% - 3 * var(--gap)) / 4))); justify-content: center; }
-@media (max-width: 640px) { .grille { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .grille { grid-template-columns: minmax(0, 1fr); } }
 
 .carte {
   position: relative; display: flex; flex-direction: column; overflow: hidden; padding: 0;
@@ -201,6 +201,8 @@ async function rejoindre(c: Communaute) {
 .carte:has(.carte__lien:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { .carte:hover { transform: none; } }
 .carte__couverture { aspect-ratio: 16 / 8; }
+/* Téléphone : une seule colonne, la couverture devient un bandeau (deux cartes par écran au lieu d'une). */
+@media (max-width: 640px) { .carte__couverture { aspect-ratio: 16 / 5; } }
 .carte__corps { display: flex; flex-direction: column; gap: var(--space-3); flex: 1; padding: var(--space-4) var(--space-5, 1.25rem) var(--space-5, 1.25rem); }
 .carte__tete { display: flex; align-items: center; gap: var(--space-3); }
 .carte__titres { min-width: 0; }

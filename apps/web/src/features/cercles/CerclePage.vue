@@ -22,6 +22,7 @@ import OutilDecisions from './OutilDecisions.vue'
 import OutilCalendrier from './OutilCalendrier.vue'
 import { outilDepuis, OUTILS } from './qg'
 import IconeCercle from './IconeCercle.vue'
+import { centrerActif } from '../../components/rangeeDefilante'
 import { avancement, avantTirage, chefDeProjet, deposerIdee, LIMITES, lireAvancement, lireCercle, livrerTour, ordreDePassage, positionsAnneau, pourcentage, rejoindreCercle, tirerAuSort, titreDuTour, tourEnCours, type Avancement, type Cercle, type Resultat, type Tache } from './cercles'
 
 /*
@@ -78,6 +79,9 @@ const membre = computed(() => !!cercle.value?.moi.estMembre)
 // Le QG du cercle, à la façon d'un projet Basecamp : des outils (salon, tâches, point du soir, décisions, calendrier,
 // le cercle), chacun à son adresse (`?outil=`) pour qu'un lien mène droit à l'un d'eux. Les autres voient le cercle.
 const outil = computed(() => outilDepuis(route.query, membre.value, !!cercle.value?.tirage))
+// Sur téléphone, les onglets défilent : l'outil ouvert (par un lien, par exemple) est ramené dans le champ.
+const ongletsOutils = ref<HTMLElement | null>(null)
+centrerActif(ongletsOutils, '.outil-lien.actif', [outil, etat])
 const createur = computed(() => !!cercle.value?.moi.estCreateur)
 const preparation = computed(() => (cercle.value ? avantTirage(cercle.value) : null))
 const monIdee = computed(() => cercle.value?.membres.find((m) => m.personne.id === moi.value?.id)?.idee ?? null)
@@ -134,7 +138,7 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
 </script>
 
 <template>
-  <section class="cercle-page">
+  <section class="cercle-page" :class="{ 'cercle-page--salon': etat === 'pret' && outil === 'salon' }">
 
     <LienRetour v-if="etat !== 'pret'" to="/cercles">{{ t('cercles.tous') }}</LienRetour>
     <JSquelette v-if="etat === 'chargement'" :nombre="3" />
@@ -148,7 +152,8 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
     </div>
 
     <template v-else-if="cercle">
-      <header class="cercle-tete">
+      <!-- Hors du cercle, un en-tête compact. Dedans, le nom passe en haut de la barre latérale : la place va aux outils. -->
+      <header v-if="!membre" class="cercle-tete">
         <LienRetour to="/cercles">{{ t('cercles.tous') }}</LienRetour>
         <div class="cercle-tete__ligne">
           <h1>{{ cercle.nom }}</h1>
@@ -164,7 +169,16 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
       <div class="espace" :class="{ 'espace--outils': membre }">
       <!-- La barre latérale du cercle : ses outils, puis l'équipe. Sur mobile, une rangée qui défile. -->
       <aside v-if="membre" class="barre-laterale">
-      <nav class="outils-nav" :aria-label="t('cercles.onglets.aria')">
+      <header class="identite" data-test="identite-cercle">
+        <RouterLink to="/cercles" class="identite__retour" data-test="tous-les-cercles"><IconeCercle nom="retour" :taille="14" />{{ t('cercles.tous') }}</RouterLink>
+        <h1 class="identite__nom">{{ cercle.nom }}</h1>
+        <p class="identite__infos">{{ cercle.ville ? t('cercles.sousTitre', { n: cercle.membres.length, ville: cercle.ville }) : t('cercles.sousTitreSansVille', { n: cercle.membres.length }) }}</p>
+        <p v-if="cercle.statut === 'ouvert' && cercle.profilsRecherches?.length" class="cercle-tete__profils" data-test="profils-recherches">
+          <span>{{ t('cercles.cherche') }}</span>
+          <span v-for="p in cercle.profilsRecherches" :key="p" class="cercle-tete__profil">{{ t(`cercles.profils.${p}`) }}</span>
+        </p>
+      </header>
+      <nav ref="ongletsOutils" class="outils-nav" :aria-label="t('cercles.onglets.aria')">
         <RouterLink
           v-for="o in OUTILS"
           :key="o"
@@ -335,7 +349,9 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
 </template>
 
 <style scoped>
-.cercle-page { display: grid; gap: var(--space-6); width: 100%; max-width: 84rem; margin-inline: auto; }
+.cercle-page { display: grid; gap: var(--space-6); width: 100%; max-width: 96rem; margin-inline: auto; margin-top: calc(-1 * var(--space-4)); }
+/* Même cadre pour toutes les sous-pages (rien ne bouge en passant de l'une à l'autre) ; dans le salon, la discussion
+ * prend toute la hauteur. */
 /* Un en-tête compact : le retour, puis le nom du cercle et ses infos sur une ligne. La place va aux outils. */
 .cercle-tete { display: grid; gap: var(--space-2); padding-top: var(--space-2); }
 .cercle-tete__ligne { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1) var(--space-4); }
@@ -345,7 +361,14 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
 .espace { display: grid; gap: var(--space-6); }
 .espace--outils { grid-template-columns: 14.5rem minmax(0, 1fr); align-items: start; }
 .espace__contenu { display: grid; gap: var(--space-6); min-width: 0; }
-.barre-laterale { position: sticky; top: calc(var(--space-12) + var(--space-8)); display: grid; gap: var(--space-6); }
+/* Le nom du cercle, en haut de la barre latérale : un retour discret vers la liste, le nom, ses infos. */
+.identite { display: grid; gap: 2px; padding: 0 var(--space-3) var(--space-4); border-bottom: 1px solid var(--line); }
+.identite__retour { display: inline-flex; align-items: center; gap: 4px; justify-self: start; margin-bottom: var(--space-2); color: var(--ink-muted); font-size: 0.8125rem; font-weight: 600; text-decoration: none; }
+.identite__retour:hover { color: var(--ink); }
+.identite__retour:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+.identite__nom { margin: 0; font-size: 1.25rem; line-height: 1.2; letter-spacing: -0.3px; overflow-wrap: anywhere; }
+.identite__infos { margin: 0; color: var(--ink-muted); font-size: var(--type-body-sm-size); }
+.barre-laterale { align-content: start; position: sticky; top: calc(var(--space-12) + var(--space-8)); display: grid; gap: var(--space-6); }
 .outils-nav { display: grid; gap: 2px; }
 .outil-lien {
   display: flex; align-items: center; gap: var(--space-3); min-height: 42px; padding: 0 var(--space-3); border-radius: var(--radius-md);
@@ -366,16 +389,21 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
 @media (max-width: 900px) {
   .espace--outils { grid-template-columns: minmax(0, 1fr); margin-top: 0; }
   .barre-laterale { position: static; }
-  .outils-nav { display: flex; gap: var(--space-1); overflow-x: auto; scrollbar-width: none; margin-inline: calc(-1 * var(--space-4)); padding-inline: var(--space-4); }
+  .outils-nav { display: flex; gap: var(--space-1); overflow-x: auto; scrollbar-width: none; margin-inline: calc(-1 * var(--space-4)); padding-inline: var(--space-4) var(--space-8);
+    /* Un fondu au bord droit : les autres outils (calendrier, décisions, points) sont plus loin. */
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - var(--space-8)), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - var(--space-8)), transparent); }
+  .outils-nav::-webkit-scrollbar { display: none; }
   .outil-lien { flex: none; min-height: 40px; }
+  .outil-lien:focus-visible { outline-offset: -2px; }
   .equipe { display: none; }
 }
 .mise-en-page { display: grid; gap: var(--space-6); grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); align-items: start; }
-@media (max-width: 860px) { .mise-en-page { grid-template-columns: 1fr; } }
+@media (max-width: 860px) { .mise-en-page { grid-template-columns: minmax(0, 1fr); } }
 
 .mise-en-page--edition { grid-template-columns: minmax(0, 1fr); }
 .idee-champs { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.2fr); gap: var(--space-4); align-items: start; }
-@media (max-width: 760px) { .idee-champs { grid-template-columns: 1fr; } }
+@media (max-width: 760px) { .idee-champs { grid-template-columns: minmax(0, 1fr); } }
 
 .anneau { margin: 0; padding: var(--space-6); }
 .anneau__scene { position: relative; aspect-ratio: 1; max-width: 30rem; margin: 0 auto; }
@@ -416,8 +444,8 @@ const ideeValide = computed(() => idee.value.titre.trim().length >= LIMITES.idee
 .confirmation p { margin: 0; }
 .livre { display: grid; gap: var(--space-1); margin: 0; padding: var(--space-4) var(--space-6); border-left: 4px solid var(--proof); animation: apparait var(--motion-celebrate) var(--ease-pop) both; }
 
-.cote { display: grid; gap: var(--space-4); }
-.tour { display: grid; gap: var(--space-3); padding: var(--space-6); }
+.cote { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
+.tour { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-3); padding: clamp(var(--space-4), 4vw, var(--space-6)); }
 .tour h2 { margin: 0; font-size: 1.375rem; }
 .tour__surtitre { margin: 0; color: var(--proof-ink); font-weight: 700; font-size: var(--type-body-sm-size); }
 .avancement { display: grid; gap: var(--space-2); }

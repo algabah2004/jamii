@@ -79,7 +79,7 @@ async function supprimer() {
 .boite {
   /* La boîte prend la hauteur de son contenu : certains navigateurs (Safari) l'étiraient sur tout l'écran. */
   width: min(28rem, calc(100vw - 2rem)); height: fit-content; max-height: calc(100dvh - 2rem); margin: auto; overflow: auto;
-  padding: var(--space-8); border: 1px solid var(--line); border-radius: var(--radius-lg);
+  padding: clamp(var(--space-4), 6vw, var(--space-8)); border: 1px solid var(--line); border-radius: var(--radius-lg);
   background: var(--surface); color: var(--ink); box-shadow: 0 24px 60px rgb(2 7 10 / 0.35);
 }
 .boite[open] { display: grid; gap: var(--space-3); justify-items: start; align-content: start; grid-auto-rows: auto; animation: entre 220ms var(--ease-pop); }

@@ -13,9 +13,13 @@ describe('traductions', () => {
   it("l'anglais a exactement les mêmes clés que le français", () => {
     expect(cles(en).sort()).toEqual(cles(fr).sort())
   })
-  it("choisit le français par défaut, l'anglais si le navigateur le préfère", () => {
-    expect(langueInitiale([])).toBe('fr')
-    expect(langueInitiale(['wo-SN', 'fr'])).toBe('fr')
-    expect(langueInitiale(['en-NG'])).toBe('en')
+  it("suit la langue du navigateur, sauf si on a déjà choisi avec le bouton FR/EN", () => {
+    expect(langueInitiale(null, ['en-US', 'fr'])).toBe('en')
+    expect(langueInitiale(null, ['fr-SN'])).toBe('fr')
+    expect(langueInitiale(null, ['wo-SN', 'en'])).toBe('fr')
+    expect(langueInitiale(null, [])).toBe('fr')
+    expect(langueInitiale('fr', ['en-GB'])).toBe('fr')
+    expect(langueInitiale('en', ['fr-FR'])).toBe('en')
+    expect(langueInitiale('<script>', ['fr'])).toBe('fr')
   })
 })

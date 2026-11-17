@@ -152,7 +152,7 @@ select {
 }
 .liste { list-style: none; margin: 0; padding: 0; display: grid; }
 .client { display: grid; gap: var(--space-4); grid-template-columns: minmax(0, 1fr) minmax(0, 15rem); padding: var(--space-4) 0; border-top: 1px solid var(--line); }
-@media (max-width: 640px) { .client { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .client { grid-template-columns: minmax(0, 1fr); } }
 .client p { margin: 0; }
 .client__texte { display: grid; gap: var(--space-1); }
 .client__resume { font-weight: 600; }

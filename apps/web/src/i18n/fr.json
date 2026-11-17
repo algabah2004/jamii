@@ -3,6 +3,7 @@
     "cercles": "Cercles",
     "profil": "Profil",
     "principal": "Menu principal",
+    "bouton": "Menu",
     "systalink": "Espace Systalink",
     "vitrine": "Vitrine",
     "communautes": "Communautés",
@@ -47,12 +48,25 @@
     "googleOu": "Ou reçois un lien de connexion par e-mail :",
     "bienvenue": "Bienvenue sur Jamii",
     "accroche": "La plateforme d'échange des développeurs africains, ouverte à toute personne qui a un besoin.",
-    "points": [
-      "Trouve des coéquipiers et crée un cercle.",
-      "Échange dans les communautés.",
-      "Décris ton besoin à Ayo, l'assistant IA."
-    ],
-    "rassurance": "Pas de mot de passe. Rien n'est publié sans ton accord."
+    "rassurance": "Pas de mot de passe. Rien n'est publié sans ton accord.",
+    "accesTitre": "Se connecter ou créer un compte",
+    "sousTitre": "Ton compte est créé à ta première connexion.",
+    "githubPastille": "Pour les développeurs",
+    "emailPastille": "Pour tout le monde",
+    "atouts": {
+      "cercles": {
+        "titre": "Des cercles",
+        "texte": "Trouve des coéquipiers et lancez un projet ou une tontine ensemble."
+      },
+      "communautes": {
+        "titre": "Des communautés",
+        "texte": "Échange avec des développeurs de tout le continent."
+      },
+      "ayo": {
+        "titre": "Ayo, l'assistant IA",
+        "texte": "Décris ton besoin, Ayo t'aide à trouver les bonnes personnes."
+      }
+    }
   },
   "accueil": {
     "titre": "Trouve ton équipe, construis ton projet, mets-le en ligne.",
@@ -474,7 +488,33 @@
         "annee": "Année",
         "retirer": "Retirer cette réalisation",
         "ajouter": "Ajouter une réalisation"
-      }
+      },
+      "crayon": "Modifier : {bloc}",
+      "blocs": {
+        "identite": "Titre et présentation",
+        "lieu": "Lieu et disponibilité",
+        "liens": "Liens",
+        "langues": "Langues",
+        "competences": "Compétences",
+        "realisations": "Projets réalisés ailleurs"
+      },
+      "blocEnCours": "Tu modifies : {bloc}",
+      "autresBlocs": "Les autres blocs ne bougent pas",
+      "enregistrerBloc": "Enregistrer ce bloc",
+      "rienPublie": "Rien n'est publié avant que tu enregistres.",
+      "titreAide": "C'est la première chose qu'on lit sous ton nom.",
+      "bioAide": "Dis d'où tu viens et ce que tu aimes construire.",
+      "compteur": "{n} sur {max}",
+      "incompletes": "Encore {n} blocs à remplir | Encore {n} bloc à remplir | Encore {n} blocs à remplir",
+      "ajouter": {
+        "identite": "+ Ajouter ton titre et ta présentation",
+        "lieu": "+ Ajouter ton pays et ta ville",
+        "liens": "+ Ajouter tes liens",
+        "langues": "+ Ajouter tes langues",
+        "realisations": "+ Ajouter un projet réalisé ailleurs",
+        "competences": "+ Ajouter tes compétences"
+      },
+      "competencesPointille": "Une compétence que tu déclares s'affiche en pointillé tant qu'aucun dépôt ou projet ne la prouve."
     },
     "langages": {
       "titre": "Langages",
@@ -483,7 +523,16 @@
     "competences": {
       "titre": "Compétences",
       "declaree": "(déclarée)",
-      "source": "Déduites de tes dépôts GitHub, plus celles que tu ajoutes."
+      "source": "Déduites de tes dépôts GitHub, plus celles que tu ajoutes.",
+      "phare": "Mise en avant",
+      "toutes": "Afficher les {n} compétences",
+      "moins": "Afficher moins",
+      "sources": {
+        "github": "Déduite des dépôts GitHub",
+        "declaree": "Ajoutée par la personne",
+        "ia": "Proposée par l’IA, validée par la personne"
+      },
+      "preuvesNombre": "aucun dépôt | prouvée par {n} dépôt | prouvée par {n} dépôts"
     },
     "projets": {
       "titre": "Projets sur Jamii",
@@ -496,7 +545,8 @@
     "depots": {
       "titre": "Dépôts GitHub",
       "etoiles": "aucune étoile | {n} étoile | {n} étoiles",
-      "pasUnePreuve": "Les dépôts montrent ce que tu codes. Seul un projet mis en ligne et vérifié compte comme preuve."
+      "pasUnePreuve": "Les dépôts montrent ce que tu codes. Seul un projet mis en ligne et vérifié compte comme preuve.",
+      "toutVoir": "Tout voir sur GitHub"
     },
     "fiabilite": {
       "titre": "Pourquoi on peut compter sur {prenom}",
@@ -508,14 +558,9 @@
         "projet_en_ligne": "projet en ligne vérifié | projets en ligne vérifiés"
       },
       "contestees": "dont {n} en cours de vérification | dont {n} en cours de vérification",
-      "vide": "Pas encore de preuve. Elles s'ajoutent toutes seules, à mesure que tu participes :",
-      "comment": {
-        "projet_en_ligne": "un projet mis en ligne avec ton équipe, et qui répond ;",
-        "tache_livree_a_temps": "une tâche livrée à la date prévue ;",
-        "reponse_acceptee": "une réponse acceptée dans une communauté ;",
-        "avis_coequipier": "un coéquipier qui referait équipe avec toi."
-      },
-      "sansNote": "Pas de note globale : chaque point se vérifie, et se conteste s'il est faux."
+      "vide": "Elles s'ajoutent toutes seules, à mesure que tu participes.",
+      "sansNote": "Pas de note globale : chaque point se vérifie, et se conteste s'il est faux.",
+      "titreAVenir": "Les preuves que tu vas gagner"
     },
     "carte": {
       "titre": "Ta carte de compétences",
@@ -531,10 +576,12 @@
       }
     },
     "liens": {
-      "site": "Site"
+      "site": "Site",
+      "titre": "Ailleurs"
     },
     "langues": {
-      "parle": "Parle :"
+      "parle": "Parle :",
+      "titre": "Langues"
     },
     "phares": {
       "titre": "Compétences mises en avant"
@@ -556,10 +603,9 @@
       "copier": "Copier le lien du profil",
       "copie": "Lien copié",
       "competences": "Compétences",
-      "projetsVerifies": "aucun projet vérifié | {n} projet vérifié sur Jamii | {n} projets vérifiés sur Jamii",
-      "realisations": "aucune réalisation | {n} réalisation | {n} réalisations",
       "scanner": "Voir mon profil",
-      "message": "Mon profil sur Jamii : {lien}"
+      "message": "Mon profil sur Jamii : {lien}",
+      "aide": "Elle s'affiche quand tu colles le lien de ton profil."
     },
     "public": {
       "introuvable": "Ce profil n’est pas public",
@@ -569,6 +615,42 @@
       "invitationTexte": "Sur Jamii, tes projets mis en ligne avec une équipe deviennent des preuves.",
       "rejoindre": "Créer mon profil",
       "nonPublie": "{nom} n’a pas encore publié son profil. Vous pouvez déjà lui écrire."
+    },
+    "aPropos": {
+      "titre": "À propos",
+      "ia": "Résumé proposé par l'IA à partir des dépôts publics"
+    },
+    "avis": {
+      "titre": "Ce qu'en disent ses coéquipiers",
+      "projet": "Ont travaillé ensemble sur {projet}"
+    },
+    "experience": {
+      "titre": "Expérience",
+      "surJamii": "Projet sur Jamii",
+      "competences": "Compétences :"
+    },
+    "activite": {
+      "titre": "Activité",
+      "sousTitre": "Sur GitHub, {'@'}{login}",
+      "misAJour": "{nom} a mis à jour ce dépôt · {quand}",
+      "depot": "Dépôt de {nom}"
+    },
+    "anneau": {
+      "avec": "Anneau de preuves : {liste}",
+      "sans": "Anneau de preuves : aucune preuve pour l'instant"
+    },
+    "preuves": {
+      "plein": "Trait plein : vérifié par Jamii",
+      "pointille": "Pointillé : déclaré par la personne"
+    },
+    "navigation": "Dans ce profil",
+    "barre": {
+      "titre": "Mon profil",
+      "visibilite": "Visibilité du profil",
+      "publie": "Publié",
+      "prive": "Privé",
+      "publieAide": "Tout le monde peut voir ton profil.",
+      "priveAide": "Toi seul vois ton profil."
     }
   },
   "etat": {
@@ -672,7 +754,12 @@
     },
     "reserve": {
       "titre": "Réservé à l’équipe Systalink",
-      "texte": "Cet espace montre à Systalink ce que Jamii lui apporte. Si tu fais partie de l’équipe Systalink, demande à l’équipe Jamii d’ajouter ton compte."
+      "texte": "Cet espace montre à Systalink ce que Jamii lui apporte. Si tu fais partie de l’équipe Systalink, demande à l’équipe Jamii d’ajouter ton compte.",
+      "jury": "Tu fais partie du jury de la CADEV ? Entre le code d’accès donné avec la soumission.",
+      "code": "Code d’accès jury",
+      "entrer": "Entrer",
+      "codeFaux": "Ce code n’est pas le bon. Vérifie-le et réessaie.",
+      "tropDEssais": "Trop d’essais. Demande de l’aide à l’équipe Jamii."
     },
     "dontDatacloud": "dont {n} sur DataCloud"
   },
@@ -1244,7 +1331,12 @@
       "reagir": "Pose une question à Ayo, ou dis-lui ce qui ne te va pas…",
       "limite": "Cette discussion est déjà longue. Ouvre une nouvelle discussion pour continuer.",
       "supprimer": "Supprimer la discussion",
-      "confirmerSuppression": "Supprimer cette discussion ? Ton besoin et tous les messages seront effacés. Une mission déjà publiée reste en ligne.",
+      "suppression": {
+        "titre": "Supprimer cette discussion ?",
+        "texte": "Ton besoin et tous les messages échangés avec Ayo seront effacés. Une mission déjà publiée reste en ligne.",
+        "annuler": "Annuler",
+        "confirmer": "Supprimer"
+      },
       "messages": "{n} message | {n} messages",
       "reponse": "Ayo te répond"
     }
@@ -1739,7 +1831,22 @@
       "produit": "Planning, priorités, suivi",
       "test": "Tests, qualité, recette"
     },
-    "cherche": "On cherche :"
+    "cherche": "On cherche :",
+    "points": {
+      "ontRepondu": "personne n’a encore répondu | a répondu | ont répondu",
+      "repondu": "a répondu",
+      "pasEncore": "pas encore répondu",
+      "uneFoisParJour": "Un point par jour, visible de tout le cercle.",
+      "aiderAuSalon": "Aider {nom} dans le salon"
+    },
+    "decisions": {
+      "aide": "Ce que l’équipe a tranché, écrit une fois et retrouvé sans fouiller le salon.",
+      "registreTenuPar": "Registre tenu par",
+      "compte": "décision | décision | décisions",
+      "tour": "Tour {n}",
+      "tourAvecTitre": "Tour {n} · {titre}",
+      "horsTour": "Avant les tours"
+    }
   },
   "reseau": {
     "competences": "Compétences",
@@ -3162,5 +3269,9 @@
     "quiEtAutres": "{noms} et {n} autres",
     "pastille": "{emoji} : {n} réaction, {qui} | {emoji} : {n} réaction, {qui} | {emoji} : {n} réactions, {qui}",
     "erreur": "La réaction n’a pas pu être enregistrée. Réessaie."
+  },
+  "langues": {
+    "passerEn": "Passer en anglais",
+    "passerFr": "Passer en français"
   }
 }

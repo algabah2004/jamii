@@ -3,6 +3,7 @@
     "cercles": "Circles",
     "profil": "Profile",
     "principal": "Main menu",
+    "bouton": "Menu",
     "systalink": "Systalink space",
     "vitrine": "Showcase",
     "communautes": "Communities",
@@ -47,12 +48,25 @@
     "googleOu": "Or get a sign-in link by email:",
     "bienvenue": "Welcome to Jamii",
     "accroche": "The exchange platform for African developers, open to anyone with a need.",
-    "points": [
-      "Find teammates and start a circle.",
-      "Talk in the communities.",
-      "Describe your need to Ayo, the AI assistant."
-    ],
-    "rassurance": "No password. Nothing is published without your consent."
+    "rassurance": "No password. Nothing is published without your consent.",
+    "accesTitre": "Sign in or create an account",
+    "sousTitre": "Your account is created the first time you sign in.",
+    "githubPastille": "For developers",
+    "emailPastille": "For everyone",
+    "atouts": {
+      "cercles": {
+        "titre": "Circles",
+        "texte": "Find teammates and run a project or a tontine together."
+      },
+      "communautes": {
+        "titre": "Communities",
+        "texte": "Talk with developers from across the continent."
+      },
+      "ayo": {
+        "titre": "Ayo, the AI assistant",
+        "texte": "Describe your need and Ayo helps you find the right people."
+      }
+    }
   },
   "accueil": {
     "titre": "Find your team, build your project, put it online.",
@@ -474,16 +488,51 @@
         "annee": "Year",
         "retirer": "Remove this project",
         "ajouter": "Add a project"
-      }
+      },
+      "crayon": "Edit: {bloc}",
+      "blocs": {
+        "identite": "Title and introduction",
+        "lieu": "Place and availability",
+        "liens": "Links",
+        "langues": "Languages",
+        "competences": "Skills",
+        "realisations": "Projects done elsewhere"
+      },
+      "blocEnCours": "You are editing: {bloc}",
+      "autresBlocs": "The other blocks do not change",
+      "enregistrerBloc": "Save this block",
+      "rienPublie": "Nothing is published until you save.",
+      "titreAide": "It is the first thing people read under your name.",
+      "bioAide": "Say where you come from and what you like to build.",
+      "compteur": "{n} of {max}",
+      "incompletes": "{n} blocks left to fill | {n} block left to fill | {n} blocks left to fill",
+      "ajouter": {
+        "identite": "+ Add your title and introduction",
+        "lieu": "+ Add your country and city",
+        "liens": "+ Add your links",
+        "langues": "+ Add your languages",
+        "realisations": "+ Add a project done elsewhere",
+        "competences": "+ Add your skills"
+      },
+      "competencesPointille": "A skill you declare is shown dashed until a repository or a project proves it."
     },
     "langages": {
-      "titre": "Languages",
+      "titre": "Programming languages",
       "estimation": "Estimated from the size of your public GitHub repositories (forks excluded)."
     },
     "competences": {
       "titre": "Skills",
       "declaree": "(declared)",
-      "source": "Deduced from your GitHub repositories, plus the ones you add."
+      "source": "Deduced from your GitHub repositories, plus the ones you add.",
+      "phare": "Featured",
+      "toutes": "Show all {n} skills",
+      "moins": "Show less",
+      "sources": {
+        "github": "Inferred from GitHub repositories",
+        "declaree": "Added by the person",
+        "ia": "Suggested by AI, confirmed by the person"
+      },
+      "preuvesNombre": "no repository | backed by {n} repository | backed by {n} repositories"
     },
     "projets": {
       "titre": "Projects on Jamii",
@@ -496,7 +545,8 @@
     "depots": {
       "titre": "GitHub repositories",
       "etoiles": "no stars | {n} star | {n} stars",
-      "pasUnePreuve": "Repositories show what you code. Only a project that is online and verified counts as proof."
+      "pasUnePreuve": "Repositories show what you code. Only a project that is online and verified counts as proof.",
+      "toutVoir": "See all on GitHub"
     },
     "fiabilite": {
       "titre": "Why you can count on {prenom}",
@@ -508,14 +558,9 @@
         "projet_en_ligne": "verified project online | verified projects online"
       },
       "contestees": "including {n} being checked | including {n} being checked",
-      "vide": "No proof yet. It adds up on its own as you take part:",
-      "comment": {
-        "projet_en_ligne": "a project put online with your team, that responds;",
-        "tache_livree_a_temps": "a task delivered on the planned date;",
-        "reponse_acceptee": "an answer accepted in a community;",
-        "avis_coequipier": "a teammate who would work with you again."
-      },
-      "sansNote": "No overall score: each point can be checked, and disputed if it is wrong."
+      "vide": "They add themselves as you take part.",
+      "sansNote": "No overall score: each point can be checked, and disputed if it is wrong.",
+      "titreAVenir": "The proofs you are going to earn"
     },
     "carte": {
       "titre": "Your skills map",
@@ -531,10 +576,12 @@
       }
     },
     "liens": {
-      "site": "Website"
+      "site": "Website",
+      "titre": "Elsewhere"
     },
     "langues": {
-      "parle": "Speaks:"
+      "parle": "Speaks:",
+      "titre": "Languages"
     },
     "phares": {
       "titre": "Featured skills"
@@ -556,10 +603,9 @@
       "copier": "Copy profile link",
       "copie": "Link copied",
       "competences": "Skills",
-      "projetsVerifies": "no verified project | {n} verified project on Jamii | {n} verified projects on Jamii",
-      "realisations": "no work | {n} project | {n} projects",
       "scanner": "See my profile",
-      "message": "My profile on Jamii: {lien}"
+      "message": "My profile on Jamii: {lien}",
+      "aide": "It shows when you paste your profile link."
     },
     "public": {
       "introuvable": "This profile is not public",
@@ -569,6 +615,42 @@
       "invitationTexte": "On Jamii, projects you launch with a team become proof.",
       "rejoindre": "Create my profile",
       "nonPublie": "{nom} hasn't published their profile yet. You can already message them."
+    },
+    "aPropos": {
+      "titre": "About",
+      "ia": "Summary suggested by AI from public repositories"
+    },
+    "avis": {
+      "titre": "What teammates say",
+      "projet": "Worked together on {projet}"
+    },
+    "experience": {
+      "titre": "Experience",
+      "surJamii": "Project on Jamii",
+      "competences": "Skills:"
+    },
+    "activite": {
+      "titre": "Activity",
+      "sousTitre": "On GitHub, {'@'}{login}",
+      "misAJour": "{nom} updated this repository · {quand}",
+      "depot": "{nom}’s repository"
+    },
+    "anneau": {
+      "avec": "Proof ring: {liste}",
+      "sans": "Proof ring: no proof yet"
+    },
+    "preuves": {
+      "plein": "Solid line: verified by Jamii",
+      "pointille": "Dashed line: declared by the person"
+    },
+    "navigation": "On this profile",
+    "barre": {
+      "titre": "My profile",
+      "visibilite": "Profile visibility",
+      "publie": "Published",
+      "prive": "Private",
+      "publieAide": "Anyone can see your profile.",
+      "priveAide": "Only you can see your profile."
     }
   },
   "etat": {
@@ -672,7 +754,12 @@
     },
     "reserve": {
       "titre": "For the Systalink team only",
-      "texte": "This space shows Systalink what Jamii brings them. If you are on the Systalink team, ask the Jamii team to add your account."
+      "texte": "This space shows Systalink what Jamii brings them. If you are on the Systalink team, ask the Jamii team to add your account.",
+      "jury": "On the CADEV jury? Enter the access code given with the submission.",
+      "code": "Jury access code",
+      "entrer": "Enter",
+      "codeFaux": "This code is not right. Check it and try again.",
+      "tropDEssais": "Too many attempts. Ask the Jamii team for help."
     },
     "dontDatacloud": "{n} on DataCloud"
   },
@@ -1244,7 +1331,12 @@
       "reagir": "Ask Ayo a question, or tell him what doesn't suit you…",
       "limite": "This conversation is already long. Start a new conversation to go on.",
       "supprimer": "Delete the conversation",
-      "confirmerSuppression": "Delete this conversation? Your need and all the messages will be erased. A mission already published stays online.",
+      "suppression": {
+        "titre": "Delete this conversation?",
+        "texte": "Your need and every message exchanged with Ayo will be erased. A mission already published stays online.",
+        "annuler": "Cancel",
+        "confirmer": "Delete"
+      },
       "messages": "{n} message | {n} messages",
       "reponse": "Ayo answers you"
     }
@@ -1739,7 +1831,22 @@
       "produit": "Planning, priorities, follow-up",
       "test": "Tests, quality, acceptance"
     },
-    "cherche": "Looking for:"
+    "cherche": "Looking for:",
+    "points": {
+      "ontRepondu": "nobody has answered yet | answered | answered",
+      "repondu": "answered",
+      "pasEncore": "not answered yet",
+      "uneFoisParJour": "One check-in a day, visible to the whole circle.",
+      "aiderAuSalon": "Help {nom} in the room"
+    },
+    "decisions": {
+      "aide": "What the team has decided, written once and found without digging through the room.",
+      "registreTenuPar": "Log kept by",
+      "compte": "decisions | decision | decisions",
+      "tour": "Round {n}",
+      "tourAvecTitre": "Round {n} · {titre}",
+      "horsTour": "Before the rounds"
+    }
   },
   "reseau": {
     "competences": "Skills",
@@ -3162,5 +3269,9 @@
     "quiEtAutres": "{noms} and {n} others",
     "pastille": "{emoji}: {n} reaction, {qui} | {emoji}: {n} reaction, {qui} | {emoji}: {n} reactions, {qui}",
     "erreur": "The reaction could not be saved. Try again."
+  },
+  "langues": {
+    "passerEn": "Switch to English",
+    "passerFr": "Switch to French"
   }
 }

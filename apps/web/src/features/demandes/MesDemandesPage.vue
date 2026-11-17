@@ -7,6 +7,7 @@ import { JBouton, JSquelette } from '../../design-system'
 import BadgeIa from '../../components/BadgeIa.vue'
 import AyoAvatar from './AyoAvatar.vue'
 import ConversationDemande from './ConversationDemande.vue'
+import ConfirmerSuppression from './ConfirmerSuppression.vue'
 import { dateCourte, listerDemandes, supprimerDemande, type DemandeResumee } from './demandes'
 
 /*
@@ -41,8 +42,9 @@ const filtre = ref<Etat | 'toutes'>('toutes')
 const compte = (e: Etat) => demandes.value.filter((d) => etatDe(d) === e).length
 /** Supprimer une discussion depuis la liste, après confirmation. */
 const suppressionRatee = ref(false)
+const confirmation = ref<InstanceType<typeof ConfirmerSuppression> | null>(null)
 async function supprimer(d: DemandeResumee) {
-  if (!window.confirm(t('demandes.discussion.confirmerSuppression'))) return
+  if (!(await confirmation.value?.demander())) return
   suppressionRatee.value = false
   try {
     if (!(await supprimerDemande(d.id))) return void (suppressionRatee.value = true)
@@ -104,6 +106,7 @@ const affichees = computed(() => (filtre.value === 'toutes' ? demandes.value : d
         </li>
       </ul>
     </section>
+    <ConfirmerSuppression ref="confirmation" />
   </section>
 </template>
 
@@ -111,7 +114,7 @@ const affichees = computed(() => (filtre.value === 'toutes' ? demandes.value : d
 .mes-demandes { display: grid; gap: var(--space-8); min-width: 0; }
 
 
-.vide { display: grid; gap: var(--space-3); justify-items: start; padding: var(--space-8); }
+.vide { display: grid; gap: var(--space-3); justify-items: start; padding: clamp(var(--space-4), 6vw, var(--space-8)); }
 .vide p { margin: 0; }
 
 .historique { display: grid; gap: var(--space-4); }

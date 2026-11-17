@@ -384,4 +384,9 @@ const prenom = computed(() => moi.value?.nom.split(' ')[0] ?? '')
   .cadre-salon { height: calc(100dvh - 12rem); }
   .ecrire { padding: var(--space-4); }
 }
+/* Téléphone : l'avatar à côté du champ lui prenait 56 px sur 256. Le champ prend toute la largeur. */
+@media (max-width: 480px) {
+  .ecrire { grid-template-columns: minmax(0, 1fr); padding: var(--space-3); }
+  .ecrire > :first-child:not(.ecrire__corps) { display: none; }
+}
 </style>

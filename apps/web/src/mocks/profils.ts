@@ -140,6 +140,8 @@ export const handlersProfils = [
     const { publie: _p, afficherResumeIa: _a, resumeIaPropose: _r, competencesProposees: _c, generation: _g, version: _v, ...publicProfil } = p
     return HttpResponse.json(publicProfil)
   }),
+  // Le détail des preuves : la démo n'en a pas encore (aucune participation à un projet).
+  http.get('/api/profils/:id/preuves', () => HttpResponse.json({ elements: [], curseurSuivant: null })),
   http.post('/api/me/profil/publier', () => {
     const p = lire()
     if (!p) return probleme(404, 'profil_non_genere', 'Aucun profil pour l’instant')

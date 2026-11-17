@@ -1,5 +1,12 @@
 /* Base commune de toutes les pages : la charte de docs/design/identite-visuelle.html, en variables (tokens.css). */
 
+/*
+ * Paliers de largeur (docs/responsive.md). Les variables CSS ne marchent pas dans @media : on écrit les valeurs.
+ *   480 px  téléphone          720 px  grand téléphone, tablette verticale
+ *   960 px  tablette           1180 px petit portable
+ * Quand on touche un écran, on ramène ses @media à ces quatre valeurs.
+ */
+
 *, *::before, *::after { box-sizing: border-box; }
 
 body {
@@ -12,6 +19,8 @@ body {
   line-height: var(--type-body-line);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  /* Un nom, un lien ou un code très long passe à la ligne au lieu d'élargir la page (docs/responsive.md, point 8). */
+  overflow-wrap: break-word;
 }
 
 h1, h2, h3 { font-family: var(--font-display); margin: 0 0 var(--space-3); text-wrap: balance; }
@@ -48,7 +57,16 @@ input:not([type='radio'], [type='checkbox'], [type='range']), select, textarea {
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-sm);
 }
+/* Sur téléphone, un champ de moins de 16 px fait zoomer iOS à chaque saisie : 16 px partout sous 720 px.
+   Le `:is(#app, body)` donne à la règle le poids d'un identifiant, pour passer devant les styles des composants. */
+@media (max-width: 720px) {
+  :is(#app, body) :is(input:not([type='radio'], [type='checkbox'], [type='range'], [type='color']), select, textarea, [contenteditable='true']) { font-size: 16px; }
+}
 input[type='radio'], input[type='checkbox'] { accent-color: var(--action); width: 1.1em; height: 1.1em; }
+/* Au doigt, une case de 18 px se rate : 24 px au moins (WCAG 2.5.8). min-* l'emporte sur la largeur d'un composant. */
+@media (max-width: 720px), (pointer: coarse) {
+  input[type='radio'], input[type='checkbox'] { min-width: 24px; min-height: 24px; }
+}
 
 /* Les options d'un menu ont leur propre fond : on leur donne l'encre et la surface du thème, sinon une encre
    claire héritée d'une zone sombre devient illisible sur le fond blanc du navigateur. */
@@ -57,6 +75,19 @@ select option { color: var(--ink); background: var(--surface); }
 ::selection { background: var(--action-soft); color: var(--ink); }
 
 img, svg { max-width: 100%; }
+
+/* Une rangée qui défile à l'horizontale (onglets, filtres) sur écran étroit : pas de barre, un fondu sur les bords
+   pour montrer qu'il y a d'autres choix, et l'anneau de focus à l'intérieur pour ne pas être rogné. */
+.defile-x {
+  display: flex; flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--space-3), #000 calc(100% - var(--space-6)), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 var(--space-3), #000 calc(100% - var(--space-6)), transparent);
+  padding-inline: var(--space-3) var(--space-6);
+}
+.defile-x::-webkit-scrollbar { display: none; }
+.defile-x > * { flex-shrink: 0; }
+.defile-x :focus-visible { outline-offset: -2px; }
 
 .visuellement-cache {
   position: absolute !important;
@@ -72,6 +103,8 @@ img, svg { max-width: 100%; }
   padding: var(--space-6);
   box-shadow: var(--ombre-carte);
 }
+/* Téléphone : 24 px de marge intérieure dans 288 px d'écran utile, c'est un sixième de la largeur perdu. */
+@media (max-width: 480px) { .carte { padding: var(--space-4); } }
 /* Une ombre douce et large : la carte flotte au-dessus des lueurs, sans bord dur. */
 :root { --ombre-carte: 0 1px 2px color-mix(in srgb, var(--midnight) 5%, transparent), 0 10px 30px color-mix(in srgb, var(--midnight) 7%, transparent); }
 

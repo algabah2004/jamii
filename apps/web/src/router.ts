@@ -1,12 +1,13 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import { installerMemoireEspaces } from './memoireEspaces'
 import { useSession } from './session'
 import AccueilPage from './pages/AccueilPage.vue'
 
 export const routes: RouteRecordRaw[] = [
   { path: '/', name: 'accueil', component: AccueilPage },
   // Se connecter avec GitHub ou par un lien e-mail (contracts/socle.yaml). L'API renvoie aussi ici en cas d'échec.
-  { path: '/connexion', name: 'connexion', component: () => import('./features/connexion/ConnexionPage.vue') },
-  { path: '/connexion/email', name: 'connexion-email', component: () => import('./features/connexion/ConfirmationEmailPage.vue') },
+  { path: '/connexion', name: 'connexion', component: () => import('./features/connexion/ConnexionPage.vue'), meta: { pleineLargeur: true } },
+  { path: '/connexion/email', name: 'connexion-email', component: () => import('./features/connexion/ConfirmationEmailPage.vue'), meta: { pleineLargeur: true } },
   {
     path: '/profil',
     name: 'profil',
@@ -160,5 +161,6 @@ export function creerRouteur(historique = createWebHistory()) {
       return { name: 'connexion', query: { retour: vers.fullPath } }
     }
   })
+  installerMemoireEspaces(routeur)
   return routeur
 }

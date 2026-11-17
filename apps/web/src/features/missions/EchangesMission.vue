@@ -126,7 +126,7 @@ async function envoyer() {
 }
 .fil:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .fil li { display: grid; grid-template-columns: auto 1fr; gap: var(--space-1) var(--space-2); align-items: end; justify-items: start; }
-.fil li.de-moi { grid-template-columns: 1fr; justify-items: end; }
+.fil li.de-moi { grid-template-columns: minmax(0, 1fr); justify-items: end; }
 .bulle {
   max-inline-size: 36rem; padding: 10px 14px; border-radius: 18px 18px 18px 6px; white-space: pre-line; line-height: 1.5;
   background: var(--surface); border: 1px solid var(--line);
@@ -135,7 +135,7 @@ async function envoyer() {
 .heure { grid-column: 1 / -1; font-size: 0.75rem; }
 .fil li:not(.de-moi) .heure { padding-inline-start: 28px; }
 .saisie {
-  display: grid; grid-template-columns: 1fr auto; gap: var(--space-3); align-items: end;
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-3); align-items: end;
   padding: 6px 6px 6px var(--space-2); border: 1px solid var(--line-strong); border-radius: 18px; background: var(--surface);
 }
 .saisie:focus-within { border-color: var(--action); box-shadow: 0 0 0 3px color-mix(in srgb, var(--action) 20%, transparent); }

@@ -136,7 +136,7 @@ async function retoucher() {
 /* Chaque jalon : une bande de couleur à gauche selon où il en est. */
 .jalon {
   --etat: var(--line-strong);
-  display: grid; gap: var(--space-4); padding: var(--space-5, 20px) var(--space-6);
+  display: grid; gap: var(--space-4); padding: var(--space-5, 20px) clamp(var(--space-4), 5vw, var(--space-6));
   border: 1px solid var(--line); border-inline-start: 5px solid var(--etat); border-radius: 16px; background: var(--surface);
 }
 .jalon[data-statut='en_cours'] { --etat: var(--action); }

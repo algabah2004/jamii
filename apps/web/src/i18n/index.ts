@@ -5,10 +5,26 @@ import en from './en.json'
 export type Langue = 'fr' | 'en'
 export const LANGUES: Langue[] = ['fr', 'en']
 
-/** Français d'abord (docs/vocabulaire.md), anglais si le navigateur le préfère. */
-export function langueInitiale(preferees: readonly string[] = navigator.languages ?? []): Langue {
-  const premiere = preferees[0]?.slice(0, 2)
-  return premiere === 'en' ? 'en' : 'fr'
+export const CLE_LANGUE = 'jamii.langue'
+
+function langueRetenue(): string | null {
+  try {
+    return localStorage.getItem(CLE_LANGUE)
+  } catch {
+    return null
+  }
+}
+
+/**
+ * La langue à l'ouverture : celle choisie avec le bouton FR/EN si on l'a déjà fait dans ce navigateur, sinon celle du
+ * navigateur (anglais s'il préfère l'anglais, français pour toutes les autres langues : docs/vocabulaire.md).
+ */
+export function langueInitiale(
+  retenue: string | null = langueRetenue(),
+  navigateur: readonly string[] = typeof navigator === 'undefined' ? [] : (navigator.languages ?? [navigator.language]),
+): Langue {
+  if (retenue === 'fr' || retenue === 'en') return retenue
+  return navigateur[0]?.toLowerCase().startsWith('en') ? 'en' : 'fr'
 }
 
 export const i18n = createI18n<[typeof fr], Langue>({
@@ -17,3 +33,17 @@ export const i18n = createI18n<[typeof fr], Langue>({
   fallbackLocale: 'fr',
   messages: { fr, en },
 })
+
+// L'attribut `lang` de la page suit la langue d'ouverture (lecteurs d'écran, césure).
+if (typeof document !== 'undefined') document.documentElement.lang = langueInitiale()
+
+/** Change la langue de toute l'interface, et l'attribut `lang` de la page pour les lecteurs d'écran. */
+export function changerLangue(langue: Langue) {
+  ;(i18n.global.locale as unknown as { value: Langue }).value = langue
+  document.documentElement.lang = langue
+  try {
+    localStorage.setItem(CLE_LANGUE, langue)
+  } catch {
+    /* Mémoire du navigateur indisponible : la prochaine visite suivra la langue du navigateur. */
+  }
+}

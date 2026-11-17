@@ -130,29 +130,6 @@ const echeanceCourte = (iso: string) => new Intl.DateTimeFormat(locale.value, { 
     <p v-else-if="etat === 'erreur'" class="texte-discret" role="alert">{{ t('etat.indisponible') }}</p>
 
     <div v-else class="grille">
-      <aside class="cote">
-        <section class="carte" aria-labelledby="colline-titre">
-          <h3 id="colline-titre">{{ t('cercles.qg.colline') }}</h3>
-          <CollineDuTour v-if="taches.length" :taches="taches" />
-          <p v-else class="texte-discret">{{ t('cercles.qg.aucuneTache') }}</p>
-          <p class="texte-discret legende">{{ t('cercles.qg.collineAide') }}</p>
-        </section>
-
-        <section v-if="moiId && compte.libres" class="carte ayo" data-test="repartition-ayo">
-          <div class="ayo__tete">
-            <AyoAvatar :taille="28" :reflechit="reflechit" />
-            <p>{{ t('cercles.repartition.intro') }}</p>
-          </div>
-          <button v-if="!suggestions || !propositions.length" type="button" class="pilule" :disabled="reflechit" data-test="demander-ayo" @click="demanderAyo">{{ t('cercles.repartition.demander') }}</button>
-          <ul v-if="propositions.length" class="ayo__liste">
-            <li v-for="s in propositions" :key="s.tache.id">
-              <span><strong>{{ s.tache.titre }}</strong> → {{ s.membre.nom }}</span>
-              <button type="button" class="pilule" :disabled="enCours === s.tache.id" data-test="confier" @click="confier(s)">{{ t('cercles.repartition.confier') }}</button>
-            </li>
-          </ul>
-          <p v-else-if="suggestions" class="texte-discret">{{ t('cercles.repartition.rien') }}</p>
-        </section>
-      </aside>
 
       <section class="carte liste-carte" :aria-label="t('cercles.qg.outils.taches')">
         <div class="filtres" role="tablist" :aria-label="t('cercles.tache.filtres')">
@@ -196,6 +173,29 @@ const echeanceCourte = (iso: string) => new Intl.DateTimeFormat(locale.value, { 
         </div>
         <p v-if="erreur" role="alert" class="erreur">{{ erreur }}</p>
       </section>
+      <aside class="cote">
+        <section class="carte" aria-labelledby="colline-titre">
+          <h3 id="colline-titre">{{ t('cercles.qg.colline') }}</h3>
+          <CollineDuTour v-if="taches.length" :taches="taches" />
+          <p v-else class="texte-discret">{{ t('cercles.qg.aucuneTache') }}</p>
+          <p class="texte-discret legende">{{ t('cercles.qg.collineAide') }}</p>
+        </section>
+
+        <section v-if="moiId && compte.libres" class="carte ayo" data-test="repartition-ayo">
+          <div class="ayo__tete">
+            <AyoAvatar :taille="28" :reflechit="reflechit" />
+            <p>{{ t('cercles.repartition.intro') }}</p>
+          </div>
+          <button v-if="!suggestions || !propositions.length" type="button" class="pilule" :disabled="reflechit" data-test="demander-ayo" @click="demanderAyo">{{ t('cercles.repartition.demander') }}</button>
+          <ul v-if="propositions.length" class="ayo__liste">
+            <li v-for="s in propositions" :key="s.tache.id">
+              <span><strong>{{ s.tache.titre }}</strong> → {{ s.membre.nom }}</span>
+              <button type="button" class="pilule" :disabled="enCours === s.tache.id" data-test="confier" @click="confier(s)">{{ t('cercles.repartition.confier') }}</button>
+            </li>
+          </ul>
+          <p v-else-if="suggestions" class="texte-discret">{{ t('cercles.repartition.rien') }}</p>
+        </section>
+      </aside>
     </div>
 
     <DialogueTache
@@ -212,7 +212,7 @@ const echeanceCourte = (iso: string) => new Intl.DateTimeFormat(locale.value, { 
 </template>
 
 <style scoped>
-.outil-taches { display: grid; gap: var(--space-6); }
+.outil-taches { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-6); }
 .tete { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--space-4); }
 .nouvelle {
   display: inline-flex; align-items: center; gap: var(--space-2); min-height: 44px; padding: 0 var(--space-6); border: 0; border-radius: var(--radius-pill);
@@ -220,8 +220,13 @@ const echeanceCourte = (iso: string) => new Intl.DateTimeFormat(locale.value, { 
 }
 .nouvelle:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
-.grille { display: grid; gap: var(--space-4); grid-template-columns: minmax(15rem, 20rem) minmax(0, 1fr); align-items: start; }
-.cote { display: grid; gap: var(--space-4); }
+.grille { display: grid; gap: var(--space-4); grid-template-columns: minmax(0, 1fr) 18.5rem; align-items: start; }
+/* La liste d'abord, large ; la colline et Ayo à côté, qui suivent le défilement. */
+.cote { display: grid; gap: var(--space-4); position: sticky; top: var(--space-6); }
+@media (max-width: 1180px) {
+  .grille { grid-template-columns: minmax(0, 1fr); }
+  .cote { position: static; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); align-items: start; }
+}
 .cote h3 { margin: 0 0 var(--space-3); font-size: var(--type-body-size); }
 .legende { margin: var(--space-3) 0 0; font-size: 0.8125rem; }
 
@@ -231,8 +236,11 @@ const echeanceCourte = (iso: string) => new Intl.DateTimeFormat(locale.value, { 
 .ayo__liste { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); font-size: var(--type-body-sm-size); }
 .ayo__liste li { display: flex; justify-content: space-between; align-items: center; gap: var(--space-2); }
 
-.liste-carte { display: grid; gap: var(--space-3); padding-bottom: var(--space-4); }
-.filtres { display: flex; gap: var(--space-1); padding: 4px; border-radius: var(--radius-pill); background: var(--surface-raised); justify-self: start; }
+.liste-carte { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-3); padding-bottom: var(--space-4); }
+/* Les trois filtres défilent s'ils ne tiennent pas (320 px) au lieu d'élargir la carte. */
+.filtres { display: flex; gap: var(--space-1); padding: 4px; border-radius: var(--radius-pill); background: var(--surface-raised); justify-self: start; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.filtres::-webkit-scrollbar { display: none; }
+.filtre { flex-shrink: 0; white-space: nowrap; }
 .filtre { display: inline-flex; align-items: center; gap: var(--space-2); min-height: 36px; padding: 0 var(--space-4); border: 0; border-radius: var(--radius-pill); background: transparent; color: var(--ink-muted); font: inherit; font-size: var(--type-body-sm-size); font-weight: 600; cursor: pointer; }
 .filtre.actif { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgb(2 7 10 / 0.15); }
 .filtre:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
@@ -275,7 +283,8 @@ const echeanceCourte = (iso: string) => new Intl.DateTimeFormat(locale.value, { 
 .ligne-move { transition: transform var(--motion-base) var(--ease-out); }
 @media (prefers-reduced-motion: reduce) { .ligne-move { transition: none; } }
 @media (max-width: 900px) {
-  .grille { grid-template-columns: 1fr; }
+  /* minmax(0, 1fr) et non 1fr : « 1fr » ne descend pas sous la largeur du contenu, et l'outil sortait de l'écran. */
+  .grille { grid-template-columns: minmax(0, 1fr); }
   .cote { order: 2; }
 }
 @media (max-width: 560px) {

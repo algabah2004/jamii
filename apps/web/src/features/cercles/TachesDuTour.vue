@@ -166,7 +166,7 @@ async function toutConfier() {
 </template>
 
 <style scoped>
-.taches { display: grid; gap: var(--space-3); padding-top: var(--space-4); border-top: 1px solid var(--line); }
+.taches { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-3); padding-top: var(--space-4); border-top: 1px solid var(--line); }
 .taches h3 { margin: 0; font-size: var(--type-body-size); }
 .note { margin: 0; color: var(--ink-muted); font-size: var(--type-body-sm-size); }
 .liste { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-1); }
@@ -180,6 +180,11 @@ async function toutConfier() {
 .tache__titre { overflow-wrap: anywhere; cursor: pointer; }
 .tache--livree .tache__titre { color: var(--ink-muted); text-decoration: line-through; }
 .tache__qui { display: flex; align-items: center; gap: var(--space-2); }
+/* Téléphone : qui s'en charge passe sous le titre, au lieu de pousser la ligne hors de la carte. */
+@media (max-width: 480px) {
+  .tache { grid-template-columns: auto minmax(0, 1fr); }
+  .tache__qui { grid-column: 2; flex-wrap: wrap; }
+}
 .lien {
   padding: var(--space-1) var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-pill);
   background: transparent; color: var(--ink); font: inherit; font-size: var(--type-body-sm-size); cursor: pointer;

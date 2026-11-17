@@ -121,7 +121,7 @@ const CRITERES = [82, 64, 48] as const
   border-inline-start: 4px solid var(--proof);
 }
 
-@media (max-width: 900px) { .formats { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { .formats { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 560px) {
   .tableau { transform: none; }
 }
