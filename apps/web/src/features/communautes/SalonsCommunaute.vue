@@ -469,6 +469,10 @@ function teinte(id: string) {
 
     <template v-else-if="actuel">
       <header class="salon__tete">
+        <!-- Téléphone (salon en plein écran) : la flèche ramène à la communauté. -->
+        <RouterLink :to="`/communautes/${slug}`" class="salon__retour" :aria-label="t('communautes.salons.retour')" data-test="retour-salon">
+          <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M12.5 4.5 7 10l5.5 5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        </RouterLink>
         <h1 class="salon__nom"><span aria-hidden="true">#</span> {{ actuel.nom }}</h1>
         <p class="salon__sujet">{{ actuel.sujet }}</p>
         <div class="salon__actions">
@@ -671,6 +675,9 @@ function teinte(id: string) {
   display: flex; align-items: center; gap: var(--space-3); min-height: 56px; padding: var(--space-2) var(--space-4);
   border-bottom: 1px solid var(--line); box-shadow: 0 1px 0 color-mix(in srgb, var(--ink) 4%, transparent);
 }
+.salon__retour { display: none; place-items: center; flex: none; width: 40px; height: 40px; margin-inline-start: calc(-1 * var(--space-2)); border-radius: 50%; color: var(--ink); }
+.salon__retour:hover { background: color-mix(in srgb, var(--ink) 8%, transparent); }
+.salon__retour:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .salon__nom { margin: 0; flex-shrink: 0; font-size: 1.0625rem; font-family: var(--font-text); font-weight: 700; }
 .salon__nom span { color: var(--ink-muted); font-weight: 500; }
 .salon__sujet {
@@ -762,4 +769,5 @@ button.appel:disabled { opacity: 0.6; cursor: progress; }
   .appel span:first-of-type { display: none; }
   .ecrire__aide { display: none; }
 }
+@media (max-width: 720px) { .salon__retour { display: grid; } }
 </style>
