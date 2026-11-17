@@ -835,7 +835,12 @@ const placeLibre = (m: Message) => !!m.invitation && m.invitation.cercle.statut 
   .tete__retour { display: grid; }
   /* Plein écran sur téléphone : le bandeau colle au bord, comme dans une application de messagerie. */
   .cadre .tete { margin: 0; border-radius: 0; border-width: 0 0 1px; min-height: 60px; }
-  .saisie { margin-bottom: max(var(--space-2), env(safe-area-inset-bottom)); }
+  /* Les messages prennent la largeur : peu de marge, et pas d'avatar à côté de chaque bulle (le bandeau dit déjà
+     à qui on parle). */
+  .cadre .fil { padding: var(--space-3) var(--space-2) var(--space-4); }
+  .cadre .ligne__avatar { display: none; }
+  .cadre .bulle { max-width: 88%; }
+  .cadre .saisie { margin: 0 var(--space-2) max(var(--space-2), env(safe-area-inset-bottom)); }
 }
 /* Selon la largeur de la conversation, pas de l'écran : à 768 px, la liste est à côté et la conversation n'a que
    400 px ; le nom de la personne disparaissait derrière les boutons. */
