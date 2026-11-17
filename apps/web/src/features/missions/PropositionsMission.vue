@@ -155,10 +155,10 @@ async function agir(p: Proposition, retenir: boolean) {
 </template>
 
 <style scoped>
-.propositions { display: grid; gap: var(--space-4); padding: var(--space-8); }
+.propositions { display: grid; gap: var(--space-4); padding: clamp(var(--space-4), 6vw, var(--space-8)); }
 .propositions h2 { margin: 0; font-size: 1.25rem; }
 .liste { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--space-4); }
-.liste > li { display: grid; gap: var(--space-2); padding: var(--space-4); border: 1px solid var(--line-strong); border-radius: var(--radius-md); }
+.liste > li { display: grid; gap: var(--space-2); padding: clamp(var(--space-3), 4vw, var(--space-4)); border: 1px solid var(--line-strong); border-radius: var(--radius-md); }
 .liste > li[data-statut='retenue'] { border-color: var(--action); }
 .liste > li[data-statut='retiree'], .liste > li[data-statut='non_retenue'] { opacity: 0.75; }
 .tete { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; justify-content: space-between; }

@@ -113,7 +113,7 @@ async function envoyer() {
 </template>
 
 <style scoped>
-.echanges { display: grid; gap: var(--space-4); padding: var(--space-8); }
+.echanges { display: grid; gap: var(--space-4); padding: clamp(var(--space-4), 6vw, var(--space-8)); }
 .echanges h2, .echanges p { margin: 0; }
 .echanges h2 { font-size: 1.25rem; }
 .tete { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: baseline; justify-content: space-between; }

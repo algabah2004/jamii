@@ -65,7 +65,7 @@ const accepter = () => agir(() => accepterDevis(props.mission.id, devis.value.id
 </template>
 
 <style scoped>
-.devis { display: grid; gap: var(--space-4); padding: var(--space-8); }
+.devis { display: grid; gap: var(--space-4); padding: clamp(var(--space-4), 6vw, var(--space-8)); }
 .devis h2 { margin: 0; font-size: 1.25rem; }
 .devis h3 { margin: 0 0 var(--space-2); font-size: 1rem; }
 .personne { margin: 0; display: flex; gap: var(--space-2); align-items: center; }
