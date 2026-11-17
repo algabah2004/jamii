@@ -850,6 +850,7 @@ const messageErreur = computed(() =>
 
 @media (prefers-reduced-motion: reduce) { .besoin summary::before { transition: none; } }
 
+
 /* ---------------------------------------------------------------- la conversation avec Ayo, l'assistant IA */
 .ayo-message { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-3); align-items: start; }
 .ayo-message__bulle {
@@ -914,4 +915,21 @@ const messageErreur = computed(() =>
 .genre--outil { background: var(--proof-soft); color: var(--proof-ink); }
 .services-ayo { display: grid; gap: var(--space-3); }
 .services-ayo__note { margin: 0; font-size: var(--type-body-sm-size); }
+
+/* Téléphone : trois cartes imbriquées (la réponse d'Ayo, la proposition, une piste) gardaient chacune 24 à 32 px
+   de marge ; le texte n'avait plus que 200 px. Marges ramenées à 12–16 px, onglets qui défilent avec un fondu. */
+@media (max-width: 480px) {
+  .ayo-message__bulle { padding: var(--space-3) var(--space-4) var(--space-4); }
+  .bloc, .priorite, .jalon, .recommande, .offres, .brief, .attente, .vide { padding: var(--space-4); }
+  .piste { padding: var(--space-3); }
+  .lancer-seul { padding: var(--space-3) var(--space-4); }
+  .onglets__barre {
+    scrollbar-width: none; padding-inline-end: var(--space-6);
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - var(--space-8)), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - var(--space-8)), transparent);
+  }
+  .onglets__barre::-webkit-scrollbar { display: none; }
+  .onglet { padding-inline: var(--space-3); }
+  .onglet:focus-visible { outline-offset: -2px; }
+}
 </style>
