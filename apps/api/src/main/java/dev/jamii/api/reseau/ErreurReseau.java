@@ -39,6 +39,18 @@ class ErreurReseau extends RuntimeException {
 		return new ErreurReseau(HttpStatus.FORBIDDEN, "interdit", "Accès refusé", null, 0);
 	}
 
+	/** Le compte démo, ouvert à tout visiteur, n'écrit et n'appelle que les personnes de la démo (#157). */
+	static ErreurReseau compteDemo() {
+		return new ErreurReseau(HttpStatus.FORBIDDEN, "compte_demo", "Le compte démo ne peut écrire qu'aux personnes de la démo", null, 0);
+	}
+
+	/** Lève {@link #compteDemo()} si `moi` est le compte démo et `autre` un vrai compte. */
+	static void verifierDemo(dev.jamii.api.auth.Annuaire annuaire, java.util.UUID moi, java.util.UUID autre) {
+		if (annuaire.estDeDemonstration(moi) && !annuaire.estDeDemonstration(autre)) {
+			throw compteDemo();
+		}
+	}
+
 	static ErreurReseau conflit(String code, String titre) {
 		return new ErreurReseau(HttpStatus.CONFLICT, code, titre, null, 0);
 	}

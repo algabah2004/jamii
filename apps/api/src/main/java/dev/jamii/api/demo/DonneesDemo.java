@@ -114,11 +114,24 @@ class DonneesDemo implements ApplicationRunner {
 		// Les nouveaux cercles se complètent aussi sur la base distante déjà chargée, sans réinitialisation.
 		transaction.executeWithoutResult(statut -> new DemoDecouverteCercles(base, maintenant).charger());
 		transaction.executeWithoutResult(statut -> new DemoDecouverteHackathons(base, maintenant).charger());
+		// Le compte démo, partagé par tous les visiteurs : effacé puis recréé à chaque démarrage (CompteDemo).
+		// Si la remise à zéro échoue (une donnée qu'on n'avait pas prévue), l'API démarre quand même avec l'ancien compte.
+		try {
+			transaction.executeWithoutResult(statut -> {
+				var compteDemo = new CompteDemo(base, maintenant);
+				compteDemo.reinitialiser();
+				compteDemo.creer();
+			});
+		}
+		catch (org.springframework.dao.DataAccessException e) {
+			journal.warn("Le compte démo n'a pas pu être remis à zéro : il garde ses données", e);
+		}
 		// Après les communautés : leurs personnes existent alors toutes. Un profil publié pour chacune.
 		transaction.executeWithoutResult(statut -> new DemoProfils(base, maintenant).charger());
 		transaction.executeWithoutResult(statut -> new DemoSalonsCercles(base, maintenant).charger());
 		// En dernier : le vrai compte rejoint des personnes, des communautés et un hackathon qui existent déjà.
 		transaction.executeWithoutResult(statut -> new DemoMonCompte(base, projets, maintenant, compte).charger());
+		transaction.executeWithoutResult(statut -> DemoMonCompte.pourCompteDemo(base, projets, maintenant).completer());
 		journal.info(Boolean.TRUE.equals(charge) ? "Données de démo chargées (profil demo)" : "Données de démo déjà présentes");
 		return Boolean.TRUE.equals(charge);
 	}

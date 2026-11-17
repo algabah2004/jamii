@@ -21,6 +21,10 @@ function nonConnecte() {
       connecte = true
       return new HttpResponse(null, { status: 204 })
     }),
+    http.post('/api/auth/demo', () => {
+      connecte = true
+      return new HttpResponse(null, { status: 204 })
+    }),
   )
 }
 
@@ -93,6 +97,33 @@ describe('se connecter', () => {
     await vi.waitFor(() => expect(page.find('[data-test="connexion-github"]').exists()).toBe(true))
     await new Promise((r) => setTimeout(r, 50))
     expect(page.find('[data-test="connexion-google"]').exists()).toBe(false)
+  })
+
+  it('le compte démo : un clic ouvre la session et mène à la page demandée', async () => {
+    nonConnecte()
+    const { page, routeur } = await ouvrir('/connexion?retour=/cercles')
+    await vi.waitFor(() => expect(page.find('[data-test="connexion-demo"]').exists()).toBe(true))
+    expect(page.get('[data-test="voie-demo"]').text()).toContain('effacé au prochain redémarrage')
+    await page.get('[data-test="connexion-demo"]').trigger('click')
+    await vi.waitFor(() => expect(routeur.currentRoute.value.path).toBe('/cercles'))
+  })
+
+  it("sans compte démo sur le serveur, pas de bouton ; s'il ne répond pas, on le dit", async () => {
+    nonConnecte()
+    serveur.use(http.get('/api/auth/fournisseurs', () => HttpResponse.json({ github: true, google: true, email: true, demo: false })))
+    const { page } = await ouvrir('/connexion')
+    await vi.waitFor(() => expect(page.find('[data-test="connexion-google"]').exists()).toBe(true))
+    expect(page.find('[data-test="connexion-demo"]').exists()).toBe(false)
+    page.unmount()
+
+    serveur.use(
+      http.get('/api/auth/fournisseurs', () => HttpResponse.json({ github: true, google: true, email: true, demo: true })),
+      http.post('/api/auth/demo', () => HttpResponse.json({ code: 'introuvable' }, { status: 404 })),
+    )
+    const { page: autre } = await ouvrir('/connexion')
+    await vi.waitFor(() => expect(autre.find('[data-test="connexion-demo"]').exists()).toBe(true))
+    await autre.get('[data-test="connexion-demo"]').trigger('click')
+    await vi.waitFor(() => expect(autre.find('[data-test="erreur-demo"]').exists()).toBe(true))
   })
 
   it("explique l'échec de la connexion Google", async () => {

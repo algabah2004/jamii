@@ -6,6 +6,9 @@ info:
   description: |
     Responsable : @rev22rse22 (bloc #19). Règles communes : docs/api-conventions.md. Plan : docs/priorites.md.
 
+    **Le compte démo** (`socle.yaml`, `POST /api/auth/demo`), ouvert à tout visiteur, n'écrit, ne transfère, n'appelle et
+    ne demande en contact que les personnes de la démo : vers un vrai compte, `403` avec le code `compte_demo`.
+
     **Les recommandations** relient un cercle et des profils publiés (`profils.yaml`) :
     - à un développeur, les cercles **ouverts** dont les membres n'ont pas encore ses compétences, ceux de sa ville d'abord ;
     - à un membre d'un cercle ouvert, les profils publiés et `disponible` qui apportent une compétence qui manque au cercle.

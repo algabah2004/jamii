@@ -263,6 +263,7 @@ class ReseauController {
 			throw ErreurReseau.validation("texte", "obligatoire");
 		}
 		var destinataire = personne(personneId);
+		ErreurReseau.verifierDemo(annuaire, moi.id(), destinataire);
 		var pieces = fichiers.verifierPiecesPrivees(corps.pieces(), moi.id(), destinataire);
 		var ligne = messagerie.envoyer(moi.id(), destinataire, corps.texte(), corps.cercleId(), pieces, corps.reponseA());
 		ecriture.arreter(moi.id(), destinataire);
@@ -327,6 +328,9 @@ class ReseauController {
 	ResponseEntity<Void> transferer(@AuthenticationPrincipal UtilisateurConnecte moi, @PathVariable String personneId,
 			@PathVariable String messageId, @RequestBody(required = false) Transfert corps) {
 		UUID id = personne(messageId);
+		if (corps != null && corps.destinataires() != null) {
+			corps.destinataires().stream().filter(java.util.Objects::nonNull).forEach(d -> ErreurReseau.verifierDemo(annuaire, moi.id(), d));
+		}
 		Instant maintenant = Instant.now();
 		messagerie.transferer(moi.id(), personne(personneId), id, corps == null ? null : corps.destinataires(), estUnAppel(id),
 				(pieces, destinataire) -> fichiers.copierPrives(pieces, moi.id(), destinataire, maintenant));
@@ -371,7 +375,9 @@ class ReseauController {
 
 	@PutMapping("/api/contacts/{personneId}")
 	LienContact ajouterContact(@AuthenticationPrincipal UtilisateurConnecte moi, @PathVariable String personneId) {
-		var lien = contacts.ajouter(moi.id(), personne(personneId));
+		UUID personne = personne(personneId);
+		ErreurReseau.verifierDemo(annuaire, moi.id(), personne);
+		var lien = contacts.ajouter(moi.id(), personne);
 		return new LienContact(lien.statut(), lien.depuis());
 	}
 

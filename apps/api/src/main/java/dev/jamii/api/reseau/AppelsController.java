@@ -64,6 +64,7 @@ class AppelsController {
 		if (corps == null) {
 			throw ErreurReseau.validation("offre", "obligatoire");
 		}
+		ErreurReseau.verifierDemo(annuaire, moi.id(), uuid(personneId));
 		var appel = appels.lancer(moi.id(), uuid(personneId), corps.offre(), Boolean.TRUE.equals(corps.video()));
 		return ResponseEntity.created(URI.create("/api/appels/" + appel.id())).cacheControl(CacheControl.noStore())
 			.body(vue(appel, moi.id()));

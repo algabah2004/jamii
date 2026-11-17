@@ -30,9 +30,12 @@ class MesDonneesController {
 
 	private final LimiteurDemandes limiteur;
 
-	MesDonneesController(MesDonnees donnees, LimiteurDemandes limiteur) {
+	private final Annuaire annuaire;
+
+	MesDonneesController(MesDonnees donnees, LimiteurDemandes limiteur, Annuaire annuaire) {
 		this.donnees = donnees;
 		this.limiteur = limiteur;
+		this.annuaire = annuaire;
 	}
 
 	@GetMapping("/api/me/export")
@@ -66,8 +69,16 @@ class MesDonneesController {
 	 * requêtes), donc rien ne reste à moitié supprimé si l'API redémarre.
 	 */
 	@DeleteMapping("/api/me")
-	ResponseEntity<Void> supprimer(@AuthenticationPrincipal UtilisateurConnecte moi, HttpServletRequest requete)
+	ResponseEntity<?> supprimer(@AuthenticationPrincipal UtilisateurConnecte moi, HttpServletRequest requete)
 			throws ServletException {
+		// Le compte démo est partagé par tous les visiteurs : un seul d'entre eux ne peut pas l'effacer pour les autres.
+		if (annuaire.estDeDemonstration(moi.id())) {
+			ProblemDetail erreur = ProblemDetail.forStatus(HttpStatus.FORBIDDEN);
+			erreur.setType(URI.create("urn:jamii:erreur:compte_demo"));
+			erreur.setTitle("Le compte démo ne peut pas être supprimé");
+			erreur.setProperty("code", "compte_demo");
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(erreur);
+		}
 		donnees.supprimer(moi.id(), Instant.now());
 		// Ferme la session en cours et efface son cookie, même si le compte avait déjà disparu.
 		requete.logout();

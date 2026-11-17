@@ -258,7 +258,7 @@ class DonneesDemoTest {
 	@Test
 	void chaque_personne_de_demo_a_un_profil_publie_avec_ses_competences() {
 		assertThat(compter("SELECT count(*) FROM utilisateur u JOIN profil p ON p.utilisateur_id = u.id"
-				+ " WHERE u.email LIKE '%@demo.jamii.test' AND p.publie")).isEqualTo(18);
+				+ " WHERE u.email LIKE '%@demo.jamii.test' AND p.publie")).isEqualTo(19);
 		var profil = mvc.get().uri("/api/profils/" + DonneesDemo.KOFI.id());
 		assertThat(profil).hasStatusOk();
 		assertThat(profil).bodyJson().extractingPath("$.nom").isEqualTo("Kofi Mensah");
@@ -281,7 +281,7 @@ class DonneesDemoTest {
 
 	@Test
 	void aucun_compte_de_demo_n_a_de_login_github_ni_d_adresse_joignable() {
-		assertThat(compter("SELECT count(*) FROM utilisateur WHERE email LIKE '%@demo.jamii.test'")).as("les 6 de la démo et les 12 des communautés").isEqualTo(18);
+		assertThat(compter("SELECT count(*) FROM utilisateur WHERE email LIKE '%@demo.jamii.test'")).as("les 6 de la démo, les 12 des communautés et le compte démo").isEqualTo(19);
 		assertThat(compter("SELECT count(*) FROM utilisateur WHERE email LIKE '%@demo.jamii.test' AND login_github IS NOT NULL")).isZero();
 	}
 
@@ -300,7 +300,8 @@ class DonneesDemoTest {
 		assertThat(detail).bodyJson().extractingPath("$.nombreMembres").isEqualTo(1);
 		assertThat(detail).bodyJson().extractingPath("$.taille").isEqualTo(4);
 		assertThat(detail).bodyJson().extractingPath("$.moi.estMembre").isEqualTo(false);
-		assertThat(compter("SELECT count(*) FROM cercle")).isEqualTo(24);
+		// 24 cercles de démo, et celui du compte démo (CompteDemo).
+		assertThat(compter("SELECT count(*) FROM cercle")).isEqualTo(25);
 	}
 
 	@Test
@@ -308,9 +309,9 @@ class DonneesDemoTest {
 	void une_base_de_demo_deja_chargee_recoit_les_nouveaux_cercles() {
 		UUID sahel = DonneesDemo.id("cercle:decouverte:sahel-mobile");
 		base.sql("DELETE FROM cercle WHERE id = :id").param("id", sahel).update();
-		assertThat(compter("SELECT count(*) FROM cercle")).isEqualTo(23);
-		assertThat(demo.charger(Instant.now())).as("les anciennes données étaient déjà chargées").isFalse();
 		assertThat(compter("SELECT count(*) FROM cercle")).isEqualTo(24);
+		assertThat(demo.charger(Instant.now())).as("les anciennes données étaient déjà chargées").isFalse();
+		assertThat(compter("SELECT count(*) FROM cercle")).isEqualTo(25);
 		assertThat(compter("SELECT count(*) FROM cercle_membre WHERE cercle_id = '" + sahel + "'")).isEqualTo(1);
 		assertThat(compter("SELECT count(*) FROM message_cercle WHERE cercle_id = '" + sahel + "'"))
 			.as("le salon du cercle raconte sa création").isPositive();

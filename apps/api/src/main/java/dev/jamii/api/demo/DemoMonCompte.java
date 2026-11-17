@@ -45,7 +45,10 @@ final class DemoMonCompte {
 
 	static final UUID MISSION = id("mission:jamii-mobile");
 
-	private static final String CLE = "mon-compte";
+	/** Le même parcours pour le compte démo ({@link CompteDemo}), avec ses propres identifiants : aucune collision. */
+	static final UUID CERCLE_DEMO = id("cercle:pionniers");
+
+	static final UUID MISSION_DEMO = id("mission:jamii-mobile:compte-demo");
 
 	private static final String LIVREE = "livree";
 
@@ -63,11 +66,51 @@ final class DemoMonCompte {
 
 	private UUID moi;
 
+	/** Ce qui distingue le vrai compte et le compte démo : préfixe des identifiants, cercle, mission, coéquipière. */
+	private final String cle;
+
+	private final UUID cercleId;
+
+	private final UUID missionId;
+
+	private final String nomCercle;
+
+	private final String titreMission;
+
+	private final DonneesDemo.Personne equipiere;
+
 	DemoMonCompte(JdbcClient base, Projets projets, Instant maintenant, String login) {
+		this(base, projets, maintenant, login, null, "mon-compte", CERCLE, MISSION, "Cercle des bâtisseurs", "L'application mobile de Jamii", AWA);
+	}
+
+	private DemoMonCompte(JdbcClient base, Projets projets, Instant maintenant, String login, UUID moi, String cle, UUID cercleId,
+			UUID missionId, String nomCercle, String titreMission, DonneesDemo.Personne equipiere) {
 		this.base = base;
 		this.projets = projets;
 		this.maintenant = maintenant;
 		this.login = login == null ? "" : login.trim();
+		this.moi = moi;
+		this.cle = cle;
+		this.cercleId = cercleId;
+		this.missionId = missionId;
+		this.nomCercle = nomCercle;
+		this.titreMission = titreMission;
+		this.equipiere = equipiere;
+	}
+
+	/** Le parcours du compte démo : un autre cercle, une autre mission, et Fatou (pas Awa) dans l'équipe du hackathon. */
+	static DemoMonCompte pourCompteDemo(JdbcClient base, Projets projets, Instant maintenant) {
+		return new DemoMonCompte(base, projets, maintenant, null, CompteDemo.ID, "compte-demo", CERCLE_DEMO, MISSION_DEMO,
+				"Cercle des pionniers", "Jamii sur téléphone : le salon et le calendrier du cercle", FATOU);
+	}
+
+	/** Pour le compte démo, qui existe déjà ({@link CompteDemo#creer}). */
+	void completer() {
+		if (!base.sql("SELECT EXISTS (SELECT 1 FROM utilisateur WHERE id = :id)").param("id", moi).query(Boolean.class).single()) {
+			return;
+		}
+		remplir();
+		journal.info("Données de démo complétées pour le compte démo");
 	}
 
 	/** Vrai si le compte a été trouvé (et complété). */
@@ -82,13 +125,17 @@ final class DemoMonCompte {
 			return false;
 		}
 		moi = compte.get();
+		remplir();
+		journal.info("Données de démo complétées pour le compte {}", login);
+		return true;
+	}
+
+	private void remplir() {
 		cercle();
 		communautes();
 		reseau();
 		hackathon();
 		mission();
-		journal.info("Données de démo complétées pour le compte {}", login);
-		return true;
 	}
 
 	private Timestamp ilYA(Duration duree) {
@@ -110,7 +157,7 @@ final class DemoMonCompte {
 	// ---------------------------------------------------------------- le cercle
 
 	private void cercle() {
-		boolean deja = base.sql("SELECT EXISTS (SELECT 1 FROM cercle WHERE id = :c)").param("c", CERCLE).query(Boolean.class).single();
+		boolean deja = base.sql("SELECT EXISTS (SELECT 1 FROM cercle WHERE id = :c)").param("c", cercleId).query(Boolean.class).single();
 		if (deja) {
 			return;
 		}
@@ -122,9 +169,9 @@ final class DemoMonCompte {
 
 		base.sql("""
 				INSERT INTO cercle (id, nom, ville, taille, createur_id, statut, tour_en_cours, tirage_le, cree_le)
-				VALUES (:id, 'Cercle des bâtisseurs', :ville, 4, :moi, 'en_cours', 2, :tirage, :cree)
+				VALUES (:id, :nom, :ville, 4, :moi, 'en_cours', 2, :tirage, :cree)
 				""")
-			.param("id", CERCLE).param("ville", ville).param("moi", moi).param("tirage", Timestamp.from(tirage))
+			.param("id", cercleId).param("nom", nomCercle).param("ville", ville).param("moi", moi).param("tirage", Timestamp.from(tirage))
 			.param("cree", Timestamp.from(creation)).update();
 		// Dans l'ordre du tirage : le tour de Nia est livré, celui du compte (Jamii) est en cours.
 		List<Object[]> places = List.of(
@@ -138,7 +185,7 @@ final class DemoMonCompte {
 					INSERT INTO cercle_membre (cercle_id, utilisateur_id, rejoint_le, idee_titre, idee_description, rang)
 					VALUES (:c, :u, :t, :titre, :description, :rang)
 					""")
-				.param("c", CERCLE).param("u", membres.get(i)).param("t", Timestamp.from(creation.plus(heures(i))))
+				.param("c", cercleId).param("u", membres.get(i)).param("t", Timestamp.from(creation.plus(heures(i))))
 				.param("titre", places.get(i)[1]).param("description", places.get(i)[2]).param("rang", i + 1).update();
 		}
 
@@ -155,7 +202,7 @@ final class DemoMonCompte {
 				new Tache("Mettre l'API en ligne sur DataCloud", 2, null, LIVREE, 12, "normale", null),
 				new Tache("Tester avec dix passagers de la ligne 46", 2, NIA, LIVREE, 13, "basse", null)), maintenant.minus(jours(8)));
 		base.sql("UPDATE cercle_membre SET livre_le = :t WHERE cercle_id = :c AND rang = 1")
-			.param("t", ilYA(jours(8))).param("c", CERCLE).update();
+			.param("t", ilYA(jours(8))).param("c", cercleId).update();
 		projets.marquerLivre(matatu, maintenant.minus(jours(8)));
 
 		// Tour 2 : Jamii, au 8e jour. Le calendrier montre des échéances passées, aujourd'hui, et à venir.
@@ -179,14 +226,14 @@ final class DemoMonCompte {
 						"Déployer l'API, le web et la base sur DataCloud avec le domaine jamii.dev.\nFini quand le cercle fait sa démo sur le site en ligne."),
 				new Tache("Préparer la démo devant le jury", 2, null, "a_faire", 13, "haute", null)), maintenant.minus(heures(3)));
 
-		new DemoSalonsCercles(base, maintenant).histoire(List.of(CERCLE));
+		new DemoSalonsCercles(base, maintenant).histoire(List.of(cercleId));
 		salon();
 	}
 
 	private UUID ouvrirTour(int rang, UUID beneficiaire, List<UUID> membres, Object[] place, Instant quand) {
 		UUID projet = projets.creerPourCercle(beneficiaire, membres, (String) place[1], (String) place[2], quand);
 		base.sql("UPDATE cercle_membre SET projet_id = :p WHERE cercle_id = :c AND rang = :n")
-			.param("p", projet).param("c", CERCLE).param("n", rang).update();
+			.param("p", projet).param("c", cercleId).param("n", rang).update();
 		return projet;
 	}
 
@@ -199,7 +246,7 @@ final class DemoMonCompte {
 					INSERT INTO jalon (id, projet_id, titre, echeance, statut, ordre, cree_le, version)
 					VALUES (:id, :p, :titre, :echeance, :statut, :ordre, :t, :version)
 					""")
-				.param("id", id("jalon:" + CLE + ":" + tour + ":" + i)).param("p", projet).param("titre", j[0])
+				.param("id", id("jalon:" + cle + ":" + tour + ":" + i)).param("p", projet).param("titre", j[0])
 				.param("echeance", date(debut, (Integer) j[1])).param("statut", atteint ? "atteint" : "prevu").param("ordre", i)
 				.param("t", Timestamp.from(debut.plus(Duration.ofMinutes(i)))).param("version", atteint ? 1 : 0).update();
 		}
@@ -218,8 +265,8 @@ final class DemoMonCompte {
 					                   livree_le, cree_le, version)
 					VALUES (:id, :p, :jalon, :titre, :description, :priorite, :echeance, :assignee, :statut, :livree, :t, :version)
 					""")
-				.param("id", id("tache:" + CLE + ":" + tour + ":" + i)).param("p", projet)
-				.param("jalon", id("jalon:" + CLE + ":" + tour + ":" + t.jalon())).param("titre", t.titre())
+				.param("id", id("tache:" + cle + ":" + tour + ":" + i)).param("p", projet)
+				.param("jalon", id("jalon:" + cle + ":" + tour + ":" + t.jalon())).param("titre", t.titre())
 				.param("description", t.description()).param("priorite", t.priorite()).param("echeance", date(debut, t.echeance()))
 				.param("assignee", qui(t.qui())).param("statut", t.statut())
 				.param("livree", livreeLe == null ? null : Timestamp.from(livreeLe))
@@ -259,7 +306,7 @@ final class DemoMonCompte {
 				VALUES (:id, :c, :a, :type, :texte, :fait, :prevu, :bloque, :resoluLe, :resoluPar, :le)
 				ON CONFLICT (id) DO NOTHING
 				""")
-			.param("id", id("salon-cercle:" + CERCLE + ":" + n)).param("c", CERCLE).param("a", auteur).param("type", type)
+			.param("id", id("salon-cercle:" + cercleId + ":" + n)).param("c", cercleId).param("a", auteur).param("type", type)
 			.param("texte", texte).param("fait", fait).param("prevu", prevu).param("bloque", bloque)
 			.param("resoluLe", resoluIlYa == null ? null : ilYA(resoluIlYa)).param("resoluPar", resoluPar)
 			.param("le", ilYA(ilYa)).update();
@@ -281,8 +328,8 @@ final class DemoMonCompte {
 
 		communaute("web").ifPresent(c -> {
 			Optional<UUID> projet = base.sql("SELECT projet_id FROM cercle_membre WHERE cercle_id = :c AND utilisateur_id = :u")
-				.param("c", CERCLE).param("u", moi).query(UUID.class).optional();
-			UUID publication = id("publication:" + CLE + ":jamii");
+				.param("c", cercleId).param("u", moi).query(UUID.class).optional();
+			UUID publication = id("publication:" + cle + ":jamii");
 			base.sql("""
 					INSERT INTO publication (id, communaute_id, auteur_id, type, titre, contenu, projet_id, cree_le)
 					VALUES (:id, :c, :a, 'montre_ton_projet', :titre, :contenu, :projet, :t)
@@ -307,7 +354,7 @@ final class DemoMonCompte {
 				SELECT :id, s.id, :a, :texte, :le FROM salon s WHERE s.communaute_id = :c AND s.slug = :slug
 				ON CONFLICT (id) DO NOTHING
 				""")
-			.param("id", id("message:" + CLE + ":" + communaute + "/" + salon + "/" + n)).param("a", auteur).param("texte", texte)
+			.param("id", id("message:" + cle + ":" + communaute + "/" + salon + "/" + n)).param("a", auteur).param("texte", texte)
 			.param("le", ilYA(ilYa)).param("c", c).param("slug", salon).update());
 	}
 
@@ -317,7 +364,7 @@ final class DemoMonCompte {
 				SELECT :id, :p, :a, :contenu, :t WHERE EXISTS (SELECT 1 FROM publication WHERE id = :p)
 				ON CONFLICT (id) DO NOTHING
 				""")
-			.param("id", id("reponse:" + CLE + ":jamii:" + n)).param("p", publication).param("a", auteur).param("contenu", contenu)
+			.param("id", id("reponse:" + cle + ":jamii:" + n)).param("p", publication).param("a", auteur).param("contenu", contenu)
 			.param("t", ilYA(ilYa)).update();
 	}
 
@@ -356,26 +403,26 @@ final class DemoMonCompte {
 				VALUES (:id, :de, :a, :texte, :le, :lu)
 				ON CONFLICT (id) DO NOTHING
 				""")
-			.param("id", id("message-prive:" + CLE + ":kofi:" + n)).param("de", de).param("a", a).param("texte", texte)
+			.param("id", id("message-prive:" + cle + ":kofi:" + n)).param("de", de).param("a", a).param("texte", texte)
 			.param("le", ilYA(ilYa)).param("lu", lu ? ilYA(ilYa.minus(Duration.ofMinutes(5))) : null).update();
 	}
 
 	// ---------------------------------------------------------------- le hackathon
 
-	/** Une équipe au hackathon ouvert d'Abidjan, avec Awa, si le compte n'y est pas déjà inscrit. */
+	/** Une équipe au hackathon ouvert d'Abidjan, avec sa coéquipière, si le compte n'y est pas déjà inscrit. */
 	private void hackathon() {
 		UUID h = DemoAnnonces.HACKATHON_OUVERT;
 		boolean possible = base.sql("""
 				SELECT EXISTS (SELECT 1 FROM hackathon WHERE id = :h)
-				   AND NOT EXISTS (SELECT 1 FROM inscription WHERE hackathon_id = :h AND utilisateur_id IN (:moi, :awa))
-				""").param("h", h).param("moi", moi).param("awa", AWA.id()).query(Boolean.class).single();
+				   AND NOT EXISTS (SELECT 1 FROM inscription WHERE hackathon_id = :h AND utilisateur_id IN (:moi, :equipiere))
+				""").param("h", h).param("moi", moi).param("equipiere", equipiere.id()).query(Boolean.class).single();
 		if (!possible) {
 			return;
 		}
-		UUID equipe = id("hackathon:abidjan-sante:equipe:" + CLE);
+		UUID equipe = id("hackathon:abidjan-sante:equipe:" + cle);
 		base.sql("INSERT INTO equipe (id, hackathon_id, nom, chef_id, cree_le) VALUES (:id, :h, 'Les bâtisseurs', :c, :t)")
 			.param("id", equipe).param("h", h).param("c", moi).param("t", ilYA(heures(20))).update();
-		for (UUID u : List.of(moi, AWA.id())) {
+		for (UUID u : List.of(moi, equipiere.id())) {
 			base.sql("""
 					INSERT INTO inscription (id, hackathon_id, utilisateur_id, equipe_id, statut, cherche_equipe, competences, cree_le)
 					VALUES (:id, :h, :u, :e, 'acceptee', FALSE, :c, :t)
@@ -392,11 +439,11 @@ final class DemoMonCompte {
 		base.sql("""
 				INSERT INTO mission (id, client_id, titre, besoin, competences, budget_centimes, devise, date_souhaitee, visibilite,
 					ville, pays, a_distance, statut, version, cree_le, publiee_le)
-				VALUES (:id, :moi, 'L''application mobile de Jamii', :besoin, ARRAY['flutter', 'spring'], 600000, 'XOF', :souhaitee,
+				VALUES (:id, :moi, :titre, :besoin, ARRAY['flutter', 'spring'], 600000, 'XOF', :souhaitee,
 					'publique', 'Dakar', 'SN', TRUE, 'publiee', 2, :t, :t)
 				ON CONFLICT (id) DO NOTHING
 				""")
-			.param("id", MISSION).param("moi", moi)
+			.param("id", missionId).param("moi", moi).param("titre", titreMission)
 			.param("besoin", "Jamii a besoin d'une application mobile : le salon du cercle, le point du jour et le calendrier du tour, "
 					+ "avec des notifications. Elle doit marcher sur un téléphone d'entrée de gamme et avec peu de réseau.")
 			.param("souhaitee", date(maintenant, 45)).param("t", ilYA(jours(3))).update();
@@ -412,7 +459,7 @@ final class DemoMonCompte {
 				VALUES (:id, :m, :d, :message, :prix, 'XOF', :delai, 'envoyee', :t)
 				ON CONFLICT DO NOTHING
 				""")
-			.param("id", id("mission:jamii-mobile:proposition:" + qui.cle())).param("m", MISSION).param("d", qui.id())
+			.param("id", id((cle.equals("mon-compte") ? "mission:jamii-mobile" : "mission:jamii-mobile:" + cle) + ":proposition:" + qui.cle())).param("m", missionId).param("d", qui.id())
 			.param("message", message).param("prix", prix).param("delai", delai).param("t", ilYA(ilYa)).update();
 	}
 

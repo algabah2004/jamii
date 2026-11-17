@@ -103,6 +103,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/demo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ouvre une session sur le compte démo, sans compte ni mot de passe (#157)
+         * @description Pour explorer Jamii déjà rempli : un cercle dont c'est le tour, des communautés, des contacts, un hackathon et une
+         *     mission. Le compte est partagé par tous les visiteurs, donc remis à zéro à chaque démarrage de l'API. Il n'écrit
+         *     et n'appelle que les personnes de la démo (`403 compte_demo` sinon), et ne peut pas être supprimé. N'existe
+         *     qu'avec le profil `demo` et `JAMII_DEMO_CONNEXION` vrai (`404` sinon).
+         */
+        post: operations["entrerEnDemo"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/lien-email": {
         parameters: {
             query?: never;
@@ -530,9 +553,30 @@ export interface operations {
                         github: boolean;
                         google: boolean;
                         email: boolean;
+                        /** @description Vrai si `POST /api/auth/demo` est ouvert (profil demo de l'API). */
+                        demo: boolean;
                     };
                 };
             };
+        };
+    };
+    entrerEnDemo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Session ouverte : cookie de session posé. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["Introuvable"];
         };
     };
     demanderLienEmail: {
@@ -649,6 +693,8 @@ export interface operations {
                 content?: never;
             };
             401: components["responses"]["NonConnecte"];
+            /** @description `compte_demo` : le compte démo, partagé par tous les visiteurs, ne peut pas être supprimé. */
+            403: components["responses"]["Interdit"];
         };
     };
     exporterMesDonnees: {

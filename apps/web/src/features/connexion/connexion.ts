@@ -46,13 +46,23 @@ export function minutesAvant(entete: string | null): number {
   return Number.isFinite(secondes) && secondes > 0 ? Math.ceil(secondes / 60) : 1
 }
 
-/** Les façons de se connecter que le serveur propose. Google n'est montré que s'il est configuré. */
-export async function lireFournisseurs(): Promise<{ google: boolean }> {
+/** Les façons de se connecter que le serveur propose. Google n'est montré que s'il est configuré, le compte démo aussi. */
+export async function lireFournisseurs(): Promise<{ google: boolean; demo: boolean }> {
   try {
     const { data } = await api.GET('/api/auth/fournisseurs')
-    return { google: data?.google === true }
+    return { google: data?.google === true, demo: data?.demo === true }
   } catch {
-    return { google: false }
+    return { google: false, demo: false }
+  }
+}
+
+/** Ouvre une session sur le compte démo (#157), partagé par tous les visiteurs. Vrai si c'est fait. */
+export async function entrerEnDemo(): Promise<boolean> {
+  try {
+    const { response } = await api.POST('/api/auth/demo')
+    return response.status === 204
+  } catch {
+    return false
   }
 }
 

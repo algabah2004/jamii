@@ -55,6 +55,18 @@ public class Annuaire {
 		return utilisateurs.findById(id).map(Utilisateur::email).filter(e -> !e.isBlank());
 	}
 
+	/** Le domaine réservé des comptes de la démo : personne ne le reçoit, et aucun vrai compte ne l'utilise. */
+	public static final String DOMAINE_DEMO = "@demo.jamii.test";
+
+	/**
+	 * Vrai pour un compte de la démo : ses personnes fictives et le compte démo que tout visiteur peut ouvrir. Ce
+	 * dernier n'écrit qu'aux comptes de la démo et ne peut pas être supprimé : un visiteur anonyme n'importune personne.
+	 */
+	@Transactional(readOnly = true)
+	public boolean estDeDemonstration(UUID id) {
+		return utilisateurs.findById(id).map(Utilisateur::email).filter(e -> e != null && e.endsWith(DOMAINE_DEMO)).isPresent();
+	}
+
 	private static Compte enCompte(Utilisateur u) {
 		return new Compte(u.id(), u.nom(), u.avatarUrl(), u.loginGithub());
 	}
