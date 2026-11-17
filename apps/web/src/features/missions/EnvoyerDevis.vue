@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import IconeMission from './IconeMission.vue'
 import { computed, ref, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { JBouton, JChamp } from '../../design-system'
@@ -79,8 +80,11 @@ async function envoyer() {
 </script>
 
 <template>
-  <form class="carte devis" aria-labelledby="devis-titre" data-test="form-devis" @submit.prevent="envoyer">
-    <h2 id="devis-titre">{{ remplace ? t('missions.devis.remplacer') : t('missions.devis.titre') }}</h2>
+  <form class="carte devis m-bloc" data-ton="orange" aria-labelledby="devis-titre" data-test="form-devis" @submit.prevent="envoyer">
+    <header class="m-tete">
+      <IconeMission nom="devis" />
+      <div><h2 id="devis-titre">{{ remplace ? t('missions.devis.remplacer') : t('missions.devis.titre') }}</h2></div>
+    </header>
     <p class="texte-discret">{{ t('missions.devis.intro') }}</p>
 
     <div class="devise">
@@ -93,7 +97,7 @@ async function envoyer() {
     <ol class="jalons">
       <li v-for="(j, i) in jalons" :key="j.cle" data-test="ligne-jalon">
         <fieldset>
-          <legend>{{ t('missions.suivi.jalon', { n: i + 1 }) }}</legend>
+          <legend><span class="numero" aria-hidden="true">{{ i + 1 }}</span>{{ t('missions.suivi.jalon', { n: i + 1 }) }}</legend>
           <JChamp v-model="j.titre" :libelle="t('missions.devis.jalonTitre')" :maxlength="LIMITES_DEVIS.titreMax" requis />
           <div class="ligne">
             <JChamp
@@ -112,7 +116,7 @@ async function envoyer() {
       <JBouton v-if="jalons.length < LIMITES_DEVIS.jalonsMax" variante="secondaire" data-test="ajouter-jalon" @click="ajouter">{{ t('missions.devis.ajouter') }}</JBouton>
     </div>
 
-    <p class="total" data-test="total" aria-live="polite">{{ t('missions.devis.total', { montant: formaterMontant({ centimes: total, devise }, locale) }) }}</p>
+    <p class="total m-montant" data-test="total" aria-live="polite">{{ t('missions.devis.total', { montant: formaterMontant({ centimes: total, devise }, locale) }) }}</p>
 
     <JChamp v-model="retouches" type="number" :libelle="t('missions.devis.retouches')" :aide="t('missions.devis.aideRetouches')" requis />
     <JChamp v-model="conditions" :libelle="t('missions.devis.conditions')" :aide="t('missions.devis.aideConditions')" multiligne :lignes="3" :maxlength="LIMITES_DEVIS.conditionsMax" />
@@ -125,16 +129,17 @@ async function envoyer() {
 </template>
 
 <style scoped>
-.devis { display: grid; gap: var(--space-4); padding: clamp(var(--space-4), 6vw, var(--space-8)); }
-.devis h2 { margin: 0; font-size: 1.25rem; }
+.devis { display: grid; gap: var(--space-5, 20px); }
 .texte-discret { margin: 0; }
 .devise { display: grid; gap: var(--space-1); max-width: 12rem; }
 .devise label { font-size: var(--type-label-size); line-height: var(--type-label-line); font-weight: var(--type-label-weight); }
 .devise select { min-height: 44px; }
 .jalons { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--space-4); }
-fieldset { margin: 0; display: grid; gap: var(--space-3); padding: var(--space-4); border: 1px solid var(--line-strong); border-radius: var(--radius-md); }
-legend { font-weight: 600; padding: 0 var(--space-2); }
+fieldset { margin: 0; display: grid; gap: var(--space-3); padding: var(--space-5, 20px); border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
+legend { display: inline-flex; gap: var(--space-2); align-items: center; font-weight: 700; padding: 0 var(--space-2); }
+.numero { display: grid; place-items: center; inline-size: 1.75rem; block-size: 1.75rem; border-radius: 50%; background: var(--action); color: var(--on-action, #fff); font-size: .8125rem; font-weight: 800; }
 .ligne { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); align-items: start; }
-.total { margin: 0; font-weight: 700; }
+/* Le total se recalcule à chaque frappe : un bandeau qu'on ne rate pas. */
+.total { margin: 0; padding: var(--space-4); border-radius: 14px; font-size: 1.25rem; background: color-mix(in srgb, var(--action) 10%, var(--surface-raised)); border: 1px solid color-mix(in srgb, var(--action) 30%, transparent); }
 .erreur { margin: 0; color: var(--danger); font-weight: 600; }
 </style>

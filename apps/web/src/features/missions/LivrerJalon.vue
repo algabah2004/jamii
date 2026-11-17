@@ -53,6 +53,7 @@ async function livrer() {
 </template>
 
 <style scoped>
-.livrer { display: grid; gap: var(--space-4); }
+/* Livrer : un encart teinté dans le jalon, pour qu'on voie que c'est à soi d'agir. */
+.livrer { display: grid; gap: var(--space-4); padding: var(--space-5, 20px); border-radius: 14px; border: 1px dashed color-mix(in srgb, var(--action) 50%, var(--line)); background: color-mix(in srgb, var(--action) 5%, var(--surface)); }
 .erreur { margin: 0; color: var(--danger); font-weight: 600; }
 </style>

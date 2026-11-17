@@ -18,6 +18,8 @@ const { envoi, message, agir } = useAction((m) => emit('maj', m))
 
 const peut = (nom: string) => (props.mission.moi.actions as string[]).includes(nom)
 const statut = computed(() => props.jalon.statut)
+/** La couleur de la pastille : bleu en cours, orange livré (à vérifier), vert accepté. */
+const TONS: Record<string, string | undefined> = { a_faire: undefined, en_cours: 'bleu', livre: 'orange', accepte: 'vert' }
 /** L'heure de la lecture de la page : un jalon pas livré dont la date est passée est en retard. */
 const maintenant = Date.now()
 const retard = computed(() => enRetard(props.jalon, maintenant))
@@ -54,17 +56,17 @@ async function retoucher() {
 <template>
   <li :id="`jalon-${jalon.id}`" class="jalon" :data-statut="statut" data-test="jalon">
     <header class="tete">
-      <h3>{{ t('missions.suivi.jalon', { n: jalon.ordre }) }} · {{ jalon.titre }}</h3>
+      <h3><span class="numero" aria-hidden="true">{{ statut === 'accepte' ? '✓' : jalon.ordre }}</span>{{ t('missions.suivi.jalon', { n: jalon.ordre }) }} · {{ jalon.titre }}</h3>
       <p class="etiquettes">
-        <span v-if="retard" class="etiquette etiquette--retard" data-test="en-retard">{{ t('missions.suivi.enRetard') }}</span>
-        <span class="etiquette" data-test="statut-jalon">{{ t(`missions.suivi.statuts.${statut}`) }}</span>
+        <span v-if="retard" class="etiquette etiquette--retard m-pastille" data-ton="rouge" data-test="en-retard">{{ t('missions.suivi.enRetard') }}</span>
+        <span class="etiquette m-pastille" :data-ton="TONS[statut]" data-test="statut-jalon">{{ t(`missions.suivi.statuts.${statut}`) }}</span>
       </p>
     </header>
 
-    <dl class="faits">
+    <dl class="faits m-tuiles">
       <div>
         <dt>{{ t('missions.suivi.montant') }}</dt>
-        <dd>{{ formaterMontant(jalon.montant, locale) }}</dd>
+        <dd class="m-fort">{{ formaterMontant(jalon.montant, locale) }}</dd>
       </div>
       <div v-if="jalon.echeance">
         <dt>{{ t('missions.suivi.echeance') }}</dt>
@@ -77,7 +79,7 @@ async function retoucher() {
     </dl>
     <p v-if="jalon.description" class="description">{{ jalon.description }}</p>
 
-    <p v-if="acceptationAVenir" class="note" data-test="acceptation-automatique">
+    <p v-if="acceptationAVenir" class="note m-note" data-test="acceptation-automatique">
       {{ t('missions.suivi.acceptationAutomatique', { date: date(jalon.acceptationAutomatiqueLe) }) }}
     </p>
     <p v-if="statut === 'accepte' && jalon.accepteLe" class="texte-discret" data-test="accepte-le">
@@ -131,27 +133,35 @@ async function retoucher() {
 </template>
 
 <style scoped>
-.jalon { display: grid; gap: var(--space-4); padding: clamp(var(--space-4), 5vw, var(--space-6)); border: 1px solid var(--line-strong); border-radius: var(--radius-md); }
-.jalon[data-statut='accepte'] { border-color: var(--action); }
-.tete { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: baseline; justify-content: space-between; }
-.tete h3 { margin: 0; font-size: 1rem; }
+/* Chaque jalon : une bande de couleur à gauche selon où il en est. */
+.jalon {
+  --etat: var(--line-strong);
+  display: grid; gap: var(--space-4); padding: var(--space-5, 20px) clamp(var(--space-4), 5vw, var(--space-6));
+  border: 1px solid var(--line); border-inline-start: 5px solid var(--etat); border-radius: 16px; background: var(--surface);
+}
+.jalon[data-statut='en_cours'] { --etat: var(--action); }
+.jalon[data-statut='livre'] { --etat: var(--cantaloupe); background: color-mix(in srgb, var(--cantaloupe) 5%, var(--surface)); }
+.jalon[data-statut='accepte'] { --etat: var(--succes, #1f9d62); }
+.tete { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; justify-content: space-between; }
+.tete h3 { margin: 0; display: flex; gap: var(--space-3); align-items: center; font-size: 1.0625rem; }
+.numero {
+  flex: none; display: grid; place-items: center; inline-size: 2rem; block-size: 2rem; border-radius: 50%;
+  border: 2px solid var(--etat); color: var(--ink); font-size: .875rem; font-weight: 800;
+}
+.jalon[data-statut='accepte'] .numero { background: var(--etat); color: #fff; }
 .jalon { scroll-margin-block-start: 6rem; }
 .etiquettes { margin: 0; display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .etiquette { margin: 0; }
 /* « En retard » : le mot le dit, la couleur ne fait que le souligner. */
 .etiquette--retard { border: 1px solid var(--danger); color: var(--danger); font-weight: 700; }
-.faits { margin: 0; display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); }
-.faits dt { font-size: var(--type-body-sm-size); color: var(--ink-muted); }
-.faits dd { margin: 0; font-weight: 600; }
 .description, .message { margin: 0; white-space: pre-line; }
 .livraisons { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--space-3); }
-.livraisons > li { padding-inline-start: var(--space-4); border-inline-start: 3px solid var(--line-strong); display: grid; gap: var(--space-1); }
+.livraisons > li { padding: var(--space-3) var(--space-4); border-radius: 12px; background: var(--surface-raised); display: grid; gap: var(--space-1); }
 .livraisons p { margin: 0; }
 .liens { margin: 0; padding-inline-start: var(--space-4); overflow-wrap: anywhere; }
-.retouche { font-weight: 600; }
+.retouche { font-weight: 600; padding-block-start: var(--space-2); border-block-start: 1px dashed var(--line-strong); }
 .actions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
 .retouche-form { display: grid; gap: var(--space-4); }
-.note { margin: 0; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); border-inline-start: 3px solid var(--cantaloupe); background: color-mix(in srgb, var(--surface) 60%, transparent); }
 .erreur { margin: 0; color: var(--danger); font-weight: 600; }
 .texte-discret { margin: 0; }
 </style>

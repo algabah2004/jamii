@@ -35,7 +35,7 @@ function trancher() {
 
 <template>
   <div class="desaccord">
-    <section v-if="desaccord" class="note" aria-labelledby="desaccord-titre" data-test="desaccord">
+    <section v-if="desaccord" class="note m-note" aria-labelledby="desaccord-titre" data-test="desaccord">
       <h3 id="desaccord-titre">{{ t('missions.fin.desaccord.titre') }}</h3>
       <p class="texte-discret">{{ t(`missions.fin.desaccord.ouvertPar.${desaccord.ouvertPar}`, { date: formaterDate(desaccord.ouvertLe, locale) }) }}</p>
       <p class="texte">{{ desaccord.raison }}</p>
@@ -83,7 +83,7 @@ function trancher() {
 <style scoped>
 .desaccord, .formulaire { display: grid; gap: var(--space-4); }
 .desaccord h3 { margin: 0; font-size: 1rem; }
-.note { display: grid; gap: var(--space-2); padding: var(--space-4); border-radius: var(--radius-md); border-inline-start: 3px solid var(--cantaloupe); background: color-mix(in srgb, var(--surface) 60%, transparent); }
+.note { display: grid; gap: var(--space-2); padding: var(--space-4); font-weight: 400; }
 .note p { margin: 0; }
 .texte { white-space: pre-line; }
 .decision { font-weight: 700; }

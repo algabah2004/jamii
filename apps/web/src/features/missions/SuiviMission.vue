@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import IconeMission from './IconeMission.vue'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { JAvatar, JBouton, JChamp } from '../../design-system'
@@ -31,21 +32,27 @@ function demarrer() {
 </script>
 
 <template>
-  <section class="carte suivi" aria-labelledby="suivi-titre" data-test="suivi">
-    <h2 id="suivi-titre">{{ t('missions.suivi.titre') }}</h2>
+  <section class="carte suivi m-bloc" aria-labelledby="suivi-titre" data-test="suivi">
+    <header class="m-tete">
+      <IconeMission nom="suivi" />
+      <div><h2 id="suivi-titre">{{ t('missions.suivi.titre') }}</h2></div>
+    </header>
 
-    <dl class="faits">
+    <!-- L'avancement d'un coup d'œil : la part des jalons acceptés. -->
+    <div class="m-progression" aria-hidden="true"><span :style="{ inlineSize: `${jalons.length ? (acceptes / jalons.length) * 100 : 0}%` }"></span></div>
+
+    <dl class="faits m-tuiles">
       <div>
         <dt>{{ t('missions.suivi.developpeur') }}</dt>
         <dd class="personne"><JAvatar :nom="travail.developpeur.nom" :url="travail.developpeur.avatarUrl" :taille="28" /> {{ travail.developpeur.nom }}</dd>
       </div>
       <div>
         <dt>{{ t('missions.suivi.total') }}</dt>
-        <dd>{{ formaterMontant(travail.devis.total, locale) }}</dd>
+        <dd class="m-fort">{{ formaterMontant(travail.devis.total, locale) }}</dd>
       </div>
       <div>
         <dt>{{ t('missions.suivi.avancement') }}</dt>
-        <dd data-test="avancement">{{ t('missions.suivi.jalonsAcceptes', { n: acceptes, total: jalons.length }, acceptes) }}</dd>
+        <dd class="m-fort" data-test="avancement">{{ t('missions.suivi.jalonsAcceptes', { n: acceptes, total: jalons.length }, acceptes) }}</dd>
       </div>
       <div v-if="travail.demarreLe">
         <dt>{{ t('missions.suivi.demarreLe') }}</dt>
@@ -53,7 +60,7 @@ function demarrer() {
       </div>
     </dl>
 
-    <form v-if="peutDemarrer" class="demarrer" data-test="form-demarrer" @submit.prevent="demarrer">
+    <form v-if="peutDemarrer" class="demarrer m-encart" data-test="form-demarrer" @submit.prevent="demarrer">
       <p>{{ t('missions.suivi.demarrer.intro') }}</p>
       <JChamp
         v-model="informations"
@@ -68,9 +75,9 @@ function demarrer() {
       </div>
       <p v-if="message" role="alert" class="erreur" data-test="erreur-demarrer">{{ message }}</p>
     </form>
-    <p v-else-if="mission.statut === 'attribuee'" class="note" data-test="attente-depart">{{ t('missions.suivi.attenteDepart') }}</p>
+    <p v-else-if="mission.statut === 'attribuee'" class="note m-note" data-test="attente-depart">{{ t('missions.suivi.attenteDepart') }}</p>
 
-    <section v-if="travail.informationsDepart" aria-labelledby="depart-titre">
+    <section v-if="travail.informationsDepart" class="m-encart" aria-labelledby="depart-titre">
       <h3 id="depart-titre">{{ t('missions.suivi.informationsDepart') }}</h3>
       <!-- Texte libre du client : affiché échappé, avec ses retours à la ligne. -->
       <p class="depart" data-test="informations-depart">{{ travail.informationsDepart }}</p>
@@ -91,17 +98,13 @@ function demarrer() {
 </template>
 
 <style scoped>
-.suivi { display: grid; gap: var(--space-6); padding: clamp(var(--space-4), 6vw, var(--space-8)); }
-.suivi h2 { margin: 0; font-size: 1.25rem; }
+.suivi { display: grid; gap: var(--space-6); }
 .suivi h3 { margin: 0 0 var(--space-2); font-size: 1rem; }
-.faits { margin: 0; display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); }
-.faits dt { font-size: var(--type-body-sm-size); color: var(--ink-muted); }
-.faits dd { margin: 0; font-weight: 600; }
 .personne { display: flex; gap: var(--space-2); align-items: center; }
 .demarrer { display: grid; gap: var(--space-4); }
 .demarrer p, .depart, .texte-discret { margin: 0; }
 .depart { white-space: pre-line; }
 .jalons { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--space-4); }
-.note { margin: 0; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); border-inline-start: 3px solid var(--cantaloupe); background: color-mix(in srgb, var(--surface) 60%, transparent); font-weight: 600; }
+.m-encart { padding: var(--space-4) var(--space-5, 20px); border-radius: 14px; background: var(--surface-raised); }
 .erreur { margin: 0; color: var(--danger); font-weight: 600; }
 </style>
