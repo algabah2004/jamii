@@ -239,7 +239,8 @@ Ce que tous les écrans partagent. Corrigé ici une fois, pour ne pas l'être di
 - ✅ émulation Android (Chrome Android, tactile, `pointer: coarse`, `hover: none`) : 17 routes à 360 px sans défaut ; les actions des messages, cachées au survol sur ordinateur, restent visibles au toucher ; un message s'écrit et s'envoie au doigt, le champ garde le focus ;
 - ✅ menu repliable (960 px et moins) : un bouton « Menu » (motif disclosure, `aria-expanded`) ouvre toutes les rubriques d'un coup, en grille, cibles de 48 px, « Se déconnecter » en bas sur téléphone ; se referme au changement de page, avec Échap (focus rendu au bouton) ou en touchant ailleurs. L'en-tête passe sur une ligne : 66 px au lieu de 114. Vérifié à 320 et 768 px, en clair et en sombre ; audit de 15 routes × 4 largeurs sur `main` après fusion (#339, #340 à #343) : aucun défaut ;
 - ✅ `jamii.dev` déployé (après #339), en lecture, en émulation Android à 360 px : les 5 pages publiques (accueil, missions, hackathons, vitrine, connexion) sans débordement, l'en-tête à 66 px, le menu s'ouvre avec des cibles de 48 px ;
-- ⬜ vrai téléphone Android et captures à 360 px : à faire sur `jamii.dev` après le déploiement.
+- ✅ captures à 360 px : les 17 écrans (dont le menu ouvert), aucun débordement ; images gardées hors du dépôt.
+- ⬜ vrai téléphone Android d'entrée de gamme : à faire sur `jamii.dev` (clavier réel, tactile, processeur lent).
 
 ## 7. Ce que ce plan ne fait pas
 - **Pas de refonte visuelle.** On rend juste et confortable ce qui existe. Une idée de refonte devient une proposition à part.
