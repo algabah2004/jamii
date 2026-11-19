@@ -9,7 +9,9 @@ for (const chemin of ['/', '/connexion', '/vitrine', '/missions', '/hackathons']
   test(`${chemin} : aucune violation grave d'accessibilité`, async ({ page }) => {
     await page.goto(chemin)
     await expect(page.locator('#app:not([data-prerendu])')).toBeAttached()
-    await page.waitForLoadState('networkidle')
+    // Pas de « networkidle » : certaines pages interrogent l'API à intervalle régulier. On attend le contenu.
+    await expect(page.locator('main').first()).toBeVisible()
+    await page.waitForLoadState('load')
     const { violations } = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
     const graves = violations.filter((v) => v.impact === 'serious' || v.impact === 'critical')
     expect(graves.map((v) => `${v.id} (${v.nodes.length}) : ${v.help}`)).toEqual([])

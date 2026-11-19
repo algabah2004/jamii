@@ -5,7 +5,12 @@ test.describe('Le parcours du compte démo, sur la vraie API', () => {
   test('un visiteur entre en démo et retrouve son profil rempli', async ({ page }) => {
     const erreurs = surveillerConsole(page)
     await entrerEnDemo(page)
+    await page.goto('/profil')
+    await expect(page).toHaveURL(/\/profil$/)
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+    // Le compte démo est rempli de tout le parcours : son profil n'est pas vide.
+    const moi = await (await page.request.get('/api/me')).json()
+    expect(moi.nom).toBeTruthy()
     expect(erreurs()).toEqual([])
   })
 

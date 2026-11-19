@@ -12,7 +12,7 @@ IMAGE=caddy:2.8.4-alpine   # déjà là pour l'entrée ; son wget (busybox) suff
 
 demande() { # $1 conteneur, $2 adresse e-mail, $3 en-tête supplémentaire (facultatif) → code HTTP
   docker exec "$1" sh -c '
-    entetes=$(wget -S -O /dev/null http://entree:8080/api/me 2>&1 || true)
+    entetes=$(wget -S -O /dev/null http://entree:8080/api/auth/fournisseurs 2>&1 || true)  # 200, et pose le cookie CSRF
     jeton=$(echo "$entetes" | sed -n "s/.*Set-Cookie: XSRF-TOKEN=\([^;]*\).*/\1/p" | head -1)
     wget -S -O /dev/null --header "Cookie: XSRF-TOKEN=$jeton" --header "X-XSRF-TOKEN: $jeton" \
       --header "Content-Type: application/json" ${3:+--header "$3"} \

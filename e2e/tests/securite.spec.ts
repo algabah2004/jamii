@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { entrerEnDemo } from './outils'
 
 test.describe('Sécurité vue du navigateur', () => {
   test('les pages portent les en-têtes de sécurité (CSP, cadre interdit, nosniff)', async ({ request }) => {
@@ -20,9 +21,7 @@ test.describe('Sécurité vue du navigateur', () => {
   })
 
   test('une écriture sans jeton CSRF est refusée, même avec une session', async ({ page }) => {
-    await page.goto('/connexion')
-    await page.getByRole('button', { name: 'Explorer avec le compte démo' }).click()
-    await expect(page).toHaveURL(/\/profil$/)
+    await entrerEnDemo(page)
     // Même cookie de session, mais sans l'en-tête X-XSRF-TOKEN que pose le front.
     const reponse = await page.request.post('/api/auth/deconnexion', { headers: { 'X-XSRF-TOKEN': '' } })
     expect(reponse.status()).toBe(403)

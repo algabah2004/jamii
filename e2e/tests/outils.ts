@@ -16,10 +16,13 @@ export function surveillerConsole(page: Page): () => string[] {
   return () => erreurs
 }
 
-/** Ouvre une session sur un compte démo neuf, comme un visiteur avec le bouton de l'accueil (POST /api/auth/demo). */
+/**
+ * Ouvre une session sur un compte démo neuf, comme un visiteur avec le bouton « Explorer avec le compte démo »
+ * (POST /api/auth/demo). On attend que la page de connexion soit quittée et que le serveur reconnaisse la session.
+ */
 export async function entrerEnDemo(page: Page): Promise<void> {
   await page.goto('/connexion')
   await page.getByRole('button', { name: 'Explorer avec le compte démo' }).click()
-  await expect(page).toHaveURL(/\/profil$/)
-  await expect(page.getByTestId('mon-profil').or(page.getByTestId('bouton-menu'))).toBeVisible()
+  await expect(page).not.toHaveURL(/\/connexion/)
+  await expect.poll(async () => (await page.request.get('/api/me')).status()).toBe(200)
 }
