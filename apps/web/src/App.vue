@@ -22,9 +22,12 @@ const activite = useActivite()
 // Messages et notifications ont chacun leur accès et leur compteur.
 const messagesNonLus = computed(() => activite.value?.messagesNonLus ?? 0)
 const nonLus = computed(() => activite.value?.notificationsNonLues ?? 0)
-watch(etat, (e) => (e === 'connecte' ? suivreActivite() : arreterActivite()), { immediate: true })
-// Les appels (#157) : on demande toutes les 2 s si quelqu'un appelle, sur n'importe quelle page (features/reseau/appel.ts).
-watch(etat, (e) => (e === 'connecte' ? suivreAppelsEntrants() : arreterAppelsEntrants()), { immediate: true })
+// Ces suivis vivent dans le navigateur seulement : au pré-rendu de l'accueil (docs/adr/0011), il n'y a ni onglet ni API.
+if (!import.meta.env.SSR) {
+  watch(etat, (e) => (e === 'connecte' ? suivreActivite() : arreterActivite()), { immediate: true })
+  // Les appels (#157) : on demande toutes les 2 s si quelqu'un appelle, sur n'importe quelle page (features/reseau/appel.ts).
+  watch(etat, (e) => (e === 'connecte' ? suivreAppelsEntrants() : arreterAppelsEntrants()), { immediate: true })
+}
 
 /*
  * Sur téléphone et tablette (960 px et moins), le menu se replie derrière un bouton « Menu » : toutes les rubriques
