@@ -40,7 +40,11 @@ import dev.jamii.api.auth.UtilisateurConnecte;
 @Profile("demo")
 class ConnexionDemoController {
 
-	/** Par adresse IP : de quoi ouvrir la démo sur plusieurs appareils, pas de quoi remplir la base. */
+	/**
+	 * Par adresse IP : de quoi ouvrir la démo sur plusieurs appareils, pas de quoi remplir la base. Valeur par défaut de
+	 * {@code jamii.demo.par-adresse} ; seuls les tests de parcours (e2e/compose.yml), qui viennent tous d'une même
+	 * machine, la relèvent.
+	 */
 	static final int PAR_IP = 5;
 
 	static final Duration FENETRE = Duration.ofHours(1);
@@ -58,10 +62,14 @@ class ConnexionDemoController {
 
 	private final boolean ouverte;
 
-	ConnexionDemoController(JdbcClient base, VisiteursDemo visiteurs, @Value("${jamii.demo.connexion:false}") boolean ouverte) {
+	private final int parAdresse;
+
+	ConnexionDemoController(JdbcClient base, VisiteursDemo visiteurs, @Value("${jamii.demo.connexion:false}") boolean ouverte,
+			@Value("${jamii.demo.par-adresse:" + PAR_IP + "}") int parAdresse) {
 		this.base = base;
 		this.visiteurs = visiteurs;
 		this.ouverte = ouverte;
+		this.parAdresse = parAdresse;
 	}
 
 	@PostMapping("/api/auth/demo")
@@ -109,7 +117,7 @@ class ConnexionDemoController {
 			if (f == null || !f.debut().plus(FENETRE).isAfter(maintenant)) {
 				return new Fenetre(maintenant, 1);
 			}
-			if (f.compte() >= PAR_IP) {
+			if (f.compte() >= parAdresse) {
 				attente[0] = Math.max(1, Duration.between(maintenant, f.debut().plus(FENETRE)).toSeconds());
 				return f;
 			}

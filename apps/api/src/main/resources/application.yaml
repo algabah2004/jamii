@@ -80,6 +80,9 @@ jamii:
     # Profil demo seulement : le bouton « Explorer avec le compte démo » de la page de connexion, ouvert à tout visiteur.
     # JAMII_DEMO_CONNEXION=false le retire (le compte démo reste rempli, mais plus personne ne peut l'ouvrir).
     connexion: ${JAMII_DEMO_CONNEXION:true}
+    # Profil demo seulement : comptes démo ouverts par adresse IP et par heure. 5 en production ; relevé seulement par
+    # les tests de parcours (e2e/compose.yml), où toutes les requêtes viennent de la même machine.
+    par-adresse: ${JAMII_DEMO_PAR_ADRESSE:5}
   # Les appels vocaux et vidéo des salons (#155) : un serveur Jitsi. Chaque salon y a sa salle.
   appels:
     url: ${APPELS_URL:https://meet.jit.si}
