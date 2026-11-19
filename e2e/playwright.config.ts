@@ -7,6 +7,11 @@ import { defineConfig, devices } from '@playwright/test'
 export default defineConfig({
   testDir: 'tests',
   fullyParallel: true,
+  // Une vraie pile (Java, PostgreSQL, deux Caddy) : créer un compte démo rempli prend quelques secondes. Deux
+  // navigateurs à la fois suffisent et évitent d'étouffer la machine de CI.
+  workers: 2,
+  timeout: 60_000,
+  expect: { timeout: 15_000 },
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
