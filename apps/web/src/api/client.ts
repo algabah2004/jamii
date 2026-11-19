@@ -35,7 +35,8 @@ export const csrf: Middleware = {
 // Même origine que l'API : le cookie de session HttpOnly suit tout seul, sans CORS.
 // `fetch` est lu à chaque appel (et non capturé à l'import) pour que MSW puisse l'intercepter.
 export const api = createClient<paths>({
-  baseUrl: window.location.origin,
+  // Au pré-rendu de l'accueil (Node, sans navigateur), aucune origine : les appels échouent et la page garde son état vide.
+  baseUrl: typeof window === 'undefined' ? 'http://prerendu.invalid' : window.location.origin,
   credentials: 'same-origin',
   fetch: (requete) => globalThis.fetch(requete),
 })

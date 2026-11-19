@@ -22,8 +22,12 @@
 
 	handle {
 		root * /srv
-		# Routeur du front en mode historique : toute page inconnue renvoie index.html.
-		try_files {path} /index.html
+		# Routeur du front en mode historique. « / » sert index.html, l'accueil déjà rendu en HTML (docs/adr/0011) ;
+		# toute autre page inconnue du disque renvoie app.html, la coquille vide, pour ne pas montrer l'accueil une fraction
+		# de seconde avant la vraie page. « / » doit être nommé : try_files ne le prend pas pour un fichier.
+		@accueil path /
+		rewrite @accueil /index.html
+		try_files {path} /app.html
 		file_server
 		header {
 			X-Content-Type-Options nosniff
