@@ -88,6 +88,16 @@ export async function seDeconnecter(): Promise<void> {
   etat.value = 'non_connecte'
 }
 
+/**
+ * Le pré-rendu de l'accueil (scripts/prerendre.mjs) dessine la page vue par un visiteur sans compte : il fixe l'état
+ * sans appeler l'API, qui n'existe pas au moment du build.
+ */
+export function supposerNonConnecte(): void {
+  moi.value = null
+  accesSystalink.value = false
+  etat.value = 'non_connecte'
+}
+
 export function useSession() {
   return { etat: readonly(etat), moi: readonly(moi), accesSystalink: readonly(accesSystalink) }
 }
