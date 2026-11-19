@@ -2,6 +2,14 @@
 {
 	admin off
 	auto_https off
+	# En production, ce Caddy est derrière l'entrée publique (deploiement/Caddyfile), sur le réseau privé de Docker.
+	# On croit l'adresse du visiteur qu'elle transmet (X-Forwarded-For) seulement si elle vient d'une adresse privée.
+	# Sans ça, l'API voyait tous les visiteurs avec l'adresse de l'entrée : les limites par adresse (5 comptes démo
+	# par heure, liens de connexion par e-mail) valaient pour le monde entier. L'entrée publique, elle, ne croit
+	# personne : elle remplace X-Forwarded-For par la vraie adresse, donc un visiteur ne peut pas mentir sur la sienne.
+	servers {
+		trusted_proxies static private_ranges
+	}
 }
 
 :{$PORT:8080} {
