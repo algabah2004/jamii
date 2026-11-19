@@ -18,6 +18,8 @@ export default defineConfig({
   use: {
     baseURL: process.env.JAMII_URL ?? 'http://localhost:8080',
     locale: 'fr-FR',
+    // Le front marque ses éléments avec data-test (comme ses tests Vitest), pas data-testid.
+    testIdAttribute: 'data-test',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
