@@ -21,7 +21,7 @@
 | **Essayer sans compte** | Sur la page de connexion, **« Explorer avec le compte démo »** : en un clic, un compte à soi, déjà rempli (un cercle dont c'est le tour, des communautés, des contacts, un hackathon, des missions). Chaque visiteur a le sien, personne d'autre ne le voit, il est effacé après 24 heures |
 | **Se connecter** | **GitHub** (développeurs) ou **Google** (PME, associations), sans mot de passe. Aucun compte Systalink n'est demandé |
 | **L'espace Systalink** | Lien **Systalink** dans le menu. Réservé à l'équipe Systalink : le **code d'accès jury** est donné dans le formulaire de soumission |
-| **Le code** | Ce dépôt : une API Java, un front Vue, un service IA Python, 15 contrats OpenAPI, une CI à chaque PR |
+| **Le code** | Ce dépôt : une API Java, un front Vue, un service IA Python, 15 contrats OpenAPI, plus de 1 250 tests, dont 36 parcours joués sur la vraie pile avant chaque mise en ligne |
 | **Ce qui est vérifiable** | Chaque chiffre de ce README se recompte dans le dépôt ou sur le site |
 
 ---
@@ -87,7 +87,7 @@ Une commerçante écrit « je veux vendre mes tissus en ligne ». **Ayo** discut
 | **Se mesurer** | Les **hackathons**, challenges et concours d'innovation : inscription, équipes, rendu, jury (une note de 1 à 5, jamais pour sa propre équipe), résultats |
 | **Montrer** | La **vitrine** des projets en ligne : chaque adresse est vérifiée toutes les 24 heures |
 
-En **français et en anglais** (selon la langue du navigateur), en thème clair et sombre, accessible (tests automatiques axe-core).
+En **français et en anglais** (selon la langue du navigateur), en thème clair et sombre, accessible : aucune violation grave des règles WCAG 2.1 A et AA sur les 5 pages publiques contrôlées (axe-core, vérifié à chaque PR et en production).
 
 ![Une communauté : fil, salons en direct et membres actifs](docs/images/communaute.jpg)
 
@@ -99,11 +99,25 @@ En **français et en anglais** (selon la langue du navigateur), en thème clair 
 
 | | |
 |---|---|
-| **262 pull requests** fusionnées, chacune passée par la CI | `gh pr list --state merged` |
-| **Plus de 1 100 tests automatisés** : 579 côté API, 478 côté front, 69 côté IA | `@Test`, `it(`, `def test_` |
+| **290 pull requests** fusionnées, chacune passée par la CI | `gh pr list --state merged` |
+| **Plus de 1 250 tests automatisés** : 592 côté API, 557 côté front, 69 côté IA, 36 parcours de bout en bout | `@Test`, `npx vitest run`, `def test_`, `npx playwright test --list` |
 | **15 contrats OpenAPI** entre les modules | [`contracts/`](contracts/README.md) |
 | **65 migrations** de base de données versionnées (Flyway) | `apps/api/src/main/resources/db/migration` |
 | **16 modules** dans l'API, chacun avec son responsable | [`docs/equipe.md`](docs/equipe.md) |
+
+### Testé comme en production
+
+Les tests unitaires ne suffisent pas à prouver qu'un site marche : **36 parcours Playwright** ([`e2e/`](e2e/)) jouent Jamii dans un vrai navigateur, sur **ordinateur et sur téléphone**, contre la **vraie pile montée comme en production** : la même entrée Caddy (le `deploiement/Caddyfile` de production tel quel), le front, l'API et PostgreSQL. Les images sont construites depuis le code de la PR, et aucun service extérieur n'est appelé.
+
+| Parcours | Ce qui est vérifié |
+|---|---|
+| **Compte démo** | Entrer en démo, parcourir cercles, communautés, messages, notifications et demandes **sans aucune erreur dans la console**. Deux visiteurs ont deux comptes distincts. La déconnexion ferme la session côté serveur |
+| **Sécurité** | En-têtes (CSP, `X-Frame-Options`, `nosniff`, pas d'en-tête `Server`), erreurs au format `problem+json`, écriture refusée sans jeton CSRF, page réservée qui renvoie vers la connexion |
+| **Accessibilité** | axe-core, WCAG 2.1 A et AA : aucune violation grave sur `/`, `/connexion`, `/vitrine`, `/missions` et `/hackathons` |
+| **Accueil pré-rendu** | Le HTML contient la page avant tout JavaScript, elle s'affiche JavaScript coupé, et le navigateur la reprend sans erreur |
+| **Limites par visiteur** | Deux machines d'adresses différentes passent derrière les deux Caddy : chacune a sa propre limite, et un faux `X-Forwarded-For` ne la contourne pas |
+
+**Ce job conditionne la mise en ligne** : si un parcours échoue, rien ne part en production. En cas d'échec, la CI publie les journaux de la pile, les captures et les traces. Les mêmes parcours se lancent contre le site en ligne (`JAMII_URL=https://jamii.dev`).
 
 ### L'architecture
 
@@ -120,26 +134,28 @@ flowchart LR
 
 - **Le contrat avant le code** : chaque module publie son contrat OpenAPI, les types du front en sont **générés**. Un module ne dépend jamais de l'implémentation d'un autre.
 - **Tout fournisseur passe par un adaptateur** (IA, e-mail, stockage, vérification de liens…) avec une version simulée pour les tests. On change de fournisseur **par la configuration**, sans réécrire de code.
+- **L'accueil est pré-rendu au build** : il arrive en HTML complet dès le premier octet (moteurs de recherche, aperçus de liens), puis Vue le reprend sans le redessiner. Pré-rendu plutôt que SSR, car cette page est la même pour tous les visiteurs sans compte : pas de serveur Node en plus en production ([ADR 0011](docs/adr/0011-prerendu-accueil.md)).
 - **L'IA pour comprendre, des règles pour décider** : l'IA lit des dépôts et un texte libre ; la recommandation de développeurs, la répartition des tâches et les chiffres de Systalink sont **calculés**, sans IA, donc gratuits, explicables et testés.
 
 ### La sécurité
 
 | | |
 |---|---|
-| **Accès** | API **fermée par défaut** : chaque route publique est ouverte explicitement. Protection CSRF, cookie de session `HttpOnly`, `Secure`, `SameSite` |
+| **Accès** | API **fermée par défaut** : chaque route publique est ouverte explicitement. Protection CSRF, cookie de session `HttpOnly`, `Secure`, `SameSite`. Limites par visiteur (compte démo, liens par e-mail) calculées sur **sa vraie adresse** : seul le relais interne est cru, un `X-Forwarded-For` falsifié ne les contourne pas |
 | **Connexion** | OAuth2 (GitHub, Google). Aucun mot de passe stocké. Aucune redirection ouverte. Le compte démo est jetable : créé par visiteur, sans adresse réelle, effacé avec tout son contenu après 24 heures par une tâche planifiée. L'API sait aussi envoyer un lien par e-mail **à usage unique**, stocké en empreinte, avec expiration (pas encore proposé sur le site) |
 | **Navigateur** | Politique de contenu (CSP) stricte : seuls les scripts de Jamii s'exécutent. HSTS, `Permissions-Policy` (caméra et micro pour les appels seulement), `X-Frame-Options`, `nosniff` |
 | **Fichiers envoyés** | Type reconnu **sur le contenu réel**, droits de lecture vérifiés, servis dans un bac à sable (CSP `sandbox`) |
 | **Réseau** | Appels sortants interdits vers les adresses internes (SSRF) ; le relais TURN refuse les réseaux privés. Seuls les ports 22, 80, 443 et 3478 sont ouverts |
 | **Données personnelles** | Le minimum, avec consentement. Chaque personne peut **exporter ou supprimer** ses données. Les coordonnées ne partent jamais vers l'IA |
-| **Chaîne d'approvisionnement** | La CI bloque les secrets dans le code, les licences GPL/AGPL/LGPL, et produit un SBOM de chaque partie. Alertes Dependabot actives |
+| **Chaîne d'approvisionnement** | La CI bloque les secrets dans le code, les licences GPL/AGPL/LGPL, et produit un SBOM de chaque partie. Alertes Dependabot actives. `npm audit` du front : 0 vulnérabilité connue |
 
 ### L'exploitation
 
 - **Déploiement continu** : chaque fusion dans `main` construit les images Docker (`ghcr.io`), puis le serveur DataCloud se met à jour seul ([`docs/deploiement-datacloud.md`](docs/deploiement-datacloud.md)). Un fichier `PAUSE` fige la version en ligne avant une démo.
 - **Sondes de santé** pour l'orchestrateur (`/health/liveness`, `/health/readiness`).
 - **Résilience** : si l'IA ne répond plus, Jamii continue (cache, réponse de repli, quotas et budget par jour). Pendant le redémarrage de l'API, le front réessaie au lieu d'afficher une erreur.
-- **La CI à chaque PR** : tests de l'API (sur un vrai PostgreSQL), du front (types, tests, accessibilité, build) et du service IA (lint, tests), secrets, licences, hygiène du dépôt, titres conventionnels.
+- **La CI à chaque PR** : tests de l'API (sur un vrai PostgreSQL), du front (types, tests, build) et du service IA (lint, tests), **parcours de bout en bout sur la pile de production**, secrets, licences, hygiène du dépôt, titres conventionnels. La mise en ligne automatique ne part que si la CI de `main` est entièrement verte.
+- **Des tests fiables, pas seulement nombreux** : un test instable est traité comme un bug. La suite front passe aussi sur un portable modeste (le nombre de workers suit la mémoire disponible), et la CI ne rejoue jamais un test en échec.
 
 ---
 
@@ -209,4 +225,4 @@ Le détail par membre : [`docs/cadev.md`](docs/cadev.md#ce-quon-déclare-usage-d
 
 ### In English
 
-**Jamii** ("community" in Swahili) is the exchange platform for African developers, **live at [jamii.dev](https://jamii.dev) on Systalink's DataCloud**. Developers meet in communities, build each other's projects in rotating **circles** (a tech version of the African *tontine*), answer small businesses' needs with **Ayo**, an AI advisor restricted to Systalink's catalogue, and ship every project online. Jury members can try everything in one click with **“Explorer avec le compte démo”** on the sign-in page: a private, pre-filled demo account per visitor, deleted after 24 hours. Systalink gets a private space with consented, qualified leads (signed webhook, CSV), anonymous market trends and measured conversion of each recommended service. Built with Java 21 / Spring Boot, Vue 3 / TypeScript, Python / FastAPI and PostgreSQL; 15 OpenAPI contracts, 1,100+ automated tests, CI on every PR, continuous deployment, strict security headers and a pluggable LLM provider (DeepSeek today, Yokk by configuration). Apache 2.0.
+**Jamii** ("community" in Swahili) is the exchange platform for African developers, **live at [jamii.dev](https://jamii.dev) on Systalink's DataCloud**. Developers meet in communities, build each other's projects in rotating **circles** (a tech version of the African *tontine*), answer small businesses' needs with **Ayo**, an AI advisor restricted to Systalink's catalogue, and ship every project online. Jury members can try everything in one click with **“Explorer avec le compte démo”** on the sign-in page: a private, pre-filled demo account per visitor, deleted after 24 hours. Systalink gets a private space with consented, qualified leads (signed webhook, CSV), anonymous market trends and measured conversion of each recommended service. Built with Java 21 / Spring Boot, Vue 3 / TypeScript, Python / FastAPI and PostgreSQL; 15 OpenAPI contracts, 1,250+ automated tests including 36 end-to-end journeys run on the production stack (desktop and mobile) before every release, WCAG 2.1 AA checks, continuous deployment, strict security headers and a pluggable LLM provider (DeepSeek today, Yokk by configuration). Apache 2.0.
