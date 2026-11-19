@@ -139,7 +139,8 @@ describe('Mon profil', () => {
     await page.get('[data-test="modifier"]').trigger('click')
     await page.get('[data-test="formulaire"]').trigger('submit')
     await vi.waitFor(() => expect(page.find('[data-test="message"]').text()).toContain('autre onglet'))
-    expect(page.find('[data-test="formulaire"]').exists()).toBe(false)
+    // Le formulaire se ferme au rechargement de la dernière version, qui peut arriver juste après le message.
+    await vi.waitFor(() => expect(page.find('[data-test="formulaire"]').exists()).toBe(false))
   })
 
   it('une valeur refusée par l’API est signalée sur son champ', async () => {
