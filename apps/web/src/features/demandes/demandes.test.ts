@@ -75,7 +75,7 @@ describe('Une PME décrit son besoin', () => {
     await vi.waitFor(() => expect(page.find('[data-test="envoyer"]').exists()).toBe(true))
     expect(page.get('[data-test="envoyer"]').attributes('disabled')).toBeDefined()
     await page.get('[data-test="exemple"]').trigger('click')
-    expect(page.get('[data-test="envoyer"]').attributes('disabled')).toBeUndefined()
+    await vi.waitFor(() => expect(page.get('[data-test="envoyer"]').attributes('disabled')).toBeUndefined())
     await page.get('[data-test="envoyer"]').trigger('submit')
     await vi.waitFor(() => expect(routeur.currentRoute.value.name).toBe('demande'), { timeout: 4000 })
     await vi.waitFor(() => expect(page.find('[data-test="plan-propose"]').exists()).toBe(true), { timeout: 4000 })
@@ -527,7 +527,7 @@ describe('la refonte : on parle à Ayo, une IA, sur la page même', () => {
     const { page } = await ouvrir('/demandes')
     await vi.waitFor(() => expect(page.find('[data-test="exemple"]').exists()).toBe(true))
     await page.get('[data-test="exemple"]').trigger('click')
-    expect((page.get('[data-test="saisie-ayo"]').element as HTMLTextAreaElement).value).toContain('Thiès')
+    await vi.waitFor(() => expect((page.get('[data-test="saisie-ayo"]').element as HTMLTextAreaElement).value).toContain('Thiès'))
     expect(envoyees).toEqual([])
   })
 

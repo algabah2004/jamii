@@ -135,6 +135,7 @@ describe('Question : les membres répondent, l’auteur accepte', () => {
       ),
     )
     const { page } = await ouvrir(QUESTION_D_AWA)
+    await vi.waitFor(() => expect(page.find('[data-test="accepter"]').exists()).toBe(true))
     await page.get('[data-test="accepter"]').trigger('click')
     await vi.waitFor(() => expect(page.text()).toContain('Cette question a déjà une réponse acceptée.'))
   })
