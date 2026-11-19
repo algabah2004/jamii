@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "vite",
     "dev:factice": "vite --mode factice",
-    "build": "vue-tsc --noEmit && vite build",
+    "build": "vue-tsc --noEmit && vite build && node scripts/prerendre.mjs",
     "preview": "vite preview",
     "test": "vitest run",
     "typecheck": "vue-tsc --noEmit",
