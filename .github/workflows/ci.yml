@@ -175,3 +175,39 @@ jobs:
           git diff --exit-code -- src/api/generated || { echo "::error::Lance npm run api:types dans apps/web et commite le résultat"; exit 1; }
       - run: npm test
       - run: npm run build
+
+  parcours:
+    # Les parcours d'un visiteur sur la vraie pile, montée comme en production (e2e/compose.yml : entree → web → api →
+    # postgres), images construites depuis le code de la PR. Comme les autres jobs, il conditionne la mise en ligne
+    # (workflow Images) : un parcours cassé ne part pas sur jamii.dev.
+    name: Parcours (Playwright, pile complète)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: e2e
+    steps:
+      - uses: actions/checkout@v7
+      - name: Construire et démarrer la pile
+        run: docker compose up -d --build --wait
+      - name: Chaque visiteur garde sa propre adresse derrière les deux Caddy (#355)
+        run: ./verifier-adresses.sh
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Parcours sur ordinateur et téléphone
+        run: npx playwright test
+      - name: Journaux de la pile (en cas d'échec)
+        if: failure()
+        run: docker compose logs --no-color --tail=300
+      - name: Rapport Playwright (captures et traces des échecs)
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: rapport-playwright
+          path: e2e/playwright-report/
+          retention-days: 7
