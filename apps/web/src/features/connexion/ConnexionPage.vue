@@ -198,7 +198,8 @@ async function explorer() {
 /* Le bouton Google suit les consignes de Google : fond clair, logo en couleurs, texte « Continuer avec Google ». */
 .bouton-google { border: 1px solid #747775; background: #fff; color: #1f1f1f; }
 .bouton-google:hover { background: #f2f2f2; }
-.bouton-demo { border: 1px solid var(--action); background: var(--surface); color: var(--action); cursor: pointer; }
+/* Texte en --action-ink (5,4:1 sur blanc) : le bleu --action (3,2:1) est réservé aux fonds et aux bordures (WCAG AA). */
+.bouton-demo { border: 1px solid var(--action); background: var(--surface); color: var(--action-ink); cursor: pointer; }
 .bouton-demo:hover:not(:disabled) { background: var(--action-soft); }
 .bouton-demo:disabled { opacity: 0.7; cursor: progress; }
 .bouton-demo svg { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }

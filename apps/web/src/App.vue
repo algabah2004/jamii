@@ -213,7 +213,7 @@ main.main--pleine { max-width: none; padding-inline: var(--space-4); }
    nets, pour que la capsule se détache tout en laissant voir le motif flouté dessous. */
 :root[data-theme='sombre'] .entete__interieur.verre,
 .zone-sombre .entete__interieur.verre {
-  background: color-mix(in srgb, white 9%, color-mix(in srgb, var(--surface-raised) 55%, transparent));
+  background: color-mix(in srgb, white 9%, color-mix(in srgb, var(--surface-raised) 80%, transparent));
   border-color: color-mix(in srgb, white 16%, transparent);
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, white 22%, transparent),
@@ -222,7 +222,7 @@ main.main--pleine { max-width: none; padding-inline: var(--space-4); }
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='clair']) .entete__interieur.verre {
-    background: color-mix(in srgb, white 9%, color-mix(in srgb, var(--surface-raised) 55%, transparent));
+    background: color-mix(in srgb, white 9%, color-mix(in srgb, var(--surface-raised) 80%, transparent));
     border-color: color-mix(in srgb, white 16%, transparent);
     box-shadow:
       inset 0 1px 0 color-mix(in srgb, white 22%, transparent),

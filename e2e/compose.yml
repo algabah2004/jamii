@@ -1,0 +1,72 @@
+# La pile complète pour les tests de parcours (Playwright), construite depuis le code de la PR.
+# Même chaîne qu'en production (deploiement/compose.yml) : entree (Caddy public) → web (Caddy, front) → api → postgres.
+# Seules différences : HTTP sur :8080 au lieu de HTTPS, et aucun service extérieur (GitHub, IA et e-mails simulés).
+# Lancer depuis e2e/ :  docker compose up -d --build --wait
+name: jamii-e2e
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: jamii
+      POSTGRES_USER: jamii
+      POSTGRES_PASSWORD: e2e_seulement
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jamii -d jamii"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  api:
+    build: ../apps/api
+    environment:
+      SPRING_PROFILES_ACTIVE: demo
+      POSTGRES_HOST: postgres
+      POSTGRES_PASSWORD: e2e_seulement
+      GITHUB_SOURCE: simule
+      # Aucun vrai compte GitHub à placer dans la démo : seuls les comptes fictifs.
+      JAMII_DEMO_COMPTE: ""
+      # Tous les tests viennent de la même machine : sans ça, le 6e compte démo de l'heure serait refusé (429).
+      # La limite elle-même est vérifiée par verifier-adresses.sh, sur celle des liens e-mail (20, non réglable).
+      JAMII_DEMO_PAR_ADRESSE: "1000"
+      WEB_URL: http://localhost:8080
+      EMAIL_FOURNISSEUR: simule
+      IA_FOURNISSEUR: simule
+      # Le navigateur des tests parle en http://localhost : pas de HTTPS dans cette pile.
+      SESSION_COOKIE_SECURE: "false"
+    depends_on: { postgres: { condition: service_healthy } }
+    healthcheck:
+      # L'image JRE n'a ni curl ni wget : bash ouvre la connexion lui-même (/dev/tcp, que sh ne connaît pas).
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /health/readiness HTTP/1.0\\r\\n\\r\\n' >&3 && grep -q '\"UP\"' <&3"]
+      interval: 3s
+      timeout: 3s
+      retries: 60
+      start_period: 20s
+
+  web:
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+    environment:
+      PORT: "8080"
+      API_URL: http://api:8080
+    depends_on: { api: { condition: service_healthy } }
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  # L'entrée publique, avec le Caddyfile de production tel quel.
+  entree:
+    image: caddy:2.8.4-alpine
+    environment:
+      DOMAINE: ":8080"
+    volumes:
+      - ../deploiement/Caddyfile:/etc/caddy/Caddyfile:ro
+    ports: ["8080:8080"]
+    depends_on: { web: { condition: service_healthy } }
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/"]
+      interval: 2s
+      timeout: 3s
+      retries: 30

@@ -1,0 +1,16 @@
+{
+  "name": "jamii-e2e",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "pile": "docker compose up -d --build --wait",
+    "adresses": "./verifier-adresses.sh",
+    "pile:arret": "docker compose down -v",
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.10.2",
+    "@playwright/test": "1.65.1"
+  }
+}
