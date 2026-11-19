@@ -169,7 +169,8 @@ function suivre(s: number, delai: number) {
 export function suivreAppelsEntrants(): void {
   if (entrants) return
   entrants = setInterval(() => {
-    if (document.visibilityState === 'visible') void verifierEntrant()
+    // Sans document (environnement de test démonté), il n'y a plus personne à prévenir : la CI de main a échoué ainsi.
+    if (typeof document !== 'undefined' && document.visibilityState === 'visible') void verifierEntrant()
   }, INTERVALLE_ENTRANT_MS)
   window.addEventListener('pagehide', quitterPage)
 }
