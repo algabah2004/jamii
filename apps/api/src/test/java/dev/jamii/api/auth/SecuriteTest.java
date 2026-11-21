@@ -155,6 +155,31 @@ class SecuriteTest {
 	}
 
 	@Test
+	void la_session_d_un_visiteur_repond_200_sans_erreur() {
+		MvcTestResult reponse = mvc.get().uri("/api/auth/session").exchange();
+		assertThat(reponse).hasStatusOk().bodyJson().isStrictlyEqualTo("""
+				{"connecte":false,"moi":null}""");
+	}
+
+	@Test
+	void la_session_renvoie_le_compte_connecte() {
+		UtilisateurConnecte awa = comptes.enregistrer(2002, "awa-session", "Awa", "https://avatars.example/2002");
+
+		MvcTestResult reponse = mvc.get().uri("/api/auth/session").with(oauth2Login().oauth2User(awa)).exchange();
+
+		assertThat(reponse).hasStatusOk().bodyJson().isLenientlyEqualTo("""
+				{"connecte":true,"moi":{"id":"%s","nom":"Awa","loginGithub":"awa-session","roles":["membre"]}}"""
+				.formatted(awa.id()));
+	}
+
+	@Test
+	void la_session_d_un_compte_supprime_redevient_anonyme() {
+		var fantome = new UtilisateurConnecte(UUID.randomUUID(), Set.of(Role.MEMBRE));
+		assertThat(mvc.get().uri("/api/auth/session").with(oauth2Login().oauth2User(fantome))).hasStatusOk()
+				.bodyJson().extractingPath("$.connecte").isEqualTo(false);
+	}
+
+	@Test
 	void deconnexion_exige_le_jeton_csrf() {
 		MvcTestResult sansJeton = mvc.post().uri("/api/auth/deconnexion").exchange();
 		assertThat(sansJeton).hasStatus(HttpStatus.FORBIDDEN);

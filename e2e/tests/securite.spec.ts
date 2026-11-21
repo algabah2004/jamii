@@ -20,6 +20,19 @@ test.describe('Sécurité vue du navigateur', () => {
     expect((await reponse.json()).code).toBe('non_connecte')
   })
 
+  test("un visiteur sans compte ne reçoit aucune réponse en erreur de l'API", async ({ page }) => {
+    const erreurs: string[] = []
+    page.on('response', (r) => {
+      if (r.url().includes('/api/') && r.status() >= 400) erreurs.push(`${r.status()} ${r.url()}`)
+    })
+    await page.goto('/')
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Trouve ton équipe.')
+    await page.waitForLoadState('networkidle')
+    expect(erreurs).toEqual([])
+    const session = await (await page.request.get('/api/auth/session')).json()
+    expect(session).toEqual({ connecte: false, moi: null })
+  })
+
   test('une écriture sans jeton CSRF est refusée, même avec une session', async ({ page }) => {
     await entrerEnDemo(page)
     // Même cookie de session, mais sans l'en-tête X-XSRF-TOKEN que pose le front.

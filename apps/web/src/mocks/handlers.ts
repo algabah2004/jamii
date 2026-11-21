@@ -101,6 +101,7 @@ export const handlers = [
           { status: 401, headers: { 'Content-Type': 'application/problem+json' } },
         ),
   ),
+  http.get('/api/auth/session', () => HttpResponse.json(connecte ? { connecte: true, moi: moiDemo } : { connecte: false, moi: null })),
   // En démo, le compte connecté fait partie de l'équipe Systalink : l'espace reste visible pendant la présentation.
   http.get('/api/systalink/acces', () => HttpResponse.json({ acces: connecte, codeJury: false })),
   http.get('/api/systalink/tableau-de-bord', ({ request }) => {

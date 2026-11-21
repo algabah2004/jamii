@@ -5,22 +5,22 @@ import { chargerSession, seDeconnecter, useSession } from './session'
 import { moiDemo } from './mocks/handlers'
 
 describe('chargerSession', () => {
-  it("connaît l'utilisateur quand /api/me répond 200", async () => {
+  it("connaît l'utilisateur quand la session est ouverte", async () => {
     await chargerSession()
     const { etat, moi } = useSession()
     expect(etat.value).toBe('connecte')
     expect(moi.value?.nom).toBe(moiDemo.nom)
   })
 
-  it("affiche l'accueil non connecté sur un 401", async () => {
-    serveur.use(http.get('/api/me', () => HttpResponse.json({ code: 'non_connecte' }, { status: 401 })))
+  it("affiche l'accueil non connecté sans compte", async () => {
+    serveur.use(http.get('/api/auth/session', () => HttpResponse.json({ connecte: false, moi: null })))
     await chargerSession()
     expect(useSession().etat.value).toBe('non_connecte')
   })
 
   it("signale l'API indisponible sur une 503 ou une coupure réseau, après avoir réessayé", async () => {
     let appels = 0
-    serveur.use(http.get('/api/me', () => {
+    serveur.use(http.get('/api/auth/session', () => {
       appels++
       return new HttpResponse(null, { status: 503 })
     }))
@@ -28,14 +28,14 @@ describe('chargerSession', () => {
     expect(appels).toBe(3)
     expect(useSession().etat.value).toBe('indisponible')
 
-    serveur.use(http.get('/api/me', () => HttpResponse.error()))
+    serveur.use(http.get('/api/auth/session', () => HttpResponse.error()))
     await chargerSession([])
     expect(useSession().etat.value).toBe('indisponible')
   })
 
   it("passe un redémarrage de l'API sans afficher l'erreur", async () => {
     let appels = 0
-    serveur.use(http.get('/api/me', () => (++appels < 3 ? new HttpResponse(null, { status: 502 }) : HttpResponse.json(moiDemo))))
+    serveur.use(http.get('/api/auth/session', () => (++appels < 3 ? new HttpResponse(null, { status: 502 }) : HttpResponse.json({ connecte: true, moi: moiDemo }))))
     await chargerSession([1, 1, 1])
     expect(useSession().etat.value).toBe('connecte')
     expect(appels).toBe(3)
@@ -45,7 +45,7 @@ describe('chargerSession', () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
     try {
       let enPanne = true
-      serveur.use(http.get('/api/me', () => (enPanne ? HttpResponse.error() : HttpResponse.json(moiDemo))))
+      serveur.use(http.get('/api/auth/session', () => (enPanne ? HttpResponse.error() : HttpResponse.json({ connecte: true, moi: moiDemo }))))
       await chargerSession([])
       expect(useSession().etat.value).toBe('indisponible')
       enPanne = false

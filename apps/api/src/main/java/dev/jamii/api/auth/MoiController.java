@@ -35,6 +35,30 @@ class MoiController {
 		return Moi.depuis(utilisateur.get());
 	}
 
+	/**
+	 * GET /api/auth/session (contrat : opération « session »). Toujours 200 : un visiteur sans compte n'est pas une
+	 * erreur, et la console de son navigateur reste propre. Un compte supprimé pendant que la session vivait est
+	 * déconnecté, comme pour GET /api/me.
+	 */
+	@GetMapping("/api/auth/session")
+	Session session(@AuthenticationPrincipal UtilisateurConnecte connecte, HttpServletRequest requete) throws ServletException {
+		if (connecte == null) {
+			return Session.ANONYME;
+		}
+		var utilisateur = utilisateurs.findById(connecte.id());
+		if (utilisateur.isEmpty()) {
+			requete.logout();
+			return Session.ANONYME;
+		}
+		return new Session(true, Moi.depuis(utilisateur.get()));
+	}
+
+	record Session(boolean connecte, Moi moi) {
+
+		static final Session ANONYME = new Session(false, null);
+
+	}
+
 	/** Schéma Moi du contrat. L'e-mail n'apparaît que dans cette réponse, jamais dans le profil vu par les autres. */
 	record Moi(UUID id, String nom, String email, String avatarUrl, String loginGithub, List<String> methodesConnexion,
 			Set<Role> roles, Instant creeLe) {

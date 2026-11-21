@@ -151,7 +151,7 @@ describe('AXE, décrire son besoin à Ayo', () => {
 
 describe('AXE, se connecter', () => {
   it('la présentation de Jamii et les deux façons de se connecter', async () => {
-    serveur.use(http.get('/api/me', () => HttpResponse.json({ code: 'non_connecte' }, { status: 401 })))
+    serveur.use(http.get('/api/auth/session', () => HttpResponse.json({ connecte: false, moi: null })))
     expect(await violations('/connexion', '[data-test="connexion-google"]')).toEqual([])
   })
 })

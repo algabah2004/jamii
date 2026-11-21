@@ -124,6 +124,31 @@ paths:
                   email: { type: boolean }
                   demo: { type: boolean, description: 'Vrai si `POST /api/auth/demo` est ouvert (profil demo de l''API).' }
 
+  /api/auth/session:
+    get:
+      tags: [connexion]
+      operationId: session
+      summary: Qui est connecté, sans erreur pour un visiteur
+      description: |
+        Le front l'appelle au démarrage de chaque page. Un visiteur sans compte n'est pas une erreur : la réponse est
+        `200` avec `connecte: false`, et la console du navigateur reste propre. `GET /api/me` garde son `401` pour les
+        clients qui exigent une session.
+      security: []
+      responses:
+        '200':
+          description: L'état de la session, et le compte s'il y en a un.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [connecte, moi]
+                properties:
+                  connecte: { type: boolean }
+                  moi:
+                    oneOf:
+                      - $ref: '#/components/schemas/Moi'
+                      - type: 'null'
+
   /api/auth/demo:
     post:
       tags: [connexion]

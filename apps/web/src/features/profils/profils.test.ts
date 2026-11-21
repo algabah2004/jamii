@@ -44,7 +44,7 @@ describe('Mon profil', () => {
   })
 
   it('sans GitHub relié, propose « Relier mon GitHub », puis dit quand c’est fait ou pourquoi ça a échoué', async () => {
-    serveur.use(http.get('/api/me', () => HttpResponse.json({ ...moiDemo, loginGithub: null, methodesConnexion: ['email'] })))
+    serveur.use(http.get('/api/auth/session', () => HttpResponse.json({ connecte: true, moi: { ...moiDemo, loginGithub: null, methodesConnexion: ['email'] } })))
     let page = await ouvrir()
     await vi.waitFor(() => expect(page.find('[data-test="relier-github"]').exists()).toBe(true))
     expect(page.get('[data-test="relier-github"]').attributes('href')).toBe('/api/auth/github?lier=1')
@@ -56,7 +56,7 @@ describe('Mon profil', () => {
     expect(page.get('[data-test="erreur-lien"]').text()).toContain('déjà relié à un autre compte')
     page.unmount()
 
-    serveur.use(http.get('/api/me', () => HttpResponse.json(moiDemo)))
+    serveur.use(http.get('/api/auth/session', () => HttpResponse.json({ connecte: true, moi: moiDemo })))
     page = await ouvrir('/profil?github=relie')
     await vi.waitFor(() => expect(page.find('[data-test="github-relie"]').exists()).toBe(true))
     expect(page.find('[data-test="generer"]').exists()).toBe(true)
