@@ -16,7 +16,7 @@ const JETON = 'a'.repeat(40)
 function nonConnecte() {
   let connecte = false
   serveur.use(
-    http.get('/api/me', () => (connecte ? HttpResponse.json(moiDemo) : HttpResponse.json({ code: 'non_connecte' }, { status: 401 }))),
+    http.get('/api/auth/session', () => (connecte ? HttpResponse.json({ connecte: true, moi: moiDemo }) : HttpResponse.json({ connecte: false, moi: null }))),
     http.post('/api/auth/lien-email/confirmation', () => {
       connecte = true
       return new HttpResponse(null, { status: 204 })
@@ -173,7 +173,7 @@ describe('le lien reçu par e-mail', () => {
     expect(appels).toBe(0)
     expect(routeur.currentRoute.value.query.jeton).toBeUndefined()
 
-    serveur.use(http.get('/api/me', () => HttpResponse.json(moiDemo)))
+    serveur.use(http.get('/api/auth/session', () => HttpResponse.json({ connecte: true, moi: moiDemo })))
     await page.find('[data-test="confirmer-lien"]').trigger('click')
     // L'ancienne adresse du formulaire mène à la conversation avec Ayo, sur « Tes demandes ».
     await vi.waitFor(() => expect(routeur.currentRoute.value.path).toBe('/demandes'), { timeout: 4000 })

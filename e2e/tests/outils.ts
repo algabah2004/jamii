@@ -2,7 +2,7 @@ import { expect, type Page } from '@playwright/test'
 
 /**
  * Relève les erreurs de la console et de la page pendant un test. Un jury qui ouvre les outils du navigateur ne doit
- * rien y trouver de rouge, hors réponses HTTP attendues (un 401 sur /api/me pour un visiteur sans compte, par exemple).
+ * rien y trouver de rouge, hors réponses HTTP attendues (un 403 sur une écriture refusée, par exemple).
  */
 export function surveillerConsole(page: Page): () => string[] {
   const erreurs: string[] = []

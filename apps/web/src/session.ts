@@ -33,14 +33,15 @@ let reprise: ReturnType<typeof setTimeout> | null = null
 /** Un essai : vrai si l'API a répondu (connecté ou non), faux si elle est injoignable ou en erreur. */
 async function essayer(): Promise<boolean> {
   try {
-    const { data, response } = await api.GET('/api/me')
-    if (data) {
-      moi.value = data
+    // GET /api/auth/session répond 200 même sans compte : la console d'un visiteur reste sans erreur rouge.
+    const { data } = await api.GET('/api/auth/session')
+    if (data?.connecte && data.moi) {
+      moi.value = data.moi
       accesSystalink.value = await lireAccesSystalink()
       etat.value = 'connecte'
       return true
     }
-    if (response.status === 401) {
+    if (data) {
       moi.value = null
       accesSystalink.value = false
       etat.value = 'non_connecte'
@@ -53,7 +54,7 @@ async function essayer(): Promise<boolean> {
 }
 
 /**
- * Appelé au démarrage : 401 veut dire « afficher l'accueil non connecté » (contrat socle). Une API qui ne répond pas
+ * Appelé au démarrage : `connecte: false` veut dire « afficher l'accueil non connecté » (contrat socle). Une API qui ne répond pas
  * est réessayée quelques fois avant d'être signalée, puis en arrière-plan jusqu'à son retour.
  */
 export async function chargerSession(attentes: readonly number[] = ATTENTES_MS): Promise<void> {

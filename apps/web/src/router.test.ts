@@ -7,7 +7,7 @@ import { chargerSession } from './session'
 
 describe('routeur', () => {
   it("renvoie vers la page de connexion, avec le chemin de retour, si on n'est pas connecté", async () => {
-    serveur.use(http.get('/api/me', () => new HttpResponse(null, { status: 401 })))
+    serveur.use(http.get('/api/auth/session', () => HttpResponse.json({ connecte: false, moi: null })))
     await chargerSession()
     const routeur = creerRouteur(createMemoryHistory())
     await routeur.push('/profil')
@@ -23,7 +23,7 @@ describe('routeur', () => {
   })
 
   it('ouvre les missions et les hackathons sans compte, mais pas leur création', async () => {
-    serveur.use(http.get('/api/me', () => new HttpResponse(null, { status: 401 })))
+    serveur.use(http.get('/api/auth/session', () => HttpResponse.json({ connecte: false, moi: null })))
     await chargerSession()
     const routeur = creerRouteur(createMemoryHistory())
     await routeur.push('/missions')

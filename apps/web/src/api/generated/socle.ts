@@ -103,6 +103,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Qui est connecté, sans erreur pour un visiteur
+         * @description Le front l'appelle au démarrage de chaque page. Un visiteur sans compte n'est pas une erreur : la réponse est
+         *     `200` avec `connecte: false`, et la console du navigateur reste propre. `GET /api/me` garde son `401` pour les
+         *     clients qui exigent une session.
+         */
+        get: operations["session"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/demo": {
         parameters: {
             query?: never;
@@ -566,6 +588,29 @@ export interface operations {
                         email: boolean;
                         /** @description Vrai si `POST /api/auth/demo` est ouvert (profil demo de l'API). */
                         demo: boolean;
+                    };
+                };
+            };
+        };
+    };
+    session: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description L'état de la session, et le compte s'il y en a un. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        connecte: boolean;
+                        moi: components["schemas"]["Moi"] | null;
                     };
                 };
             };
