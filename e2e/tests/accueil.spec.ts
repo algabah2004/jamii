@@ -11,6 +11,17 @@ test.describe("L'accueil pré-rendu (docs/adr/0011)", () => {
     expect(html).toContain('og:title')
   })
 
+  test("l'image d'aperçu des liens est servie, au format annoncé", async ({ request }) => {
+    const html = await (await request.get('/')).text()
+    expect(html).toContain('<meta property="og:image" content="https://jamii.dev/og-image.png" />')
+    const image = await request.get('/og-image.png')
+    expect(image.status()).toBe(200)
+    expect(image.headers()['content-type']).toBe('image/png')
+    // En-tête PNG puis largeur et hauteur du bloc IHDR : 1200 × 630, comme le disent og:image:width et og:image:height.
+    const octets = await image.body()
+    expect([octets.readUInt32BE(16), octets.readUInt32BE(20)]).toEqual([1200, 630])
+  })
+
   test("les autres pages reçoivent la coquille vide, jamais l'accueil", async ({ request }) => {
     for (const chemin of ['/missions', '/p/inconnu', '/cercles']) {
       const html = await (await request.get(chemin)).text()
