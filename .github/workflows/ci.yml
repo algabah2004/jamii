@@ -82,7 +82,7 @@ jobs:
         run: ./mvnw -B -q org.cyclonedx:cyclonedx-maven-plugin:2.9.3:makeBom -DoutputFormat=json -DoutputName=bom
       - name: SBOM du service IA (Python)
         if: hashFiles('services/ia/uv.lock') != ''
-        uses: astral-sh/setup-uv@v10.3.3
+        uses: astral-sh/setup-uv@v10.4.0
       - if: hashFiles('services/ia/uv.lock') != ''
         working-directory: services/ia
         run: |
@@ -144,7 +144,7 @@ jobs:
       DATABASE_URL: postgresql://jamii:jamii_ci_only@localhost:5432/jamii
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10.3.3
+      - uses: astral-sh/setup-uv@v10.4.0
         with:
           enable-cache: true
           cache-dependency-glob: services/ia/uv.lock
